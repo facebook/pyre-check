@@ -969,7 +969,7 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     !&"test.foo"
+                     (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                      (Some
                         (node
                            ~path
@@ -990,7 +990,7 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     !&"test.foo"
+                     (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                      (Some
                         (node
                            ~path
@@ -1051,7 +1051,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1069,7 +1069,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1098,7 +1098,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1116,7 +1116,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1146,7 +1146,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1165,7 +1165,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(5, 2)
@@ -1195,7 +1195,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(5, 2)
@@ -1213,7 +1213,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1254,7 +1254,8 @@ let test_updates context =
              {
                Define.signature =
                  {
-                   Define.Signature.name = !&"test.foo";
+                   Define.Signature.name =
+                     Node.create ~location:(location (7, 4) (7, 7)) !&"test.foo";
                    parameters =
                      [
                        node
@@ -1298,7 +1299,8 @@ let test_updates context =
              {
                Define.signature =
                  {
-                   Define.Signature.name = !&"test.foo";
+                   Define.Signature.name =
+                     Node.create ~location:(location (5, 4) (5, 7)) !&"test.foo";
                    parameters =
                      [
                        node
@@ -1341,7 +1343,7 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = !&"test.foo";
+              Define.Signature.name = Node.create ~location:(location (5, 4) (5, 7)) !&"test.foo";
               parameters =
                 [
                   node
@@ -1380,7 +1382,7 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = !&"test.foo";
+              Define.Signature.name = Node.create ~location:(location (4, 4) (4, 7)) !&"test.foo";
               parameters =
                 [
                   node
@@ -1450,7 +1452,7 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = !&"test.foo";
+              Define.Signature.name = Node.create ~location:(location (8, 4) (8, 7)) !&"test.foo";
               parameters =
                 [
                   node
@@ -1592,7 +1594,8 @@ let test_updates context =
                {
                  Define.signature =
                    {
-                     Define.Signature.name = !&"test.A.foo";
+                     Define.Signature.name =
+                       Node.create ~location:(location (4, 6) (4, 9)) !&"test.A.foo";
                      parameters =
                        [
                          node
@@ -1636,7 +1639,8 @@ let test_updates context =
                     {
                       Define.signature =
                         {
-                          Define.Signature.name = !&"test.A.foo";
+                          Define.Signature.name =
+                            Node.create ~location:(location (6, 6) (6, 9)) !&"test.A.foo";
                           parameters =
                             [
                               node
@@ -1730,7 +1734,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1748,7 +1752,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(3, 0)
                  ~stop:(4, 12)
-                 !&"test.foo"
+                 (node ~path ~start:(3, 4) ~stop:(3, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(4, 4)
@@ -1777,7 +1781,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
@@ -1804,7 +1808,7 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 !&"test.foo"
+                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)

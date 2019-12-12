@@ -18,7 +18,7 @@ let test_is_method _ =
     {
       Define.signature =
         {
-          name = !&name;
+          name = + !&name;
           parameters = [];
           decorators = [];
           docstring = None;
@@ -41,7 +41,7 @@ let test_is_classmethod _ =
     {
       Define.signature =
         {
-          name = !&name;
+          name = + !&name;
           parameters = [];
           decorators;
           docstring = None;
@@ -68,7 +68,7 @@ let test_is_class_property _ =
     {
       Define.signature =
         {
-          name = !&name;
+          name = + !&name;
           parameters = [];
           decorators;
           docstring = None;
@@ -93,7 +93,7 @@ let test_decorator _ =
     {
       Define.signature =
         {
-          name = !&"foo";
+          name = + !&"foo";
           parameters = [];
           decorators;
           docstring = None;
@@ -131,7 +131,7 @@ let test_is_constructor _ =
       {
         Define.signature =
           {
-            name = !&name;
+            name = + !&name;
             parameters = [];
             decorators = [];
             docstring = None;
@@ -214,13 +214,16 @@ let test_defines _ =
     let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
-        assert_equal define.Node.value.Define.signature.name !&method_id ~printer:Reference.show
+        assert_equal
+          (Node.value define.Node.value.Define.signature.name)
+          !&method_id
+          ~printer:Reference.show
     | None when not exists -> ()
     | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
           Reference.pp
-          name
+          (Node.value name)
           method_name
         |> assert_failure
     | None -> Format.sprintf "method %s not found when expected" method_name |> assert_failure
@@ -407,7 +410,7 @@ let test_attributes _ =
           if number_of_defines > 0 then
             let define =
               {
-                Define.Signature.name = !&"foo";
+                Define.Signature.name = + !&"foo";
                 parameters = [];
                 decorators = [];
                 docstring = None;

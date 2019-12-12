@@ -555,7 +555,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -576,7 +576,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "*"; value = None; annotation = None };
@@ -601,7 +601,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -622,7 +622,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -643,7 +643,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -664,7 +664,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [!"foo"];
                docstring = None;
@@ -685,7 +685,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [!"decorator"];
                docstring = None;
@@ -706,7 +706,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators =
                  [
@@ -738,7 +738,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [!"foo"; !"bar"];
                docstring = None;
@@ -759,7 +759,7 @@ let test_define _ =
          {
            signature =
              {
-               Define.Signature.name = !&"foo";
+               Define.Signature.name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = None };
@@ -784,7 +784,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = Some (+Expression.Integer 1); annotation = None };
@@ -809,7 +809,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [+{ Parameter.name = "a"; value = Some (+Expression.Tuple []); annotation = None }];
                decorators = [];
@@ -831,7 +831,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -856,7 +856,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -882,7 +882,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -899,7 +899,7 @@ let test_define _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -927,7 +927,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
                decorators = [];
                docstring = None;
@@ -948,7 +948,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -976,7 +976,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = Some !"int" };
@@ -1001,7 +1001,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1048,7 +1048,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = None };
@@ -1073,7 +1073,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1103,7 +1103,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1133,7 +1133,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1163,7 +1163,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1192,7 +1192,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1220,7 +1220,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1248,7 +1248,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1277,7 +1277,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1313,7 +1313,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1349,7 +1349,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1391,7 +1391,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1426,7 +1426,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1463,7 +1463,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -1492,7 +1492,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1536,7 +1536,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1581,7 +1581,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -1627,7 +1627,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -1662,7 +1662,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1695,7 +1695,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -1736,7 +1736,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1776,7 +1776,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1809,7 +1809,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -1847,7 +1847,7 @@ let test_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -3361,7 +3361,7 @@ let test_class _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -3392,7 +3392,7 @@ let test_class _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -3409,7 +3409,7 @@ let test_class _ =
                            {
                              signature =
                                {
-                                 name = !&"baz";
+                                 name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -3549,7 +3549,7 @@ let test_class _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -3580,7 +3580,7 @@ let test_class _ =
                   {
                     signature =
                       {
-                        name = !&"__init__";
+                        name = + !&"__init__";
                         parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
                         decorators = [];
                         docstring = None;
@@ -3636,7 +3636,7 @@ let test_class _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -4782,7 +4782,7 @@ let test_stubs _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -4803,7 +4803,7 @@ let test_stubs _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -4824,7 +4824,7 @@ let test_stubs _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                docstring = None;
@@ -4845,7 +4845,7 @@ let test_stubs _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters =
                  [
                    +{
@@ -4917,7 +4917,7 @@ let test_ellipsis _ =
          {
            signature =
              {
-               name = !&"__init__";
+               name = + !&"__init__";
                parameters =
                  [
                    +{

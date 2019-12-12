@@ -439,7 +439,7 @@ let process_type_query_request
                   }
                 in
                 {
-                  TypeQuery.define_name = name;
+                  TypeQuery.define_name = Node.value name;
                   parameters = List.map parameters ~f:represent_parameter;
                   return_annotation;
                 }
@@ -455,7 +455,8 @@ let process_type_query_request
               {
                 Node.value =
                   {
-                    Statement.Define.signature = { Statement.Define.Signature.name = caller; _ };
+                    Statement.Define.signature =
+                      { Statement.Define.Signature.name = { Node.value = caller; _ }; _ };
                     _;
                   };
                 _;

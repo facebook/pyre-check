@@ -3630,7 +3630,8 @@ module TypedDictionary = struct
         {
           signature =
             {
-              name = Reference.create_from_list [class_name; name];
+              name =
+                Reference.create_from_list [class_name; name] |> Node.create_with_default_location;
               parameters =
                 [
                   { ExpressionParameter.name = "self"; value = None; annotation = self_parameter }

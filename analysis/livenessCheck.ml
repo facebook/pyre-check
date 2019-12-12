@@ -78,7 +78,7 @@ module State (Context : Context) = struct
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations
         ~environment:Context.environment
-        (Node.value define |> Define.name)
+        (Node.value define |> Define.name |> Node.value)
     in
     { used = Identifier.Set.empty; define; local_annotations }
 
@@ -205,7 +205,13 @@ let run ~configuration:_ ~environment ~source =
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let define = Source.top_level_define_node source in
-  let check ({ Node.value = { Define.signature = { Define.Signature.name; _ }; _ }; _ } as define) =
+  let check
+      ( {
+          Node.value =
+            { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ };
+          _;
+        } as define )
+    =
     let cfg = Cfg.create (Node.value define) in
     Fixpoint.backward ~cfg ~initial:(State.initial ~define)
     |> Fixpoint.entry

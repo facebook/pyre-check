@@ -67,7 +67,8 @@ module Binding = struct
         of_unannotated_target ~kind:(Kind.AssignTarget None) target
     | Statement.Class { Class.name = { Node.value = name; _ }; _ } ->
         [{ kind = Kind.ClassName; name = Reference.show name; location }]
-    | Statement.Define { Define.signature = { name; _ } as signature; _ } ->
+    | Statement.Define { Define.signature = { name = { Node.value = name; _ }; _ } as signature; _ }
+      ->
         [{ kind = Kind.DefineName signature; name = Reference.show name; location }]
     | Statement.For { For.target; body; orelse; _ } ->
         let target_names = of_unannotated_target ~kind:Kind.ForTarget target in
@@ -280,7 +281,7 @@ module Scope = struct
           Format.asprintf
             "Cannot create a scope for define %a"
             Reference.pp
-            (Statement.Define.name define)
+            (Node.value (Statement.Define.name define))
         in
         failwith message
     | Some result -> result

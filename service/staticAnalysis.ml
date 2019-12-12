@@ -35,7 +35,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
     |> List.filter ~f:(fun { Node.value = define; _ } -> not (Define.is_overloaded_function define))
   in
   let record_toplevel_definition definition =
-    let name = definition.Node.value.Define.signature.name in
+    let name = Node.value definition.Node.value.Define.signature.name in
     match definition.Node.value.Define.signature.parent with
     | None ->
         (* Only record top-level definitions. *)

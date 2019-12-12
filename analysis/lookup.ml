@@ -174,7 +174,10 @@ let create_of_source type_environment source =
   let definitions_lookup = Location.Reference.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
-      ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
+      ( {
+          Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+          _;
+        } as define_node )
     =
     let annotation_lookup =
       TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name

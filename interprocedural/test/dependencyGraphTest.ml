@@ -340,7 +340,7 @@ let test_type_collection context =
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
-      TypeEnvironment.ReadOnly.get_local_annotations environment name
+      TypeEnvironment.ReadOnly.get_local_annotations environment (Node.value name)
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =

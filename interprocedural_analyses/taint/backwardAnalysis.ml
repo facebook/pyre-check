@@ -817,7 +817,9 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
 
 
 let run ~environment ~define ~existing_model =
-  let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
+  let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
+      define )
+    =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     Annotated.Define.create define
@@ -830,7 +832,9 @@ let run ~environment ~define ~existing_model =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let local_annotations =
-      TypeEnvironment.ReadOnly.get_local_annotations environment (Node.value define |> Define.name)
+      TypeEnvironment.ReadOnly.get_local_annotations
+        environment
+        (Node.value define |> Define.name |> Node.value)
 
 
     let is_constructor () =

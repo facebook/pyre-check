@@ -883,7 +883,7 @@ let test_class_locations _ =
                       {
                         signature =
                           {
-                            name = !&"bar";
+                            name = node ~start:(2, 5) ~stop:(2, 8) !&"bar";
                             parameters = [];
                             decorators = [];
                             docstring = None;
@@ -965,7 +965,7 @@ let test_class_locations _ =
                                  {
                                    signature =
                                      {
-                                       name = !&"bar";
+                                       name = node ~start:(4, 8) ~stop:(4, 11) !&"bar";
                                        parameters = [];
                                        decorators = [];
                                        docstring = None;
@@ -999,7 +999,7 @@ let test_define_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(1, 10) ~stop:(1, 13) !&"foo";
                  parameters = [];
                  decorators = [];
                  docstring = None;
@@ -1035,7 +1035,7 @@ let test_define_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(2, 4) ~stop:(2, 7) !&"foo";
                  parameters = [];
                  decorators = [];
                  docstring = None;
@@ -1055,7 +1055,7 @@ let test_define_locations _ =
                       {
                         signature =
                           {
-                            name = !&"bar";
+                            name = node ~start:(3, 6) ~stop:(3, 9) !&"bar";
                             parameters = [];
                             decorators = [];
                             docstring = None;
@@ -1103,7 +1103,7 @@ let test_define_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(2, 4) ~stop:(2, 7) !&"foo";
                  parameters =
                    [
                      node
@@ -1149,7 +1149,7 @@ let test_define_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(2, 4) ~stop:(2, 7) !&"foo";
                  parameters =
                    [
                      node
@@ -2576,7 +2576,7 @@ let test_stub_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(1, 4) ~stop:(1, 7) !&"foo";
                  parameters =
                    [
                      node
@@ -2612,7 +2612,7 @@ let test_stub_locations _ =
            {
              signature =
                {
-                 name = !&"foo";
+                 name = node ~start:(2, 4) ~stop:(2, 7) !&"foo";
                  parameters =
                    [
                      node

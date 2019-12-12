@@ -172,7 +172,7 @@ end
 and Define : sig
   module Signature : sig
     type t = {
-      name: Reference.t;
+      name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
       docstring: string option;
@@ -261,7 +261,7 @@ and Define : sig
 
   val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 
-  val name : t -> Reference.t
+  val name : t -> Reference.t Node.t
 
   val unqualified_name : t -> Identifier.t
 

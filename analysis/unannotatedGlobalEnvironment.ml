@@ -476,7 +476,9 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
                 {
                   signature =
                     {
-                      name = Reference.create "typing.GenericMeta.__getitem__";
+                      name =
+                        Reference.create "typing.GenericMeta.__getitem__"
+                        |> Node.create_with_default_location;
                       parameters =
                         [
                           { Parameter.name = "cls"; value = None; annotation = None }
@@ -581,7 +583,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         in
         List.rev_append (List.map ~f:import_to_global imports) globals
     | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
-        (name, Define [Node.create signature ~location]) :: globals
+        (Node.value name, Define [Node.create signature ~location]) :: globals
     | If { If.body; orelse; _ } ->
         (* TODO(T28732125): Properly take an intersection here. *)
         List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
@@ -696,7 +698,7 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external;
       let definitions =
         let table = Reference.Table.create () in
         let process_define ({ Node.value = define; _ } as define_node) =
-          let define_name = Define.name define in
+          let define_name = Define.name define |> Node.value in
           let sibling =
             let open FunctionDefinition.Sibling in
             if Define.is_overloaded_function define then

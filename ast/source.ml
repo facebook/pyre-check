@@ -348,7 +348,7 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
       | Assign { Assign.target = { Node.value = Name target; _ }; _ } when is_simple_name target ->
           public_values @ filter_private [target |> name_to_reference_exn], dunder_all
       | Class { Class.name; _ } -> public_values @ filter_private [Node.value name], dunder_all
-      | Define { Define.signature = { name; _ }; _ } ->
+      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } ->
           public_values @ filter_private [name], dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } = Option.value alias ~default:name in

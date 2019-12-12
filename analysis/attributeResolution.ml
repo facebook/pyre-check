@@ -1322,7 +1322,7 @@ module Implementation = struct
               | None -> class_annotation
             in
             match signatures with
-            | ({ Define.Signature.name; _ } as define) :: _ as defines ->
+            | ({ Define.Signature.name = { Node.value = name; _ }; _ } as define) :: _ as defines ->
                 let parent =
                   (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't
                      play well with our logic here - we should clean up the call logic to handle

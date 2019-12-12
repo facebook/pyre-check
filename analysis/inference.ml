@@ -666,7 +666,10 @@ let run
   let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check
-      ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
+      ( {
+          Node.location;
+          value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+        } as define_node )
     =
     let module State = State (struct
       let configuration = configuration

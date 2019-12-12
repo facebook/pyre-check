@@ -78,7 +78,7 @@ module ConstantPropagationState (Context : Context) = struct
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations
         ~environment:Context.environment
-        (Define.name define)
+        (Define.name define |> Node.value)
     in
     { constants; define; local_annotations; nested_defines = NestedDefines.initial }
 
@@ -382,6 +382,9 @@ let run
       else
         reference
     in
+    let sanitize_reference_node { Node.value; location } =
+      { Node.value = sanitize_reference value; location }
+    in
     let sanitize_identifier identifier =
       if String.length (Identifier.sanitized identifier) > 15 then (
         let replacement = generate_identifier () in
@@ -403,7 +406,9 @@ let run
                 let names = String.Hash_set.create () in
                 let scope_name identifier =
                   let qualifier =
-                    Reference.show name |> String.substr_replace_all ~pattern:"." ~with_:"?"
+                    Node.value name
+                    |> Reference.show
+                    |> String.substr_replace_all ~pattern:"." ~with_:"?"
                   in
                   let stars, name = Identifier.split_star identifier in
                   let name =
@@ -483,7 +488,7 @@ let run
                   List.map parameters ~f:sanitize_parameter
                 in
                 let signature =
-                  { define.signature with name = sanitize_reference name; parameters }
+                  { define.signature with name = sanitize_reference_node name; parameters }
                 in
                 Statement.Define { signature; captures; body }
             | For ({ For.target = { Node.value = Name name; _ } as target; _ } as block)
@@ -605,9 +610,11 @@ let run
                   in
                   List.map parameters ~f:sanitize_parameter
                 in
-                let signature =
-                  { define.signature with name = dequalify_reference name; parameters }
+                let name =
+                  let { Node.value; location } = name in
+                  { Node.value = dequalify_reference value; location }
                 in
+                let signature = { define.signature with name; parameters } in
                 Statement.Define { define with signature }
             | Try ({ Try.handlers; _ } as block) ->
                 let handlers =

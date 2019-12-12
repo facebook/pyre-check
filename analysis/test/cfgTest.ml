@@ -16,7 +16,7 @@ let test_to_dot _ =
       {
         Define.signature =
           {
-            name = !&"foo";
+            name = + !&"foo";
             parameters = [];
             decorators = [];
             docstring = None;
@@ -102,7 +102,7 @@ let assert_cfg body expected =
     {
       Define.signature =
         {
-          name = !&"foo";
+          name = + !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;

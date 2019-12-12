@@ -775,12 +775,12 @@ compound_statement:
         | _ ->
             parameters
       in
-      let name = snd name in
+      let name_location, name = name in
       {
         Node.location;
         value = Define {
           signature = {
-            name = name;
+            name = { Node.location = name_location; value = name };
             parameters = List.map ~f:convert_parameter parameters;
             decorators = [];
             return_annotation = annotation >>| convert;

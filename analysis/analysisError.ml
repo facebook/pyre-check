@@ -478,7 +478,11 @@ let messages ~concise ~signature location kind =
     =
     location
   in
-  let { Node.value = { Define.Signature.name = define_name; _ }; location = define_location } =
+  let {
+    Node.value = { Define.Signature.name = { Node.value = define_name; _ }; _ };
+    location = define_location;
+  }
+    =
     signature
   in
   let show_sanitized_expression expression =
@@ -1771,8 +1775,15 @@ let inference_information
     ~signature:
       {
         Node.value =
-          { Define.Signature.name; parameters; return_annotation; decorators; parent; async; _ } as
-          signature;
+          {
+            Define.Signature.name = { Node.value = name; _ };
+            parameters;
+            return_annotation;
+            decorators;
+            parent;
+            async;
+            _;
+          } as signature;
         _;
       }
     kind

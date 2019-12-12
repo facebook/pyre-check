@@ -1795,7 +1795,7 @@ let test_expand_implicit_returns _ =
               {
                 signature =
                   {
-                    name = !&"foo";
+                    name = + !&"foo";
                     parameters = [];
                     decorators = [];
                     docstring = None;
@@ -1978,7 +1978,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = !&name;
+          name = + !&name;
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
@@ -1996,7 +1996,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = !&"$toplevel";
+          name = + !&"$toplevel";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -2014,7 +2014,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = !&(parent ^ ".$class_toplevel");
+          name = + !&(parent ^ ".$class_toplevel");
           parameters = [];
           decorators = [];
           docstring = None;
@@ -2034,7 +2034,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = !&"foo";
+          name = + !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
@@ -2052,7 +2052,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = !&"foo";
+          name = + !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
@@ -2104,7 +2104,7 @@ let test_classes _ =
              {
                signature =
                  {
-                   name = !&"bar";
+                   name = + !&"bar";
                    parameters = [];
                    decorators = [];
                    docstring = None;
@@ -2560,7 +2560,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2577,7 +2577,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -2612,7 +2612,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2629,7 +2629,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -2646,7 +2646,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = !&"baz";
+                        name = + !&"baz";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -2674,7 +2674,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2691,7 +2691,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -2708,7 +2708,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"baz";
+                                 name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2741,7 +2741,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2763,7 +2763,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2783,7 +2783,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"baz";
+                                 name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2816,7 +2816,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2838,7 +2838,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2858,7 +2858,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"baz";
+                                 name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2888,7 +2888,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2911,7 +2911,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2947,7 +2947,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -2968,7 +2968,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -2994,7 +2994,7 @@ let test_populate_nesting_define _ =
                                  {
                                    signature =
                                      {
-                                       name = !&"baz";
+                                       name = + !&"baz";
                                        parameters = [];
                                        decorators = [];
                                        docstring = None;
@@ -3016,7 +3016,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"qux";
+                                 name = + !&"qux";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -3054,7 +3054,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = !&"bar";
+                        name = + !&"bar";
                         parameters = [];
                         decorators = [];
                         docstring = None;
@@ -3071,7 +3071,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"baz";
+                                 name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -3102,7 +3102,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = !&"foo";
+               name = + !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -3127,7 +3127,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = !&"bar";
+                                 name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  docstring = None;
@@ -3144,7 +3144,7 @@ let test_populate_nesting_define _ =
                                     {
                                       signature =
                                         {
-                                          name = !&"baz";
+                                          name = + !&"baz";
                                           parameters = [];
                                           decorators = [];
                                           docstring = None;
@@ -3194,7 +3194,7 @@ let test_populate_captures _ =
           sofar
           { Node.value = { Define.signature = { Define.Signature.name; _ }; captures; _ }; _ }
         =
-        Reference.Map.set sofar ~key:name ~data:captures
+        Reference.Map.set sofar ~key:(Node.value name) ~data:captures
       in
       List.fold defines ~init:Reference.Map.empty ~f:build_capture_map
     in
@@ -3328,7 +3328,7 @@ let test_populate_captures _ =
               DefineSignature
                 (Node.create
                    {
-                     Define.Signature.name = !&"bar";
+                     Define.Signature.name = Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
                      parameters =
                        [
                          Node.create

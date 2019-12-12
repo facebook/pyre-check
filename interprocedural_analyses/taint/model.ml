@@ -700,7 +700,11 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
-      | { Node.value = Statement.Define { signature = { name; _ } as signature; _ }; location } ->
+      | {
+          Node.value =
+            Statement.Define { signature = { name = { Node.value = name; _ }; _ } as signature; _ };
+          location;
+        } ->
           let class_candidate =
             Reference.prefix name
             >>| GlobalResolution.parse_reference global_resolution
@@ -746,7 +750,12 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
                     | Statement.Define
                         {
                           Define.signature =
-                            { Define.Signature.name; parameters; decorators; _ } as signature;
+                            {
+                              Define.Signature.name = { Node.value = name; _ };
+                              parameters;
+                              decorators;
+                              _;
+                            } as signature;
                           _;
                         } ->
                         let signature =
@@ -791,7 +800,11 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
       | {
           Node.value =
             Assign
-              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+              {
+                Assign.target = { Node.value = Name name; location = name_location };
+                annotation = Some annotation;
+                _;
+              };
           location;
         }
         when is_simple_name name
@@ -799,7 +812,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           let name = name_to_reference_exn name in
           let signature =
             {
-              Define.Signature.name;
+              Define.Signature.name = Node.create ~location:name_location name;
               parameters = [];
               decorators = [];
               docstring = None;
@@ -814,7 +827,11 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
       | {
           Node.value =
             Assign
-              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+              {
+                Assign.target = { Node.value = Name name; location = name_location };
+                annotation = Some annotation;
+                _;
+              };
           location;
         }
         when is_simple_name name
@@ -822,7 +839,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           let name = name_to_reference_exn name in
           let signature =
             {
-              Define.Signature.name;
+              Define.Signature.name = Node.create ~location:name_location name;
               parameters =
                 [Parameter.create ~location:Location.Reference.any ~annotation ~name:"$global" ()];
               decorators = [];
@@ -894,7 +911,13 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
     | _ -> ()
   in
   let create_model
-      ( ({ Define.Signature.name; parameters; return_annotation; decorators; _ } as define),
+      ( ( {
+            Define.Signature.name = { Node.value = name; _ };
+            parameters;
+            return_annotation;
+            decorators;
+            _;
+          } as define ),
         location,
         call_target )
     =
@@ -923,7 +946,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
             | { Node.value = Statement.Define ({ signature; _ } as define); location } ->
                 if
                   predicate define
-                  && Reference.equal define.Define.signature.Define.Signature.name name
+                  && Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
                 then
                   let parser = GlobalResolution.annotation_parser global_resolution in
                   Node.create signature ~location

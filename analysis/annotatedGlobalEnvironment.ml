@@ -63,7 +63,11 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
     match global with
     | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
         let create_overload
-            { Node.location; Node.value = { Define.Signature.name; parent; _ } as signature }
+            {
+              Node.location;
+              Node.value =
+                { Define.Signature.name = { Node.value = name; _ }; parent; _ } as signature;
+            }
           =
           let parent =
             if Define.Signature.is_class_method signature then

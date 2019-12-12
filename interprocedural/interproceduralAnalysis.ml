@@ -284,7 +284,7 @@ let analyze_define
           ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%a`"
           Reference.pp
-          name
+          (Node.value name)
           Analysis.Type.pp
           annotation;
         Result.Kind.Map.empty, Result.Kind.Map.empty
@@ -681,7 +681,7 @@ let compute_fixpoint
       let model = Fixpoint.get_model callable |> Option.value ~default:Result.empty_model in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
-        (Log.Color.yellow (Reference.show name))
+        (Log.Color.yellow (Reference.show (Node.value name)))
         iterations
         Result.pp_model_t
         model

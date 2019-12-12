@@ -94,7 +94,7 @@ let test_parse_stubs_modules_list context =
             _;
           }
         when Statement.Define.is_stub define = is_stub ->
-          name
+          Node.value name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
@@ -143,7 +143,11 @@ let test_parse_source context =
   assert_equal number_of_lines 2;
   match statements with
   | [{ Node.value = Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
-      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
+      assert_equal
+        ~cmp:Reference.equal
+        ~printer:Reference.show
+        (Node.value name)
+        (Reference.create "x.foo")
   | _ -> assert_unreached ()
 
 

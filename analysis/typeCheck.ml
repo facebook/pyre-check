@@ -681,13 +681,12 @@ module State (Context : Context) = struct
       |> Option.value ~default:state
     in
     let add_capture_annotations state =
-      let process_signature ({ Define.Signature.name; _ } as signature) =
+      let process_signature ({ Define.Signature.name = { Node.value = name; _ }; _ } as signature) =
         if Reference.is_local name then
           type_of_signature ~resolution ~location signature
           |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables
           |> Annotation.create
-          |> (fun annotation ->
-               Resolution.set_local resolution ~reference:signature.name ~annotation)
+          |> (fun annotation -> Resolution.set_local resolution ~reference:name ~annotation)
           |> fun resolution -> { state with resolution }
         else
           state
@@ -760,7 +759,9 @@ module State (Context : Context) = struct
             let name = name |> Identifier.sanitized in
             let is_dunder_new_method_for_named_tuple =
               Define.is_method define
-              && Reference.is_suffix ~suffix:(Reference.create ".__new__") define.signature.name
+              && Reference.is_suffix
+                   ~suffix:(Reference.create ".__new__")
+                   (Node.value define.signature.name)
               && Option.value_map
                    ~default:false
                    ~f:(name_is ~name:"typing.NamedTuple")
@@ -1177,7 +1178,7 @@ module State (Context : Context) = struct
                   | Type.Callable { Type.Callable.implementation; _ }
                     when not (StatementDefine.is_static_method define) ->
                       let original_implementation =
-                        Resolution.resolve_reference resolution name
+                        Resolution.resolve_reference resolution (Node.value name)
                         |> function
                         | Type.Callable
                             { Type.Callable.implementation = original_implementation; _ } ->
@@ -1383,7 +1384,7 @@ module State (Context : Context) = struct
         match return_annotation with
         | Some ({ Node.location; _ } as annotation) -> (
             match define with
-            | { Define.signature = { Define.Signature.name; _ }; _ }
+            | { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ }
               when String.equal (Reference.last name) "__new__" ->
                 (* TODO(T45018328): Error here. `__new__` is a special undecorated class method, and
                    we really ought to be checking its return type against typing.Type[Cls]. *)
@@ -4241,14 +4242,14 @@ module State (Context : Context) = struct
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
     | YieldFrom _ -> state
-    | Define { signature; _ } ->
-        if Reference.is_local signature.name then
+    | Define { signature = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
+      ->
+        if Reference.is_local name then
           type_of_signature ~resolution ~location signature
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
           |> Annotation.create
-          |> (fun annotation ->
-               Resolution.set_local resolution ~reference:signature.name ~annotation)
+          |> (fun annotation -> Resolution.set_local resolution ~reference:name ~annotation)
           |> fun resolution -> { state with resolution }
         else
           state
@@ -4308,7 +4309,11 @@ module State (Context : Context) = struct
 
   let errors ({ resolution; errors; _ } as state) =
     let global_resolution = Resolution.global_resolution resolution in
-    let ({ Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node) =
+    let ( {
+            Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+            location;
+          } as define_node )
+      =
       Context.define
     in
     let class_initialization_errors errors =
@@ -4865,7 +4870,12 @@ let exit_state ~resolution (module Context : Context) =
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let initial = State.initial ~resolution in
-  let { Node.value = { Define.signature = { Define.Signature.name; _ }; _ } as define; _ } =
+  let {
+    Node.value =
+      { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ } as define;
+    _;
+  }
+    =
     Context.define
   in
   if Define.is_stub define then
@@ -4897,7 +4907,10 @@ let check_define
     ~resolution
     ~qualifier
     ~call_graph_builder:(module Builder : Callgraph.Builder)
-    ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
+    ( {
+        Node.location;
+        value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ } as define;
+      } as define_node )
   =
   try
     let errors, local_annotations, callees =

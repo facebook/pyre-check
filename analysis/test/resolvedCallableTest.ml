@@ -18,7 +18,7 @@ let test_apply_decorators context =
   let create_define ~decorators ~parameters ~return_annotation =
     (let decorators = List.map ~f:parse_single_expression decorators in
      {
-       Define.Signature.name = !&"define";
+       Define.Signature.name = + !&"define";
        parameters;
        decorators;
        docstring = None;
@@ -170,7 +170,7 @@ let test_create context =
       |> GlobalResolution.create_callable
            ~resolution
            ~parent:parent_annotation
-           ~name:(Reference.show name)
+           ~name:(Reference.show (Node.value name))
       |> (fun callable ->
            check_implicit callable;
            callable)

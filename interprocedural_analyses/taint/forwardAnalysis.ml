@@ -873,7 +873,13 @@ let extract_features_to_attach existing_taint =
 
 
 let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
-  let { Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
+  let {
+    Define.signature = { return_annotation; name = { Node.value = name; _ }; parameters; _ };
+    _;
+  }
+    =
+    define
+  in
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
   in
@@ -917,7 +923,9 @@ let run ~environment ~define ~existing_model =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let local_annotations =
-      TypeEnvironment.ReadOnly.get_local_annotations environment (Node.value define |> Define.name)
+      TypeEnvironment.ReadOnly.get_local_annotations
+        environment
+        (Node.value define |> Define.name |> Node.value)
 
 
     let debug = Define.dump define.value

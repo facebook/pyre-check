@@ -1349,7 +1349,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
 let mock_signature =
   {
-    Define.Signature.name = Reference.create "$empty";
+    Define.Signature.name = Node.create_with_default_location (Reference.create "$empty");
     parameters = [];
     decorators = [];
     docstring = None;

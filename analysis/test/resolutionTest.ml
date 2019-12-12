@@ -551,7 +551,7 @@ let test_function_definitions context =
     let functions =
       GlobalResolution.function_definitions resolution !&function_name
       >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-              Reference.show name)
+              Reference.show (Node.value name))
       |> Option.value ~default:[]
     in
     assert_equal ~printer:(String.concat ~sep:", ") expected functions

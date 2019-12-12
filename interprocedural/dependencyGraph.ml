@@ -23,7 +23,10 @@ let empty_overrides = Reference.Map.empty
 
 let create_callgraph ~environment ~source =
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let fold_defines dependencies ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
+  let fold_defines
+      dependencies
+      ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
+      define )
     =
     let module Callgraph = Analysis.Callgraph in
     let create_target method_name =
