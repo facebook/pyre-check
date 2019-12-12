@@ -58,7 +58,7 @@ class Persistent(Command):
         # pyre-fixme[16]: `Namespace` has no attribute `store_type_check_resolution`.
         arguments.store_type_check_resolution = False
         # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
-        arguments.incremental_style = IncrementalStyle.SHALLOW
+        arguments.incremental_style = None
         Start(
             arguments,
             self._original_directory,

@@ -80,7 +80,7 @@ class Incremental(Reporting):
             "--incremental-style",
             type=IncrementalStyle,
             choices=list(IncrementalStyle),
-            default=IncrementalStyle.SHALLOW,
+            default=None,
             help="How to approach doing incremental checks.",
         )
         incremental.add_argument(
