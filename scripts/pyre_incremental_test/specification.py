@@ -285,6 +285,13 @@ class FileRepositoryUpdate(SingleUpdate):
 
     def update(self, environment: Environment, working_directory: Path) -> None:
         for handle, content in self.changes.items():
+            # Need to create parent directory if it doesn't exist
+            parent_path = Path(handle).parent
+            if not parent_path == Path("."):
+                environment.checked_run(
+                    working_directory=working_directory,
+                    command=f"mkdir -p {parent_path}",
+                )
             environment.checked_run(
                 working_directory=working_directory,
                 command=f"tee {handle}",
