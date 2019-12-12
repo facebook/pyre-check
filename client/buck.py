@@ -89,6 +89,7 @@ class FastBuckBuilder(BuckBuilder):
         ] + list(targets)
         if self._debug_mode:
             command.append("--debug")
+        LOG.info("Buck builder command: `{}`".format(" ".join(command)))
         with subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as buck_builder_process:
