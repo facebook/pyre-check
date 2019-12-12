@@ -603,6 +603,27 @@ let test_query context =
                    2, 40, 2, 44, Type.none;
                    2, 30, 2, 35, Type.literal_string "bar";
                    2, 11, 2, 14, Type.meta Type.integer;
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.none;
+                             parameters =
+                               Type.Callable.Defined
+                                 [
+                                   Named { name = "x"; annotation = Type.integer; default = true };
+                                   Named { name = "y"; annotation = Type.string; default = true };
+                                 ];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    2, 17, 2, 19, Type.literal_integer 10;
                    2, 8, 2, 9, Type.integer;
                    3, 2, 3, 3, Type.literal_integer 42;
@@ -634,6 +655,27 @@ let test_query context =
                    5, 8, 5, 9, Type.integer;
                    2, 16, 2, 17, Type.string;
                    2, 11, 2, 14, Type.meta Type.integer;
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.string;
+                             parameters =
+                               Type.Callable.Defined
+                                 [
+                                   Named { name = "x"; annotation = Type.integer; default = false };
+                                   Named { name = "y"; annotation = Type.string; default = false };
+                                 ];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    2, 8, 2, 9, Type.integer;
                    4, 5, 4, 6, Type.literal_integer 5;
                    2, 19, 2, 22, Type.meta Type.string;
@@ -681,6 +723,22 @@ let test_query context =
                    4, 3, 4, 4, Type.literal_integer 1;
                    3, 5, 3, 9, Type.Literal (Boolean true);
                    4, 7, 4, 8, Type.literal_integer 1;
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.Top;
+                             parameters = Type.Callable.Defined [];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                  ]
                  |> create_types_at_locations;
              };
@@ -705,6 +763,22 @@ let test_query context =
                    3, 12, 3, 13, Type.literal_integer 1;
                    3, 6, 3, 7, Type.integer;
                    4, 7, 4, 8, Type.literal_integer 1;
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.Top;
+                             parameters = Type.Callable.Defined [];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    3, 15, 3, 16, Type.literal_integer 2;
                  ]
                  |> create_types_at_locations;
@@ -733,6 +807,22 @@ let test_query context =
                    4, 8, 4, 9, Type.literal_integer 1;
                    5, 9, 5, 18, Type.parametric "type" (Concrete [Type.Primitive "Exception"]);
                    2, 13, 2, 17, Type.none;
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.none;
+                             parameters = Type.Callable.Defined [];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    4, 4, 4, 5, Type.literal_integer 1;
                  ]
                  |> create_types_at_locations;
@@ -796,8 +886,27 @@ let test_query context =
                  [
                    3, 13, 3, 16, parse_annotation "typing.Type[int]";
                    3, 10, 3, 11, Type.integer;
+                   3, 6, 3, 9, parse_annotation "typing.Callable[[Named(y, int)], str]";
                    5, 9, 5, 10, Type.integer;
                    2, 11, 2, 14, parse_annotation "typing.Type[int]";
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.string;
+                             parameters =
+                               Type.Callable.Defined
+                                 [Named { name = "x"; annotation = Type.integer; default = false }];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    2, 8, 2, 9, Type.integer;
                    4, 11, 4, 12, Type.integer;
                    3, 21, 3, 24, parse_annotation "typing.Type[str]";
@@ -822,6 +931,31 @@ let test_query context =
                types =
                  [
                    2, 11, 2, 27, Type.meta (Type.list Type.integer);
+                   ( 2,
+                     4,
+                     2,
+                     7,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test.foo";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.none;
+                             parameters =
+                               Type.Callable.Defined
+                                 [
+                                   Named
+                                     {
+                                       name = "x";
+                                       annotation = Type.list Type.integer;
+                                       default = false;
+                                     };
+                                 ];
+                             define_location = None;
+                           };
+                         overloads = [];
+                         implicit = None;
+                       } );
                    2, 8, 2, 9, Type.list Type.integer;
                    2, 32, 2, 36, Type.none;
                  ]
@@ -1295,8 +1429,10 @@ let test_incremental_lookups context =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      ":2:4-2:7/typing.Callable(test_incremental_lookups.foo)[[Named(x, unknown)], unknown]";
       ":2:8-2:9/typing.Any";
       ":3:11-3:12/typing_extensions.Literal[1]";
+      ":4:4-4:7/typing.Callable(test_incremental_lookups.boo)[[Named(x, unknown)], unknown]";
       ":4:8-4:9/typing.Any";
       Format.sprintf
         ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"

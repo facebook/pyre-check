@@ -123,6 +123,22 @@ let test_process_type_query_request context =
                     ]
                 },
                 {
+                  "location": {
+                    "path": "test.py",
+                    "start": {
+                      "line": 2,
+                      "column": 4
+                    },
+                    "stop": {
+                      "line": 2,
+                      "column": 7
+                    }
+                  },
+                  "coverage": [
+                    "Typed"
+                  ]
+                },
+                {
                     "location": {
                         "path": "test.py",
                         "start": {

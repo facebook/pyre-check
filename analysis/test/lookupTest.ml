@@ -135,6 +135,8 @@ let test_lookup_pick_narrowest context =
       "2:14-2:18/typing.Type[bool]";
       "2:20-2:26/typing.Optional[bool]";
       "2:28-2:49/typing.Type[typing.Optional[bool]]";
+      "2:4-2:7/typing.Callable(test.foo)[[Named(flag, bool), Named(testme, \
+       typing.Optional[bool])], None]";
       "2:54-2:58/None";
       "2:8-2:12/bool";
       "3:17-3:27/bool";
@@ -181,6 +183,7 @@ let test_lookup_comprehensions context =
     ~lookup:(generate_lookup ~context source)
     [
       "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
       "3:18-3:23/typing.List[float]";
       "3:19-3:22/float";
       "3:2-3:3/typing.List[float]";
@@ -214,10 +217,12 @@ let test_lookup_identifier_accesses context =
       "4:23-4:24/int";
       "4:26-4:29/typing.Type[int]";
       "4:34-4:38/None";
+      "4:8-4:16/typing.Callable(test.A.__init__)[[Named(self, unknown), Named(i, int)], None]";
       "5:17-5:18/int";
       "5:8-5:12/test.A";
       "5:8-5:14/int";
       "7:13-7:16/typing.Type[int]";
+      "7:4-7:7/typing.Callable(test.foo)[[], int]";
       "8:10-8:13/typing_extensions.Literal[100]";
       "8:4-8:5/test.A";
       "8:8-8:14/test.A";
@@ -244,7 +249,13 @@ let test_lookup_unknown_accesses context =
     |} in
   let lookup = generate_lookup ~context source in
   let assert_annotation = assert_annotation ~lookup ~path:"test" in
-  assert_annotation_list ~lookup ["2:13-2:17/None"; "3:14-3:19/typing_extensions.Literal['key']"];
+  assert_annotation_list
+    ~lookup
+    [
+      "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
+      "3:14-3:19/typing_extensions.Literal['key']";
+    ];
   assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:None;
   assert_annotation ~position:{ Location.line = 3; column = 23 } ~annotation:None
 
@@ -278,16 +289,19 @@ let test_lookup_multiline_accesses context =
     ~lookup
     [
       "11:13-11:16/typing.Type[int]";
+      "11:4-11:7/typing.Callable(test.bar)[[], int]";
       "12:4-12:5/test.A";
       "12:8-12:11/test.A";
       "12:8-12:9/typing.Type[test.A]";
       "13:12-13:13/test.A";
       "13:12-14:13/int";
       "16:21-16:24/typing.Type[int]";
+      "16:4-16:15/typing.Callable(test.with_blanks)[[], int]";
       "17:12-17:13/typing.Type[test.A]";
       "17:12-17:15/test.A";
       "17:12-19:13/int";
       "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
       "3:7-5:15/bool";
       "8:6-8:7/typing.Type[test.A]";
       "9:13-9:15/typing_extensions.Literal[12]";
@@ -356,6 +370,7 @@ let test_lookup_string_annotations context =
   assert_annotation_list
     ~lookup
     [
+      "2:4-2:7/typing.Callable(test.foo)[[Named(x, int), Named(y, str)], None]";
       "3:3-3:4/int";
       "3:6-3:11/typing.Type[int]";
       "4:3-4:4/str";
@@ -433,6 +448,7 @@ let test_lookup_unbound context =
     [
       "2:14-2:29/typing.Type[typing.List[Variable[_T]]]";
       "2:34-2:38/None";
+      "2:4-2:7/typing.Callable(test.foo)[[Named(list, typing.List[Variable[_T]])], None]";
       "2:8-2:12/typing.List[Variable[_T]]";
       "3:18-3:20/typing.List[Variable[_T]]";
       "3:2-3:3/typing.List[typing.Any]";
@@ -494,6 +510,7 @@ let test_lookup_if_statements context =
       "2:14-2:18/typing.Type[bool]";
       "2:20-2:24/typing.List[int]";
       "2:26-2:42/typing.Type[typing.List[int]]";
+      "2:4-2:7/typing.Callable(test.foo)[[Named(flag, bool), Named(list, typing.List[int])], None]";
       "2:47-2:51/None";
       "2:8-2:12/bool";
       "3:7-3:11/bool";
@@ -546,11 +563,15 @@ let test_lookup_definitions context =
   assert_definition_list
     ~lookup
     [
+      "test:11:4-11:8 -> test:11:0-13:21";
       "test:12:10-12:16 -> test:2:0-3:13";
       "test:12:4-12:7 -> test:8:0-9:8";
       "test:13:12-13:18 -> test:2:0-3:13";
       "test:13:4-13:11 -> test:5:0-6:8";
       "test:2:16-2:19 -> :96:0-157:32";
+      "test:2:4-2:10 -> test:2:0-3:13";
+      "test:5:4-5:11 -> test:5:0-6:8";
+      "test:8:4-8:7 -> test:8:0-9:8";
     ];
   assert_definition ~position:{ Location.line = 12; column = 0 } ~definition:None;
   assert_definition ~position:{ Location.line = 12; column = 4 } ~definition:(Some "test:8:0-9:8");
@@ -585,6 +606,7 @@ let test_lookup_definitions_instances context =
   assert_definition_list
     ~lookup
     [
+      "test:11:4-11:8 -> test:11:0-19:15";
       "test:12:8-12:9 -> test:2:0-4:12";
       "test:13:4-13:9 -> test:3:4-4:12";
       "test:14:4-14:11 -> test:3:4-4:12";
@@ -599,10 +621,12 @@ let test_lookup_definitions_instances context =
       "test:19:4-19:13 -> test:3:4-4:12";
       "test:19:4-19:5 -> test:6:0-9:18";
       "test:2:6-2:7 -> test:2:0-4:12";
+      "test:3:8-3:11 -> test:3:4-4:12";
       "test:6:6-6:7 -> test:6:0-9:18";
       "test:7:11-7:12 -> test:2:0-4:12";
       "test:7:4-7:5 -> test:6:0-9:18";
       "test:8:21-8:22 -> test:2:0-4:12";
+      "test:8:8-8:11 -> test:8:4-9:18";
       "test:9:15-9:16 -> test:2:0-4:12";
     ];
   assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:(Some "test:8:4-9:18");
