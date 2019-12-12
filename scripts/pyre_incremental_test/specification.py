@@ -1,3 +1,4 @@
+import json
 import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -185,9 +186,11 @@ class FileRepositoryState(RepositoryState):
         root = Path(temporary_directory)
         LOG.debug(f"Using temporary directory {temporary_directory} as local root")
 
+        watched = False
         try:
             # Write all files under the local root.
             all_files = {
+                ".watchmanconfig": "{}",
                 # Note that --binary and --typeshed still needs to be set in pyre flags.
                 ".pyre_configuration": '{ "source_directories": [ "." ] }',
                 **self.files,
@@ -195,9 +198,23 @@ class FileRepositoryState(RepositoryState):
             FileRepositoryUpdate(changes=all_files, removals=[]).update(
                 environment, root
             )
+
+            # Watchman uses the "error" field instead of return code to signal errors
+            watchman_output = environment.checked_run(
+                working_directory=root, command="watchman watch ."
+            ).stdout
+            if "error" in json.loads(watchman_output):
+                raise RuntimeError(
+                    f"`watchman watch` invocation failed with output:\n{watchman_output}"
+                )
+            watched = True
             yield root
         finally:
             # Clean up the files we've written.
+            if watched:
+                environment.checked_run(
+                    working_directory=root, command="watchman watch-del ."
+                )
             environment.checked_run(
                 working_directory=Path("."), command=f"rm -rf {temporary_directory}"
             )
