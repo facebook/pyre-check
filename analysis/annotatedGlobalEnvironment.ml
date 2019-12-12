@@ -135,7 +135,18 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         (unannotated_global_environment class_metadata_environment)
         ?dependency
         name
-      >>= process_unannotated_global
+      >>= fun global ->
+      let timer = Timer.start () in
+      let result = process_unannotated_global global in
+      Statistics.performance
+        ~flush:false
+        ~randomly_log_every:500
+        ~section:`Check
+        ~name:"SingleGlobalTypeCheck"
+        ~timer
+        ~normals:["name", Reference.show name; "request kind", "SingleGlobalTypeCheck"]
+        ();
+      result
 
 
 module GlobalTable = Environment.EnvironmentTable.WithCache (struct
