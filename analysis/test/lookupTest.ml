@@ -154,6 +154,25 @@ let test_lookup_pick_narrowest context =
   assert_annotation ~position:{ Location.line = 3; column = 28 } ~annotation:None
 
 
+let test_lookup_assign context =
+  let source = {|
+      def foo():
+        x = 1
+        x = str(x)
+    |} in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:4-2:7/typing.Callable(test.foo)[[], unknown]";
+      "3:2-3:3/typing_extensions.Literal[1]";
+      "3:6-3:7/typing_extensions.Literal[1]";
+      "4:10-4:11/typing_extensions.Literal[1]";
+      "4:2-4:3/str";
+      "4:6-4:12/str";
+      "4:6-4:9/typing.Type[str]";
+    ]
+
+
 let test_lookup_class_attributes context =
   let source = {|
       class Foo():
@@ -646,6 +665,7 @@ let () =
          "lookup" >:: test_lookup;
          "lookup_call_arguments" >:: test_lookup_call_arguments;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
+         "lookup_assign" >:: test_lookup_assign;
          "lookup_class_attributes" >:: test_lookup_class_attributes;
          "lookup_identifier_accesses" >:: test_lookup_identifier_accesses;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;

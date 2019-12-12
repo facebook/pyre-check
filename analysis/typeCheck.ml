@@ -4774,8 +4774,8 @@ module State (Context : Context) = struct
       Error.filter ~resolution:global_resolution errors
 
 
-  let forward ?key ({ bottom; _ } as state) ~statement =
-    let ({ resolution; resolution_fixpoint; _ } as state) =
+  let forward ?key ({ bottom; resolution; _ } as state) ~statement =
+    let ({ resolution_fixpoint; _ } as state) =
       if bottom then
         state
       else

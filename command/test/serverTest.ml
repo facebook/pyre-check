@@ -886,7 +886,6 @@ let test_query context =
                  [
                    3, 13, 3, 16, parse_annotation "typing.Type[int]";
                    3, 10, 3, 11, Type.integer;
-                   3, 6, 3, 9, parse_annotation "typing.Callable[[Named(y, int)], str]";
                    5, 9, 5, 10, Type.integer;
                    2, 11, 2, 14, parse_annotation "typing.Type[int]";
                    ( 2,
