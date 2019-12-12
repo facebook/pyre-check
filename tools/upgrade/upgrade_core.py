@@ -76,11 +76,19 @@ class Configuration:
         configurations = []
         for configuration_path in configuration_paths:
             with open(configuration_path) as configuration_file:
-                configuration = Configuration(
-                    configuration_path, json.load(configuration_file)
-                )
-                if configuration.push_blocking or (not arguments.push_blocking_only):
-                    configurations.append(configuration)
+                try:
+                    configuration = Configuration(
+                        configuration_path, json.load(configuration_file)
+                    )
+                    if configuration.push_blocking or (
+                        not arguments.push_blocking_only
+                    ):
+                        configurations.append(configuration)
+                except json.decoder.JSONDecodeError:
+                    LOG.error(
+                        "Configuration at `%s` is invalid, skipping.",
+                        configuration_path,
+                    )
         LOG.info(
             "Found %d %sconfiguration%s",
             len(configurations),
