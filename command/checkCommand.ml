@@ -78,7 +78,11 @@ let run_check
       else
         let timer = Timer.start () in
         let { Check.errors; ast_environment; _ } =
-          Check.check ~scheduler:None ~configuration ~build_legacy_dependency_graph:false
+          Check.check
+            ~scheduler:None
+            ~configuration
+            ~build_legacy_dependency_graph:false
+            ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
         in
         let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
         Statistics.performance

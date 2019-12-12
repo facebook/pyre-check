@@ -6,6 +6,7 @@
 module AccessPath = AccessPath
 module Analysis = TaintAnalysis
 module BackwardAnalysis = BackwardAnalysis
+module CallGraphBuilder = CallGraphBuilder
 module TaintConfiguration = Configuration
 module Domains = Domains
 module Features = Features

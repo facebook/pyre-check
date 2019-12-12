@@ -16,4 +16,5 @@ val check
   :  scheduler:Scheduler.t option ->
   configuration:Configuration.Analysis.t ->
   build_legacy_dependency_graph:bool ->
+  call_graph_builder:(module Callgraph.Builder) ->
   result

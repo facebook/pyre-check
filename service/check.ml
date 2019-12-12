@@ -18,6 +18,7 @@ let check
     ~configuration:
       ({ Configuration.Analysis.project_root; local_root; search_path; debug; _ } as configuration)
     ~build_legacy_dependency_graph
+    ~call_graph_builder
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
@@ -108,7 +109,12 @@ let check
     environment
   in
   let errors =
-    Analysis.TypeCheck.legacy_run_on_modules ~scheduler ~configuration ~environment qualifiers;
+    Analysis.TypeCheck.legacy_run_on_modules
+      ~scheduler
+      ~configuration
+      ~environment
+      ~call_graph_builder
+      qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration

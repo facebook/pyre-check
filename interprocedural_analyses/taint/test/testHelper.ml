@@ -389,7 +389,9 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
   let configuration, ast_environment, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     let { Test.ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, errors =
-      Test.ScratchProject.build_type_environment_and_postprocess project
+      Test.ScratchProject.build_type_environment_and_postprocess
+        ~call_graph_builder:(module Taint.CallGraphBuilder)
+        project
     in
     ( Test.ScratchProject.configuration_of project,
       AstEnvironment.read_only ast_environment,

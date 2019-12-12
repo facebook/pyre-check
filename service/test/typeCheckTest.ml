@@ -42,6 +42,7 @@ let assert_errors
       ~scheduler:(Some scheduler)
       ~configuration
       ~build_legacy_dependency_graph:false
+      ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
   in
   let errors =
     errors

@@ -4976,17 +4976,19 @@ let check_function_definition
     ~configuration
     ~resolution
     ~name
+    ?call_graph_builder
     { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings; qualifier }
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." Reference.pp name;
 
   let check_define =
-    check_define
-      ~configuration
-      ~resolution
-      ~call_graph_builder:(module Callgraph.DefaultBuilder)
-      ~qualifier
+    let call_graph_builder =
+      match call_graph_builder with
+      | Some call_graph_builder -> call_graph_builder
+      | None -> (module Callgraph.DefaultBuilder : Callgraph.Builder)
+    in
+    check_define ~configuration ~resolution ~call_graph_builder ~qualifier
   in
   let sibling_bodies =
     List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
@@ -5022,7 +5024,7 @@ let check_function_definition
   result
 
 
-let run_on_define ~configuration ~environment name =
+let run_on_define ~configuration ~environment ?call_graph_builder name =
   let global_resolution =
     let global_environment = TypeEnvironment.global_environment environment in
     match configuration with
@@ -5035,7 +5037,7 @@ let run_on_define ~configuration ~environment name =
   | None -> ()
   | Some definition ->
       let { CheckResult.errors; local_annotations } =
-        check_function_definition ~configuration ~resolution ~name definition
+        check_function_definition ~configuration ~resolution ~name ?call_graph_builder definition
       in
       let () =
         if configuration.store_type_check_resolution then
@@ -5048,14 +5050,14 @@ let run_on_define ~configuration ~environment name =
       TypeEnvironment.set_errors environment name errors
 
 
-let run_on_defines ~scheduler ~configuration ~environment defines =
+let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder defines =
   let timer = Timer.start () in
 
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
     let analyze_define number_defines define_name =
-      run_on_define ~configuration ~environment define_name;
+      run_on_define ~configuration ~environment ?call_graph_builder define_name;
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -5080,7 +5082,7 @@ let run_on_defines ~scheduler ~configuration ~environment defines =
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
 
 
-let legacy_run_on_modules ~scheduler ~configuration ~environment qualifiers =
+let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_builder qualifiers =
   Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
 
   let all_defines =
@@ -5105,7 +5107,7 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment qualifiers =
       ()
   in
 
-  run_on_defines ~scheduler ~configuration ~environment all_defines;
+  run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder all_defines;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"

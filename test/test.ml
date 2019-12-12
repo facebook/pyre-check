@@ -1557,7 +1557,7 @@ module ScratchProject = struct
     { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
 
 
-  let build_type_environment project =
+  let build_type_environment ?call_graph_builder project =
     let { BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
       build_global_environment project
     in
@@ -1567,12 +1567,13 @@ module ScratchProject = struct
     |> TypeCheck.legacy_run_on_modules
          ~scheduler:(Scheduler.mock ())
          ~configuration
-         ~environment:type_environment;
+         ~environment:type_environment
+         ?call_graph_builder;
     { BuiltTypeEnvironment.sources; ast_environment; type_environment }
 
 
-  let build_type_environment_and_postprocess project =
-    let built_type_environment = build_type_environment project in
+  let build_type_environment_and_postprocess ?call_graph_builder project =
+    let built_type_environment = build_type_environment ?call_graph_builder project in
     let errors =
       List.map
         built_type_environment.sources
