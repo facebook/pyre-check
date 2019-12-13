@@ -4611,7 +4611,9 @@ let test_import _ =
                { Import.name = !&"d"; alias = Some !&"e" };
              ];
          };
-    ]
+    ];
+  assert_raises (Failure "Could not parse test") (fun () ->
+      parse_untrimmed ~silent:true "from import x")
 
 
 let test_global _ =

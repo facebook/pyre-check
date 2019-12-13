@@ -1143,9 +1143,14 @@ from:
   ;
 
 from_string:
-  | { "" }
+  | identifier = identifier {
+      snd identifier
+  }
   | identifier = identifier; from_string = from_string {
       (snd identifier) ^ from_string
+    }
+  | relative = nonempty_list(ellipsis_or_dot) {
+      String.concat relative
     }
   | relative = nonempty_list(ellipsis_or_dot);
     from_string = from_string {
