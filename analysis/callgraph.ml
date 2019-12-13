@@ -130,7 +130,7 @@ module DefaultBuilder : Builder = struct
       | Some (Type.Union elements), Some callables when List.length elements = List.length callables
         ->
           List.map2_exn elements callables ~f:method_callee |> List.concat
-      | Some annotation, Some [callable] -> method_callee annotation callable
+      | Some annotation, Some callables -> List.concat_map callables ~f:(method_callee annotation)
       | Some (Type.Optional annotation), _ -> (
           match Node.value callee with
           | Expression.Name (Name.Attribute { attribute; _ }) -> (

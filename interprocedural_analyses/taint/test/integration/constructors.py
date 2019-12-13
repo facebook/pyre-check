@@ -46,3 +46,15 @@ class ChildWithNew(ParentWithInit):
 
 def test_new_thing():
     c = ChildWithNew(__test_source())
+
+
+class BothNewAndInit:
+    def __new__(cls):
+        pass
+
+    def __init__(self):
+        return
+
+
+def test_both_new_and_init_callgraph():
+    BothNewAndInit()

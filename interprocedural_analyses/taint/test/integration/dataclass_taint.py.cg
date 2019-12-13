@@ -1,4 +1,4 @@
 @generated
 Call dependencies
-dataclass_taint.bad_is_tainted (fun) -> [__test_sink (fun) __test_source (fun) dataclass_taint.DataClass::__init__ (method)]
-dataclass_taint.benign_is_untainted (fun) -> [__test_sink (fun) __test_source (fun) dataclass_taint.DataClass::__init__ (method)]
+dataclass_taint.bad_is_tainted (fun) -> [__test_sink (fun) __test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]
+dataclass_taint.benign_is_untainted (fun) -> [__test_sink (fun) __test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]

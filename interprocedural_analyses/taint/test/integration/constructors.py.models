@@ -223,6 +223,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "constructors.BothNewAndInit.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "constructors.ChildWithNew.__new__",
     "sources": [],
     "sinks": [
