@@ -299,9 +299,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     ) -> Tuple[List[str], List[str]]:
         self._notify_about_rebuild(is_start_message=True)
 
-        old_scratch_paths = set(self._symbolic_links.values())
+        old_scratch_paths = set(self._symbolic_links.keys())
         self.rebuild()
-        new_scratch_paths = set(self._symbolic_links.values())
+        new_scratch_paths = set(self._symbolic_links.keys())
 
         self._notify_about_rebuild(is_start_message=False)
 
@@ -325,7 +325,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             path: os.path.join(self.get_root(), relative_link)
             for path, relative_link in relative_link_map.items()
         }
-        tracked_paths.extend(absolute_link_map.values())
+        tracked_paths.extend(absolute_link_map.keys())
         for path, absolute_link in absolute_link_map.items():
             try:
                 add_symbolic_link(absolute_link, path)
@@ -336,7 +336,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def _process_deleted_paths(self, deleted_paths: List[str]) -> List[str]:
         deleted_links = [
-            self._symbolic_links[project_path]
+            project_path
             for project_path in deleted_paths
             if project_path in self._symbolic_links
         ]
@@ -369,9 +369,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         ]
 
         for path in updated_paths:
-            if path in self._symbolic_links:
-                tracked_paths.append(self._symbolic_links[path])
-            elif self._is_tracked(path):
+            if path in self._symbolic_links or self._is_tracked(path):
                 tracked_paths.append(path)
 
         if SharedAnalysisDirectory.should_rebuild(
