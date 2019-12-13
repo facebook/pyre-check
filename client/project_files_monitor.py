@@ -46,7 +46,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._analysis_directory = analysis_directory
 
         self._extensions = set(
-            ["py", "pyi"] + configuration.extensions
+            ["py", "pyi", "thrift"] + configuration.extensions
         )  # type: Set[str]
 
         self._watchman_path = self._find_watchman_path(current_directory)  # type: str
@@ -67,7 +67,11 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 "allof",
                 ["type", "f"],
                 ["not", "empty"],
-                ["anyof", *[["suffix", extension] for extension in self._extensions]],
+                [
+                    "anyof",
+                    *[["suffix", extension] for extension in self._extensions],
+                    ["match", "TARGETS"],
+                ],
             ],
             "fields": ["name"],
         }

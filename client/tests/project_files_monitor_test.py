@@ -47,7 +47,13 @@ class MonitorTest(unittest.TestCase):
         )
         self.assertCountEqual(
             subscription.subscription["expression"][3],
-            ["anyof", ["suffix", "py"], ["suffix", "pyi"]],
+            [
+                "anyof",
+                ["suffix", "py"],
+                ["suffix", "pyi"],
+                ["suffix", "thrift"],
+                ["match", "TARGETS"],
+            ],
         )
 
         # additional extensions
@@ -70,6 +76,7 @@ class MonitorTest(unittest.TestCase):
                 ["suffix", "pyi"],
                 ["suffix", "thrift"],
                 ["suffix", "whl"],
+                ["match", "TARGETS"],
             ],
         )
 
