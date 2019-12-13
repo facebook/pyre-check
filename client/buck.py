@@ -303,13 +303,15 @@ def query_buck_relative_paths(
             "Buck root couldn't be found. Returning empty analysis directory mapping."
         )
         return {}
+    target_string = " ".join(targets)
     command = [
         "buck",
         "query",
         "--json",
         "--output-attribute",
         ".*",
-        "owner(%s)",
+        # This will get only those owner targets that are beneath our targets.
+        f"owner(%s) ^ set({target_string})",
         *project_paths,
     ]
     LOG.info(f"Running command: {command}")
@@ -326,19 +328,9 @@ def query_buck_relative_paths(
     ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))
 
-    # When `srcs` is defined on a `python_binary` target `foo`, querying its
-    # buck owner returns `foo-library` for some reason, even though there's no
-    # explicit target named `foo-library`. So, check for the latter case as
-    # well.
-    relevant_output = {
-        target: value
-        for target, value in owner_output.items()
-        if target in targets
-        or (target.endswith("-library") and target[: -len("-library")] in targets)
-    }
     results = {}
     for project_path in project_paths:
-        for target_data in relevant_output.values():
+        for target_data in owner_output.values():
             prefix = os.path.join(buck_root, target_data["buck.base_path"]) + os.sep
             suffix = project_path[len(prefix) :]
             if not project_path.startswith(prefix) or suffix not in target_data["srcs"]:

@@ -190,7 +190,7 @@ class BuckTest(unittest.TestCase):
                 "/BUCK_ROOT/src/python/b/c.py",
                 "/BUCK_ROOT/src/python/package.py",
                 "/BUCK_ROOT/src/java/python/a.py",  # untracked paths
-                "/BUCK_ROOT/com/companyname/package.py"
+                "/BUCK_ROOT/com/companyname/package.py",
                 "/OTHER_PROJECT/src/python/a.py",
             ]
             self.assertDictEqual(
@@ -201,12 +201,18 @@ class BuckTest(unittest.TestCase):
                     "/BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
                 },
             )
-            self.assertDictEqual(
-                buck.query_buck_relative_paths(paths, targets=["targetA"]),
-                {
-                    "/BUCK_ROOT/src/python/a.py": "src/python/a.py",
-                    "/BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
-                },
+            check_output.assert_called_once_with(
+                [
+                    "buck",
+                    "query",
+                    "--json",
+                    "--output-attribute",
+                    ".*",
+                    "owner(%s) ^ set(targetA targetB)",
+                    *paths,
+                ],
+                timeout=30,
+                stderr=subprocess.DEVNULL,
             )
 
         with patch.object(subprocess, "check_output") as check_output:
