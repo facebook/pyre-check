@@ -12,11 +12,10 @@ import time
 from logging import Logger
 from typing import List, Optional
 
-from .. import json_rpc
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import ClientException, Command, Result, State
+from .command import ClientException, Command, State
 from .kill import Kill
 
 
@@ -74,11 +73,7 @@ class Stop(Command):
             try:
                 stopped = False
                 # If this call fails, check() will throw a ClientException.
-                if self._configuration._use_json_sockets:
-                    request = json_rpc.Request(method="stop", parameters={})
-                    self._send_and_handle_socket_request(request, self._version_hash)
-                else:
-                    self._call_client(command=self.NAME).check()
+                self._call_client(command=self.NAME).check()
                 # Poll for a second to ensure that the server has a chance to exit.
                 if pid_to_poll is not None:
                     stop_time = time.time() + 1.0
@@ -109,6 +104,3 @@ class Stop(Command):
                 os.kill(pid, 2)  # sigint
         except (FileNotFoundError, OSError, ValueError):
             pass
-
-    def _socket_result_handler(self, result: Result) -> None:
-        pass
