@@ -137,7 +137,11 @@ def main() -> int:
                         "exit_code": exit_code,
                         "runtime": int((time.time() - start) * 1000),
                     },
-                    normals={"cwd": os.getcwd(), "client_version": __version__},
+                    normals={
+                        "cwd": os.getcwd(),
+                        "client_version": __version__,
+                        "command": command.NAME,
+                    },
                 )
 
     return exit_code
