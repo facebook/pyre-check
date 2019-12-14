@@ -53,7 +53,7 @@ let get_exported_imports ~ast_environment module_reference =
   >>| Source.statements
   >>| List.concat_map ~f:(function
           | { Node.value = Statement.Import { imports; _ }; _ } ->
-              List.map imports ~f:(fun import -> import.name)
+              List.map imports ~f:(fun import -> Node.value import.name)
           | _ -> [])
   >>| Reference.Set.of_list
   |> Option.value ~default:Reference.Set.empty

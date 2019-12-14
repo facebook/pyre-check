@@ -559,24 +559,24 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
           List.mapi elements ~f:is_simple_name
         in
         (Option.all valid |> Option.value ~default:[]) @ globals
-    | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
+    | Import { Import.from = Some _; imports = [{ Import.name = { Node.value = name; _ }; _ }] }
       when String.equal (Reference.show name) "*" ->
         (* Don't register x.* as a global when a user writes `from x import *`. *)
         globals
     | Import { Import.from; imports } ->
         let from =
-          match from >>| Reference.show with
+          match from >>| Node.value >>| Reference.show with
           | None
           | Some "future.builtins"
           | Some "builtins" ->
               Reference.empty
           | Some from -> Reference.create from
         in
-        let import_to_global { Import.name; alias } =
+        let import_to_global { Import.name = { Node.value = name; _ }; alias } =
           let qualified_name =
             match alias with
             | None -> Reference.combine qualifier name
-            | Some alias -> Reference.combine qualifier alias
+            | Some { Node.value = alias; _ } -> Reference.combine qualifier alias
           in
           let original_name = Reference.combine from name in
           qualified_name, Imported original_name

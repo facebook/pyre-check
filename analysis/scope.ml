@@ -77,7 +77,7 @@ module Binding = struct
         List.concat [target_names; body_names; orelse_names]
     | Statement.If { If.body; orelse; _ } -> List.append (of_statements body) (of_statements orelse)
     | Statement.Import { Import.imports; _ } ->
-        let binding_of_import { Import.alias; name } =
+        let binding_of_import { Import.alias; name = { Node.value = name; _ } } =
           (* TODO: Track the location of import name. *)
           match alias with
           | None ->
@@ -86,7 +86,8 @@ module Binding = struct
                 None
               else
                 Some { kind = Kind.ImportName; name; location }
-          | Some alias -> Some { kind = Kind.ImportName; name = Reference.show alias; location }
+          | Some { Node.value = alias; _ } ->
+              Some { kind = Kind.ImportName; name = Reference.show alias; location }
         in
         List.filter_map imports ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->

@@ -254,7 +254,7 @@ let is_generator body =
 %token <Lexing.position> AWAIT
 %token <Lexing.position> COLON
 %token <Lexing.position> DEDENT
-%token <Lexing.position> DOT
+%token <Lexing.position * Lexing.position> DOT
 %token <Lexing.position> LEFTBRACKET
 %token <Lexing.position> LEFTCURLY
 %token <Lexing.position> LEFTPARENS
@@ -1137,30 +1137,47 @@ handler:
 
 from:
   | from = from_string {
-      Reference.create from
+      { Node.location = fst from; value = Reference.create (snd from) }
       |> Option.some
     }
   ;
 
 from_string:
   | identifier = identifier {
-      snd identifier
+      identifier
   }
   | identifier = identifier; from_string = from_string {
-      (snd identifier) ^ from_string
+      let location =
+        { (fst identifier) with Location.stop = (fst from_string).Location.stop }
+      in
+      location, (snd identifier) ^ (snd from_string)
     }
   | relative = nonempty_list(ellipsis_or_dot) {
-      String.concat relative
+      let location =
+        Location.create
+          ~start:(fst (fst (List.hd_exn relative)))
+          ~stop:(snd (fst (List.last_exn relative)))
+      in
+      location, String.concat (List.map ~f:snd relative)
     }
   | relative = nonempty_list(ellipsis_or_dot);
     from_string = from_string {
-      (String.concat relative) ^ from_string
+      let location =
+        location_create_with_stop
+          ~start:(fst (fst (List.hd_exn relative)))
+          ~stop:((fst from_string).Location.stop)
+      in
+      location, (String.concat (List.map ~f:snd relative)) ^ (snd from_string)
     }
   ;
 
 ellipsis_or_dot:
-  | DOT { "." }
-  | ELLIPSES { "..." }
+  | position = DOT {
+      position, "."
+    }
+  | position = ELLIPSES {
+      position, "..."
+    }
   ;
 
 imports:
@@ -1182,17 +1199,20 @@ imports:
 
 import:
   | position = ASTERIKS {
-      let start, stop = position in
-      Location.create ~start ~stop,
+      let location =
+        let start, stop = position in
+        Location.create ~start ~stop
+      in
+      location,
       {
-        Import.name = Reference.create "*";
+        Import.name = { Node.location; value = Reference.create "*" };
         alias = None;
       }
     }
   | name = reference {
       fst name,
       {
-        Import.name = snd name;
+        Import.name = { Node.location = fst name; value = snd name };
         alias = None;
       }
     }
@@ -1200,8 +1220,8 @@ import:
     AS; alias = identifier {
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
-        Import.name = snd name;
-        alias = Some (Reference.create (snd alias));
+        Import.name = { Node.location = fst name; value = snd name };
+        alias = Some { Node.location = fst alias; value = Reference.create (snd alias) };
       }
     }
   ;

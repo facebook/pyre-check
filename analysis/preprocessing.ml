@@ -18,8 +18,8 @@ let expand_relative_imports ({ Source.source_path = { SourcePath.qualifier; _ };
       let value =
         match value with
         | Statement.Import { Import.from = Some from; imports }
-          when (not (String.equal (Reference.show from) "builtins"))
-               && not (String.equal (Reference.show from) "future.builtins") ->
+          when (not (String.equal (Reference.show (Node.value from)) "builtins"))
+               && not (String.equal (Reference.show (Node.value from)) "future.builtins") ->
             Statement.Import
               { Import.from = Some (Source.expand_relative_import source ~from); imports }
         | _ -> value
@@ -829,11 +829,11 @@ let qualify
           let orelse_scope, orelse = qualify_statements ~scope orelse in
           ( join_scopes body_scope orelse_scope,
             If { If.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse } )
-      | Import { Import.from = Some from; imports }
+      | Import { Import.from = Some { Node.value = from; _ }; imports }
         when not (String.equal (Reference.show from) "builtins") ->
-          let import aliases { Import.name; alias } =
+          let import aliases { Import.name = { Node.value = name; _ }; alias } =
             match alias with
-            | Some alias ->
+            | Some { Node.value = alias; _ } ->
                 (* Add `alias -> from.name`. *)
                 Map.set
                   aliases
@@ -848,9 +848,9 @@ let qualify
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
       | Import { Import.from = None; imports } ->
-          let import aliases { Import.name; alias } =
+          let import aliases { Import.name = { Node.value = name; _ }; alias } =
             match alias with
-            | Some alias ->
+            | Some { Node.value = alias; _ } ->
                 (* Add `alias -> from.name`. *)
                 Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
             | None -> aliases
@@ -1502,18 +1502,18 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
     let statement map ({ Node.value; _ } as statement) =
       match value with
       | Statement.Import { Import.from = None; imports } ->
-          let add_import map { Import.name; alias } =
+          let add_import map { Import.name = { Node.value = name; _ }; alias } =
             match alias with
-            | Some alias ->
+            | Some { Node.value = alias; _ } ->
                 (* Add `name -> alias`. *)
                 Map.set map ~key:name ~data:alias
             | None -> map
           in
           List.fold_left imports ~f:add_import ~init:map, [statement]
-      | Import { Import.from = Some from; imports } ->
-          let add_import map { Import.name; alias } =
+      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
+          let add_import map { Import.name = { Node.value = name; _ }; alias } =
             match alias with
-            | Some alias ->
+            | Some { Node.value = alias; _ } ->
                 (* Add `from.name -> alias`. *)
                 Map.set map ~key:(Reference.combine from name) ~data:alias
             | None ->

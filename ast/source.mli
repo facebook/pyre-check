@@ -87,4 +87,4 @@ val top_level_define_node : t -> Statement.Define.t Node.t
 
 val wildcard_exports_of : t -> Reference.t list
 
-val expand_relative_import : from:Reference.t -> t -> Reference.t
+val expand_relative_import : from:Reference.t Node.t -> t -> Reference.t Node.t

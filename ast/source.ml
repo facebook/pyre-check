@@ -351,7 +351,9 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
       | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } ->
           public_values @ filter_private [name], dunder_all
       | Import { Import.imports; _ } ->
-          let get_import_name { Import.alias; name } = Option.value alias ~default:name in
+          let get_import_name { Import.alias; name } =
+            alias >>| Node.value |> Option.value ~default:(Node.value name)
+          in
           public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
       | _ -> public_values, dunder_all
     in
@@ -360,9 +362,12 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
   Option.value dunder_all ~default:toplevel_public |> List.dedup_and_sort ~compare:Reference.compare
 
 
-let expand_relative_import ~from { source_path = { SourcePath.is_init; qualifier; _ }; _ } =
+let expand_relative_import
+    ~from:{ Node.value = from; location }
+    { source_path = { SourcePath.is_init; qualifier; _ }; _ }
+  =
   match Reference.show from with
-  | "builtins" -> Reference.empty
+  | "builtins" -> Node.create ~location Reference.empty
   | serialized ->
       (* Expand relative imports according to PEP 328 *)
       let dots = String.take_while ~f:(fun dot -> Char.equal dot '.') serialized in
@@ -390,4 +395,4 @@ let expand_relative_import ~from { source_path = { SourcePath.is_init; qualifier
         else
           Reference.empty
       in
-      Reference.combine prefix postfix
+      Node.create ~location (Reference.combine prefix postfix)

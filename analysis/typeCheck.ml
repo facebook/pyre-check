@@ -4178,8 +4178,10 @@ module State (Context : Context) = struct
         in
         let undefined_imports =
           match from with
-          | Some from -> Option.to_list (check_import from)
-          | None -> List.filter_map imports ~f:(fun { Import.name; _ } -> check_import name)
+          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
+          | None ->
+              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+                  check_import name)
         in
         let add_import_error state reference =
           Error.create ~location ~kind:(Error.UndefinedImport reference) ~define:Context.define

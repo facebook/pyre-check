@@ -255,9 +255,9 @@ let expand_wildcard_imports
         let statement _ collected_imports { Node.value; _ } =
           match value with
           | Statement.Import { Import.from = Some from; imports }
-            when List.exists imports ~f:(fun { Import.name; _ } ->
+            when List.exists imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
                      String.equal (Reference.show name) "*") ->
-              from :: collected_imports
+              Node.value from :: collected_imports
           | _ -> collected_imports
       end)
       in
@@ -290,19 +290,27 @@ let expand_wildcard_imports
 
     let statement state ({ Node.value; _ } as statement) =
       match value with
-      | Statement.Import { Import.from = Some from; imports }
-        when List.exists imports ~f:(fun { Import.name; _ } ->
-                 String.equal (Reference.show name) "*") ->
-          let expanded_import =
-            match get_transitive_exports from ~ast_environment ~dependency:qualifier with
-            | [] -> statement
-            | exports ->
-                List.map exports ~f:(fun name -> { Import.name; alias = None })
-                |> (fun expanded ->
-                     Statement.Import { Import.from = Some from; imports = expanded })
-                |> fun value -> { statement with Node.value }
+      | Statement.Import { Import.from = Some from; imports } -> (
+          let starred_import =
+            List.find imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+                String.equal (Reference.show name) "*")
           in
-          state, [expanded_import]
+          match starred_import with
+          | Some { Import.name = { Node.location; _ }; _ } ->
+              let expanded_import =
+                match
+                  get_transitive_exports (Node.value from) ~ast_environment ~dependency:qualifier
+                with
+                | [] -> statement
+                | exports ->
+                    List.map exports ~f:(fun name ->
+                        { Import.name = Node.create ~location name; alias = None })
+                    |> (fun expanded ->
+                         Statement.Import { Import.from = Some from; imports = expanded })
+                    |> fun value -> { statement with Node.value }
+              in
+              state, [expanded_import]
+          | None -> state, [statement] )
       | _ -> state, [statement]
   end)
   in

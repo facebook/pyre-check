@@ -34,16 +34,36 @@ end
 
 module Import = struct
   type import = {
-    name: Reference.t;
-    alias: Reference.t option;
+    name: Reference.t Node.t;
+    alias: Reference.t Node.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
-    from: Reference.t option;
+    from: Reference.t Node.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    let location_insensitive_compare_import left right =
+      match
+        Option.compare
+          (Node.location_insensitive_compare [%compare: Reference.t])
+          left.alias
+          right.alias
+      with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Node.location_insensitive_compare [%compare: Reference.t] left.name right.name
+    in
+    match
+      Option.compare
+        (Node.location_insensitive_compare [%compare: Reference.t])
+        left.from
+        right.from
+    with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare location_insensitive_compare_import left.imports right.imports
 end
 
 module Raise = struct
@@ -2068,7 +2088,7 @@ end = struct
     | For left, For right -> For.location_insensitive_compare left right
     | Global left, Global right -> List.compare Identifier.compare left right
     | If left, If right -> If.location_insensitive_compare left right
-    | Import left, Import right -> Import.compare left right
+    | Import left, Import right -> Import.location_insensitive_compare left right
     | Nonlocal left, Nonlocal right -> List.compare Identifier.compare left right
     | Pass, Pass -> 0
     | Raise left, Raise right -> Raise.location_insensitive_compare left right
@@ -2394,12 +2414,18 @@ module PrettyPrinter = struct
             orelse
     | Import { Import.from; imports } -> (
         let pp_import formatter { Import.name; alias } =
-          Format.fprintf formatter "%a%a" Reference.pp name pp_reference_option alias
+          Format.fprintf
+            formatter
+            "%a%a"
+            Reference.pp
+            (Node.value name)
+            pp_reference_option
+            (alias >>| Node.value)
         in
         let pp_imports formatter import_list = pp_list formatter pp_import ", " import_list in
         match from with
         | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
-        | Some from ->
+        | Some { Node.value = from; _ } ->
             Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
         )
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list

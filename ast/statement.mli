@@ -19,16 +19,18 @@ end
 
 module Import : sig
   type import = {
-    name: Reference.t;
-    alias: Reference.t option;
+    name: Reference.t Node.t;
+    alias: Reference.t Node.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
-    from: Reference.t option;
+    from: Reference.t Node.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
+
+  val location_insensitive_compare : t -> t -> int
 end
 
 module Raise : sig

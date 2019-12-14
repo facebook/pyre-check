@@ -171,6 +171,13 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
+      | Import { Import.from; imports } ->
+          let visit_import { Import.name; alias } =
+            visit_node ~state ~visitor (Reference name);
+            Option.iter ~f:(fun alias -> visit_node ~state ~visitor (Reference alias)) alias
+          in
+          Option.iter ~f:(fun from -> visit_node ~state ~visitor (Reference from)) from;
+          List.iter ~f:visit_import imports
       | Raise { Raise.expression; from } ->
           Option.iter ~f:visit_expression expression;
           Option.iter ~f:visit_expression from
@@ -198,7 +205,6 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Statement.Yield expression
       | Statement.YieldFrom expression ->
           visit_expression expression
-      | Import _
       | Nonlocal _
       | Global _
       | Pass

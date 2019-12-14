@@ -141,12 +141,12 @@ let register_dependencies { ast_environment } source =
               match from with
               | None ->
                   (* If analyzing `import a, b, c`, add `a`, `b`, `c` to the dependencies. *)
-                  imports |> List.map ~f:(fun { Import.name; _ } -> name)
-              | Some base_module ->
+                  imports |> List.map ~f:(fun { Import.name = { Node.value = name; _ }; _ } -> name)
+              | Some { Node.value = base_module; _ } ->
                   (* If analyzing `from x import a, b, c`, add `x`, `x.a`, `x.b`, `x.c` to the
                      dependencies, if they are module names. *)
                   base_module
-                  :: List.map imports ~f:(fun { Import.name; _ } ->
+                  :: List.map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
                          Reference.combine base_module name)
                   |> List.filter ~f:(AstEnvironment.ReadOnly.is_module ast_environment)
             in
