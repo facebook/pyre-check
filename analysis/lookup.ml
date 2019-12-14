@@ -34,85 +34,84 @@ module NodeVisitor = struct
       ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup } as state)
       node
     =
+    let rec annotate_expression ({ Node.location; value } as expression) =
+      let resolution = if postcondition then post_resolution else pre_resolution in
+      let resolve ~expression =
+        try
+          let annotation = Resolution.resolve_to_annotation resolution expression in
+          let original = Annotation.original annotation in
+          if Type.is_top original || Type.is_unbound original then
+            let annotation = Annotation.annotation annotation in
+            if Type.is_top annotation || Type.is_unbound annotation then
+              None
+            else
+              Some annotation
+          else
+            Some original
+        with
+        | ClassHierarchy.Untracked _ -> None
+      in
+      let resolve_definition ~expression =
+        let find_definition reference =
+          let fallback = function
+            | Some location -> Some location
+            | None -> (
+                match Resolution.resolve_reference resolution reference with
+                | Type.Callable { implementation = { define_location; _ }; _ } -> define_location
+                | _ -> None )
+          in
+          GlobalResolution.global (Resolution.global_resolution resolution) reference
+          >>| Node.location
+          |> fallback
+          >>= fun location ->
+          if Location.equal location Location.Reference.any then None else Some location
+        in
+        match Node.value expression with
+        | Expression.Name (Name.Identifier identifier) ->
+            find_definition (Reference.create identifier)
+        | Name (Name.Attribute { base; attribute; _ } as name) -> (
+            let definition = name_to_reference name >>= find_definition in
+            match definition with
+            | Some definition -> Some definition
+            | None ->
+                (* Resolve prefix to check if this is a method. *)
+                resolve ~expression:base
+                >>| Type.class_name
+                >>| (fun prefix -> Reference.create ~prefix attribute)
+                >>= find_definition )
+        | _ -> None
+      in
+      let store_lookup ~table ~location ~data =
+        if
+          (not (Location.equal location Location.Reference.any))
+          && not (Location.equal location Location.Reference.synthetic)
+        then
+          Hashtbl.set table ~key:location ~data |> ignore
+      in
+      let store_annotation location annotation =
+        store_lookup ~table:annotations_lookup ~location ~data:annotation
+      in
+      let store_definition location data = store_lookup ~table:definitions_lookup ~location ~data in
+      resolve ~expression >>| store_annotation location |> ignore;
+      resolve_definition ~expression >>| store_definition location |> ignore;
+      match value with
+      | Call { arguments; _ } ->
+          let annotate_argument_name { Call.Argument.name; value = { Node.location; _ } as value } =
+            match name, resolve ~expression:value with
+            | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->
+                let location = { location with Location.start } in
+                store_annotation location annotation
+            | _ -> ()
+          in
+          List.iter ~f:annotate_argument_name arguments
+      | _ -> ()
+    in
     match node with
     | Visit.Expression expression ->
-        let resolution = if postcondition then post_resolution else pre_resolution in
-        let resolve ~expression =
-          try
-            let annotation = Resolution.resolve_to_annotation resolution expression in
-            let original = Annotation.original annotation in
-            if Type.is_top original || Type.is_unbound original then
-              let annotation = Annotation.annotation annotation in
-              if Type.is_top annotation || Type.is_unbound annotation then
-                None
-              else
-                Some annotation
-            else
-              Some original
-          with
-          | ClassHierarchy.Untracked _ -> None
-        in
-        let resolve_definition ~expression =
-          let find_definition reference =
-            let fallback = function
-              | Some location -> Some location
-              | None -> (
-                  match Resolution.resolve_reference resolution reference with
-                  | Type.Callable { implementation = { define_location; _ }; _ } -> define_location
-                  | _ -> None )
-            in
-            GlobalResolution.global (Resolution.global_resolution resolution) reference
-            >>| Node.location
-            |> fallback
-            >>= fun location ->
-            if Location.equal location Location.Reference.any then None else Some location
-          in
-          match Node.value expression with
-          | Expression.Name (Name.Identifier identifier) ->
-              find_definition (Reference.create identifier)
-          | Name (Name.Attribute { base; attribute; _ } as name) -> (
-              let definition = name_to_reference name >>= find_definition in
-              match definition with
-              | Some definition -> Some definition
-              | None ->
-                  (* Resolve prefix to check if this is a method. *)
-                  resolve ~expression:base
-                  >>| Type.class_name
-                  >>| (fun prefix -> Reference.create ~prefix attribute)
-                  >>= find_definition )
-          | _ -> None
-        in
-        let rec annotate_expression ({ Node.location; value } as expression) =
-          let store_lookup ~table ~location ~data =
-            if
-              (not (Location.equal location Location.Reference.any))
-              && not (Location.equal location Location.Reference.synthetic)
-            then
-              Hashtbl.set table ~key:location ~data |> ignore
-          in
-          let store_annotation location annotation =
-            store_lookup ~table:annotations_lookup ~location ~data:annotation
-          in
-          let store_definition location data =
-            store_lookup ~table:definitions_lookup ~location ~data
-          in
-          resolve ~expression >>| store_annotation location |> ignore;
-          resolve_definition ~expression >>| store_definition location |> ignore;
-          match value with
-          | Call { arguments; _ } ->
-              let annotate_argument_name
-                  { Call.Argument.name; value = { Node.location; _ } as value }
-                =
-                match name, resolve ~expression:value with
-                | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->
-                    let location = { location with Location.start } in
-                    store_annotation location annotation
-                | _ -> ()
-              in
-              List.iter ~f:annotate_argument_name arguments
-          | _ -> ()
-        in
         annotate_expression expression;
+        state
+    | Visit.Reference { Node.value = reference; location } ->
+        annotate_expression (Ast.Expression.from_reference ~location reference);
         state
     | _ -> state
 
@@ -152,8 +151,6 @@ module Visit = struct
           postcondition_visit target;
           annotation >>| store_annotation |> ignore;
           precondition_visit value
-      | Class { Class.name = { Node.value; location }; _ } ->
-          precondition_visit (Ast.Expression.from_reference ~location value)
       | Define
           {
             Define.signature =
