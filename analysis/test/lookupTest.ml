@@ -261,6 +261,31 @@ let test_lookup_identifier_accesses context =
   assert_annotation ~position:{ Location.line = 9; column = 13 } ~annotation:(Some "9:11-9:14/int")
 
 
+let test_lookup_imports context =
+  let source = {|
+      from typing import List as l
+    |} in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    ["2:19-2:23/typing.TypeAlias"; "2:27-2:28/typing.TypeAlias"];
+
+  let source =
+    {|
+      from unittest.mock import Mock
+      from subprocess import call as my_call
+    |}
+  in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:26-2:30/typing.Type[unittest.mock.Mock]";
+      "3:23-3:27/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
+       unknown)], unknown]";
+      "3:31-3:38/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
+       unknown)], unknown]";
+    ]
+
+
 let test_lookup_unknown_accesses context =
   let source = {|
       def foo() -> None:
@@ -668,6 +693,7 @@ let () =
          "lookup_assign" >:: test_lookup_assign;
          "lookup_class_attributes" >:: test_lookup_class_attributes;
          "lookup_identifier_accesses" >:: test_lookup_identifier_accesses;
+         "lookup_imports" >:: test_lookup_imports;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
          "lookup_multiline_accesses" >:: test_lookup_multiline_accesses;
          "lookup_out_of_bounds_accesses" >:: test_lookup_out_of_bounds_accesses;

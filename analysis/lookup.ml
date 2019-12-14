@@ -172,6 +172,27 @@ module Visit = struct
           List.iter parameters ~f:visit_parameter;
           List.iter decorators ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
+      | Import { Import.from; imports } ->
+          let visit_import { Import.name = { Node.value = name; location = name_location }; alias } =
+            let qualifier =
+              match from with
+              | Some { Node.value = from; _ } -> from
+              | None -> Reference.empty
+            in
+            let create_qualified_expression ~location =
+              Reference.combine qualifier name |> Ast.Expression.from_reference ~location
+            in
+            precondition_visit (create_qualified_expression ~location:name_location);
+            Option.iter
+              ~f:(fun { Node.location; _ } ->
+                precondition_visit (create_qualified_expression ~location))
+              alias
+          in
+          Option.iter
+            ~f:(fun { Node.value = from; location } ->
+              Ast.Expression.from_reference ~location from |> precondition_visit)
+            from;
+          List.iter imports ~f:visit_import
       | _ -> visit_statement ~state statement
     in
     List.iter ~f:(visit_statement_override ~state) source.Source.statements;
