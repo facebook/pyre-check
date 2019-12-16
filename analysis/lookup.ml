@@ -103,6 +103,10 @@ module NodeVisitor = struct
       let store_definition location data = store_lookup ~table:definitions_lookup ~location ~data in
       resolve ~resolution ~expression >>| store_annotation location |> ignore;
       resolve_definition ~expression >>| store_definition location |> ignore;
+      let annotate_nested_scope_expression ~annotations ({ Node.location; _ } as expression) =
+        let resolution = TypeCheck.resolution global_resolution ~annotations () in
+        resolve ~resolution ~expression >>| store_annotation location |> ignore
+      in
       match value with
       | Call { arguments; _ } ->
           let annotate_argument_name { Call.Argument.name; value = { Node.location; _ } as value } =
@@ -113,25 +117,37 @@ module NodeVisitor = struct
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments
+      | DictionaryComprehension { element = { key; value }; generators; _ } ->
+          let store_generator_annotation { Comprehension.Generator.target; iterator; conditions; _ }
+            =
+            let annotations =
+              LocalAnnotationMap.get_expression_postcondition resolution_lookup target.Node.location
+              |> Option.value ~default:Reference.Map.empty
+            in
+            let annotate_expression expression =
+              annotate_nested_scope_expression ~annotations expression |> ignore
+            in
+            annotate_expression key;
+            annotate_expression value;
+            annotate_expression target;
+            annotate_expression iterator;
+            List.iter ~f:annotate_expression conditions
+          in
+          List.iter ~f:store_generator_annotation generators
       | ListComprehension { element; generators; _ }
       | SetComprehension { element; generators; _ } ->
           let store_generator_annotation { Comprehension.Generator.target; iterator; conditions; _ }
             =
-            let annotate_expression ({ Node.location; _ } as expression) =
-              let resolution =
-                let annotations =
-                  LocalAnnotationMap.get_expression_postcondition
-                    resolution_lookup
-                    target.Node.location
-                  |> Option.value ~default:Reference.Map.empty
-                in
-                TypeCheck.resolution global_resolution ~annotations ()
-              in
-              resolve ~resolution ~expression >>| store_annotation location |> ignore
+            let annotations =
+              LocalAnnotationMap.get_expression_postcondition resolution_lookup target.Node.location
+              |> Option.value ~default:Reference.Map.empty
             in
-            annotate_expression element |> ignore;
-            annotate_expression target |> ignore;
-            annotate_expression iterator |> ignore;
+            let annotate_expression expression =
+              annotate_nested_scope_expression ~annotations expression |> ignore
+            in
+            annotate_expression element;
+            annotate_expression target;
+            annotate_expression iterator;
             List.iter ~f:annotate_expression conditions
           in
           List.iter ~f:store_generator_annotation generators

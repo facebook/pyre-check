@@ -288,6 +288,60 @@ let test_lookup_comprehensions context =
       "4:2-4:3/typing.Set[float]";
       "4:6-4:24/typing.Set[float]";
       "4:7-4:8/float";
+    ];
+  let source =
+    {|
+       def foo() -> None:
+         a = 1
+         b = 1
+         c = {a: b for a in [1.0]}
+    |}
+  in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
+      "3:2-3:3/typing_extensions.Literal[1]";
+      "3:6-3:7/typing_extensions.Literal[1]";
+      "4:2-4:3/typing_extensions.Literal[1]";
+      "4:6-4:7/typing_extensions.Literal[1]";
+      "5:10-5:11/typing_extensions.Literal[1]";
+      "5:16-5:17/float";
+      "5:2-5:3/typing.Dict[float, int]";
+      "5:21-5:26/typing.List[float]";
+      "5:22-5:25/float";
+      "5:6-5:27/typing.Dict[float, int]";
+      "5:7-5:8/float";
+    ];
+  let source =
+    {|
+       def foo() -> None:
+         a = 1
+         b = 1
+         c = {a: b for a in [1.0] for b in [1, 2]}
+    |}
+  in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
+      "3:2-3:3/typing_extensions.Literal[1]";
+      "3:6-3:7/typing_extensions.Literal[1]";
+      "4:2-4:3/typing_extensions.Literal[1]";
+      "4:6-4:7/typing_extensions.Literal[1]";
+      "5:10-5:11/int";
+      "5:16-5:17/float";
+      "5:2-5:3/typing.Dict[float, int]";
+      "5:21-5:26/typing.List[float]";
+      "5:22-5:25/float";
+      "5:31-5:32/int";
+      "5:36-5:42/typing.List[int]";
+      "5:37-5:38/typing_extensions.Literal[1]";
+      "5:40-5:41/typing_extensions.Literal[2]";
+      "5:6-5:43/typing.Dict[float, int]";
+      "5:7-5:8/float";
     ]
 
 
