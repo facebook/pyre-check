@@ -207,6 +207,25 @@ let test_lookup_comprehensions context =
       "3:19-3:22/float";
       "3:2-3:3/typing.List[float]";
       "3:6-3:24/typing.List[float]";
+    ];
+  let source = {|
+       def foo() -> None:
+         x = 1
+         a = [x for x in [1.0]]
+    |} in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:13-2:17/None";
+      "2:4-2:7/typing.Callable(test.foo)[[], None]";
+      "3:2-3:3/typing_extensions.Literal[1]";
+      "3:6-3:7/typing_extensions.Literal[1]";
+      "4:13-4:14/typing_extensions.Literal[1]";
+      "4:18-4:23/typing.List[float]";
+      "4:19-4:22/float";
+      "4:2-4:3/typing.List[float]";
+      "4:6-4:24/typing.List[float]";
+      "4:7-4:8/typing_extensions.Literal[1]";
     ]
 
 

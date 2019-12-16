@@ -1417,7 +1417,9 @@ module State (Context : Context) = struct
       let { state; resolved = value_resolved; _ } = forward_expression ~state ~expression:value in
       Type.weaken_literals key_resolved, Type.weaken_literals value_resolved, state
     in
-    let forward_generator ~state ~generator:({ Comprehension.Generator.conditions; _ } as generator)
+    let forward_generator
+        ~state
+        ~generator:({ Comprehension.Generator.conditions; target; _ } as generator)
       =
       (* Propagate the target type information. *)
       let iterator =
@@ -1425,9 +1427,18 @@ module State (Context : Context) = struct
         |> Node.create ~location
       in
       let state =
-        let { errors; _ } = state in
-        let ({ errors = iterator_errors; _ } as state) =
+        let { errors; resolution; resolution_fixpoint; _ } = state in
+        let ({ errors = iterator_errors; resolution = iterator_resolution; _ } as state) =
           forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
+        in
+        let precondition = Resolution.annotations resolution in
+        let postcondition = Resolution.annotations iterator_resolution in
+        let resolution_fixpoint =
+          LocalAnnotationMap.set_expression
+            ~key:target.Node.location
+            ~precondition
+            ~postcondition
+            resolution_fixpoint
         in
         (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
            temporarily minting a variable in a new scope and old annotations should be ignored. *)
@@ -1443,7 +1454,7 @@ module State (Context : Context) = struct
             iterator_errors
             errors
         in
-        { state with errors }
+        { state with errors; resolution_fixpoint }
       in
       List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
