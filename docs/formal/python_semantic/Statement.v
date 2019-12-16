@@ -28,3 +28,10 @@ Inductive t : Set :=
   | Seq : forall (st next : t), t 
   | Return: forall (ret: Expression.t), t
 .
+
+Fixpoint to_seq (statements: list t) : t :=
+  match statements with 
+  | nil => Pass 
+  | hd :: nil => hd 
+  | hd :: tl => Seq hd (to_seq tl)
+  end.

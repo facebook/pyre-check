@@ -77,9 +77,6 @@ Qed.
 (** Map from identifiers to values. Used during <<Expression.t>> evaluation *)
 Definition EState := @RawState0 Value.t.
 
-Definition get_state_value (state: EState) k : option Value.t :=
-  get0 state k.
-
 (** * Evaluation of expressions
   Evaluates the expression <<expr>> using the state <<now>>. Returns some
   <<Value.t>> if everything went ok, or <<None>> otherwise.
@@ -105,7 +102,7 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             | Some vl => Some (Value.Sequence vl)
             | None => None
             end
-    | Expression.Id id => get_state_value now id
+    | Expression.Id id => get0 now id
     | Expression.None => Some Value.None
     | Expression.String s => Some (Value.String s)
     | Expression.Ternary target test alternative =>
@@ -400,6 +397,7 @@ Qed.
 (* begin hide *)
 Module Test.
 (* Toy examples to convince myself that everything is correct *)
+Definition XID : Lvalue.t  := Lvalue.Id "x"%string.
 Definition YID : Lvalue.t  := Lvalue.Id "y"%string.
 Definition X : Expression.t := Expression.Id "x"%string.
 Definition Ret x := Statement.Return x.
