@@ -97,10 +97,4 @@ class Stop(Command):
             else:
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
-        try:
-            pid_path = ProjectFilesMonitor.pid_path(self._configuration)
-            with open(pid_path) as file:
-                pid = int(file.read())
-                os.kill(pid, 2)  # sigint
-        except (FileNotFoundError, OSError, ValueError):
-            pass
+        ProjectFilesMonitor.stop_project_monitor(self._configuration)

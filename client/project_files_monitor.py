@@ -144,3 +144,14 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 "the current directory `{}`".format(directory)
             )
         return watchman_path
+
+    @staticmethod
+    def stop_project_monitor(configuration: Configuration) -> None:
+        try:
+            pid_path = ProjectFilesMonitor.pid_path(configuration)
+            with open(pid_path) as file:
+                pid = int(file.read())
+                os.kill(pid, 2)  # sigint
+                LOG.info("Stopped the file monitor.")
+        except (FileNotFoundError, OSError, ValueError):
+            pass

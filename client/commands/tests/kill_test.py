@@ -8,120 +8,108 @@
 import os  # noqa
 import shutil  # noqa
 import signal
+import subprocess
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import psutil  # noqa
 
 from ... import commands  # noqa
-from .command_test import mock_arguments, mock_configuration
+from .. import kill
+from ..kill import Kill, _get_process_name
 
 
 class KillTest(unittest.TestCase):
-    @patch("psutil.process_iter")
-    @patch("os.getpgid", side_effect=lambda id: id)
-    @patch("os.kill")
-    @patch("os.remove")
-    @patch("os.unlink")
-    @patch(
-        "os.readlink",
-        side_effect=[
-            "/tmp/actual_socket",
-            "/tmp/json_socket",
-            "/tmp/actual_socket",
-            "/tmp/json_socket",
-            "/tmp/actual_socket",
-            "/tmp/json_socket",
-            "/tmp/actual_socket",
-            "/tmp/json_socket",
-        ],
-    )
-    @patch("os.path.realpath")
-    @patch("os.chdir")
-    @patch("subprocess.run")
+    @patch.object(os, "getenv")
+    def test_get_process_name(self, get_environment: MagicMock) -> None:
+        get_environment.return_value = None
+        self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "foo")
+        get_environment.return_value = "/tmp/pyre_directory/main.exe"
+        self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
+
+    @patch.object(psutil, "process_iter")
+    @patch.object(os, "getpgid", side_effect=lambda id: id)
+    @patch.object(os, "getpid", return_value=1234)
+    @patch.object(os, "kill")
+    def test_kill_client_processes(
+        self,
+        os_kill: MagicMock,
+        get_process_id: MagicMock,
+        get_process_group_id: MagicMock,
+        process_iterator: MagicMock,
+    ) -> None:
+        process_iterator.return_value = [
+            Mock(info={"name": "pyre-client"}, pid=1234),
+            Mock(info={"name": "pyre-client"}, pid=5678),
+            Mock(info={"name": "not-pyre-client"}, pid=4321),
+            Mock(info={"name": "pyre-client"}, pid=9101),
+        ]
+        Kill._kill_client_processes()
+        os_kill.assert_has_calls(
+            [call(5678, signal.SIGKILL), call(9101, signal.SIGKILL)]
+        )
+
+        os_kill.side_effect = ProcessLookupError
+        # Ensure that we don't crash even if os.kill fails to find a process.
+        Kill._kill_client_processes()
+
+    @patch.object(shutil, "rmtree")
+    @patch.object(Kill, "__init__", return_value=None)
+    def test_delete_caches(self, kill_init: MagicMock, remove_tree: MagicMock) -> None:
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._log_directory = ".pyre"
+        kill_command._delete_caches()
+        remove_tree.assert_has_calls(
+            [call(".pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
+        )
+
+    @patch.object(os, "remove")
+    @patch.object(os, "unlink")
+    @patch.object(os, "readlink", return_value="/tmp/actual_socket")
+    def test_delete_linked_paths(
+        self, readlink: MagicMock, unlink: MagicMock, remove: MagicMock
+    ) -> None:
+        Kill._delete_linked_path("foo.sock")
+        remove.assert_called_once_with("/tmp/actual_socket")
+        unlink.assert_called_once_with("foo.sock")
+
+    @patch.object(subprocess, "run")
+    @patch.object(kill, "_get_process_name", return_value="foo.exe")
+    def test_kill_binary_processes(
+        self, get_process_name: MagicMock, run: MagicMock
+    ) -> None:
+        Kill._kill_binary_processes()
+        run.assert_called_once_with(["pkill", "foo.exe"])
+
+    @patch.object(Kill, "_delete_linked_path")
+    @patch.object(Kill, "_delete_caches")
+    @patch.object(Kill, "_kill_client_processes")
+    @patch.object(Kill, "_kill_binary_processes")
+    @patch.object(Kill, "__init__", return_value=None)
     def test_kill(
         self,
-        run,
-        chdir,
-        realpath,
-        readlink,
-        unlink,
-        remove,
-        kill,
-        _get_process_group_id,
-        process_iter,
+        kill_init: MagicMock,
+        kill_binary_processes: MagicMock,
+        kill_client_processes: MagicMock,
+        delete_caches: MagicMock,
+        delete_linked_path: MagicMock,
     ) -> None:
-        processA = MagicMock()
-        processA.info = {"name": "pyre-client"}
-        processA.pid = 1234
-        processB = MagicMock()
-        processB.info = {"name": "pyre-client"}
-        processB.pid = 5678
-        processC = MagicMock()
-        processC.info = {"name": "not-pyre-client"}
-        processC.pid = 4321
-        process_iter.return_value = [processA, processB, processC]
-        with patch("os.getenv", return_value=None), patch(
-            "os.getpid", return_value=1234
-        ):
-            realpath.return_value = "/test-binary"
-            original_directory = "/original/directory"
-            arguments = mock_arguments()
-            configuration = mock_configuration()
-            analysis_directory = MagicMock()
-            commands.Kill(
-                arguments, original_directory, configuration, analysis_directory
-            ).run()
-            run.assert_has_calls([call(["pkill", "pyre.bin"])])
-            kill.assert_has_calls([call(5678, signal.SIGKILL)])
-            remove.assert_has_calls(
-                [call("/tmp/actual_socket"), call("/tmp/json_socket")]
-            )
-            unlink.assert_has_calls(
-                [
-                    call(".pyre/server/server.sock"),
-                    call(".pyre/server/json_server.sock"),
-                ]
-            )
-        with patch(
-            "os.getenv",
-            side_effect=["/tmp/pyre_directory/main.exe", "/tmp/pyre/my_client"],
-        ):
-            kill.reset_mock()
-            realpath.return_value = "/test-binary"
-            original_directory = "/original/directory"
-            arguments = mock_arguments()
-            configuration = mock_configuration()
-            analysis_directory = MagicMock()
-            commands.Kill(
-                arguments, original_directory, configuration, analysis_directory
-            ).run()
-            run.assert_has_calls([call(["pkill", "main.exe"])])
-            kill.assert_has_calls([call(5678, signal.SIGKILL)])
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._log_directory = ".pyre"
+        kill_command._arguments = Mock(with_fire=False)
+        kill_command._configuration = Mock()
+        kill_command._run()
 
-        with patch("os.getcwd", return_value="/root"), patch(
-            "shutil.rmtree"
-        ) as remove_tree:
-            original_directory = "/original/directory"
-            arguments = mock_arguments()
-            configuration = mock_configuration()
-            analysis_directory = MagicMock()
-            arguments.with_fire = True
-            commands.Kill(
-                arguments, original_directory, configuration, analysis_directory
-            ).run()
-            remove_tree.assert_has_calls(
-                [call(".pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
-            )
-        # Ensure that we don't crash even if os.kill fails to find a process.
-        with patch("os.getenv", return_value=None), patch(
-            "os.getpid", return_value=1234
-        ), patch("os.kill", side_effect=ProcessLookupError):
-            realpath.return_value = "/test-binary"
-            original_directory = "/original/directory"
-            arguments = mock_arguments()
-            configuration = mock_configuration()
-            analysis_directory = MagicMock()
-            commands.Kill(
-                arguments, original_directory, configuration, analysis_directory
-            ).run()
+        delete_caches.assert_not_called()
+
+        kill_binary_processes.assert_called_once()
+        kill_client_processes.assert_called_once()
+        self.assertEqual(delete_linked_path.call_count, 2)
+
+        kill_command._arguments = Mock(with_fire=True)
+        kill_command._run()
+
+        delete_caches.assert_called_once()
+        self.assertEqual(kill_binary_processes.call_count, 2)
+        self.assertEqual(kill_client_processes.call_count, 2)
+        self.assertEqual(delete_linked_path.call_count, 4)
