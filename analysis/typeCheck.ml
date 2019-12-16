@@ -1066,7 +1066,7 @@ module State (Context : Context) = struct
       let resolution_fixpoint =
         let postcondition = Resolution.annotations resolution in
         let key = [%hash: int * int] (Cfg.entry_index, 0) in
-        LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
+        LocalAnnotationMap.set_statement resolution_fixpoint ~key ~postcondition
       in
       { state with resolution; resolution_fixpoint }
     in
@@ -4789,7 +4789,7 @@ module State (Context : Context) = struct
         | Some key, { resolution = post_resolution; _ } ->
             let precondition = Resolution.annotations resolution in
             let postcondition = Resolution.annotations post_resolution in
-            LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
+            LocalAnnotationMap.set_statement resolution_fixpoint ~key ~precondition ~postcondition
         | None, _ -> resolution_fixpoint
       in
       { state with resolution_fixpoint }
@@ -4860,7 +4860,8 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
   let annotations =
     match key, local_annotations with
     | Some key, Some map ->
-        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
+        LocalAnnotationMap.get_statement_precondition map key
+        |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
   resolution global_resolution ~annotations () |> Resolution.with_parent ~parent

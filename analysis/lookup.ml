@@ -217,9 +217,9 @@ let create_of_source type_environment source =
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.get_precondition annotation_lookup key
+        ( LocalAnnotationMap.get_statement_precondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty,
-          LocalAnnotationMap.get_postcondition annotation_lookup key
+          LocalAnnotationMap.get_statement_postcondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty )
       in
       let pre_resolution = TypeCheck.resolution global_resolution ~annotations:pre_annotations () in
