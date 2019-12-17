@@ -50,6 +50,7 @@ module type Builder = sig
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
     callables:Type.Callable.t list option ->
+    arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
     callee:Ast.Expression.t ->
     unit

@@ -15,6 +15,7 @@
 (tests
  (names
   accessPathTest
+  callGraphBuilderTest
   configurationTest
   domainTest
   integrationTest

@@ -83,6 +83,7 @@ module type Builder = sig
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
     callables:Type.Callable.t list option ->
+    arguments:Call.Argument.t list ->
     dynamic:bool ->
     callee:Expression.t ->
     unit
@@ -103,7 +104,7 @@ module DefaultBuilder : Builder = struct
 
   let initialize () = Hashtbl.clear table
 
-  let add_callee ~global_resolution ~target ~callables ~dynamic ~callee =
+  let add_callee ~global_resolution ~target ~callables ~arguments:_ ~dynamic ~callee =
     (* Store callees. *)
     let callees =
       let method_callee ?(is_optional_class_attribute = false) annotation callable =
@@ -222,7 +223,7 @@ end
 module NullBuilder : Builder = struct
   let initialize () = ()
 
-  let add_callee ~global_resolution:_ ~target:_ ~callables:_ ~dynamic:_ ~callee:_ = ()
+  let add_callee ~global_resolution:_ ~target:_ ~callables:_ ~arguments:_ ~dynamic:_ ~callee:_ = ()
 
   let add_property_callees ~global_resolution:_ ~resolved_base:_ ~attributes:_ ~name:_ ~location:_ =
     ()

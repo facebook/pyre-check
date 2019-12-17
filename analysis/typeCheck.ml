@@ -1658,7 +1658,7 @@ module State (Context : Context) = struct
           | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
           | annotation -> callable annotation >>| fun callable -> [callable]
         in
-        Context.Builder.add_callee ~global_resolution ~target ~callables ~dynamic ~callee;
+        Context.Builder.add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee;
         let signature callable =
           let signature =
             GlobalResolution.signature_select
@@ -2073,7 +2073,8 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
           arguments =
-            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
+            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }] as
+            arguments;
         } ->
         let callables =
           let { resolved; _ } = forward_expression ~state ~expression:callee in
@@ -2081,7 +2082,13 @@ module State (Context : Context) = struct
           | Type.Callable callable -> Some [callable]
           | _ -> None
         in
-        Context.Builder.add_callee ~global_resolution ~target:None ~callables ~dynamic:false ~callee;
+        Context.Builder.add_callee
+          ~global_resolution
+          ~target:None
+          ~callables
+          ~arguments
+          ~dynamic:false
+          ~callee;
 
         (* Be angelic and compute errors using the typeshed annotation for isinstance. *)
 

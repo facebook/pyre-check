@@ -997,6 +997,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class InitVar(typing.Generic[_T]): ...
         |}
     );
+    ( "functools.pyi",
+      {|
+        from typing import TypeVar, Generic, Callable, Tuple, Any, Dict
+        _T = TypeVar("_T")
+
+        class partial(Generic[_T]):
+            func: Callable[..., _T]
+            args: Tuple[Any, ...]
+            keywords: Dict[str, Any]
+            def __init__(self, func: Callable[..., _T], *args: Any, **kwargs: Any) -> None: ...
+            def __call__(self, *args: Any, **kwargs: Any) -> _T: ...
+       |}
+    );
     ( "subprocess.pyi",
       {|
         def run(command, shell): ...
