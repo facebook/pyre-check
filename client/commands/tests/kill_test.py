@@ -27,16 +27,20 @@ class KillTest(unittest.TestCase):
         get_environment.return_value = "/tmp/pyre_directory/main.exe"
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
 
+    @patch.object(commands.kill.ProjectFilesMonitor, "stop_project_monitor")
     @patch.object(psutil, "process_iter")
     @patch.object(os, "getpgid", side_effect=lambda id: id)
     @patch.object(os, "getpid", return_value=1234)
     @patch.object(os, "kill")
+    @patch.object(Kill, "__init__", return_value=None)
     def test_kill_client_processes(
         self,
+        kill_init: MagicMock,
         os_kill: MagicMock,
         get_process_id: MagicMock,
         get_process_group_id: MagicMock,
         process_iterator: MagicMock,
+        stop_project_monitor: MagicMock,
     ) -> None:
         process_iterator.return_value = [
             Mock(info={"name": "pyre-client"}, pid=1234),
@@ -44,14 +48,19 @@ class KillTest(unittest.TestCase):
             Mock(info={"name": "not-pyre-client"}, pid=4321),
             Mock(info={"name": "pyre-client"}, pid=9101),
         ]
-        Kill._kill_client_processes()
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._configuration = MagicMock()
+        kill_command._kill_client_processes()
         os_kill.assert_has_calls(
             [call(5678, signal.SIGKILL), call(9101, signal.SIGKILL)]
         )
+        stop_project_monitor.assert_called_once()
 
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._configuration = MagicMock()
         os_kill.side_effect = ProcessLookupError
         # Ensure that we don't crash even if os.kill fails to find a process.
-        Kill._kill_client_processes()
+        kill_command._kill_client_processes()
 
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)

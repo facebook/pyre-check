@@ -16,6 +16,7 @@ import psutil
 from .. import BINARY_NAME, CLIENT_NAME
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
+from ..project_files_monitor import ProjectFilesMonitor
 from .command import Command
 
 
@@ -72,8 +73,7 @@ class Kill(Command):
         except OSError:
             pass
 
-    @staticmethod
-    def _kill_client_processes() -> None:
+    def _kill_client_processes(self) -> None:
         for process in psutil.process_iter(attrs=["name"]):
             if process.info["name"] != CLIENT_NAME:
                 continue
@@ -91,6 +91,7 @@ class Kill(Command):
                 os.kill(pid_to_kill, signal.SIGKILL)
             except ProcessLookupError:
                 continue
+        ProjectFilesMonitor.stop_project_monitor(self._configuration)
 
     @staticmethod
     def _kill_binary_processes() -> None:
