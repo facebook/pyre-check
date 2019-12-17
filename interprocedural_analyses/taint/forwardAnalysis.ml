@@ -591,11 +591,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       match expression.Node.value with
       | Await expression -> analyze_expression ~resolution ~state ~expression
-      | BooleanOperator { left; operator = _; right }
-      | ComparisonOperator { left; operator = _; right } ->
+      | BooleanOperator { left; operator = _; right } ->
           let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
+      | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
+          match ComparisonOperator.override comparison with
+          | Some override -> analyze_expression ~resolution ~state ~expression:override
+          | None ->
+              let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
+              let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
+              ForwardState.Tree.join left_taint right_taint, state )
       | Call
           {
             callee =

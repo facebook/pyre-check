@@ -59,6 +59,70 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "features.issue_via_equality",
+    "callable_line": 61,
+    "code": 5002,
+    "line": 64,
+    "start": 16,
+    "end": 31,
+    "filename": "features.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "features.py",
+                "line": 62,
+                "start": 8,
+                "end": 32
+              },
+              "resolves_to": [ "features.returns_tainted_object" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 64,
+              "start": 16,
+              "end": 31
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "features.len",
@@ -125,6 +189,37 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.returns_tainted_object",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 58,
+              "start": 11,
+              "end": 26
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {

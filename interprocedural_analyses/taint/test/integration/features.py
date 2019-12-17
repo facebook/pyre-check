@@ -52,3 +52,13 @@ def issue_via_bool():
     o = __test_source()
     x = bool(o)
     __test_sink(x)
+
+
+def returns_tainted_object() -> object:
+    return __test_source()
+
+
+def issue_via_equality():
+    o = returns_tainted_object()
+    matches_tainted = o == "tainted"
+    __test_sink(matches_tainted)
