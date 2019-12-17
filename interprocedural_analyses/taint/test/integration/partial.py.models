@@ -1,0 +1,146 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.partial_application_with_named_a",
+    "callable_line": 20,
+    "code": 5002,
+    "line": 22,
+    "start": 31,
+    "end": 32,
+    "filename": "partial.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "partial.py",
+              "line": 21,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "partial.py",
+                "line": 22,
+                "start": 31,
+                "end": 32
+              },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.partial_application_with_tainted",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 12,
+    "start": 29,
+    "end": 30,
+    "filename": "partial.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "partial.py",
+              "line": 11,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "partial.py",
+                "line": 12,
+                "start": 29,
+                "end": 30
+              },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.a_flows_to_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "root": {
+              "filename": "partial.py",
+              "line": 7,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}

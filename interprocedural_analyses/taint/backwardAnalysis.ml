@@ -478,6 +478,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call
           {
             callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
+                        attribute = "partial";
+                        _;
+                      });
+                _;
+              };
+            arguments = { Call.Argument.value = actual_callable; _ } :: actual_arguments;
+          } ->
+          analyze_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:
+              (Node.create
+                 ~location
+                 (Expression.Call { callee = actual_callable; arguments = actual_arguments }))
+      | Call
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as
               callee;
             arguments =
