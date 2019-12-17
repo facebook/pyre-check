@@ -310,8 +310,9 @@ def query_buck_relative_paths(
         "--json",
         "--output-attribute",
         ".*",
-        # This will get only those owner targets that are beneath our targets.
-        f"owner(%s) ^ set({target_string})",
+        # This will get only those owner targets that are beneath our targets or
+        # the dependencies of our targets.
+        f"owner(%s) ^ deps(set({target_string}))",
         *project_paths,
     ]
     LOG.info(f"Running command: {command}")

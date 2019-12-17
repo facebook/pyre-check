@@ -208,7 +208,7 @@ class BuckTest(unittest.TestCase):
                     "--json",
                     "--output-attribute",
                     ".*",
-                    "owner(%s) ^ set(targetA targetB)",
+                    "owner(%s) ^ deps(set(targetA targetB))",
                     *paths,
                 ],
                 timeout=30,
