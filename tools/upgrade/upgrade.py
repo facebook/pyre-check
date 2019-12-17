@@ -17,6 +17,10 @@ class VersionControl:
         pass
 
 
-if __name__ == "__main__":
+def main() -> None:
     version_control = VersionControl()
     upgrade_core.run(version_control)
+
+
+if __name__ == "__main__":
+    main()
