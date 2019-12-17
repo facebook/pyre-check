@@ -380,7 +380,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution location ~taint ~state callee arguments =
       let ({ Call.callee; arguments } as call_expression) =
-        Annotated.Call.redirect_special_calls ~resolution { Call.callee; arguments }
+        Interprocedural.CallResolution.redirect_special_calls ~resolution { Call.callee; arguments }
       in
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | _, Name (Name.Identifier "super") -> (
@@ -475,30 +475,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | ComparisonOperator { left; operator = _; right } ->
           analyze_expression ~resolution ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
-      | Call
-          {
-            callee =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
-                        attribute = "partial";
-                        _;
-                      });
-                _;
-              };
-            arguments = { Call.Argument.value = actual_callable; _ } :: actual_arguments;
-          } ->
-          analyze_expression
-            ~resolution
-            ~taint
-            ~state
-            ~expression:
-              (Node.create
-                 ~location
-                 (Expression.Call { callee = actual_callable; arguments = actual_arguments }))
       | Call
           {
             callee =

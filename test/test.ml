@@ -1018,6 +1018,24 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_output(command, shell): ...
         |}
     );
+    ( "multiprocessing/context.pyi",
+      {|
+        from typing import Optional, Callable, Tuple, Any, Mapping
+        class Process:
+          _start_method: Optional[str]
+          def __init__(
+              self,
+              group: None = ...,
+              target: Optional[Callable[..., Any]] = ...,
+              name: Optional[str] = ...,
+              args: Tuple[Any, ...] = ...,
+              kwargs: Mapping[str, Any] = ...,
+              *,
+              daemon: Optional[bool] = ...,
+          ) -> None: ...
+      |}
+    );
+    "multiprocessing/__init__.pyi", "from multiprocessing.context import Process as Process";
     ( "enum.pyi",
       {|
         from abc import ABCMeta

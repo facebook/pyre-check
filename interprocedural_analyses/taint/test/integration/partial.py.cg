@@ -1,6 +1,8 @@
 @generated
 Call dependencies
 partial.a_flows_to_sink (fun) -> [__test_sink (fun)]
+partial.multiprocessing_not_tainted (fun) -> [__test_source (fun) multiprocessing.context.Process::__init__ (method) partial.a_flows_to_sink (fun)]
+partial.multiprocessing_tainted (fun) -> [__test_source (fun) multiprocessing.context.Process::__init__ (method) partial.a_flows_to_sink (fun)]
 partial.partial_application_with_benign (fun) -> [functools.partial::__init__ (method) partial.a_flows_to_sink (fun)]
 partial.partial_application_with_named_a (fun) -> [__test_source (fun) functools.partial::__init__ (method) partial.a_flows_to_sink (fun)]
 partial.partial_application_with_named_b (fun) -> [__test_source (fun) functools.partial::__init__ (method) partial.a_flows_to_sink (fun)]

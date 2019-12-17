@@ -280,3 +280,51 @@ let get_global_targets ~resolution reference =
       { constructor_targets = get_constructor_targets ~resolution ~receiver:callee; callee }
   else
     GlobalTargets (resolve_target ~resolution callee)
+
+
+let transform_special_calls { Call.callee; arguments } =
+  match callee, arguments with
+  | ( {
+        Node.value =
+          Expression.Name
+            (Name.Attribute
+              {
+                base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
+                attribute = "partial";
+                _;
+              });
+        _;
+      },
+      { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
+      Some { Call.callee = actual_callable; arguments = actual_arguments }
+  | ( {
+        Node.value =
+          Name
+            (Name.Attribute
+              {
+                base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
+                attribute = "Process";
+                _;
+              });
+        _;
+      },
+      [
+        { Call.Argument.value = process_callee; name = Some { Node.value = "$parameter$target"; _ } };
+        {
+          Call.Argument.value = { Node.value = Expression.Tuple process_arguments; _ };
+          name = Some { Node.value = "$parameter$args"; _ };
+        };
+      ] ) ->
+      Some
+        {
+          Call.callee = process_callee;
+          arguments =
+            List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
+        }
+  | _ -> None
+
+
+let redirect_special_calls ~resolution call =
+  match transform_special_calls call with
+  | Some call -> call
+  | None -> Annotated.Call.redirect_special_calls ~resolution call

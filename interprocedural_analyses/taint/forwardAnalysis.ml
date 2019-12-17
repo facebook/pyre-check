@@ -457,7 +457,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution ~location ~state callee arguments =
       let call = { Call.callee; arguments } in
-      let { Call.callee; arguments } = Annotated.Call.redirect_special_calls ~resolution call in
+      let { Call.callee; arguments } =
+        Interprocedural.CallResolution.redirect_special_calls ~resolution call
+      in
       (* reveal_taint(). *)
       begin
         match Node.value callee, arguments with
@@ -576,29 +578,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
-      | Call
-          {
-            callee =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
-                        attribute = "partial";
-                        _;
-                      });
-                _;
-              };
-            arguments = { Call.Argument.value = actual_callable; _ } :: actual_arguments;
-          } ->
-          analyze_expression
-            ~resolution
-            ~state
-            ~expression:
-              (Node.create
-                 ~location
-                 (Expression.Call { callee = actual_callable; arguments = actual_arguments }))
       | Call
           {
             callee =

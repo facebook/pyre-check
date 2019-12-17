@@ -7,27 +7,29 @@ open Core
 open OUnit2
 open Test
 
-let test_partial context =
-  let assert_call_graph source expected =
-    let _ =
-      ScratchProject.setup ~context ["test.py", source]
-      |> ScratchProject.build_type_environment_and_postprocess
-           ~call_graph_builder:(module Taint.CallGraphBuilder)
-    in
-    let assert_call_graph_consistent (name, expected) =
-      let actual =
-        Analysis.Callgraph.get ~caller:name
-        |> List.map ~f:(fun { Analysis.Callgraph.callee; _ } -> callee)
-      in
-      assert_equal
-        ~cmp:(List.equal Analysis.Callgraph.equal_callee)
-        ~printer:(fun callees ->
-          List.map callees ~f:Analysis.Callgraph.show_callee |> String.concat ~sep:", ")
-        expected
-        actual
-    in
-    List.iter expected ~f:assert_call_graph_consistent
+let assert_call_graph ~context source expected =
+  let _ =
+    ScratchProject.setup ~context ["test.py", source]
+    |> ScratchProject.build_type_environment_and_postprocess
+         ~call_graph_builder:(module Taint.CallGraphBuilder)
   in
+  let assert_call_graph_consistent (name, expected) =
+    let actual =
+      Analysis.Callgraph.get ~caller:name
+      |> List.map ~f:(fun { Analysis.Callgraph.callee; _ } -> callee)
+    in
+    assert_equal
+      ~cmp:(List.equal Analysis.Callgraph.equal_callee)
+      ~printer:(fun callees ->
+        List.map callees ~f:Analysis.Callgraph.show_callee |> String.concat ~sep:", ")
+      expected
+      actual
+  in
+  List.iter expected ~f:assert_call_graph_consistent
+
+
+let test_partial context =
+  let assert_call_graph = assert_call_graph ~context in
   assert_call_graph
     {|
       from functools import partial
@@ -73,4 +75,33 @@ let test_partial context =
     ]
 
 
-let () = "callGraphBuilder" >::: ["partial" >:: test_partial] |> Test.run
+let test_multiprocessing_process context =
+  let assert_call_graph = assert_call_graph ~context in
+  assert_call_graph
+    {|
+      import multiprocessing
+      def foo(x):
+        return x
+
+      def bar():
+         multiprocessing.Process(target=foo, args=(1,))
+    |}
+    [
+      ( !&"test.bar",
+        [
+          Analysis.Callgraph.Method
+            {
+              class_name = Type.Primitive "multiprocessing.context.Process";
+              direct_target = !&"multiprocessing.context.Process.__init__";
+              dispatch = Analysis.Callgraph.Static;
+              is_optional_class_attribute = false;
+            };
+          Analysis.Callgraph.Function !&"test.foo";
+        ] );
+    ]
+
+
+let () =
+  "callGraphBuilder"
+  >::: ["partial" >:: test_partial; "multiprocessing_process" >:: test_multiprocessing_process]
+  |> Test.run
