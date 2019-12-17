@@ -145,7 +145,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join taint_accumulator
 
 
-    and apply_call_targets ~resolution call_location arguments state call_targets =
+    and apply_call_targets ~resolution ~callee call_location arguments state call_targets =
       let apply_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let { TaintResult.forward; backward; _ } = taint_model.model in
@@ -330,7 +330,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           Map.Poly.fold tito_effects ~f:for_each_target ~init:state
         in
-        ForwardState.Tree.join result_taint tito, apply_tito_side_effects tito_effects state
+        let returned_taint =
+          let joined = ForwardState.Tree.join result_taint tito in
+          if taint_model.is_obscure then
+            let annotation =
+              Resolution.resolve
+                resolution
+                (Node.create_with_default_location (Expression.Call { Call.callee; arguments }))
+            in
+            ForwardState.Tree.transform
+              ForwardTaint.simple_feature_set
+              ~f:
+                (Features.add_type_breadcrumb
+                   ~resolution:(Resolution.global_resolution resolution)
+                   (Some annotation))
+              joined
+          else
+            joined
+        in
+        returned_taint, apply_tito_side_effects tito_effects state
       in
       match call_targets with
       | [] ->
@@ -445,7 +463,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let { Interprocedural.CallResolution.new_targets; init_targets } = constructor_targets in
       let apply_call_targets state targets =
         let arguments = { Call.Argument.name = None; value = callee } :: arguments in
-        apply_call_targets ~resolution location arguments state targets
+        apply_call_targets ~resolution ~callee location arguments state targets
       in
       let state =
         match new_targets with
@@ -487,7 +505,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution global in
           match targets with
           | Interprocedural.CallResolution.GlobalTargets targets ->
-              apply_call_targets ~resolution location arguments state targets
+              apply_call_targets ~resolution ~callee location arguments state targets
           | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
               analyze_constructor_call
                 ~resolution
@@ -514,7 +532,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     taint
               | _ -> taint
           in
-          apply_call_targets ~resolution location arguments state indirect_targets
+          apply_call_targets ~resolution ~callee location arguments state indirect_targets
           |>> add_index_breadcrumb_if_necessary
       | None, Name (Name.Identifier _name) ->
           let constructor_targets =
@@ -662,7 +680,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | None -> analyze_attribute_access ~resolution ~state ~location base attribute
           | Some targets ->
               let arguments = [{ Call.Argument.name = None; value = base }] in
-              apply_call_targets ~resolution location arguments state targets )
+              apply_call_targets ~resolution ~callee:expression location arguments state targets )
       | Set set ->
           List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
       | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state

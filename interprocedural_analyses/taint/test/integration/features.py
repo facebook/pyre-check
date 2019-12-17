@@ -46,3 +46,9 @@ def optional_scalar(parameter) -> Optional[int]:
 
 def tito_via_optional(o: Any):
     return optional_scalar(o)
+
+
+def issue_via_bool():
+    o = __test_source()
+    x = bool(o)
+    __test_sink(x)

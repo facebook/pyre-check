@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+features.issue_via_bool (fun) -> [__test_sink (fun) __test_source (fun) object::__init__ (method) object::__new__ (method)]
 features.optional_scalar (fun) -> []
 features.tito_via_constructor (fun) -> [int::__init__ (method) object::__new__ (method)]
 features.tito_via_len (fun) -> [features.len (fun)]
