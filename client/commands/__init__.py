@@ -19,6 +19,7 @@ from .query import Query as Query
 from .rage import Rage as Rage
 from .reporting import Reporting as Reporting
 from .restart import Restart as Restart
+from .servers import Servers as Servers
 from .start import Start
 from .statistics import Statistics as Statistics
 from .stop import Stop as Stop
@@ -39,6 +40,7 @@ COMMANDS: List[Type[CommandParser]] = [
     Check,
     Color,
     Deobfuscate,
+    Servers,
     Incremental,
     Infer,
     Initialize,
