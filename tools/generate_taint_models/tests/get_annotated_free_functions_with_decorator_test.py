@@ -23,7 +23,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=cleaned_source)):
             generator = AnnotatedFreeFunctionWithDecoratorGenerator()
             self.assertSetEqual(
-                set(generator._annotate_fns(spec, "/root", "/root/module.py")),
+                {
+                    str(model)
+                    for model in generator._annotate_fns(
+                        spec, "/root", "/root/module.py"
+                    )
+                },
                 set(expected),
             )
 

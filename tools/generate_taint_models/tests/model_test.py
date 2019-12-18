@@ -20,35 +20,45 @@ class ModelTest(unittest.TestCase):
     def test_callable_model(self) -> None:
         name = f"{__name__}.test_function"
         self.assertEqual(
-            model.CallableModel(
-                callable=test_function, arg="TaintSource[tainted]"
-            ).generate(),
+            str(
+                model.CallableModel(
+                    callable_object=test_function, arg="TaintSource[tainted]"
+                )
+            ),
             f"def {name}(argument: TaintSource[tainted], *variable, **keyword): ...",
         )
         self.assertEqual(
-            model.CallableModel(
-                callable=test_function,
-                arg="TaintSource[tainted]",
-                whitelisted_parameters=["str"],
-            ).generate(),
+            str(
+                model.CallableModel(
+                    callable_object=test_function,
+                    arg="TaintSource[tainted]",
+                    whitelisted_parameters=["str"],
+                )
+            ),
             f"def {name}(argument, *variable, **keyword): ...",
         )
         self.assertEqual(
-            model.CallableModel(
-                callable=test_function, vararg="TaintSource[tainted]"
-            ).generate(),
+            str(
+                model.CallableModel(
+                    callable_object=test_function, vararg="TaintSource[tainted]"
+                )
+            ),
             f"def {name}(argument, *variable: TaintSource[tainted], **keyword): ...",
         )
         self.assertEqual(
-            model.CallableModel(
-                callable=test_function, kwarg="TaintSource[tainted]"
-            ).generate(),
+            str(
+                model.CallableModel(
+                    callable_object=test_function, kwarg="TaintSource[tainted]"
+                )
+            ),
             f"def {name}(argument, *variable, **keyword: TaintSource[tainted]): ...",
         )
         self.assertEqual(
-            model.CallableModel(
-                callable=test_function, returns="TaintSink[returned]"
-            ).generate(),
+            str(
+                model.CallableModel(
+                    callable_object=test_function, returns="TaintSink[returned]"
+                )
+            ),
             f"def {name}(argument, *variable, **keyword) -> TaintSink[returned]: ...",
         )
 
@@ -56,19 +66,18 @@ class ModelTest(unittest.TestCase):
         def local_function(x: int, *args: str) -> None:
             ...
 
-        self.assertEqual(
+        with self.assertRaises(ValueError):
             model.CallableModel(
-                callable=local_function, returns="TaintSink[returned]"
-            ).generate(),
-            None,
-        )
+                callable_object=local_function, returns="TaintSink[returned]"
+            )
 
         # Ensure that we don't choke on malformed types of functions.
         class CallMe:
             def __call__(self) -> None:
                 pass
 
-        self.assertEqual(model.CallableModel(callable=CallMe).generate(), None)
+        with self.assertRaises(ValueError):
+            model.CallableModel(callable_object=CallMe)
 
     def assert_modeled(self, source: str, expected: str, **kwargs: str) -> None:
         parsed_function = ast.parse(textwrap.dedent(source)).body[0]
@@ -76,9 +85,7 @@ class ModelTest(unittest.TestCase):
         parsed_function: model.FunctionDefinition
 
         self.assertEqual(
-            model.FunctionDefinitionModel(
-                definition=parsed_function, **kwargs
-            ).generate(),
+            str(model.FunctionDefinitionModel(definition=parsed_function, **kwargs)),
             expected,
         )
 
@@ -190,49 +197,69 @@ class ModelTest(unittest.TestCase):
 
     def test_assignment_model(self) -> None:
         self.assertEqual(
-            model.AssignmentModel(
-                annotation="TaintSink[Test]", target="name"
-            ).generate(),
+            str(model.AssignmentModel(annotation="TaintSink[Test]", target="name")),
             "name: TaintSink[Test] = ...",
         )
-        self.assertEqual(
+        with self.assertRaises(ValueError):
             model.AssignmentModel(
                 annotation="TaintSink[Test]", target="do-not-generate"
-            ).generate(),
-            None,
-        )
+            )
 
     def test_raw_callable_model(self) -> None:
         self.assertEqual(
-            model.RawCallableModel(
-                callable_name="qualified.C.name",
-                parameters=[
-                    ("self", "TaintSource[UserControlled]"),
-                    ("a", None),
-                    ("b", "TaintSource[Foo]"),
-                ],
-            ).generate(),
+            str(
+                model.RawCallableModel(
+                    callable_name="qualified.C.name",
+                    parameters=[
+                        model.RawCallableModel.Parameter(
+                            "self", "TaintSource[UserControlled]"
+                        ),
+                        model.RawCallableModel.Parameter("a", None),
+                        model.RawCallableModel.Parameter("b", "TaintSource[Foo]"),
+                    ],
+                )
+            ),
             "def qualified.C.name(self: TaintSource[UserControlled], a, "
             "b: TaintSource[Foo]): ...",
         )
         self.assertEqual(
-            model.RawCallableModel(
-                callable_name="qualified.C.name",
-                parameters=[("self", None), ("*args", "TaintSource[Var]")],
-            ).generate(),
+            str(
+                model.RawCallableModel(
+                    callable_name="qualified.C.name",
+                    parameters=[
+                        model.RawCallableModel.Parameter("self", None),
+                        model.RawCallableModel.Parameter("*args", "TaintSource[Var]"),
+                    ],
+                )
+            ),
             "def qualified.C.name(self, *args: TaintSource[Var]): ...",
         )
         self.assertEqual(
-            model.RawCallableModel(
-                callable_name="qualified.C.name",
-                parameters=[("self", None), ("**kwargs", "TaintSource[UC]")],
-            ).generate(),
+            str(
+                model.RawCallableModel(
+                    callable_name="qualified.C.name",
+                    parameters=[
+                        model.RawCallableModel.Parameter("self", None),
+                        model.RawCallableModel.Parameter("**kwargs", "TaintSource[UC]"),
+                    ],
+                )
+            ),
             "def qualified.C.name(self, **kwargs: TaintSource[UC]): ...",
         )
-        self.assertEqual(
+        with self.assertRaises(ValueError):
             model.RawCallableModel(
                 callable_name="my-qualifier.C.name",
-                parameters=[("self", None), ("**kwargs", "TaintSource[UC]")],
-            ).generate(),
-            None,
+                parameters=[
+                    model.RawCallableModel.Parameter("self", None),
+                    model.RawCallableModel.Parameter("**kwargs", "TaintSource[UC]"),
+                ],
+            )
+
+        self.assertEqual(
+            str(
+                model.ClassModel(
+                    class_name="qualified.C.name", annotation="TaintSource[UC]"
+                )
+            ),
+            "class qualified.C.name(TaintSource[UC]): ...",
         )

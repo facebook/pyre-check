@@ -9,7 +9,7 @@
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_qualified_name
-from .model import CallableModel
+from .model import CallableModel, Model
 from .model_generator import Configuration, Registry
 from .view_generator import ViewGenerator
 
@@ -17,18 +17,20 @@ from .view_generator import ViewGenerator
 class ExitNodeGenerator(ViewGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
         exit_nodes = set()
 
         for view_function in functions_to_model:
             qualified_name = extract_qualified_name(view_function)
             if qualified_name in Configuration.whitelisted_views:
                 continue
-            model = CallableModel(
-                returns="TaintSink[ReturnedToUser]", callable=view_function
-            ).generate()
-            if model is not None:
+            try:
+                model = CallableModel(
+                    returns="TaintSink[ReturnedToUser]", callable_object=view_function
+                )
                 exit_nodes.add(model)
+            except ValueError:
+                pass
 
         return sorted(exit_nodes)
 

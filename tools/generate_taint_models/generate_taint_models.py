@@ -6,20 +6,15 @@
 # pyre-strict
 
 import argparse
-import ast
-import functools
-import glob
 import logging
 import os
-from pathlib import Path
-from typing import Callable, Dict, Mapping, Optional, Set, Union
+from typing import Optional
 
-import _ast
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
 from . import ConfigurationArguments, GenerationArguments, run_from_global_state
 from .generator_specs import DecoratorAnnotationSpec
-from .model_generator import Configuration, Registry
+from .model_generator import Registry
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

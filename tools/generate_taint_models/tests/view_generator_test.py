@@ -11,6 +11,7 @@ from typing import Callable, Iterable
 from unittest.mock import patch
 
 from .. import model_generator, view_generator
+from ..model import Model
 
 
 class ViewGeneratorTest(unittest.TestCase):
@@ -37,7 +38,7 @@ class ViewGeneratorTest(unittest.TestCase):
         class TestGenerator(view_generator.ViewGenerator):
             def compute_models(
                 self, functions_to_model: Iterable[Callable[..., object]]
-            ) -> Iterable[str]:
+            ) -> Iterable[Model]:
                 return []
 
         with patch(f"{view_generator.__name__}.import_module", return_value=Urls):

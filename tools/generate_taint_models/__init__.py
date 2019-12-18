@@ -100,10 +100,12 @@ def run_from_global_state(
             else:
                 filename = f"generated_{name}"
             with open(f"{output_directory}/{filename}.pysa", "w") as output_file:
-                output_file.write("\n".join(sorted(models[name])))
+                output_file.write(
+                    "\n".join([str(model) for model in sorted(models[name])])
+                )
                 output_file.write("\n")
     else:
         all_models = set()
         for name in models:
             all_models = all_models.union(models[name])
-        print("\n".join(sorted(all_models)))
+        print("\n".join([str(model) for model in sorted(all_models)]))

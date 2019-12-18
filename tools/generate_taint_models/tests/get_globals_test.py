@@ -81,7 +81,11 @@ class GetGlobalsTest(unittest.TestCase):
             )
             generator = GlobalModelGenerator()
             self.assertSetEqual(
-                set(generator._globals("/root", "/root/module.py")), set(expected)
+                {
+                    str(model)
+                    for model in generator._globals("/root", "/root/module.py")
+                },
+                set(expected),
             )
 
     @patch("builtins.open")

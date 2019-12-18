@@ -17,7 +17,7 @@ class GetExitNodesTest(unittest.TestCase):
     def test_compute_models(self) -> None:
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
-            list(ExitNodeGenerator().compute_models(all_functions)),
+            [*map(str, ExitNodeGenerator().compute_models(all_functions))],
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
@@ -30,7 +30,7 @@ class GetExitNodesTest(unittest.TestCase):
         )
         Configuration.whitelisted_views = [f"{qualifier}.TestClass.methodA"]
         self.assertEqual(
-            list(ExitNodeGenerator().compute_models(all_functions)),
+            [*map(str, ExitNodeGenerator().compute_models(all_functions))],
             [
                 f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
                 f"def {qualifier}.testA() -> {sink}: ...",

@@ -8,7 +8,7 @@
 from typing import Callable, Iterable, Optional, Set
 
 from .inspect_parser import extract_qualified_name
-from .model import CallableModel
+from .model import CallableModel, Model
 from .model_generator import Configuration
 
 
@@ -17,22 +17,23 @@ class FunctionTainter:
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
         entry_points = set()
-
         for function in functions_to_model:
             qualified_name = extract_qualified_name(function)
             if qualified_name in Configuration.whitelisted_views:
                 continue
-            model = CallableModel(
-                callable=function,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
-                whitelisted_parameters=Configuration.whitelisted_classes,
-                parameter_name_whitelist=self.parameter_name_whitelist,
-            ).generate()
-            if model is not None:
+            try:
+                model = CallableModel(
+                    callable_object=function,
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                    whitelisted_parameters=Configuration.whitelisted_classes,
+                    parameter_name_whitelist=self.parameter_name_whitelist,
+                )
                 entry_points.add(model)
+            except ValueError:
+                pass
 
         return sorted(entry_points)

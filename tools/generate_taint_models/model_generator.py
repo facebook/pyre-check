@@ -5,8 +5,6 @@
 
 # pyre-strict
 
-import ast
-import functools
 import logging
 import os
 import time
@@ -26,6 +24,7 @@ from typing import (
 
 from ...client import log_statistics
 from .get_annotated_free_functions_with_decorator import DecoratorAnnotationSpec
+from .model import Model
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -47,14 +46,14 @@ class ModelGenerator(ABC):
     @abstractmethod
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
         pass
 
     @abstractmethod
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         pass
 
-    def generate_models(self) -> Set[str]:
+    def generate_models(self) -> Set[Model]:
         return set(self.compute_models(self.gather_functions_to_model()))
 
 

@@ -17,7 +17,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
     def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"
         self.assertEqual(
-            list(RESTApiSourceGenerator().compute_models(all_functions)),
+            [*map(str, RESTApiSourceGenerator().compute_models(all_functions))],
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x: {source}): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
@@ -32,7 +32,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
         Configuration.whitelisted_classes = ["int"]
         Configuration.whitelisted_views = [f"{qualifier}.testA"]
         self.assertEqual(
-            list(RESTApiSourceGenerator().compute_models(all_functions)),
+            [*map(str, RESTApiSourceGenerator().compute_models(all_functions))],
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"

@@ -47,7 +47,7 @@ class GetGraphQLSourcesTest(unittest.TestCase):
         source = "TaintSource[UserControlled]"
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
-            list(GraphQLSourceGenerator().compute_models(all_functions)),
+            [*map(str, GraphQLSourceGenerator().compute_models(all_functions))],
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source}) -> {sink}: ...",

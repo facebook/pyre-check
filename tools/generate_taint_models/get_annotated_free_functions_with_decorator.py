@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Callable, Iterable, List, Set, Tuple, Union
 
 from .generator_specs import DecoratorAnnotationSpec
-from .model import FunctionDefinitionModel
+from .model import FunctionDefinitionModel, Model
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
 
@@ -23,7 +23,7 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     def _annotate_fns(
         self, spec: DecoratorAnnotationSpec, root: str, path: str
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
 
         found_functions: Set[FunctionDefinition] = set()
         module = load_module(path)
@@ -144,19 +144,20 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
 
         module_qualifier = qualifier(root, path)
 
-        models: Set[str] = set()
-
+        models: Set[FunctionDefinitionModel] = set()
         for found_function in found_functions:
-            models.add(
-                FunctionDefinitionModel(
+            try:
+                function_definition_model = FunctionDefinitionModel(
                     qualifier=module_qualifier,
                     definition=found_function,
                     arg=spec.arg_annotation,
                     vararg=spec.vararg_annotation,
                     kwarg=spec.kwarg_annotation,
                     returns=spec.return_annotation,
-                ).generate()
-            )
+                )
+                models.add(function_definition_model)
+            except ValueError:
+                pass
 
         return models
 
@@ -165,7 +166,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
         annotated_fns = set()
 
         for path in find_all_paths():

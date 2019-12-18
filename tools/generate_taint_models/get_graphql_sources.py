@@ -9,7 +9,7 @@ import os
 from importlib import import_module
 from typing import Callable, Iterable
 
-from .model import CallableModel
+from .model import CallableModel, Model
 from .model_generator import Configuration, ModelGenerator, Registry
 
 
@@ -51,18 +51,19 @@ class GraphQLSourceGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
+    ) -> Iterable[Model]:
         graphql_models = set()
-
         for view_function in functions_to_model:
-            model = CallableModel(
-                callable=view_function,
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
-                returns="TaintSink[ReturnedToUser]",
-            ).generate()
-            if model is not None:
+            try:
+                model = CallableModel(
+                    callable_object=view_function,
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                    returns="TaintSink[ReturnedToUser]",
+                )
                 graphql_models.add(model)
+            except ValueError:
+                pass
 
         return sorted(graphql_models)
 

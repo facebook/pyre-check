@@ -7,8 +7,19 @@
 
 import ast
 import inspect
+import logging
 import types
-from typing import Callable, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+)
 
 import _ast
 
@@ -17,16 +28,45 @@ from .inspect_parser import extract_annotation, extract_name, extract_qualified_
 
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 
+LOG: logging.Logger = logging.getLogger(__name__)
 
-class RawCallableModel(NamedTuple):
+
+class Model:
+    def __lt__(self, other: "Model") -> bool:
+        return str(self) < str(other)
+
+    def __hash__(self) -> int:
+        return hash(str(self))
+
+
+class RawCallableModel(Model):
+    class Parameter(NamedTuple):
+        name: str
+        taint: Optional[str]
+
+        def __eq__(self, other: "RawCallableModel.Parameter") -> bool:
+            if not isinstance(other, self.__class__):
+                return False
+            return self.name == other.name
+
     callable_name: str
-    # The tuple's second element is the taint of the parameter.
-    parameters: List[Tuple[str, Optional[str]]]
+    parameters: List[Parameter]
     returns: Optional[str] = None
 
-    def generate(self) -> Optional[str]:
-        if "-" in self.callable_name:
-            return None
+    def __init__(
+        self,
+        callable_name: str,
+        parameters: List[Parameter],
+        returns: Optional[str] = None,
+    ) -> None:
+        # Object construction should fail if any child class passes in a None.
+        if not callable_name or "-" in callable_name:
+            raise ValueError("The callable is not supported")
+        self.callable_name = callable_name
+        self.parameters = parameters
+        self.returns = returns
+
+    def __str__(self) -> str:
         serialized_parameters = []
         for parameter_name, taint in self.parameters:
             if taint:
@@ -44,32 +84,70 @@ class RawCallableModel(NamedTuple):
             f"{return_annotation}: ..."
         )
 
+    def __eq__(self, other: "RawCallableModel") -> bool:
+        if not isinstance(other, RawCallableModel):
+            return False
+        return (
+            self.callable_name == other.callable_name
+            and self.returns == other.returns
+            and self.parameters == other.parameters
+        )
 
-class CallableModel(NamedTuple):
-    callable: Callable[..., object]
-    arg: Optional[str] = None
-    vararg: Optional[str] = None
-    kwarg: Optional[str] = None
-    returns: Optional[str] = None
-    whitelisted_parameters: Optional[Iterable[str]] = None
-    parameter_name_whitelist: Optional[Set[str]] = None
+    # Need to explicitly define this(despite baseclass) as we are overriding eq
+    def __hash__(self) -> int:
+        parameter_names_string = ",".join(
+            map(lambda parameter: parameter.name, self.parameters)
+        )
+        return hash((self.callable_name, self.returns, parameter_names_string))
 
-    def generate(self) -> Optional[str]:
-        modeled_object = self.callable
-        qualified_name = extract_qualified_name(modeled_object)
-        # Don't attempt to generate models for local functions that our static analysis
-        # can't handle.
-        if qualified_name is None:
-            return None
-        parameters = []
-        if isinstance(modeled_object, types.FunctionType):
-            view_parameters = inspect.signature(modeled_object).parameters
-        elif isinstance(modeled_object, types.MethodType):
+
+class CallableModel(RawCallableModel):
+    callable_object: Callable[..., object]
+    whitelisted_parameters: Optional[Iterable[str]]
+    parameter_name_whitelist: Optional[Set[str]]
+
+    def __init__(
+        self,
+        callable_object: Callable[..., object],
+        arg: Optional[str] = None,
+        vararg: Optional[str] = None,
+        kwarg: Optional[str] = None,
+        returns: Optional[str] = None,
+        whitelisted_parameters: Optional[Iterable[str]] = None,
+        parameter_name_whitelist: Optional[Set[str]] = None,
+    ) -> None:
+        self.callable_object = callable_object
+        self.arg = arg
+        self.vararg = vararg
+        self.kwarg = kwarg
+        self.whitelisted_parameters = whitelisted_parameters
+        self.parameter_name_whitelist = parameter_name_whitelist
+        view_parameters = CallableModel._get_view_parameters(callable_object)
+        super().__init__(
+            # pyre-ignore[6]: Expected str but got optional[str].
+            callable_name=extract_qualified_name(callable_object),
+            parameters=self._generate_parameters(view_parameters),
+            returns=returns,
+        )
+
+    @staticmethod
+    def _get_view_parameters(
+        callable_object: Callable[..., object]
+    ) -> Mapping[str, inspect.Parameter]:
+        view_parameters: Mapping[str, inspect.Parameter] = {}
+        if isinstance(callable_object, types.FunctionType):
+            view_parameters = inspect.signature(callable_object).parameters
+        elif isinstance(callable_object, types.MethodType):
             # pyre-fixme
-            view_parameters = inspect.signature(modeled_object.__func__).parameters
-        else:
-            return
+            view_parameters = inspect.signature(callable_object.__func__).parameters
+        return view_parameters
+
+    def _generate_parameters(
+        self, view_parameters: Mapping[str, inspect.Parameter]
+    ) -> List[RawCallableModel.Parameter]:
+        parameters: List[RawCallableModel.Parameter] = []
         name_whitelist = self.parameter_name_whitelist
+
         for parameter_name in view_parameters:
             parameter = view_parameters[parameter_name]
             whitelist = self.whitelisted_parameters
@@ -87,59 +165,85 @@ class CallableModel(NamedTuple):
                     taint = self.arg
             else:
                 taint = None
-            parameters.append((extract_name(parameter), taint))
-        return RawCallableModel(
-            callable_name=qualified_name, parameters=parameters, returns=self.returns
-        ).generate()
+            parameters.append(
+                RawCallableModel.Parameter(extract_name(parameter), taint)
+            )
+        return parameters
 
 
-def _annotate(argument: str, annotation: Optional[str]) -> str:
-    if annotation:
-        return f"{argument}: {annotation}"
-    else:
-        return argument
-
-
-class FunctionDefinitionModel(NamedTuple):
+class FunctionDefinitionModel(RawCallableModel):
     definition: FunctionDefinition
-    arg: Optional[str] = None
-    vararg: Optional[str] = None
-    kwarg: Optional[str] = None
-    returns: Optional[str] = None
     qualifier: Optional[str] = None
 
-    def generate(self) -> str:
-        annotated_params: List[str] = []
-        parameters = self.definition.args
+    def __init__(
+        self,
+        definition: FunctionDefinition,
+        arg: Optional[str] = None,
+        vararg: Optional[str] = None,
+        kwarg: Optional[str] = None,
+        returns: Optional[str] = None,
+        qualifier: Optional[str] = None,
+    ) -> None:
+        self.definition = definition
+        self.qualifier = qualifier
+        self.arg = arg
+        self.vararg = vararg
+        self.kwarg = kwarg
+        self.returns = returns
+        super().__init__(
+            callable_name=self._get_fully_qualified_callable_name(),
+            parameters=self._generate_parameters(),
+            returns=returns,
+        )
 
-        for ast_arg in self.definition.args.args:
-            annotated_params.append(_annotate(ast_arg.arg, self.arg))
+    def _generate_parameters(self) -> List[RawCallableModel.Parameter]:
+        parameters: List[RawCallableModel.Parameter] = []
+        function_arguments = self.definition.args
 
-        vararg_parameters = parameters.vararg
+        for ast_arg in function_arguments.args:
+            parameters.append(RawCallableModel.Parameter(ast_arg.arg, self.arg))
+
+        vararg_parameters = function_arguments.vararg
         if isinstance(vararg_parameters, ast.arg):
-            annotated_params.append(_annotate(f"*{vararg_parameters.arg}", self.vararg))
+            parameters.append(
+                RawCallableModel.Parameter(f"*{vararg_parameters.arg}", self.vararg)
+            )
 
-        kwarg_parameters = parameters.kwarg
+        kwarg_parameters = function_arguments.kwarg
         if isinstance(kwarg_parameters, ast.arg):
-            annotated_params.append(_annotate(f"**{kwarg_parameters.arg}", self.kwarg))
+            parameters.append(
+                RawCallableModel.Parameter(f"**{kwarg_parameters.arg}", self.kwarg)
+            )
 
-        combined_params = ", ".join(annotated_params) if annotated_params else ""
+        return parameters
 
-        returns = f" -> {self.returns}" if self.returns else ""
+    def _get_fully_qualified_callable_name(self) -> str:
         qualifier = f"{self.qualifier}." if self.qualifier else ""
-
         fn_name = self.definition.name
+        return qualifier + fn_name
 
-        return f"def {qualifier}{fn_name}({combined_params}){returns}: ..."
 
-
-class AssignmentModel(NamedTuple):
+class AssignmentModel(Model):
     annotation: str
     target: str
 
-    def generate(self) -> Optional[str]:
-        # Ensure that we don't attempt to generate models which originate from module
-        # names with a `-` in them.
-        if "-" in self.target:
-            return None
+    def __init__(self, annotation: str, target: str) -> None:
+        if "-" in target:
+            raise ValueError("The target is not supported")
+        self.annotation = annotation
+        self.target = target
+
+    def __str__(self) -> str:
         return f"{self.target}: {self.annotation} = ..."
+
+
+class ClassModel(Model):
+    class_name: str
+    annotation: str
+
+    def __init__(self, class_name: str, annotation: str) -> None:
+        self.class_name = class_name
+        self.annotation = annotation
+
+    def __str__(self) -> str:
+        return f"class {self.class_name}({self.annotation}): ..."

@@ -12,7 +12,7 @@ import logging
 import os
 from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
-from .model import AssignmentModel, FunctionDefinitionModel
+from .model import AssignmentModel, FunctionDefinitionModel, Model
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
 
@@ -22,8 +22,8 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class GlobalModelGenerator(ModelGenerator):
-    def _globals(self, root: str, path: str) -> Iterable[str]:
-        globals: Set[str] = set()
+    def _globals(self, root: str, path: str) -> Iterable[Model]:
+        globals = set()
         # The parent of the property needs to be stored as well, as we only store the
         # module qualifier.
         cached_properties: Set[Tuple[Optional[str], FunctionDefinition]] = set()
@@ -34,7 +34,7 @@ class GlobalModelGenerator(ModelGenerator):
             return globals
 
         class NameVisitor(ast.NodeVisitor):
-            def __init__(self, globals: Set[str]) -> None:
+            def __init__(self, globals: Set) -> None:
                 self.globals = globals
                 self.blacklist: Optional[Set[str]] = None
                 self.parent: Optional[str] = None
@@ -176,11 +176,13 @@ class GlobalModelGenerator(ModelGenerator):
             qualified_target = f"{module_qualifier}.{target}"
             if qualified_target in Configuration.blacklisted_globals:
                 continue
-            generated = AssignmentModel(
-                annotation="TaintSink[Global]", target=qualified_target
-            ).generate()
-            if generated is not None:
+            try:
+                generated = AssignmentModel(
+                    annotation="TaintSink[Global]", target=qualified_target
+                )
                 models.add(generated)
+            except ValueError:
+                pass
 
         for (parent, function_definition) in cached_properties:
             is_class_property = any(
@@ -197,24 +199,26 @@ class GlobalModelGenerator(ModelGenerator):
                 function_qualifier = f"{module_qualifier}.{parent}"
             else:
                 function_qualifier = module_qualifier
-            models.add(
-                FunctionDefinitionModel(
+            try:
+                function_definition_model = FunctionDefinitionModel(
                     qualifier=function_qualifier,
                     definition=function_definition,
                     returns=returns,
-                ).generate()
-            )
+                )
+                models.add(function_definition_model)
+            except ValueError:
+                pass
+
         return models
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
 
-    # pyre-fixme[14]: `compute_models` overrides method defined in `ModelGenerator`
-    #  inconsistently.
+    # pyre-fixme[14]: inconsistent method override from `ModelGenerator`
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., None]]
-    ) -> Iterable[str]:
-        sinks: Set[str] = set()
+    ) -> Iterable[Model]:
+        sinks: Set[Model] = set()
 
         for path in find_all_paths():
             relative_path = os.path.relpath(path, Configuration.root)
