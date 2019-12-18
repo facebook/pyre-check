@@ -98,6 +98,13 @@ touch "${MODULE_NAME}/tools/upgrade/__init__.py"
 # i.e. copy all *.py files from all directories, except "tests"
 rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}/client"
 rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../tools/upgrade/" "${BUILD_ROOT}/${MODULE_NAME}/tools/upgrade"
+
+PYRE_ROOT="$(dirname "${SCRIPTS_DIRECTORY}")"
+# Copy all .pysa stubs as well.
+rsync -avm --filter='+ */' --filter='-! *.pysa' "${PYRE_ROOT}/stubs/taint" "${BUILD_ROOT}/"
+rsync -avm --filter='+ */' --filter='-! *.pysa' "${PYRE_ROOT}/stubs/third_party_taint" "${BUILD_ROOT}/"
+cp "${PYRE_ROOT}/stubs/taint/taint.config" "${BUILD_ROOT}/taint/taint.config"
+
 # Patch version number.
 sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/client/version.py"
 
