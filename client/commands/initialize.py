@@ -15,7 +15,13 @@ import sys
 from logging import Logger
 from typing import Any, Dict
 
-from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
+from .. import (
+    BINARY_NAME,
+    CONFIGURATION_FILE,
+    find_taint_models_directory,
+    find_typeshed,
+    log,
+)
 from ..exceptions import EnvironmentException
 from .command import CommandParser
 
@@ -83,6 +89,10 @@ class Initialize(CommandParser):
                     "No typeshed directory found at `{}`.".format(typeshed)
                 )
         configuration["typeshed"] = typeshed
+
+        taint_models_path = find_taint_models_directory()
+        if taint_models_path is not None:
+            configuration["taint_models_path"] = taint_models_path
 
         analysis_directory = log.get_optional_input(
             "Which directory should pyre be initialized in?", "."

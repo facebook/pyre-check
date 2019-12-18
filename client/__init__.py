@@ -260,3 +260,9 @@ def find_typeshed() -> Optional[str]:
 
     # This is a terrible, terrible hack.
     return _find_directory_upwards(current_directory, "typeshed/")
+
+
+def find_taint_models_directory() -> Optional[str]:
+    return _find_directory_upwards(
+        os.path.dirname(os.path.realpath(__file__)), "pyre_check/taint/"
+    )
