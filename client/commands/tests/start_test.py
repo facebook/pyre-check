@@ -16,14 +16,12 @@ from ...analysis_directory import AnalysisDirectory
 from ...commands import start  # noqa
 from ...filesystem import acquire_lock  # noqa
 from ..command import __name__ as client_name
-from ..start import __name__ as start_name
 from .command_test import mock_arguments, mock_configuration
 
 
 _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__name__)
 
 
-@patch("{}.get_enabled_features".format(start_name), return_value={})
 class StartTest(unittest.TestCase):
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
@@ -38,7 +36,6 @@ class StartTest(unittest.TestCase):
         lock_file,
         find_local_root,
         find_project_root,
-        get_enabled_features,
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -238,11 +235,7 @@ class StartTest(unittest.TestCase):
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
-        self,
-        get_directories_to_analyze,
-        find_local_root,
-        find_project_root,
-        get_enabled_features,
+        self, get_directories_to_analyze, find_local_root, find_project_root
     ) -> None:
         # Check start with watchman.
         original_directory = "/original/directory"
@@ -733,9 +726,9 @@ class StartTest(unittest.TestCase):
 
         # Incremental style override tests
         arguments = mock_arguments()
+        arguments.features = '{ "enable_fine_grained_incremental": false }'
         arguments.incremental_style = None
         configuration = mock_configuration(version_hash="hash")
-        get_enabled_features.return_value = {"enable_fine_grained_incremental": False}
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
@@ -758,9 +751,9 @@ class StartTest(unittest.TestCase):
         )
 
         arguments = mock_arguments()
+        arguments.features = '{ "irrelevant_feature": true }'
         arguments.incremental_style = None
         configuration = mock_configuration(version_hash="hash")
-        get_enabled_features.return_value = {"irrelevant_feature": True}
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
@@ -783,9 +776,9 @@ class StartTest(unittest.TestCase):
         )
 
         arguments = mock_arguments()
+        arguments.features = '{ "enable_fine_grained_incremental": true }'
         arguments.incremental_style = None
         configuration = mock_configuration(version_hash="hash")
-        get_enabled_features.return_value = {"enable_fine_grained_incremental": True}
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
@@ -810,8 +803,8 @@ class StartTest(unittest.TestCase):
 
         # Command line override takes precedence
         arguments = mock_arguments()
+        arguments.features = '{ "enable_fine_grained_incremental": true }'
         arguments.incremental_style = commands.IncrementalStyle.SHALLOW
-        get_enabled_features.return_value = {"enable_fine_grained_incremental": True}
         configuration = mock_configuration(version_hash="hash")
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")

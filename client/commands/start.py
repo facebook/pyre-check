@@ -11,7 +11,7 @@ import json
 import logging
 import os
 from logging import Logger
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from .. import configuration_monitor, filesystem, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
@@ -23,12 +23,11 @@ from .reporting import Reporting
 LOG: Logger = logging.getLogger(__name__)
 
 
-try:
-    from ...facebook.enabled_features import get_enabled_features
-except Exception:
-
-    def get_enabled_features() -> Dict[str, bool]:
-        return {}
+def _fine_grained_incremental_override(feature_string: str) -> bool:
+    try:
+        return json.loads(feature_string).get("enable_fine_grained_incremental", False)
+    except Exception:
+        return False
 
 
 class Start(Reporting):
@@ -48,9 +47,20 @@ class Start(Reporting):
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
         self._use_watchman: bool = not arguments.no_watchman
 
-        self._provided_incremental_style: Optional[
-            IncrementalStyle
-        ] = arguments.incremental_style
+        features = self._features
+        fine_grained_override = (
+            _fine_grained_incremental_override(features)
+            if features is not None
+            else False
+        )
+        default_incremental_style = (
+            IncrementalStyle.FINE_GRAINED
+            if fine_grained_override
+            else IncrementalStyle.SHALLOW
+        )
+        self._incremental_style: IncrementalStyle = (
+            arguments.incremental_style or default_incremental_style
+        )
 
         if self._no_saved_state:
             self._save_initial_state_to: Optional[str] = None
@@ -139,23 +149,6 @@ class Start(Reporting):
                 else:
                     raise exception
 
-    def _incremental_style(self) -> IncrementalStyle:
-        provided_incremental_style = self._provided_incremental_style
-        if provided_incremental_style is not None:
-            return provided_incremental_style
-
-        # If no explicit incremental style was provided in the arguments, compute from
-        # Gatekeepers.
-        LOG.info("Checking enabled features...")
-        features = get_enabled_features()
-        LOG.info("Determined enabled features.")
-        fine_grained_override = features.get("enable_fine_grained_incremental", False)
-        return (
-            IncrementalStyle.FINE_GRAINED
-            if fine_grained_override
-            else IncrementalStyle.SHALLOW
-        )
-
     def _flags(self) -> List[str]:
         flags = super()._flags()
         if self._taint_models_path:
@@ -222,13 +215,13 @@ class Start(Reporting):
         for extension in extensions:
             flags.extend(["-extension", extension])
 
-        incremental_style = self._incremental_style()
-        if incremental_style == IncrementalStyle.TRANSITIVE:
+        if self._incremental_style == IncrementalStyle.TRANSITIVE:
             flags.append("-transitive")
-        elif incremental_style == IncrementalStyle.FINE_GRAINED:
+        elif self._incremental_style == IncrementalStyle.FINE_GRAINED:
             flags.append("-new-incremental-check")
 
         if self._configuration.autocomplete:
             flags.append("-autocomplete")
+        flags.extend(self._feature_flags())
 
         return flags
