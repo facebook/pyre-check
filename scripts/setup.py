@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import sys
 from typing import List, Tuple
@@ -54,6 +55,10 @@ def find_taint_stubs():
 with open("README.md") as f:
     long_description = f.read()
 
+with open(
+    os.path.join("pyre_check", "tools", "sapp", "requirements.json")
+) as json_file:
+    extra_requirements = json.load(json_file)
 
 PYRE_EMAIL = "pyre@fb.com"
 AUTHOR = "Facebook"
@@ -89,10 +94,12 @@ setup(
     data_files=[("bin", ["bin/pyre.bin"])] + find_typeshed_files() + find_taint_stubs(),
     python_requires=">=3.5",
     install_requires=["pywatchman", "psutil", "libcst", "pyre_extensions"],
+    extras_require=extra_requirements,
     entry_points={
         "console_scripts": [
             "pyre = pyre_check.client.pyre:main",
             "pyre-upgrade = pyre_check.tools.upgrade.upgrade:main",
+            "sapp = pyre_check.tools.sapp.sapp.cli:cli [sapp]",
         ]
     },
 )

@@ -82,6 +82,14 @@ done
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
 
+# sapp directory is either beside or inside pyre-check directory
+SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../tools/sapp/"
+if [[ ! -d "${SAPP_DIRECTORY}" ]]; then
+  SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../../sapp/"
+fi
+
+
+
 cd "${SCRIPTS_DIRECTORY}/"
 BUILD_ROOT="$(mktemp -d)"
 cd "${BUILD_ROOT}"
@@ -104,6 +112,11 @@ PYRE_ROOT="$(dirname "${SCRIPTS_DIRECTORY}")"
 rsync -avm --filter='+ */' --filter='-! *.pysa' "${PYRE_ROOT}/stubs/taint" "${BUILD_ROOT}/"
 rsync -avm --filter='+ */' --filter='-! *.pysa' "${PYRE_ROOT}/stubs/third_party_taint" "${BUILD_ROOT}/"
 cp "${PYRE_ROOT}/stubs/taint/taint.config" "${BUILD_ROOT}/taint/taint.config"
+
+# copy *.py and requirements.txt files from sapp, exclude everything else
+rsync -avm --filter='- tests/' --filter='+ */' --filter='+ *.py' \
+  --filter='+ *requirements.json' --filter='- *' "${SAPP_DIRECTORY}" \
+  "${BUILD_ROOT}/${MODULE_NAME}/tools/sapp"
 
 # Patch version number.
 sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/client/version.py"
