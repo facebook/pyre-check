@@ -3,11 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
+
 from setuptools import find_packages, setup
 
 
-with open("requirements.txt") as f:
-    requirements = f.read().splitlines()
+with open("requirements.json") as json_file:
+    data = json.load(json_file)
+    requirements = data["sapp"]
 
 setup(
     name="sapp",
@@ -16,6 +19,6 @@ setup(
     entry_points={"console_scripts": ["sapp = sapp.cli:cli"]},
     packages=find_packages(),
     url="https://pyre-check.org/",
-    maintainer="Jerry Liu, Zachary Landau, Dominik Gabi",
-    maintainer_email="jerryliu55@fb.com, zacharyl@fb.com, dominik@fb.com",
+    maintainer="Zachary Landau, Dominik Gabi",
+    maintainer_email="zacharyl@fb.com, dominik@fb.com",
 )
