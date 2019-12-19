@@ -458,7 +458,6 @@ class Command(CommandParser):
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
         )
-        self._features: Optional[str] = arguments.features
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
