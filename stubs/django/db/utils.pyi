@@ -1,3 +1,5 @@
+# pyre-unsafe
+
 from typing import Iterable
 
 from django.db.backends.base.base import BaseDatabaseWrapper

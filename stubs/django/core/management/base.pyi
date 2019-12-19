@@ -1,0 +1,6 @@
+from typing import TextIO
+
+class BaseCommand:
+    stdout: TextIO = ...
+
+class CommandError(Exception): ...

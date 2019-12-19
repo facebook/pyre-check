@@ -1,0 +1,3 @@
+# pyre-unsafe
+
+def run_checks(app_configs=None, tags=None, include_deployment_checks=False): ...
