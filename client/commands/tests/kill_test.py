@@ -10,6 +10,7 @@ import shutil  # noqa
 import signal
 import subprocess
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
 
 import psutil  # noqa
@@ -78,9 +79,10 @@ class KillTest(unittest.TestCase):
     def test_delete_linked_paths(
         self, readlink: MagicMock, unlink: MagicMock, remove: MagicMock
     ) -> None:
-        Kill._delete_linked_path("foo.sock")
+        socket_path = Path("foo.sock")
+        Kill._delete_linked_path(socket_path)
         remove.assert_called_once_with("/tmp/actual_socket")
-        unlink.assert_called_once_with("foo.sock")
+        unlink.assert_called_once_with(socket_path)
 
     @patch.object(subprocess, "run")
     @patch.object(kill, "_get_process_name", return_value="foo.exe")
@@ -90,6 +92,7 @@ class KillTest(unittest.TestCase):
         Kill._kill_binary_processes()
         run.assert_called_once_with(["pkill", "foo.exe"])
 
+    @patch.object(Path, "glob", return_value=["a.sock", "b.sock"])
     @patch.object(Kill, "_delete_linked_path")
     @patch.object(Kill, "_delete_caches")
     @patch.object(Kill, "_kill_client_processes")
@@ -102,6 +105,7 @@ class KillTest(unittest.TestCase):
         kill_client_processes: MagicMock,
         delete_caches: MagicMock,
         delete_linked_path: MagicMock,
+        glob,
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._log_directory = ".pyre"
@@ -113,7 +117,7 @@ class KillTest(unittest.TestCase):
 
         kill_binary_processes.assert_called_once()
         kill_client_processes.assert_called_once()
-        self.assertEqual(delete_linked_path.call_count, 2)
+        self.assertEqual(delete_linked_path.call_count, 4)
 
         kill_command._arguments = Mock(with_fire=True)
         kill_command._run()
@@ -121,4 +125,4 @@ class KillTest(unittest.TestCase):
         delete_caches.assert_called_once()
         self.assertEqual(kill_binary_processes.call_count, 2)
         self.assertEqual(kill_client_processes.call_count, 2)
-        self.assertEqual(delete_linked_path.call_count, 4)
+        self.assertEqual(delete_linked_path.call_count, 8)

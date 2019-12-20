@@ -9,6 +9,7 @@ import os
 import shutil
 import signal
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 import psutil
@@ -50,7 +51,7 @@ class Kill(Command):
         return AnalysisDirectory(".")
 
     @staticmethod
-    def _delete_linked_path(link_path: str) -> None:
+    def _delete_linked_path(link_path: Path) -> None:
         try:
             actual_path = os.readlink(link_path)
             os.remove(actual_path)
@@ -103,9 +104,10 @@ class Kill(Command):
     def _run(self) -> None:
         self._kill_binary_processes()
 
-        server_root = os.path.join(self._log_directory, "server")
-        self._delete_linked_path(os.path.join(server_root, "server.sock"))
-        self._delete_linked_path(os.path.join(server_root, "json_server.sock"))
+        socket_paths = Path(self._log_directory).glob("**/server.sock")
+        json_server_paths = Path(self._log_directory).glob("**/json_server.sock")
+        [self._delete_linked_path(path) for path in socket_paths]
+        [self._delete_linked_path(path) for path in json_server_paths]
 
         if self._arguments.with_fire is True:
             self._delete_caches()
