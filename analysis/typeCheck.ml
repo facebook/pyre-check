@@ -695,8 +695,7 @@ module State (Context : Context) = struct
         let state, annotation =
           match kind with
           | Define.Capture.Kind.Annotation None ->
-              (* TODO: Emit a warning in strict mode *)
-              state, Type.Any
+              emit_error ~state ~location ~kind:(Error.MissingCaptureAnnotation name), Type.Any
           | Define.Capture.Kind.Annotation (Some annotation_expression) ->
               parse_and_check_annotation ~state annotation_expression
           | Define.Capture.Kind.DefineSignature { Node.value = signature; location } ->

@@ -327,6 +327,7 @@ let test_check_unbound_variables context =
 
 let test_check_nested context =
   let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:
@@ -363,17 +364,109 @@ let test_check_nested context =
       "Incompatible return type [7]: Expected `Derp.Word` but got "
       ^ "implicit return value of `None`.";
     ];
-
-  (* Nesting behaves differently for the toplevel function. *)
   assert_type_errors
     ~handle:"shadowing.py"
     {|
       def shadowing(i: int) -> None: ...
-      shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
+      shadowing('asdf') 
     |}
     [
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `shadowing` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        def bar() -> None:
+          reveal_type(x)
+        bar()
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        def baz():
+          pass
+        def bar() -> None:
+          baz()  # Don't warn on captured functions
+        bar()
+    |}
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_type_errors
+    {|
+      class Foo:
+        def foo(self) -> None:
+          def bar() -> None:
+            reveal_type(self)  # Don't warn on captured self
+          bar()
+    |}
+    ["Revealed type [-1]: Revealed type for `self` is `Foo`."];
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def foo(cls) -> None:
+          def bar() -> None:
+            reveal_type(cls)  # Don't warn on captured cls
+          bar()
+    |}
+    ["Revealed type [-1]: Revealed type for `cls` is `typing.Type[Foo]`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        def bar() -> None:
+          reveal_type(x)
+        bar()
+    |}
+    [
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
+       will be treated as having type `Any` in this function. Consider annotating the variable \
+       where it is first defined in the outer function, or passing the variable from the outer \
+       function to the inner function as an additional argument.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        def bar() -> None:
+          reveal_type(x)
+        bar()
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        def bar() -> None:
+          def baz() -> None:
+            reveal_type(x)
+          baz()
+        bar()
+    |}
+    [
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
+       will be treated as having type `Any` in this function. Consider annotating the variable \
+       where it is first defined in the outer function, or passing the variable from the outer \
+       function to the inner function as an additional argument.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x, y = (1, 2)
+        def bar() -> None:
+          reveal_type(x)
+        bar()
+    |}
+    [
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
+       will be treated as having type `Any` in this function. Consider annotating the variable \
+       where it is first defined in the outer function, or passing the variable from the outer \
+       function to the inner function as an additional argument.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
   assert_type_errors
     {|
@@ -386,7 +479,12 @@ let test_check_nested context =
         def bar() -> int:
           return always_declared
     |}
-    []
+    [
+      "Missing annotation for captured variable [53]: Captured variable `always_declared` is not \
+       annotated and will be treated as having type `Any` in this function. Consider annotating \
+       the variable where it is first defined in the outer function, or passing the variable from \
+       the outer function to the inner function as an additional argument.";
+    ]
 
 
 let () =
