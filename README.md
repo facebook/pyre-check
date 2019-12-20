@@ -14,6 +14,10 @@ For more detailed documentation, see https://pyre-check.org.
 ## Supported platforms
 
 * **Python**: you need **Python 3.5 or later** to run Pyre.
+
+| :warning: NOTE: The minimum Python version will be switched to 3.6 around January-February 2020. |
+| --- |
+
 * **Operating System**:
   * a recent version of Linux (we tested on **Ubuntu 16.04 LTS** and **CentOS 7**);
   * **OSX 10.11** or newer;
