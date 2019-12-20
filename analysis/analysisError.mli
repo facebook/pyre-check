@@ -213,6 +213,7 @@ type kind =
       parent: Type.t;
       missing_annotation: missing_annotation;
     }
+  | MissingCaptureAnnotation of Identifier.t
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t
   | MissingParameterAnnotation of missing_annotation

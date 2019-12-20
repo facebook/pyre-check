@@ -222,6 +222,7 @@ type kind =
       parent: Type.t;
       missing_annotation: missing_annotation;
     }
+  | MissingCaptureAnnotation of Identifier.t
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t
   | MissingParameterAnnotation of missing_annotation
@@ -348,6 +349,7 @@ let code = function
   | RedefinedClass _ -> 50
   | UnusedLocalMode _ -> 51
   | PrivateProtocolProperty _ -> 52
+  | MissingCaptureAnnotation _ -> 53
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -382,6 +384,7 @@ let name = function
   | InvalidAssignment _ -> "Invalid assignment"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
+  | MissingCaptureAnnotation _ -> "Missing annotation for captured variable"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
   | MissingOverloadImplementation _ -> "Missing overload implementation"
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
@@ -1260,6 +1263,18 @@ let messages ~concise ~signature location kind =
               pp_type
               parent;
           ] )
+  | MissingCaptureAnnotation name when concise ->
+      [Format.asprintf "Captured variable `%a` is not annotated." Identifier.pp_sanitized name]
+  | MissingCaptureAnnotation name ->
+      [
+        Format.asprintf
+          "Captured variable `%a` is not annotated and will be treated as having type `Any` in \
+           this function. Consider annotating the variable where it is first defined in the outer \
+           function, or passing the variable from the outer function to the inner function as an \
+           additional argument."
+          Identifier.pp_sanitized
+          name;
+      ]
   | MissingGlobalAnnotation { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Global annotation cannot be `Any`."]
@@ -1963,6 +1978,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
+  | MissingCaptureAnnotation _
   | MissingGlobalAnnotation _
   | MissingOverloadImplementation _
   | MissingParameterAnnotation _
@@ -2105,6 +2121,8 @@ let less_or_equal ~resolution left right =
   | ( MissingArgument { callee = left_callee; parameter = Anonymous left_index },
       MissingArgument { callee = right_callee; parameter = Anonymous right_index } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
+  | MissingCaptureAnnotation left_name, MissingCaptureAnnotation right_name ->
+      Identifier.equal_sanitized left_name right_name
   | InvalidException left, InvalidException right ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
@@ -2204,6 +2222,7 @@ let less_or_equal ~resolution left right =
   | InvalidClassInstantiation _, _
   | MissingArgument _, _
   | MissingAttributeAnnotation _, _
+  | MissingCaptureAnnotation _, _
   | MissingGlobalAnnotation _, _
   | MissingOverloadImplementation _, _
   | MissingParameterAnnotation _, _
@@ -2293,6 +2312,9 @@ let join ~resolution left right =
         MissingArgument { callee = right_callee; parameter = Anonymous right_index } )
       when Option.equal Reference.equal_sanitized left_callee right_callee
            && left_index = right_index ->
+        left.kind
+    | MissingCaptureAnnotation left_name, MissingCaptureAnnotation right_name
+      when Identifier.equal_sanitized left_name right_name ->
         left.kind
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when Reference.equal_sanitized left.name right.name ->
@@ -2518,6 +2540,7 @@ let join ~resolution left right =
     | InvalidClassInstantiation _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
+    | MissingCaptureAnnotation _, _
     | MissingGlobalAnnotation _, _
     | MissingOverloadImplementation _, _
     | MissingParameterAnnotation _, _
@@ -2793,6 +2816,7 @@ let suppress ~mode ~ignore_codes error =
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
         true
+    | MissingCaptureAnnotation _ -> true
     | MissingReturnAnnotation { annotation = Some annotation; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
     | MissingParameterAnnotation { annotation = Some annotation; _ }
@@ -2986,6 +3010,7 @@ let dequalify
             parent = dequalify parent;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
+    | MissingCaptureAnnotation name -> MissingCaptureAnnotation (dequalify_identifier name)
     | MissingGlobalAnnotation ({ annotation; _ } as immutable_type) ->
         MissingGlobalAnnotation { immutable_type with annotation = annotation >>| dequalify }
     | MissingOverloadImplementation name -> MissingOverloadImplementation (dequalify_reference name)
