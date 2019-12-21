@@ -260,12 +260,52 @@ let report_statistics () =
   Measure.print_distributions ()
 
 
+exception TarError of string
+
+type tar_structure = {
+  directory: Pyre.Path.t;
+  table_path: Pyre.Path.t;
+  dependencies_path: Pyre.Path.t;
+}
+
+let create_temporary_directory () =
+  let open Pyre in
+  let root = Filename.temp_dir "pyre" "saved_state" |> Path.create_absolute in
+  let table_path = Path.create_relative ~root ~relative:"table" in
+  let dependencies_path = Path.create_relative ~root ~relative:"deps" in
+  { directory = root; table_path; dependencies_path }
+
+
+let run_tar arguments =
+  let { Unix.Process_info.pid; _ } = Unix.create_process ~prog:"tar" ~args:arguments in
+  if Result.is_error (Unix.waitpid pid) then
+    raise
+      (TarError (Format.sprintf "unable to run tar command %s " (List.to_string ~f:Fn.id arguments)))
+  else
+    ()
+
+
 let save_shared_memory ~path =
+  let open Pyre in
   SharedMemory.collect `aggressive;
-  SharedMem.save_table path
+  let { directory; table_path; dependencies_path } = create_temporary_directory () in
+  SharedMem.save_table (Path.absolute table_path);
+  let _edges_count : bytes =
+    SharedMem.save_dep_table_sqlite (Path.absolute dependencies_path) "0.0.0"
+  in
+  run_tar ["cf"; path; "-C"; Path.absolute directory; "."]
 
 
-let load_shared_memory ~path = SharedMem.load_table path
+let load_shared_memory ~path =
+  let open Pyre in
+  let { directory; table_path; dependencies_path } = create_temporary_directory () in
+  run_tar ["xf"; path; "-C"; Path.absolute directory];
+  SharedMem.load_table (Path.absolute table_path);
+  let _edges_count : bytes =
+    SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
+  in
+  ()
+
 
 external pyre_reset : unit -> unit = "pyre_reset"
 
