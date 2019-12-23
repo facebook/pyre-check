@@ -1623,6 +1623,23 @@ module State (Context : Context) = struct
         | Type.Callable callable -> Some callable
         | _ -> None
       in
+      (* When an operator does not exist on the left operand but its inverse exists on the right
+         operand, the missing attribute error would not have been thrown for the original operator.
+         Build up the original error in case the inverse operator does not typecheck. *)
+      let potential_missing_operator_error =
+        match resolved, Node.value callee, target with
+        | Type.Top, Expression.Name (Attribute { attribute; _ }), Some target
+          when Option.is_some (inverse_operator attribute)
+               && (not (Type.is_any target))
+               && not (Type.is_unbound target) ->
+            Some
+              (Error.UndefinedAttribute
+                 {
+                   attribute;
+                   origin = Error.Class { annotation = target; class_attribute = false };
+                 })
+        | _ -> None
+      in
       let signatures =
         let callables =
           let callable = function
@@ -1655,6 +1672,28 @@ module State (Context : Context) = struct
           in
           match resolved with
           | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
+          | Type.Top -> (
+              match Node.value callee, arguments with
+              | Expression.Name (Attribute { base; attribute; _ }), [{ Call.Argument.value; _ }]
+                -> (
+                  let arguments = [{ Call.Argument.value = base; name = None }] in
+                  inverse_operator attribute
+                  >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
+                  >>= fun found_callable ->
+                  let resolved_base = Resolution.resolve resolution base in
+                  if Type.is_any resolved_base || Type.is_unbound resolved_base then
+                    callable resolved >>| fun callable -> [callable]
+                  else
+                    match
+                      GlobalResolution.signature_select
+                        ~arguments
+                        ~global_resolution:(Resolution.global_resolution resolution)
+                        ~resolve:(Resolution.resolve resolution)
+                        ~callable:found_callable
+                    with
+                    | Found callable -> Some [callable]
+                    | _ -> None )
+              | _ -> None )
           | annotation -> callable annotation >>| fun callable -> [callable]
         in
         Context.Builder.add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee;
@@ -1672,27 +1711,8 @@ module State (Context : Context) = struct
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
                   [{ Call.Argument.value; _ }] ) ->
-                  let backup = function
-                    (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
-                    | "__add__" -> Some "__radd__"
-                    | "__sub__" -> Some "__rsub__"
-                    | "__mul__" -> Some "__rmul__"
-                    | "__matmul__" -> Some "__rmatmul__"
-                    | "__truediv__" -> Some "__rtruediv__"
-                    | "__floordiv__" -> Some "__rfloordiv__"
-                    | "__mod__" -> Some "__rmod__"
-                    | "__divmod__" -> Some "__rdivmod__"
-                    | "__pow__" -> Some "__rpow__"
-                    | "__lshift__" -> Some "__rlshift__"
-                    | "__rshift__" -> Some "__rrshift__"
-                    | "__and__" -> Some "__rand__"
-                    | "__xor__" -> Some "__rxor__"
-                    | "__or__" -> Some "__ror__"
-                    | _ -> None
-                  in
-                  let backup_name = backup (Reference.last name) in
                   let arguments = [{ Call.Argument.value = base; name = None }] in
-                  backup_name
+                  inverse_operator (Reference.last name)
                   >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
                   >>| (fun callable ->
                         GlobalResolution.signature_select
@@ -1880,12 +1900,16 @@ module State (Context : Context) = struct
           { state; resolved = annotation; resolved_annotation = None; base = None }
       | _ ->
           let state =
-            if Type.equal Type.Any resolved || Type.equal Type.Top resolved then
-              state
-            else
-              Error.NotCallable resolved
-              |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
-              |> emit_raw_error ~state
+            match resolved, potential_missing_operator_error with
+            | Type.Top, Some kind ->
+                Error.create ~location ~kind ~define:Context.define |> emit_raw_error ~state
+            | Type.Any, _
+            | Type.Top, _ ->
+                state
+            | _ ->
+                Error.NotCallable resolved
+                |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                |> emit_raw_error ~state
           in
           { state; resolved = Type.Top; resolved_annotation = None; base = None }
     in
@@ -2683,18 +2707,23 @@ module State (Context : Context) = struct
                       |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                       |> emit_raw_error ~state
                   | _, (attribute, Some target) ->
-                      Error.UndefinedAttribute
-                        {
-                          attribute = name;
-                          origin =
-                            Error.Class
-                              {
-                                annotation = target;
-                                class_attribute = Annotated.Attribute.class_attribute attribute;
-                              };
-                        }
-                      |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
-                      |> emit_raw_error ~state
+                      if Option.is_some (inverse_operator name) then
+                        (* Defer any missing attribute error until the inverse operator has been
+                           typechecked. *)
+                        state
+                      else
+                        Error.UndefinedAttribute
+                          {
+                            attribute = name;
+                            origin =
+                              Error.Class
+                                {
+                                  annotation = target;
+                                  class_attribute = Annotated.Attribute.class_attribute attribute;
+                                };
+                          }
+                        |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                        |> emit_raw_error ~state
                   | _ ->
                       let enclosing_class_reference =
                         let open Annotated in

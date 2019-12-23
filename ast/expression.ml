@@ -1376,3 +1376,22 @@ let get_item_call base arguments ~location =
 
 let is_private_attribute attribute_name =
   String.is_prefix ~prefix:"__" attribute_name && not (String.is_suffix ~suffix:"__" attribute_name)
+
+
+let inverse_operator = function
+  (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
+  | "__add__" -> Some "__radd__"
+  | "__sub__" -> Some "__rsub__"
+  | "__mul__" -> Some "__rmul__"
+  | "__matmul__" -> Some "__rmatmul__"
+  | "__truediv__" -> Some "__rtruediv__"
+  | "__floordiv__" -> Some "__rfloordiv__"
+  | "__mod__" -> Some "__rmod__"
+  | "__divmod__" -> Some "__rdivmod__"
+  | "__pow__" -> Some "__rpow__"
+  | "__lshift__" -> Some "__rlshift__"
+  | "__rshift__" -> Some "__rrshift__"
+  | "__and__" -> Some "__rand__"
+  | "__xor__" -> Some "__rxor__"
+  | "__or__" -> Some "__ror__"
+  | _ -> None

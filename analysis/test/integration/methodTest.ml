@@ -150,6 +150,121 @@ let test_check_method_returns context =
   ()
 
 
+let test_check_inverse_operator context =
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        def __rshift__(self, other: object) -> int:
+          return 1
+      class D: pass
+
+      def foo() -> int:
+        return (C() >> D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+      class D:
+        def __rshift__(self, other: object) -> int:
+          return 1
+
+      def foo() -> int:
+        return (C() >> D())
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `C` has no attribute `__rshift__`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+      class D:
+        def __rrshift__(self, other: object) -> int:
+          return 1
+
+      def foo() -> int:
+        return (C() >> D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        def __rrshift__(self, other: int) -> int:
+          return 1
+      class D:
+        def __init__(self) -> None:
+          self.x = "foo"
+          self.y = C()
+
+      def foo() -> None:
+        d = D()
+        z = (d.x >> d.y)
+    |}
+    (* Make sure that if the operands don't typecheck, we raise an error for the left operand. *)
+    ["Undefined attribute [16]: `str` has no attribute `__rshift__`."];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        d: typing.Dict[str, typing.Any] = {"foo": 3}
+        z = d["foo"] + d["foo"]
+    |}
+    (* There should be no attribute error for Any. *)
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(xs: typing.Iterable[typing.Any]) -> None:
+        a, b = xs
+        reveal_type(a)
+        z = a * b
+    |}
+    (* There should be no attribute error for undefined. *)
+    [
+      "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
+       `Any`.";
+      "Revealed type [-1]: Revealed type for `a` is `undefined`.";
+    ];
+  assert_type_errors
+    ~context
+    (* Any % int should return unknown, not int (via the int __mod__ operator). This is necessary
+       for dealing with edge cases with old-style format strings when the format string happens to
+       be typed as Any. *)
+    {|
+      def baz(d: typing.Dict[str, typing.Any]) -> None:
+        a = d["foo"]
+        reveal_type(a)
+        reveal_type(a % 3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
+    ];
+  assert_type_errors
+    ~context
+    (* Bottom % int should return unknown, not int (via the int __mod__ operator). *)
+    {|
+      def foo(xs: typing.Iterable[typing.Any]) -> None:
+        a, b = xs
+        reveal_type(a)
+        reveal_type(a % 3)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
+       `Any`.";
+      "Revealed type [-1]: Revealed type for `a` is `undefined`.";
+      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
+    ];
+  ()
+
+
 let test_check_method_parameters context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_strict_type_errors = assert_strict_type_errors ~context in
@@ -2031,6 +2146,7 @@ let () =
   "method"
   >::: [
          "check_method_returns" >:: test_check_method_returns;
+         "check_inverse_operator" >:: test_check_inverse_operator;
          "check_method_parameters" >:: test_check_method_parameters;
          "check_private_member_access" >:: test_check_private_member_access;
          "check_abstract_methods" >:: test_check_abstract_methods;
