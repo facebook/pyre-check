@@ -12,7 +12,10 @@ let test_check_imports context =
     {|
       import durp
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    [
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
+       (Stub files are from https://github.com/python/typeshed)";
+    ];
   assert_type_errors {|
       import typing
     |} [];
@@ -20,7 +23,10 @@ let test_check_imports context =
     {|
       import typing, durp
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    [
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
+       (Stub files are from https://github.com/python/typeshed)";
+    ];
   assert_type_errors {|
       from typing import durp
     |} [];
@@ -28,7 +34,10 @@ let test_check_imports context =
     {|
       from durp import typing
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    [
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
+       (Stub files are from https://github.com/python/typeshed)";
+    ];
 
   (* Ensure we don't double-error. *)
   assert_type_errors
@@ -46,7 +55,8 @@ let test_check_imports context =
       a = durp.x
     |}
     [
-      "Undefined import [21]: Could not find a module corresponding to import `durp`.";
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
+       (Stub files are from https://github.com/python/typeshed)";
       "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
     ];
   assert_type_errors
@@ -98,8 +108,10 @@ let test_check_imports context =
       from durp.c import c  # This is ok
     |}
     [
-      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
+      "Undefined import [21]: Could not find a module stub file corresponding to import \
+       `durp.Foo`. (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp.b`. \
+       (Stub files are from https://github.com/python/typeshed)";
     ];
   assert_type_errors
     ~update_environment_with:
@@ -123,8 +135,10 @@ let test_check_imports context =
       import durp.c
     |}
     [
-      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
+      "Undefined import [21]: Could not find a module stub file corresponding to import \
+       `durp.Foo`. (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module stub file corresponding to import `durp.b`. \
+       (Stub files are from https://github.com/python/typeshed)";
     ];
   assert_type_errors
     ~update_environment_with:

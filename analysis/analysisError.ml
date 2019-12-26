@@ -1701,7 +1701,8 @@ let messages ~concise ~signature location kind =
   | UndefinedImport reference ->
       [
         Format.asprintf
-          "Could not find a module corresponding to import `%a`."
+          "Could not find a module stub file corresponding to import `%a`. (Stub files are from \
+           https://github.com/python/typeshed)"
           pp_reference
           reference;
       ]
