@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 from . import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
     assert_readable_directory,
     find_typeshed,

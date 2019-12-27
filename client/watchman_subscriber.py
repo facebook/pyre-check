@@ -74,8 +74,9 @@ class WatchmanSubscriber(object):
             os.makedirs(self._base_path)
         except OSError:
             pass
-        lock_path = os.path.join(self._base_path, "{}.lock".format(self._name))
-        pid_path = os.path.join(self._base_path, "{}.pid".format(self._name))
+        lock_path: str = os.path.join(self._base_path, "{}.lock".format(self._name))
+        pid_path: str = os.path.join(self._base_path, "{}.pid".format(self._name))
+        LOG.debug(f"WatchmanSubscriber: Trying to acquire lock file {lock_path}.")
 
         def cleanup() -> None:
             LOG.info("Cleaning up lock and pid files before exiting.")
@@ -102,10 +103,11 @@ class WatchmanSubscriber(object):
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
 
-            for subscription in self._subscriptions:
+            subscriptions = self._subscriptions
+            for subscription in subscriptions:
                 self._subscribe_to_watchman(subscription)
 
-            if not self._subscriptions:
+            if not subscriptions:
                 LOG.info("No watchman roots to subscribe to.")
 
             connection = self._watchman_client.recvConn
@@ -116,16 +118,14 @@ class WatchmanSubscriber(object):
             while self._alive:
                 # This call is blocking, which prevents this loop from burning CPU.
                 response = connection.receive()
-                try:
-                    if response["is_fresh_instance"]:
-                        LOG.info(
-                            "Ignoring initial watchman message for %s", response["root"]
-                        )
-                    else:
-                        self._handle_response(response)
-                    self._ready.set()  # At least one message has been received.
-                except KeyError:
-                    pass
+                if response.get("is_fresh_instance", False):
+                    LOG.info(
+                        "Ignoring initial watchman message for %s",
+                        response.get("root", "<no-root-found>"),
+                    )
+                else:
+                    self._handle_response(response)
+                self._ready.set()  # At least one message has been received.
 
             cleanup()
 

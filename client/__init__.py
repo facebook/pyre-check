@@ -24,6 +24,7 @@ from .filesystem import find_root, translate_paths  # noqa
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
+LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 BINARY_NAME: str = "pyre.bin"
 CLIENT_NAME: str = "pyre-client"
 LOG_DIRECTORY: str = ".pyre"
@@ -88,9 +89,7 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
     try:
         # Get local configuration version
         if local_path:
-            local_configuration = os.path.join(
-                local_path, CONFIGURATION_FILE + ".local"
-            )
+            local_configuration = os.path.join(local_path, LOCAL_CONFIGURATION_FILE)
             version = read_version(local_configuration)
 
         # Get configuration version
@@ -111,11 +110,11 @@ def find_project_root(original_directory: str) -> str:
 
 def find_local_root(original_directory: str) -> Optional[str]:
     global_root = find_root(original_directory, CONFIGURATION_FILE)
-    local_root = find_root(original_directory, CONFIGURATION_FILE + ".local")
+    local_root = find_root(original_directory, LOCAL_CONFIGURATION_FILE)
     # Check for illegal nested local configuration.
     if local_root:
         parent_local_root = find_root(
-            os.path.dirname(local_root), CONFIGURATION_FILE + ".local"
+            os.path.dirname(local_root), LOCAL_CONFIGURATION_FILE
         )
         if parent_local_root:
             raise EnvironmentException(

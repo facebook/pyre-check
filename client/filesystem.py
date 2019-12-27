@@ -197,6 +197,7 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
             fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
 
     except FileNotFoundError:
+        LOG.warning(f"Unable to acquire lock because lock file {path} was not found")
         yield
 
 

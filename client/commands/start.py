@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import errno
 import json
@@ -35,7 +33,7 @@ class Start(Reporting):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
@@ -106,6 +104,8 @@ class Start(Reporting):
                         self._configuration,
                         self._analysis_directory,
                         self._current_directory,
+                        self._original_directory,
+                        self.local_configuration,
                     ).daemonize()
 
                     # This unsafe call is OK due to the client lock always
