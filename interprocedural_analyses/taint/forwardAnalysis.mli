@@ -9,6 +9,7 @@ open Statement
 
 val run
   :  environment:TypeEnvironment.ReadOnly.t ->
+  qualifier:Reference.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
   TaintResult.Forward.model * TaintResult.result

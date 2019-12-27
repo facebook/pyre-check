@@ -9,5 +9,5 @@ open Interprocedural
 include DeadStoreResult.Register (struct
   let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
 
-  let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ = "A", 5
+  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
 end)

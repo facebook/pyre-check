@@ -46,6 +46,8 @@ module FunctionDefinition : sig
     siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
+
+  val all_bodies : t -> Define.t Node.t list
 end
 
 module ReadOnly : sig

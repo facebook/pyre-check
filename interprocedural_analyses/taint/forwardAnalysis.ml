@@ -941,7 +941,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   |> attach_features
 
 
-let run ~environment ~define ~existing_model =
+let run ~environment ~qualifier:_ ~define ~existing_model =
   let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } = define in
   let module Context = struct
     let definition = define

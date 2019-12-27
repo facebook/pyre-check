@@ -60,9 +60,9 @@ include TaintResult.Register (struct
             raise exn )
 
 
-  let analyze ~callable:_ ~environment ~define ~mode existing_model =
-    let forward, result = ForwardAnalysis.run ~environment ~define ~existing_model in
-    let backward = BackwardAnalysis.run ~environment ~define ~existing_model in
+  let analyze ~callable:_ ~environment ~qualifier ~define ~mode existing_model =
+    let forward, result = ForwardAnalysis.run ~environment ~qualifier ~define ~existing_model in
+    let backward = BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model in
     let model =
       if mode = Normal then
         { forward; backward; mode }
@@ -72,11 +72,11 @@ include TaintResult.Register (struct
     result, model
 
 
-  let analyze ~callable ~environment ~define ~existing =
+  let analyze ~callable ~environment ~qualifier ~define ~existing =
     match existing with
     | Some ({ mode = SkipAnalysis; _ } as model) ->
         let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
         [], model
-    | Some ({ mode; _ } as model) -> analyze ~callable ~environment ~define ~mode model
-    | None -> analyze ~callable ~environment ~define ~mode:Normal empty_model
+    | Some ({ mode; _ } as model) -> analyze ~callable ~environment ~qualifier ~define ~mode model
+    | None -> analyze ~callable ~environment ~qualifier ~define ~mode:Normal empty_model
 end)

@@ -821,7 +821,7 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run ~environment ~define ~existing_model =
+let run ~environment ~qualifier:_ ~define ~existing_model =
   let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
       define )
     =

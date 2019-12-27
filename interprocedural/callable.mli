@@ -116,10 +116,10 @@ end
 
 module Set : Caml.Set.S with type elt = t
 
-val get_definition
+val get_module_and_definition
   :  resolution:Analysis.GlobalResolution.t ->
   [< real_target ] ->
-  Define.t Node.t option
+  (Reference.t * Define.t Node.t) option
 
 val resolve_method
   :  resolution:Analysis.GlobalResolution.t ->

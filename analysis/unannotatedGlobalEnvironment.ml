@@ -48,6 +48,12 @@ module FunctionDefinition = struct
     siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
+
+  let all_bodies { body; siblings; _ } =
+    let sibling_bodies = List.map siblings ~f:(fun { Sibling.body; _ } -> body) in
+    match body with
+    | None -> sibling_bodies
+    | Some body -> body :: sibling_bodies
 end
 
 module ReadOnly = struct

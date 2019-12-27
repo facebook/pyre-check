@@ -13,6 +13,7 @@ open TestHelper
 
 let assert_taint ?models ~context source expect =
   let handle = "qualifier.py" in
+  let qualifier = Ast.Reference.create "qualifier" in
   let sources =
     match models with
     | Some models -> [handle, source; "models.py", models]
@@ -28,9 +29,7 @@ let assert_taint ?models ~context source expect =
     Test.ScratchProject.build_type_environment project
   in
   let source =
-    AstEnvironment.ReadOnly.get_source
-      (AstEnvironment.read_only ast_environment)
-      (Ast.Reference.create "qualifier")
+    AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
     |> fun option -> Option.value_exn option
   in
   let global_resolution = TypeEnvironment.global_resolution environment in
@@ -53,6 +52,7 @@ let assert_taint ?models ~context source expect =
     let forward, _errors =
       ForwardAnalysis.run
         ~environment:(TypeEnvironment.read_only environment)
+        ~qualifier
         ~define
         ~existing_model:Taint.Result.empty_model
     in
@@ -63,7 +63,7 @@ let assert_taint ?models ~context source expect =
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expect;
-  TypeEnvironment.invalidate environment [Ast.Reference.create "qualifier"]
+  TypeEnvironment.invalidate environment [qualifier]
 
 
 let test_no_model context =

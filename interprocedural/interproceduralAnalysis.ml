@@ -239,6 +239,7 @@ let analyze_define
     analyses
     callable
     environment
+    qualifier
     ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
   =
   let () = Log.log ~section:`Interprocedural "Analyzing %a" Callable.pp_real_target callable in
@@ -264,7 +265,9 @@ let analyze_define
       let akind = Kind.abstract kind in
       let module Analysis = (val analysis) in
       let existing = Result.get (ModelPart kind) old_model.models in
-      let method_result, method_model = Analysis.analyze ~callable ~environment ~define ~existing in
+      let method_result, method_model =
+        Analysis.analyze ~callable ~environment ~qualifier ~define ~existing
+      in
       ( akind,
         Pkg { kind = ModelPart kind; value = method_model },
         Pkg { kind = ResultPart kind; value = method_result } )
@@ -380,7 +383,7 @@ let analyze_callable analyses step callable environment =
   in
   match callable with
   | #Callable.real_target as callable -> (
-      match Callable.get_definition callable ~resolution with
+      match Callable.get_module_and_definition callable ~resolution with
       | None ->
           let () = Log.error "Found no definition for %s" (Callable.show callable) in
           let () =
@@ -400,10 +403,10 @@ let analyze_callable analyses step callable environment =
               model = get_obscure_models analyses;
               result = Result.empty_result;
             }
-      | Some ({ Node.value; _ } as define) ->
+      | Some (qualifier, ({ Node.value; _ } as define)) ->
           if Define.dump value then
             callables_to_dump := Callable.Set.add callable !callables_to_dump;
-          analyze_define step analyses callable environment define )
+          analyze_define step analyses callable environment qualifier define )
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
@@ -673,8 +676,8 @@ let compute_fixpoint
       let { Define.signature = { name; _ }; _ } =
         match callable with
         | #Callable.real_target as callable ->
-            Callable.get_definition callable ~resolution
-            >>| Node.value
+            Callable.get_module_and_definition callable ~resolution
+            >>| (fun (_, { Node.value; _ }) -> value)
             |> fun value -> Option.value_exn value
         | _ -> failwith "No real target to dump"
       in

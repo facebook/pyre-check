@@ -36,7 +36,7 @@ end)
 include SimpleAnalysis.Register (struct
   let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
 
-  let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ = "some result", 5
+  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5
 end)
 
 let test_simple_analysis _ =

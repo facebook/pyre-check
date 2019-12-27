@@ -12,6 +12,7 @@ open TestHelper
 
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
+  let qualifier = Ast.Reference.create "qualifier" in
   let {
     Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
     type_environment = environment;
@@ -22,9 +23,7 @@ let assert_taint ~context source expected =
     |> Test.ScratchProject.build_type_environment
   in
   let source =
-    AstEnvironment.ReadOnly.get_source
-      (AstEnvironment.read_only ast_environment)
-      (Ast.Reference.create "qualifier")
+    AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
     |> fun option -> Option.value_exn option
   in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
@@ -35,6 +34,7 @@ let assert_taint ~context source expected =
     let backward =
       BackwardAnalysis.run
         ~environment:(TypeEnvironment.read_only environment)
+        ~qualifier
         ~define
         ~existing_model:Taint.Result.empty_model
     in
@@ -45,7 +45,7 @@ let assert_taint ~context source expected =
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expected;
-  TypeEnvironment.invalidate environment [Ast.Reference.create "qualifier"]
+  TypeEnvironment.invalidate environment [qualifier]
 
 
 let test_plus_taint_in_taint_out context =

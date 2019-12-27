@@ -61,7 +61,7 @@ end)
 module AnalysisA = ResultA.Register (struct
   let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
 
-  let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ = "A", 5
+  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
 end)
 
 module ResultB = Interprocedural.Result.Make (struct
@@ -108,7 +108,7 @@ end)
 module AnalysisB = ResultB.Register (struct
   let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
 
-  let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ = 7, "B"
+  let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = 7, "B"
 end)
 
 let analyses = [AnalysisA.abstract_kind; AnalysisB.abstract_kind]
