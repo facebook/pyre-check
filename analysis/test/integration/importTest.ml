@@ -13,8 +13,9 @@ let test_check_imports context =
       import durp
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp`. (For common \
+       reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
     ];
   assert_type_errors {|
       import typing
@@ -24,8 +25,9 @@ let test_check_imports context =
       import typing, durp
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp`. (For common \
+       reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
     ];
   assert_type_errors {|
       from typing import durp
@@ -35,8 +37,9 @@ let test_check_imports context =
       from durp import typing
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp`. (For common \
+       reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
     ];
 
   (* Ensure we don't double-error. *)
@@ -55,8 +58,9 @@ let test_check_imports context =
       a = durp.x
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp`. (For common \
+       reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
       "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
     ];
   assert_type_errors
@@ -108,10 +112,12 @@ let test_check_imports context =
       from durp.c import c  # This is ok
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import \
-       `durp.Foo`. (Stub files are from https://github.com/python/typeshed)";
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp.b`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`. (For \
+       common reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`. (For \
+       common reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
     ];
   assert_type_errors
     ~update_environment_with:
@@ -135,10 +141,12 @@ let test_check_imports context =
       import durp.c
     |}
     [
-      "Undefined import [21]: Could not find a module stub file corresponding to import \
-       `durp.Foo`. (Stub files are from https://github.com/python/typeshed)";
-      "Undefined import [21]: Could not find a module stub file corresponding to import `durp.b`. \
-       (Stub files are from https://github.com/python/typeshed)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`. (For \
+       common reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`. (For \
+       common reasons, see \
+       https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)";
     ];
   assert_type_errors
     ~update_environment_with:

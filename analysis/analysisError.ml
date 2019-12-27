@@ -1701,8 +1701,8 @@ let messages ~concise ~signature location kind =
   | UndefinedImport reference ->
       [
         Format.asprintf
-          "Could not find a module stub file corresponding to import `%a`. (Stub files are from \
-           https://github.com/python/typeshed)"
+          "Could not find a module corresponding to import `%a`. (For common reasons, see \
+           https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)"
           pp_reference
           reference;
       ]
