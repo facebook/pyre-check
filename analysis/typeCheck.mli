@@ -23,6 +23,8 @@ module ErrorMap : sig
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val debug : bool
 
   val define : Define.t Node.t

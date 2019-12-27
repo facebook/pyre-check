@@ -525,7 +525,7 @@ let missing_builtin_globals =
       SimpleAssign
         {
           explicit_annotation = Some (Type.expression annotation);
-          target_location = Location.Reference.any;
+          target_location = Location.any;
           value = Node.create_with_default_location Expression.Ellipsis;
         } )
   in

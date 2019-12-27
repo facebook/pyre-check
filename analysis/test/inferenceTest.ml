@@ -14,6 +14,8 @@ let configuration = Configuration.Analysis.create ~infer:true ()
 
 let assert_backward ~resolution precondition statement postcondition =
   let module State = State (struct
+    let qualifier = Reference.empty
+
     let configuration = configuration
 
     let define = +mock_define

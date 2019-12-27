@@ -840,8 +840,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           let signature =
             {
               Define.Signature.name = Node.create ~location:name_location name;
-              parameters =
-                [Parameter.create ~location:Location.Reference.any ~annotation ~name:"$global" ()];
+              parameters = [Parameter.create ~location:Location.any ~annotation ~name:"$global" ()];
               decorators = [];
               docstring = None;
               return_annotation = None;
@@ -930,7 +929,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
            them. *)
         let global_type () =
           name
-          |> from_reference ~location:Location.Reference.any
+          |> from_reference ~location:Location.any
           |> Resolution.resolve_to_annotation resolution
         in
         let parent =

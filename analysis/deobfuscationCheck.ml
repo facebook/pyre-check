@@ -14,9 +14,11 @@ module Error = AnalysisError
 let name = "Deobfuscation"
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val environment : TypeEnvironment.ReadOnly.t
 
-  val transformations : Statement.t list Location.Reference.Table.t
+  val transformations : Statement.t list Location.Table.t
 
   val errors : LivenessCheck.ErrorMap.t
 
@@ -45,7 +47,7 @@ module ConstantPropagationState (Context : Context) = struct
     nested_defines: t NestedDefines.t;
   }
 
-  let constant_to_expression ?(location = Location.Reference.any) = function
+  let constant_to_expression ?(location = Location.any) = function
     | Integer integer -> Node.create ~location (Expression.Integer integer)
     | String string -> Node.create ~location (Expression.String { kind = String; value = string })
     | Bytes string -> Node.create ~location (Expression.String { kind = Bytes; value = string })
@@ -240,8 +242,8 @@ module UnusedStoreState (Context : Context) = struct
   let initial ~state:_ = initial
 
   let update_transformations state =
-    let add_transformation { Error.location; _ } =
-      Hashtbl.set Context.transformations ~key:location ~data:[]
+    let add_transformation { Error.location = { Location.WithModule.start; stop; _ }; _ } =
+      Hashtbl.set Context.transformations ~key:{ Location.start; stop } ~data:[]
     in
     List.iter ~f:add_transformation (errors state)
 end
@@ -305,9 +307,11 @@ let run
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let module Context = struct
+    let qualifier = qualifier
+
     let environment = environment
 
-    let transformations = Location.Reference.Table.create ()
+    let transformations = Location.Table.create ()
 
     let errors = LivenessCheck.ErrorMap.Table.create ()
 
@@ -671,4 +675,9 @@ let run
   in
   (* Create error. *)
   let { Node.location; value = define } = Source.top_level_define_node source in
-  [Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)]
+  [
+    Error.create
+      ~location:(Location.with_module ~qualifier location)
+      ~kind:(Error.Deobfuscation source)
+      ~define:(Node.create define ~location);
+  ]

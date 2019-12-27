@@ -75,8 +75,9 @@ module AnnotationEdit = struct
       let line =
         match error_kind with
         | Error.IncompatibleReturnType { define_location; _ } -> Location.line define_location
-        | Error.IncompatibleVariableType { declare_location; _ } -> Location.line declare_location
-        | _ -> Location.line location
+        | Error.IncompatibleVariableType { declare_location; _ } ->
+            Location.WithPath.line declare_location
+        | _ -> Location.WithModule.line location
       in
       line - 1
     in
@@ -244,7 +245,7 @@ let process_type_query_request
         let to_attribute { Node.value = { Annotated.Class.Attribute.name; annotation; _ }; _ } =
           { TypeQuery.name; annotation }
         in
-        parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
+        parse_and_validate (Expression.from_reference ~location:Location.any annotation)
         |> Type.split
         |> fst
         |> Type.primitive_name
@@ -261,7 +262,7 @@ let process_type_query_request
              (Callgraph.get ~caller |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
     | TypeQuery.CalleesWithLocation caller ->
         let instantiate =
-          Location.instantiate
+          Location.WithModule.instantiate
             ~lookup:
               (AstEnvironment.ReadOnly.get_real_path_relative
                  ~configuration
@@ -338,7 +339,7 @@ let process_type_query_request
                 Format.asprintf
                   "%s: [%s]"
                   (Callgraph.show_callee callee)
-                  (List.map locations ~f:Location.Reference.show |> String.concat ~sep:", ")
+                  (List.map locations ~f:Location.WithModule.show |> String.concat ~sep:", ")
               in
               Some
                 ( Callgraph.CalleeValue.description,
@@ -463,7 +464,7 @@ let process_type_query_request
               }
             =
             let instantiate =
-              Location.instantiate
+              Location.WithModule.instantiate
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative
                      ~configuration
@@ -679,6 +680,8 @@ let process_type_query_request
           |> Node.create_with_default_location
         in
         let module State = TypeCheck.State (struct
+          let qualifier = Reference.empty
+
           let debug = false
 
           let define = define
@@ -806,18 +809,17 @@ let process_display_type_errors_request ~state ~configuration paths =
 
 
 let process_get_definition_request
-    ~state:({ State.environment; _ } as state)
+    ~state:({ State.module_tracker; _ } as state)
     ~configuration
     ~request:{ DefinitionRequest.id; path; position }
   =
   let response =
-    let ast_environment = TypeEnvironment.ast_environment environment in
     let open LanguageServer.Protocol in
     let response =
       match LookupCache.find_definition ~state ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
-      | Some { Location.start; stop; path } -> (
-          match AstEnvironment.ReadOnly.get_source_path ast_environment path with
+      | Some { Location.start; stop } -> (
+          match ModuleTracker.lookup_path ~configuration module_tracker path with
           | None -> TextDocumentDefinitionResponse.create_empty ~id
           | Some source_path ->
               let path = SourcePath.full_path ~configuration source_path in
@@ -940,7 +942,7 @@ let rec process
       | CodeActionRequest { id; diagnostics; uri; path } ->
           let is_range_equal_location
               { LanguageServer.Types.Range.start = range_start; end_ }
-              { Location.start = location_start; stop; _ }
+              { Location.WithModule.start = location_start; stop; _ }
             =
             let compare_position
                 { LanguageServer.Types.Position.line = range_line; character }

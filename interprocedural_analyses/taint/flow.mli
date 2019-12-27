@@ -17,7 +17,7 @@ type flows = flow list [@@deriving sexp]
 
 type candidate = {
   flows: flows;
-  location: Location.t;
+  location: Location.WithModule.t;
 }
 [@@deriving sexp]
 
@@ -30,7 +30,7 @@ type flow_state = {
 type issue = {
   code: int;
   flow: flow;
-  issue_location: Location.t;
+  issue_location: Location.WithModule.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;
 }
@@ -43,7 +43,7 @@ val partition_flows
   flow_state
 
 val generate_source_sink_matches
-  :  location:Location.t ->
+  :  location:Location.WithModule.t ->
   source_tree:ForwardState.Tree.t ->
   sink_tree:BackwardState.Tree.t ->
   candidate

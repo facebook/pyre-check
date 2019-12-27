@@ -10,6 +10,8 @@ open Pyre
 module Error = AnalysisError
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val define : Define.t Node.t
 
   val global_resolution : GlobalResolution.t
@@ -27,7 +29,7 @@ module State (Context : Context) = struct
 
   type alias =
     | Reference of Reference.t
-    | Location of Location.Reference.t
+    | Location of Location.t
   [@@deriving compare, sexp, show]
 
   module AliasMap = Map.Make (struct
@@ -35,8 +37,8 @@ module State (Context : Context) = struct
   end)
 
   type t = {
-    unawaited: state Location.Reference.Map.t;
-    locals: Location.Reference.Set.t AliasMap.t;
+    unawaited: state Location.Map.t;
+    locals: Location.Set.t AliasMap.t;
     need_to_await: bool;
   }
 
@@ -74,9 +76,7 @@ module State (Context : Context) = struct
   let pp format state = Format.fprintf format "%s" (show state)
 
   let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
-    let state =
-      { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty; need_to_await = true }
-    in
+    let state = { unawaited = Location.Map.empty; locals = AliasMap.empty; need_to_await = true } in
     let forward_parameter
         ({ unawaited; locals; need_to_await } as state)
         { Node.value = { Expression.Parameter.name; annotation; _ }; location }
@@ -107,7 +107,7 @@ module State (Context : Context) = struct
             Map.set
               locals
               ~key:(Reference (Reference.create name))
-              ~data:(Location.Reference.Set.singleton location);
+              ~data:(Location.Set.singleton location);
           need_to_await;
         }
       else
@@ -133,12 +133,12 @@ module State (Context : Context) = struct
                 Map.set errors ~key:location ~data:{ references = name :: references; expression }
             | None -> errors
           in
-          Location.Reference.Set.fold locations ~init:errors ~f:add_reference
+          Location.Set.fold locations ~init:errors ~f:add_reference
       | Location _ -> errors
     in
     let error (location, unawaited_awaitable) =
       Error.create
-        ~location
+        ~location:(Location.with_module ~qualifier:Context.qualifier location)
         ~kind:(Error.UnawaitedAwaitable unawaited_awaitable)
         ~define:Context.define
     in
@@ -276,7 +276,7 @@ module State (Context : Context) = struct
                   let { locals; _ } = state in
                   let name = name_to_reference_exn name in
                   let awaitable_locations =
-                    new_awaitables |> List.map ~f:Node.location |> Location.Reference.Set.of_list
+                    new_awaitables |> List.map ~f:Node.location |> Location.Set.of_list
                   in
                   let locals =
                     match Map.find locals (Reference name) with
@@ -306,7 +306,7 @@ module State (Context : Context) = struct
         let { unawaited; locals; need_to_await } = state in
         let find_aliases { Node.value; location } =
           if Map.mem unawaited location then
-            Some (Location.Reference.Set.singleton location)
+            Some (Location.Set.singleton location)
           else
             match value with
             | Expression.Name name when is_simple_name name ->
@@ -474,11 +474,11 @@ module State (Context : Context) = struct
               let key = Reference (name_to_reference_exn target) in
               if not (List.is_empty awaitables) then
                 let awaitable_locations =
-                  List.map awaitables ~f:Node.location |> Location.Reference.Set.of_list
+                  List.map awaitables ~f:Node.location |> Location.Set.of_list
                 in
                 Map.set locals ~key ~data:awaitable_locations
               else if Map.mem unawaited location then
-                Map.set locals ~key ~data:(Location.Reference.Set.singleton location)
+                Map.set locals ~key ~data:(Location.Set.singleton location)
               else
                 locals
             in
@@ -608,9 +608,15 @@ end
 
 let name = "Awaitable"
 
-let run ~configuration:_ ~environment ~source =
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let check define =
     let module Context = struct
+      let qualifier = qualifier
+
       let define = define
 
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment

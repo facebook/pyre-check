@@ -9,9 +9,9 @@ open Ast
 open Expression
 open Statement
 
-type annotation_lookup = Type.t Location.Reference.Table.t
+type annotation_lookup = Type.t Location.Table.t
 
-type definition_lookup = Location.Reference.t Location.Reference.Table.t
+type definition_lookup = Location.t Location.Table.t
 
 type t = {
   annotations_lookup: annotation_lookup;
@@ -72,8 +72,7 @@ module NodeVisitor = struct
           GlobalResolution.global (Resolution.global_resolution resolution) reference
           >>| Node.location
           |> fallback
-          >>= fun location ->
-          if Location.equal location Location.Reference.any then None else Some location
+          >>= fun location -> if Location.equal location Location.any then None else Some location
         in
         match Node.value expression with
         | Expression.Name (Name.Identifier identifier) ->
@@ -92,8 +91,8 @@ module NodeVisitor = struct
       in
       let store_lookup ~table ~location ~data =
         if
-          (not (Location.equal location Location.Reference.any))
-          && not (Location.equal location Location.Reference.synthetic)
+          (not (Location.equal location Location.any))
+          && not (Location.equal location Location.synthetic)
         then
           Hashtbl.set table ~key:location ~data |> ignore
       in
@@ -188,8 +187,8 @@ module Visit = struct
         in
         let location = Node.location annotation in
         if
-          (not (Location.equal location Location.Reference.any))
-          && not (Location.equal location Location.Reference.synthetic)
+          (not (Location.equal location Location.any))
+          && not (Location.equal location Location.synthetic)
         then
           Hashtbl.add annotations_lookup ~key:location ~data:resolved |> ignore
       in
@@ -247,8 +246,8 @@ module Visit = struct
 end
 
 let create_of_source type_environment source =
-  let annotations_lookup = Location.Reference.Table.create () in
-  let definitions_lookup = Location.Reference.Table.create () in
+  let annotations_lookup = Location.Table.create () in
+  let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ( {

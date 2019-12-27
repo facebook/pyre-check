@@ -1332,17 +1332,16 @@ let exists_in_list ?(match_prefix = false) ~expression_list target_string =
 
 
 let arguments_location
-    { Call.callee = { Node.location = { Location.stop = callee_end; path; _ }; _ }; arguments }
+    { Call.callee = { Node.location = { Location.stop = callee_end; _ }; _ }; arguments }
   =
   match List.rev arguments with
   | [] ->
       {
-        Location.path;
-        start = callee_end;
+        Location.start = callee_end;
         stop = { callee_end with column = callee_end.Location.column + 2 };
       }
   | { Call.Argument.value = { Node.location = { Location.stop; _ }; _ }; _ } :: _ ->
-      { Location.path; start = callee_end; stop = { stop with column = stop.Location.column + 1 } }
+      { Location.start = callee_end; stop = { stop with column = stop.Location.column + 1 } }
 
 
 let get_item_call base arguments ~location =

@@ -201,7 +201,7 @@ let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compat
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
 
 let parse_reference ?(allow_untracked = false) ({ dependency; _ } as resolution) reference =
-  Expression.from_reference ~location:Location.Reference.any reference
+  Expression.from_reference ~location:Location.any reference
   |> AttributeResolution.ReadOnly.parse_annotation
        ?dependency
        ~allow_untracked

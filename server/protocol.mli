@@ -112,7 +112,7 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   type type_at_location = {
-    location: Location.Instantiated.t;
+    location: Location.t;
     annotation: Type.t;
   }
   [@@deriving eq, show, to_yojson]
@@ -124,7 +124,7 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   type coverage_at_location = {
-    location: Location.Instantiated.t;
+    location: Location.t;
     coverage: coverage_level;
   }
   [@@deriving eq, show, to_yojson]
@@ -167,7 +167,7 @@ module TypeQuery : sig
 
   type callee_with_instantiated_locations = {
     callee: Callgraph.callee;
-    locations: Location.Instantiated.t list;
+    locations: Location.WithPath.t list;
   }
   [@@deriving eq, show]
 
@@ -220,7 +220,7 @@ module TypeQuery : sig
     | Error of string
   [@@deriving eq, show, to_yojson]
 
-  val create_type_at_location : Location.Instantiated.t * Type.t -> type_at_location
+  val create_type_at_location : Location.t * Type.t -> type_at_location
 
   val json_socket_response : response -> Yojson.Safe.t
 end
@@ -279,7 +279,7 @@ type response =
   | TypeCheckResponse of Error.Instantiated.t list
   | TypeQueryResponse of TypeQuery.response
   | StopResponse
-  | GetDefinitionResponse of Location.Instantiated.t option
-  | HoverResponse of Location.Instantiated.t option
+  | GetDefinitionResponse of Location.WithPath.t option
+  | HoverResponse of Location.t option
   | ServerUuidResponse of string
 [@@deriving eq, show]

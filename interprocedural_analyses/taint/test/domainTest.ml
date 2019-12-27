@@ -14,7 +14,7 @@ let test_partition_call_map _ =
   let taint = ForwardTaint.singleton Sources.UserControlled in
   let call_taint1 =
     ForwardTaint.apply_call
-      Location.Reference.any
+      Location.WithModule.any
       ~callees:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[AbstractTreeDomain.Label.create_name_field "a"]
@@ -22,7 +22,7 @@ let test_partition_call_map _ =
   in
   let call_taint2 =
     ForwardTaint.apply_call
-      Location.Reference.any
+      Location.WithModule.any
       ~callees:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[]

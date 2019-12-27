@@ -323,8 +323,7 @@ let assert_binding ~expected ~actual name =
 
 let location (start_line, start_column) (stop_line, stop_column) =
   {
-    Location.path = !&"test";
-    start = { Location.line = start_line; column = start_column };
+    Location.start = { Location.line = start_line; column = start_column };
     stop = { Location.line = stop_line; column = stop_column };
   }
 

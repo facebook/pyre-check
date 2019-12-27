@@ -56,6 +56,8 @@ module NestedDefineLookup = struct
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val environment : TypeEnvironment.ReadOnly.t
 
   val errors : ErrorMap.t
@@ -97,7 +99,12 @@ module State (Context : Context) = struct
       match Set.find used ~f:(Identifier.equal name) with
       | Some _ -> ()
       | None ->
-          let error = Error.create ~location ~kind:(Error.DeadStore name) ~define in
+          let error =
+            Error.create
+              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~kind:(Error.DeadStore name)
+              ~define
+          in
           ErrorMap.Table.set
             Context.errors
             ~key:{ ErrorMap.location; identifier = name }
@@ -134,7 +141,12 @@ module State (Context : Context) = struct
         match Set.find used ~f:(Identifier.equal identifier) with
         | Some _ -> Set.remove used identifier
         | None ->
-            let error = Error.create ~location ~kind:(Error.DeadStore identifier) ~define in
+            let error =
+              Error.create
+                ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                ~kind:(Error.DeadStore identifier)
+                ~define
+            in
             ErrorMap.Table.set Context.errors ~key:{ ErrorMap.location; identifier } ~data:error;
             used
       in
@@ -193,8 +205,14 @@ end
 
 let name = "Liveness"
 
-let run ~configuration:_ ~environment ~source =
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let module Context = struct
+    let qualifier = qualifier
+
     let environment = environment
 
     let errors = ErrorMap.Table.create ()

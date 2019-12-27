@@ -12,9 +12,9 @@ module NestedDefines : sig
     state: 'state;
   }
 
-  and 'state t = 'state nested Location.Reference.Map.t
+  and 'state t = 'state nested Location.Map.t
 
-  val initial : 'state Location.Reference.Map.t
+  val initial : 'state Location.Map.t
 
   val update_nested_defines
     :  (Location.t, 'state nested, 'a) Base.Map.t ->

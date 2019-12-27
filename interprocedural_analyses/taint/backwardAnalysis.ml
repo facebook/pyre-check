@@ -21,6 +21,8 @@ module type FixpointState = sig
 end
 
 module type FUNCTION_CONTEXT = sig
+  val qualifier : Reference.t
+
   val definition : Define.t Node.t
 
   val first_parameter : unit -> Root.t option (* For implicit self reference in super() *)
@@ -146,7 +148,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           match
             Model.get_global_sink_model
               ~resolution
-              ~location:(Node.location argument)
+              ~location:
+                (Location.with_module ~qualifier:FunctionContext.qualifier (Node.location argument))
               ~expression:argument
           with
           | Some global_taint -> global_taint
@@ -227,7 +230,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.join taint_tree
         in
         let analyze_argument ~obscure_taint state ((argument, sink_matches), (_dup, tito_matches)) =
-          let location = argument.Node.location in
+          let location =
+            Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+          in
           let sink_taint =
             List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
           in
@@ -663,7 +668,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
             in
             let global_taint =
-              let location = target.Node.location in
+              let location =
+                Location.with_module ~qualifier:FunctionContext.qualifier target.Node.location
+              in
               Model.get_global_sink_model ~resolution ~location ~expression:target
               |> Option.value ~default:BackwardState.Tree.empty
             in
@@ -821,7 +828,7 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run ~environment ~qualifier:_ ~define ~existing_model =
+let run ~environment ~qualifier ~define ~existing_model =
   let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
       define )
     =
@@ -832,6 +839,8 @@ let run ~environment ~qualifier:_ ~define ~existing_model =
     |> Annotated.Define.define
   in
   let module AnalysisInstance = AnalysisInstance (struct
+    let qualifier = qualifier
+
     let definition = define
 
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment

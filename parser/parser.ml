@@ -46,14 +46,12 @@ let parse ?start_line ?start_column ?relative lines =
   | Generator.Error
   | Failure _ ->
       let location =
-        Location.Instantiated.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
+        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
       in
       let line = location.Location.start.Location.line - 1
       and column = location.Location.start.Location.column in
       let error =
-        let header =
-          Format.asprintf "Could not parse file at %a" Location.Instantiated.pp location
-        in
+        let header = Format.asprintf "Could not parse file at %a" Location.pp location in
         let indicator =
           if column > 0 then
             String.make (column - 1) ' ' ^ "^"

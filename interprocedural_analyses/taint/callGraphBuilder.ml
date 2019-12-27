@@ -10,7 +10,7 @@ module DefaultBuilder = Callgraph.DefaultBuilder
 
 let initialize () = DefaultBuilder.initialize ()
 
-let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee =
+let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualifier ~callee =
   let callables =
     match
       Interprocedural.CallResolution.transform_special_calls { Expression.Call.callee; arguments }
@@ -26,6 +26,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee
                 ~callables:(Some [callable])
                 ~arguments:transformed_arguments
                 ~dynamic:false
+                ~qualifier
                 ~callee:transformed_call
           | _ -> ()
         end;
@@ -54,11 +55,24 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee
             | _ -> Some callables )
         | _ -> callables )
   in
-  DefaultBuilder.add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee
+  DefaultBuilder.add_callee
+    ~global_resolution
+    ~target
+    ~callables
+    ~arguments
+    ~dynamic
+    ~qualifier
+    ~callee
 
 
-let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~location =
-  DefaultBuilder.add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~location
+let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~qualifier ~location =
+  DefaultBuilder.add_property_callees
+    ~global_resolution
+    ~resolved_base
+    ~attributes
+    ~name
+    ~qualifier
+    ~location
 
 
 let get_all_callees () = DefaultBuilder.get_all_callees ()

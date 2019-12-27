@@ -119,9 +119,9 @@ end)
 module LocationKey = struct
   type t = Location.t
 
-  let to_string = Location.Reference.show
+  let to_string = Location.show
 
-  let compare = Location.Reference.compare
+  let compare = Location.compare
 
   type out = string
 

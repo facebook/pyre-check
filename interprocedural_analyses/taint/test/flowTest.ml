@@ -116,7 +116,11 @@ let test_no_errors _ =
     |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
   in
   let assert_no_errors ~source_tree ~sink_tree =
-    let location = Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos in
+    let location =
+      Location.with_module
+        ~qualifier:Reference.empty
+        (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
+    in
     let define =
       Statement.Define.create_toplevel ~qualifier:None ~statements:[]
       |> Node.create_with_default_location
@@ -177,7 +181,11 @@ let test_errors _ =
     |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
   in
   let assert_error ~source_tree ~sink_tree code =
-    let location = Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos in
+    let location =
+      Location.with_module
+        ~qualifier:Reference.empty
+        (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
+    in
     let define =
       Statement.Define.create_toplevel ~qualifier:None ~statements:[]
       |> Node.create_with_default_location

@@ -13,10 +13,10 @@ module Error = AnalysisError
    remove the used codes from the map of unused ignores. Since the hash tables are initialized with
    only the sources we're considering, this is sufficient to determine all ignored errors and unused
    ignores. *)
-let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
+let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
   let unused_ignores, ignore_lookup =
-    let unused_ignores = Location.Reference.Table.create () in
-    let ignore_lookup = Location.Reference.Table.create () in
+    let unused_ignores = Location.Table.create () in
+    let ignore_lookup = Location.Table.create () in
     List.iter ignore_lines ~f:(fun ignore ->
         Hashtbl.add_multi ignore_lookup ~key:(Ignore.key ignore) ~data:ignore);
     let register_unused_ignore ignore =
@@ -57,7 +57,11 @@ let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
           end;
           ignored := true )
       in
-      Hashtbl.find ignore_lookup (Error.key error) >>| List.iter ~f:process_ignore |> ignore;
+      let key =
+        (* Don't care about module name here since we always operate within the same module *)
+        Error.key error |> fun { Location.WithModule.start; stop; _ } -> { Location.start; stop }
+      in
+      Hashtbl.find ignore_lookup key >>| List.iter ~f:process_ignore |> ignore;
       not !ignored
     in
     List.filter ~f:not_ignored errors
@@ -65,7 +69,7 @@ let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
   let unused_ignore_errors =
     let to_error unused_ignore =
       {
-        Error.location = Ignore.location unused_ignore;
+        Error.location = Location.with_module ~qualifier (Ignore.location unused_ignore);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         signature =
           {
@@ -81,14 +85,18 @@ let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
 
 let add_local_mode_errors
     ~define
-    { Source.metadata = { Source.Metadata.unused_local_modes; local_mode = actual_mode; _ }; _ }
+    {
+      Source.metadata = { Source.Metadata.unused_local_modes; local_mode = actual_mode; _ };
+      source_path = { SourcePath.qualifier; _ };
+      _;
+    }
     errors
   =
   let add_error errors unused_mode =
     match actual_mode with
     | Some actual_mode ->
         Error.create
-          ~location:(Node.location unused_mode)
+          ~location:(Location.with_module ~qualifier (Node.location unused_mode))
           ~kind:(Error.UnusedLocalMode { unused_mode; actual_mode })
           ~define
         :: errors
@@ -125,12 +133,12 @@ let filter_errors
 let run_on_source
     ~configuration
     ~global_resolution
-    ~source:({ Source.metadata; _ } as source)
+    ~source:({ Source.metadata; source_path = { SourcePath.qualifier; _ }; _ } as source)
     errors_by_define
   =
   filter_errors ~configuration ~global_resolution ~metadata errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
-  |> ignore source
+  |> ignore ~qualifier source
   |> List.map
        ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   |> List.sort ~compare:Error.compare

@@ -823,7 +823,7 @@ end = struct
                               [
                                 {
                                   Call.Argument.name = None;
-                                  value = from_reference ~location:Location.Reference.any name;
+                                  value = from_reference ~location:Location.any name;
                                 };
                               ];
                           };

@@ -53,18 +53,23 @@ module Set (Element : SET_ARG) : TAINT_SET with type element = Element.t = struc
     elements set |> List.map ~f:element_to_json
 end
 
-let location_to_json ?filename_lookup location : Yojson.Safe.json =
-  let line = Location.line location in
-  let column = Location.column location in
-  let end_column = Location.stop_column location (* Note: not correct for multiple line span *) in
+let location_to_json
+    ?filename_lookup
+    ( { Location.WithModule.start = { line; column }; stop = { column = end_column; _ }; _ } as
+    location_with_module )
+    : Yojson.Safe.json
+  =
   let optionally_add_filename fields =
     match filename_lookup with
     | Some lookup ->
-        let path = Location.instantiate ~lookup location |> Location.path in
+        let { Location.WithPath.path; _ } =
+          Location.WithModule.instantiate ~lookup location_with_module
+        in
         ("filename", `String path) :: fields
     | None -> fields
   in
   let fields =
+    (* Note: not correct for multiple line span *)
     ["line", `Int line; "start", `Int column; "end", `Int end_column] |> optionally_add_filename
   in
   `Assoc fields
@@ -73,11 +78,11 @@ let location_to_json ?filename_lookup location : Yojson.Safe.json =
 module TraceInfo = struct
   type t =
     | Declaration
-    | Origin of Location.t
+    | Origin of Location.WithModule.t
     | CallSite of {
         port: AccessPath.Root.t;
         path: AbstractTreeDomain.Label.path;
-        location: Location.t;
+        location: Location.WithModule.t;
         callees: Interprocedural.Callable.t list;
         trace_length: int;
       }
@@ -87,11 +92,12 @@ module TraceInfo = struct
 
   let show = function
     | Declaration -> "declaration"
-    | Origin location -> Format.sprintf "@%s" (Location.Reference.show location)
+    | Origin location -> Format.asprintf "@%a" Location.WithModule.pp location
     | CallSite { location; callees; _ } ->
-        Format.sprintf
-          "via call@%s[%s]"
-          (Location.Reference.show location)
+        Format.asprintf
+          "via call@%a[%s]"
+          Location.WithModule.pp
+          location
           (String.concat
              ~sep:" "
              (List.map ~f:Interprocedural.Callable.external_target_name callees))
@@ -181,7 +187,7 @@ module TraceInfo = struct
             trace_length = trace_length_right;
           } ) ->
         port_left = port_right
-        && Location.compare location_left location_right = 0
+        && Location.WithModule.compare location_left location_right = 0
         && callees_left = callees_right
         && trace_length_right <= trace_length_left
         && AbstractTreeDomain.Label.is_prefix ~prefix:path_right path_left
@@ -191,9 +197,9 @@ module TraceInfo = struct
   let widen set = set
 
   let strip_for_callsite = function
-    | Origin _ -> Origin Location.Reference.any
+    | Origin _ -> Origin Location.WithModule.any
     | CallSite { port; path; location = _; callees; trace_length } ->
-        CallSite { port; path; location = Location.Reference.any; callees; trace_length }
+        CallSite { port; path; location = Location.WithModule.any; callees; trace_length }
     | Declaration -> Declaration
 end
 
@@ -272,7 +278,7 @@ module type TAINT_DOMAIN = sig
 
   (* Add trace info at call-site *)
   val apply_call
-    :  Location.t ->
+    :  Location.WithModule.t ->
     callees:Interprocedural.Callable.t list ->
     port:AccessPath.Root.t ->
     path:AbstractTreeDomain.Label.path ->

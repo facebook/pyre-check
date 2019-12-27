@@ -99,7 +99,7 @@ module HoverResponse : sig
   type t [@@deriving to_yojson]
 
   type hover_result = {
-    location: Ast.Location.Instantiated.t;
+    location: Ast.Location.t;
     contents: string;
   }
 

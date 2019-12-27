@@ -97,11 +97,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
               with
               | Parser.Error _
               | Failure _ ->
-                  Log.debug
-                    "Invalid string annotation `%s` at %a"
-                    value
-                    Location.Reference.pp
-                    location;
+                  Log.debug "Invalid string annotation `%s` at %a" value Location.pp location;
                   Name (Name.Identifier "$unparsed_annotation") )
           | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
           | _ -> value
@@ -275,7 +271,7 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                 Log.debug
                   "Pyre could not parse format string `%s` at %a"
                   input_string
-                  Location.Reference.pp
+                  Location.pp
                   location;
                 []
           in
@@ -303,7 +299,7 @@ type scope = {
   locals: Reference.Set.t;
   use_forward_references: bool;
   is_top_level: bool;
-  skip: Location.Reference.Set.t;
+  skip: Location.Set.t;
   is_in_function: bool;
   is_in_class: bool;
 }
@@ -1118,11 +1114,7 @@ let qualify
             with
             | Parser.Error _
             | Failure _ ->
-                Log.debug
-                  "Invalid string annotation `%s` at %a"
-                  value
-                  Location.Reference.pp
-                  location;
+                Log.debug "Invalid string annotation `%s` at %a" value Location.pp location;
                 String { StringLiteral.value; kind } )
           else
             String { StringLiteral.value; kind }
@@ -1164,7 +1156,7 @@ let qualify
       immutables = Reference.Set.empty;
       use_forward_references = true;
       is_top_level = true;
-      skip = Location.Reference.Set.empty;
+      skip = Location.Set.empty;
       is_in_function = false;
       is_in_class = false;
     }

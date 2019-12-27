@@ -12,6 +12,8 @@ open TypeCheck
 open Test
 
 module DefaultContext = struct
+  let qualifier = Reference.empty
+
   let debug = false
 
   let define = +Test.mock_define
@@ -77,6 +79,8 @@ let test_initial context =
     in
     let module Context = struct
       let debug = false
+
+      let qualifier = Reference.empty
 
       let define = +define
 
@@ -1002,6 +1006,8 @@ let test_forward_statement context =
       | _ -> failwith "Unable to parse define."
     in
     let module Context = struct
+      let qualifier = Reference.empty
+
       let debug = false
 
       let define = +define

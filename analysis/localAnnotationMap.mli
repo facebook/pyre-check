@@ -27,7 +27,7 @@ val set_statement
 val set_expression
   :  ?precondition:Annotation.t Reference.Map.t ->
   ?postcondition:Annotation.t Reference.Map.t ->
-  key:Location.Reference.t ->
+  key:Location.t ->
   t ->
   t
 
@@ -35,6 +35,6 @@ val get_statement_precondition : t -> int -> Annotation.t Reference.Map.t option
 
 val get_statement_postcondition : t -> int -> Annotation.t Reference.Map.t option
 
-val get_expression_precondition : t -> Location.Reference.t -> Annotation.t Reference.Map.t option
+val get_expression_precondition : t -> Location.t -> Annotation.t Reference.Map.t option
 
-val get_expression_postcondition : t -> Location.Reference.t -> Annotation.t Reference.Map.t option
+val get_expression_postcondition : t -> Location.t -> Annotation.t Reference.Map.t option

@@ -31,11 +31,14 @@ module ErrorMap = struct
 
   type t = Error.t Map.t
 
-  let add ~errors ({ Error.location; _ } as error) =
+  let add ~errors ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error) =
+    let location = { Location.start; stop } in
     Map.set errors ~key:{ location; kind = Error.code error } ~data:error
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val debug : bool
 
   val define : Define.t Node.t
@@ -125,7 +128,7 @@ module State (Context : Context) = struct
         in
         Format.asprintf
           "    %a -> %s"
-          Location.Instantiated.pp
+          Location.WithPath.pp
           (Error.Instantiated.location error)
           (Error.Instantiated.description error ~show_error_traces:true)
       in
@@ -167,7 +170,10 @@ module State (Context : Context) = struct
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
     let add_error errors mismatch =
-      Error.create ~location ~kind:(Error.InvalidTypeParameters mismatch) ~define:Context.define
+      Error.create
+        ~location:(Location.with_module ~qualifier:Context.qualifier location)
+        ~kind:(Error.InvalidTypeParameters mismatch)
+        ~define:Context.define
       |> ErrorMap.add ~errors
     in
     List.fold mismatches ~f:add_error ~init:errors, annotation
@@ -183,7 +189,7 @@ module State (Context : Context) = struct
           | false ->
               Some
                 (Error.create
-                   ~location
+                   ~location:(Location.with_module ~qualifier:Context.qualifier location)
                    ~kind:(Error.UndefinedType (Primitive class_name))
                    ~define:Context.define) )
     in
@@ -212,7 +218,7 @@ module State (Context : Context) = struct
               Error.Define
           in
           Error.create
-            ~location
+            ~location:(Location.with_module ~qualifier:Context.qualifier location)
             ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
             ~define:Context.define
           |> Option.some
@@ -265,7 +271,7 @@ module State (Context : Context) = struct
     let errors =
       if Type.is_top annotation then (* Could not even parse expression. *)
         Error.create
-          ~location
+          ~location:(Location.with_module ~qualifier:Context.qualifier location)
           ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
           ~define:Context.define
         |> ErrorMap.add ~errors
@@ -424,8 +430,12 @@ module State (Context : Context) = struct
       }
 
 
-  let emit_raw_error ~state:({ errors; resolution; _ } as state) ({ Error.location; _ } as error) =
+  let emit_raw_error
+      ~state:({ errors; resolution; _ } as state)
+      ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
+    =
     let error =
+      let location = { Location.start; stop } in
       match Map.find errors { ErrorMap.location; kind = Error.code error } with
       | Some other_error ->
           Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
@@ -435,7 +445,11 @@ module State (Context : Context) = struct
 
 
   let emit_error ~state ~location ~kind =
-    Error.create ~location ~kind ~define:Context.define |> emit_raw_error ~state
+    Error.create
+      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~kind
+      ~define:Context.define
+    |> emit_raw_error ~state
 
 
   type base =
@@ -576,7 +590,10 @@ module State (Context : Context) = struct
     in
     let instantiate location =
       let ast_environment = GlobalResolution.ast_environment global_resolution in
-      Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) location
+      let location = Location.with_module ~qualifier:Context.qualifier location in
+      Location.WithModule.instantiate
+        ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+        location
     in
     let check_decorators state =
       let check_final_decorator state =
@@ -1141,7 +1158,7 @@ module State (Context : Context) = struct
                         let parent = overridden_attribute |> Attribute.parent |> Type.show in
                         let error =
                           Error.create
-                            ~location
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
                             ~kind:(Error.InvalidOverride { parent; decorator = Final })
                             ~define:Context.define
                         in
@@ -1164,7 +1181,7 @@ module State (Context : Context) = struct
                       in
                       let error =
                         Error.create
-                          ~location
+                          ~location:(Location.with_module ~qualifier:Context.qualifier location)
                           ~kind:(Error.InvalidOverride { parent; decorator })
                           ~define:Context.define
                       in
@@ -1199,7 +1216,7 @@ module State (Context : Context) = struct
                         then
                           let error =
                             Error.create
-                              ~location
+                              ~location:(Location.with_module ~qualifier:Context.qualifier location)
                               ~kind:
                                 (Error.InconsistentOverride
                                    {
@@ -1259,7 +1276,8 @@ module State (Context : Context) = struct
                                 if (not (Type.is_top expected)) && not is_compatible then
                                   let error =
                                     Error.create
-                                      ~location
+                                      ~location:
+                                        (Location.with_module ~qualifier:Context.qualifier location)
                                       ~kind:
                                         (Error.InconsistentOverride
                                            {
@@ -1302,7 +1320,8 @@ module State (Context : Context) = struct
                               else
                                 let error =
                                   Error.create
-                                    ~location
+                                    ~location:
+                                      (Location.with_module ~qualifier:Context.qualifier location)
                                     ~kind:
                                       (Error.InconsistentOverride
                                          {
@@ -1585,13 +1604,17 @@ module State (Context : Context) = struct
                     then
                       Error.UndefinedAttribute
                         { attribute = Reference.last reference; origin = Error.Module qualifier }
-                      |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                      |> (fun kind ->
+                           Error.create
+                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~kind
+                             ~define:Context.define)
                       |> emit_raw_error ~state
                     else
                       state
                 | _ ->
                     Error.create
-                      ~location
+                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
                       ~kind:(Error.UndefinedName reference)
                       ~define:Context.define
                     |> emit_raw_error ~state
@@ -1696,7 +1719,14 @@ module State (Context : Context) = struct
               | _ -> None )
           | annotation -> callable annotation >>| fun callable -> [callable]
         in
-        Context.Builder.add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~callee;
+        Context.Builder.add_callee
+          ~global_resolution
+          ~target
+          ~callables
+          ~arguments
+          ~dynamic
+          ~qualifier:Context.qualifier
+          ~callee;
         let signature callable =
           let signature =
             GlobalResolution.signature_select
@@ -1808,6 +1838,7 @@ module State (Context : Context) = struct
               in
               match reason with
               | AbstractClassInstantiation { class_name; abstract_methods } ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:
@@ -1815,17 +1846,20 @@ module State (Context : Context) = struct
                          (Error.AbstractClassInstantiation { class_name; abstract_methods }))
                     ~define:Context.define
               | CallingParameterVariadicTypeVariable ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.NotCallable (Type.Callable callable))
                     ~define:Context.define
               | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
                   let kind = Error.InvalidArgument (Error.Keyword { expression; annotation }) in
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create ~location ~kind ~define:Context.define
               | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
                   let kind =
                     Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
                   in
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create ~location ~kind ~define:Context.define
               | Mismatch mismatch ->
                   let { AttributeResolution.actual; expected; name; position } =
@@ -1863,33 +1897,40 @@ module State (Context : Context) = struct
                           normal
                     | _ -> normal
                   in
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create ~location ~kind ~define:Context.define
               | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))
                     ~define:Context.define
               | MissingArgument parameter ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.MissingArgument { callee; parameter })
                     ~define:Context.define
               | MutuallyRecursiveTypeVariables ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.MutuallyRecursiveTypeVariables callee)
                     ~define:Context.define
               | ProtocolInstantiation class_name ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.InvalidClassInstantiation (ProtocolInstantiation class_name))
                     ~define:Context.define
               | TooManyArguments { expected; provided } ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.TooManyArguments { callee; expected; provided })
                     ~define:Context.define
               | UnexpectedKeyword name ->
+                  let location = Location.with_module ~qualifier:Context.qualifier location in
                   Error.create
                     ~location
                     ~kind:(Error.UnexpectedKeyword { callee; name })
@@ -1902,13 +1943,21 @@ module State (Context : Context) = struct
           let state =
             match resolved, potential_missing_operator_error with
             | Type.Top, Some kind ->
-                Error.create ~location ~kind ~define:Context.define |> emit_raw_error ~state
+                Error.create
+                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                  ~kind
+                  ~define:Context.define
+                |> emit_raw_error ~state
             | Type.Any, _
             | Type.Top, _ ->
                 state
             | _ ->
                 Error.NotCallable resolved
-                |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                |> (fun kind ->
+                     Error.create
+                       ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                       ~kind
+                       ~define:Context.define)
                 |> emit_raw_error ~state
           in
           { state; resolved = Type.Top; resolved_annotation = None; base = None }
@@ -2111,6 +2160,7 @@ module State (Context : Context) = struct
           ~callables
           ~arguments
           ~dynamic:false
+          ~qualifier:Context.qualifier
           ~callee;
 
         (* Be angelic and compute errors using the typeshed annotation for isinstance. *)
@@ -2571,7 +2621,11 @@ module State (Context : Context) = struct
                   annotation = resolved_base;
                   attempted_action = Error.AttributeAccess attribute;
                 }
-              |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+              |> (fun kind ->
+                   Error.create
+                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                     ~kind
+                     ~define:Context.define)
               |> emit_raw_error ~state
             in
             state, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
@@ -2618,7 +2672,11 @@ module State (Context : Context) = struct
                     | _ -> None
                   in
                   Error.UndefinedAttribute { attribute; origin = Error.Callable name }
-                  |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                  |> (fun kind ->
+                       Error.create
+                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                         ~kind
+                         ~define:Context.define)
                   |> emit_raw_error ~state
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
@@ -2667,7 +2725,11 @@ module State (Context : Context) = struct
                       attribute;
                       origin = Error.Class { annotation = resolved_base; class_attribute = false };
                     }
-                  |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                  |> (fun kind ->
+                       Error.create
+                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                         ~kind
+                         ~define:Context.define)
                   |> emit_raw_error ~state
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
@@ -2691,6 +2753,7 @@ module State (Context : Context) = struct
                     ~resolved_base
                     ~attributes
                     ~location
+                    ~qualifier:Context.qualifier
                     ~name
                 end;
                 let state =
@@ -2704,7 +2767,11 @@ module State (Context : Context) = struct
                   match reference, definition with
                   | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
                       Error.UndefinedName reference
-                      |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                      |> (fun kind ->
+                           Error.create
+                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~kind
+                             ~define:Context.define)
                       |> emit_raw_error ~state
                   | _, (attribute, Some target) ->
                       if Option.is_some (inverse_operator name) then
@@ -2722,7 +2789,12 @@ module State (Context : Context) = struct
                                   class_attribute = Annotated.Attribute.class_attribute attribute;
                                 };
                           }
-                        |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                        |> (fun kind ->
+                             Error.create
+                               ~location:
+                                 (Location.with_module ~qualifier:Context.qualifier location)
+                               ~kind
+                               ~define:Context.define)
                         |> emit_raw_error ~state
                   | _ ->
                       let enclosing_class_reference =
@@ -2745,7 +2817,12 @@ module State (Context : Context) = struct
                             origin =
                               Error.Class { annotation = resolved_base; class_attribute = false };
                           }
-                        |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                        |> (fun kind ->
+                             Error.create
+                               ~location:
+                                 (Location.with_module ~qualifier:Context.qualifier location)
+                               ~kind
+                               ~define:Context.define)
                         |> emit_raw_error ~state
                       else
                         state
@@ -2920,7 +2997,10 @@ module State (Context : Context) = struct
     in
     let instantiate location =
       let ast_environment = GlobalResolution.ast_environment global_resolution in
-      Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) location
+      let location = Location.with_module ~qualifier:Context.qualifier location in
+      Location.WithModule.instantiate
+        ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+        location
     in
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)
@@ -3094,7 +3174,11 @@ module State (Context : Context) = struct
                     AnalysisError.InvalidType
                       (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable))
                   in
-                  Error.create ~location ~kind ~define:Context.define |> ErrorMap.add ~errors
+                  Error.create
+                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                    ~kind
+                    ~define:Context.define
+                  |> ErrorMap.add ~errors
               | _ -> errors
             in
             { state with resolution; errors }, resolved
@@ -3456,7 +3540,8 @@ module State (Context : Context) = struct
                         |> Option.value ~default:location
                       in
                       Error.create
-                        ~location:global_location
+                        ~location:
+                          (Location.with_module ~qualifier:Context.qualifier global_location)
                         ~kind:
                           (Error.MissingGlobalAnnotation
                              {
@@ -3470,7 +3555,7 @@ module State (Context : Context) = struct
                       |> Option.some
                     else if explicit && insufficiently_annotated then
                       Error.create
-                        ~location
+                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
                         ~kind:
                           (Error.ProhibitedAny
                              {
@@ -3491,7 +3576,7 @@ module State (Context : Context) = struct
                         GlobalResolution.parse_annotation global_resolution value
                       in
                       Error.create
-                        ~location
+                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
                         ~kind:
                           (Error.ProhibitedAny
                              {
@@ -3518,7 +3603,7 @@ module State (Context : Context) = struct
                     in
                     if explicit && (not is_type_alias) && not (Option.is_some definition) then
                       Error.create
-                        ~location
+                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
                         ~kind:
                           (Error.ProhibitedAny
                              {
@@ -3554,7 +3639,7 @@ module State (Context : Context) = struct
                         if is_illegal_attribute_annotation attribute then
                           (* Non-self attributes may not be annotated. *)
                           Error.create
-                            ~location
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
                             ~kind:(Error.IllegalAnnotationTarget target)
                             ~define:Context.define
                           |> Option.some
@@ -3563,7 +3648,8 @@ module State (Context : Context) = struct
                         then
                           let attribute_location = Annotated.Attribute.location attribute in
                           Error.create
-                            ~location:attribute_location
+                            ~location:
+                              (Location.with_module ~qualifier:Context.qualifier attribute_location)
                             ~kind:
                               (Error.MissingAttributeAnnotation
                                  {
@@ -3581,7 +3667,7 @@ module State (Context : Context) = struct
                           |> Option.some
                         else if insufficiently_annotated && explicit && not is_type_alias then
                           Error.create
-                            ~location
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
                             ~kind:
                               (Error.ProhibitedAny
                                  {
@@ -3602,7 +3688,7 @@ module State (Context : Context) = struct
                     | None -> None )
                 | _ ->
                     Error.create
-                      ~location
+                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
                       ~kind:(Error.IllegalAnnotationTarget target)
                       ~define:Context.define
                     |> Option.some_if explicit
@@ -3963,7 +4049,8 @@ module State (Context : Context) = struct
               else
                 Some
                   (Error.create
-                     ~location:(Node.location test)
+                     ~location:
+                       (Location.with_module ~qualifier:Context.qualifier (Node.location test))
                      ~kind:
                        (Error.ImpossibleAssertion
                           { statement; expression = value; annotation = resolved })
@@ -4019,7 +4106,7 @@ module State (Context : Context) = struct
             match refinable_annotation name with
             | Some (_, { Annotation.annotation = Type.Optional Type.Bottom; _ }) ->
                 Error.create
-                  ~location:(Node.location test)
+                  ~location:(Location.with_module ~qualifier:Context.qualifier (Node.location test))
                   ~kind:
                     (Error.ImpossibleAssertion
                        { statement; expression = test; annotation = Type.Optional Type.Bottom })
@@ -4160,7 +4247,8 @@ module State (Context : Context) = struct
                 match Annotation.annotation annotation with
                 | t when Type.is_none t ->
                     Error.create
-                      ~location:(Node.location test)
+                      ~location:
+                        (Location.with_module ~qualifier:Context.qualifier (Node.location test))
                       ~kind:
                         (Error.ImpossibleAssertion
                            {
@@ -4230,7 +4318,10 @@ module State (Context : Context) = struct
                   check_import name)
         in
         let add_import_error state reference =
-          Error.create ~location ~kind:(Error.UndefinedImport reference) ~define:Context.define
+          Error.create
+            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+            ~kind:(Error.UndefinedImport reference)
+            ~define:Context.define
           |> emit_raw_error ~state
         in
         List.fold undefined_imports ~init:state ~f:add_import_error
@@ -4377,7 +4468,7 @@ module State (Context : Context) = struct
             >>| List.filter ~f:is_private_attribute
             >>| List.map ~f:(fun name ->
                     Error.create
-                      ~location
+                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
                       ~kind:
                         (Error.PrivateProtocolProperty
                            { name; parent = Annotated.Class.annotation definition })
@@ -4481,7 +4572,7 @@ module State (Context : Context) = struct
                      in
                      Some
                        (Error.create
-                          ~location
+                          ~location:(Location.with_module ~qualifier:Context.qualifier location)
                           ~kind:
                             (Error.UninitializedAttribute
                                {
@@ -4526,7 +4617,7 @@ module State (Context : Context) = struct
               if is_final then
                 let error =
                   Error.create
-                    ~location
+                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
                     ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
                     ~define:Context.define
                 in
@@ -4617,7 +4708,11 @@ module State (Context : Context) = struct
                                        ~covariant:false);
                               }
                         in
-                        Some (Error.create ~location ~kind ~define:Context.define)
+                        Some
+                          (Error.create
+                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~kind
+                             ~define:Context.define)
                     in
                     Class.overrides ~resolution:global_resolution ~name definition
                     >>| check_override
@@ -4644,7 +4739,7 @@ module State (Context : Context) = struct
             in
             let error =
               Error.create
-                ~location
+                ~location:(Location.with_module ~qualifier:Context.qualifier location)
                 ~kind:
                   (Error.RedefinedClass
                      {
@@ -4674,7 +4769,7 @@ module State (Context : Context) = struct
     in
     let overload_errors errors =
       let { resolved_annotation = annotation; _ } =
-        from_reference ~location:Location.Reference.any name
+        from_reference ~location:Location.any name
         |> fun expression -> forward_expression ~state ~expression
       in
       let overload_to_callable overload =
@@ -4693,7 +4788,7 @@ module State (Context : Context) = struct
                && Type.Callable.Overload.is_undefined implementation ->
             let error =
               Error.create
-                ~location
+                ~location:(Location.with_module ~qualifier:Context.qualifier location)
                 ~kind:(Error.MissingOverloadImplementation name)
                 ~define:Context.define
             in
@@ -4732,7 +4827,7 @@ module State (Context : Context) = struct
                      else
                        let error =
                          Error.create
-                           ~location
+                           ~location:(Location.with_module ~qualifier:Context.qualifier location)
                            ~kind:
                              (Error.IncompatibleOverload
                                 (ReturnType
@@ -4754,7 +4849,7 @@ module State (Context : Context) = struct
                    then
                      let error =
                        Error.create
-                         ~location
+                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
                          ~define:Context.define
                          ~kind:
                            (Error.IncompatibleOverload
@@ -4785,7 +4880,7 @@ module State (Context : Context) = struct
                       ->
                         let error =
                           Error.create
-                            ~location
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
                             ~define:Context.define
                             ~kind:
                               (Error.IncompatibleOverload
@@ -4861,7 +4956,10 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
   in
+  (* TODO: Eliminate the need of creating a dummy state here *)
   let module State = State (struct
+    let qualifier = Reference.empty
+
     let debug = false
 
     let define = define
@@ -4964,6 +5062,8 @@ let check_define
   try
     let errors, local_annotations, callees =
       let module Context = struct
+        let qualifier = qualifier
+
         let debug = debug
 
         let define = define_node
@@ -4992,7 +5092,10 @@ let check_define
           "Analysis crashed because of untracked type `%s`."
           (Log.Color.red (Type.show annotation));
       let undefined_error =
-        Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
+        Error.create
+          ~location:(Location.with_module ~qualifier location)
+          ~kind:(Error.AnalysisFailure annotation)
+          ~define:define_node
       in
       { errors = [undefined_error]; local_annotations = None }
 
@@ -5009,6 +5112,9 @@ let get_or_recompute_local_annotations ~environment name =
           let _, local_annotations, _ =
             let resolution = resolution global_resolution () in
             let module Context = struct
+              (* Doesn't matter what the qualifier is since we won't be using it *)
+              let qualifier = Reference.empty
+
               let debug = false
 
               let define = define_node

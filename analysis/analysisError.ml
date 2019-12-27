@@ -19,7 +19,7 @@ type missing_annotation = {
   name: Reference.t;
   annotation: Type.t option;
   given_annotation: Type.t option;
-  evidence_locations: Location.Instantiated.t list;
+  evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -55,7 +55,7 @@ and mismatch = {
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.Instantiated.t;
+  declare_location: Location.WithPath.t;
 }
 
 and invalid_argument =
@@ -474,8 +474,8 @@ let weaken_literals kind =
 
 let messages ~concise ~signature location kind =
   let {
-    Location.start = { Location.line = start_line; _ };
-    Location.stop = { Location.line = stop_line; _ };
+    Location.WithPath.start = { Location.line = start_line; _ };
+    stop = { Location.line = stop_line; _ };
     _;
   }
     =
@@ -694,7 +694,7 @@ let messages ~concise ~signature location kind =
             "Attribute `%a` declared on line %d, incorrectly used on line %d."
             pp_reference
             name
-            declare_location.Location.start.Location.line
+            declare_location.Location.WithPath.start.Location.line
             start_line
       in
       [message; trace]
@@ -1204,7 +1204,8 @@ let messages ~concise ~signature location kind =
           let trace =
             let evidence_string =
               evidence_locations
-              |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+              |> List.map ~f:(fun { Location.WithPath.path; start; _ } ->
+                     Format.asprintf "%s:%a" path Location.pp_position start)
               |> String.concat ~sep:", "
             in
             Format.asprintf
@@ -1287,7 +1288,8 @@ let messages ~concise ~signature location kind =
     when Type.is_concrete annotation -> (
       let evidence_string =
         evidence_locations
-        |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+        |> List.map ~f:(fun { Location.WithPath.path; start; _ } ->
+               Format.asprintf "%s:%a" path Location.pp_position start)
         |> String.concat ~sep:", "
       in
       match given_annotation with
@@ -1432,7 +1434,7 @@ let messages ~concise ~signature location kind =
       let trace =
         let evidence_string =
           evidence_locations
-          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_line)
+          |> List.map ~f:(Format.asprintf "%a" Location.WithPath.pp_line)
           |> String.concat ~sep:", "
         in
         Format.asprintf
@@ -2016,7 +2018,7 @@ let less_or_equal ~resolution left right =
     GlobalResolution.less_or_equal resolution ~left:left.actual ~right:right.actual
     && GlobalResolution.less_or_equal resolution ~left:left.expected ~right:right.expected
   in
-  Location.equal left.location right.location
+  [%compare.equal: Location.WithModule.t] left.location right.location
   &&
   match left.kind, right.kind with
   | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
@@ -2273,7 +2275,7 @@ let join ~resolution left right =
       given_annotation = join_annotation_options left.given_annotation right.given_annotation;
       evidence_locations =
         List.dedup_and_sort
-          ~compare:Location.Instantiated.compare
+          ~compare:Location.WithPath.compare
           (left.evidence_locations @ right.evidence_locations);
       thrown_at_source = left.thrown_at_source || right.thrown_at_source;
     }
@@ -2570,7 +2572,7 @@ let join ~resolution left right =
         let { location; _ } = left in
         Log.debug
           "Incompatible type in error join at %a: %a %a"
-          Location.pp
+          Location.WithModule.pp
           location
           pp_kind
           left.kind
@@ -2579,7 +2581,7 @@ let join ~resolution left right =
         Top
   in
   let location =
-    if Location.compare left.location right.location <= 0 then
+    if Location.WithModule.compare left.location right.location <= 0 then
       left.location
     else
       right.location
@@ -2758,7 +2760,7 @@ let filter ~resolution errors =
       | UndefinedAttribute { origin = Callable (Some name); _ } -> Reference.last name = "patch"
       | _ -> false
     in
-    let is_stub_error { kind; location = { Location.path; _ }; _ } =
+    let is_stub_error { kind; location = { Location.WithModule.path; _ }; _ } =
       match kind with
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
@@ -2779,7 +2781,7 @@ let filter ~resolution errors =
           | _ -> false )
       | _ -> false
     in
-    Location.equal Location.Reference.synthetic location
+    Location.WithModule.equal Location.WithModule.synthetic location
     || is_stub_error error
     || is_mock_error error
     || is_unimplemented_return_error error

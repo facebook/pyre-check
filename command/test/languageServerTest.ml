@@ -644,7 +644,7 @@ let test_language_server_definition_response context =
     let message =
       let response =
         match location with
-        | Some { start; stop; path } ->
+        | Some { WithPath.path; start; stop } ->
             let path = Path.create_relative ~root:local_root ~relative:path in
             TextDocumentDefinitionResponse.create ~id ~start ~stop ~path
         | None -> TextDocumentDefinitionResponse.create_empty ~id
@@ -763,11 +763,7 @@ let test_language_server_hover_response _ =
     HoverResponse.create
       ~id:(int_request_id 1)
       ~result:
-        (Some
-           {
-             HoverResponse.location = Ast.Location.Instantiated.any;
-             contents = "Hover response contents";
-           })
+        (Some { HoverResponse.location = Ast.Location.any; contents = "Hover response contents" })
     |> HoverResponse.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.pretty_to_string

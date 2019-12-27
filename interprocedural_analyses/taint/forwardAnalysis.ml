@@ -24,6 +24,8 @@ module type FixpointState = sig
 end
 
 module type FUNCTION_CONTEXT = sig
+  val qualifier : Reference.t
+
   val definition : Define.t Node.t
 
   val global_resolution : GlobalResolution.t
@@ -31,7 +33,7 @@ module type FUNCTION_CONTEXT = sig
   val local_annotations : LocalAnnotationMap.t option
 
   val check_flow
-    :  location:Location.t ->
+    :  location:Location.WithModule.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
     unit
@@ -181,7 +183,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (tito_effects, state)
             ((argument, sink_matches), (_dup, tito_matches))
           =
-          let location = argument.Node.location in
+          let location =
+            Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+          in
           let argument_taint, state = analyze_unstarred_expression ~resolution argument state in
           let tito =
             let convert_tito_path
@@ -308,7 +312,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~source_tree
               state
             =
-            let location = argument.Node.location in
+            let location =
+              Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+            in
             begin
               match Model.get_global_sink_model ~resolution ~location ~expression:argument with
               | None -> ()
@@ -589,6 +595,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
+      let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
       match expression.Node.value with
       | Await expression -> analyze_expression ~resolution ~state ~expression
       | BooleanOperator { left; operator = _; right } ->
@@ -768,6 +775,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             state
       | _ ->
           (* Check flows to tainted globals/attributes. *)
+          let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           let source_tree = taint in
           let sink_tree =
             Model.get_global_sink_model ~resolution ~location ~expression:target
@@ -809,6 +817,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           state
       | Return { expression = Some expression; _ } ->
           let taint, state = analyze_expression ~resolution ~state ~expression in
+          let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           FunctionContext.check_flow
             ~location
             ~source_tree:taint
@@ -833,6 +842,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (parameter_root, name, { Ast.Node.location; value = { Parameter.value; _ } })
         =
         let prime =
+          let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
           |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
         in
@@ -941,9 +951,11 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   |> attach_features
 
 
-let run ~environment ~qualifier:_ ~define ~existing_model =
+let run ~environment ~qualifier ~define ~existing_model =
   let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } = define in
   let module Context = struct
+    let qualifier = qualifier
+
     let definition = define
 
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
@@ -956,7 +968,7 @@ let run ~environment ~qualifier:_ ~define ~existing_model =
 
     let debug = Define.dump define.value
 
-    let candidates = Location.Reference.Table.create ()
+    let candidates = Location.WithModule.Table.create ()
 
     let add_flow_candidate candidate =
       let key = candidate.Flow.location in
@@ -966,7 +978,7 @@ let run ~environment ~qualifier:_ ~define ~existing_model =
             { Flow.flows = List.rev_append candidate.Flow.flows flows; location }
         | None -> candidate
       in
-      Location.Reference.Table.set candidates ~key ~data:candidate
+      Location.WithModule.Table.set candidates ~key ~data:candidate
 
 
     let check_flow ~location ~source_tree ~sink_tree =
@@ -979,7 +991,7 @@ let run ~environment ~qualifier:_ ~define ~existing_model =
         let new_issues = Flow.generate_issues ~define candidate in
         List.rev_append new_issues issues
       in
-      Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
+      Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
 
 
     let return_sink =
@@ -992,7 +1004,10 @@ let run ~environment ~qualifier:_ ~define ~existing_model =
         ~root:AccessPath.Root.LocalResult
         ~path:[]
         existing_model.TaintResult.backward.sink_taint
-      |> BackwardState.Tree.apply_call return_location ~callees:[] ~port:AccessPath.Root.LocalResult
+      |> BackwardState.Tree.apply_call
+           (Location.with_module ~qualifier return_location)
+           ~callees:[]
+           ~port:AccessPath.Root.LocalResult
   end
   in
   let module AnalysisInstance = AnalysisInstance (Context) in

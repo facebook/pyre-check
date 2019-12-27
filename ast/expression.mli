@@ -333,11 +333,7 @@ val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> b
 
 val arguments_location : Call.t -> Location.t
 
-val get_item_call
-  :  string ->
-  expression Node.t list ->
-  location:Reference.t Location.location ->
-  expression
+val get_item_call : string -> expression Node.t list -> location:Location.t -> expression
 
 val is_private_attribute : string -> bool
 

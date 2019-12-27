@@ -55,7 +55,7 @@ end
 module Simple = struct
   type t =
     | LeafName of string
-    | TitoPosition of Location.Reference.t
+    | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of { position: int }
   [@@deriving show, sexp, compare]

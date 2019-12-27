@@ -9,7 +9,7 @@ open Core
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.Instantiated.t * Type.t) list option;
+  types_by_location: (Location.t * Type.t) list option;
 }
 
 val evict : lookups:Analysis.Lookup.t String.Table.t -> Reference.t -> unit
@@ -21,13 +21,13 @@ val find_annotation
   configuration:Configuration.Analysis.t ->
   path:PyrePath.t ->
   position:Location.position ->
-  (Location.Instantiated.t * Type.t) option
+  (Location.t * Type.t) option
 
 val find_all_annotations
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
   path:PyrePath.t ->
-  (Location.Instantiated.t * Type.t) list option
+  (Location.t * Type.t) list option
 
 val find_all_annotations_batch
   :  state:State.t ->
@@ -40,4 +40,4 @@ val find_definition
   configuration:Configuration.Analysis.t ->
   PyrePath.t ->
   Location.position ->
-  Location.Reference.t option
+  Location.t option

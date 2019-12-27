@@ -10,6 +10,8 @@ module Error = AnalysisError
 module type Context = sig
   val configuration : Configuration.Analysis.t
 
+  val qualifier : Reference.t
+
   val define : Define.t Node.t
 end
 

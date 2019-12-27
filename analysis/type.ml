@@ -915,7 +915,7 @@ let parametric_substitution_map =
 
 
 let rec expression annotation =
-  let location = Location.Reference.any in
+  let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
   let get_item_call = get_item_call ~location in
   let convert_annotation annotation =

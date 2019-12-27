@@ -13,9 +13,9 @@ module NestedDefines = struct
     state: 'state;
   }
 
-  and 'state t = 'state nested Location.Reference.Map.t
+  and 'state t = 'state nested Location.Map.t
 
-  let initial = Location.Reference.Map.empty
+  let initial = Location.Map.empty
 
   let update_nested_defines nested_defines ~statement ~state =
     match statement with

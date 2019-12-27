@@ -96,11 +96,10 @@ let test_simple_registration context =
   ()
 
 
-let node ?(path = !&"test") ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
+let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
     {
-      Location.path;
-      start = { Location.line = start_line; Location.column = start_column };
+      Location.start = { Location.line = start_line; Location.column = start_column };
       stop = { Location.line = stop_line; Location.column = stop_column };
     }
   in

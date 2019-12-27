@@ -19,6 +19,8 @@ let add_local ~resolution ~name ~annotation =
 module type Context = sig
   val configuration : Configuration.Analysis.t
 
+  val qualifier : Reference.t
+
   val define : Define.t Node.t
 end
 
@@ -38,11 +40,13 @@ end
 
 module State (Context : Context) = struct
   module TypeCheckContext = struct
+    let qualifier = Context.qualifier
+
     let debug = Context.configuration.debug
 
     let define = Context.define
 
-    let calls = Location.Reference.Table.create ()
+    let calls = Location.Table.create ()
 
     module Builder = Callgraph.NullBuilder
   end
@@ -86,7 +90,7 @@ module State (Context : Context) = struct
         in
         Format.asprintf
           "    %a -> %s"
-          Location.Instantiated.pp
+          Location.WithPath.pp
           (Error.Instantiated.location error)
           (Error.Instantiated.description error ~show_error_traces:true)
       in
@@ -452,7 +456,7 @@ module State (Context : Context) = struct
               let annotation = Type.remove_undeclared annotation in
               let error =
                 Error.create
-                  ~location
+                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
                   ~kind:
                     (Error.MissingParameterAnnotation
                        {
@@ -657,7 +661,7 @@ let run
     ~global_resolution
     ~source:
       ( {
-          Source.source_path = { SourcePath.relative; is_stub; _ };
+          Source.source_path = { SourcePath.qualifier; relative; is_stub; _ };
           metadata = { local_mode; ignore_codes; _ };
           _;
         } as source )
@@ -673,6 +677,8 @@ let run
     =
     let module State = State (struct
       let configuration = configuration
+
+      let qualifier = qualifier
 
       let define = Node.create ~location define
     end)
@@ -741,7 +747,12 @@ let run
           ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
         if configuration.debug then
-          [Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node]
+          [
+            Error.create
+              ~location:(Location.with_module ~qualifier location)
+              ~kind:(Error.AnalysisFailure annotation)
+              ~define:define_node;
+          ]
         else
           []
   in

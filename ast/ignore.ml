@@ -20,20 +20,18 @@ type t = {
 [@@deriving show, sexp]
 
 let compare left right =
-  let { Location.path = left_path; start = left_start; _ } = left.location in
-  let { Location.path = right_path; start = right_start; _ } = right.location in
-  [%compare: int * int list * Reference.t * Location.position * kind]
-    (left.ignored_line, left.codes, left_path, left_start, left.kind)
-    (right.ignored_line, right.codes, right_path, right_start, right.kind)
+  let { Location.start = left_start; _ } = left.location in
+  let { Location.start = right_start; _ } = right.location in
+  [%compare: int * int list * Location.position * kind]
+    (left.ignored_line, left.codes, left_start, left.kind)
+    (right.ignored_line, right.codes, right_start, right.kind)
 
 
 let equal = [%compare.equal: t]
 
 let hash_fold_t state { ignored_line; codes; location; kind; _ } =
-  let { Location.path; start; _ } = location in
-  [%hash_fold: int * int list * Reference.t * Location.position * kind]
-    state
-    (ignored_line, codes, path, start, kind)
+  let { Location.start; _ } = location in
+  [%hash_fold: int * int list * Location.position * kind] state (ignored_line, codes, start, kind)
 
 
 let hash = Hash.run hash_fold_t

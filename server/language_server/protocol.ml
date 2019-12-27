@@ -37,7 +37,7 @@ module PublishDiagnostics = struct
 
   let of_errors path errors =
     let diagnostic_of_error error =
-      let { Ast.Location.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
+      let { Ast.Location.WithPath.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
       Diagnostic.
         {
           range = Range.create ~start ~stop;
@@ -245,7 +245,7 @@ module HoverResponse = struct
   include Types.HoverResponse
 
   type hover_result = {
-    location: Ast.Location.Instantiated.t;
+    location: Ast.Location.t;
     contents: string;
   }
 

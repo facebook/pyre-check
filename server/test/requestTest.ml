@@ -107,24 +107,7 @@ let test_process_type_query_request context =
          "response": {
             "types": [
                 {
-                    "location": {
-                        "path": "test.py",
-                        "start": {
-                            "line": 2,
-                            "column": 11
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 14
-                        }
-                    },
-                    "coverage": [
-                        "Typed"
-                    ]
-                },
-                {
                   "location": {
-                    "path": "test.py",
                     "start": {
                       "line": 2,
                       "column": 4
@@ -140,7 +123,6 @@ let test_process_type_query_request context =
                 },
                 {
                     "location": {
-                        "path": "test.py",
                         "start": {
                             "line": 2,
                             "column": 8
@@ -156,7 +138,21 @@ let test_process_type_query_request context =
                 },
                 {
                     "location": {
-                        "path": "test.py",
+                        "start": {
+                            "line": 2,
+                            "column": 19
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 22
+                        }
+                    },
+                    "coverage": [
+                        "Typed"
+                    ]
+                },
+                {
+                    "location": {
                         "start": {
                             "line": 3,
                             "column": 9
@@ -172,14 +168,13 @@ let test_process_type_query_request context =
                 },
                 {
                     "location": {
-                        "path": "test.py",
                         "start": {
                             "line": 2,
-                            "column": 19
+                            "column": 11
                         },
                         "stop": {
                             "line": 2,
-                            "column": 22
+                            "column": 14
                         }
                     },
                     "coverage": [
@@ -234,7 +229,7 @@ let test_process_type_query_request context =
                 {
                     "locations": [
                         {
-                            "path": "await.py",
+                            "path":"await.py",
                             "start": {
                                 "line": 4,
                                 "column": 2
@@ -635,18 +630,16 @@ let test_process_get_definition_request context =
   in
   let assert_response ?filename ~line ~column response =
     let position = { Location.line; column } in
-    let request =
-      let path =
-        match filename with
-        | Some valid_filename -> Path.create_relative ~root:local_root ~relative:valid_filename
-        | _ ->
-            (* Create a bogus filename entry. *)
-            Path.create_relative
-              ~relative:"bogusfile.py"
-              ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
-      in
-      { Protocol.DefinitionRequest.id = int_request_id 0; path; position }
+    let path =
+      match filename with
+      | Some valid_filename -> Path.create_relative ~root:local_root ~relative:valid_filename
+      | _ ->
+          (* Create a bogus filename entry. *)
+          Path.create_relative
+            ~relative:"bogusfile.py"
+            ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
     in
+    let request = { Protocol.DefinitionRequest.id = int_request_id 0; path; position } in
     let actual_response =
       let actual_response = Request.process_get_definition_request ~state ~configuration ~request in
       match actual_response with
@@ -659,14 +652,13 @@ let test_process_get_definition_request context =
       let result =
         let response_location
             {
-              Ast.Location.path;
-              start = { Ast.Location.line = start_line; column = start_column };
+              Ast.Location.start = { Ast.Location.line = start_line; column = start_column };
               stop = { Ast.Location.line = stop_line; column = stop_column };
             }
           =
           {
             (* Temporary paths are OS-dependent. *)
-            Location.uri = Path.uri (Path.create_relative ~root:local_root ~relative:path);
+            Location.uri = Path.uri path;
             range =
               {
                 start = { Position.line = start_line; character = start_column };
@@ -708,8 +700,7 @@ let test_process_get_definition_request context =
     ~column:9
     (Some
        {
-         Location.path = "library.py";
-         start = { Location.line = 0; column = 0 };
+         Location.start = { Location.line = 0; column = 0 };
          stop = { Location.line = 0; column = 26 };
        })
 
@@ -721,15 +712,15 @@ let test_create_annotation_edit context =
       name = Reference.create "x";
       annotation = Some (Type.Literal (Integer 1));
       given_annotation = None;
-      evidence_locations = [Location.Instantiated.any];
+      evidence_locations = [Location.WithPath.any];
       thrown_at_source = true;
     }
   in
   let mock_mismatch : Analysis.Error.mismatch =
     { actual = Type.integer; expected = Type.string; due_to_invariance = false }
   in
-  let location = { Location.Reference.any with start = { line = 0; column = 0 } } in
-  let instantiated_location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
+  let location = { Location.WithModule.any with start = { line = 0; column = 0 } } in
+  let instantiated_location = { Location.WithPath.any with start = { line = 0; column = 0 } } in
   let assert_edit ~source ~error ~expected_text ~expected_range =
     let file =
       let path = Path.create_relative ~root ~relative:"test.py" in
@@ -844,7 +835,7 @@ let test_create_annotation_edit context =
                  mismatch = mock_mismatch;
                  is_implicit = false;
                  is_unimplemented = false;
-                 define_location = { Location.Reference.any with start = { line = 0; column = 0 } };
+                 define_location = { Location.any with start = { line = 0; column = 0 } };
                };
            signature = +mock_signature;
          });

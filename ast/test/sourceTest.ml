@@ -24,7 +24,7 @@ let test_parse _ =
     let location =
       let start = { Location.line; column = start } in
       let stop = { Location.line; column = stop } in
-      { Location.path = Reference.create "test"; start; stop }
+      { Location.start; stop }
     in
     Node.create ~location mode
   in
@@ -74,7 +74,7 @@ let test_parse _ =
     let location =
       let start = { Location.line = start_line; column = start_column } in
       let stop = { Location.line = end_line; column = end_column } in
-      { Location.path = qualifier; start; stop }
+      { Location.start; stop }
     in
     create ~ignored_line ~codes ~kind ~location
   in

@@ -24,18 +24,14 @@ and callee =
 
 type callee_with_locations = {
   callee: callee;
-  locations: Location.Reference.t list;
+  locations: Location.WithModule.t list;
 }
-
-include Hashable.Make (struct
-  type t = callee [@@deriving compare, hash, sexp]
-end)
 
 let callee_to_yojson ?locations callee =
   let locations =
     match locations with
     | None -> []
-    | Some locations -> ["locations", `List (List.map locations ~f:Location.Instantiated.to_yojson)]
+    | Some locations -> ["locations", `List (List.map locations ~f:Location.WithPath.to_yojson)]
   in
   match callee with
   | Function name ->
@@ -85,6 +81,7 @@ module type Builder = sig
     callables:Type.Callable.t list option ->
     arguments:Call.Argument.t list ->
     dynamic:bool ->
+    qualifier:Reference.t ->
     callee:Expression.t ->
     unit
 
@@ -93,6 +90,7 @@ module type Builder = sig
     resolved_base:Type.t ->
     attributes:(AnnotatedAttribute.t * Type.t) list ->
     name:string ->
+    qualifier:Reference.t ->
     location:Location.t ->
     unit
 
@@ -100,11 +98,11 @@ module type Builder = sig
 end
 
 module DefaultBuilder : Builder = struct
-  let table = Location.Reference.Table.create ()
+  let table = Location.WithModule.Table.create ()
 
   let initialize () = Hashtbl.clear table
 
-  let add_callee ~global_resolution ~target ~callables ~arguments:_ ~dynamic ~callee =
+  let add_callee ~global_resolution ~target ~callables ~arguments:_ ~dynamic ~qualifier ~callee =
     (* Store callees. *)
     let callees =
       let method_callee ?(is_optional_class_attribute = false) annotation callable =
@@ -152,10 +150,11 @@ module DefaultBuilder : Builder = struct
       | None, Some [{ Type.Callable.kind = Named define; _ }] -> [Function define]
       | _ -> []
     in
-    Hashtbl.set table ~key:(Node.location callee) ~data:callees
+    let key = Location.with_module ~qualifier (Node.location callee) in
+    Hashtbl.set table ~key ~data:callees
 
 
-  let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~location =
+  let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~qualifier ~location =
     let property_callables = ref [] in
     let register_attribute_callable ?(is_optional_class_attribute = false) class_name attribute =
       let direct_target_name =
@@ -206,12 +205,17 @@ module DefaultBuilder : Builder = struct
     in
     List.iter attributes ~f:register;
     if not (List.is_empty !property_callables) then
-      Hashtbl.set table ~key:location ~data:!property_callables
+      let key = Location.with_module ~qualifier location in
+      Hashtbl.set table ~key ~data:!property_callables
 
+
+  module CalleesTable = Hashtbl.Make (struct
+    type t = callee [@@deriving compare, hash, sexp]
+  end)
 
   let get_all_callees () =
     (* Sort the callees as a map from callee -> list of locations. *)
-    let callees = Table.create () in
+    let callees = CalleesTable.create () in
     let add_binding ~key ~data =
       List.iter data ~f:(fun callee -> Hashtbl.add_multi callees ~key:callee ~data:key)
     in
@@ -223,9 +227,26 @@ end
 module NullBuilder : Builder = struct
   let initialize () = ()
 
-  let add_callee ~global_resolution:_ ~target:_ ~callables:_ ~arguments:_ ~dynamic:_ ~callee:_ = ()
+  let add_callee
+      ~global_resolution:_
+      ~target:_
+      ~callables:_
+      ~arguments:_
+      ~dynamic:_
+      ~qualifier:_
+      ~callee:_
+    =
+    ()
 
-  let add_property_callees ~global_resolution:_ ~resolved_base:_ ~attributes:_ ~name:_ ~location:_ =
+
+  let add_property_callees
+      ~global_resolution:_
+      ~resolved_base:_
+      ~attributes:_
+      ~name:_
+      ~qualifier:_
+      ~location:_
+    =
     ()
 
 

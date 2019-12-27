@@ -14,63 +14,78 @@ type position = {
 
 val any_position : position
 
-(* Yes, I hate abbreviations that much *)
-type 'path location = {
-  path: 'path;
+type t = {
   start: position;
   stop: position;
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-module Reference : sig
-  type t = AstReference.t location [@@deriving compare, eq, sexp, show, hash]
+val create : start:Lexing.position -> stop:Lexing.position -> t
 
-  module Map : Map.S with type Key.t = t
+val any : t
 
-  module Set : Set.S with type Elt.t = t
+val synthetic : t
 
-  include Hashable with type t := t
+val start : t -> position
 
-  val create : start:Lexing.position -> stop:Lexing.position -> t
+val stop : t -> position
 
-  val start : t -> position
+val line : t -> int
 
-  val stop : t -> position
+val column : t -> int
+
+val stop_column : t -> int
+
+val pp_start : Format.formatter -> t -> unit
+
+val pp_line_and_column : Format.formatter -> t -> unit
+
+module Map : Map.S with type Key.t = t
+
+module Set : Set.S with type Elt.t = t
+
+include Hashable with type t := t
+
+module WithPath : sig
+  type t = {
+    path: string;
+    start: position;
+    stop: position;
+  }
+  [@@deriving compare, eq, sexp, hash, to_yojson]
 
   val any : t
 
-  val synthetic : t
+  val pp : Format.formatter -> t -> unit
 
-  val pp_line_and_column : Format.formatter -> t -> unit
-end
-
-module Instantiated : sig
-  type t = string location [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val create : start:Lexing.position -> stop:Lexing.position -> t
-
-  val any : t
-
-  val synthetic : t
-
-  val pp_start : Format.formatter -> t -> unit
+  val line : t -> int
 
   val pp_line : Format.formatter -> t -> unit
 end
 
-val instantiate : Reference.t -> lookup:(AstReference.t -> string option) -> Instantiated.t
+module WithModule : sig
+  type t = {
+    path: Reference.t;
+    start: position;
+    stop: position;
+  }
+  [@@deriving compare, eq, sexp, hash, to_yojson]
 
-val reference : Instantiated.t -> Reference.t
+  val any : t
 
-val line : 'path location -> int
+  val synthetic : t
 
-val column : 'path location -> int
+  val line : t -> int
 
-val stop_column : 'path location -> int
+  val pp : Format.formatter -> t -> unit
 
-val path : 'path location -> 'path
+  val show : t -> string
 
-(* Shortcuts to make this more palatable. *)
-type t = Reference.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  val instantiate : lookup:(Reference.t -> string option) -> t -> WithPath.t
 
-val create : start:Lexing.position -> stop:Lexing.position -> t
+  include Hashable with type t := t
+end
+
+val with_path : path:string -> t -> WithPath.t
+
+val with_module : qualifier:Reference.t -> t -> WithModule.t

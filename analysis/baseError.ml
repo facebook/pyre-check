@@ -17,7 +17,7 @@ module type Kind = sig
   val messages
     :  concise:bool ->
     signature:Define.Signature.t Node.t ->
-    Location.Instantiated.t ->
+    Location.WithPath.t ->
     t ->
     string list
 
@@ -28,7 +28,7 @@ module type Error = sig
   type kind
 
   type t = {
-    location: Location.t;
+    location: Location.WithModule.t;
     kind: kind;
     signature: Define.Signature.t Node.t;
   }
@@ -37,7 +37,7 @@ module type Error = sig
   module Instantiated : sig
     type t [@@deriving sexp, compare, eq, show, hash]
 
-    val location : t -> Location.Instantiated.t
+    val location : t -> Location.WithPath.t
 
     val path : t -> string
 
@@ -52,11 +52,11 @@ module type Error = sig
 
   include Hashable with type t := t
 
-  val create : location:Location.t -> kind:kind -> define:Define.t Node.t -> t
+  val create : location:Location.WithModule.t -> kind:kind -> define:Define.t Node.t -> t
 
   val path : t -> Reference.t
 
-  val key : t -> Location.t
+  val key : t -> Location.WithModule.t
 
   val code : t -> int
 
@@ -66,7 +66,7 @@ end
 module Make (Kind : Kind) = struct
   module T = struct
     type t = {
-      location: Location.t;
+      location: Location.WithModule.t;
       kind: Kind.t;
       signature: Define.Signature.t Node.t;
     }
@@ -81,11 +81,11 @@ module Make (Kind : Kind) = struct
     { location; kind; signature = { Node.value = signature; location = define_location } }
 
 
-  let path { location = { Location.path; _ }; _ } = path
+  let path { location = { Location.WithModule.path; _ }; _ } = path
 
-  let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
+  let key { location = { Location.WithModule.start = { Location.line; _ }; path; _ }; _ } =
     let start = { Location.line; column = -1 } in
-    { Location.start; stop = start; path }
+    { Location.WithModule.start; stop = start; path }
 
 
   let code { kind; _ } = Kind.code kind
@@ -96,7 +96,7 @@ module Make (Kind : Kind) = struct
 
   module Instantiated = struct
     type t = {
-      location: Location.Instantiated.t;
+      location: Location.WithPath.t;
       kind: Kind.t;
       signature: Define.Signature.t Node.t;
     }
@@ -106,7 +106,7 @@ module Make (Kind : Kind) = struct
 
     let location { location; _ } = location
 
-    let path { location = { Location.path; _ }; _ } = path
+    let path { location = { Location.WithPath.path; _ }; _ } = path
 
     let kind { kind; _ } = kind
 
@@ -133,7 +133,11 @@ module Make (Kind : Kind) = struct
         ~show_error_traces
         ( {
             location =
-              { Location.path; start = { Location.line = start_line; column = start_column }; _ };
+              {
+                Location.WithPath.path;
+                start = { Location.line = start_line; column = start_column };
+                _;
+              };
             kind;
             signature = { Node.value = signature; _ } as signature_node;
             _;
@@ -156,5 +160,5 @@ module Make (Kind : Kind) = struct
   end
 
   let instantiate ~lookup { location; kind; signature } =
-    { Instantiated.location = Location.instantiate ~lookup location; kind; signature }
+    { Instantiated.location = Location.WithModule.instantiate ~lookup location; kind; signature }
 end

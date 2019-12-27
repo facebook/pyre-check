@@ -120,7 +120,7 @@ let parse_untrimmed
       in
       let line = location.Location.start.Location.line - 1
       and column = location.Location.start.Location.column in
-      let header = Format.asprintf "\nCould not parse test at %a" Location.Reference.pp location in
+      let header = Format.asprintf "\nCould not parse test at %a" Location.pp location in
       let indicator = if column > 0 then String.make (column - 1) ' ' ^ "^" else "^" in
       let error =
         match List.nth (String.split source ~on:'\n') line with
@@ -228,11 +228,10 @@ let collect_nodes_as_strings source =
   Collector.collect source
 
 
-let node ?(path = Reference.empty) ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
+let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
     {
-      Location.path;
-      start = { Location.line = start_line; Location.column = start_column };
+      Location.start = { Location.line = start_line; Location.column = start_column };
       stop = { Location.line = stop_line; Location.column = stop_column };
     }
   in
@@ -284,7 +283,7 @@ let assert_source_equal_with_locations expected actual =
             format
             "%s -> (%a)\n"
             (node_string |> add_indentation)
-            Location.Reference.pp_line_and_column
+            Location.pp_line_and_column
             location
         in
         collect_nodes_as_strings (Source.create [statement]) |> List.iter ~f:print_expression
@@ -316,7 +315,7 @@ let assert_source_equal_with_locations expected actual =
         prefix
         pp
         statement
-        Location.Reference.pp_line_and_column
+        Location.pp_line_and_column
         statement.Node.location
         indented_prefix
         pp_nested_expressions
@@ -367,13 +366,11 @@ let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
 
-let ( ! ) name =
-  +Expression.Expression.Name (Expression.create_name ~location:Location.Reference.any name)
-
+let ( ! ) name = +Expression.Expression.Name (Expression.create_name ~location:Location.any name)
 
 let ( !! ) name =
   +Statement.Expression
-     (+Expression.Expression.Name (Expression.create_name ~location:Location.Reference.any name))
+     (+Expression.Expression.Name (Expression.create_name ~location:Location.any name))
 
 
 let ( !& ) name = Reference.create name
@@ -1688,7 +1685,7 @@ let assert_errors
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->
           let location = Error.Instantiated.location error in
-          Option.some_if (Location.Instantiated.equal location Location.Instantiated.any) location)
+          Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
     in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then

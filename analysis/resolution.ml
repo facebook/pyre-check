@@ -89,7 +89,7 @@ let resolve ({ resolve; _ } as resolution) expression =
 let resolve_to_annotation ({ resolve; _ } as resolution) expression = resolve ~resolution expression
 
 let resolve_reference ({ resolve; _ } as resolution) reference =
-  Expression.from_reference ~location:Location.Reference.any reference
+  Expression.from_reference ~location:Location.any reference
   |> resolve ~resolution
   |> Annotation.annotation
 

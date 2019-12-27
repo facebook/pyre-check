@@ -12,8 +12,7 @@ open Test
 
 let location (start_line, start_column) (stop_line, stop_column) =
   {
-    Location.path = !&"test";
-    start = { Location.line = start_line; column = start_column };
+    Location.start = { Location.line = start_line; column = start_column };
     stop = { Location.line = stop_line; column = stop_column };
   }
 
@@ -282,18 +281,10 @@ let test_simple_global_registration context =
          (Reference.create name))
   in
   let target_location =
-    {
-      Location.path = Reference.create "test";
-      start = { line = 2; column = 0 };
-      stop = { line = 2; column = 3 };
-    }
+    { Location.start = { line = 2; column = 0 }; stop = { line = 2; column = 3 } }
   in
   let value_location =
-    {
-      Location.path = Reference.create "test";
-      start = { line = 2; column = 6 };
-      stop = { line = 2; column = 7 };
-    }
+    { Location.start = { line = 2; column = 6 }; stop = { line = 2; column = 7 } }
   in
   let value =
     let value = parse_single_expression "8" in
@@ -325,11 +316,7 @@ let test_simple_global_registration context =
             explicit_annotation = None;
             value = create_with_location (Expression.Expression.Integer 8) (3, 8) (3, 9);
             target_location =
-              {
-                Location.path = !&"test";
-                start = { line = 3; column = 2 };
-                stop = { line = 3; column = 5 };
-              };
+              { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } };
           }));
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
@@ -428,10 +415,10 @@ let test_updates context =
           let remove_target_location = function
             | UnannotatedGlobalEnvironment.SimpleAssign assign ->
                 UnannotatedGlobalEnvironment.SimpleAssign
-                  { assign with target_location = Location.Reference.any }
+                  { assign with target_location = Location.any }
             | UnannotatedGlobalEnvironment.TupleAssign assign ->
                 UnannotatedGlobalEnvironment.TupleAssign
-                  { assign with target_location = Location.Reference.any }
+                  { assign with target_location = Location.any }
             | global -> global
           in
           UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
@@ -664,7 +651,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "7") with location = location (2, 9) (2, 10) };
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                  }) );
       ]
     ~expected_triggers:[dependency]
@@ -679,7 +666,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                  }) );
       ]
     ();
@@ -742,19 +729,17 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
-  let path = !&"test" in
   let open Statement in
   let open Expression in
   let tuple_expression =
     node
-      ~path
       ~start:(2, 10)
       ~stop:(2, 24)
       (Expression.Tuple
          [
-           node ~path ~start:(2, 10) ~stop:(2, 13) (Expression.Name (Name.Identifier "int"));
-           node ~path ~start:(2, 15) ~stop:(2, 18) (Expression.Name (Name.Identifier "str"));
-           node ~path ~start:(2, 20) ~stop:(2, 24) (Expression.Name (Name.Identifier "bool"));
+           node ~start:(2, 10) ~stop:(2, 13) (Expression.Name (Name.Identifier "int"));
+           node ~start:(2, 15) ~stop:(2, 18) (Expression.Name (Name.Identifier "str"));
+           node ~start:(2, 20) ~stop:(2, 24) (Expression.Name (Name.Identifier "bool"));
          ])
   in
   assert_updates
@@ -771,7 +756,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 0;
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                    total_length = 3;
                  }) );
         `Global
@@ -782,7 +767,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 1;
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                    total_length = 3;
                  }) );
         `Global
@@ -793,7 +778,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 2;
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                    total_length = 3;
                  }) );
       ]
@@ -821,7 +806,7 @@ let test_updates context =
                    explicit_annotation = None;
                    value =
                      { (parse_single_expression "int") with location = location (2, 4) (2, 7) };
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                  }) );
       ]
     ~expected_triggers:[]
@@ -852,7 +837,7 @@ let test_updates context =
                    explicit_annotation = None;
                    value =
                      { (parse_single_expression "int") with location = location (3, 6) (3, 9) };
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                  }) );
       ]
     ~expected_triggers:[]
@@ -895,7 +880,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
-                   target_location = Location.Reference.any;
+                   target_location = Location.any;
                  }) );
       ]
     ();
@@ -934,7 +919,6 @@ let test_updates context =
     ();
   let create_simple_signature ~start ~stop name return_annotation =
     node
-      ~path
       ~start
       ~stop
       {
@@ -969,10 +953,9 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                     (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                      (Some
                         (node
-                           ~path
                            ~start:(2, 13)
                            ~stop:(2, 17)
                            (Expression.Name (Name.Identifier "None"))));
@@ -990,10 +973,9 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                     (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                      (Some
                         (node
-                           ~path
                            ~start:(2, 13)
                            ~stop:(2, 17)
                            (Expression.Name (Name.Identifier "None"))));
@@ -1005,14 +987,12 @@ let test_updates context =
   let dependency = SharedMemoryKeys.TypeCheckDefine !&"test" in
   let create_simple_return ~start ~stop expression =
     node
-      ~path
       ~start
       ~stop
       (Statement.Return { Return.is_implicit = false; expression = Some expression })
   in
   let create_simple_define ~start ~stop name body =
     node
-      ~path
       ~start
       ~stop
       {
@@ -1051,12 +1031,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -1069,12 +1049,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ();
@@ -1098,12 +1078,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1116,12 +1096,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
                  ]) );
       ]
     ();
@@ -1146,12 +1126,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1165,12 +1145,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 (node ~path ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
+                 (node ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
                  ]) );
       ]
     ();
@@ -1195,12 +1175,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 (node ~path ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
+                 (node ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1213,12 +1193,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 3));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 3));
                  ]) );
       ]
     ();
@@ -1248,7 +1228,6 @@ let test_updates context =
       [
         (let body =
            node
-             ~path
              ~start:(7, 0)
              ~stop:(8, 10)
              {
@@ -1259,7 +1238,6 @@ let test_updates context =
                    parameters =
                      [
                        node
-                         ~path
                          ~start:(7, 8)
                          ~stop:(7, 9)
                          { Parameter.name = "$parameter$x"; value = None; annotation = None };
@@ -1279,7 +1257,6 @@ let test_updates context =
                      ~start:(8, 2)
                      ~stop:(8, 10)
                      (node
-                        ~path
                         ~start:(8, 9)
                         ~stop:(8, 10)
                         (Expression.Name (Name.Identifier "$parameter$x")));
@@ -1293,7 +1270,6 @@ let test_updates context =
       [
         (let body =
            node
-             ~path
              ~start:(5, 0)
              ~stop:(6, 10)
              {
@@ -1304,7 +1280,6 @@ let test_updates context =
                    parameters =
                      [
                        node
-                         ~path
                          ~start:(5, 8)
                          ~stop:(5, 9)
                          { Parameter.name = "$parameter$x"; value = None; annotation = None };
@@ -1324,7 +1299,6 @@ let test_updates context =
                      ~start:(6, 2)
                      ~stop:(6, 10)
                      (node
-                        ~path
                         ~start:(6, 9)
                         ~stop:(6, 10)
                         (Expression.Name (Name.Identifier "$parameter$x")));
@@ -1337,7 +1311,6 @@ let test_updates context =
   let () =
     let body =
       node
-        ~path
         ~start:(5, 0)
         ~stop:(6, 10)
         {
@@ -1347,7 +1320,6 @@ let test_updates context =
               parameters =
                 [
                   node
-                    ~path
                     ~start:(5, 8)
                     ~stop:(5, 9)
                     { Parameter.name = "$parameter$x"; value = None; annotation = None };
@@ -1367,7 +1339,6 @@ let test_updates context =
                 ~start:(6, 2)
                 ~stop:(6, 10)
                 (node
-                   ~path
                    ~start:(6, 9)
                    ~stop:(6, 10)
                    (Expression.Name (Name.Identifier "$parameter$x")));
@@ -1376,7 +1347,6 @@ let test_updates context =
     in
     let first_overload =
       node
-        ~path
         ~start:(4, 0)
         ~stop:(4, 27)
         {
@@ -1386,7 +1356,6 @@ let test_updates context =
               parameters =
                 [
                   node
-                    ~path
                     ~start:(4, 8)
                     ~stop:(4, 9)
                     {
@@ -1395,7 +1364,6 @@ let test_updates context =
                       annotation =
                         Some
                           (node
-                             ~path
                              ~start:(4, 11)
                              ~stop:(4, 14)
                              (Expression.Name (Name.Identifier "int")));
@@ -1404,7 +1372,6 @@ let test_updates context =
               decorators =
                 [
                   node
-                    ~path
                     ~start:(3, 1)
                     ~stop:(3, 9)
                     (Expression.Name
@@ -1412,7 +1379,6 @@ let test_updates context =
                           {
                             Name.Attribute.base =
                               node
-                                ~path
                                 ~start:(3, 1)
                                 ~stop:(3, 9)
                                 (Expression.Name (Name.Identifier "typing"));
@@ -1422,12 +1388,7 @@ let test_updates context =
                 ];
               docstring = None;
               return_annotation =
-                Some
-                  (node
-                     ~path
-                     ~start:(4, 19)
-                     ~stop:(4, 22)
-                     (Expression.Name (Name.Identifier "int")));
+                Some (node ~start:(4, 19) ~stop:(4, 22) (Expression.Name (Name.Identifier "int")));
               async = false;
               generator = false;
               parent = None;
@@ -1437,16 +1398,14 @@ let test_updates context =
           body =
             [
               node
-                ~path
                 ~start:(4, 24)
                 ~stop:(4, 27)
-                (Statement.Expression (node ~path ~start:(4, 24) ~stop:(4, 27) Expression.Ellipsis));
+                (Statement.Expression (node ~start:(4, 24) ~stop:(4, 27) Expression.Ellipsis));
             ];
         }
     in
     let second_overload =
       node
-        ~path
         ~start:(8, 0)
         ~stop:(8, 27)
         {
@@ -1456,7 +1415,6 @@ let test_updates context =
               parameters =
                 [
                   node
-                    ~path
                     ~start:(8, 8)
                     ~stop:(8, 9)
                     {
@@ -1465,7 +1423,6 @@ let test_updates context =
                       annotation =
                         Some
                           (node
-                             ~path
                              ~start:(8, 11)
                              ~stop:(8, 14)
                              (Expression.Name (Name.Identifier "str")));
@@ -1474,7 +1431,6 @@ let test_updates context =
               decorators =
                 [
                   node
-                    ~path
                     ~start:(7, 1)
                     ~stop:(7, 9)
                     (Expression.Name
@@ -1482,7 +1438,6 @@ let test_updates context =
                           {
                             Name.Attribute.base =
                               node
-                                ~path
                                 ~start:(7, 1)
                                 ~stop:(7, 9)
                                 (Expression.Name (Name.Identifier "typing"));
@@ -1492,12 +1447,7 @@ let test_updates context =
                 ];
               docstring = None;
               return_annotation =
-                Some
-                  (node
-                     ~path
-                     ~start:(8, 19)
-                     ~stop:(8, 22)
-                     (Expression.Name (Name.Identifier "str")));
+                Some (node ~start:(8, 19) ~stop:(8, 22) (Expression.Name (Name.Identifier "str")));
               async = false;
               generator = false;
               parent = None;
@@ -1507,10 +1457,9 @@ let test_updates context =
           body =
             [
               node
-                ~path
                 ~start:(8, 24)
                 ~stop:(8, 27)
-                (Statement.Expression (node ~path ~start:(8, 24) ~stop:(8, 27) Expression.Ellipsis));
+                (Statement.Expression (node ~start:(8, 24) ~stop:(8, 27) Expression.Ellipsis));
             ];
         }
     in
@@ -1580,15 +1529,10 @@ let test_updates context =
         (let definition =
            let open UnannotatedGlobalEnvironment.FunctionDefinition in
            let create_elipsis ~start ~stop () =
-             node
-               ~path
-               ~start
-               ~stop
-               (Statement.Expression (node ~path ~start ~stop Expression.Ellipsis))
+             node ~start ~stop (Statement.Expression (node ~start ~stop Expression.Ellipsis))
            in
            let body =
              node
-               ~path
                ~start:(4, 2)
                ~stop:(4, 27)
                {
@@ -1599,7 +1543,6 @@ let test_updates context =
                      parameters =
                        [
                          node
-                           ~path
                            ~start:(4, 10)
                            ~stop:(4, 14)
                            { Parameter.name = "$parameter$self"; value = None; annotation = None };
@@ -1607,7 +1550,6 @@ let test_updates context =
                      decorators =
                        [
                          node
-                           ~path
                            ~start:(3, 3)
                            ~stop:(3, 11)
                            (Expression.Name (Name.Identifier "property"));
@@ -1616,7 +1558,6 @@ let test_updates context =
                      return_annotation =
                        Some
                          (node
-                            ~path
                             ~start:(4, 19)
                             ~stop:(4, 22)
                             (Expression.Name (Name.Identifier "int")));
@@ -1633,7 +1574,6 @@ let test_updates context =
              [
                (let body =
                   node
-                    ~path
                     ~start:(6, 2)
                     ~stop:(6, 40)
                     {
@@ -1644,7 +1584,6 @@ let test_updates context =
                           parameters =
                             [
                               node
-                                ~path
                                 ~start:(6, 10)
                                 ~stop:(6, 14)
                                 {
@@ -1653,7 +1592,6 @@ let test_updates context =
                                   annotation = None;
                                 };
                               node
-                                ~path
                                 ~start:(6, 16)
                                 ~stop:(6, 21)
                                 {
@@ -1662,7 +1600,6 @@ let test_updates context =
                                   annotation =
                                     Some
                                       (node
-                                         ~path
                                          ~start:(6, 23)
                                          ~stop:(6, 26)
                                          (Expression.Name (Name.Identifier "int")));
@@ -1671,7 +1608,6 @@ let test_updates context =
                           decorators =
                             [
                               node
-                                ~path
                                 ~start:(5, 3)
                                 ~stop:(5, 13)
                                 (Expression.Name
@@ -1679,7 +1615,6 @@ let test_updates context =
                                       {
                                         base =
                                           node
-                                            ~path
                                             ~start:(5, 3)
                                             ~stop:(5, 6)
                                             (Expression.Name (Name.Identifier "foo"));
@@ -1691,7 +1626,6 @@ let test_updates context =
                           return_annotation =
                             Some
                               (node
-                                 ~path
                                  ~start:(6, 31)
                                  ~stop:(6, 35)
                                  (Expression.Name (Name.Identifier "None")));
@@ -1734,12 +1668,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1752,12 +1686,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(3, 0)
                  ~stop:(4, 12)
-                 (node ~path ~start:(3, 4) ~stop:(3, 7) !&"test.foo")
+                 (node ~start:(3, 4) ~stop:(3, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(4, 4)
                      ~stop:(4, 12)
-                     (node ~path ~start:(4, 11) ~stop:(4, 12) (Expression.Integer 1));
+                     (node ~start:(4, 11) ~stop:(4, 12) (Expression.Integer 1));
                  ]) );
       ]
     ();
@@ -1781,12 +1715,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
                  ]) );
       ]
     ();
@@ -1808,12 +1742,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~path ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
                  ]) );
       ]
     ~expected_triggers:[dependency]

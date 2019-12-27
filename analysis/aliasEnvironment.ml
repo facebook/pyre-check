@@ -112,9 +112,7 @@ let extract_alias unannotated_global_environment name ~dependency =
   let extract_alias = function
     | UnannotatedGlobalEnvironment.SimpleAssign { explicit_annotation; value; _ } -> (
         let target_annotation =
-          Type.create
-            ~aliases:(fun _ -> None)
-            (from_reference ~location:Location.Reference.any name)
+          Type.create ~aliases:(fun _ -> None) (from_reference ~location:Location.any name)
         in
         match Node.value value, explicit_annotation with
         | ( _,
@@ -257,7 +255,7 @@ let extract_alias unannotated_global_environment name ~dependency =
               (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
               None
           | _ ->
-              let value = from_reference ~location:Location.Reference.any original_name in
+              let value = from_reference ~location:Location.any original_name in
               Some (TypeAlias { target = name; value }) )
     | TupleAssign _
     | Define _ ->

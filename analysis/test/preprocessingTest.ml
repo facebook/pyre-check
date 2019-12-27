@@ -1881,8 +1881,7 @@ let test_expand_implicit_returns _ =
          pass
      |}
     {
-      Location.path = !&"test";
-      start = { Location.line = 3; Location.column = 2 };
+      Location.start = { Location.line = 3; Location.column = 2 };
       stop = { Location.line = 3; Location.column = 6 };
     };
   assert_implicit_return_location
@@ -1898,8 +1897,7 @@ let test_expand_implicit_returns _ =
            return 2
      |}
     {
-      Location.path = !&"test";
-      start = { Location.line = 10; Location.column = 6 };
+      Location.start = { Location.line = 10; Location.column = 6 };
       stop = { Location.line = 10; Location.column = 14 };
     };
   assert_implicit_return_location
@@ -1914,8 +1912,7 @@ let test_expand_implicit_returns _ =
            pass
        |}
     {
-      Location.path = !&"test";
-      start = { Location.line = 9; Location.column = 4 };
+      Location.start = { Location.line = 9; Location.column = 4 };
       stop = { Location.line = 9; Location.column = 8 };
     };
   assert_implicit_return_location
@@ -1934,8 +1931,7 @@ let test_expand_implicit_returns _ =
                pass
        |}
     {
-      Location.path = !&"test";
-      start = { Location.line = 13; Location.column = 8 };
+      Location.start = { Location.line = 13; Location.column = 8 };
       stop = { Location.line = 13; Location.column = 12 };
     };
   assert_implicit_return_location
@@ -1952,8 +1948,7 @@ let test_expand_implicit_returns _ =
              pass
        |}
     {
-      Location.path = !&"test";
-      start = { Location.line = 11; Location.column = 6 };
+      Location.start = { Location.line = 11; Location.column = 6 };
       stop = { Location.line = 11; Location.column = 10 };
     }
 
@@ -3167,10 +3162,9 @@ let test_populate_nesting_define _ =
   ()
 
 
-let location ?(path = !&"test") (start_line, start_column) (stop_line, stop_column) =
+let location (start_line, start_column) (stop_line, stop_column) =
   {
-    Location.path;
-    start = { Location.line = start_line; Location.column = start_column };
+    Location.start = { Location.line = start_line; Location.column = start_column };
     stop = { Location.line = stop_line; Location.column = stop_column };
   }
 

@@ -262,7 +262,7 @@ let test_attributes _ =
       ~annotation
       ?(frozen = false)
       ?(implicit = true)
-      ?(location = Location.Reference.any)
+      ?(location = Location.any)
       ~name
       ?(primitive = false)
       ?(toplevel = true)
@@ -401,8 +401,7 @@ let test_attributes _ =
           | Some ((start_line, start_column), (stop_line, stop_column)) ->
               Some
                 {
-                  Location.path = Reference.empty;
-                  start = { Location.line = start_line; column = start_column };
+                  Location.start = { Location.line = start_line; column = start_column };
                   stop = { Location.line = stop_line; column = stop_column };
                 }
         in
@@ -447,7 +446,7 @@ let test_attributes _ =
               }
         in
         { Attribute.kind; name }
-        |> Node.create ~location:(Option.value location ~default:Location.Reference.any)
+        |> Node.create ~location:(Option.value location ~default:Location.any)
       in
       List.map expected ~f:attribute
     in
@@ -471,8 +470,7 @@ let test_attributes _ =
       in
       equal_kind
       && String.equal left_name right_name
-      && ( Location.equal left_location Location.Reference.any
-         || Location.equal left_location right_location )
+      && (Location.equal left_location Location.any || Location.equal left_location right_location)
     in
     assert_equal
       ~cmp:(List.equal equal)

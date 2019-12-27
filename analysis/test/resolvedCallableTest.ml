@@ -83,7 +83,7 @@ let test_apply_decorators context =
     in
     assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_count actual_count
   in
-  let create_parameter ~name = Parameter.create ~location:Location.Reference.any ~name () in
+  let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
   create_define ~decorators:[] ~parameters:[create_parameter ~name:"test"] ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:1;
   create_define

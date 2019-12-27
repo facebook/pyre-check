@@ -151,8 +151,7 @@ let test_collect_location _ =
     let expected_locations =
       let create_location (start_line, start_column, end_line, end_column) =
         {
-          Location.path = !&"test";
-          start = { Ast.Location.line = start_line; column = start_column };
+          Location.start = { Ast.Location.line = start_line; column = start_column };
           stop = { Ast.Location.line = end_line; column = end_column };
         }
       in

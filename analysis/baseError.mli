@@ -17,7 +17,7 @@ module type Kind = sig
   val messages
     :  concise:bool ->
     signature:Define.Signature.t Node.t ->
-    Location.Instantiated.t ->
+    Location.WithPath.t ->
     t ->
     string list
 
@@ -28,7 +28,7 @@ module type Error = sig
   type kind
 
   type t = {
-    location: Location.t;
+    location: Location.WithModule.t;
     kind: kind;
     signature: Define.Signature.t Node.t;
   }
@@ -37,7 +37,7 @@ module type Error = sig
   module Instantiated : sig
     type t [@@deriving sexp, compare, eq, show, hash]
 
-    val location : t -> Location.Instantiated.t
+    val location : t -> Location.WithPath.t
 
     val path : t -> string
 
@@ -52,11 +52,11 @@ module type Error = sig
 
   include Hashable with type t := t
 
-  val create : location:Location.t -> kind:kind -> define:Define.t Node.t -> t
+  val create : location:Location.WithModule.t -> kind:kind -> define:Define.t Node.t -> t
 
   val path : t -> Reference.t
 
-  val key : t -> Location.t
+  val key : t -> Location.WithModule.t
 
   val code : t -> int
 

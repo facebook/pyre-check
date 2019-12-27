@@ -61,7 +61,7 @@ let decorate
         match parameters with
         | Defined parameters ->
             let convert (placed_single_star, sofar) parameter =
-              let location = Location.Reference.any in
+              let location = Location.any in
               let placed_single_star, sofar =
                 match placed_single_star, parameter with
                 | false, Type.Callable.Parameter.KeywordOnly _ ->

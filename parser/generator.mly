@@ -377,7 +377,7 @@ parse:
 (* Statements. *)
 
 statements:
-  | { Location.Reference.any, [] }
+  | { Location.any, [] }
   | NEWLINE; statements = statements { statements }
   | statement = statement; statements = statements {
       (* The recursion always terminates in the empty statement case. This logic avoids
@@ -930,7 +930,7 @@ block:
   ;
 
 named_optional_block(NAME):
-  | { Location.Reference.any, [] }
+  | { Location.any, [] }
   | NAME; COLON; block = block { block }
   ;
 
@@ -1448,7 +1448,7 @@ expression:
 
   | expression = expression; DOT; identifier = identifier {
       let location =
-        { expression.Node.location with Location.stop = Location.Reference.stop (fst identifier) }
+        { expression.Node.location with Location.stop = Location.stop (fst identifier) }
       in
       {
         Node.location;

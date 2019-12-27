@@ -81,12 +81,6 @@ let parse_annotation environment =
   GlobalResolution.create environment |> GlobalResolution.parse_annotation ~allow_untracked:true
 
 
-let create_location path start_line start_column end_line end_column =
-  let start = { Location.line = start_line; column = start_column } in
-  let stop = { Location.line = end_line; column = end_column } in
-  { Location.path; start; stop }
-
-
 let test_register_aliases context =
   let register_all sources = populate ~context sources in
   let assert_resolved sources aliases =

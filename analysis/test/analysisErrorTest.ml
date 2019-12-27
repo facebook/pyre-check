@@ -41,8 +41,13 @@ let mock_define = define ()
 
 let mock_parent = Type.Primitive "foo"
 
-let error ?(signature = mock_signature) ?(location = Location.Reference.any) kind =
-  { Error.location; kind; signature }
+let error
+    ?(qualifier = Reference.empty)
+    ?(signature = mock_signature)
+    ?(location = Location.any)
+    kind
+  =
+  { Error.location = Location.with_module ~qualifier location; kind; signature }
 
 
 let revealed_type expression annotation =
@@ -102,7 +107,7 @@ let test_due_to_analysis_limitations _ =
            {
              Error.name = !&"";
              mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-             declare_location = Location.Instantiated.any;
+             declare_location = Location.WithPath.any;
            };
        });
   assert_due_to_analysis_limitations
@@ -114,7 +119,7 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              mismatch =
                { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
-             declare_location = Location.Instantiated.any;
+             declare_location = Location.WithPath.any;
            };
        });
   assert_not_due_to_analysis_limitations
@@ -126,7 +131,7 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              mismatch =
                { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
-             declare_location = Location.Instantiated.any;
+             declare_location = Location.WithPath.any;
            };
        });
 
@@ -360,7 +365,7 @@ let test_join context =
                 Error.name = !&"";
                 mismatch =
                   { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-                declare_location = Location.Instantiated.any;
+                declare_location = Location.WithPath.any;
               };
           }))
     (error
@@ -368,7 +373,7 @@ let test_join context =
           {
             Error.name = !&"";
             mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-            declare_location = Location.Instantiated.any;
+            declare_location = Location.WithPath.any;
           }))
     (error Error.Top);
   assert_join
@@ -401,7 +406,7 @@ let test_join context =
           }));
   let create_mock_location path =
     {
-      Location.path;
+      Location.WithPath.path;
       start = { Location.line = 1; column = 1 };
       stop = { Location.line = 1; column = 1 };
     }
@@ -589,16 +594,13 @@ let test_join context =
     (error Error.Top);
   assert_join
     (error
-       ~location:
-         { Location.Reference.synthetic with Location.start = { Location.line = 1; column = 0 } }
+       ~location:{ Location.synthetic with Location.start = { Location.line = 1; column = 0 } }
        (revealed_type "a" (Annotation.create Type.integer)))
     (error
-       ~location:
-         { Location.Reference.synthetic with Location.start = { Location.line = 2; column = 1 } }
+       ~location:{ Location.synthetic with Location.start = { Location.line = 2; column = 1 } }
        (revealed_type "a" (Annotation.create Type.float)))
     (error
-       ~location:
-         { Location.Reference.synthetic with Location.start = { Location.line = 1; column = 0 } }
+       ~location:{ Location.synthetic with Location.start = { Location.line = 1; column = 0 } }
        (revealed_type "a" (Annotation.create Type.float)))
 
 
@@ -677,18 +679,20 @@ let test_filter context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
+  let assert_filtered ?(location = Location.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
     assert_equal [] (filter ~resolution errors)
   in
-  let assert_unfiltered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
-    let errors = [error ~signature ~location kind] in
+  let assert_unfiltered ?qualifier ?(location = Location.any) ?(signature = mock_signature) kind =
+    let errors = [error ?qualifier ~signature ~location kind] in
     assert_equal ~cmp:(List.equal equal) errors (filter ~resolution errors)
   in
   (* Suppress stub errors. *)
-  let stub = { Location.Reference.any with Location.path = !&"stub" } in
-  assert_unfiltered ~location:stub (undefined_attribute (Type.Primitive "Foo"));
-  assert_unfiltered ~location:Location.Reference.any (undefined_attribute (Type.Primitive "Foo"));
+  assert_unfiltered
+    ~location:Location.any
+    ~qualifier:!&"stub"
+    (undefined_attribute (Type.Primitive "Foo"));
+  assert_unfiltered ~location:Location.any (undefined_attribute (Type.Primitive "Foo"));
 
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.Primitive "unittest.mock.Mock") Type.integer);
@@ -702,7 +706,7 @@ let test_filter context =
   assert_unfiltered (unexpected_keyword "foo" None);
 
   (* Always filter synthetic locations. *)
-  assert_filtered ~location:Location.Reference.synthetic (missing_return Type.integer);
+  assert_filtered ~location:Location.synthetic (missing_return Type.integer);
 
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);

@@ -10,8 +10,8 @@ open Analysis
 open Pyre
 open Test
 
-let show_location { Location.path; start; stop } =
-  Format.asprintf "%a:%a-%a" Reference.pp path Location.pp_position start Location.pp_position stop
+let show_location { Location.start; stop } =
+  Format.asprintf "%a-%a" Location.pp_position start Location.pp_position stop
 
 
 let generate_lookup ~context source =
@@ -44,8 +44,7 @@ let test_lookup context =
   generate_lookup ~context source |> ignore
 
 
-let assert_annotation_list ~lookup ?(path = "test") expected =
-  let expected = List.map expected ~f:(fun annotation -> Format.sprintf "%s:%s" path annotation) in
+let assert_annotation_list ~lookup expected =
   let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
   assert_equal
     ~printer:(String.concat ~sep:", ")
@@ -56,8 +55,7 @@ let assert_annotation_list ~lookup ?(path = "test") expected =
     |> List.sort ~compare:String.compare )
 
 
-let assert_annotation ~lookup ~path ~position ~annotation =
-  let annotation = annotation >>| fun annotation -> Format.sprintf "%s:%s" path annotation in
+let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
@@ -76,7 +74,7 @@ let test_lookup_call_arguments context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -144,7 +142,7 @@ let test_lookup_pick_narrowest context =
       "3:7-3:11/bool";
       "3:7-3:28/bool";
     ];
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:28/bool");
   assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:28/bool");
   assert_annotation ~position:{ Location.line = 3; column = 17 } ~annotation:(Some "3:17-3:27/bool");
@@ -179,7 +177,7 @@ let test_lookup_class_attributes context =
           b: bool
     |} in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -359,7 +357,7 @@ let test_lookup_identifier_accesses context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -427,7 +425,7 @@ let test_lookup_unknown_accesses context =
           arbitrary["key"] = value
     |} in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -463,7 +461,7 @@ let test_lookup_multiline_accesses context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -545,7 +543,7 @@ let test_lookup_string_annotations context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -605,7 +603,6 @@ let test_lookup_union_type_resolution context =
   in
   assert_annotation
     ~lookup:(generate_lookup ~context source)
-    ~path:"test"
     ~position:{ Location.line = 19; column = 11 }
     ~annotation:(Some "19:11-19:12/typing.Union[test.A, test.B, test.C]")
 
@@ -621,7 +618,7 @@ let test_lookup_unbound context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  let assert_annotation = assert_annotation ~lookup ~path:"test" in
+  let assert_annotation = assert_annotation ~lookup in
   assert_annotation_list
     ~lookup
     [
@@ -744,18 +741,18 @@ let test_lookup_definitions context =
   assert_definition_list
     ~lookup
     [
-      "test:11:4-11:8 -> test:11:0-13:21";
-      "test:12:10-12:16 -> test:2:0-3:13";
-      "test:12:4-12:7 -> test:8:0-9:8";
-      "test:13:12-13:18 -> test:2:0-3:13";
-      "test:13:4-13:11 -> test:5:0-6:8";
-      "test:2:16-2:19 -> :96:0-157:32";
-      "test:2:4-2:10 -> test:2:0-3:13";
-      "test:5:4-5:11 -> test:5:0-6:8";
-      "test:8:4-8:7 -> test:8:0-9:8";
+      "11:4-11:8 -> 11:0-13:21";
+      "12:10-12:16 -> 2:0-3:13";
+      "12:4-12:7 -> 8:0-9:8";
+      "13:12-13:18 -> 2:0-3:13";
+      "13:4-13:11 -> 5:0-6:8";
+      "2:16-2:19 -> 96:0-157:32";
+      "2:4-2:10 -> 2:0-3:13";
+      "5:4-5:11 -> 5:0-6:8";
+      "8:4-8:7 -> 8:0-9:8";
     ];
   assert_definition ~position:{ Location.line = 12; column = 0 } ~definition:None;
-  assert_definition ~position:{ Location.line = 12; column = 4 } ~definition:(Some "test:8:0-9:8");
+  assert_definition ~position:{ Location.line = 12; column = 4 } ~definition:(Some "8:0-9:8");
   assert_definition ~position:{ Location.line = 12; column = 7 } ~definition:None
 
 
@@ -787,37 +784,37 @@ let test_lookup_definitions_instances context =
   assert_definition_list
     ~lookup
     [
-      "test:11:4-11:8 -> test:11:0-19:15";
-      "test:12:8-12:9 -> test:2:0-4:12";
-      "test:13:4-13:9 -> test:3:4-4:12";
-      "test:14:4-14:11 -> test:3:4-4:12";
-      "test:14:4-14:5 -> test:2:0-4:12";
-      "test:15:8-15:9 -> test:6:0-9:18";
-      "test:16:4-16:15 -> test:3:4-4:12";
-      "test:16:4-16:9 -> test:8:4-9:18";
-      "test:17:4-17:11 -> test:8:4-9:18";
-      "test:17:4-17:17 -> test:3:4-4:12";
-      "test:17:4-17:5 -> test:6:0-9:18";
-      "test:18:4-18:11 -> test:3:4-4:12";
-      "test:19:4-19:13 -> test:3:4-4:12";
-      "test:19:4-19:5 -> test:6:0-9:18";
-      "test:2:6-2:7 -> test:2:0-4:12";
-      "test:3:8-3:11 -> test:3:4-4:12";
-      "test:6:6-6:7 -> test:6:0-9:18";
-      "test:7:11-7:12 -> test:2:0-4:12";
-      "test:7:4-7:5 -> test:6:0-9:18";
-      "test:8:21-8:22 -> test:2:0-4:12";
-      "test:8:8-8:11 -> test:8:4-9:18";
-      "test:9:15-9:16 -> test:2:0-4:12";
+      "11:4-11:8 -> 11:0-19:15";
+      "12:8-12:9 -> 2:0-4:12";
+      "13:4-13:9 -> 3:4-4:12";
+      "14:4-14:11 -> 3:4-4:12";
+      "14:4-14:5 -> 2:0-4:12";
+      "15:8-15:9 -> 6:0-9:18";
+      "16:4-16:15 -> 3:4-4:12";
+      "16:4-16:9 -> 8:4-9:18";
+      "17:4-17:11 -> 8:4-9:18";
+      "17:4-17:17 -> 3:4-4:12";
+      "17:4-17:5 -> 6:0-9:18";
+      "18:4-18:11 -> 3:4-4:12";
+      "19:4-19:13 -> 3:4-4:12";
+      "19:4-19:5 -> 6:0-9:18";
+      "2:6-2:7 -> 2:0-4:12";
+      "3:8-3:11 -> 3:4-4:12";
+      "6:6-6:7 -> 6:0-9:18";
+      "7:11-7:12 -> 2:0-4:12";
+      "7:4-7:5 -> 6:0-9:18";
+      "8:21-8:22 -> 2:0-4:12";
+      "8:8-8:11 -> 8:4-9:18";
+      "9:15-9:16 -> 2:0-4:12";
     ];
-  assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:(Some "test:8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:(Some "test:8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:(Some "test:8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:(Some "test:8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:(Some "test:3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:(Some "test:3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:(Some "test:3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:(Some "test:3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:(Some "8:4-9:18");
+  assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:(Some "8:4-9:18");
+  assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:(Some "8:4-9:18");
+  assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:(Some "8:4-9:18");
+  assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:(Some "3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:(Some "3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:(Some "3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:(Some "3:4-4:12");
   assert_definition ~position:{ Location.line = 16; column = 15 } ~definition:None
 
 

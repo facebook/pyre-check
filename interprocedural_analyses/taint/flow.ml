@@ -18,14 +18,14 @@ type flows = flow list [@@deriving sexp]
 
 type candidate = {
   flows: flows;
-  location: Location.t;
+  location: Location.WithModule.t;
 }
 [@@deriving sexp]
 
 type issue = {
   code: int;
   flow: flow;
-  issue_location: Location.t;
+  issue_location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
 [@@deriving sexp]
@@ -199,17 +199,24 @@ let to_json ~filename_lookup callable issue =
         `Assoc ["name", `String "backward"; "roots", sink_traces];
       ]
   in
-  let issue_location = issue.issue_location |> Location.instantiate ~lookup:filename_lookup in
+  let {
+    Location.WithPath.path;
+    start = { line; column = start_column };
+    stop = { column = stop_column; _ };
+  }
+    =
+    Location.WithModule.instantiate ~lookup:filename_lookup issue.issue_location
+  in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc
     [
       "callable", `String callable_name;
       "callable_line", `Int callable_line;
       "code", `Int issue.code;
-      "line", `Int (Location.line issue_location);
-      "start", `Int (Location.column issue_location);
-      "end", `Int (Location.stop_column issue_location);
-      "filename", `String (Location.path issue_location);
+      "line", `Int line;
+      "start", `Int start_column;
+      "end", `Int stop_column;
+      "filename", `String path;
       "message", `String message;
       "traces", traces;
     ]

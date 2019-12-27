@@ -6,7 +6,6 @@
 open OUnit2
 open Ast
 open Core
-open Test
 
 type test_node = string Ast.Node.t [@@deriving compare, eq, sexp, show, hash]
 
@@ -22,21 +21,19 @@ let test_equality _ =
   in
   let location_1 =
     {
-      Location.path = !&"some_path";
       Location.start = { Location.line = 1; column = 1 };
       Location.stop = { Location.line = 2; column = 5 };
     }
   in
   let location_2 =
     {
-      Location.path = !&"some_other_path";
       Location.start = { Location.line = 12; column = 3 };
       Location.stop = { Location.line = 12; column = 7 };
     }
   in
   compare_two_locations location_1 location_1 true true true;
-  compare_two_locations Location.Reference.any location_1 false false false;
-  compare_two_locations Location.Reference.any location_2 false false false;
+  compare_two_locations Location.any location_1 false false false;
+  compare_two_locations Location.any location_2 false false false;
   compare_two_locations location_1 location_2 false false false
 
 

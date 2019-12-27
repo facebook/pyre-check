@@ -10,7 +10,7 @@ type missing_annotation = {
   name: Reference.t;
   annotation: Type.t option;
   given_annotation: Type.t option;
-  evidence_locations: Location.Instantiated.t list;
+  evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -46,7 +46,7 @@ and mismatch = {
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.Instantiated.t;
+  declare_location: Location.WithPath.t;
 }
 
 and invalid_argument =

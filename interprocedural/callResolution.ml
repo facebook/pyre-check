@@ -269,7 +269,7 @@ type global_targets =
 
 let get_global_targets ~resolution reference =
   let callee =
-    Expression.Name (create_name_from_reference ~location:Location.Reference.any reference)
+    Expression.Name (create_name_from_reference ~location:Location.any reference)
     |> Node.create_with_default_location
   in
   (* Determine if this is a constructor call, as we need to add the uninitialized object argument

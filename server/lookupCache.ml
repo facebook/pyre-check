@@ -11,7 +11,7 @@ open Pyre
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.Instantiated.t * Type.t) list option;
+  types_by_location: (Location.t * Type.t) list option;
 }
 
 type lookup = {
@@ -19,11 +19,6 @@ type lookup = {
   source_path: SourcePath.t option;
   lookup: Lookup.t option;
 }
-
-let instantiate_location ~state:{ State.environment; _ } =
-  let ast_environment = TypeEnvironment.ast_environment environment in
-  Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
-
 
 let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ } paths =
   let paths, nonexistent_paths =
@@ -89,21 +84,14 @@ let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) (
 let find_annotation ~state ~configuration ~path ~position =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let annotation =
-    lookup
-    >>= Lookup.get_annotation ~position
-    >>| fun (location, annotation) -> instantiate_location ~state location, annotation
-  in
+  let annotation = lookup >>= Lookup.get_annotation ~position in
   let _ =
     match source_path with
     | Some { SourcePath.relative = handle; _ } ->
         let normals =
           annotation
           >>| fun (location, annotation) ->
-          [
-            "resolved location", Location.Instantiated.show location;
-            "resolved annotation", Type.show annotation;
-          ]
+          ["resolved location", Location.show location; "resolved annotation", Type.show annotation]
         in
         log_lookup ~handle ~position ~timer ~name:"find annotation" ?normals ()
     | _ -> ()
@@ -114,11 +102,7 @@ let find_annotation ~state ~configuration ~path ~position =
 let find_all_annotations ~state ~configuration ~path =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let annotations =
-    lookup
-    >>| Lookup.get_all_annotations
-    >>| List.map ~f:(fun (location, annotation) -> instantiate_location ~state location, annotation)
-  in
+  let annotations = lookup >>| Lookup.get_all_annotations in
   let _ =
     match source_path, annotations with
     | Some { SourcePath.relative = handle; _ }, Some annotations ->
@@ -137,12 +121,7 @@ let find_all_annotations ~state ~configuration ~path =
 
 let find_all_annotations_batch ~state ~configuration ~paths =
   let get_annotations { path; lookup; _ } =
-    let annotations =
-      lookup
-      >>| Lookup.get_all_annotations
-      >>| List.map ~f:(fun (location, annotation) ->
-              instantiate_location ~state location, annotation)
-    in
+    let annotations = lookup >>| Lookup.get_all_annotations in
     { path; types_by_location = annotations }
   in
   List.map ~f:get_annotations (get_lookups ~configuration ~state paths)
@@ -156,7 +135,7 @@ let find_definition ~state ~configuration path position =
     match source_path with
     | Some { SourcePath.relative = handle; _ } ->
         let normals =
-          definition >>| fun location -> ["resolved location", Location.Reference.show location]
+          definition >>| fun location -> ["resolved location", Location.show location]
         in
         log_lookup ~handle ~position ~timer ~name:"find definition" ?normals ()
     | _ -> ()

@@ -22,12 +22,10 @@ and callee =
 
 type callee_with_locations = {
   callee: callee;
-  locations: Location.Reference.t list;
+  locations: Location.WithModule.t list;
 }
 
-val callee_to_yojson : ?locations:Location.Instantiated.t list -> callee -> Yojson.Safe.t
-
-include Hashable with type t := callee
+val callee_to_yojson : ?locations:Location.WithPath.t list -> callee -> Yojson.Safe.t
 
 module CalleeValue : Memory.ValueType with type t = callee_with_locations list
 
@@ -52,6 +50,7 @@ module type Builder = sig
     callables:Type.Callable.t list option ->
     arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
+    qualifier:Reference.t ->
     callee:Ast.Expression.t ->
     unit
 
@@ -60,7 +59,8 @@ module type Builder = sig
     resolved_base:Type.t ->
     attributes:(AnnotatedAttribute.t * Type.t) list ->
     name:string ->
-    location:Ast.Location.Reference.t ->
+    qualifier:Reference.t ->
+    location:Ast.Location.t ->
     unit
 
   val get_all_callees : unit -> callee_with_locations list

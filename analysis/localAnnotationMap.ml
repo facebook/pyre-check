@@ -37,11 +37,11 @@ end
    is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
 type t = {
   statements: Annotations.t Int.Map.Tree.t;
-  expressions: Annotations.t Location.Reference.Map.Tree.t;
+  expressions: Annotations.t Location.Map.Tree.t;
 }
 [@@deriving eq]
 
-let empty = { statements = Int.Map.Tree.empty; expressions = Location.Reference.Map.Tree.empty }
+let empty = { statements = Int.Map.Tree.empty; expressions = Location.Map.Tree.empty }
 
 let pp formatter { statements; expressions } =
   let pp_annotations formatter iterator pp_key map =
@@ -55,7 +55,7 @@ let pp formatter { statements; expressions } =
   Format.fprintf formatter "Statements:\n";
   pp_annotations formatter Int.Map.Tree.iteri Int.pp statements;
   Format.fprintf formatter "Expressions:\n";
-  pp_annotations formatter Location.Reference.Map.Tree.iteri Location.Reference.pp expressions
+  pp_annotations formatter Location.Map.Tree.iteri Location.pp expressions
 
 
 let show map = Format.asprintf "%a" pp map
@@ -72,7 +72,7 @@ let merge
   in
   {
     statements = Int.Map.Tree.merge ~f:join left_statements right_statements;
-    expressions = Location.Reference.Map.Tree.merge ~f:join left_expressions right_expressions;
+    expressions = Location.Map.Tree.merge ~f:join left_expressions right_expressions;
   }
 
 
@@ -102,7 +102,7 @@ let set_expression
     { statements; expressions }
   =
   let expressions =
-    Location.Reference.Map.Tree.set
+    Location.Map.Tree.set
       expressions
       ~key
       ~data:
@@ -125,10 +125,10 @@ let get_statement_postcondition { statements; _ } key =
 
 
 let get_expression_precondition { expressions; _ } key =
-  Location.Reference.Map.Tree.find expressions key
+  Location.Map.Tree.find expressions key
   >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
 
 
 let get_expression_postcondition { expressions; _ } key =
-  Location.Reference.Map.Tree.find expressions key
+  Location.Map.Tree.find expressions key
   >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition
