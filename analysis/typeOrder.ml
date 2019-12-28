@@ -12,14 +12,9 @@ open Assumptions
 type order = {
   handler: (module ClassHierarchy.Handler);
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
-  attributes:
-    Type.t ->
-    protocol_assumptions:ProtocolAssumptions.t ->
-    callable_assumptions:CallableAssumptions.t ->
-    AnnotatedAttribute.t list option;
+  attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
-  protocol_assumptions: ProtocolAssumptions.t;
-  callable_assumptions: CallableAssumptions.t;
+  assumptions: Assumptions.t;
 }
 
 module type FullOrderTypeWithoutT = sig
@@ -64,7 +59,7 @@ module OrderImplementation = struct
 
     let resolve_callable_protocol
         ~assumption
-        ~order:{ attributes; protocol_assumptions; callable_assumptions; _ }
+        ~order:{ attributes; assumptions = { protocol_assumptions; callable_assumptions }; _ }
         annotation
       =
       match
@@ -72,8 +67,15 @@ module OrderImplementation = struct
       with
       | Some assumption -> Some assumption
       | None ->
-          let new_callable_assumptions =
-            CallableAssumptions.add ~candidate:annotation ~callable:assumption callable_assumptions
+          let new_assumptions =
+            {
+              protocol_assumptions;
+              callable_assumptions =
+                CallableAssumptions.add
+                  ~candidate:annotation
+                  ~callable:assumption
+                  callable_assumptions;
+            }
           in
           let find_call = function
             | {
@@ -88,8 +90,7 @@ module OrderImplementation = struct
                 Some annotation
             | _ -> None
           in
-          attributes annotation ~protocol_assumptions ~callable_assumptions:new_callable_assumptions
-          >>= List.find_map ~f:find_call
+          attributes annotation ~assumptions:new_assumptions >>= List.find_map ~f:find_call
 
 
     (* TODO(T40105833): merge this with actual signature select *)
@@ -337,7 +338,8 @@ module OrderImplementation = struct
        extract possible solutions to the constraints set you have built up with List.filter_map
        ~f:OrderedConstraints.solve *)
     and solve_less_or_equal
-        ({ handler; constructor; is_protocol; protocol_assumptions; _ } as order)
+        ( { handler; constructor; is_protocol; assumptions = { protocol_assumptions; _ }; _ } as
+        order )
         ~constraints
         ~left
         ~right
@@ -892,7 +894,7 @@ module OrderImplementation = struct
             handler = (module Handler : ClassHierarchy.Handler) as handler;
             constructor;
             is_protocol;
-            protocol_assumptions;
+            assumptions = { protocol_assumptions; _ };
             _;
           } as order )
         left
@@ -1162,7 +1164,7 @@ module OrderImplementation = struct
             handler = (module Handler : ClassHierarchy.Handler);
             constructor;
             is_protocol;
-            protocol_assumptions;
+            assumptions = { protocol_assumptions; _ };
             _;
           } as order )
         left
@@ -1311,8 +1313,7 @@ module OrderImplementation = struct
         ( {
             attributes;
             handler = (module Handler : ClassHierarchy.Handler) as handler;
-            protocol_assumptions;
-            callable_assumptions;
+            assumptions = { protocol_assumptions; _ } as assumptions;
             _;
           } as order )
         ~candidate
@@ -1365,8 +1366,7 @@ module OrderImplementation = struct
                   (not (Type.is_object parent)) && not (Type.is_generic_primitive parent)
                 in
                 attributes
-                  ~protocol_assumptions:new_assumptions
-                  ~callable_assumptions
+                  ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
                   (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
@@ -1429,8 +1429,7 @@ module OrderImplementation = struct
                       SanitizeTransform.visit [] candidate
                     in
                     ( attributes
-                        ~protocol_assumptions:new_assumptions
-                        ~callable_assumptions
+                        ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
                         sanitized_candidate,
                       desanitize_map )
               in
@@ -1453,7 +1452,8 @@ module OrderImplementation = struct
                     | `Right _ -> Some `Missing
                   in
                   let order_with_new_assumption =
-                    { order with protocol_assumptions = new_assumptions }
+                    let assumptions = { assumptions with protocol_assumptions = new_assumptions } in
+                    { order with assumptions }
                   in
                   let attribute_implements ~key:_ ~data constraints_set =
                     match data with

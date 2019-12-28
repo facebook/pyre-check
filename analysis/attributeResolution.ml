@@ -833,7 +833,7 @@ module Implementation = struct
 
   let full_order
       { constructor; attribute_table; _ }
-      ~assumptions:({ protocol_assumptions; callable_assumptions } as assumptions)
+      ~assumptions
       ?dependency
       class_metadata_environment
     =
@@ -847,8 +847,7 @@ module Implementation = struct
 
       instantiated |> Type.primitive_name >>= constructor { assumptions with protocol_assumptions }
     in
-    let attributes class_type ~protocol_assumptions ~callable_assumptions =
-      let assumptions = { assumptions with protocol_assumptions; callable_assumptions } in
+    let attributes class_type ~assumptions =
       match Type.resolve_class class_type with
       | None -> None
       | Some [] -> None
@@ -890,8 +889,7 @@ module Implementation = struct
       constructor;
       attributes;
       is_protocol;
-      protocol_assumptions;
-      callable_assumptions;
+      assumptions;
     }
 
 
