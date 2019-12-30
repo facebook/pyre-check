@@ -40,6 +40,12 @@ We care about investing in type system improvements and features to better suppo
 - Fully support all Python 3.8 features
 - Investigate the frequency/severity of shape mismatch errors in production ML pipelines.
 
+## Taint Analysis
+We plan on improving the coverage and expressiveness of Pysa, our taint analysis, and make it a generally usable tool for open source use cases.
+
+- Build a web-based UI available for open source users, similar to the Facebook-internal UI that we use for the consumption of results.
+- Ensure that all Pysa features are documented and that a tutorial is available.
+- Invest in the performance of the taint analysis.
 
 # H2 2019
 
