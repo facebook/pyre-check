@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import os  # noqa
 import shutil  # noqa
 import signal
@@ -28,7 +26,7 @@ class KillTest(unittest.TestCase):
         get_environment.return_value = "/tmp/pyre_directory/main.exe"
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
 
-    @patch.object(commands.kill.ProjectFilesMonitor, "stop_project_monitor")
+    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
     @patch.object(psutil, "process_iter")
     @patch.object(os, "getpgid", side_effect=lambda id: id)
     @patch.object(os, "getpid", return_value=1234)
@@ -41,7 +39,7 @@ class KillTest(unittest.TestCase):
         get_process_id: MagicMock,
         get_process_group_id: MagicMock,
         process_iterator: MagicMock,
-        stop_project_monitor: MagicMock,
+        stop_subscriber: MagicMock,
     ) -> None:
         process_iterator.return_value = [
             Mock(info={"name": "pyre-client"}, pid=1234),
@@ -50,15 +48,20 @@ class KillTest(unittest.TestCase):
             Mock(info={"name": "pyre-client"}, pid=9101),
         ]
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._configuration = MagicMock()
+        kill_command._configuration = MagicMock(log_directory=".pyre")
         kill_command._kill_client_processes()
         os_kill.assert_has_calls(
             [call(5678, signal.SIGKILL), call(9101, signal.SIGKILL)]
         )
-        stop_project_monitor.assert_called_once()
+        stop_subscriber.assert_has_calls(
+            [
+                call(".pyre/file_monitor", "file_monitor"),
+                call(".pyre/configuration_monitor", "configuration_monitor"),
+            ]
+        )
 
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._configuration = MagicMock()
+        kill_command._configuration = MagicMock(log_directory=".pyre")
         os_kill.side_effect = ProcessLookupError
         # Ensure that we don't crash even if os.kill fails to find a process.
         kill_command._kill_client_processes()
@@ -105,7 +108,7 @@ class KillTest(unittest.TestCase):
         kill_client_processes: MagicMock,
         delete_caches: MagicMock,
         delete_linked_path: MagicMock,
-        glob,
+        glob: MagicMock,
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._log_directory = ".pyre"

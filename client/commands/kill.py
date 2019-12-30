@@ -14,10 +14,11 @@ from typing import Optional
 
 import psutil
 
-from .. import BINARY_NAME, CLIENT_NAME
+from .. import BINARY_NAME, CLIENT_NAME, configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
+from ..watchman_subscriber import WatchmanSubscriber
 from .command import Command
 
 
@@ -92,7 +93,13 @@ class Kill(Command):
                 os.kill(pid_to_kill, signal.SIGKILL)
             except ProcessLookupError:
                 continue
-        ProjectFilesMonitor.stop_project_monitor(self._configuration)
+        WatchmanSubscriber.stop_subscriber(
+            ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
+        )
+        WatchmanSubscriber.stop_subscriber(
+            configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
+            configuration_monitor.ConfigurationMonitor.NAME,
+        )
 
     @staticmethod
     def _kill_binary_processes() -> None:
