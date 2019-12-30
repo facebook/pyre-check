@@ -95,8 +95,27 @@ class KillTest(unittest.TestCase):
         Kill._kill_binary_processes()
         run.assert_called_once_with(["pkill", "foo.exe"])
 
-    @patch.object(Path, "glob", return_value=["a.sock", "b.sock"])
     @patch.object(Kill, "_delete_linked_path")
+    @patch.object(kill, "Path")
+    @patch.object(Kill, "__init__", return_value=None)
+    def test_delete_server_files(
+        self, kill_init: MagicMock, path_class: MagicMock, delete_linked_path: MagicMock
+    ) -> None:
+        def path_constructor(*subpaths: str) -> Mock:
+            if "/".join(subpaths).endswith(".pyre"):
+                # The project root has two local server sockets under it.
+                return Mock(glob=Mock(return_value=["a.sock", "b.sock"]))
+            else:
+                # The local server has just one socket under it.
+                return Mock(glob=Mock(return_value=["a.sock"]))
+
+        path_class.side_effect = path_constructor
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._current_directory = "/root/.pyre"
+        kill_command._delete_server_files()
+        self.assertEqual(delete_linked_path.call_count, 6)
+
+    @patch.object(Kill, "_delete_server_files")
     @patch.object(Kill, "_delete_caches")
     @patch.object(Kill, "_kill_client_processes")
     @patch.object(Kill, "_kill_binary_processes")
@@ -107,8 +126,7 @@ class KillTest(unittest.TestCase):
         kill_binary_processes: MagicMock,
         kill_client_processes: MagicMock,
         delete_caches: MagicMock,
-        delete_linked_path: MagicMock,
-        glob: MagicMock,
+        delete_server_files: MagicMock,
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._log_directory = ".pyre"
@@ -120,7 +138,7 @@ class KillTest(unittest.TestCase):
 
         kill_binary_processes.assert_called_once()
         kill_client_processes.assert_called_once()
-        self.assertEqual(delete_linked_path.call_count, 4)
+        delete_server_files.assert_called_once()
 
         kill_command._arguments = Mock(with_fire=True)
         kill_command._run()
@@ -128,4 +146,4 @@ class KillTest(unittest.TestCase):
         delete_caches.assert_called_once()
         self.assertEqual(kill_binary_processes.call_count, 2)
         self.assertEqual(kill_client_processes.call_count, 2)
-        self.assertEqual(delete_linked_path.call_count, 8)
+        self.assertEqual(delete_server_files.call_count, 2)

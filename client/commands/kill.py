@@ -9,12 +9,13 @@ import os
 import shutil
 import signal
 import subprocess
+from itertools import chain
 from pathlib import Path
 from typing import Optional
 
 import psutil
 
-from .. import BINARY_NAME, CLIENT_NAME, configuration_monitor
+from .. import BINARY_NAME, CLIENT_NAME, LOG_DIRECTORY, configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
@@ -108,13 +109,18 @@ class Kill(Command):
         binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
         subprocess.run(["pkill", binary_name])
 
+    def _delete_server_files(self) -> None:
+        root_log_directory = Path(self._current_directory, LOG_DIRECTORY)
+        LOG.info("Deleting server files under %s", root_log_directory)
+        socket_paths = root_log_directory.glob("**/server.sock")
+        json_server_paths = root_log_directory.glob("**/json_server.sock")
+        pid_paths = root_log_directory.glob("**/server.pid")
+        for path in chain(socket_paths, json_server_paths, pid_paths):
+            self._delete_linked_path(path)
+
     def _run(self) -> None:
         self._kill_binary_processes()
-
-        socket_paths = Path(self._log_directory).glob("**/server.sock")
-        json_server_paths = Path(self._log_directory).glob("**/json_server.sock")
-        [self._delete_linked_path(path) for path in socket_paths]
-        [self._delete_linked_path(path) for path in json_server_paths]
+        self._delete_server_files()
 
         if self._arguments.with_fire is True:
             self._delete_caches()
