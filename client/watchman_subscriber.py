@@ -133,6 +133,7 @@ class WatchmanSubscriber(object):
         """We double-fork here to detach the daemon process from the parent.
            If we were to just fork the child as a daemon, we'd have to worry about the
            parent process exiting zombifying the daemon."""
+        LOG.debug("Daemonizing the %s.", self._name)
         if os.fork() == 0:
             pid = os.fork()
             if pid == 0:

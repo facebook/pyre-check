@@ -185,6 +185,7 @@ def add_symbolic_link(link_path: str, actual_path: str) -> None:
 @contextmanager
 def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, None]:
     """Raises an OSError if the lock can't be acquired"""
+    LOG.debug("Trying to acquire lock on file %s", path)
     try:
         with open(path, "w+") as lockfile:
             if not blocking:
@@ -197,7 +198,7 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
             fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
 
     except FileNotFoundError:
-        LOG.warning(f"Unable to acquire lock because lock file {path} was not found")
+        LOG.debug(f"Unable to acquire lock because lock file {path} was not found")
         yield
 
 
