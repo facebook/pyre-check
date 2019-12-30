@@ -1,0 +1,19 @@
+# pyre-unsafe
+
+from typing import Any, Optional
+
+from django.core.exceptions import ValidationError as ValidationError
+
+class EmailValidator:
+    def __call__(self, value: Optional[str]) -> None: ...
+
+class URLValidator:
+    def __call__(self, value: Optional[str]) -> None: ...
+
+class RegexValidator(object):
+    def __init__(
+        self, regex=..., message=..., code=..., inverse_match=..., flags=...
+    ) -> None: ...
+    def __call__(self, value: Optional[str]) -> None: ...
+
+validate_email: EmailValidator = ...

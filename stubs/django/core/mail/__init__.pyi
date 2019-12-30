@@ -1,4 +1,9 @@
-from typing import Any
+# pyre-unsafe
+
+from email.mime.base import MIMEBase
+from typing import Any, Iterable, Optional, Tuple, Union
+
+from django.core.mail.message import EmailMessage, SafeMIMEMultipart, SafeMIMEText
 
 def send_mail(
     subject: Any,
