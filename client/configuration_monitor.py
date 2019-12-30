@@ -39,8 +39,7 @@ class ConfigurationMonitor(WatchmanSubscriber):
         original_directory: str,
         local_configuration_root: Optional[str],
     ) -> None:
-        base_path = os.path.join(configuration.log_directory, self._name)
-        super(ConfigurationMonitor, self).__init__(base_path)
+        super(ConfigurationMonitor, self).__init__(self.base_path(configuration))
         self._arguments = arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
@@ -48,9 +47,15 @@ class ConfigurationMonitor(WatchmanSubscriber):
         self._original_directory = original_directory
         self._local_configuration_root = local_configuration_root
 
+    NAME = "configuration_monitor"
+
     @property
     def _name(self) -> str:
-        return "configuration_monitor"
+        return ConfigurationMonitor.NAME
+
+    @staticmethod
+    def base_path(configuration: Configuration) -> str:
+        return os.path.join(configuration.log_directory, ConfigurationMonitor.NAME)
 
     @property
     def _subscriptions(self) -> List[Subscription]:

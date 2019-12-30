@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import logging
 import os
@@ -12,9 +10,11 @@ import time
 from logging import Logger
 from typing import List, Optional
 
+from .. import configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
+from ..watchman_subscriber import WatchmanSubscriber
 from .command import ClientException, Command, State
 from .kill import Kill
 
@@ -27,7 +27,7 @@ class Stop(Command):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
@@ -49,8 +49,9 @@ class Stop(Command):
         return flags
 
     def _run(self) -> None:
-        def _kill():
+        def _kill() -> None:
             arguments = self._arguments
+            # pyre-fixme[16]: `argparse.Namespace` has no attribute `with_fire`.
             arguments.with_fire = False
             Kill(
                 arguments,
@@ -97,4 +98,10 @@ class Stop(Command):
             else:
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
-        ProjectFilesMonitor.stop_project_monitor(self._configuration)
+        WatchmanSubscriber.stop_subscriber(
+            ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
+        )
+        WatchmanSubscriber.stop_subscriber(
+            configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
+            configuration_monitor.ConfigurationMonitor.NAME,
+        )

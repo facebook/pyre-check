@@ -40,8 +40,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         current_directory: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        base_path = os.path.join(configuration.log_directory, self._name)
-        super(ProjectFilesMonitor, self).__init__(base_path)
+        super(ProjectFilesMonitor, self).__init__(self.base_path(configuration))
         self._configuration = configuration
         self._analysis_directory = analysis_directory
 
@@ -82,10 +81,13 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         ]
 
     @staticmethod
+    def base_path(configuration: Configuration) -> str:
+        return os.path.join(configuration.log_directory, ProjectFilesMonitor.NAME)
+
+    @staticmethod
     def pid_path(configuration: Configuration) -> str:
         return os.path.join(
-            configuration.log_directory,
-            ProjectFilesMonitor.NAME,
+            ProjectFilesMonitor.base_path(configuration),
             "{}.pid".format(ProjectFilesMonitor.NAME),
         )
 
