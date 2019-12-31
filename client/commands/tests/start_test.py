@@ -11,11 +11,15 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-from ... import commands, configuration_monitor, project_files_monitor  # noqa
+from ... import (  # noqa
+    commands,
+    configuration_monitor,
+    filesystem,
+    project_files_monitor,
+)
 from ...analysis_directory import AnalysisDirectory
 from ...commands import start  # noqa
-from ...filesystem import acquire_lock  # noqa
-from ..command import __name__ as client_name
+from ..command import ExitCode, __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -229,6 +233,31 @@ class StartTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Start.NAME)
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
+
+        # Exit code is success when server already exists.
+        mock_object = Mock()
+        mock_object.__enter__ = Mock(return_value=(Mock(), None))
+        mock_object.__exit__ = Mock(return_value=None)
+
+        def raise_os_error(lock, blocking):
+            if lock.endswith("server.lock"):
+                raise OSError
+            return mock_object
+
+        with patch("builtins.open", mock_open()), patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            project_files_monitor, "ProjectFilesMonitor"
+        ) as Monitor, patch.object(
+            filesystem, "acquire_lock"
+        ) as acquire_lock:
+            acquire_lock.side_effect = raise_os_error
+            command = commands.Start(
+                arguments, original_directory, configuration, analysis_directory
+            )
+            command.run()
+            print(command._exit_code)
+            self.assertEqual(command._exit_code, ExitCode.SUCCESS)
 
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)

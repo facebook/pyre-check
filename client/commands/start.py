@@ -122,7 +122,6 @@ class Start(Reporting):
                             "Server at `%s` exists, skipping.",
                             self._analysis_directory.get_root(),
                         )
-                        self._exit_code = ExitCode.FAILURE
                         return
 
                     self._analysis_directory.prepare()
