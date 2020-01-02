@@ -12,11 +12,12 @@ from typing import Any, List, Optional, Set, Type
 from . import get_annotated_free_functions_with_decorator  # noqa
 from . import get_class_sources  # noqa
 from . import get_exit_nodes  # noqa
+from . import get_filtered_sources  # noqa
 from . import get_globals  # noqa
 from . import get_graphql_sources  # noqa
 from . import get_request_specific_data  # noqa
 from . import get_REST_api_sources  # noqa
-from .get_annotated_free_functions_with_decorator import DecoratorAnnotationSpec
+from .generator_specifications import DecoratorAnnotationSpecification
 from .model_generator import Configuration, Registry
 
 
@@ -28,7 +29,7 @@ class ConfigurationArguments:
     outside the current directory, and adding a non-optional argument will break those.
     """
 
-    annotation_specs: List[DecoratorAnnotationSpec]
+    annotation_specifications: List[DecoratorAnnotationSpecification]
     whitelisted_views: List[str]
     whitelisted_classes: List[str]
     # pyre-ignore[4]: Too dynamic.
@@ -45,6 +46,7 @@ class ConfigurationArguments:
     blacklisted_globals: Set[str]
     logger: Optional[str] = None
     classes_to_taint: Optional[List[str]] = None
+    annotation_specs: Optional[List[DecoratorAnnotationSpecification]] = None
 
 
 @dataclass
@@ -65,7 +67,12 @@ def run_from_global_state(
     configuration_arguments: ConfigurationArguments,
 ) -> None:
     # Set up all global state :(
-    Configuration.annotation_specs = configuration_arguments.annotation_specs
+    annotation_specs = configuration_arguments.annotation_specs
+    Configuration.annotation_specifications = (
+        annotation_specs
+        if annotation_specs is not None
+        else configuration_arguments.annotation_specifications
+    )
     Configuration.whitelisted_views = configuration_arguments.whitelisted_views
     Configuration.whitelisted_classes = configuration_arguments.whitelisted_classes
     Configuration.url_resolver_type = configuration_arguments.url_resolver_type

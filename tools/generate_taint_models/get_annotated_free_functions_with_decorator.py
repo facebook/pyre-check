@@ -10,7 +10,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Iterable, List, Set, Tuple, Union
 
-from .generator_specs import DecoratorAnnotationSpec
+from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel, Model
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
@@ -22,7 +22,10 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     def _annotate_fns(
-        self, spec: DecoratorAnnotationSpec, root: str, path: str
+        self,
+        annotation_specification: DecoratorAnnotationSpecification,
+        root: str,
+        path: str,
     ) -> Iterable[Model]:
 
         found_functions: Set[FunctionDefinition] = set()
@@ -139,7 +142,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                 # tree once we see a class definition
                 pass
 
-        visitor = FreeFunctionVisitor(spec.decorator)
+        visitor = FreeFunctionVisitor(annotation_specification.decorator)
         visitor.visit(module)
 
         module_qualifier = qualifier(root, path)
@@ -150,10 +153,10 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                 function_definition_model = FunctionDefinitionModel(
                     qualifier=module_qualifier,
                     definition=found_function,
-                    arg=spec.arg_annotation,
-                    vararg=spec.vararg_annotation,
-                    kwarg=spec.kwarg_annotation,
-                    returns=spec.return_annotation,
+                    arg=annotation_specification.arg_annotation,
+                    vararg=annotation_specification.vararg_annotation,
+                    kwarg=annotation_specification.kwarg_annotation,
+                    returns=annotation_specification.return_annotation,
                 )
                 models.add(function_definition_model)
             except ValueError:
@@ -170,8 +173,12 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
         annotated_fns = set()
 
         for path in find_all_paths():
-            for spec in Configuration.annotation_specs:
-                annotated_fns.update(self._annotate_fns(spec, Configuration.root, path))
+            for annotation_specification in Configuration.annotation_specifications:
+                annotated_fns.update(
+                    self._annotate_fns(
+                        annotation_specification, Configuration.root, path
+                    )
+                )
 
         return sorted(annotated_fns)
 

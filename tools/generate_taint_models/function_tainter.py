@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from typing import Callable, Iterable, Optional, Set
+from typing import Callable, Iterable, List, Optional, Set
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
@@ -14,6 +14,22 @@ from .model_generator import Configuration
 
 class FunctionTainter:
     parameter_name_whitelist: Optional[Set[str]] = None
+
+    def __init__(
+        self,
+        whitelisted_classes: Optional[List[str]] = None,
+        arg: str = "TaintSource[UserControlled]",
+        vararg: str = "TaintSource[UserControlled]",
+        kwarg: str = "TaintSource[UserControlled]",
+    ) -> None:
+        self.arg = arg
+        self.vararg = vararg
+        self.kwarg = kwarg
+        self.whitelisted_classes: List[str] = (
+            whitelisted_classes
+            if whitelisted_classes
+            else Configuration.whitelisted_classes
+        )
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
@@ -26,10 +42,10 @@ class FunctionTainter:
             try:
                 model = CallableModel(
                     callable_object=function,
-                    arg="TaintSource[UserControlled]",
-                    vararg="TaintSource[UserControlled]",
-                    kwarg="TaintSource[UserControlled]",
-                    whitelisted_parameters=Configuration.whitelisted_classes,
+                    arg=self.arg,
+                    vararg=self.vararg,
+                    kwarg=self.kwarg,
+                    whitelisted_parameters=self.whitelisted_classes,
                     parameter_name_whitelist=self.parameter_name_whitelist,
                 )
                 entry_points.add(model)

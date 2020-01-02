@@ -13,7 +13,7 @@ from typing import Optional
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
 from . import ConfigurationArguments, GenerationArguments, run_from_global_state
-from .generator_specs import DecoratorAnnotationSpec
+from .generator_specifications import DecoratorAnnotationSpecification
 from .model_generator import Registry
 
 
@@ -65,7 +65,7 @@ def main() -> None:
         "--annotation-spec",
         action="append",
         nargs=5,
-        metavar=DecoratorAnnotationSpec._fields,
+        metavar=DecoratorAnnotationSpecification._fields,
         help="Identify free functions decorated with 'decorator' and generate "
         "models with the arguments and return annotated according to the "
         "provided '*_annotation' arguments",
@@ -82,8 +82,13 @@ def main() -> None:
     if stub_root:
         stub_root = os.path.abspath(stub_root)
 
-    annotation_specs = [
-        DecoratorAnnotationSpec(**dict(zip(DecoratorAnnotationSpec._fields, spec)))
+    annotation_specifications = [
+        DecoratorAnnotationSpecification(
+            **{
+                field: value if value else None
+                for field, value in zip(DecoratorAnnotationSpecification._fields, spec)
+            }
+        )
         for spec in (arguments.annotation_spec or [])
     ]
 
@@ -94,7 +99,7 @@ def main() -> None:
             output_directory=arguments.output_directory,
         ),
         ConfigurationArguments(
-            annotation_specs=annotation_specs,
+            annotation_specifications=annotation_specifications,
             whitelisted_views=_WHITELISTED_DJANGO_VIEWS,
             whitelisted_classes=arguments.whitelisted_class,
             # pyre-ignore[16]: The django stubs are for another version.

@@ -8,7 +8,7 @@
 from typing import NamedTuple, Optional
 
 
-class DecoratorAnnotationSpec(NamedTuple):
+class DecoratorAnnotationSpecification(NamedTuple):
     decorator: str
     arg_annotation: Optional[str] = None
     vararg_annotation: Optional[str] = None

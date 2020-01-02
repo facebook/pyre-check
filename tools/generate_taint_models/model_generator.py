@@ -23,7 +23,7 @@ from typing import (
 )
 
 from ...client import log_statistics
-from .get_annotated_free_functions_with_decorator import DecoratorAnnotationSpec
+from .generator_specifications import DecoratorAnnotationSpecification
 from .model import Model
 
 
@@ -75,7 +75,7 @@ class Configuration:
     graphql_module: ClassVar[Union[List[str], str]] = ""
     blacklisted_globals: ClassVar[Set[str]] = set()
     blacklisted_global_directories: ClassVar[Set[str]] = set()
-    annotation_specs: ClassVar[List[DecoratorAnnotationSpec]] = []
+    annotation_specifications: ClassVar[List[DecoratorAnnotationSpecification]] = []
     logger: ClassVar[Optional[str]] = None
     classes_to_taint: ClassVar[Optional[List[str]]] = []
 
