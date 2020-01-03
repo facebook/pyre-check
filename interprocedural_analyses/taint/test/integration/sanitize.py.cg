@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+sanitize.return_taint_sanitize (fun) -> []
+sanitize.test1 (fun) -> [__test_source (fun) object::__init__ (method) object::__new__ (method) sanitize.test2 (fun) sanitize.test3 (fun)]
+sanitize.test2 (fun) -> [__test_sink (fun) sanitize.return_taint_sanitize (fun)]
+sanitize.test3 (fun) -> [__test_sink (fun) sanitize.return_taint_sanitize (fun)]

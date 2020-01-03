@@ -142,18 +142,7 @@
       }
     ],
     "sinks": [],
-    "tito": [
-      {
-        "port": "formal(self)[tainted]",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      }
-    ]
+    "tito": []
   }
 }
 {
@@ -280,19 +269,7 @@
       }
     ],
     "sinks": [],
-    "tito": [
-      {
-        "port": "formal(self)[tainted]",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 15, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      }
-    ]
+    "tito": []
   }
 }
 {
@@ -375,19 +352,7 @@
       }
     ],
     "sinks": [],
-    "tito": [
-      {
-        "port": "formal(self)[tainted]",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 28, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      }
-    ]
+    "tito": []
   }
 }
 {

@@ -27,6 +27,43 @@
         ]
       },
       {
+        "port": "formal(obj)[__dict__]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "model_simplification.py",
+                "line": 43,
+                "start": 56,
+                "end": 57
+              },
+              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "port": "formal(obj)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
+            ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "model_simplification.py",
+                "line": 58,
+                "start": 34,
+                "end": 35
+              },
+              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "port": "formal(obj)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
+            ]
+          }
+        ]
+      },
+      {
         "port": "formal(obj)",
         "taint": [
           {
@@ -89,28 +126,6 @@
               { "via": "object" },
               { "always-via": "obscure" }
             ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 58,
-                "start": 34,
-                "end": 35
-              },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
-            "leaves": [
-              { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
-            ],
-            "features": [
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
           }
         ]
       }
@@ -129,6 +144,17 @@
       },
       {
         "port": "formal(obj)[*]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "tito": [ { "line": 43, "start": 56, "end": 57 } ],
+            "leaves": [ { "kind": "LocalReturn" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[__dict__]",
         "taint": [
           {
             "decl": "MISSING",

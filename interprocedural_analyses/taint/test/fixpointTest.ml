@@ -267,7 +267,7 @@ let test_fixpoint context =
             outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.Class.property";
             outcome
               ~kind:`Function
-              ~tito_parameters:["c"]
+              ~tito_parameters:[]
               ~returns:[Sources.Test]
               "qualifier.uses_property";
             outcome

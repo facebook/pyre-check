@@ -684,6 +684,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       match statement with
       | Statement.Assign { target; value; _ } ->
           let taint, _ = compute_assignment_taint ~resolution target state in
+          let state =
+            match of_expression ~resolution target with
+            | Some { root; path } ->
+                { taint = BackwardState.assign ~root ~path BackwardState.Tree.empty state.taint }
+            | None -> state
+          in
           analyze_expression ~resolution ~taint ~state ~expression:value
       | Assert _
       | Break
