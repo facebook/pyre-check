@@ -40,6 +40,7 @@ class ModuleLoaderTest(unittest.TestCase):
 
         # pyre-ignore[3]: Return type must be specified as type that does not
         # contain Any.
+        # pyre-fixme[53]: Captured variable `invalid_syntax` is not annotated.
         def _open_implementation(path: str, mode: str) -> IO[Any]:
             if path == valid_path:
                 return mock_open(read_data=valid_syntax).return_value

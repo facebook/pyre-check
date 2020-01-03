@@ -321,6 +321,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         isfile.side_effect = lambda path: path != "project/deleted.py"
 
+        # pyre-fixme[53]: Captured variable `shared_analysis_directory` is not
+        #  annotated.
         def update_paths_for_rebuild() -> None:
             shared_analysis_directory._symbolic_links[
                 "project/something/new_file_from_rebuild.py"
@@ -487,6 +489,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         Path(root, "first", "b", "z.py").touch()
         Path(root, "second", "a.py").touch()
 
+        # pyre-fixme[53]: Captured variable `root` is not annotated.
         def side_effect(path: str, stderr=None) -> bytes:  # pyre-fixme[2]
             if path[1].endswith("first"):
                 serialized = "\n".join(

@@ -78,6 +78,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
         ]
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
@@ -93,6 +94,7 @@ class RunnerTest(unittest.TestCase):
             expected_discrepancy=None,
         )
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def consistent_not_clean_execute(command_input: CommandInput) -> CommandOutput:
             pyre_error = PyreError(
                 line=1, column=1, path="test.py", description="Something is wrong"
@@ -117,6 +119,7 @@ class RunnerTest(unittest.TestCase):
             expected_discrepancy=None,
         )
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def inconsistent_execute0(command_input: CommandInput) -> CommandOutput:
             pyre_error = PyreError(
                 line=1, column=1, path="test.py", description="Something is wrong"
@@ -149,6 +152,7 @@ class RunnerTest(unittest.TestCase):
             ),
         )
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def inconsistent_execute1(command_input: CommandInput) -> CommandOutput:
             pyre_error0 = PyreError(
                 line=1, column=1, path="test.py", description="Something is wrong"
@@ -303,6 +307,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
         ]
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
@@ -367,6 +372,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
         ]
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
@@ -428,6 +434,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
         ]
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
@@ -554,6 +561,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
         ]
 
+        # pyre-fixme[53]: Captured variable `initial_hash` is not annotated.
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
