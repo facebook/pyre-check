@@ -77,7 +77,8 @@ class IssueQueryResult(NamedTuple):
     code: int
     callable: str
     message: str
-
+    min_trace_length_to_sources: int
+    min_trace_length_to_sinks: int
 
 class TraceFrameQueryResult(NamedTuple):
     id: DBID
@@ -474,6 +475,8 @@ details              show additional information about the current trace frame
                     Issue.code,
                     CallableText.contents.label("callable"),
                     MessageText.contents.label("message"),
+                    IssueInstance.min_trace_length_to_sources,
+                    IssueInstance.min_trace_length_to_sinks,
                 )
                 .filter(IssueInstance.run_id == self.current_run_id)
                 .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
@@ -1409,7 +1412,8 @@ details              show additional information about the current trace frame
                 f" Sources: {sources_output if sources_output else 'No sources'}",
                 f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
                 (f"Location: {issue.filename}" f":{issue.location}"),
-            ]
+                f"Min_trace_length_to_sources: {issue.min_trace_length_to_sources}",
+                f"Min_trace_length_to_sinks: {issue.min_trace_length_to_sinks}",            ]
         )
 
     def _create_trace_frame_output_string(
@@ -1504,6 +1508,8 @@ details              show additional information about the current trace frame
                 Issue.code,
                 CallableText.contents.label("callable"),
                 MessageText.contents.label("message"),
+                IssueInstance.min_trace_length_to_sources,
+                IssueInstance.min_trace_length_to_sinks,
             )
             .filter(IssueInstance.id == self.current_issue_instance_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)

@@ -1600,6 +1600,8 @@ class InteractiveTest(TestCase):
             code=1000,
             callable="module.function1",
             message="root",
+            min_trace_length_to_sources=1,
+            min_trace_length_to_sinks=1,
         )
         sources = []
         sinks = ["sink1", "sink2"]
