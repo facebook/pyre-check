@@ -82,7 +82,7 @@ class TypeCollector(cst.CSTVisitor):
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
 
-    def leave_ClassDef(self, node: cst.ClassDef) -> None:
+    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.qualifier.pop()
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
@@ -98,7 +98,7 @@ class TypeCollector(cst.CSTVisitor):
         # pyi files don't support inner functions, return False to stop the traversal.
         return False
 
-    def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
         self.qualifier.pop()
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool:
@@ -108,7 +108,7 @@ class TypeCollector(cst.CSTVisitor):
         self.attribute_annotations[".".join(self.qualifier)] = annotation_value
         return True
 
-    def leave_AnnAssign(self, node: cst.AnnAssign) -> None:
+    def leave_AnnAssign(self, original_node: cst.AnnAssign) -> None:
         self.qualifier.pop()
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:

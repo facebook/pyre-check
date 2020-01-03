@@ -89,7 +89,7 @@ class AnnotationCountCollector(StatisticsCollector):
         self._check_parameter_annotations(node.params.default_params)
         self._check_parameter_annotations(node.params.params)
 
-    def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
         self.in_function_definition = False
         self.is_static_function = False
 
@@ -114,7 +114,7 @@ class AnnotationCountCollector(StatisticsCollector):
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.in_class_definition = True
 
-    def leave_ClassDef(self, node: cst.ClassDef) -> None:
+    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.in_class_definition = False
 
 
@@ -164,7 +164,7 @@ class StrictCountCollector(StatisticsCollector):
         if unsafe_match:
             self.is_unsafe = True
 
-    def leave_Module(self, node: cst.Module) -> None:
+    def leave_Module(self, original_node: cst.Module) -> None:
         if self.is_unsafe:
             self.unsafe_count += 1
         elif self.is_strict or self.strict_by_default:
