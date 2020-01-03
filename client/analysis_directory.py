@@ -299,17 +299,21 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     ) -> Tuple[List[str], List[str]]:
         self._notify_about_rebuild(is_start_message=True)
 
-        old_scratch_paths = set(self._symbolic_links.keys())
+        old_symbolic_links = self._symbolic_links
+        old_paths = set(self._symbolic_links.keys())
         self.rebuild()
-        new_scratch_paths = set(self._symbolic_links.keys())
+        new_paths = set(self._symbolic_links.keys())
 
         self._notify_about_rebuild(is_start_message=False)
 
-        # We ignore the individual new_paths from above and consider only
-        # paths updated during a rebuild.
-        tracked_paths.extend(new_scratch_paths - old_scratch_paths)
-        deleted_paths = list(old_scratch_paths - new_scratch_paths)
-        return tracked_paths, deleted_paths
+        tracked_paths.extend(new_paths - old_paths)
+
+        # Translate the paths here because we need the old symbolic links
+        # mapping to get their old scratch path.
+        deleted_scratch_paths = [
+            old_symbolic_links.get(path, path) for path in old_paths - new_paths
+        ]
+        return tracked_paths, deleted_scratch_paths
 
     def _process_new_paths(
         self, new_paths: List[str], tracked_paths: List[str]
@@ -335,8 +339,10 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         return tracked_paths
 
     def _process_deleted_paths(self, deleted_paths: List[str]) -> List[str]:
-        deleted_links = [
-            project_path
+        # Translate the paths here because we need the old symbolic links
+        # mapping to get their old scratch path.
+        deleted_scratch_paths = [
+            self._symbolic_links.get(project_path, project_path)
             for project_path in deleted_paths
             if project_path in self._symbolic_links
         ]
@@ -347,7 +353,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                     _delete_symbolic_link(link)
                 except OSError:
                     LOG.warning("Failed to delete link at `%s`.", link)
-        return deleted_links
+        return deleted_scratch_paths
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """Update the analysis directory for any new or deleted files.
@@ -387,7 +393,14 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 deleted_paths = self._process_deleted_paths(deleted_paths)
 
         tracked_paths.extend(deleted_paths)
-        return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
+        return UpdatedPaths(
+            updated_paths=[
+                self._symbolic_links.get(path, path) for path in tracked_paths
+            ],
+            deleted_paths=[
+                self._symbolic_links.get(path, path) for path in deleted_paths
+            ],
+        )
 
     def cleanup(self) -> None:
         try:

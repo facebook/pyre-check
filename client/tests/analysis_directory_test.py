@@ -209,8 +209,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         # updated files. This is the existing behavior and may be a bug.
         expected = UpdatedPaths(
             updated_paths=[
-                "project/tracked.py",
-                "project/tracked2.py",
+                "scratch/bar/tracked.py",
+                "scratch/bar/tracked2.py",
                 "scratch/baz/hello/new_file_tracked_because_of_search_path.py",
             ],
             deleted_paths=[],
@@ -254,7 +254,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ["project/tracked.py", "project/something/new_file.py"]
         )
         expected = UpdatedPaths(
-            updated_paths=["project/tracked.py", "project/something/new_file.py"],
+            updated_paths=["scratch/bar/tracked.py", "scratch/foo/new_file.py"],
             deleted_paths=[],
         )
         self.assertEqual(actual, expected)
@@ -296,7 +296,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         }
         actual = shared_analysis_directory.process_updated_files(["project/deleted.py"])
         expected = UpdatedPaths(
-            updated_paths=["project/deleted.py"], deleted_paths=["project/deleted.py"]
+            updated_paths=["scratch/bar/deleted.py"],
+            deleted_paths=["scratch/bar/deleted.py"],
         )
         self.assertEqual(actual, expected)
         self.assertEqual(shared_analysis_directory._symbolic_links, {})
@@ -324,12 +325,12 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         # pyre-fixme[53]: Captured variable `shared_analysis_directory` is not
         #  annotated.
         def update_paths_for_rebuild() -> None:
-            shared_analysis_directory._symbolic_links[
-                "project/something/new_file_from_rebuild.py"
-            ] = "scratch/new_file_from_rebuild.py"
-            del shared_analysis_directory._symbolic_links[
-                "project/deleted_by_rebuild.py"
-            ]
+            shared_analysis_directory._symbolic_links = {
+                "project/tracked.py": "scratch/tracked.py",
+                "project/something/new_file_from_rebuild.py": (
+                    "scratch/new_file_from_rebuild.py"
+                ),
+            }
 
         rebuild.side_effect = update_paths_for_rebuild
 
@@ -349,13 +350,13 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         expected = UpdatedPaths(
             updated_paths=[
                 # Tracked files.
-                "project/tracked.py",
+                "scratch/tracked.py",
                 "baz/hello/new_file_tracked_because_of_search_path.py",
                 # New file from the rebuild.
-                "project/something/new_file_from_rebuild.py",
-                "project/deleted_by_rebuild.py",
+                "scratch/new_file_from_rebuild.py",
+                "scratch/deleted_by_rebuild.py",
             ],
-            deleted_paths=["project/deleted_by_rebuild.py"],
+            deleted_paths=["scratch/deleted_by_rebuild.py"],
         )
         self.assertEqual(actual, expected)
 
