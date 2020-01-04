@@ -91,7 +91,10 @@ class FastBuckBuilder(BuckBuilder):
             command.append("--debug")
         LOG.info("Buck builder command: `{}`".format(" ".join(command)))
         with subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         ) as buck_builder_process:
             # Java's logging conflicts with Python's logging, we capture the
             # logs and re-log them with python's logger.
