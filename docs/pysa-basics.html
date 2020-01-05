@@ -151,7 +151,7 @@ these stub files are discussed further in the Stubs section.</p>
 </code></pre>
 <p>Stubs that indicate what is a sink are then defined in <code>.pysa</code> files. Sinks can
 be added to the same files as sources. Sinks are declared in the same places
-that <a href="https://docs.python.org/3/library/typing.html">types are declared in python
+that <a href="https://docs.python.org/3/library/typing.html">types are declared in Python
 3</a>. Function parameters and even
 whole classes can be declared as sinks by adding <code>TaintSink[SINK_NAME]</code> where
 you would add a python type:</p>
@@ -239,7 +239,7 @@ django.http.request.HttpRequest.COOKIES: TaintSource[Cookies] = ...
 your codebase. These <code>.pyi</code> stubs are similar and use <a href="https://www.python.org/dev/peps/pep-0484/#stub-files">the same
 syntax</a> as the <code>.pysa</code>
 stubs, but are not the stubs that are referred to in this document (though they
-are relavent to static analysis). See the &quot;Stubs&quot; section of the <a href="/docs/gradual-typing.html">Gradual Typing
+are relevent to static analysis). See the &quot;Stubs&quot; section of the <a href="/docs/gradual-typing.html">Gradual Typing
 page</a> for more info.</p>
 <h3><a class="anchor" aria-hidden="true" id="requirements-and-features"></a><a href="#requirements-and-features" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Requirements and Features</h3>
 <h4><a class="anchor" aria-hidden="true" id="fully-qualified-names"></a><a href="#fully-qualified-names" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Fully qualified names</h4>
@@ -274,7 +274,7 @@ signature:</p>
 implementation. When working with functions defined outside your project, where
 you don't directly see the source. You can use <a href="/docs/querying-pyre.html"><code>pyre query</code></a>
 with the <code>signature</code> argument to have Pysa dump it's internal model of a
-function, so you know exactly how to write your model</p>
+function, so you know exactly how to write your model.</p>
 <h4><a class="anchor" aria-hidden="true" id="eliding"></a><a href="#eliding" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Eliding</h4>
 <p>As you can see from the above examples, defaulted values and function bodies can
 both be elided with <code>...</code>. Additionally, type annotations <em>must</em> be entirely

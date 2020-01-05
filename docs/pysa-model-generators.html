@@ -65,7 +65,7 @@ within the pyre-check repository.</p>
 <p>The majority of model generators require access to a running environment. For
 example, the <code>RESTApiSourceGenerator</code> needs to be able to access <code>urlpatterns</code>
 configured for Django, meaning it has to import (and implicitly run) the file
-you use to configure routing. The recommended way to run model generators to set
+you use to configure routing. The recommended way to run model generators is to set
 up a small script within your repository that can run within the virtual
 environment for your project. You can follow the pattern of
 <code>generate_taint_models.py</code> to construct a <code>ConfigurationArguments</code> object and
@@ -76,7 +76,7 @@ model generators which are currently provided out of the box with Pysa.</p>
 <h3><a class="anchor" aria-hidden="true" id="restapisourcegeneratorhttpsgithubcomfacebookpyre-checkblobmastertoolsgenerate_taint_modelsget_rest_api_sourcespy"></a><a href="#restapisourcegeneratorhttpsgithubcomfacebookpyre-checkblobmastertoolsgenerate_taint_modelsget_rest_api_sourcespy" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a><a href="https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/get_REST_api_sources.py"><code>RESTApiSourceGenerator</code></a></h3>
 <p>This model generator is intended to taint all arguments to <a href="https://docs.djangoproject.com/en/2.2/topics/http/views/">Django view
 functions</a> as
-<code>UserControlled</code>. This us useful when you have views that receive
+<code>UserControlled</code>. This is useful when you have views that receive
 user-controlled data as arguments separate from the <code>HttpRequest</code> parameter,
 such as when <a href="https://docs.djangoproject.com/en/2.2/topics/http/urls/#example">capturing values from the request
 path</a>.</p>
