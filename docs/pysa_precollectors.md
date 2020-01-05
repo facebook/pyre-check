@@ -18,7 +18,7 @@ within the pyre-check repository.
 The majority of model generators require access to a running environment. For
 example, the `RESTApiSourceGenerator` needs to be able to access `urlpatterns`
 configured for Django, meaning it has to import (and implicitly run) the file
-you use to configure routing. The recommended way to run model generators to set
+you use to configure routing. The recommended way to run model generators is to set
 up a small script within your repository that can run within the virtual
 environment for your project. You can follow the pattern of
 `generate_taint_models.py` to construct a `ConfigurationArguments` object and
@@ -33,7 +33,7 @@ model generators which are currently provided out of the box with Pysa.
 
 This model generator is intended to taint all arguments to [Django view
 functions](https://docs.djangoproject.com/en/2.2/topics/http/views/) as
-`UserControlled`. This us useful when you have views that receive
+`UserControlled`. This is useful when you have views that receive
 user-controlled data as arguments separate from the `HttpRequest` parameter,
 such as when [capturing values from the request
 path](https://docs.djangoproject.com/en/2.2/topics/http/urls/#example).
