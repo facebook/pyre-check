@@ -8,7 +8,7 @@ sidebar_label: Running Pysa
 
 The setup requires the following 4 types of files.
 
-1. **Source Code** (`*.py`): This is your application's code
+1. **Source Code** (`*.py`): This is your application's code.
 2. **Taint Config** (`taint.config`): This file declares sources, sinks,
    features, and rules.
 3. **Taint Stubs** (`.pysa`): These files link together the information in your

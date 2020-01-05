@@ -130,7 +130,7 @@ sinks: [
 
 Stubs that indicate what is a sink are then defined in `.pysa` files. Sinks can
 be added to the same files as sources. Sinks are declared in the same places
-that [types are declared in python
+that [types are declared in Python
 3](https://docs.python.org/3/library/typing.html). Function parameters and even
 whole classes can be declared as sinks by adding `TaintSink[SINK_NAME]` where
 you would add a python type:
@@ -250,7 +250,7 @@ There are other stub files with the `.pyi` extension which can also exist in
 your codebase. These `.pyi` stubs are similar and use [the same
 syntax](https://www.python.org/dev/peps/pep-0484/#stub-files) as the `.pysa`
 stubs, but are not the stubs that are referred to in this document (though they
-are relavent to static analysis). See the "Stubs" section of the [Gradual Typing
+are relevent to static analysis). See the "Stubs" section of the [Gradual Typing
 page](gradual_typing.md) for more info.
 
 ### Requirements and Features
@@ -298,7 +298,7 @@ Pysa will complain if the signature of your stub doesn't exactly match the
 implementation. When working with functions defined outside your project, where
 you don't directly see the source. You can use [`pyre query`](querying_pyre.md)
 with the `signature` argument to have Pysa dump it's internal model of a
-function, so you know exactly how to write your model
+function, so you know exactly how to write your model.
 
 #### Eliding
 
