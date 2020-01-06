@@ -46,7 +46,6 @@ class ConfigurationArguments:
     blacklisted_globals: Set[str]
     logger: Optional[str] = None
     classes_to_taint: Optional[List[str]] = None
-    annotation_specs: Optional[List[DecoratorAnnotationSpecification]] = None
 
 
 @dataclass
@@ -67,11 +66,8 @@ def run_from_global_state(
     configuration_arguments: ConfigurationArguments,
 ) -> None:
     # Set up all global state :(
-    annotation_specs = configuration_arguments.annotation_specs
     Configuration.annotation_specifications = (
-        annotation_specs
-        if annotation_specs is not None
-        else configuration_arguments.annotation_specifications
+        configuration_arguments.annotation_specifications
     )
     Configuration.whitelisted_views = configuration_arguments.whitelisted_views
     Configuration.whitelisted_classes = configuration_arguments.whitelisted_classes

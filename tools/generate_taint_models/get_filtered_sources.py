@@ -6,7 +6,7 @@ from .get_annotated_free_functions_with_decorator import (
 )
 from .get_REST_api_sources import RESTApiSourceGenerator
 from .model import Model
-from .model_generator import Configuration, ModelGenerator, Registry
+from .model_generator import ModelGenerator, Registry
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -36,5 +36,5 @@ class FilteredSourceGenerator(ModelGenerator):
 
 
 Registry.register(
-    "get_filtered_sources", FilteredSourceGenerator, include_by_default=True
+    "get_filtered_sources", FilteredSourceGenerator, include_by_default=False
 )
