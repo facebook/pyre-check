@@ -70,10 +70,11 @@ class KillTest(unittest.TestCase):
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(self, kill_init: MagicMock, remove_tree: MagicMock) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._log_directory = ".pyre"
+        kill_command._current_directory = "/root"
+        kill_command._log_directory = "/root/.pyre/foo"
         kill_command._delete_caches()
         remove_tree.assert_has_calls(
-            [call(".pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
+            [call("/root/.pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
         )
 
     @patch.object(os, "remove")

@@ -65,9 +65,10 @@ class Kill(Command):
             pass
 
     def _delete_caches(self) -> None:
+        root_log_directory = Path(self._current_directory, LOG_DIRECTORY)
         # If a resource cache exists, delete it to remove corrupted artifacts.
         try:
-            shutil.rmtree(os.path.join(self._log_directory, "resource_cache"))
+            shutil.rmtree(str(root_log_directory / "resource_cache"))
         except OSError:
             pass
         # If a buck builder cache exists, also remove it.
