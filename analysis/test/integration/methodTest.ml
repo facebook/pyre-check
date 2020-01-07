@@ -1795,6 +1795,17 @@ let test_check_static context =
         def __class_getitem__(cls, key: int) -> typing.Type[Foo]:
           return cls
     |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      class Foo:
+        def __new__(cls) -> typing.Type[Foo]:
+          return cls
+
+        def test(self) -> typing.Type[Foo]:
+          return self.__class__.__new__(self.__class__)
+    |}
     []
 
 

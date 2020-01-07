@@ -1322,16 +1322,13 @@ module Implementation = struct
             match signatures with
             | ({ Define.Signature.name = { Node.value = name; _ }; _ } as define) :: _ as defines ->
                 let parent =
-                  (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't
-                     play well with our logic here - we should clean up the call logic to handle
-                     passing the extra argument, and eliminate the special fields from here. *)
                   if
-                    Define.Signature.is_static_method define
-                    && not (String.equal (Define.Signature.unqualified_name define) "__new__")
+                    Define.Signature.is_class_method define
+                    || String.equal (Define.Signature.unqualified_name define) "__new__"
                   then
-                    None
-                  else if Define.Signature.is_class_method define then
                     Some (Type.meta instantiated)
+                  else if Define.Signature.is_static_method define then
+                    None
                   else if default_class_attribute then
                     (* Keep first argument around when calling instance methods from class
                        attributes. *)
@@ -2014,6 +2011,27 @@ module Implementation = struct
       { kind = Named (Reference.create name); implementation; overloads; implicit = None }
     in
     match parent with
+    | Some parent when String.equal (Reference.last (Reference.create name)) "__new__" ->
+        (* Special case __new__ because it is the only static method with one of its parameters
+           implicitly annotated. *)
+        let { Type.Callable.kind; implementation; overloads; implicit } = callable in
+        let add_class_annotation { Type.Callable.annotation; parameters; define_location } =
+          let parameters =
+            match parameters with
+            | Defined
+                (Named { Type.Callable.Parameter.name; annotation = Type.Top; default }
+                :: parameters) ->
+                Defined (Named { name; annotation = parent; default } :: parameters)
+            | _ -> parameters
+          in
+          { Type.Callable.annotation; parameters; define_location }
+        in
+        {
+          Type.Callable.kind;
+          implementation = add_class_annotation implementation;
+          overloads = List.map overloads ~f:add_class_annotation;
+          implicit;
+        }
     | Some parent ->
         let { Type.Callable.kind; implementation; overloads; implicit } =
           match implementation, overloads with
@@ -2782,7 +2800,29 @@ module Implementation = struct
       signature, definition_index parent
     in
     let constructor_signature, constructor_index = signature_and_index ~name:"__init__" in
-    let new_signature, new_index = signature_and_index ~name:"__new__" in
+    let new_signature, new_index =
+      let new_signature, new_index = signature_and_index ~name:"__new__" in
+      let drop_class_parameter = function
+        | Type.Callable { Type.Callable.kind; implementation; overloads; implicit } ->
+            let drop_parameter { Type.Callable.annotation; parameters; define_location } =
+              let parameters =
+                match parameters with
+                | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
+                | _ -> parameters
+              in
+              { Type.Callable.annotation; parameters; define_location }
+            in
+            Type.Callable
+              {
+                kind;
+                implementation = drop_parameter implementation;
+                overloads = List.map overloads ~f:drop_parameter;
+                implicit;
+              }
+        | annotation -> annotation
+      in
+      drop_class_parameter new_signature, new_index
+    in
     let signature =
       if new_index < constructor_index then
         new_signature

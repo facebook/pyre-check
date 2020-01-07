@@ -1404,8 +1404,8 @@ module State (Context : Context) = struct
             match define with
             | { Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ }; _ }
               when String.equal (Reference.last name) "__new__" ->
-                (* TODO(T45018328): Error here. `__new__` is a special undecorated class method, and
-                   we really ought to be checking its return type against typing.Type[Cls]. *)
+                (* TODO(T45018328): Error here. `__new__` is a special undecorated static method,
+                   and we really ought to be checking its return type against typing.Type[Cls]. *)
                 state
             | _ ->
                 let annotation = GlobalResolution.parse_annotation global_resolution annotation in

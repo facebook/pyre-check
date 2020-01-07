@@ -308,7 +308,7 @@ let test_check_tuple context =
     {|
       class Foo:
         def __new__(cls, foo: typing.Dict[int, typing.Any] = {}) -> Foo:
-            return super(Foo, cls).__new__()
+            return super(Foo, cls).__new__(cls)
     |}
     [
       "Missing parameter annotation [2]: Parameter `foo` must have a type that does not contain \
