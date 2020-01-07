@@ -120,6 +120,13 @@ class Kill(Command):
             self._delete_linked_path(path)
 
     def _run(self) -> None:
+        explicit_local = self._arguments.local_configuration
+        if explicit_local:
+            LOG.warning(
+                "Pyre kill will terminate all running servers. Specifying local path `{}` is unnecessary.".format(
+                    explicit_local
+                )
+            )
         self._kill_binary_processes()
         self._delete_server_files()
 
