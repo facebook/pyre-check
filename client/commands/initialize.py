@@ -47,7 +47,7 @@ class Initialize(CommandParser):
         )
 
     def _get_configuration(self) -> Dict[str, Any]:
-        configuration = {}  # type: Dict[str, Any]
+        configuration: Dict[str, Any] = {}
 
         watchman_configuration_path = os.path.abspath(".watchmanconfig")
         if shutil.which("watchman") is not None and log.get_yes_no_input(
@@ -102,7 +102,7 @@ class Initialize(CommandParser):
         return configuration
 
     def _get_local_configuration(self) -> Dict[str, Any]:
-        configuration = {}  # type: Dict[str, Any]
+        configuration: Dict[str, Any] = {}
         targets = log.get_input(
             "Which buck target(s) should pyre analyze? (//target:a,//target/b/...)\n"
         )

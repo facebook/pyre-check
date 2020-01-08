@@ -23,7 +23,7 @@ from ..watchman_subscriber import WatchmanSubscriber
 from .command import Command
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Kill(Command):

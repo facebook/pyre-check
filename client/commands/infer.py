@@ -157,7 +157,7 @@ class FieldStub:
 
 
 class Stub:
-    stub = None  # type: Optional[Union[FieldStub, FunctionStub]]
+    stub: Optional[Union[FieldStub, FunctionStub]] = None
 
     def __init__(self, error) -> None:
         self.path = Path(error.path)

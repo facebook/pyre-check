@@ -148,7 +148,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
-        self._symbolic_links = {}  # type: Dict[str, str]
+        self._symbolic_links: Dict[str, str] = {}
 
         self._configuration = configuration
 

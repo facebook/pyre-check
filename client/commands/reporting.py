@@ -19,7 +19,7 @@ from ..filesystem import translate_path
 from .command import TEXT, ClientException, Command, Result
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Reporting(Command):
@@ -62,12 +62,10 @@ class Reporting(Command):
     ) -> Sequence[Error]:
         result.check()
 
-        errors = []  # type: List[Error]
-        # pyre-ignore: T39175181
-        results = {}  # type: List[Dict[str, Any]]
+        errors: List[Error] = []
+        results: List[Dict[str, Any]] = []
         try:
             results = json.loads(result.output)
-            # TODO(T39755668): deprecate 'if' condition eventually.
             if "errors" in results:
                 results = results["errors"]
         except (json.JSONDecodeError, ValueError):

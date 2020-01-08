@@ -16,7 +16,7 @@ from .. import LOG_DIRECTORY, find_project_root
 from .command import Command
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 ROOT_PLACEHOLDER_NAME = "<root>"
@@ -30,7 +30,7 @@ class ServerDetails(TypedDict):
 
 
 class Servers(Command):
-    NAME = "servers"
+    NAME: str = "servers"
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

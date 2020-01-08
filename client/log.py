@@ -20,35 +20,35 @@ PROMPT: int = 50
 SUCCESS: int = 60
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
-stdout = io.StringIO(newline="")  # type: io.StringIO
+stdout: io.StringIO = io.StringIO(newline="")
 __handler: Optional["TimedStreamHandler"] = None
 
 
 class Color:
-    YELLOW = "\033[33m"  # type: str
-    RED = "\033[31m"  # type: str
-    GREEN = "\033[32m"  # type: str
+    YELLOW: str = "\033[33m"
+    RED: str = "\033[31m"
+    GREEN: str = "\033[32m"
 
 
 class Format:
-    BOLD = "\033[1m"  # type: str
+    BOLD: str = "\033[1m"
 
-    CLEAR_LINE = "\x1b[0G\x1b[K"  # type: str
-    CLEAR = "\033[0m"  # type: str
-    TRUNCATE_OVERFLOW = "\033[?7l"  # type: str
-    WRAP_OVERFLOW = "\033[?7h"  # type: str
-    NEWLINE = "\n"  # type: str
+    CLEAR_LINE: str = "\x1b[0G\x1b[K"
+    CLEAR: str = "\033[0m"
+    TRUNCATE_OVERFLOW: str = "\033[?7l"
+    WRAP_OVERFLOW: str = "\033[?7h"
+    NEWLINE: str = "\n"
 
-    CURSOR_UP_LINE = "\x1b[1A"  # type: str
-    HIDE_CURSOR = "\x1b[?25l"  # type: str
-    SHOW_CURSOR = "\x1b[?25h"  # type: str
+    CURSOR_UP_LINE: str = "\x1b[1A"
+    HIDE_CURSOR: str = "\x1b[?25l"
+    SHOW_CURSOR: str = "\x1b[?25h"
 
 
 class Character:
-    LAMBDA = "ƛ"  # type: str
+    LAMBDA: str = "ƛ"
 
 
 class SectionFormatter(logging.Formatter):
@@ -61,21 +61,21 @@ class SectionFormatter(logging.Formatter):
 
 
 class TimedStreamHandler(logging.StreamHandler):
-    THRESHOLD = 0.5  # type: float
-    LINE_BREAKING_LEVELS = ["ERROR", "WARNING", "SUCCESS"]  # type: Sequence[str]
+    THRESHOLD: float = 0.5
+    LINE_BREAKING_LEVELS: Sequence[str] = ["ERROR", "WARNING", "SUCCESS"]
 
-    _terminate = False  # type: bool
-    _last_update = 0.0  # type: float
+    _terminate: bool = False
+    _last_update: float = 0.0
 
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
         self.setFormatter(logging.Formatter("%(message)s"))
-        self.terminator = ""  # type: str
+        self.terminator: str = ""
         self.setLevel(logging.INFO)
 
-        self._record = None  # type: Optional[logging.LogRecord]
-        self._last_record = None  # type: Optional[logging.LogRecord]
-        self._active_lines = 0  # type: int
+        self._record: Optional[logging.LogRecord] = None
+        self._last_record: Optional[logging.LogRecord] = None
+        self._active_lines: int = 0
 
         # Preamble preparing terminal.
         sys.stderr.write(
@@ -184,7 +184,7 @@ def initialize(
         stream_handler = TimedStreamHandler()
         __handler = stream_handler
 
-    handlers = [stream_handler]  # type: List[logging.Handler]
+    handlers: List[logging.Handler] = [stream_handler]
 
     if not noninteractive and not disable_file_logging:
         if not os.path.exists(log_directory):
@@ -210,14 +210,14 @@ def cleanup() -> None:
 
 
 class Buffer:
-    THRESHOLD = 0.1  # type: float
+    THRESHOLD: float = 0.1
 
-    _flushed = False  # type: bool
+    _flushed: bool = False
 
     def __init__(self, section: str, data: List[str]) -> None:
-        self._section = section  # type: str
-        self._data = data  # type: List[str]
-        self._lock = threading.RLock()  # type: threading.RLock
+        self._section: str = section
+        self._data: List[str] = data
+        self._lock: threading.RLock = threading.RLock()
         thread = threading.Thread(target=self._thread)
         thread.daemon = True
         thread.start()

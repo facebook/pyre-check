@@ -429,7 +429,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
     def test_merge_into_paths(self) -> None:
-        directory = tempfile.mkdtemp()  # type: str
+        directory: str = tempfile.mkdtemp()
         root = os.path.realpath(directory)
 
         Path(root, "a.py").touch()
@@ -448,7 +448,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         Path(root, "mypy/another.pyi").symlink_to(Path(root, "mypy/my.py"))
         Path(root, "scipyi/another.py").symlink_to(Path(root, "scipyi/sci.pyi"))
         shared_analysis_directory = SharedAnalysisDirectory([root], [])
-        all_paths = {}  # type: Dict[str, str]
+        all_paths: Dict[str, str] = {}
         shared_analysis_directory._merge_into_paths(root, all_paths)
         self.assertEqual(
             all_paths,
@@ -524,9 +524,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
     def test_prepare(self) -> None:
-        buck_output_directory = tempfile.mkdtemp()  # type: str
-        project_directory = tempfile.mkdtemp()  # type: str
-        original_scratch_directory = tempfile.mkdtemp()  # type: str
+        buck_output_directory: str = tempfile.mkdtemp()
+        project_directory: str = tempfile.mkdtemp()
+        original_scratch_directory: str = tempfile.mkdtemp()
 
         with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
@@ -564,9 +564,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             )
 
     def test_rebuild(self) -> None:
-        buck_output_directory = tempfile.mkdtemp("_buck_output")  # type: str
-        project_directory = tempfile.mkdtemp("_project")  # type: str
-        original_scratch_directory = tempfile.mkdtemp("_original_scratch")  # type: str
+        buck_output_directory: str = tempfile.mkdtemp("_buck_output")
+        project_directory: str = tempfile.mkdtemp("_project")
+        original_scratch_directory: str = tempfile.mkdtemp("_original_scratch")
 
         with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
             SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory

@@ -156,7 +156,7 @@ def expand_relative_path(root: str, path: str) -> str:
 
 
 class Configuration:
-    disabled = False  # type: bool
+    disabled: bool = False
 
     def __init__(
         self,
@@ -175,20 +175,20 @@ class Configuration:
         self.logger = logger
         self.formatter = formatter
         self.ignore_all_errors = []
-        self.number_of_workers = None  # type: int # pyre-fixme
-        self.local_configuration = None  # type: Optional[str]
-        self.taint_models_path = []  # type: List[str]
-        self.file_hash = None  # type: Optional[str]
-        self.extensions = []  # type: List[str]
-        self._log_directory = log_directory  # type: Optional[str]
+        self.number_of_workers: int = 0
+        self.local_configuration: Optional[str] = None
+        self.taint_models_path: List[str] = []
+        self.file_hash: Optional[str] = None
+        self.extensions: List[str] = []
+        self._log_directory: Optional[str] = log_directory
 
-        self._version_hash = None  # type: Optional[str]
-        self._binary = None  # type: Optional[str]
-        self._typeshed = None  # type: Optional[str]
-        self.strict = False  # type: bool
-        self._use_buck_builder = None  # type: Optional[bool]
-        self._use_json_sockets = None  # type: Optional[bool]
-        self.ignore_infer = []
+        self._version_hash: Optional[str] = None
+        self._binary: Optional[str] = None
+        self._typeshed: Optional[str] = None
+        self.strict: bool = False
+        self._use_buck_builder: Optional[bool] = None
+        self._use_json_sockets: Optional[bool] = None
+        self.ignore_infer: List[str] = []
 
         # Handle search path from multiple sources
         self._search_path = []
@@ -220,7 +220,7 @@ class Configuration:
         if typeshed:
             self._typeshed = typeshed
 
-        self.excludes = []  # type: List[str]
+        self.excludes: List[str] = []
         if excludes:
             self.excludes.extend(excludes)
 
@@ -287,8 +287,7 @@ class Configuration:
                     "Binary at `{}` does not exist.".format(self.binary)
                 )
 
-            number_of_workers = self.number_of_workers
-            if number_of_workers and number_of_workers < 1:
+            if self.number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.
@@ -625,7 +624,7 @@ class Configuration:
             else:
                 LOG.info("Found: `%s`", self._binary)
 
-        if not self.number_of_workers:
+        if self.number_of_workers == 0:
             self.number_of_workers = number_of_workers()
 
         if not self._typeshed:

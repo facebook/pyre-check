@@ -17,7 +17,7 @@ from typing import Any, Dict, List, NamedTuple
 from .filesystem import acquire_lock, remove_if_exists
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 Subscription = NamedTuple(

@@ -228,7 +228,7 @@ def fix_file(
     if "@" "generated" in text:
         LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
         return
-    lines = text.split("\n")  # type: List[str]
+    lines: List[str] = text.split("\n")
 
     # Replace lines in file.
     new_lines = []
@@ -350,7 +350,7 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
         return
 
-    lines = text.split("\n")  # type: List[str]
+    lines: List[str] = text.split("\n")
 
     # Check if already locally strict or ignore-all.
     for line in lines:

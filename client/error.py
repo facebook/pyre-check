@@ -12,8 +12,8 @@ from .log import Color, Format
 
 
 class Error:
-    ignore_error = False  # type: bool
-    external_to_global_root = False  # type: bool
+    ignore_error: bool = False
+    external_to_global_root: bool = False
 
     def __init__(
         self,
@@ -22,17 +22,17 @@ class Error:
         **error: Any
         # note: adding a comma after `Any` above creates a SyntaxError
     ) -> None:
-        self.line = error["line"]  # type: int
-        self.column = error["column"]  # type: int
-        self.path = error["path"]  # type: str
-        self.code = error["code"]  # type: int
-        self.name = error["name"]  # type: str
-        self.description = error["description"]  # type: str
-        self.long_description = error.get("long_description", "")  # type: str
-        self.concise_description = error.get("concise_description", "")  # type: str
-        self.inference = error["inference"]  # type: str
-        self.ignore_error = ignore_error  # type: bool
-        self.external_to_global_root = external_to_global_root  # type: bool
+        self.line: int = error["line"]
+        self.column: int = error["column"]
+        self.path: str = error["path"]
+        self.code: int = error["code"]
+        self.name: str = error["name"]
+        self.description: str = error["description"]
+        self.long_description: str = error.get("long_description", "")
+        self.concise_description: str = error.get("concise_description", "")
+        self.inference: str = error["inference"]
+        self.ignore_error: bool = ignore_error
+        self.external_to_global_root: bool = external_to_global_root
 
     def __repr__(self) -> str:
         if is_capable_terminal(file=sys.stdout):

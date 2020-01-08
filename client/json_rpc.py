@@ -33,12 +33,12 @@ class Request(object):
         self.parameters = parameters
 
     def json(self) -> str:
-        object = {"jsonrpc": "2.0", "method": self.method}  # type: Dict[str, Any]
+        json_object: Dict[str, Any] = {"jsonrpc": "2.0", "method": self.method}
         if self.id:
-            object["id"] = self.id
+            json_object["id"] = self.id
         if self.parameters:
-            object["params"] = self.parameters
-        return json.dumps(object)
+            json_object["params"] = self.parameters
+        return json.dumps(json_object)
 
     @staticmethod
     def validate_payload(payload: JSON) -> bool:

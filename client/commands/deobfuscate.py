@@ -10,7 +10,7 @@ from . import Check
 
 
 class Deobfuscate(Check):
-    NAME = "deobfuscate"  # type: str
+    NAME = "deobfuscate"
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

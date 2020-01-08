@@ -206,12 +206,12 @@ def _normalize(targets: List[str]) -> List[Tuple[str, str]]:
             + targets
             + ["--type", "python_binary", "python_test"]
         )
-        targets_to_destinations = (
+        targets_to_destinations: List[str] = (
             subprocess.check_output(command, stderr=subprocess.PIPE, timeout=600)
             .decode()
             .strip()
             .split("\n")
-        )  # type: List[str]
+        )
         targets_to_destinations = list(filter(bool, targets_to_destinations))
         # The output is of the form //target //corresponding.par
         result = []

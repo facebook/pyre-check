@@ -17,7 +17,7 @@ from .socket_connection import SocketConnection
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class MonitorException(Exception):
@@ -44,11 +44,11 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._configuration = configuration
         self._analysis_directory = analysis_directory
 
-        self._extensions = set(
+        self._extensions: Set[str] = set(
             ["py", "pyi", "thrift"] + configuration.extensions
-        )  # type: Set[str]
+        )
 
-        self._watchman_path = self._find_watchman_path(current_directory)  # type: str
+        self._watchman_path: str = self._find_watchman_path(current_directory)
 
         self.socket_connection = SocketConnection(self._configuration.log_directory)
         self.socket_connection.connect()
@@ -155,5 +155,5 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 pid = int(file.read())
                 os.kill(pid, 2)  # sigint
                 LOG.info("Stopped the file monitor.")
-        except (FileNotFoundError, OSError, ValueError):
+        except (OSError, ValueError):
             pass

@@ -25,7 +25,7 @@ def writable_directory(path: str) -> str:
 
 
 class Analyze(Check):
-    NAME = "analyze"  # type: str
+    NAME = "analyze"
 
     def __init__(
         self,
@@ -37,15 +37,15 @@ class Analyze(Check):
         super(Analyze, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._analysis = arguments.analysis  # type: str
-        self._taint_models_path = (
+        self._analysis: str = arguments.analysis
+        self._taint_models_path: List[str] = (
             arguments.taint_models_path or self._configuration.taint_models_path
-        )  # type: List[str]
-        self._no_verify = arguments.no_verify  # type: bool
-        self._save_results_to = arguments.save_results_to  # type: Optional[str]
-        self._dump_call_graph = arguments.dump_call_graph  # type: bool
-        self._repository_root = arguments.repository_root  # type: Optional[str]
-        self._rules = arguments.rule  # type: Optional[List[int]]
+        )
+        self._no_verify: bool = arguments.no_verify
+        self._save_results_to: Optional[str] = arguments.save_results_to
+        self._dump_call_graph: bool = arguments.dump_call_graph
+        self._repository_root: Optional[str] = arguments.repository_root
+        self._rules: Optional[List[int]] = arguments.rule
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

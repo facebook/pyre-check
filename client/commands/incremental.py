@@ -51,9 +51,9 @@ class Incremental(Reporting):
         super(Incremental, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._nonblocking = arguments.nonblocking  # type: bool
-        self._incremental_style = arguments.incremental_style  # type: bool
-        self._no_start_server = arguments.no_start  # type: bool
+        self._nonblocking: bool = arguments.nonblocking
+        self._incremental_style: bool = arguments.incremental_style
+        self._no_start_server: bool = arguments.no_start
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

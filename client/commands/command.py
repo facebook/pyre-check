@@ -33,11 +33,11 @@ from ..filesystem import remove_if_exists, translate_path
 from ..socket_connection import SocketConnection, SocketException
 
 
-TEXT = "text"  # type: str
-JSON = "json"  # type: str
+TEXT: str = "text"
+JSON: str = "json"
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ClientException(Exception):
@@ -78,8 +78,8 @@ class ProfileOutput(enum.Enum):
 
 class Result:
     def __init__(self, code: int, output: str) -> None:
-        self.code = code
-        self.output = output  # type: str
+        self.code: int = code
+        self.output: str = output
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
@@ -133,8 +133,8 @@ def executable_file(file_path: str) -> str:
 
 
 class CommandParser(ABC):
-    NAME = ""  # type: str
-    _exit_code = ExitCode.SUCCESS  # type: ExitCode
+    NAME = ""
+    _exit_code: ExitCode = ExitCode.SUCCESS
 
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         self._arguments = arguments
@@ -418,10 +418,10 @@ class CommandParser(ABC):
 
 
 class Command(CommandParser):
-    _buffer = []  # type: List[str]
-    _call_client_terminated = False  # type: bool
+    _buffer: List[str] = []
+    _call_client_terminated: bool = False
 
-    _local_root = ""  # type: str
+    _local_root: str = ""
 
     def __init__(
         self,

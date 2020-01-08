@@ -30,7 +30,7 @@ CLIENT_NAME: str = "pyre-client"
 LOG_DIRECTORY: str = ".pyre"
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def assert_readable_directory(directory: str) -> None:
@@ -85,7 +85,7 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
             configuration_contents = file.read()
             return json.loads(configuration_contents).pop("version", None)
 
-    version = None  # type: Optional[str]
+    version: Optional[str] = None
     try:
         # Get local configuration version
         if local_path:
@@ -188,10 +188,7 @@ def log_statistics(
         integers["time"] = int(time.time())
     normals = normals or {}
     if configuration:
-        normals = {
-            **normals,
-            "version": configuration.version_hash,
-        }  # type: Dict[str, str]
+        normals: Dict[str, str] = {**normals, "version": configuration.version_hash}
         if not logger:
             logger = configuration.logger
     if not logger:

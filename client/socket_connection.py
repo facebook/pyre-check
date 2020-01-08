@@ -22,9 +22,7 @@ class SocketException(Exception):
 
 class SocketConnection(object):
     def __init__(self, root: str) -> None:
-        self.socket = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM
-        )  # type: socket.socket
+        self.socket: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.root = root
         self.input: BinaryIO = self.socket.makefile(mode="rb")
         self.output: BinaryIO = self.socket.makefile(mode="wb")
@@ -34,7 +32,7 @@ class SocketConnection(object):
         try:
             self.socket.connect(os.path.realpath(socket_path))
             return self
-        except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
+        except OSError as error:
             raise SocketException(
                 "Failed to connect to server at `{}`. Reason: `{}`".format(
                     socket_path, error

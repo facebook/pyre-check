@@ -32,7 +32,7 @@ from .exceptions import EnvironmentException
 from .version import __version__
 
 
-LOG = logging.getLogger(__name__)  # type: logging.Logger
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def main() -> int:
