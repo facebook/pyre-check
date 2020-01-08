@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional, Set, TextIO
 
 from . import buck
 from .exceptions import EnvironmentException
-from .filesystem import find_root, translate_paths  # noqa
+from .filesystem import find_root, translate_paths
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"

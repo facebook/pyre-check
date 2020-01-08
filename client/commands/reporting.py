@@ -9,7 +9,7 @@ import fnmatch
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Sequence, Set  # noqa
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 from .. import log
 from ..analysis_directory import AnalysisDirectory

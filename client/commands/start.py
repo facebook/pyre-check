@@ -14,7 +14,7 @@ from typing import List, Optional
 from .. import configuration_monitor, filesystem, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import ExitCode, IncrementalStyle, typeshed_search_path
+from .command import IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -130,7 +130,7 @@ class Start(Reporting):
 
                     if self._use_watchman:
                         try:
-                            file_monitor = project_files_monitor.ProjectFilesMonitor(  # noqa
+                            file_monitor = project_files_monitor.ProjectFilesMonitor(
                                 self._configuration,
                                 self._current_directory,
                                 self._analysis_directory,

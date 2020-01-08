@@ -11,14 +11,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-from ... import (  # noqa
-    commands,
-    configuration_monitor,
-    filesystem,
-    project_files_monitor,
-)
+from ... import commands, configuration_monitor, filesystem, project_files_monitor
 from ...analysis_directory import AnalysisDirectory
-from ...commands import start  # noqa
 from ..command import ExitCode, __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 

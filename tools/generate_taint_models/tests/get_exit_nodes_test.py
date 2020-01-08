@@ -6,7 +6,6 @@
 # pyre-unsafe
 
 import unittest
-from typing import Callable
 
 from ..get_exit_nodes import ExitNodeGenerator
 from ..model_generator import Configuration

@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, List, NamedTuple, Optional, cast
+from typing import Any, Dict, List, NamedTuple, Optional
 
 
 # We use NamedTuple instead of dataclasses for Python3.5/6 support.

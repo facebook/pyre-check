@@ -3,17 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os  # noqa
-import shutil  # noqa
+import os
+import shutil
 import signal
 import subprocess
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
 
-import psutil  # noqa
+import psutil
 
-from ... import commands  # noqa
+from ... import commands
 from .. import kill
 from ..kill import Kill, _get_process_name
 

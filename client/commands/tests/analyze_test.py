@@ -8,7 +8,7 @@
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands  # noqa
+from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
 from ..command import __name__ as client_name

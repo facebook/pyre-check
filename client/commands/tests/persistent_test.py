@@ -9,12 +9,7 @@ import io
 import unittest
 from unittest.mock import call, patch
 
-from ... import (  # noqa
-    EnvironmentException,
-    commands,
-    configuration_monitor,
-    project_files_monitor,
-)
+from ... import commands, configuration_monitor, project_files_monitor
 from ...analysis_directory import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 

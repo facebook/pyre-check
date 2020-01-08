@@ -5,9 +5,7 @@
 
 # pyre-unsafe
 
-import hashlib  # noqa
 import os
-import shutil  # noqa
 import site
 import sys
 import unittest
@@ -15,11 +13,7 @@ from typing import Any, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
 from .. import CONFIGURATION_FILE, number_of_workers
-from ..configuration import (  # noqa
-    Configuration,
-    InvalidConfiguration,
-    SearchPathElement,
-)
+from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
 
 

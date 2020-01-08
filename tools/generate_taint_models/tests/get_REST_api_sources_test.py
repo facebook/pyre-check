@@ -6,7 +6,6 @@
 # pyre-unsafe
 
 import unittest
-from typing import Callable
 
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from ..model_generator import Configuration

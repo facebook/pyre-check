@@ -98,9 +98,7 @@ class StopTest(unittest.TestCase):
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
 
-            def fail_on_stop(
-                command: str, flags: Optional[List[str]] = None
-            ) -> Mock:  # noqa
+            def fail_on_stop(command: str, flags: Optional[List[str]] = None) -> Mock:
                 flags = flags or []
                 if command == commands.Stop.NAME:
                     raise commands.ClientException

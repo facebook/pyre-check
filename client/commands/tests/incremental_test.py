@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
-from ...commands import command, incremental, stop  # noqa
+from ...commands import incremental, stop
 from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 

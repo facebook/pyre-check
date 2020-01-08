@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os  # noqa
-import sys  # noqa
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
@@ -85,7 +83,7 @@ class MonitorTest(unittest.TestCase):
         original_directory = "/"
         local_configuration_root = None
         try:
-            import pywatchman  # noqa
+            import pywatchman
 
             with patch.object(pywatchman, "client") as pywatchman_client:
                 pywatchman_client.side_effect = Exception

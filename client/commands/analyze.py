@@ -6,7 +6,7 @@
 
 import argparse
 import os
-from typing import List, Optional  # noqa
+from typing import List, Optional
 
 from .. import assert_writable_directory, log, readable_directory
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory

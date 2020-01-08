@@ -9,17 +9,7 @@ import ast
 import inspect
 import logging
 import types
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-)
+from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
 
 import _ast
 

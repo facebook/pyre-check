@@ -16,7 +16,7 @@ import sys
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Any, List, Optional, Set, Union  # noqa
+from typing import Any, List, Optional, Set, Union
 
 from .. import apply_annotations, log
 from ..analysis_directory import AnalysisDirectory

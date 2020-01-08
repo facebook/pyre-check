@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-import builtins  # noqa
 import os
 import sys
 import unittest

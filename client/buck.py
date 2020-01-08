@@ -14,7 +14,7 @@ import threading
 from collections import namedtuple
 from json.decoder import JSONDecodeError
 from logging import Logger
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, cast  # noqa
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from .filesystem import BuckBuilder, find_root
 

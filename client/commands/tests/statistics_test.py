@@ -11,7 +11,6 @@ from typing import Dict
 
 from libcst import Module, parse_module
 
-from ... import commands  # noqa
 from ..statistics import (
     AnnotationCountCollector,
     FixmeCountCollector,

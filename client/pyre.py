@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import traceback
-from typing import Optional, Type  # noqa
+from typing import Optional
 
 from . import (
     buck,
@@ -21,13 +21,7 @@ from . import (
     log,
     log_statistics,
 )
-from .commands import (  # noqa
-    Command,
-    ExitCode,
-    IncrementalStyle,
-    ProfileOutput,
-    reporting,
-)
+from .commands import Command, ExitCode
 from .exceptions import EnvironmentException
 from .version import __version__
 

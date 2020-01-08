@@ -5,16 +5,14 @@
 
 # pyre-unsafe
 
-import builtins  # noqa
 import json
 import os
 import subprocess
 import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
-from ... import commands  # noqa
+from ... import commands
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
-from ...error import Error  # noqa
 from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 

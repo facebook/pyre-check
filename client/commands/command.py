@@ -15,7 +15,7 @@ import signal
 import subprocess
 import threading
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, List, Optional, Set  # noqa
+from typing import Iterable, List, Optional
 
 from .. import (
     find_local_root,

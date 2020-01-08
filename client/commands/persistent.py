@@ -15,7 +15,7 @@ from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, IncrementalStyle
+from .command import Command
 from .start import Start
 
 

@@ -7,7 +7,7 @@
 import functools
 import logging
 import os
-from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
+from typing import Any, Dict, List, Set
 
 from . import json_rpc
 from .analysis_directory import AnalysisDirectory

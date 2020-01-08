@@ -6,7 +6,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ... import commands  # noqa
+from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 

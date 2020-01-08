@@ -147,7 +147,7 @@ class BuckTest(unittest.TestCase):
     def test_generate_source_directories(
         self, mock_find_built_source_directories, mock_normalize, build_targets
     ) -> None:
-        mock_find_built_source_directories.return_value = BuckOut(  # noqa
+        mock_find_built_source_directories.return_value = BuckOut(
             {"new_tree"}, {"empty_target"}
         )
 
@@ -159,9 +159,7 @@ class BuckTest(unittest.TestCase):
                     [call(["target"]), call(["target1", "target2"])], any_order=True
                 )
 
-        mock_find_built_source_directories.return_value = BuckOut(
-            {"new_tree"}, set()
-        )  # noqa
+        mock_find_built_source_directories.return_value = BuckOut({"new_tree"}, set())
         with patch.object(buck, "_normalize") as mock_normalize:
             with patch.object(buck, "_build_targets") as mock_build:
                 mock_normalize.return_value = [("normalized", "buck-out/normalized")]

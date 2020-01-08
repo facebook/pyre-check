@@ -12,7 +12,7 @@ import re
 import sys
 import threading
 import time
-from typing import List, Optional, Sequence  # noqa
+from typing import List, Optional, Sequence
 
 
 PERFORMANCE: int = 15

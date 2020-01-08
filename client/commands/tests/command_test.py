@@ -10,16 +10,15 @@ import unittest
 from typing import List
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-from ... import EnvironmentException  # noqa
-from ... import commands  # noqa
+from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ..command import __name__ as client_name
 
 
-def mock_arguments(  # noqa
+def mock_arguments(
     build=False,
     changed_files_path=None,
-    command=None,  # noqa
+    command=None,
     load_initial_state_from=None,
     no_saved_state=False,
     no_verify=False,

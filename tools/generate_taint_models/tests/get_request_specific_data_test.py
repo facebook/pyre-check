@@ -6,7 +6,6 @@
 # pyre-unsafe
 
 import unittest
-from typing import Callable
 
 from ..get_request_specific_data import RequestSpecificDataGenerator
 from .test_functions import __name__ as qualifier, all_functions

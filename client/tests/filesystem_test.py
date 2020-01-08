@@ -8,23 +8,20 @@
 import errno
 import fcntl
 import os
-import pathlib
 import subprocess
 import tempfile
 import unittest
 from contextlib import contextmanager
-from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import __name__ as client_name, buck, commands, filesystem
 from ..analysis_directory import SharedAnalysisDirectory
 from ..commands.command import __name__ as command_name
-from ..exceptions import EnvironmentException  # noqa
-from ..filesystem import (  # noqa
+from ..exceptions import EnvironmentException
+from ..filesystem import (
     Filesystem,
     MercurialBackedFilesystem,
     __name__ as filesystem_name,
-    _compute_symbolic_link_mapping,
     _delete_symbolic_link,
     acquire_lock,
     add_symbolic_link,

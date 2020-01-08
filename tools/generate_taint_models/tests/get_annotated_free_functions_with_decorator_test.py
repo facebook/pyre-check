@@ -6,7 +6,7 @@
 import os  # noqa
 import textwrap
 import unittest
-from typing import IO, Set
+from typing import Set
 from unittest.mock import mock_open, patch
 
 from ..generator_specifications import DecoratorAnnotationSpecification

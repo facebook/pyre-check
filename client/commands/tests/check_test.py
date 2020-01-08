@@ -8,7 +8,7 @@
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-from ... import commands  # noqa
+from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
 from ..command import __name__ as client_name
@@ -125,7 +125,7 @@ class CheckTest(unittest.TestCase):
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(
-        commands.Reporting, "_get_directories_to_analyze", return_value=set(["a", "b"])
+        commands.Reporting, "_get_directories_to_analyze", return_value={"a", "b"}
     )
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
