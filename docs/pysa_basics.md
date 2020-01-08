@@ -114,6 +114,15 @@ these stub files are discussed further in the Stubs section.
 class BaseException(TaintSource[Exception]): ...
 ```
 
+When tainting indexable return types such as `Dict`s, `List`s, and `Tuple`s, the
+`AppliesTo` syntax can be used to only mark a portion of the return type as
+tainted:
+
+```python
+def applies_to_index.only_applies_to_nested() -> AppliesTo[0, AppliesTo[1, TaintSource[Test]]]: ...
+def applies_to_index.only_applies_to_a_key() -> AppliesTo["a", TaintSource[Test]]: ...
+```
+
 ## Sinks
 
 Sinks are where tainted data terminates. They are declared in your

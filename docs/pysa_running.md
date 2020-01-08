@@ -4,6 +4,10 @@ title: Running Pysa
 sidebar_label: Running Pysa
 ---
 
+This page walks you through the basics of running Pysa. If you want exercises to
+walk you through using Pysa's more advanced features, check out [this
+tutorial](https://github.com/facebook/pyre-check/tree/master/pysa_tutorial)
+
 ## Setup
 
 The setup requires the following 4 types of files.

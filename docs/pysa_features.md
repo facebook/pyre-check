@@ -12,7 +12,9 @@ positives, or for zeroing in on high-signal subsets of a rule. Some are
 automatically added during the analysis process, and there is a rich system for
 manually specifying additional features.
 
-## `via` Feature
+## Manually Added Features
+
+### `via` Feature Using `Via[]`
 
 The `via` feature indicates that a flow passed through a point in the code, such
 as a function parameter, that was annotated with the specified feature name. For
@@ -56,8 +58,8 @@ def getattr(
 Pysa also supports attaching features to inferred flows, which allows you to
 filter flows passing through a function without having to annotate the taint
 yourself explicitly, and having the feature attached to all taint flowing
-through the function. This is done by adding the `AttachToSource` and
-`AttachToSink` annotations in a stubs file:
+through the function. This is done by adding the `AttachToSource`,
+`AttachToSink`, and `AttachToTito` annotations in a stubs file:
 
 ```python
 # Attaching taint to sources.
@@ -65,20 +67,25 @@ def get_signed_cookie() -> AttachToSource[Via[signed]]: ...
 
 # Attaching taint to sinks.
 def HttpResponseRedirect.__init__(self, redirect_to: AttachToSink[Via[redirect]], *args, **kwargs): ...
+
+# Attaching taint to taint-in-taint-out models.
+def attach_features.tito_and_sink(arg: AttachToTito[Via[some_feature_name]]): ...
 ```
 
-Note that **Pysa automatically adds some `via` features with special meaning**
-such as `via:obscure`, `via:format-string`, and `via:tito`. `via:obscure` means
-that the flow passed through code that Pysa does not have access to analyze, and
-thus some taint flow assumptions were made. This can be a useful to filter out
-flows that may be more noisy. `via:format-string` means that a flow passed
-through a [python f-string](https://www.python.org/dev/peps/pep-0498/)
-(`f"Variable: {variable_name}"`). Tito stands for taint-in-taint-out which
-refers to taint flows that enter a function via a parameter and then exit it in
-some form via the return value. The `via:tito` feature is attached automatically
-to all such flows.
+Pysa additionally supports attaching features to flows irrespective of sources,
+sinks, and TITO, using the `AddFeatureToArgument` annotation:
 
-## `via-value` Feature
+```python
+def add_feature_to_argument.add_feature_to_first(
+  first: AddFeatureToArgument[Via[string_concat_lhs]],
+  second
+): ...
+```
+
+Note that **Pysa automatically adds some `via` features with special meaning**.
+See the Automatic Features section for details.
+
+### `via-value` Feature Using `ViaValueOf[]`
 
 The `via-value` feature is similar to the `via` feature, however, it captures
 *the value of the specified argument, rather than a feature name*. Note that
@@ -100,8 +107,23 @@ def django.http.response.HttpResponse.__setitem__(
 ): ...
 ```
 
+## Automatic Features
 
-## `type` Feature
+### `via` Feature
+
+In addition to the manually specified `via` features, Pysa automatically adds
+some `via` features with special meaning such as `via:obscure`,
+`via:format-string`, and `via:tito`. `via:obscure` means that the flow passed
+through code that Pysa does not have access to analyze, and thus some taint flow
+assumptions were made. This can be a useful to filter out flows that may be more
+noisy. `via:format-string` means that a flow passed through a [python
+f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
+{variable_name}"`). Tito stands for taint-in-taint-out which refers to taint
+flows that enter a function via a parameter and then exit it in some form via
+the return value. The `via:tito` feature is attached automatically to all such
+flows.
+
+### `type` Feature
 
 The `type` feature is an automatically added feature which indicates that the
 flow passes through a conversion to the specified type. This feature currently
@@ -109,13 +131,13 @@ only tracks conversion to numeric values (ie. `type:scalar`). This can be useful
 for filtering out flows when numeric values are highly unlikely to result in an
 exploitable flow, such as SQL injection or RCE.
 
-## `first-field` Feature
+### `first-field` Feature
 
 The `first-field` feature is automatically added to flows for the first field
 access on the flow. E.g., if `request` is a source, and the flow starts with
 `request.f`, then `first-field:f` should be attached to the flow.
 
-## `first-index` Feature
+### `first-index` Feature
 
 The `first-index` feature is an automatically added feature which indicates that
 a flow starts with a dictionary access using the specified constant as the key.
@@ -124,14 +146,14 @@ This is useful in cases such as Django's `GET`/`POST`/`META` dictionaries on the
 header from the `META` object would result in the `first-index:HTTP_REFERER`
 feature being added.
 
-## `has` Feature
+### `has` Feature
 
 The `has` features is a summary feature for `first-field` and `first-index`.
 Thus, `has:first-index` simply indicates that there is at least one
 `first-index:<name>` feature present, and similarly for `has:first-field`.
 
 
-## `always-` Modifier on Features
+### `always-` Modifier on Features
 
 The `always-` modifier will automatically be added to any of the above features,
 when every single flow within an issue has the feature. For example, if an issue

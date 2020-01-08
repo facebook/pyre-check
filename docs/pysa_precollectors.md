@@ -20,9 +20,9 @@ example, the `RESTApiSourceGenerator` needs to be able to access `urlpatterns`
 configured for Django, meaning it has to import (and implicitly run) the file
 you use to configure routing. The recommended way to run model generators is to set
 up a small script within your repository that can run within the virtual
-environment for your project. You can follow the pattern of
-`generate_taint_models.py` to construct a `ConfigurationArguments` object and
-pass it into `run_from_global_state`.
+environment for your project. **[This tutorial
+exercise](https://github.com/facebook/pyre-check/tree/master/pysa_tutorial/exercise4)
+provides an example of how to setup and use model generators.**
 
 ## Example Model Generators
 

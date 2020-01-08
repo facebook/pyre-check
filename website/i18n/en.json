@@ -57,6 +57,10 @@
         "title": "Dynamically Generating Models",
         "sidebar_label": "Dynamically Generating Models"
       },
+      "pysa-additional-resources": {
+        "title": "Additional Resources",
+        "sidebar_label": "Additional Resources"
+      },
       "pysa-running": {
         "title": "Running Pysa",
         "sidebar_label": "Running Pysa"

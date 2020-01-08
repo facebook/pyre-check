@@ -22,7 +22,8 @@
           "pysa-model-generators",
           "pysa-tips",
           "pysa-coverage",
-          "static-analysis-post-processor"
+          "static-analysis-post-processor",
+          "pysa-additional-resources"
         ]
       }
     ]

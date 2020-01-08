@@ -71,3 +71,14 @@ def eval_and_log(*, eval: TaintSink[RemoteCodeExecution], **kwargs): ...
 ```
 
 This allows us to catch flows only into the `eval` keyword argument.
+
+## Prevent Inferring Models with `SkipAnalysis`
+
+In addition to the models defined in `.pysa` files, Pysa will infer models for
+functions based what sources, sinks, etc. they call in their body. The
+`SkipAnalysis` annotation can be used to prevent Pysa from inferring models, and
+instead force it to use only the user defined models for determining taint flow:
+
+```python
+def qualifier.dont_generate_models(argument) -> SkipAnalysis: ...
+```

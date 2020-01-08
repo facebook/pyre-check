@@ -143,6 +143,27 @@ def run(request: HttpRequest):
 This illustrates how important typing is for ensuring all flows are caught by
 during static analysis.
 
+### Globals cause missed flows
+
+To allow for parallel processing, Pysa is limited in it's ability to track taint
+flows through global variables. For example, Pysa will not detect an issue in
+the following code:
+
+```python
+user_controlled_data = ""
+
+def load_data(request: HttpRequest) -> None:
+    user_controlled_data = request.GET["data"]
+
+def run_command(request: HttpRequest) -> None:
+    load_data(request)
+    eval(user_controlled_data)
+```
+
+The best workaround is to avoid using globals in your code. If a refactor isn't
+possible, but you do know what globals should be considered tainted, you can
+explicitly declare the global tainted in your `.pysa` files.
+
 ## Helpful Python knowledge
 
 Pretty much all python operators are reduced down to double underbar functions.
@@ -162,18 +183,29 @@ to trigger to pyre to output a ton of metadata about it's current state when it
 parses the that function call. This can be useful as a starting point to figure
 out why something is/isn't happening. This will produce *very* verbose output.
 
-### `reveal_type(info)`
+### `reveal_type(YOUR_VARIABLE)`
 
-If you only want to check what pyre knows about the types of variables, you can
-call `reveal_type(YOUR_VARIABLE)` on the variable and then run pyre on the code
-to get much less verbose output than `pyre_dump()`.
+If you only want to check what pyre knows about the types of variables, inject a
+call to `reveal_type(YOUR_VARIABLE)` (no import needed) in your code. Running
+Pyre on your code will then give you compact output indicating what Pyre thinks
+the type of your variable is.
 
-### Detecting Taint
+### `reveal_taint(YOUR_VARIABLE)`
 
-There is no direct way to know if Pysa has detected a variable as tainted or
-not. One simple way to do this is inject a call to a known sink for your source,
-such as `eval`. You would pass the object that you want to know about into the
-sink, run Pysa, and see if the flow is detected.
+Similarly to `reveal_type`, if you only want to check what pyre knows about the
+taint on variables, inject a call to `reveal_taint(YOUR_VARIABLE)` (no import
+needed) in your code. Running Pysa on your code will then give you compact
+output indicating what taint Pysa has discovered. Note that each time Pysa
+analyzes the function (which could be many times) it will update it's
+understanding of the taint flowing into the function and output the current
+state. The final output will be the most complete.
+
+`reveal_taint` is a new feature, and is may not always give correct results. A
+simple debugging technique when `reveal_taint` fails is to inject a call to a
+known sink for your source, such as `eval`, rather than `reveal_taint`. You can
+then run Pysa and see if your injected flow is detected.
+
+### `results.json`
 
 Another strategy for getting a bit more metadata is adding a function into your
 code, which simply constructs and returns the type you want to examine. You can
@@ -181,3 +213,26 @@ then run Pysa, and grep for the function's name in the
 `results.json` file located wherever you pointed `--save-results-to=` to when
 running Pysa. You should then be able to see if that function is detected as
 returning taint, plus a bit more metadata about it.
+
+### `sapp`
+
+The [Static Analysis Post Processor (SAPP)](static_analysis_post_processor.md)
+has access to the same information as `results.json`. While SAPP doesn't display
+all the information `results.json` contains, it can display the information in a
+more user-friendly gdb-style way. It's especially useful for exploring flows
+which pass through many frames.
+
+
+## Developer Quality-of-Life
+
+### File Types
+
+`taint.config` is a JSON file and `.pysa` files use Python syntax. If you update
+your editor to recognize those files as JSON and Python respectively, it'll make
+development easier.
+
+### Run Pysa faster with `--rule`
+
+On large projects, Pysa can take a long time to run. When you're iterating on a
+single rule, pass the `--rule` option to Pysa to speed things up a bit by
+omitting processing on all other rules. Eg. `pyre analyze --rule 5000`
