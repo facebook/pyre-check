@@ -1448,11 +1448,13 @@ let test_map context =
      from pyre_extensions.type_variable_operators import Map
      Ts = ListVariadic("Ts")
      def bad(x: List[Map[List, Ts]]) -> None:
-      pass
+       reveal_type(x)
+       pass
      |}
     [
       "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
        variadic type parameter `Map[list, test.Ts]` was given for generic type list.";
+      "Revealed type [-1]: Revealed type for `x` is `List[typing.Any]`.";
     ];
 
   ()

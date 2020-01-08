@@ -981,7 +981,8 @@ module Implementation = struct
                 let mismatch =
                   { name; kind = UnexpectedVariadic { expected = generics; actual = given } }
                 in
-                Type.parametric name given, mismatch :: sofar
+                ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
+                  mismatch :: sofar )
             | Concatenation _, Concatenation _
             | Concatenation _, Concrete _ ->
                 (* TODO(T47346673): accept w/ new kind of validation *)
