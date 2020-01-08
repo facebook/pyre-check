@@ -399,7 +399,6 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
-      docstring = None;
     }
     |> Node.create_with_default_location
   in
@@ -493,7 +492,6 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
                           |> Node.create_with_default_location;
                         ];
                       decorators = [];
-                      docstring = None;
                       return_annotation = None;
                       async = false;
                       generator = false;

@@ -359,7 +359,6 @@ and Class : sig
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
-    docstring: string option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -399,7 +398,6 @@ end = struct
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
-    docstring: string option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -416,15 +414,11 @@ end = struct
         | _ -> (
             match List.compare Statement.location_insensitive_compare left.body right.body with
             | x when not (Int.equal x 0) -> x
-            | _ -> (
-                match
-                  List.compare
-                    Expression.location_insensitive_compare
-                    left.decorators
-                    right.decorators
-                with
-                | x when not (Int.equal x 0) -> x
-                | _ -> [%compare: string option] left.docstring right.docstring ) ) )
+            | _ ->
+                List.compare
+                  Expression.location_insensitive_compare
+                  left.decorators
+                  right.decorators ) )
 
 
   let constructors ?(in_test = false) { body; _ } =
@@ -971,7 +965,6 @@ and Define : sig
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
-      docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -1117,7 +1110,6 @@ end = struct
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
-      docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -1147,29 +1139,26 @@ end = struct
               with
               | x when not (Int.equal x 0) -> x
               | _ -> (
-                  match [%compare: string option] left.docstring right.docstring with
+                  match
+                    Option.compare
+                      Expression.location_insensitive_compare
+                      left.return_annotation
+                      right.return_annotation
+                  with
                   | x when not (Int.equal x 0) -> x
                   | _ -> (
-                      match
-                        Option.compare
-                          Expression.location_insensitive_compare
-                          left.return_annotation
-                          right.return_annotation
-                      with
+                      match Bool.compare left.async right.async with
                       | x when not (Int.equal x 0) -> x
                       | _ -> (
-                          match Bool.compare left.async right.async with
+                          match Bool.compare left.generator right.generator with
                           | x when not (Int.equal x 0) -> x
                           | _ -> (
-                              match Bool.compare left.generator right.generator with
+                              match [%compare: Reference.t option] left.parent right.parent with
                               | x when not (Int.equal x 0) -> x
-                              | _ -> (
-                                  match [%compare: Reference.t option] left.parent right.parent with
-                                  | x when not (Int.equal x 0) -> x
-                                  | _ ->
-                                      [%compare: Reference.t option]
-                                        left.nesting_define
-                                        right.nesting_define ) ) ) ) ) ) )
+                              | _ ->
+                                  [%compare: Reference.t option]
+                                    left.nesting_define
+                                    right.nesting_define ) ) ) ) ) )
 
 
     let create_toplevel ~qualifier =
@@ -1177,7 +1166,6 @@ end = struct
         name = Reference.create ?prefix:qualifier "$toplevel" |> Node.create_with_default_location;
         parameters = [];
         decorators = [];
-        docstring = None;
         return_annotation = None;
         async = false;
         generator = false;
@@ -1192,7 +1180,6 @@ end = struct
           Reference.create ~prefix:parent "$class_toplevel" |> Node.create_with_default_location;
         parameters = [];
         decorators = [];
-        docstring = None;
         return_annotation = None;
         async = false;
         generator = false;
@@ -2045,8 +2032,6 @@ and Statement : sig
 
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 
-  val extract_docstring : t list -> string option
-
   val location_insensitive_compare : t -> t -> int
 end = struct
   type statement =
@@ -2139,34 +2124,6 @@ end = struct
       | _ -> false
     in
     Option.is_some (List.find ~f:find_terminator body)
-
-
-  let extract_docstring statements =
-    (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
-     * indentation from line 2 onwards as the indentation of the docstring. *)
-    let unindent docstring =
-      let indentation line =
-        let line_without_indentation = String.lstrip line in
-        String.length line - String.length line_without_indentation
-      in
-      match String.split ~on:'\n' docstring with
-      | [] -> docstring
-      | first :: rest ->
-          let difference =
-            List.map rest ~f:indentation |> List.fold ~init:Int.max_value ~f:Int.min
-          in
-          let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
-          String.concat ~sep:"\n" (first :: rest)
-    in
-    let open Expression in
-    match statements with
-    | {
-        Node.value = Expression { Node.value = Expression.String { StringLiteral.value; _ }; _ };
-        _;
-      }
-      :: _ ->
-        Some (unindent value)
-    | _ -> None
 
 
   let generator_assignment

@@ -861,7 +861,6 @@ let test_class_locations _ =
              body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
              decorators =
                [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
-             docstring = None;
            });
     ];
   assert_source_locations
@@ -886,7 +885,6 @@ let test_class_locations _ =
                             name = node ~start:(2, 5) ~stop:(2, 8) !&"bar";
                             parameters = [];
                             decorators = [];
-                            docstring = None;
                             return_annotation = None;
                             async = false;
                             generator = false;
@@ -898,7 +896,6 @@ let test_class_locations _ =
                       });
                ];
              decorators = [];
-             docstring = None;
            });
     ];
   assert_source_locations
@@ -929,7 +926,6 @@ let test_class_locations _ =
                    (Statement.Expression (node ~start:(2, 1) ~stop:(2, 2) (Expression.Integer 1)));
                ];
              decorators = [];
-             docstring = None;
            });
     ];
   assert_source_locations
@@ -968,7 +964,6 @@ let test_class_locations _ =
                                        name = node ~start:(4, 8) ~stop:(4, 11) !&"bar";
                                        parameters = [];
                                        decorators = [];
-                                       docstring = None;
                                        return_annotation = None;
                                        async = false;
                                        generator = false;
@@ -983,7 +978,6 @@ let test_class_locations _ =
                       });
                ];
              decorators = [];
-             docstring = None;
            });
     ]
 
@@ -1002,7 +996,6 @@ let test_define_locations _ =
                  name = node ~start:(1, 10) ~stop:(1, 13) !&"foo";
                  parameters = [];
                  decorators = [];
-                 docstring = None;
                  return_annotation = None;
                  async = true;
                  generator = false;
@@ -1038,7 +1031,6 @@ let test_define_locations _ =
                  name = node ~start:(2, 4) ~stop:(2, 7) !&"foo";
                  parameters = [];
                  decorators = [];
-                 docstring = None;
                  return_annotation = None;
                  async = false;
                  generator = false;
@@ -1058,7 +1050,6 @@ let test_define_locations _ =
                             name = node ~start:(3, 6) ~stop:(3, 9) !&"bar";
                             parameters = [];
                             decorators = [];
-                            docstring = None;
                             return_annotation = None;
                             async = false;
                             generator = false;
@@ -1125,7 +1116,6 @@ let test_define_locations _ =
                        { Parameter.name = "**kwargs"; value = None; annotation = None };
                    ];
                  decorators = [];
-                 docstring = None;
                  return_annotation = None;
                  async = false;
                  generator = false;
@@ -1166,7 +1156,6 @@ let test_define_locations _ =
                        { Parameter.name = "b"; value = None; annotation = None };
                    ];
                  decorators = [];
-                 docstring = None;
                  return_annotation =
                    Some
                      (node
@@ -2606,7 +2595,6 @@ let test_stub_locations _ =
                        { Parameter.name = "a"; value = None; annotation = None };
                    ];
                  decorators = [];
-                 docstring = None;
                  return_annotation = None;
                  async = false;
                  generator = false;
@@ -2652,7 +2640,6 @@ let test_stub_locations _ =
                    ];
                  decorators =
                    [node ~start:(1, 1) ~stop:(1, 9) (Expression.Name (Name.Identifier "overload"))];
-                 docstring = None;
                  return_annotation = None;
                  async = false;
                  generator = false;
@@ -2699,7 +2686,6 @@ let test_stub_locations _ =
                       });
                ];
              decorators = [];
-             docstring = None;
            });
     ];
   assert_source_locations
@@ -2720,7 +2706,6 @@ let test_stub_locations _ =
                    (Statement.Expression (node ~start:(1, 13) ~stop:(1, 16) Expression.Ellipsis));
                ];
              decorators = [];
-             docstring = None;
            });
     ]
 

@@ -22,7 +22,6 @@ let test_parent_definition context =
           name = + !&name;
           parameters = [];
           decorators = [];
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;

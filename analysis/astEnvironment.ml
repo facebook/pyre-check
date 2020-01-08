@@ -165,14 +165,8 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     try
-      let open Statement in
       let statements = Parser.parse ~relative lines in
-      Success
-        (Source.create_from_source_path
-           ~docstring:(Statement.extract_docstring statements)
-           ~metadata
-           ~source_path
-           statements)
+      Success (Source.create_from_source_path ~metadata ~source_path statements)
     with
     | Parser.Error error -> SyntaxError error
     | Failure error -> SystemError error

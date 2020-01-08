@@ -925,7 +925,6 @@ let test_updates context =
         Define.Signature.name;
         parameters = [];
         decorators = [];
-        docstring = None;
         return_annotation;
         async = false;
         generator = false;
@@ -1001,7 +1000,6 @@ let test_updates context =
             Define.Signature.name;
             parameters = [];
             decorators = [];
-            docstring = None;
             return_annotation = None;
             async = false;
             generator = false;
@@ -1243,7 +1241,6 @@ let test_updates context =
                          { Parameter.name = "$parameter$x"; value = None; annotation = None };
                      ];
                    decorators = [];
-                   docstring = None;
                    return_annotation = None;
                    async = false;
                    generator = false;
@@ -1285,7 +1282,6 @@ let test_updates context =
                          { Parameter.name = "$parameter$x"; value = None; annotation = None };
                      ];
                    decorators = [];
-                   docstring = None;
                    return_annotation = None;
                    async = false;
                    generator = false;
@@ -1325,7 +1321,6 @@ let test_updates context =
                     { Parameter.name = "$parameter$x"; value = None; annotation = None };
                 ];
               decorators = [];
-              docstring = None;
               return_annotation = None;
               async = false;
               generator = false;
@@ -1386,7 +1381,6 @@ let test_updates context =
                             special = false;
                           }));
                 ];
-              docstring = None;
               return_annotation =
                 Some (node ~start:(4, 19) ~stop:(4, 22) (Expression.Name (Name.Identifier "int")));
               async = false;
@@ -1445,7 +1439,6 @@ let test_updates context =
                             special = false;
                           }));
                 ];
-              docstring = None;
               return_annotation =
                 Some (node ~start:(8, 19) ~stop:(8, 22) (Expression.Name (Name.Identifier "str")));
               async = false;
@@ -1554,7 +1547,6 @@ let test_updates context =
                            ~stop:(3, 11)
                            (Expression.Name (Name.Identifier "property"));
                        ];
-                     docstring = None;
                      return_annotation =
                        Some
                          (node
@@ -1622,7 +1614,6 @@ let test_updates context =
                                         special = false;
                                       }));
                             ];
-                          docstring = None;
                           return_annotation =
                             Some
                               (node

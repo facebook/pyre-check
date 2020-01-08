@@ -221,14 +221,13 @@ module Make (Transformer : Transformer) = struct
                 origin;
               }
         | Break -> value
-        | Class { Class.name; bases; body; decorators; docstring } ->
+        | Class { Class.name; bases; body; decorators } ->
             Class
               {
                 Class.name;
                 bases = transform_list bases ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_expression;
-                docstring;
               }
         | Continue -> value
         | Define { signature; captures; body } ->
@@ -242,7 +241,6 @@ module Make (Transformer : Transformer) = struct
                   parent;
                   nesting_define;
                   generator;
-                  docstring;
                 }
               =
               {
@@ -255,7 +253,6 @@ module Make (Transformer : Transformer) = struct
                 parent;
                 nesting_define;
                 generator;
-                docstring;
               }
             in
             let transform_capture { Define.Capture.name; kind } =

@@ -231,7 +231,6 @@ module Metadata = struct
 end
 
 type t = {
-  docstring: string option; [@hash.ignore]
   metadata: Metadata.t;
   source_path: SourcePath.t;
   statements: Statement.t list;
@@ -268,12 +267,11 @@ let mode ~configuration ~local_mode : mode =
   | None, _ -> Unsafe
 
 
-let create_from_source_path ~docstring ~metadata ~source_path statements =
-  { docstring; metadata; source_path; statements }
+let create_from_source_path ~metadata ~source_path statements =
+  { metadata; source_path; statements }
 
 
 let create
-    ?(docstring = None)
     ?(metadata = Metadata.create_for_testing ())
     ?(relative = "")
     ?(is_external = false)
@@ -281,7 +279,7 @@ let create
     statements
   =
   let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
-  { docstring; metadata; source_path; statements }
+  { metadata; source_path; statements }
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines

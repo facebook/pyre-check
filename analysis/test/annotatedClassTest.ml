@@ -120,13 +120,7 @@ let test_superclasses context =
     |> ScratchProject.build_global_resolution
   in
   let ( ! ) name =
-    {
-      StatementClass.name = + !&name;
-      bases = [];
-      body = [+Statement.Pass];
-      decorators = [];
-      docstring = None;
-    }
+    { StatementClass.name = + !&name; bases = []; body = [+Statement.Pass]; decorators = [] }
     |> Node.create_with_default_location
     |> Node.map ~f:ClassSummary.create
     |> Class.create
@@ -416,7 +410,7 @@ let test_constructors context =
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
-      { StatementClass.name = + !&"Derp"; bases; body = []; decorators = []; docstring = None }
+      { StatementClass.name = + !&"Derp"; bases; body = []; decorators = [] }
       |> ClassSummary.create
       |> ClassSummary.is_protocol
     in

@@ -701,7 +701,6 @@ compound_statement:
           bases = List.map ~f:convert_argument bases;
           body;
           decorators = [];
-          docstring = Statement.extract_docstring body;
         };
       }
     }
@@ -715,7 +714,6 @@ compound_statement:
     signature_comment = SIGNATURE_COMMENT?;
     body = block_or_stub_body {
       let body_location, body = body in
-      let docstring = Statement.extract_docstring body in
       let location =
         location_create_with_stop ~start:definition ~stop:body_location.Location.stop
       in
@@ -788,7 +786,6 @@ compound_statement:
             generator = is_generator body;
             parent = None;
             nesting_define = None;
-            docstring = docstring;
           };
           captures = [];
           body

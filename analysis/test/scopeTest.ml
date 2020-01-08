@@ -525,7 +525,6 @@ let test_define_local_bindings _ =
                 Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
               parameters = [];
               decorators = [];
-              docstring = None;
               return_annotation = None;
               async = false;
               generator = false;

@@ -50,7 +50,6 @@ module Metadata : sig
 end
 
 type t = {
-  docstring: string option;
   metadata: Metadata.t;
   source_path: SourcePath.t;
   statements: Statement.t list;
@@ -58,15 +57,13 @@ type t = {
 [@@deriving compare, eq, hash, show, sexp]
 
 val create_from_source_path
-  :  docstring:string option ->
-  metadata:Metadata.t ->
+  :  metadata:Metadata.t ->
   source_path:SourcePath.t ->
   Statement.t list ->
   t
 
 val create
-  :  ?docstring:string option ->
-  ?metadata:Metadata.t ->
+  :  ?metadata:Metadata.t ->
   ?relative:string ->
   ?is_external:bool ->
   ?priority:int ->

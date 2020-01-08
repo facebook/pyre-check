@@ -29,7 +29,6 @@ let test_return_annotation context =
           Define.Signature.name = + !&"derp";
           parameters = [];
           decorators = [];
-          docstring = None;
           return_annotation;
           async;
           generator;

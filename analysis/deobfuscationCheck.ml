@@ -653,16 +653,7 @@ let run
             | Statement.If ({ If.body; _ } as conditional) ->
                 Statement.If { conditional with If.body = fix_statement_list body }
             | Define { Define.body; captures; signature } ->
-                let body =
-                  let remove_docstring = function
-                    | { Node.value = Statement.Expression { Node.value = String _; _ }; _ } :: tail
-                      ->
-                        tail
-                    | statements -> statements
-                  in
-                  fix_statement_list body |> remove_docstring
-                in
-                let signature = { signature with docstring = None } in
+                let body = fix_statement_list body in
                 Define { signature; captures; body }
             | value -> value
           in

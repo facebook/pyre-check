@@ -54,7 +54,6 @@ let assert_fixpoint body expected =
           name = + !&"foo";
           parameters = [];
           decorators = [];
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;

@@ -86,13 +86,7 @@ let run tests =
   tests |> bracket |> run_test_tt_main
 
 
-let parse_untrimmed
-    ?(handle = "")
-    ?(silent = false)
-    ?(docstring = None)
-    ?(coerce_special_methods = false)
-    source
-  =
+let parse_untrimmed ?(handle = "") ?(silent = false) ?(coerce_special_methods = false) source =
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- { buffer.Lexing.lex_curr_p with Lexing.pos_fname = handle };
   try
@@ -102,11 +96,7 @@ let parse_untrimmed
         let qualifier = SourcePath.qualifier_of_relative handle in
         Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
       in
-      Source.create
-        ~docstring
-        ~metadata
-        ~relative:handle
-        (Generator.parse (Lexer.read state) buffer)
+      Source.create ~metadata ~relative:handle (Generator.parse (Lexer.read state) buffer)
     in
     let coerce_special_methods =
       if coerce_special_methods then coerce_special_methods_source else Fn.id
@@ -132,8 +122,8 @@ let parse_untrimmed
       failwith "Could not parse test"
 
 
-let parse ?(handle = "") ?(docstring = None) ?(coerce_special_methods = false) source =
-  trim_extra_indentation source |> parse_untrimmed ~handle ~docstring ~coerce_special_methods
+let parse ?(handle = "") ?(coerce_special_methods = false) source =
+  trim_extra_indentation source |> parse_untrimmed ~handle ~coerce_special_methods
 
 
 let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) ?handle source =
@@ -1380,7 +1370,6 @@ let mock_signature =
     Define.Signature.name = Node.create_with_default_location (Reference.create "$empty");
     parameters = [];
     decorators = [];
-    docstring = None;
     return_annotation = None;
     async = false;
     generator = false;

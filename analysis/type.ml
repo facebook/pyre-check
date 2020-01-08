@@ -3638,7 +3638,6 @@ module TypedDictionary = struct
                   |> Node.create_with_default_location;
                 ];
               decorators = [];
-              docstring = None;
               return_annotation;
               async = false;
               generator = false;

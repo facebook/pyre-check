@@ -16,7 +16,6 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     Define.Signature.name = Reference.create name |> Node.create_with_default_location;
     parameters = [];
     decorators = [];
-    docstring = None;
     return_annotation;
     async = false;
     generator = false;

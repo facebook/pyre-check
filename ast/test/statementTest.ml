@@ -21,7 +21,6 @@ let test_is_method _ =
           name = + !&name;
           parameters = [];
           decorators = [];
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;
@@ -44,7 +43,6 @@ let test_is_classmethod _ =
           name = + !&name;
           parameters = [];
           decorators;
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;
@@ -71,7 +69,6 @@ let test_is_class_property _ =
           name = + !&name;
           parameters = [];
           decorators;
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;
@@ -96,7 +93,6 @@ let test_decorator _ =
           name = + !&"foo";
           parameters = [];
           decorators;
-          docstring = None;
           return_annotation = None;
           async = false;
           generator = false;
@@ -134,7 +130,6 @@ let test_is_constructor _ =
             name = + !&name;
             parameters = [];
             decorators = [];
-            docstring = None;
             return_annotation = None;
             async = false;
             generator = false;
@@ -286,9 +281,7 @@ let test_attributes _ =
       in
       List.map expected ~f:attribute
     in
-    let definition =
-      { Class.name = + !&""; bases = []; body = []; decorators = []; docstring = None }
-    in
+    let definition = { Class.name = + !&""; bases = []; body = []; decorators = [] } in
     assert_equal
       ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
@@ -412,7 +405,6 @@ let test_attributes _ =
                 Define.Signature.name = + !&"foo";
                 parameters = [];
                 decorators = [];
-                docstring = None;
                 return_annotation = Some !"int";
                 async = false;
                 generator = false;
@@ -794,22 +786,6 @@ let test_terminates _ =
          x = 1
      |}
     |> fun source -> Statement.terminates source.Source.statements )
-
-
-let test_docstring _ =
-  assert_equal
-    ( parse_single_statement
-        {|
-         def foo():
-           """doc
-              string
-               end"""
-           pass
-    |}
-    |> function
-    | { Node.value = Define { Define.signature = { docstring; _ }; _ }; _ } -> docstring
-    | _ -> None )
-    (Some "doc\nstring\n end")
 
 
 let test_pp _ =

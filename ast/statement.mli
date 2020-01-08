@@ -135,7 +135,6 @@ and Class : sig
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
-    docstring: string option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -177,7 +176,6 @@ and Define : sig
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
-      docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -425,8 +423,6 @@ and Statement : sig
   val terminates : t list -> bool
 
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
-
-  val extract_docstring : t list -> string option
 end
 
 type statement = Statement.statement [@@deriving compare, eq, sexp, show, hash, to_yojson]

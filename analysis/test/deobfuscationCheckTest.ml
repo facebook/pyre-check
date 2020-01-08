@@ -320,18 +320,6 @@ let test_fixup context =
         pass
     |};
 
-  (* Remove docstrings. *)
-  assert_deobfuscation
-    {|
-      def foo():
-        "docstring"
-        pass
-    |}
-    {|
-      def foo():
-        pass
-    |};
-
   (* Sanitize accesses. *)
   assert_deobfuscation {|
       $local_qualifier$variable

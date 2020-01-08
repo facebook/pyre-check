@@ -21,7 +21,6 @@ let test_apply_decorators context =
        Define.Signature.name = + !&"define";
        parameters;
        decorators;
-       docstring = None;
        return_annotation;
        async = false;
        generator = false;

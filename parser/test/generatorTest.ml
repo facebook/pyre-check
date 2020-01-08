@@ -558,7 +558,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -583,7 +582,6 @@ let test_define _ =
                    +{ Parameter.name = "a"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -604,7 +602,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -625,7 +622,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = true;
                generator = false;
@@ -646,7 +642,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = true;
                generator = false;
@@ -667,7 +662,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [!"foo"];
-               docstring = None;
                return_annotation = None;
                async = true;
                generator = false;
@@ -688,7 +682,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [!"decorator"];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -720,7 +713,6 @@ let test_define _ =
                           ];
                       };
                  ];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -741,7 +733,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [!"foo"; !"bar"];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -766,7 +757,6 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -791,7 +781,6 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -813,7 +802,6 @@ let test_define _ =
                parameters =
                  [+{ Parameter.name = "a"; value = Some (+Expression.Tuple []); annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -834,7 +822,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -859,7 +846,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -885,7 +871,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -902,7 +887,6 @@ let test_define _ =
                         name = + !&"bar";
                         parameters = [];
                         decorators = [];
-                        docstring = None;
                         return_annotation = None;
                         async = false;
                         generator = false;
@@ -930,7 +914,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -958,7 +941,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -983,7 +965,6 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = Some !"string" };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -1030,7 +1011,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -1055,7 +1035,6 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some !"c";
                async = false;
                generator = false;
@@ -1076,7 +1055,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some !"str";
                async = false;
                generator = false;
@@ -1106,7 +1084,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "int"));
                async = false;
                generator = false;
@@ -1136,7 +1113,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "int"));
                async = false;
                generator = false;
@@ -1166,7 +1142,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "int"));
                async = false;
                generator = false;
@@ -1195,7 +1170,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1223,7 +1197,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1251,7 +1224,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1287,7 +1259,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1323,7 +1294,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1364,7 +1334,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1401,7 +1370,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1436,7 +1404,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1466,7 +1433,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1510,7 +1476,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1555,7 +1520,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1601,7 +1565,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1635,7 +1598,6 @@ let test_define _ =
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1665,7 +1627,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "List[str]"));
                async = false;
                generator = false;
@@ -1711,7 +1672,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "int"));
                async = false;
                generator = false;
@@ -1751,7 +1711,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -1787,7 +1746,6 @@ let test_define _ =
                    +{ Parameter.name = "**kwargs"; value = None; annotation = None };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -1819,7 +1777,6 @@ let test_define _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = Some (+Expression.String (StringLiteral.create "str"));
                async = false;
                generator = false;
@@ -1850,7 +1807,6 @@ let test_define _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = true;
                generator = true;
@@ -3328,25 +3284,13 @@ let test_class _ =
     "@bar\nclass foo():\n\tpass"
     [
       +Statement.Class
-         {
-           Class.name = + !&"foo";
-           bases = [];
-           body = [+Statement.Pass];
-           decorators = [!"bar"];
-           docstring = None;
-         };
+         { Class.name = + !&"foo"; bases = []; body = [+Statement.Pass]; decorators = [!"bar"] };
     ];
   assert_parsed_equal
     "class foo: pass"
     [
       +Statement.Class
-         {
-           Class.name = + !&"foo";
-           bases = [];
-           body = [+Statement.Pass];
-           decorators = [];
-           docstring = None;
-         };
+         { Class.name = + !&"foo"; bases = []; body = [+Statement.Pass]; decorators = [] };
     ];
   assert_parsed_equal
     "class foo():\n\tdef bar(): pass"
@@ -3364,7 +3308,6 @@ let test_class _ =
                         name = + !&"bar";
                         parameters = [];
                         decorators = [];
-                        docstring = None;
                         return_annotation = None;
                         async = false;
                         generator = false;
@@ -3376,7 +3319,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3395,7 +3337,6 @@ let test_class _ =
                         name = + !&"bar";
                         parameters = [];
                         decorators = [];
-                        docstring = None;
                         return_annotation = None;
                         async = false;
                         generator = false;
@@ -3412,7 +3353,6 @@ let test_class _ =
                                  name = + !&"baz";
                                  parameters = [];
                                  decorators = [];
-                                 docstring = None;
                                  return_annotation = None;
                                  async = false;
                                  generator = false;
@@ -3426,20 +3366,13 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
     "class foo.bar: pass"
     [
       +Statement.Class
-         {
-           Class.name = + !&"foo.bar";
-           bases = [];
-           body = [+Statement.Pass];
-           decorators = [];
-           docstring = None;
-         };
+         { Class.name = + !&"foo.bar"; bases = []; body = [+Statement.Pass]; decorators = [] };
     ];
   assert_parsed_equal
     "class foo(1, 2):\n\t1"
@@ -3454,7 +3387,6 @@ let test_class _ =
              ];
            body = [+Statement.Expression (+Expression.Integer 1)];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3470,7 +3402,6 @@ let test_class _ =
              ];
            body = [+Statement.Expression (+Expression.Integer 1)];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3491,7 +3422,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3512,7 +3442,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3533,7 +3462,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3552,7 +3480,6 @@ let test_class _ =
                         name = + !&"bar";
                         parameters = [];
                         decorators = [];
-                        docstring = None;
                         return_annotation = None;
                         async = false;
                         generator = false;
@@ -3564,7 +3491,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -3583,7 +3509,6 @@ let test_class _ =
                         name = + !&"__init__";
                         parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
                         decorators = [];
-                        docstring = None;
                         return_annotation = None;
                         async = false;
                         generator = false;
@@ -3607,7 +3532,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
 
@@ -3639,7 +3563,6 @@ let test_class _ =
                                  name = + !&"bar";
                                  parameters = [];
                                  decorators = [];
-                                 docstring = None;
                                  return_annotation = None;
                                  async = false;
                                  generator = false;
@@ -3654,7 +3577,6 @@ let test_class _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ]
 
@@ -4781,7 +4703,6 @@ let test_stubs _ =
                   };
              ];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -4794,7 +4715,6 @@ let test_stubs _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -4815,7 +4735,6 @@ let test_stubs _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -4836,7 +4755,6 @@ let test_stubs _ =
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -4864,7 +4782,6 @@ let test_stubs _ =
                     };
                  ];
                decorators = [!"overload"];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
@@ -4884,7 +4801,6 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -4896,7 +4812,6 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
-           docstring = None;
          };
     ];
   assert_parsed_equal
@@ -4908,7 +4823,6 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
-           docstring = None;
          };
     ]
 
@@ -4936,7 +4850,6 @@ let test_ellipsis _ =
                     };
                  ];
                decorators = [];
-               docstring = None;
                return_annotation = None;
                async = false;
                generator = false;
