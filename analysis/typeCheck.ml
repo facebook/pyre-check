@@ -537,7 +537,9 @@ module State (Context : Context) = struct
         |> Option.value ~default:[]
       in
       let type_variables_of_define signature =
-        let parser = GlobalResolution.annotation_parser global_resolution in
+        let parser =
+          GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
+        in
         let define_variables =
           Node.create signature ~location
           |> AnnotatedCallable.create_overload ~parser

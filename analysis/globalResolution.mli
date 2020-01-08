@@ -147,7 +147,10 @@ val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
 val attribute_from_annotation : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
 
-val annotation_parser : t -> AnnotatedCallable.annotation_parser
+val annotation_parser
+  :  ?allow_invalid_type_parameters:bool ->
+  t ->
+  AnnotatedCallable.annotation_parser
 
 val class_definitions : t -> Reference.t -> Class.t Node.t list option
 

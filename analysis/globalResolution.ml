@@ -538,9 +538,9 @@ let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as r
     ?dependency
 
 
-let annotation_parser resolution =
+let annotation_parser ?allow_invalid_type_parameters resolution =
   {
-    AnnotatedCallable.parse_annotation = parse_annotation resolution;
+    AnnotatedCallable.parse_annotation = parse_annotation ?allow_invalid_type_parameters resolution;
     parse_as_concatenation = parse_as_concatenation resolution;
     parse_as_parameter_specification_instance_annotation =
       parse_as_parameter_specification_instance_annotation resolution;
