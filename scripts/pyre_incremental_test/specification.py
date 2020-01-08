@@ -155,7 +155,8 @@ class HgRepositoryState(RepositoryState):
         LOG.debug(f"Original hg commit = {original_commit_hash}")
 
         environment.checked_run(
-            working_directory=self.repository, command=f"hg update {self.commit_hash}"
+            working_directory=self.repository,
+            command=f"hg update --clean {self.commit_hash}",
         )
         yield self.repository
 

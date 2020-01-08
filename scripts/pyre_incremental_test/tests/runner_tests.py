@@ -55,7 +55,7 @@ class RunnerTest(unittest.TestCase):
         initial_hash = "initial_hash"
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"),
                 "pyre --option2 --no-saved-state --enable-profiling restart",
@@ -211,7 +211,7 @@ class RunnerTest(unittest.TestCase):
         )
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed --option2 "
@@ -286,7 +286,7 @@ class RunnerTest(unittest.TestCase):
         initial_hash = "initial_hash"
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
@@ -346,7 +346,7 @@ class RunnerTest(unittest.TestCase):
         initial_hash = "initial_hash"
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
@@ -409,7 +409,7 @@ class RunnerTest(unittest.TestCase):
         initial_hash = "initial_hash"
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
@@ -538,7 +538,7 @@ class RunnerTest(unittest.TestCase):
         initial_hash = "initial_hash"
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
-            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
             CommandInput(Path("old_root"), "hg update --clean new_hashB"),
             CommandInput(
