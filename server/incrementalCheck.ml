@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-module ModuleTracker = Analysis.ModuleTracker
 open Ast
 open Analysis
 open State

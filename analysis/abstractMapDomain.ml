@@ -168,7 +168,7 @@ module Make (Key : KEY) (Element : AbstractDomain.S) = struct
         Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_elements
 
 
-  let rec create parts =
+  let create parts =
     let rec split_into_alist parts =
       match parts with
       | [] -> [], []

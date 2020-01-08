@@ -43,7 +43,7 @@ module NodeVisitor = struct
         } as state )
       node
     =
-    let rec annotate_expression ({ Node.location; value } as expression) =
+    let annotate_expression ({ Node.location; value } as expression) =
       let resolution = if postcondition then post_resolution else pre_resolution in
       let resolve ~resolution ~expression =
         try

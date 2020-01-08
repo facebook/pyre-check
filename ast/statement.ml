@@ -5,7 +5,6 @@
 
 open Core
 open Pyre
-module Name = Expression.Name
 
 module Assign = struct
   type t = {

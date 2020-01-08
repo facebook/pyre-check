@@ -7,7 +7,6 @@
   open Core
 
   open Ast
-  module AstExpression = Expression
   open Statement
   open Pyre
   open ParserExpression

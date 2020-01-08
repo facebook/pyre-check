@@ -74,7 +74,6 @@ let produce_undecorated_function class_hierarchy_environment name ~track_depende
 
 module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = UndecoratedFunctionValue
 

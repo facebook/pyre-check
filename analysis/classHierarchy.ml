@@ -8,7 +8,6 @@
 open Core
 open Ast
 open Pyre
-module Callable = Type.Callable
 
 exception Cyclic
 

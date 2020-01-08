@@ -6,7 +6,6 @@
 open Core
 open Ast
 open Pyre
-module Callable = Type.Callable
 open Assumptions
 
 type order = {
@@ -1177,10 +1176,8 @@ module OrderImplementation = struct
         | Type.Top, other
         | other, Type.Top ->
             other
-        | Type.Any, other
-        | other, Type.Any
-          when not (Type.is_unknown other) ->
-            other
+        | Type.Any, other when not (Type.is_unknown other) -> other
+        | other, Type.Any when not (Type.is_unknown other) -> other
         | Type.Bottom, _
         | _, Type.Bottom ->
             Type.Bottom

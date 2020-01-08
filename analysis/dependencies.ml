@@ -6,7 +6,6 @@
 open Core
 open Ast
 open Pyre
-module SharedMemory = Memory
 
 type t = { ast_environment: AstEnvironment.ReadOnly.t }
 

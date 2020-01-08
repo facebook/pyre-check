@@ -243,7 +243,7 @@ module State (Context : Context) = struct
       }
 
 
-  let rec initial ~resolution =
+  let initial ~resolution =
     let initial = TypeCheckState.initial ~resolution in
     { resolution; errors = TypeCheckState.error_map initial; bottom = false }
 
@@ -696,7 +696,7 @@ let run
     in
     try
       let cfg = Cfg.create define in
-      let rec backward_fixpoint ~initial_forward ~initialize_backward =
+      let backward_fixpoint ~initial_forward ~initialize_backward =
         let rec fixpoint iteration ~initial_forward ~initialize_backward =
           let invariants =
             Fixpoint.forward ~cfg ~initial:initial_forward

@@ -792,7 +792,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_definition ~define:_ state = state
 
-    let rec analyze_statement ~resolution { Node.value = statement; location } state =
+    let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Statement.Assign { target; value; _ } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in

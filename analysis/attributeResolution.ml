@@ -2389,7 +2389,7 @@ module Implementation = struct
         | Named { annotation = parameter_annotation; _ }, arguments
         | Variable (Concrete parameter_annotation), arguments
         | Keywords parameter_annotation, arguments ->
-            let rec set_constraints_and_reasons
+            let set_constraints_and_reasons
                 ~position
                 ~argument
                 ~name

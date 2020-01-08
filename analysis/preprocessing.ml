@@ -38,7 +38,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
 
     let transform_children _ _ = true
 
-    let rec transform_string_annotation_expression relative =
+    let transform_string_annotation_expression relative =
       let rec transform_expression
           ( {
               Node.location =
@@ -1358,7 +1358,7 @@ let expand_implicit_returns source =
               | Some { Node.value = Return _; _ } -> define
               | Some statement ->
                   let rec get_last statement =
-                    let rec get_last_in_block last_statement statement_block =
+                    let get_last_in_block last_statement statement_block =
                       match last_statement, List.rev statement_block with
                       | None, last_statement_in_block :: _ -> get_last last_statement_in_block
                       | _ -> last_statement

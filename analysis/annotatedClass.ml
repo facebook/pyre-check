@@ -9,7 +9,6 @@ open Pyre
 open Expression
 open Statement
 module StatementAttribute = Attribute
-module Callable = AnnotatedCallable
 module Attribute = AnnotatedAttribute
 
 type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
@@ -37,7 +36,7 @@ let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ };
   Class.implicit_attributes attribute_components
 
 
-let rec fallback_attribute ~(resolution : Resolution.t) ~name class_name =
+let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   match
     GlobalResolution.summary_and_attribute_table
       class_name

@@ -761,7 +761,7 @@ let show_for_hover annotation =
   | _ -> show_concise annotation
 
 
-let rec serialize = function
+let serialize = function
   | Bottom -> "$bottom"
   | annotation -> Format.asprintf "%a" pp annotation
 
@@ -826,7 +826,7 @@ let none = Optional Bottom
 
 let object_primitive = Primitive "object"
 
-let rec optional parameter =
+let optional parameter =
   match parameter with
   | Top -> Top
   | Optional _ -> parameter
@@ -1513,7 +1513,7 @@ let primitive_name = function
 
 
 let create_concatenation_operator_from_annotation annotation ~variable_aliases =
-  let rec create_map_operator_from_annotation annotation ~variable_aliases =
+  let create_map_operator_from_annotation annotation ~variable_aliases =
     match annotation with
     | Parametric
         { name; parameters = Concrete [Primitive left_parameter; Primitive right_parameter] }
@@ -1582,7 +1582,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
 
         let visit_children_after = true
 
-        let rec visit _ annotation =
+        let visit _ annotation =
           let rec resolve annotation =
             if Core.Hash_set.mem visited annotation then
               annotation
@@ -3396,7 +3396,7 @@ let is_concrete annotation =
   && not (Variable.contains_escaped_free_variable annotation)
 
 
-let rec dequalify map annotation =
+let dequalify map annotation =
   let dequalify_string string = string |> dequalify_identifier map in
   let module DequalifyTransform = Transform.Make (struct
     type state = unit
