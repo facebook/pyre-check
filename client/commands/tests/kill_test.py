@@ -135,8 +135,7 @@ class KillTest(unittest.TestCase):
         kill_command._configuration = Mock()
         kill_command._run()
 
-        delete_caches.assert_not_called()
-
+        delete_caches.assert_called_once()
         kill_binary_processes.assert_called_once()
         kill_client_processes.assert_called_once()
         delete_server_files.assert_called_once()
@@ -144,7 +143,7 @@ class KillTest(unittest.TestCase):
         kill_command._arguments = Mock(with_fire=True)
         kill_command._run()
 
-        delete_caches.assert_called_once()
+        self.assertEqual(delete_caches.call_count, 2)
         self.assertEqual(kill_binary_processes.call_count, 2)
         self.assertEqual(kill_client_processes.call_count, 2)
         self.assertEqual(delete_server_files.call_count, 2)

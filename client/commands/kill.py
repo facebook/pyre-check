@@ -26,6 +26,35 @@ from .command import Command
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+PYRE_FIRE = """
+                              .
+                             ,,,
+                            .,,,,
+                           ,,,,,,,,
+                          ,,,*/*,,,,.
+                         ,,,*///*,,,,,
+                       ,,,,*/////*,,,,,
+                      ,,,,////////*,,,,,
+                     ,,,*/////(/////*,,, ,
+                    ,,,**/////(((//*/*,,.,.
+                   ,,,*/////((((((////,,,,*
+                ,,.,,,/////((((((((//***/,,,
+               .,,,,/*////((((((((((/////*,,.
+               ,,,,*//////((((((((((/////*,,,
+               ,,,,*/////((((((((((((////*,,,,,
+               ,,,,,//////((((((((((/////,,,,,*
+               .,,,,,*/////(((((((/////*,,,,,*.
+            ##, *,,,,,,*//////////////,,,,,,**
+           .,*###(/**,,,*,,,,,,,,,,,,,,,*,**/
+/(##################(****///***,**,*****//*(#############//
+///#####%%%%%%%%#############((####(########%%##########*//
+///#%%#,     /**/((#########%#######. ############%%%%##/*/
+             //*/*//#####%%..#((#(###   *######////*   ////
+             ,/**///#%%#.   ,////////*    .%##/*/*//,
+               .///*        .///*////*       #/*////,
+"""
+
+
 class Kill(Command):
     NAME = "kill"
 
@@ -46,7 +75,7 @@ class Kill(Command):
         kill = parser.add_parser(cls.NAME)
         kill.set_defaults(command=cls)
         kill.add_argument(
-            "--with-fire", action="store_true", help="Adds emphasis to the command."
+            "--with-fire", action="store_true", help="A no-op flag that adds emphasis."
         )
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
@@ -123,16 +152,19 @@ class Kill(Command):
         explicit_local = self._arguments.local_configuration
         if explicit_local:
             LOG.warning(
-                "Pyre kill will terminate all running servers. Specifying local path `{}` is unnecessary.".format(
-                    explicit_local
-                )
+                "Pyre kill will terminate all running servers. "
+                "Specifying local path `{}` is unnecessary.".format(explicit_local)
             )
         self._kill_binary_processes()
         self._delete_server_files()
-
-        if self._arguments.with_fire is True:
-            self._delete_caches()
+        self._delete_caches()
         self._kill_client_processes()
+        if self._arguments.with_fire is True:
+            LOG.warning(
+                "All --with-fire functionality has now been included in `pyre kill`.\n   "
+                "The flag is now a no-op, but here is a pyre for your troubles."
+            )
+            LOG.info(PYRE_FIRE)
 
 
 def _get_process_name(environment_variable_name: str, default: str) -> str:
