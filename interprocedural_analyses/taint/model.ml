@@ -932,14 +932,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           |> from_reference ~location:Location.any
           |> Resolution.resolve_to_annotation resolution
         in
-        let parent =
-          name
-          |> Reference.as_list
-          |> List.rev
-          |> (fun list -> List.drop list 1)
-          |> List.rev
-          |> Reference.create_from_list
-        in
+        let parent = Option.value_exn (Reference.prefix name) in
         let get_matching_method ~predicate =
           let get_matching_define = function
             | { Node.value = Statement.Define ({ signature; _ } as define); location } ->
