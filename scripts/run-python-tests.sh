@@ -7,9 +7,9 @@
 
 set -e
 
-# Prefer a python3.5 interpreter to maintain full backward compatibility.
-if command -v python3.5 &>/dev/null; then
-  PYTHON_INTERPRETER=$(command -v python3.5)
+# Prefer a python3.6 interpreter to maintain full backward compatibility.
+if command -v python3.6 &>/dev/null; then
+  PYTHON_INTERPRETER=$(command -v python3.6)
 elif command -v python3 &>/dev/null; then
   PYTHON_INTERPRETER=$(command -v python3)
 else
