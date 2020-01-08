@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import traceback
-from typing import Type  # noqa
+from typing import Optional, Type  # noqa
 
 from . import (
     buck,
@@ -81,7 +81,8 @@ def main() -> int:
             LOG.warning("Defaulting to non-incremental check.")
             arguments.command = commands.Check
 
-    command = None
+    command: Optional[Command] = None
+    client_exception_message = ""
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -103,29 +104,30 @@ def main() -> int:
         log.initialize(command.noninteractive, command.log_directory)
         exit_code = command.run().exit_code()
     except buck.BuckException as error:
-        LOG.error(str(error))
+        client_exception_message = str(error)
         if arguments.command == commands.Persistent:
             commands.Persistent.run_null_server(timeout=3600 * 12)
         exit_code = ExitCode.BUCK_ERROR
     except EnvironmentException as error:
-        LOG.error(str(error))
+        client_exception_message = str(error)
         if arguments.command == commands.Persistent:
             commands.Persistent.run_null_server(timeout=3600 * 12)
         exit_code = ExitCode.FAILURE
     except commands.ClientException as error:
-        LOG.error(str(error))
+        client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
-    except Exception as error:
-        LOG.error(str(error))
-        LOG.info(traceback.format_exc())
+    except Exception:
+        client_exception_message = traceback.format_exc()
         exit_code = ExitCode.FAILURE
     except KeyboardInterrupt:
         LOG.warning("Interrupted by user")
         LOG.debug(traceback.format_exc())
         exit_code = ExitCode.SUCCESS
     finally:
+        if len(client_exception_message) > 0:
+            LOG.error(client_exception_message)
         log.cleanup()
-        if command and isinstance(command, Command):
+        if command:
             command.analysis_directory.cleanup()
             configuration = command._configuration
             if configuration and configuration.logger:
@@ -141,6 +143,7 @@ def main() -> int:
                         "cwd": os.getcwd(),
                         "client_version": __version__,
                         "command": command.NAME,
+                        "client_exception": client_exception_message,
                     },
                 )
 
