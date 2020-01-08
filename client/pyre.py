@@ -21,7 +21,7 @@ from . import (
     log,
     log_statistics,
 )
-from .commands import Command, ExitCode
+from .commands import Command, CommandParser, ExitCode
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -75,7 +75,7 @@ def main() -> int:
             LOG.warning("Defaulting to non-incremental check.")
             arguments.command = commands.Check
 
-    command: Optional[Command] = None
+    command: Optional[CommandParser] = None
     client_exception_message = ""
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
@@ -93,7 +93,7 @@ def main() -> int:
         original_directory = os.getcwd()
         # TODO(T57959968): Stop changing the directory in the client
         os.chdir(find_project_root(original_directory))
-        command = arguments.command(arguments, original_directory)
+        command: CommandParser = arguments.command(arguments, original_directory)
 
         log.initialize(command.noninteractive, command.log_directory)
         exit_code = command.run().exit_code()
@@ -121,7 +121,9 @@ def main() -> int:
         if len(client_exception_message) > 0:
             LOG.error(client_exception_message)
         log.cleanup()
-        if command:
+        # We have to have the isinstance check here, because commands which directly
+        # inherit from CommandParser such as Initialize don't have these fields.
+        if command and isinstance(command, Command):
             command.analysis_directory.cleanup()
             configuration = command._configuration
             if configuration and configuration.logger:
