@@ -128,6 +128,24 @@ let test_source_models context =
     ~model_source:"def test.f(x) -> AppliesTo[0, TaintSource[Test]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "test.f"]
     ();
+  assert_model
+    ~source:
+      {|
+        import abc
+        class C:
+          @abc.abstractproperty
+          def foo(self) -> int:
+            return self.x
+          @foo.setter
+          def foo(self, value) -> None:
+            self.x = value
+        |}
+    ~model_source:{|
+        @property
+        def test.C.foo(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "test.C.foo"]
+    ();
 
   ()
 

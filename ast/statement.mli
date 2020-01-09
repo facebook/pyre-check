@@ -218,8 +218,6 @@ and Define : sig
 
     val is_property_setter : t -> bool
 
-    val is_property : t -> bool
-
     val is_untyped : t -> bool
 
     val is_toplevel : t -> bool
@@ -288,8 +286,6 @@ and Define : sig
   val is_constructor : ?in_test:bool -> t -> bool
 
   val is_property_setter : t -> bool
-
-  val is_property : t -> bool
 
   val is_untyped : t -> bool
 

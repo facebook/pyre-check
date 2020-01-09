@@ -55,6 +55,14 @@ let raise_invalid_model message = raise (InvalidModel message)
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
+let signature_is_property signature =
+  String.Set.exists Recognized.property_decorators ~f:(Define.Signature.has_decorator signature)
+
+
+let is_property define =
+  String.Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
+
+
 let introduce_sink_taint
     ~root
     ~sinks_to_keep
@@ -776,7 +784,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
                           in
                           let decorators =
                             if
-                              Define.Signature.is_property signature
+                              signature_is_property signature
                               || Define.Signature.is_property_setter signature
                             then
                               decorators
@@ -956,8 +964,8 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           | Some annotation -> annotation
           | None -> global_type ()
         in
-        if Define.Signature.is_property define then
-          get_matching_method ~predicate:Define.is_property
+        if signature_is_property define then
+          get_matching_method ~predicate:is_property
         else if Define.Signature.is_property_setter define then
           get_matching_method ~predicate:Define.is_property_setter
         else if not (List.is_empty decorators) then

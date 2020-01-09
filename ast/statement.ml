@@ -1005,8 +1005,6 @@ and Define : sig
 
     val is_property_setter : t -> bool
 
-    val is_property : t -> bool
-
     val is_untyped : t -> bool
 
     val is_toplevel : t -> bool
@@ -1077,8 +1075,6 @@ and Define : sig
   val is_test_setup : t -> bool
 
   val is_property_setter : t -> bool
-
-  val is_property : t -> bool
 
   val is_untyped : t -> bool
 
@@ -1266,8 +1262,6 @@ end = struct
       has_decorator signature (unqualified_name signature ^ ".setter")
 
 
-    let is_property signature = has_decorator signature "property"
-
     let is_untyped { return_annotation; _ } = Option.is_none return_annotation
 
     let is_async { async; _ } = async
@@ -1376,8 +1370,6 @@ end = struct
   let is_test_setup { signature; _ } = Signature.is_test_setup signature
 
   let is_property_setter { signature; _ } = Signature.is_property_setter signature
-
-  let is_property { signature; _ } = Signature.is_property signature
 
   let is_untyped { signature; _ } = Signature.is_untyped signature
 
