@@ -1700,6 +1700,10 @@ module State (Context : Context) = struct
           in
           match resolved with
           | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
+          | Type.Variable { constraints = Type.Variable.Bound parent; _ } -> (
+              match parent with
+              | Type.Callable callable -> Some [callable]
+              | _ -> None )
           | Type.Top -> (
               match Node.value callee, arguments with
               | Expression.Name (Attribute { base; attribute; _ }), [{ Call.Argument.value; _ }]

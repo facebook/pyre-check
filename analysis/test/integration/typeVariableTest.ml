@@ -6,6 +6,30 @@
 open OUnit2
 open IntegrationTest
 
+let test_check_bounded_variables context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable
+      TFun = TypeVar("TFun", bound=Callable[[int], None])
+      def foo(x: TFun) -> None:
+        x(7)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable
+      TFun = TypeVar("TFun", bound=Callable[[int], None])
+      def foo(x: TFun) -> None:
+        x("7")
+    |}
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to anonymous call but got `str`.";
+    ];
+  ()
+
+
 let test_check_unbounded_variables context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -1672,6 +1696,7 @@ let test_concatenation_operator context =
 let () =
   "typeVariable"
   >::: [
+         "check_bounded_variables" >:: test_check_bounded_variables;
          "check_unbounded_variables" >:: test_check_unbounded_variables;
          "check_variable_bindings" >:: test_check_variable_bindings;
          "unbound_variables" >:: test_unbound_variables;
