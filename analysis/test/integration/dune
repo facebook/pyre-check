@@ -50,6 +50,7 @@
   refinementTest
   returnTest
   revealTypeTest
+  scopeTest
   signatureSelectionTest
   tupleTest
   typeVariableTest

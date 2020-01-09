@@ -1054,6 +1054,15 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
+      def foo(foo):
+        return foo
+    |}
+    {|
+      def qualifier.foo($parameter$foo):
+        return $parameter$foo
+    |};
+  assert_qualify
+    {|
       variable = 0
       with item:
         variable = 1

@@ -665,9 +665,10 @@ let qualify
                  ~qualify_strings:false
                  ~scope:{ scope with use_forward_references = true })
         in
+        (* Take care to qualify the function name before parameters, as parameters shadow it. *)
+        let scope, _ = qualify_function_name ~scope name in
         let scope, parameters = qualify_parameters ~scope parameters in
         let qualifier = Reference.combine qualifier name in
-        let scope, _ = qualify_function_name ~scope name in
         let _, body =
           qualify_statements ~scope:{ scope with qualifier; is_in_function = true } body
         in
