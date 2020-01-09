@@ -7,7 +7,7 @@ open OUnit2
 open Ast
 open Core
 
-type test_node = string Ast.Node.t [@@deriving compare, eq, sexp, show, hash]
+type test_node = string Ast.Node.t [@@deriving compare, eq, sexp, hash]
 
 let test_equality _ =
   let compare_two_locations left right equal compare_equal hashes_equal =

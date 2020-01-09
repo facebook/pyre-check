@@ -335,32 +335,6 @@ let test_check_annotation context =
     ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."]
 
 
-type definer =
-  | Module of Reference.t
-  | Type of Type.t
-[@@deriving compare, eq, show]
-
-and stripped =
-  | Attribute of string
-  | MissingAttribute of {
-      name: string;
-      missing_definer: definer;
-    }
-  | Unknown
-  | SignatureFound of {
-      callable: string;
-      callees: string list;
-    }
-  | SignatureNotFound of AttributeResolution.reason option
-  | NotCallable of Type.t
-  | Value
-
-and step = {
-  annotation: Type.t;
-  element: stripped;
-}
-[@@deriving compare, eq, show]
-
 let assert_resolved ~context sources expression expected =
   let module State = State (DefaultContext) in
   let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in

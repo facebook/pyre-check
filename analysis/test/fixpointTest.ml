@@ -11,15 +11,13 @@ open Statement
 open Test
 
 module CountingState : sig
-  type t = int [@@deriving eq]
+  type t = int
 
   include Fixpoint.State with type t := t
 end = struct
   type t = int [@@deriving show]
 
   let less_or_equal ~left ~right = left <= right
-
-  let equal = Int.( = )
 
   let forward ?key:_ state ~statement =
     match statement with

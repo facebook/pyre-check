@@ -5,10 +5,6 @@ open Analysis
 open Test
 open ClassHierarchy
 
-let connect ?(parameters = Type.OrderedTypes.Concrete []) handler ~predecessor ~successor =
-  MockClassHierarchyHandler.connect ~parameters handler ~predecessor ~successor
-
-
 let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 
 (* Butterfly:
@@ -550,5 +546,6 @@ let () =
          "to_json" >:: test_to_json;
          "variables" >:: test_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
+         "method_resolution_order_linearize" >:: test_method_resolution_order_linearize;
        ]
   |> Test.run

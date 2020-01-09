@@ -152,8 +152,6 @@ end
 module StringSet = struct
   include AbstractSetDomain.Make (String)
 
-  let top = None
-
   let singletons = ["a"; "b"; "c"]
 
   let unrelated = List.map singletons ~f:singleton
@@ -244,8 +242,6 @@ module IntToStringSet = struct
       (StringSet)
 
   include Map
-
-  let top = None
 
   (* Test that maps are strict in bottom elements. *)
   let bottom = set bottom ~key:1 ~data:StringSet.bottom
@@ -422,8 +418,6 @@ module StrictIntToStringSet = struct
       (StringSet)
 
   include Map
-
-  let top = None
 
   let build_map elements =
     let add_elements map (key, elements) = set map ~key ~data:(StringSet.of_list elements) in
@@ -744,8 +738,6 @@ end
 
 module AbstractElementSet = struct
   include AbstractElementSetDomain.Make (AbstractElement)
-
-  let top = None
 
   let unrelated =
     let open AbstractElement in
@@ -1386,8 +1378,6 @@ module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)
 
 module OverUnderStringSet = struct
   include AbstractOverUnderSetDomain.Make (String)
-
-  let top = None
 
   let unrelated =
     [

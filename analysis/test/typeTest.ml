@@ -1200,30 +1200,6 @@ let test_variables _ =
   ()
 
 
-let test_parameter_name_compatibility _ =
-  let parameter name =
-    Type.Callable.Parameter.Named { name; annotation = Type.integer; default = false }
-  in
-  assert_true
-    (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "argument"));
-  assert_true (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "$0"));
-  assert_true (Type.Callable.Parameter.names_compatible (parameter "$0") (parameter "argument"));
-  assert_true (Type.Callable.Parameter.names_compatible (parameter "$0") (parameter "$1"));
-
-  (* Underscores are ignored for the purposes of typechecking parameter compatibility. *)
-  assert_true
-    (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "_argument"));
-  assert_true
-    (Type.Callable.Parameter.names_compatible (parameter "_argument") (parameter "argument"));
-  assert_true
-    (Type.Callable.Parameter.names_compatible (parameter "__argument") (parameter "argument"));
-  assert_true
-    (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "__argument"));
-  assert_false (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "other"));
-  assert_false
-    (Type.Callable.Parameter.names_compatible (parameter "_argument") (parameter "other"))
-
-
 let test_lambda _ =
   assert_true
     (Type.equal

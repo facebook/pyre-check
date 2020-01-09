@@ -33,8 +33,6 @@ module ShallowModifyingTransformer : sig
   type t = int
 
   include Transform.Transformer with type t := t
-
-  val final : t -> int
 end = struct
   include Transform.Identity
   include ModifyingTransformer

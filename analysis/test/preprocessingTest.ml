@@ -46,10 +46,10 @@ let test_expand_relative_imports _ =
       from ..relative import d
     |}
     {|
-      from module.submodule import a
-      from module.submodule.relative import b
-      from module import c
-      from module.relative import d
+      from module.submodule.test import a
+      from module.submodule.test.relative import b
+      from module.submodule import c
+      from module.submodule.relative import d
     |}
 
 
@@ -3803,6 +3803,7 @@ let test_populate_captures _ =
 let () =
   "preprocessing"
   >::: [
+         "expand_relative_imports" >:: test_expand_relative_imports;
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_format_string" >:: test_expand_format_string;
          "qualify" >:: test_qualify;

@@ -151,11 +151,6 @@ let test_superclasses context =
   assert_superclasses !"test.SubRedundant" [!"test.SubFooBar"; !"test.Foo"; !"test.Bar"; !"object"]
 
 
-type constructor = {
-  parameters: Parameter.t list;
-  annotation: Type.t option;
-}
-
 let test_get_decorator context =
   let assert_get_decorator source decorator expected =
     let resolution =

@@ -88,8 +88,6 @@ let unexpected_keyword name callee =
   Error.UnexpectedKeyword { name; callee = callee >>| Reference.create }
 
 
-let configuration = Configuration.Analysis.create ()
-
 let test_due_to_analysis_limitations _ =
   let assert_due_to_analysis_limitations kind =
     assert_true (Error.due_to_analysis_limitations (error kind))

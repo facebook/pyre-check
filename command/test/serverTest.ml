@@ -13,15 +13,7 @@ open Server
 open Test
 open CommandTest
 
-exception Timeout
-
 let int_request_id id = LanguageServer.Types.RequestId.Int id
-
-let string_request_id id = LanguageServer.Types.RequestId.String id
-
-let file ~local_root ?content path =
-  File.create ?content (Path.create_relative ~root:local_root ~relative:path)
-
 
 let test_language_server_protocol_json_format context =
   let handle = "filename.py" in

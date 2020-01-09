@@ -125,12 +125,6 @@ let test_backward context =
   assert_backward [] "star_int_to_int(*[], y)" []
 
 
-(* We don't yet infer y, which comes after starred param *)
-
-let fixpoint_parse source =
-  parse source |> Preprocessing.preprocess |> Preprocessing.defines |> List.hd_exn
-
-
 let get_inference_errors ~context source =
   let source, configuration, ast_environment, global_resolution =
     let project = ScratchProject.setup ~context ["test.py", source] in
