@@ -239,7 +239,7 @@ end = struct
   end
 
   module UnannotatedGlobals =
-    Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+    Memory.DependencyTrackedTableNoCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
       (UnannotatedGlobalValue)
 
   module FunctionDefinitionValue = struct
@@ -258,7 +258,7 @@ end = struct
     Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
       (FunctionDefinitionValue)
 
-  let set_unannotated_global ~target = UnannotatedGlobals.write_through target
+  let set_unannotated_global ~target = UnannotatedGlobals.add target
 
   let set_class_definition ~name ~definition = ClassDefinitions.write_through name definition
 

@@ -23,7 +23,7 @@ module RawSourceValue = struct
 end
 
 module RawSources =
-  Memory.DependencyTrackedTableWithCache
+  Memory.DependencyTrackedTableNoCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.ReferenceDependencyKey)
     (RawSourceValue)
