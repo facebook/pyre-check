@@ -844,6 +844,80 @@ let test_call_locations _ =
                        };
                      ];
                  })));
+    ];
+  assert_source_locations
+    "a[:]"
+    [
+      node
+        ~start:(1, 0)
+        ~stop:(1, 4)
+        (Statement.Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 4)
+              (Expression.Call
+                 {
+                   callee =
+                     node
+                       ~start:(1, 0)
+                       ~stop:(1, 1)
+                       (Expression.Name
+                          (Name.Attribute
+                             {
+                               base =
+                                 node
+                                   ~start:(1, 0)
+                                   ~stop:(1, 1)
+                                   (Expression.Name (Name.Identifier "a"));
+                               attribute = "__getitem__";
+                               special = true;
+                             }));
+                   arguments =
+                     [
+                       {
+                         Call.Argument.name = None;
+                         value =
+                           node
+                             ~start:(1, 2)
+                             ~stop:(1, 3)
+                             (Expression.Call
+                                {
+                                  callee =
+                                    node
+                                      ~start:(1, 2)
+                                      ~stop:(1, 3)
+                                      (Expression.Name (Name.Identifier "slice"));
+                                  arguments =
+                                    [
+                                      {
+                                        Call.Argument.name = None;
+                                        value =
+                                          node
+                                            ~start:(1, 2)
+                                            ~stop:(1, 2)
+                                            (Expression.Name (Name.Identifier "None"));
+                                      };
+                                      {
+                                        Call.Argument.name = None;
+                                        value =
+                                          node
+                                            ~start:(1, 3)
+                                            ~stop:(1, 3)
+                                            (Expression.Name (Name.Identifier "None"));
+                                      };
+                                      {
+                                        Call.Argument.name = None;
+                                        value =
+                                          node
+                                            ~start:(1, 3)
+                                            ~stop:(1, 3)
+                                            (Expression.Name (Name.Identifier "None"));
+                                      };
+                                    ];
+                                });
+                       };
+                     ];
+                 })));
     ]
 
 
