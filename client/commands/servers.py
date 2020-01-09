@@ -6,14 +6,12 @@
 import argparse
 import functools
 import logging
-import subprocess
 from pathlib import Path
-from typing import List
-
-from mypy_extensions import TypedDict
+from typing import List, NamedTuple
 
 from .. import LOG_DIRECTORY, find_project_root
 from .command import Command
+from .stop import Stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -23,10 +21,20 @@ ROOT_PLACEHOLDER_NAME = "<root>"
 PID_MAXIMUM_WIDTH = 10
 
 
-class ServerDetails(TypedDict):
+class ServerDetails(NamedTuple):
     local_root: str
     pid: int
-    path: Path
+    server_pid_path: Path
+
+    @staticmethod
+    def _from_server_path(
+        server_pid_path: Path, dot_pyre_root: Path
+    ) -> "ServerDetails":
+        return ServerDetails(
+            pid=int(server_pid_path.read_text()),
+            server_pid_path=server_pid_path,
+            local_root=str(server_pid_path.relative_to(dot_pyre_root).parent.parent),
+        )
 
 
 class Servers(Command):
@@ -41,7 +49,10 @@ class Servers(Command):
             """,
         )
         servers_parser.set_defaults(command=cls, noninteractive=True)
-        servers_parser.add_argument("list", help="List running servers.")
+        subparsers = servers_parser.add_subparsers(dest="servers_subcommand")
+
+        subparsers.add_parser("list", help="List running servers.")
+        subparsers.add_parser("stop", help="Stop all running servers.")
 
     @staticmethod
     @functools.lru_cache()
@@ -50,50 +61,42 @@ class Servers(Command):
 
     @staticmethod
     def _print_server_details(all_server_details: List[ServerDetails]) -> None:
-        print("Pyre servers: <pid> <server-path>")
+        print("Pyre servers: <pid> <server-root>")
         for details in all_server_details:
             print(
                 "{:<{column_one_width}} {}".format(
-                    details["pid"],
-                    details["local_root"],
+                    details.pid,
+                    ROOT_PLACEHOLDER_NAME
+                    if details.local_root == "."
+                    else details.local_root,
                     column_one_width=PID_MAXIMUM_WIDTH,
                 )
             )
 
     @staticmethod
     def _find_servers() -> List[Path]:
-        find_command = [
-            "find",
-            str(Servers._dot_pyre_root()),
-            "-type",
-            "f",
-            "-name",
-            "server.pid",
-        ]
-        LOG.info("Running command: `{}`".format(" ".join(find_command)))
-        try:
-            server_paths = subprocess.check_output(find_command).decode().splitlines()
-        except subprocess.CalledProcessError as exception:
-            LOG.error(f"`find` failed with exception `{exception}`")
-            raise exception
-        return [Path(path) for path in server_paths]
+        return list(Servers._dot_pyre_root().glob("**/server.pid"))
 
-    @staticmethod
-    def _fetch_server_details(server_path: Path, dot_pyre_root: Path) -> ServerDetails:
-        local_root = str(server_path.relative_to(dot_pyre_root).parent.parent)
-        return {
-            "pid": int(server_path.read_text()),
-            "path": server_path,
-            "local_root": ROOT_PLACEHOLDER_NAME if local_root == "." else local_root,
-        }
+    def _stop_servers(self, servers: List[ServerDetails]) -> None:
+        for server in servers:
+            Stop(
+                arguments=self._arguments,
+                original_directory=str(
+                    self._dot_pyre_root().parent / server.local_root
+                ),
+            ).run()
 
     def _run(self) -> None:
-        server_paths = self._find_servers()
         all_server_details = sorted(
             (
-                self._fetch_server_details(server_path, Servers._dot_pyre_root())
-                for server_path in server_paths
+                ServerDetails._from_server_path(server_path, self._dot_pyre_root())
+                for server_path in self._find_servers()
             ),
-            key=lambda details: details["local_root"],
+            key=lambda details: details.local_root,
         )
-        self._print_server_details(all_server_details)
+
+        subcommand = self._arguments.servers_subcommand
+        if subcommand == "list" or subcommand is None:
+            self._print_server_details(all_server_details)
+        elif subcommand == "stop":
+            self._stop_servers(all_server_details)
