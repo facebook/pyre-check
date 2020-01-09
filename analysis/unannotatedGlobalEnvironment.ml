@@ -688,7 +688,55 @@ let collect_typecheck_units { Source.statements; _ } =
     | YieldFrom _ ->
         sofar
   in
+  let drop_nested_body { Node.value = { Define.body; _ } as define; location } =
+    let new_define =
+      let rec drop_nested_body_in_statement = function
+        | Statement.Class definition -> Statement.Class { definition with body = [] }
+        | Define { Define.signature; _ } ->
+            Statement.Define { Define.signature; captures = []; body = [] }
+        | For ({ For.body; orelse; _ } as for_statement) ->
+            Statement.For
+              {
+                for_statement with
+                body = drop_nested_body_in_statements body;
+                orelse = drop_nested_body_in_statements orelse;
+              }
+        | If ({ If.body; orelse; _ } as if_statement) ->
+            Statement.If
+              {
+                if_statement with
+                body = drop_nested_body_in_statements body;
+                orelse = drop_nested_body_in_statements orelse;
+              }
+        | While ({ While.body; orelse; _ } as while_statement) ->
+            Statement.While
+              {
+                while_statement with
+                body = drop_nested_body_in_statements body;
+                orelse = drop_nested_body_in_statements orelse;
+              }
+        | Try { Try.body; handlers; orelse; finally } ->
+            Statement.Try
+              {
+                Try.body = drop_nested_body_in_statements body;
+                handlers =
+                  List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
+                      { handler with Try.Handler.body = drop_nested_body_in_statements body });
+                orelse = drop_nested_body_in_statements orelse;
+                finally = drop_nested_body_in_statements finally;
+              }
+        | With ({ With.body; _ } as with_statement) ->
+            Statement.With { with_statement with body = drop_nested_body_in_statements body }
+        | _ as statement -> statement
+      and drop_nested_body_in_statements statements =
+        List.map statements ~f:(Node.map ~f:drop_nested_body_in_statement)
+      in
+      { define with Define.body = drop_nested_body_in_statements body }
+    in
+    { Node.value = new_define; location }
+  in
   List.fold statements ~init:[] ~f:(collect_from_statement ~ignore_class:false)
+  |> List.map ~f:drop_nested_body
 
 
 let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
