@@ -21,7 +21,7 @@ python_tests:
 
 .PHONY: server_integration_test
 server_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_integration_test.py command/test/integration/fake_repository/
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_server_integration_test.py command/test/integration/fake_repository/
 
 .PHONY: stubs_integration_test
 stubs_integration_test: all

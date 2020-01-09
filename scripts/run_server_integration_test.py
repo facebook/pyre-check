@@ -4,7 +4,6 @@
 
 import argparse
 import filecmp
-import fileinput
 import json
 import logging
 import os
