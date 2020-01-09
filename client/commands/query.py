@@ -55,9 +55,9 @@ class Query(Command):
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         query_message = """
-        `https://pyre-check.org/docs/querying-pyre.html` contains examples and documentation
-        for this command, which queries a running pyre server for type, function and
-        attribute information.
+        `https://pyre-check.org/docs/querying-pyre.html` contains examples and
+        documentation for this command, which queries a running pyre server for type,
+        function and attribute information.
 
         To get a full list of queries, you can run `pyre query help`.
         """

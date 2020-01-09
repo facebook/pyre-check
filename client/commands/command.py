@@ -107,7 +107,7 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
             continue
 
         # Always prefer newer version over older version
-        version_names = reversed(sorted(os.listdir(typeshed_subdirectory)))
+        version_names = sorted(os.listdir(typeshed_subdirectory), reverse=True)
         for version_name in version_names:
             # Anything under 2/ or 2.x is unusable for Pyre
             if version_name.startswith("2") and version_name != "2and3":
@@ -448,7 +448,9 @@ class Command(CommandParser, ABC):
         else:
             self._local_root = self._original_directory
 
-        self._configuration: Configuration = configuration or self.generate_configuration()
+        self._configuration: Configuration = (
+            configuration or self.generate_configuration()
+        )
         self._strict: bool = arguments.strict or self._configuration.strict
         self._logger: str = arguments.logger or (configuration and configuration.logger)
         self._ignore_all_errors_paths: Iterable[str] = (
