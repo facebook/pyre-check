@@ -21,7 +21,7 @@ from . import (
     log,
     log_statistics,
 )
-from .commands import Command, CommandParser, ExitCode
+from .commands import CommandParser, ExitCode
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -121,11 +121,9 @@ def main() -> int:
         if len(client_exception_message) > 0:
             LOG.error(client_exception_message)
         log.cleanup()
-        # We have to have the isinstance check here, because commands which directly
-        # inherit from CommandParser such as Initialize don't have these fields.
-        if command and isinstance(command, Command):
-            command.analysis_directory.cleanup()
-            configuration = command._configuration
+        if command:
+            command.cleanup()
+            configuration = command.configuration
             if configuration and configuration.logger:
                 log_statistics(
                     "perfpipe_pyre_usage",

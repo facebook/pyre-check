@@ -397,8 +397,15 @@ class CommandParser(ABC):
         self._run()
         return self
 
+    def cleanup(self) -> None:
+        pass
+
     def exit_code(self) -> int:
         return self._exit_code
+
+    @property
+    def configuration(self) -> Optional[Configuration]:
+        return None
 
     @property
     def current_directory(self) -> Optional[str]:
@@ -417,7 +424,7 @@ class CommandParser(ABC):
         return self._noninteractive
 
 
-class Command(CommandParser):
+class Command(CommandParser, ABC):
     _buffer: List[str] = []
     _call_client_terminated: bool = False
 
@@ -499,6 +506,9 @@ class Command(CommandParser):
 
     def _run(self) -> None:
         pass
+
+    def cleanup(self) -> None:
+        self._analysis_directory.cleanup()
 
     def _flags(self) -> List[str]:
         flags = []
@@ -683,3 +693,7 @@ class Command(CommandParser):
     @property
     def analysis_directory(self) -> AnalysisDirectory:
         return self._analysis_directory
+
+    @property
+    def configuration(self) -> Optional[Configuration]:
+        return self._configuration
