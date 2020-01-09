@@ -474,6 +474,36 @@ let test_lookup_comprehensions context =
       "3:6-3:24/typing.List[float]";
       "3:7-3:8/float";
     ];
+  let source =
+    {|
+       class Foo:
+         def __init__(self, x: int) -> None:
+           pass
+
+       def foo() -> None:
+         a = [Foo(x) for x in [1]]
+    |}
+  in
+  assert_annotation_list
+    ~lookup:(generate_lookup ~context source)
+    [
+      "2:6-2:9/typing.Type[test.Foo]";
+      "3:15-3:19/test.Foo";
+      "3:21-3:22/int";
+      "3:24-3:27/typing.Type[int]";
+      "3:32-3:36/None";
+      "3:6-3:14/typing.Callable(test.Foo.__init__)[[Named(self, unknown), Named(x, int)], None]";
+      "6:13-6:17/None";
+      "6:4-6:7/typing.Callable(test.foo)[[], None]";
+      "7:18-7:19/int";
+      "7:2-7:3/typing.List[test.Foo]";
+      "7:23-7:26/typing.List[int]";
+      "7:24-7:25/typing_extensions.Literal[1]";
+      "7:6-7:27/typing.List[test.Foo]";
+      "7:7-7:10/typing.Type[test.Foo]";
+      (* TODO(T60237096): "7:11-7:12/int" should be a valid lookup. *)
+      "7:7-7:13/test.Foo";
+    ];
   let source = {|
        def foo() -> None:
          x = 1
