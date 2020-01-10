@@ -14,7 +14,6 @@ from typing import IO, Any
 from unittest.mock import MagicMock, mock_open, patch
 
 from .. import module_loader
-from ..model_generator import Configuration
 
 
 class ModuleLoaderTest(unittest.TestCase):
@@ -64,8 +63,6 @@ class ModuleLoaderTest(unittest.TestCase):
 
     def test_find_all_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory_name:
-            Configuration.root = directory_name
-
             directory = Path(directory_name)
             nested_directories = directory / "dir/dir/dir/dir/"
             stub_directory = directory / "stubs"
@@ -88,5 +85,5 @@ class ModuleLoaderTest(unittest.TestCase):
 
             self.assertListEqual(
                 sorted([str(no_nest), str(one_nest), str(many_nest), str(pyi_file)]),
-                sorted(module_loader.find_all_paths()),
+                sorted(module_loader.find_all_paths(directory_name)),
             )

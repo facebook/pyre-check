@@ -172,7 +172,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     ) -> Iterable[Model]:
         annotated_fns = set()
 
-        for path in find_all_paths():
+        for path in find_all_paths(Configuration.root):
             for annotation_specification in Configuration.annotation_specifications:
                 annotated_fns.update(
                     self._annotate_fns(

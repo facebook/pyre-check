@@ -223,7 +223,7 @@ class GlobalModelGenerator(ModelGenerator):
     ) -> Iterable[Model]:
         sinks: Set[Model] = set()
 
-        for path in find_all_paths():
+        for path in find_all_paths(Configuration.root):
             relative_path = os.path.relpath(path, Configuration.root)
             should_skip = any(
                 (
