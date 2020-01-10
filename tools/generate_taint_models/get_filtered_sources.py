@@ -16,9 +16,7 @@ class FilteredSourceGenerator(ModelGenerator):
     def __init__(self) -> None:
         self.superset_generator = RESTApiSourceGenerator(
             whitelisted_classes=["ViewerContext", "AuthenticatedVC"],
-            arg="TaintSource[DataFromGET]",
-            vararg="TaintSource[DataFromGET]",
-            kwarg="TaintSource[DataFromGET]",
+            taint_annotation="TaintSource[DataFromGET]",
         )
         self.subset_generator = AnnotatedFreeFunctionWithDecoratorGenerator()
 
