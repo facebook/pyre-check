@@ -17,16 +17,21 @@ from ..get_annotated_free_functions_with_decorator import (
 
 class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
     def assert_expected_annotations(
-        self, source: str, spec: DecoratorAnnotationSpecification, expected: Set[str]
+        self,
+        source: str,
+        annotation_specification: DecoratorAnnotationSpecification,
+        expected: Set[str],
     ) -> None:
         cleaned_source = textwrap.dedent(source)
         with patch("builtins.open", mock_open(read_data=cleaned_source)):
-            generator = AnnotatedFreeFunctionWithDecoratorGenerator()
+            generator = AnnotatedFreeFunctionWithDecoratorGenerator(
+                root="/root", annotation_specifications=[annotation_specification]
+            )
             self.assertSetEqual(
                 {
                     str(model)
                     for model in generator._annotate_functions(
-                        spec, "/root", "/root/module.py"
+                        annotation_specification, "/root/module.py"
                     )
                 },
                 set(expected),
