@@ -42,6 +42,17 @@ class ViewGeneratorTest(unittest.TestCase):
                 return []
 
         with patch(f"{view_generator.__name__}.import_module", return_value=Urls):
+            views = TestGenerator(
+                urls_module="urls", url_pattern_type=Url, url_resolver_type=Resolver
+            ).gather_functions_to_model()
+            values = [view() for view in views]
+            self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7])
+
+            views = TestGenerator(urls_module=None).gather_functions_to_model()
+            values = [view() for view in views]
+            self.assertEqual(values, [])
+
+        with patch(f"{view_generator.__name__}.import_module", return_value=Urls):
             model_generator.Configuration.urls_module = "urls"
             model_generator.Configuration.url_pattern_type = Url
             model_generator.Configuration.url_resolver_type = Resolver
