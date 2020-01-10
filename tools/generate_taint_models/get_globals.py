@@ -22,6 +22,23 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class GlobalModelGenerator(ModelGenerator):
+    def __init__(
+        self,
+        root: Optional[str] = None,
+        stub_root: Optional[str] = None,
+        blacklisted_globals: Optional[Set[str]] = None,
+        blacklisted_global_directories: Optional[Set[str]] = None,
+    ) -> None:
+        self.root: str = root or Configuration.root
+        self.stub_root: Optional[str] = stub_root or Configuration.stub_root
+        self.blacklisted_globals: Set[str] = (
+            blacklisted_globals or Configuration.blacklisted_globals
+        )
+        self.blacklisted_global_directories: Set[str] = (
+            blacklisted_global_directories
+            or Configuration.blacklisted_global_directories
+        )
+
     def _globals(self, root: str, path: str) -> Iterable[Model]:
         globals = set()
         # The parent of the property needs to be stored as well, as we only store the
@@ -177,7 +194,7 @@ class GlobalModelGenerator(ModelGenerator):
             if target == "__all__":
                 continue
             qualified_target = f"{module_qualifier}.{target}"
-            if qualified_target in Configuration.blacklisted_globals:
+            if qualified_target in self.blacklisted_globals:
                 continue
             try:
                 generated = AssignmentModel(
@@ -223,20 +240,20 @@ class GlobalModelGenerator(ModelGenerator):
     ) -> Iterable[Model]:
         sinks: Set[Model] = set()
 
-        for path in find_all_paths(Configuration.root):
-            relative_path = os.path.relpath(path, Configuration.root)
+        for path in find_all_paths(self.root):
+            relative_path = os.path.relpath(path, self.root)
             should_skip = any(
                 (
                     relative_path.startswith(blacklisted)
-                    for blacklisted in Configuration.blacklisted_global_directories
+                    for blacklisted in self.blacklisted_global_directories
                 )
             )
             if should_skip:
-                LOG.info("Skipping %s", os.path.relpath(path, Configuration.root))
+                LOG.info("Skipping %s", os.path.relpath(path, self.root))
             else:
-                sinks = sinks.union(self._globals(Configuration.root, path))
+                sinks = sinks.union(self._globals(self.root, path))
 
-        stub_root = Configuration.stub_root
+        stub_root = self.stub_root
         if stub_root:
             stub_root = os.path.abspath(stub_root)
             paths = [

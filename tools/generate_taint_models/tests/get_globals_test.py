@@ -39,7 +39,38 @@ class GetGlobalsTest(unittest.TestCase):
         absolute_path: unittest.mock._patch,
         exists: unittest.mock._patch,
     ) -> None:
+        with patch(
+            f"{get_globals_name}.GlobalModelGenerator._globals"
+        ) as globals, patch("glob.glob", return_value=["/root/a.py", "/root/b.py"]):
+
+            GlobalModelGenerator(root="/root", stub_root="/stub_root").compute_models(
+                []
+            )
+            globals.assert_has_calls(
+                [call("/root", "/root/a.pyi"), call("/root", "/root/b.py")],
+                any_order=True,
+            )
+        directory_mapping = {
+            "/root/**/*.py": ["/root/a.py", "/root/b.py"],
+            "/stub_root/**/*.pyi": ["/stub_root/a.pyi", "/stub_root/b.pyi"],
+        }
         Configuration.root = "/root"
+        Configuration.stub_root = "/stub_root"
+        with patch(
+            f"{get_globals_name}.GlobalModelGenerator._globals"
+        ) as globals, patch(
+            "glob.glob", side_effect=lambda root, recursive: directory_mapping[root]
+        ):
+            GlobalModelGenerator().compute_models([])
+            globals.assert_has_calls(
+                [
+                    call("/root", "/root/a.pyi"),
+                    call("/root", "/root/b.py"),
+                    call("/stub_root", "/stub_root/a.pyi"),
+                    call("/stub_root", "/stub_root/b.pyi"),
+                ],
+                any_order=True,
+            )
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
         ) as globals, patch("glob.glob", return_value=["/root/a.py", "/root/b.py"]):
@@ -53,7 +84,6 @@ class GetGlobalsTest(unittest.TestCase):
             "/root/**/*.py": ["/root/a.py", "/root/b.py"],
             "/stub_root/**/*.pyi": ["/stub_root/a.pyi", "/stub_root/b.pyi"],
         }
-        Configuration.stub_root = "/stub_root"
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
         ) as globals, patch(
@@ -75,15 +105,27 @@ class GetGlobalsTest(unittest.TestCase):
     ) -> None:
         blacklist = blacklist or set()
         Configuration.blacklisted_globals = blacklist
+        Configuration.root = "/root"
         with patch("builtins.open") as open:
             open.side_effect = _open_implementation(
                 {"/root/module.py": textwrap.dedent(source)}
             )
-            generator = GlobalModelGenerator()
+            generator = GlobalModelGenerator(
+                root="/root", blacklisted_globals=blacklist
+            )
             self.assertSetEqual(
                 {
                     str(model)
                     for model in generator._globals("/root", "/root/module.py")
+                },
+                set(expected),
+            )
+            self.assertSetEqual(
+                {
+                    str(model)
+                    for model in GlobalModelGenerator()._globals(
+                        "/root", "/root/module.py"
+                    )
                 },
                 set(expected),
             )
