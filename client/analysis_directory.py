@@ -63,18 +63,18 @@ class AnalysisDirectory:
     def __init__(
         self,
         path: str,
-        filter_paths: Optional[List[str]] = None,
+        filter_paths: Optional[Set[str]] = None,
         search_path: Optional[List[str]] = None,
     ) -> None:
         self._path = path
-        self._filter_paths: List[str] = filter_paths or []
+        self._filter_paths: Set[str] = filter_paths or set()
         self._search_path: List[str] = search_path or []
 
     def get_root(self) -> str:
         return self._path
 
-    def get_filter_root(self) -> List[str]:
-        return self._filter_paths or [self.get_root()]
+    def get_filter_root(self) -> Set[str]:
+        return self._filter_paths or {self.get_root()}
 
     def prepare(self) -> None:
         pass
@@ -128,7 +128,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         source_directories: List[str],
         targets: List[str],
         original_directory: Optional[str] = None,
-        filter_paths: Optional[List[str]] = None,
+        filter_paths: Optional[Set[str]] = None,
         local_configuration_root: Optional[str] = None,
         extensions: Optional[List[str]] = None,
         search_path: Optional[List[str]] = None,
@@ -139,7 +139,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._source_directories: Set[str] = set(source_directories)
         self._targets: Set[str] = set(targets)
         self._original_directory = original_directory
-        self._filter_paths: List[str] = filter_paths or []
+        self._filter_paths: Set[str] = filter_paths or set()
         self._local_configuration_root = local_configuration_root
         self._extensions: Set[str] = set(extensions or []) | {"py", "pyi"}
         self._search_path: List[str] = search_path or []
@@ -170,8 +170,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
 
-    def get_filter_root(self) -> List[str]:
-        return self._filter_paths or [os.getcwd()]
+    def get_filter_root(self) -> Set[str]:
+        return self._filter_paths or {os.getcwd()}
 
     # Exposed for testing.
     def _resolve_source_directories(self) -> None:
@@ -481,7 +481,7 @@ def resolve_analysis_directory(
         )
 
     if arguments.filter_directory:
-        filter_paths = [arguments.filter_directory]
+        filter_paths = {arguments.filter_directory}
     else:
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory

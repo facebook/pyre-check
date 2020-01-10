@@ -84,7 +84,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
         arguments.targets = []
         arguments.filter_directory = "/real/directory"
         expected_analysis_directory = AnalysisDirectory(
-            "/symlinked/directory", filter_paths=["/real/directory"]
+            "/symlinked/directory", filter_paths={"/real/directory"}
         )
         analysis_directory = resolve_analysis_directory(
             arguments, configuration, original_directory, current_directory
@@ -384,7 +384,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             [],
             ["//x:y"],
             original_directory="/project",
-            filter_paths=["/real/directory"],
+            filter_paths={"/real/directory"},
         )
         analysis_directory = resolve_analysis_directory(
             arguments, configuration, original_directory, current_directory
@@ -401,7 +401,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ["a/b"],
             ["//x:y", "//y:/..."],
             original_directory="/project",
-            filter_paths=["/filter"],
+            filter_paths={"/filter"},
         )
         analysis_directory = resolve_analysis_directory(
             arguments, configuration, original_directory, current_directory
@@ -419,7 +419,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             [],
             ["//not:overridden/..."],
             original_directory="/project",
-            filter_paths=["/filter"],
+            filter_paths={"/filter"},
         )
         analysis_directory = resolve_analysis_directory(
             arguments, configuration, original_directory, current_directory

@@ -159,7 +159,7 @@ class ReportingTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration,
-            AnalysisDirectory("base", filter_paths=["a/b"]),
+            AnalysisDirectory("base", filter_paths={"a/b"}),
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})
 
@@ -170,7 +170,7 @@ class ReportingTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration,
-            SharedAnalysisDirectory([], ["//target/name"], filter_paths=[]),
+            SharedAnalysisDirectory([], ["//target/name"], filter_paths=set()),
         )
         with patch.object(os, "getcwd", return_value="source_directory"):
             self.assertEqual(

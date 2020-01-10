@@ -299,7 +299,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
-            filter_paths=["path/to/local"],
+            filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
 
@@ -315,7 +315,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
-            filter_paths=["path/to/local"],
+            filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
         directory = shared_analysis_directory.get_scratch_directory()
@@ -382,7 +382,7 @@ class FilesystemTest(unittest.TestCase):
                 [],
                 [],
                 original_directory="/root",
-                filter_paths=[],
+                filter_paths=set(),
                 buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()
@@ -399,7 +399,7 @@ class FilesystemTest(unittest.TestCase):
                 ["some_source_directory"],
                 ["configuration_source_directory"],
                 original_directory="/root",
-                filter_paths=[],
+                filter_paths=set(),
                 buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()

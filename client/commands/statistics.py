@@ -10,7 +10,7 @@ import os
 from collections import defaultdict
 from pathlib import Path
 from re import compile
-from typing import Dict, List, Optional, Pattern, Sequence
+from typing import Dict, List, Optional, Pattern, Sequence, Set
 
 import libcst as cst
 
@@ -222,7 +222,7 @@ def _pyre_configuration_directory(local_configuration: Optional[str]) -> Path:
     return Path.cwd()
 
 
-def _find_paths(local_configuration: Optional[str], paths: List[str]) -> List[Path]:
+def _find_paths(local_configuration: Optional[str], paths: Set[str]) -> List[Path]:
     pyre_configuration_directory = _pyre_configuration_directory(local_configuration)
 
     if paths:
@@ -249,7 +249,7 @@ class Statistics(Command):
         super(Statistics, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._filter_paths: List[str] = arguments.filter_paths
+        self._filter_paths: Set[str] = set(arguments.filter_paths)
         self._strict: bool = self._configuration.strict
 
     @classmethod

@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import json
 import logging
 import multiprocessing
@@ -16,7 +14,7 @@ import time
 import traceback
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, TextIO
+from typing import TYPE_CHECKING, Dict, Optional, Set, TextIO
 
 from . import buck
 from .exceptions import EnvironmentException
@@ -28,6 +26,9 @@ LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 BINARY_NAME: str = "pyre.bin"
 CLIENT_NAME: str = "pyre-client"
 LOG_DIRECTORY: str = ".pyre"
+
+if TYPE_CHECKING:
+    from .configuration import Configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
     return terminal not in ["dumb", "emacs"]
 
 
-def get_binary_version(configuration) -> str:
+def get_binary_version(configuration: "Configuration") -> str:
     override = os.getenv("PYRE_BINARY")
     if override:
         return "override: {}".format(override)
@@ -150,20 +151,20 @@ def find_log_directory(
 
 
 def _resolve_filter_paths(
-    arguments: Namespace, configuration, original_directory: str
+    arguments: Namespace, configuration: "Configuration", original_directory: str
 ) -> Set[str]:
-    filter_paths = []
+    filter_paths = set()
     if arguments.source_directories or arguments.targets:
         if arguments.source_directories:
-            filter_paths += arguments.source_directories
+            filter_paths.update(arguments.source_directories)
         if arguments.targets:
-            filter_paths += [
-                buck.presumed_target_root(target) for target in arguments.targets
-            ]
+            filter_paths.update(
+                [buck.presumed_target_root(target) for target in arguments.targets]
+            )
     else:
         local_configuration_root = configuration.local_configuration_root
         if local_configuration_root:
-            filter_paths = [local_configuration_root]
+            filter_paths = {local_configuration_root}
     return translate_paths(filter_paths, original_directory)
 
 
@@ -177,8 +178,7 @@ def number_of_workers() -> int:
 def log_statistics(
     category: str,
     arguments: Optional[Namespace] = None,
-    # this is typed as a Any because configuration imports __init__
-    configuration: Optional[Any] = None,
+    configuration: Optional["Configuration"] = None,
     integers: Optional[Dict[str, int]] = None,
     normals: Optional[Dict[str, str]] = None,
     logger: Optional[str] = None,

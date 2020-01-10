@@ -90,20 +90,20 @@ class InitTest(unittest.TestCase):
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory
         )
-        self.assertEqual(filter_paths, [])
+        self.assertEqual(filter_paths, set())
 
         arguments.source_directories = ["/project/a"]
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory
         )
-        self.assertEqual(filter_paths, ["/project/a"])
+        self.assertEqual(filter_paths, {"/project/a"})
 
         arguments.source_directories = ["/project/a"]
         arguments.targets = ["//x/y/..."]
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory
         )
-        self.assertEqual(filter_paths, ["/project/a", "x/y"])
+        self.assertEqual(filter_paths, {"/project/a", "x/y"})
 
         arguments.source_directories = ["/project/local/a"]
         arguments.targets = ["//x/y:z"]
@@ -111,7 +111,7 @@ class InitTest(unittest.TestCase):
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory
         )
-        self.assertEqual(filter_paths, ["/project/local/a", "x/y"])
+        self.assertEqual(filter_paths, {"/project/local/a", "x/y"})
 
         arguments.source_directories = []
         arguments.targets = []
@@ -119,7 +119,7 @@ class InitTest(unittest.TestCase):
         filter_paths = _resolve_filter_paths(
             arguments, configuration, original_directory
         )
-        self.assertEqual(filter_paths, ["/project/local"])
+        self.assertEqual(filter_paths, {"/project/local"})
 
     @patch.object(os, "getenv", return_value=None)
     @patch("builtins.open")
