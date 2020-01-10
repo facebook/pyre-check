@@ -98,26 +98,26 @@ def parse_events(input_string: str) -> List[Event]:
 def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
     def to_traceevent(event: Event) -> Optional[Dict[str, Any]]:
         if isinstance(event, DurationEvent):
-            duration_ms = event.duration
-            start_time_ms = event.metadata.timestamp - duration_ms
+            duration_us = event.duration
+            start_time_us = event.metadata.timestamp - duration_us
             return {
                 "pid": event.metadata.pid,
                 "tid": 0,
-                "ts": start_time_ms * 1000,
+                "ts": start_time_us,
                 "ph": "X",
                 "name": event.metadata.name,
-                "dur": duration_ms * 1000,
+                "dur": duration_us,
                 "args": event.metadata.tags,
             }
         elif isinstance(event, CounterEvent):
-            timestamp_ms = event.metadata.timestamp
+            timestamp_us = event.metadata.timestamp
             arguments: Dict[str, Any] = {
                 key: int(value) for key, value in event.metadata.tags.items()
             }
             return {
                 "pid": event.metadata.pid,
                 "tid": 0,
-                "ts": timestamp_ms * 1000,
+                "ts": timestamp_us,
                 "ph": "C",
                 "name": event.metadata.name,
                 "args": arguments,
