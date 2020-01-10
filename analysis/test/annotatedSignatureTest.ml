@@ -590,23 +590,11 @@ let test_select context =
     "(0, 'string')"
     (`NotFoundMissingAnonymousArgumentWithClosest ("[[int, str, bool], int]", 2));
 
-  (* Match not found in overloads: error against implementation if it exists. *)
+  (* Match not found in overloads: intentionally do not consider the implementation. *)
   assert_select
     "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.union [Type.integer; Type.string], None, 1));
-  assert_select
-    "[[bool], bool][[[str], str][[int], int]]"
-    "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
-  assert_select
-    "[[bool], bool][[[str, str], str][[int, int], int]]"
-    "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
-  assert_select
-    "[[bool], bool][[[str, str], str][[int, int], int]]"
-    "(int, str)"
-    (`NotFoundTooManyArguments (1, 2));
+    (`NotFoundMismatchWithClosest ("[[str], str]", Type.Top, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"

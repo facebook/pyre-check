@@ -1227,7 +1227,11 @@ let test_check_literals context =
     [
       "Revealed type [-1]: Revealed type for `a` is `str`.";
       "Revealed type [-1]: Revealed type for `b` is `int`.";
-      "Revealed type [-1]: Revealed type for `c` is `typing.Union[bool, int, str]`.";
+      "Incompatible parameter type [6]: Expected \
+       `typing.Union[typing_extensions.Literal['also_give_me_int'], \
+       typing_extensions.Literal['give_me_int']]` for 1st anonymous parameter to call `foo` but \
+       got `typing_extensions.Literal['something_else']`.";
+      "Revealed type [-1]: Revealed type for `c` is `int`.";
       "Revealed type [-1]: Revealed type for `d` is `int`.";
     ];
   ()

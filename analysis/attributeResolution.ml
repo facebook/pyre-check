@@ -2693,14 +2693,8 @@ module Implementation = struct
     in
     if List.is_empty overloads then
       get_match [implementation]
-    else if Type.Callable.Overload.is_undefined implementation then
-      get_match overloads
     else
-      (* TODO(T41195241) always ignore implementation when has overloads. Currently put
-         implementation as last resort *)
-      match get_match overloads with
-      | Found signature_match -> Found signature_match
-      | NotFound _ -> get_match [implementation]
+      get_match overloads
 
 
   let resolve_mutable_literals
