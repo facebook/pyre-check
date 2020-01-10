@@ -31,17 +31,29 @@ class GetGraphQLSourcesTest(unittest.TestCase):
     def test_gather_functions_to_model(self, configuration) -> None:
         configuration.graphql_module = "tools.pyre.tools.generate_taint_models.tests"
         configuration.graphql_object_type = GraphQLObjectType
-
-        functions = GraphQLSourceGenerator().gather_functions_to_model()
+        functions = GraphQLSourceGenerator(
+            graphql_module="tools.pyre.tools.generate_taint_models.tests",
+            graphql_object_type=GraphQLObjectType,
+        ).gather_functions_to_model()
         self.assertSetEqual(set(functions), {function_1, function_2})
+        self.assertSetEqual(
+            set(GraphQLSourceGenerator().gather_functions_to_model()),
+            {function_1, function_2},
+        )
 
         # Run the same test again, passing in a list for 'graphql_module', to
         # ensure both work
-        configuration.graphql_module = ["tools.pyre.tools.generate_taint_models.tests"]
-        configuration.graphql_object_type = GraphQLObjectType
+        functions = GraphQLSourceGenerator(
+            graphql_module=["tools.pyre.tools.generate_taint_models.tests"],
+            graphql_object_type=GraphQLObjectType,
+        ).gather_functions_to_model()
 
-        functions = GraphQLSourceGenerator().gather_functions_to_model()
         self.assertSetEqual(set(functions), {function_1, function_2})
+        configuration.graphql_module = ["tools.pyre.tools.generate_taint_models.tests"]
+        self.assertSetEqual(
+            set(GraphQLSourceGenerator().gather_functions_to_model()),
+            {function_1, function_2},
+        )
 
     def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"

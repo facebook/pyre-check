@@ -7,19 +7,36 @@
 
 import os
 from importlib import import_module
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, List, Optional, Type, Union
 
 from .model import CallableModel, Model
 from .model_generator import Configuration, ModelGenerator, Registry
 
 
+# pyre-ignore: Too dynamic.
+GraphQLObjectType = Type[Any]
+
+
 class GraphQLSourceGenerator(ModelGenerator):
+    def __init__(
+        self,
+        graphql_module: Optional[Union[List[str], str]] = None,
+        graphql_object_type: Optional[GraphQLObjectType] = None,
+    ) -> None:
+        super().__init__()
+        self.graphql_module: Union[
+            List[str], str
+        ] = graphql_module or Configuration.graphql_module
+        self.graphql_object_type: GraphQLObjectType = (
+            graphql_object_type or Configuration.graphql_object_type
+        )
+
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         # Get all graphql import names.
         views = []
         modules = []
 
-        module_argument = Configuration.graphql_module
+        module_argument = self.graphql_module
         graphql_modules = (
             [module_argument] if isinstance(module_argument, str) else module_argument
         )
@@ -37,7 +54,7 @@ class GraphQLSourceGenerator(ModelGenerator):
                 for key in module.__dict__:
                     element = module.__dict__[key]
 
-                    if not isinstance(element, Configuration.graphql_object_type):
+                    if not isinstance(element, self.graphql_object_type):
                         continue
 
                     for field in element.fields:
