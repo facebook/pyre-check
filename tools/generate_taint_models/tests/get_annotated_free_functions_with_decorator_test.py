@@ -25,7 +25,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             self.assertSetEqual(
                 {
                     str(model)
-                    for model in generator._annotate_fns(
+                    for model in generator._annotate_functions(
                         spec, "/root", "/root/module.py"
                     )
                 },

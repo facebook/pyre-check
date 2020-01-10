@@ -21,7 +21,7 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
-    def _annotate_fns(
+    def _annotate_functions(
         self,
         annotation_specification: DecoratorAnnotationSpecification,
         root: str,
@@ -170,17 +170,17 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
-        annotated_fns = set()
+        annotated_functions = set()
 
         for path in find_all_paths(Configuration.root):
             for annotation_specification in Configuration.annotation_specifications:
-                annotated_fns.update(
-                    self._annotate_fns(
+                annotated_functions.update(
+                    self._annotate_functions(
                         annotation_specification, Configuration.root, path
                     )
                 )
 
-        return sorted(annotated_fns)
+        return sorted(annotated_functions)
 
 
 Registry.register(
