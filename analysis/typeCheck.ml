@@ -2807,10 +2807,16 @@ module State (Context : Context) = struct
                           (Define.create Context.define)
                         >>= fun definition -> Some (AnnotatedClass.name definition)
                       in
+                      let base_class =
+                        if Type.is_meta resolved_base then
+                          Type.class_name (Type.single_parameter resolved_base)
+                        else
+                          Type.class_name resolved_base
+                      in
                       let is_accessed_in_base_class =
                         Option.value_map
                           ~default:false
-                          ~f:(Reference.equal_sanitized (Type.class_name resolved_base))
+                          ~f:(Reference.equal_sanitized base_class)
                           enclosing_class_reference
                       in
                       if is_private_attribute attribute && not is_accessed_in_base_class then

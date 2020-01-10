@@ -2196,7 +2196,66 @@ let test_check_private_member_access context =
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
       "Undefined attribute [16]: `GenericChild` has no attribute `__private`.";
       "Undefined attribute [16]: `GenericBase` has no attribute `__private`.";
-    ]
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class ExampleClass:
+        @staticmethod
+        def __private_static_method() -> float:
+          return 1.0
+
+        def foo(self) -> None:
+          ExampleClass.__private_static_method()
+          self.__class__.__private_static_method()
+          self.__private_static_method()
+
+        @classmethod
+        def bar(cls) -> None:
+          cls.__private_static_method()
+          cls.__class__.__private_static_method()
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class ExampleClass:
+        @staticmethod
+        def __private_static_method() -> float:
+          return 1.0
+
+      class Child(ExampleClass):
+        def foo1(self) -> None:
+          ExampleClass.__private_static_method()
+
+        def foo2(self) -> None:
+          self.__class__.__private_static_method()
+
+        def foo3(self) -> None:
+          self.__private_static_method()
+
+        @classmethod
+        def foo4(cls) -> None:
+          cls.__private_static_method()
+
+        @classmethod
+        def foo5(cls) -> None:
+          cls.__class__.__private_static_method()
+
+      class NonChild:
+        def bar(self) -> None:
+          ExampleClass.__private_static_method()
+
+    |}
+    [
+      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `Child` has no attribute `__private_static_method`.";
+      "Undefined attribute [16]: `typing.Type` has no attribute `__private_static_method`.";
+    ];
+  ()
 
 
 let test_enforce_dunder_params context =
