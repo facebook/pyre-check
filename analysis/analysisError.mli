@@ -116,6 +116,7 @@ and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
   | InvalidType of Type.t
+  | NestedAlias of Identifier.t
   | NestedTypeVariables of Type.Variable.t
 
 and unawaited_awaitable = {

@@ -125,6 +125,7 @@ and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
   | InvalidType of Type.t
+  | NestedAlias of Identifier.t
   | NestedTypeVariables of Type.Variable.t
 
 and unawaited_awaitable = {
@@ -898,6 +899,14 @@ let messages ~concise ~signature location kind =
           [Format.asprintf "Parameter `%a` cannot be annotated with Final." pp_identifier name]
       | InvalidType annotation ->
           [Format.asprintf "Expression `%a` is not a valid type." pp_type annotation]
+      | NestedAlias name ->
+          [
+            Format.asprintf
+              "Expression `%a` is not a valid type. All type alias declarations must be made in \
+               the module definition."
+              pp_identifier
+              name;
+          ]
       | NestedTypeVariables variable ->
           [
             Format.asprintf
@@ -2080,7 +2089,8 @@ let less_or_equal ~resolution left right =
       | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
       | None, None -> true
       | _ -> false )
-  | InvalidType (FinalParameter left), InvalidType (FinalParameter right) ->
+  | InvalidType (FinalParameter left), InvalidType (FinalParameter right)
+  | InvalidType (NestedAlias left), InvalidType (NestedAlias right) ->
       Identifier.equal left right
   | InvalidType (InvalidType left), InvalidType (InvalidType right)
   | InvalidType (FinalNested left), InvalidType (FinalNested right) ->
@@ -2983,6 +2993,7 @@ let dequalify
     | InvalidType (InvalidType annotation) -> InvalidType (InvalidType (dequalify annotation))
     | InvalidType (FinalNested annotation) -> InvalidType (FinalNested (dequalify annotation))
     | InvalidType (FinalParameter name) -> InvalidType (FinalParameter name)
+    | InvalidType (NestedAlias name) -> InvalidType (NestedAlias name)
     | InvalidType (NestedTypeVariables variable) ->
         InvalidType (NestedTypeVariables (Type.Variable.dequalify dequalify_map variable))
     | InvalidTypeParameters invalid_type_parameters ->

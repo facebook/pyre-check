@@ -318,6 +318,26 @@ let test_check_invalid_type context =
     |}
     ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
 
+  (* Type aliases cannot be nested *)
+  assert_type_errors
+    {|
+        def foo() -> None:
+          MyType = int
+          x: MyType = 1
+      |}
+    ["Undefined or invalid type [11]: Annotation `foo.MyType` is not defined as a type."];
+  assert_type_errors
+    {|
+        def foo() -> None:
+          MyType: typing.TypeAlias = int
+          x: MyType = 1
+      |}
+    [
+      "Invalid type [31]: Expression `MyType` is not a valid type. All type alias declarations \
+       must be made in the module definition.";
+      "Undefined or invalid type [11]: Annotation `foo.MyType` is not defined as a type.";
+    ];
+
   (* Type aliases to Any *)
   assert_type_errors
     {|

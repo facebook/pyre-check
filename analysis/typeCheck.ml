@@ -3148,7 +3148,7 @@ module State (Context : Context) = struct
           match original_annotation with
           | None -> value_is_type
           | Some annotation ->
-              Type.is_type_alias annotation
+              (Type.is_type_alias annotation && Define.is_toplevel define)
               || Type.is_meta annotation
                  && Type.is_typed_dictionary (Type.single_parameter annotation)
         in
@@ -3161,18 +3161,18 @@ module State (Context : Context) = struct
           let resolved = Type.remove_undeclared resolved in
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
           if is_type_alias then
-            let errors =
+            let add_annotation_errors errors =
               add_invalid_type_parameters_errors
                 ~resolution:global_resolution
                 ~location
-                ~errors:state.errors
+                ~errors
                 parsed
               |> fst
               |> fun errors ->
               add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors parsed
               |> fst
             in
-            let errors =
+            let add_type_variable_errors errors =
               match parsed with
               | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
                   let kind =
@@ -3186,6 +3186,7 @@ module State (Context : Context) = struct
                   |> ErrorMap.add ~errors
               | _ -> errors
             in
+            let errors = state.errors |> add_annotation_errors |> add_type_variable_errors in
             { state with resolution; errors }, resolved
           else
             new_state, resolved
@@ -3373,11 +3374,22 @@ module State (Context : Context) = struct
                                  })
                       | _ -> state
                     in
+                    let check_nested_explicit_type_alias state =
+                      match name, original_annotation with
+                      | Name.Identifier identifier, Some annotation
+                        when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
+                          emit_error
+                            ~state
+                            ~location
+                            ~kind:(Error.InvalidType (NestedAlias identifier))
+                      | _ -> state
+                    in
                     check_final_reassignment state
                     |> check_assign_class_variable_on_instance
                     |> check_final_is_outermost_qualifier
                     |> check_is_readonly_property
                     |> check_undefined_attribute_target
+                    |> check_nested_explicit_type_alias
                 | _ -> state
               in
               let expected, is_immutable =
