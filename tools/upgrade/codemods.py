@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import logging
 import pathlib
@@ -23,7 +21,7 @@ def run_missing_overridden_return_annotations(
     errors = sort_errors(errors_from_stdin(arguments))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`.", path)
-        errors = reversed(sorted(errors, key=lambda error: error["line"]))
+        errors = sorted(errors, key=lambda error: error["line"], reverse=True)
 
         path = pathlib.Path(path)
         lines = path.read_text().split("\n")
@@ -58,7 +56,7 @@ def run_missing_global_annotations(
     errors = sort_errors(errors_from_stdin(arguments))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`", path)
-        errors = reversed(sorted(errors, key=lambda error: error["line"]))
+        errors = sorted(errors, key=lambda error: error["line"], reverse=True)
 
         path = pathlib.Path(path)
         lines = path.read_text().split("\n")

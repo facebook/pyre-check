@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 from typing import Optional
 
@@ -12,7 +10,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from .command import Command, IncrementalStyle
 from .incremental import Incremental
-from .start import Start
+from .start import Start  # noqa
 from .stop import Stop
 
 
@@ -21,7 +19,7 @@ class Restart(Command):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,

@@ -3,11 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
 import argparse
 import json
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .. import log
 from ..analysis_directory import AnalysisDirectory
@@ -36,7 +35,7 @@ class TypeAnnotation:
             (self.start_line, self.stop_line, self.start_column, self.stop_column)
         )
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, TypeAnnotation):
             return False
         return (
@@ -47,7 +46,7 @@ class TypeAnnotation:
         )
 
     @staticmethod
-    def create_from_json(data) -> "TypeAnnotation":
+    def create_from_json(data: Dict[str, Any]) -> "TypeAnnotation":
         start = data["location"]["start"]
         stop = data["location"]["stop"]
         type = data["coverage"][0]
@@ -76,8 +75,8 @@ class CoverageLevel(Enum):
 
 
 class PrintColor:
-    def __init__(self, type_annotations, path) -> None:
-        self.type_annotations = type_annotations  # List[TypeAnnotation]
+    def __init__(self, type_annotations: Set[TypeAnnotation], path: str) -> None:
+        self.type_annotations = type_annotations
         self.path = path
 
     def _add_color(self, line: str, type: CoverageLevel) -> str:
@@ -88,7 +87,7 @@ class PrintColor:
         }
         return coverage_to_color[type] + line + log.Format.CLEAR
 
-    def _find_types_at_line(self, line_number: int):  # List
+    def _find_types_at_line(self, line_number: int) -> List[TypeAnnotation]:
         types_at_line = []
         for type in self.type_annotations:
             if type.start_line == line_number:
@@ -115,7 +114,7 @@ class Color(Command):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
@@ -123,7 +122,7 @@ class Color(Command):
         super(Color, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self.path = arguments.path
+        self.path: str = arguments.path
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

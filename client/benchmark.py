@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import logging
 import os
@@ -24,7 +22,7 @@ from .filesystem import find_root
 LOG: Logger = logging.getLogger(__name__)
 
 
-def _parallel_check(command: Iterable[str], process_count) -> float:
+def _parallel_check(command: Iterable[str], process_count: int) -> float:
     LOG.info(
         "Running %d process%s of `%s`",
         process_count,

@@ -93,7 +93,7 @@ class _ConfigurationFile:
     def __init__(self, file) -> None:
         self._deprecated = {"do_not_check": "ignore_all_errors"}
         contents = file.read()
-        self.file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
+        self.file_hash: str = hashlib.sha1(contents.encode("utf-8")).hexdigest()
         self._configuration = json.loads(contents)
 
     def consume(

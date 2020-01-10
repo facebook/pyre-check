@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
 
 import argparse
 import logging
@@ -42,7 +41,7 @@ class Query(Command):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
@@ -50,7 +49,7 @@ class Query(Command):
         super(Query, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self.query = self._rewrite_paths(arguments.query)
+        self.query: str = self._rewrite_paths(arguments.query)
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

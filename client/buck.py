@@ -1,7 +1,5 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
-# pyre-unsafe
-
 import functools
 import glob
 import json
@@ -14,13 +12,16 @@ import threading
 from collections import namedtuple
 from json.decoder import JSONDecodeError
 from logging import Logger
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
 from .filesystem import BuckBuilder, find_root
 
 
 LOG: Logger = logging.getLogger(__name__)
-BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
+
+class BuckOut(NamedTuple):
+    source_directories: Set[str]
+    targets_not_found: Set[str]
 
 
 class BuckException(Exception):
@@ -37,14 +38,14 @@ class FastBuckBuilder(BuckBuilder):
         debug_mode: bool = False,
     ) -> None:
         self._buck_root = buck_root
-        self._output_directory = output_directory or tempfile.mkdtemp(
+        self._output_directory: str = output_directory or tempfile.mkdtemp(
             prefix="pyre_tmp_"
         )
         self._buck_builder_binary = buck_builder_binary
         self._buck_builder_target = buck_builder_target
         self._debug_mode = debug_mode
-        self.conflicting_files = []
-        self.unsupported_files = []
+        self.conflicting_files: List[str] = []
+        self.unsupported_files: List[str] = []
 
     def _get_builder_executable(self) -> str:
         builder_binary = self._buck_builder_binary
@@ -148,7 +149,7 @@ class SimpleBuckBuilder(BuckBuilder):
         return generate_source_directories(targets, build=self._build)
 
 
-def presumed_target_root(target):
+def presumed_target_root(target: str) -> str:
     root_index = target.find("//")
     if root_index != -1:
         target = target[root_index + 2 :]

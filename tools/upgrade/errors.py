@@ -3,12 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
+import argparse
 import itertools
 import json
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from .postprocess import LOG
 
@@ -30,15 +29,19 @@ def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
     return []
 
 
-def sort_errors(errors: List[Dict[str, Any]]) -> List[Tuple[str, List[Any]]]:
-    def error_path(error):
+def sort_errors(
+    errors: List[Dict[str, Any]]
+) -> Iterator[Tuple[str, Iterator[Dict[str, Any]]]]:
+    def error_path(error: Dict[str, Any]) -> str:
         return error["path"]
 
     return itertools.groupby(sorted(errors, key=error_path), error_path)
 
 
-def filter_errors(arguments, errors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    def matches_error_code(error) -> bool:
+def filter_errors(
+    arguments: argparse.Namespace, errors: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    def matches_error_code(error: Dict[str, Any]) -> bool:
         return error["code"] == arguments.only_fix_error_code
 
     if arguments.only_fix_error_code:
@@ -46,7 +49,7 @@ def filter_errors(arguments, errors: List[Dict[str, Any]]) -> List[Dict[str, Any
     return errors
 
 
-def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
+def errors_from_stdin(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
     input = sys.stdin.read()
     errors = json_to_errors(input)
     return filter_errors(_arguments, errors)

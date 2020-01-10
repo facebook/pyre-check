@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import ast
 import logging
@@ -22,7 +20,8 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:
-    def wrapper(arguments: argparse.Namespace, filename: str, *args):
+    # pyre-fixme[2]: Missing parameter annotation for *args
+    def wrapper(arguments: argparse.Namespace, filename: str, *args) -> None:
         # AST before changes
         path = pathlib.Path(filename)
         try:

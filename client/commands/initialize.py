@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import json
 import logging
@@ -32,7 +30,7 @@ LOG: Logger = logging.getLogger(__name__)
 class Initialize(CommandParser):
     NAME = "initialize"
 
-    def __init__(self, arguments, original_directory: str) -> None:
+    def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         super(Initialize, self).__init__(arguments, original_directory)
         self._local: bool = arguments.local
 

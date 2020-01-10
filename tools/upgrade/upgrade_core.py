@@ -16,7 +16,7 @@ import traceback
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from ...client.commands import ExitCode
 from ...client.filesystem import get_filesystem
@@ -228,7 +228,7 @@ def fix_file(
     if "@" "generated" in text:
         LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
         return
-    lines: List[str] = text.split("\n")
+    lines = text.split("\n")  # type: List[str]
 
     # Replace lines in file.
     new_lines = []
@@ -322,7 +322,10 @@ def _upgrade_project(
         LOG.info("Error while running hg.")
 
 
-def fix(arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]) -> None:
+def fix(
+    arguments: argparse.Namespace,
+    result: Iterator[Tuple[str, Iterator[Dict[str, Any]]]],
+) -> None:
     for path, errors in result:
         LOG.info("Processing `%s`", path)
 
@@ -350,7 +353,7 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
         return
 
-    lines: List[str] = text.split("\n")
+    lines = text.split("\n")  # type: List[str]
 
     # Check if already locally strict or ignore-all.
     for line in lines:

@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import argparse
 import atexit
 import json
@@ -33,7 +31,7 @@ from .start import Start
 LOG: Logger = logging.getLogger(__name__)
 
 
-def _convert_to_result(response: json_rpc.Response):
+def _convert_to_result(response: json_rpc.Response) -> Result:
     error_code = ExitCode.FAILURE if response.error else ExitCode.SUCCESS
     return Result(output=json.dumps(response.result), code=error_code)
 
@@ -43,7 +41,7 @@ class Incremental(Reporting):
 
     def __init__(
         self,
-        arguments,
+        arguments: argparse.Namespace,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
