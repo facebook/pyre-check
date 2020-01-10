@@ -6,15 +6,31 @@
 # pyre-strict
 
 
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List, Optional
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
 from .model_generator import Configuration, Registry
-from .view_generator import ViewGenerator
+from .view_generator import DynamicURLType, ViewGenerator
 
 
 class ExitNodeGenerator(ViewGenerator):
+    def __init__(
+        self,
+        urls_module: Optional[str] = None,
+        url_resolver_type: Optional[DynamicURLType] = None,
+        url_pattern_type: Optional[DynamicURLType] = None,
+        whitelisted_views: Optional[List[str]] = None,
+    ) -> None:
+        super().__init__(
+            urls_module=urls_module,
+            url_resolver_type=url_resolver_type,
+            url_pattern_type=url_pattern_type,
+        )
+        self.whitelisted_views: List[
+            str
+        ] = whitelisted_views or Configuration.whitelisted_views
+
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
@@ -22,7 +38,7 @@ class ExitNodeGenerator(ViewGenerator):
 
         for view_function in functions_to_model:
             qualified_name = extract_qualified_name(view_function)
-            if qualified_name in Configuration.whitelisted_views:
+            if qualified_name in self.whitelisted_views:
                 continue
             try:
                 model = CallableModel(

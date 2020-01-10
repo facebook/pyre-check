@@ -39,3 +39,21 @@ class GetExitNodesTest(unittest.TestCase):
                 f"def {qualifier}.testE(x, **kwargs) -> {sink}: ...",
             ],
         )
+        self.assertEqual(
+            [
+                *map(
+                    str,
+                    ExitNodeGenerator(
+                        whitelisted_views=[f"{qualifier}.TestClass.methodA"]
+                    ).compute_models(all_functions),
+                )
+            ],
+            [
+                f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
+                f"def {qualifier}.testA() -> {sink}: ...",
+                f"def {qualifier}.testB(x) -> {sink}: ...",
+                f"def {qualifier}.testC(x) -> {sink}: ...",
+                f"def {qualifier}.testD(x, *args) -> {sink}: ...",
+                f"def {qualifier}.testE(x, **kwargs) -> {sink}: ...",
+            ],
+        )
