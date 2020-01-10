@@ -12,7 +12,7 @@ let test_check_nested context =
     ~context
     {|
      from typing import Callable, Any
-     
+
      def wraps(wrapped: Callable[[...], Any]) -> Callable[[...], Any]: ...
 
      def foo(f: Callable[[int], int]) -> Callable[[int], int]:
@@ -22,6 +22,19 @@ let test_check_nested context =
        return decorated
     |}
     [];
+  assert_default_type_errors
+    ~context
+    {|
+      from typing import Callable
+      def decorator(x: Callable[[int], str]) -> Callable[[str], int]: ...
+
+      def outer() -> None:
+          @decorator
+          def inner(x: int) -> str:
+              return "A"
+          reveal_type(inner)
+    |}
+    ["Revealed type [-1]: Revealed type for `inner` is `typing.Callable[[str], int]`."];
   ()
 
 
@@ -397,11 +410,11 @@ let test_decorators context =
       @overload
       def overloaded_decorator(f: Callable[[int], int]) -> Callable[[int], int]: ...
       def overloaded_decorator(f: Callable[[int], float]) -> Callable[[int], object]: ...
-  
+
       @overloaded_decorator
       def foo(x: int) -> int:
         return x
-  
+
       reveal_type(foo)
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], object]`."];

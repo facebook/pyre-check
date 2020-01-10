@@ -467,9 +467,8 @@ module State (Context : Context) = struct
 
   let type_of_signature ~resolution ~location signature =
     let global_resolution = Resolution.global_resolution resolution in
-    let parser = GlobalResolution.annotation_parser global_resolution in
     Node.create signature ~location
-    |> AnnotatedCallable.create_overload ~parser
+    |> GlobalResolution.apply_decorators ~resolution:global_resolution
     |> Type.Callable.create_from_implementation
 
 
