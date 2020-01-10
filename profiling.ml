@@ -21,15 +21,15 @@ module Event = struct
   }
   [@@deriving yojson]
 
-  let now_in_milliseconds () =
+  let now_in_microseconds () =
     Time_stamp_counter.now ()
     |> Time_stamp_counter.to_time ~calibrator:Timer.calibrator
     |> Time.to_span_since_epoch
-    |> Time.Span.to_ms
+    |> Time.Span.to_us
     |> Int.of_float
 
 
-  let create ?(timestamp = now_in_milliseconds ()) ?(tags = []) ~event_type name =
+  let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
     let pid = Unix.getpid () |> Pid.to_int in
     { name; pid; event_type; timestamp; tags }
