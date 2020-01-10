@@ -27,6 +27,59 @@ let test_check_bounded_variables context =
       "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to anonymous call but got `str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable, Union
+      T1 = TypeVar("T1", bound=Union[Callable[[], str], Callable[[], int]])
+      def foo(x: T1) -> None:
+        y = x()
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `Union[int, str]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable, Union
+      T1 = TypeVar("T1", bound=Union[Callable[[], str], Callable[[], str]])
+      def foo(x: T1) -> None:
+        y = x()
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `str`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      class CallableClass:
+        def __call__(self, x:int) -> str:
+          return "A"
+      T2 = TypeVar("T2", bound=CallableClass)
+      def foo(x: T2) -> None:
+        y = x(5)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `str`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      class CallableClass:
+        def __call__(self, x:int) -> str:
+          return "A"
+      T2 = TypeVar("T2", bound=CallableClass)
+      def foo(x: T2) -> None:
+        y = x(2)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `str`."];
+  assert_type_errors
+    {|
+      from typing import Type, TypeVar
+      class Constructable:
+        def __init__(self, x:int) -> None:
+          return
+      T3 = TypeVar("T3", bound=Type[Constructable])
+      def foo(x: T3) -> None:
+        x(5)
+    |}
+    [];
   ()
 
 
