@@ -1311,6 +1311,22 @@ let test_check_safe_cast context =
     []
 
 
+let test_check_annotation_with_any context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import List, Any
+      def foo(x: List[Any] = None) -> None:
+        pass
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `List[typing.Any]` but is used \
+       as type `None`.";
+      "Missing parameter annotation [2]: Parameter `x` is used as type `None` and must have a type \
+       that does not contain `Any`.";
+    ]
+
+
 let () =
   "annotation"
   >::: [
@@ -1327,5 +1343,6 @@ let () =
          "check_final_type" >:: test_final_type;
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
          "check_safe_cast" >:: test_check_safe_cast;
+         "check_annotation_with_any" >:: test_check_annotation_with_any;
        ]
   |> Test.run

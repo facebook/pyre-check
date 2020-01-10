@@ -880,10 +880,12 @@ module State (Context : Context) = struct
                       state, Annotation.create annotation
                   | None -> state, Annotation.create resolved )
               | _ -> (
-                  let annotation_and_state =
+                  let state, parsed_annotation =
                     annotation
                     >>| parse_and_check_annotation ~state ~bind_variables:false
                     >>| add_variance_error
+                    >>| (fun (state, annotation) -> state, Some annotation)
+                    |> Option.value ~default:(state, None)
                   in
                   let contains_prohibited_any parsed_annotation =
                     let contains_literal_any =
@@ -891,20 +893,26 @@ module State (Context : Context) = struct
                     in
                     contains_literal_any && Type.contains_prohibited_any parsed_annotation
                   in
-                  match annotation_and_state, value with
-                  | Some (_, annotation), Some value when Type.contains_final annotation ->
-                      let { resolved = value_annotation; _ } =
-                        forward_expression ~state ~expression:value
-                      in
+                  let value_annotation =
+                    value
+                    >>| (fun expression -> forward_expression ~state ~expression)
+                    >>| fun { resolved; _ } -> resolved
+                  in
+                  let state =
+                    match parsed_annotation, value_annotation with
+                    | Some annotation, Some value_annotation ->
+                        add_incompatible_variable_error ~state annotation value_annotation
+                    | _ -> state
+                  in
+                  match parsed_annotation, value_annotation with
+                  | Some annotation, Some value_annotation when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
                         Annotation.create_immutable
                           ~global:false
                           ~original:(Some annotation)
                           value_annotation )
-                  | Some (_, annotation), Some value when contains_prohibited_any annotation ->
-                      let { resolved = value_annotation; _ } =
-                        forward_expression ~state ~expression:value
-                      in
+                  | Some annotation, Some value_annotation when contains_prohibited_any annotation
+                    ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:(Some annotation)
@@ -913,33 +921,23 @@ module State (Context : Context) = struct
                           ~global:false
                           ~original:(Some annotation)
                           value_annotation )
-                  | Some (_, annotation), _ when Type.contains_final annotation ->
+                  | Some annotation, _ when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
                         Annotation.create_immutable ~global:false annotation )
-                  | Some (_, annotation), None when contains_prohibited_any annotation ->
+                  | Some annotation, None when contains_prohibited_any annotation ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:(Some annotation)
                           None,
                         Annotation.create_immutable ~global:false annotation )
-                  | Some (state, annotation), value ->
-                      let state =
-                        value
-                        >>| (fun value -> forward_expression ~state ~expression:value)
-                        >>| (fun { resolved; _ } -> resolved)
-                        >>| add_incompatible_variable_error ~state annotation
-                        |> Option.value ~default:state
-                      in
+                  | Some annotation, _ ->
                       state, Annotation.create_immutable ~global:false annotation
-                  | None, Some value ->
-                      let { resolved = annotation; _ } =
-                        forward_expression ~state ~expression:value
-                      in
+                  | None, Some value_annotation ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:None
-                          (Some annotation),
-                        Annotation.create annotation )
+                          (Some value_annotation),
+                        Annotation.create value_annotation )
                   | None, None ->
                       ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
                         Annotation.create Type.Any ) )
