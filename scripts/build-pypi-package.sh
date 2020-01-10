@@ -81,6 +81,7 @@ done
 
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
+STUBS_DIRECTORY="$(dirname "${SCRIPTS_DIRECTORY}")/stubs"
 
 # sapp directory is either beside or inside pyre-check directory
 SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../tools/sapp/"
@@ -143,6 +144,12 @@ if [[ -n "${BUNDLE_TYPESHED}" ]]; then
         --chmod="+w" --include="stdlib/***" --include="third_party/***" --exclude="*" \
         "${BUNDLE_TYPESHED}/" "${BUILD_ROOT}/typeshed/"
 fi
+
+mkdir -p "${BUILD_ROOT}/stubs/"
+rsync --recursive --copy-links --prune-empty-dirs --verbose \
+      --chmod="+w" --include="django/***" --include="lxml/***" --exclude="*" \
+      "${STUBS_DIRECTORY}/" "${BUILD_ROOT}/stubs/"
+
 
 # Create setup.py file.
 cp "${SCRIPTS_DIRECTORY}/setup.py" "${BUILD_ROOT}/setup.py"

@@ -91,6 +91,8 @@ setup(
     packages=find_packages(exclude=["tests", "pyre-check"]),
     data_files=[("bin", ["bin/pyre.bin"])]
     + get_all_stubs(root=Path.cwd() / "typeshed")
+    + get_all_stubs(root=Path.cwd() / "stubs" / "django")
+    + get_all_stubs(root=Path.cwd() / "stubs" / "lxml")
     + find_taint_stubs(),
     python_requires=">=3.5",
     install_requires=["pywatchman", "psutil", "libcst", "pyre_extensions"],
