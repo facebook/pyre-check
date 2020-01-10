@@ -269,16 +269,19 @@ module EnvironmentTable = struct
               name
               ~tags:["phase_name", In.Value.description]
               ~f:(fun _ ->
-                let dependencies =
-                  let filter = List.filter_map ~f:In.filter_upstream_dependency in
+                let names_to_update =
                   In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-                  |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-                  |> List.concat_map ~f:filter
+                  |> List.fold ~init:In.TriggerSet.empty ~f:(fun triggers upstream_dependencies ->
+                         SharedMemoryKeys.DependencyKey.KeySet.fold
+                           (fun dependency triggers ->
+                             match In.filter_upstream_dependency dependency with
+                             | Some trigger -> In.TriggerSet.add triggers trigger
+                             | None -> triggers)
+                           upstream_dependencies
+                           triggers)
+                  |> Set.to_list
                 in
                 let (), triggered_dependencies =
-                  let names_to_update =
-                    dependencies |> List.fold ~f:Set.add ~init:In.TriggerSet.empty |> Set.to_list
-                  in
                   let keys =
                     List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list
                   in
