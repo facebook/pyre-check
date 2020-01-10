@@ -1,3 +1,6 @@
+from typing import Any, Dict
+
+
 class SomeAPI:
     HOST = "api.some.com/1.1"
     AUTHENTICATE_URL = f"https://{HOST}/some.json"
@@ -12,6 +15,10 @@ class SomeAPI:
 
     def async_get_authenticated_user(self):
         eval(self.AUTHENTICATE_URL)
+
+
+class HttpRequest:
+    POST: Dict[str, Any] = {}
 
 
 def test_construction(request: HttpRequest):

@@ -1262,7 +1262,13 @@ end = struct
       has_decorator signature (unqualified_name signature ^ ".setter")
 
 
-    let is_untyped { return_annotation; _ } = Option.is_none return_annotation
+    let is_untyped { return_annotation; parameters; _ } =
+      Option.is_none return_annotation
+      && List.for_all
+           parameters
+           ~f:(fun { Node.value = { Expression.Parameter.annotation; _ }; _ } ->
+             Option.is_none annotation)
+
 
     let is_async { async; _ } = async
 

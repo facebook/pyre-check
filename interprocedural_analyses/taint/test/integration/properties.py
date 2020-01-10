@@ -19,7 +19,10 @@ class Class:
         return self.my_property
 
     def uses_other(self, other: Optional[Class]):
-        return other.my_property
+        if other:
+            return other.my_property
+        else:
+            return None
 
 
 class Derived(Class):

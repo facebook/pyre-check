@@ -15,11 +15,19 @@ class Request:
 
 
 def test_via_optional(request: Request):
-    return request.optional.access_token.token
+    oauth_request = request.optional
+    if oauth_request:
+        access_token = oauth_request.access_token
+        if access_token:
+            return access_token.token
+    return None
 
 
 def test_via_non_optional(request: Request):
-    return request.non_optional.access_token.token
+    access_token = request.non_optional.access_token
+    if access_token:
+        return access_token.token
+    return None
 
 
 def test_attribute(t: Token):

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "constructors.test_new_thing",
-    "callable_line": 47,
+    "callable_line": 54,
     "code": 5002,
-    "line": 48,
+    "line": 55,
     "start": 21,
     "end": 36,
     "filename": "constructors.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 48,
+              "line": 55,
               "start": 21,
               "end": 36
             },
@@ -40,7 +40,7 @@
             "call": {
               "position": {
                 "filename": "constructors.py",
-                "line": 48,
+                "line": 55,
                 "start": 21,
                 "end": 36
               },
@@ -62,9 +62,9 @@
   "kind": "issue",
   "data": {
     "callable": "constructors.test_source_in_constructor",
-    "callable_line": 30,
+    "callable_line": 37,
     "code": 5002,
-    "line": 32,
+    "line": 39,
     "start": 16,
     "end": 19,
     "filename": "constructors.py",
@@ -78,7 +78,7 @@
             "call": {
               "position": {
                 "filename": "constructors.py",
-                "line": 31,
+                "line": 38,
                 "start": 8,
                 "end": 29
               },
@@ -107,7 +107,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 32,
+              "line": 39,
               "start": 16,
               "end": 19
             },
@@ -251,7 +251,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 43,
+              "line": 50,
               "start": 20,
               "end": 25
             },
@@ -347,7 +347,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 14,
+              "line": 17,
               "start": 13,
               "end": 34
             },
@@ -377,7 +377,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 11, "start": 32, "end": 50 } ],
+            "tito": [ { "line": 14, "start": 32, "end": 50 } ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
@@ -390,7 +390,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 11, "start": 19, "end": 30 } ],
+            "tito": [ { "line": 14, "start": 19, "end": 30 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -401,7 +401,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 11, "start": 15, "end": 18 } ],
+            "tito": [ { "line": 14, "start": 15, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -421,7 +421,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 26,
+              "line": 33,
               "start": 17,
               "end": 32
             },
@@ -463,7 +463,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 19, "start": 52, "end": 61 } ],
+            "tito": [ { "line": 26, "start": 52, "end": 61 } ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
@@ -476,7 +476,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 19, "start": 41, "end": 50 } ],
+            "tito": [ { "line": 26, "start": 41, "end": 50 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
             "features": [ { "always-via": "tito" } ]
           }

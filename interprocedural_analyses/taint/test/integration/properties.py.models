@@ -176,9 +176,9 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 22,
-                "start": 15,
-                "end": 32
+                "line": 23,
+                "start": 19,
+                "end": 36
               },
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result",
@@ -203,7 +203,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 22, "start": 15, "end": 20 } ],
+            "tito": [ { "line": 23, "start": 19, "end": 24 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -331,11 +331,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 27,
+              "line": 30,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 28, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 31, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -367,7 +367,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 32, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 35, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -387,7 +387,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 38,
+              "line": 41,
               "start": 15,
               "end": 30
             },
@@ -419,7 +419,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 42,
+                "line": 45,
                 "start": 15,
                 "end": 31
               },
@@ -504,7 +504,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 56,
+              "line": 59,
               "start": 15,
               "end": 31
             },

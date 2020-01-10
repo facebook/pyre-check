@@ -31,7 +31,7 @@ def tito_via_named(o: Any):
 
 def tito_via_min_or_not(o: Any, b: bool):
     if b:
-        return min(o, 5)
+        return min(o, "abc")
     else:
         return o
 
