@@ -185,6 +185,32 @@ let test_check_inverse_operator context =
       class C:
         pass
       class D:
+        def __rrshift__(self, left: C) -> C:
+          return left
+
+      def foo() -> C:
+        return (C() >> D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+      class D:
+        def __rrshift__(self, left: C) -> C:
+          return left
+
+      def foo() -> C:
+        return (C() >> D() >> D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+      class D:
         def __rrshift__(self, other: object) -> int:
           return 1
 
@@ -198,17 +224,15 @@ let test_check_inverse_operator context =
       class C:
         def __rrshift__(self, other: int) -> int:
           return 1
-      class D:
-        def __init__(self) -> None:
-          self.x = "foo"
-          self.y = C()
 
       def foo() -> None:
-        d = D()
-        z = (d.x >> d.y)
+        z = ("foo" >> C())
     |}
     (* Make sure that if the operands don't typecheck, we raise an error for the left operand. *)
-    ["Undefined attribute [16]: `str` has no attribute `__rshift__`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `C.__rrshift__` but got `str`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -262,6 +286,62 @@ let test_check_inverse_operator context =
       "Revealed type [-1]: Revealed type for `a` is `undefined`.";
       "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
     ];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: int, y: int) -> int:
+          return y * x
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: float, y: float) -> float:
+          return y * x
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: int, y: float) -> float:
+          return x * y
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: float, y: int) -> float:
+          return x * y
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: float, y: int) -> float:
+          return x + y
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo(x: int, y: float) -> float:
+          return x + y
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class E:
+        def __rrshift__(self, left: F) -> F:
+          return left
+
+      class F:
+        def __rshift__(self, right: F) -> F:
+          return right
+
+      z: F = F() >> E()
+    |}
+    [];
   ()
 
 

@@ -1669,7 +1669,7 @@ module State (Context : Context) = struct
         | _ -> None
       in
       let signatures =
-        let callables =
+        let callables, arguments, was_operator_inverted =
           let callable = function
             | meta when Type.is_meta meta -> (
                 let backup = find_method ~parent:meta ~name:"__call__" in
@@ -1699,34 +1699,32 @@ module State (Context : Context) = struct
             | resolved -> find_method ~parent:resolved ~name:"__call__"
           in
           match resolved with
-          | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
-          | Type.Variable { constraints = Type.Variable.Bound parent; _ } -> (
-              match parent with
-              | Type.Callable callable -> Some [callable]
-              | _ -> None )
+          | Type.Union annotations ->
+              List.map annotations ~f:callable |> Option.all, arguments, false
+          | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
+              ( ( match parent with
+                | Type.Callable callable -> Some [callable]
+                | _ -> None ),
+                arguments,
+                false )
           | Type.Top -> (
               match Node.value callee, arguments with
-              | Expression.Name (Attribute { base; attribute; _ }), [{ Call.Argument.value; _ }]
-                -> (
-                  let arguments = [{ Call.Argument.value = base; name = None }] in
+              | Expression.Name (Attribute { base; attribute; _ }), [{ Call.Argument.value; _ }] ->
+                  let inverted_arguments = [{ Call.Argument.value = base; name = None }] in
                   inverse_operator attribute
                   >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
-                  >>= fun found_callable ->
-                  let resolved_base = Resolution.resolve resolution base in
-                  if Type.is_any resolved_base || Type.is_unbound resolved_base then
-                    callable resolved >>| fun callable -> [callable]
-                  else
-                    match
-                      GlobalResolution.signature_select
-                        ~arguments
-                        ~global_resolution:(Resolution.global_resolution resolution)
-                        ~resolve:(Resolution.resolve resolution)
-                        ~callable:found_callable
-                    with
-                    | Found callable -> Some [callable]
-                    | _ -> None )
-              | _ -> None )
-          | annotation -> callable annotation >>| fun callable -> [callable]
+                  >>= (fun found_callable ->
+                        let resolved_base = Resolution.resolve resolution base in
+                        if Type.is_any resolved_base || Type.is_unbound resolved_base then
+                          callable resolved >>| fun callable -> [callable], arguments, false
+                        else
+                          Some ([found_callable], inverted_arguments, true))
+                  |> Option.value_map
+                       ~default:(None, arguments, false)
+                       ~f:(fun (callables, arguments, was_operator_inverted) ->
+                         Some callables, arguments, was_operator_inverted)
+              | _ -> None, arguments, false )
+          | annotation -> (callable annotation >>| fun callable -> [callable]), arguments, false
         in
         Context.Builder.add_callee
           ~global_resolution
@@ -1749,7 +1747,8 @@ module State (Context : Context) = struct
               match Node.value callee, callable, arguments with
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
-                  [{ Call.Argument.value; _ }] ) ->
+                  [{ Call.Argument.value; _ }] )
+                when not was_operator_inverted ->
                   let arguments = [{ Call.Argument.value = base; name = None }] in
                   inverse_operator (Reference.last name)
                   >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
