@@ -422,6 +422,21 @@ module OrderImplementation = struct
           @ List.concat_map
               ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
               union
+      (* We have to consider both the variables' constraint and its full value against the optional. *)
+      | Type.Variable variable, Type.Optional optional ->
+          solve_less_or_equal order ~constraints ~left ~right:optional
+          @ solve_less_or_equal
+              order
+              ~constraints
+              ~left:(Type.Variable.Unary.upper_bound variable)
+              ~right
+      | Type.Variable bound_variable, _ ->
+          solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.Variable.Unary.upper_bound bound_variable)
+            ~right
+      | _, Type.Variable _bound_variable -> []
       | _, Type.Union rights ->
           if
             Type.Variable.all_variables_are_resolved left
@@ -539,14 +554,6 @@ module OrderImplementation = struct
             [constraints]
           else
             []
-      (* We have to consider both the variables' constraint and its full value against the optional. *)
-      | Type.Variable variable, Type.Optional optional ->
-          solve_less_or_equal order ~constraints ~left ~right:optional
-          @ solve_less_or_equal
-              order
-              ~constraints
-              ~left:(Type.Variable.Unary.upper_bound variable)
-              ~right
       (* A <= B -> A <= Optional[B].*)
       | Optional left, Optional right
       | left, Optional right
@@ -576,13 +583,6 @@ module OrderImplementation = struct
       | Type.Tuple _, _
       | _, Type.Tuple _ ->
           []
-      | Type.Variable bound_variable, _ ->
-          solve_less_or_equal
-            order
-            ~constraints
-            ~left:(Type.Variable.Unary.upper_bound bound_variable)
-            ~right
-      | _, Type.Variable _bound_variable -> []
       | ( Type.Callable { Callable.kind = Callable.Named left; _ },
           Type.Callable { Callable.kind = Callable.Named right; _ } )
         when Reference.equal left right ->

@@ -80,6 +80,34 @@ let test_check_bounded_variables context =
         x(5)
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic, List
+      S = TypeVar('S', bound=List[float])
+      def bar(x: List[float]) -> None:
+        pass
+      def foo(x: S) -> S:
+        bar(x)
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+    from typing import TypeVar, Generic
+    T = TypeVar('T', covariant=True)
+    S = TypeVar('S', bound="Foo[float]")
+
+    class Foo(Generic[T]):
+        def a(self, x: S) -> S:
+            return x
+
+        def b(self, x: S) -> None:
+            self.a(x)
+
+    def foo(a: Foo[int]) -> Foo[float]:
+        return a
+    |}
+    [];
   ()
 
 
