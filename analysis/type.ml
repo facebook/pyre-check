@@ -1806,6 +1806,12 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           | Expression.List arguments -> [get_signature (Tuple arguments)]
           | Call
               {
+                callee = { Node.value = Name (Name.Identifier "__getitem__"); _ };
+                arguments = [{ Call.Argument.value = argument; _ }];
+              } ->
+              [get_signature (Node.value argument)]
+          | Call
+              {
                 callee =
                   { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
                 arguments = [{ Call.Argument.value = argument; _ }];
