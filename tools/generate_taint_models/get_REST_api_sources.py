@@ -8,7 +8,7 @@
 
 from typing import Callable, Iterable, List, Optional
 
-from .function_tainter import FunctionTainter
+from .function_tainter import taint_functions
 from .model import Model
 from .model_generator import Configuration, Registry
 from .view_generator import ViewGenerator
@@ -32,13 +32,12 @@ class RESTApiSourceGenerator(ViewGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
-        return FunctionTainter(
+        return taint_functions(
+            functions_to_model,
             whitelisted_classes=self.whitelisted_classes,
             whitelisted_views=self.whitelisted_views,
-            arg=self.taint_annotation,
-            vararg=self.taint_annotation,
-            kwarg=self.taint_annotation,
-        ).taint_functions(functions_to_model)
+            taint_annotation=self.taint_annotation,
+        )
 
 
 Registry.register(

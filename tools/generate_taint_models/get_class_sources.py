@@ -10,7 +10,7 @@ import logging
 from typing import Callable, Iterable, List, Optional
 
 from .constructor_generator import ConstructorGenerator
-from .function_tainter import FunctionTainter
+from .function_tainter import taint_functions
 from .model import Model
 from .model_generator import Configuration, Registry
 
@@ -45,10 +45,11 @@ class ClassSourceGenerator(ConstructorGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
-        return FunctionTainter(
+        return taint_functions(
+            functions_to_model,
             whitelisted_views=self.whitelisted_views,
             whitelisted_classes=self.whitelisted_classes,
-        ).taint_functions(functions_to_model)
+        )
 
 
 Registry.register("get_class_sources", ClassSourceGenerator, include_by_default=True)
