@@ -36,6 +36,8 @@ class AnnotationCountCollector(StatisticsCollector):
         annotated_parameter_count: int = 0,
         attribute_count: int = 0,
         annotated_attribute_count: int = 0,
+        partially_annotated_function_count: int = 0,
+        fully_annotated_function_count: int = 0,
     ) -> None:
         self.return_count = return_count
         self.annotated_return_count = annotated_return_count
@@ -45,6 +47,8 @@ class AnnotationCountCollector(StatisticsCollector):
         self.annotated_parameter_count = annotated_parameter_count
         self.attribute_count = attribute_count
         self.annotated_attribute_count = annotated_attribute_count
+        self.partially_annotated_function_count = partially_annotated_function_count
+        self.fully_annotated_function_count = fully_annotated_function_count
         self.in_class_definition = False
         self.in_function_definition = False
         self.is_static_function = False
@@ -59,17 +63,22 @@ class AnnotationCountCollector(StatisticsCollector):
             "annotated_parameter_count": self.annotated_parameter_count,
             "attribute_count": self.attribute_count,
             "annotated_attribute_count": self.annotated_attribute_count,
+            "partially_annotated_function_count": self.partially_annotated_function_count,
+            "fully_annotated_function_count": self.fully_annotated_function_count,
         }
 
     def _is_self_or_cls(self, index: int) -> bool:
         return index == 0 and self.in_class_definition and not self.is_static_function
 
-    def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> None:
+    def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
+        annotated_parameter_count = 0
         for index, parameter in enumerate(parameters):
             self.parameter_count += 1
             annotation = parameter.annotation
             if annotation is not None or self._is_self_or_cls(index):
-                self.annotated_parameter_count += 1
+                annotated_parameter_count += 1
+        self.annotated_parameter_count += annotated_parameter_count
+        return annotated_parameter_count
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         for decorator in node.decorators:
@@ -78,12 +87,28 @@ class AnnotationCountCollector(StatisticsCollector):
                 if decorator_node.value == "staticmethod":
                     self.is_static_function = True
         self.in_function_definition = True
+
         self.return_count += 1
-        if node.returns is not None:
+        return_is_annotated = node.returns is not None
+        if return_is_annotated:
             self.annotated_return_count += 1
 
-        self._check_parameter_annotations(node.params.default_params)
-        self._check_parameter_annotations(node.params.params)
+        annotated_default_parameters = self._check_parameter_annotations(
+            node.params.default_params
+        )
+        annotated_parameters = self._check_parameter_annotations(node.params.params)
+
+        if return_is_annotated and (
+            annotated_default_parameters + annotated_parameters
+            == len(node.params.default_params) + len(node.params.params)
+        ):
+            self.fully_annotated_function_count += 1
+        elif (
+            return_is_annotated
+            or annotated_default_parameters > 0
+            or annotated_parameters > 0
+        ):
+            self.partially_annotated_function_count += 1
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
         self.in_function_definition = False

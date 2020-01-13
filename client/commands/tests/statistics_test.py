@@ -70,6 +70,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -87,6 +89,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -104,6 +108,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -122,6 +128,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 2,
                 "annotated_attribute_count": 1,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -140,6 +148,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -158,6 +168,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
             },
         )
 
@@ -176,17 +188,19 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
         self.assert_counts(
             """
             class A:
-                def bar(this, x: int):
+                def bar(this, x: int) -> None:
                     pass
             """,
             {
-                "annotated_return_count": 0,
+                "annotated_return_count": 1,
                 "annotated_globals_count": 0,
                 "annotated_parameter_count": 2,
                 "return_count": 1,
@@ -194,6 +208,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
             },
         )
 
@@ -213,6 +229,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -230,6 +248,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -237,11 +257,11 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             """
             class A:
                 @staticmethod
-                def bar(self, x: int):
+                def bar(self, x: int) -> None:
                     pass
             """,
             {
-                "annotated_return_count": 0,
+                "annotated_return_count": 1,
                 "annotated_globals_count": 0,
                 "annotated_parameter_count": 1,
                 "return_count": 1,
@@ -249,6 +269,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
@@ -272,6 +294,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 3,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
             },
         )
 
