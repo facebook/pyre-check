@@ -103,7 +103,6 @@ class Registry:
             start = time.time()
             generator = cls.generators[name]()
             models[name] = generator.generate_models()
-            logger = logger or Configuration.logger
             if logger is not None:
                 elapsed_time = int((time.time() - start) * 1000)
                 log_statistics(

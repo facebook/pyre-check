@@ -93,7 +93,7 @@ def run_from_global_state(
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.DEBUG if generation_arguments.verbose else logging.INFO,
     )
-    models = Registry.generate_models(modes)
+    models = Registry.generate_models(modes, logger=configuration_arguments.logger)
     output_directory = generation_arguments.output_directory
     if output_directory is not None:
         for name in models:
