@@ -96,7 +96,7 @@ class Registry:
     @classmethod
     def generate_models(
         cls, generator_names: Iterable[str], logger: Optional[str] = None
-    ) -> Dict[str, Set[str]]:
+    ) -> Dict[str, Set[Model]]:
         models = {}
         for name in generator_names:
             LOG.info("Computing models for `%s`", name)

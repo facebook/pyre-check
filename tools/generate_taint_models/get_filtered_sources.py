@@ -1,6 +1,7 @@
 import logging
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List, Optional
 
+from .generator_specifications import DecoratorAnnotationSpecification
 from .get_annotated_free_functions_with_decorator import (
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
@@ -13,12 +14,20 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class FilteredSourceGenerator(ModelGenerator):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        root: Optional[str] = None,
+        annotation_specifications: Optional[
+            List[DecoratorAnnotationSpecification]
+        ] = None,
+    ) -> None:
         self.superset_generator = RESTApiSourceGenerator(
             whitelisted_classes=["ViewerContext", "AuthenticatedVC"],
             taint_annotation="TaintSource[DataFromGET]",
         )
-        self.subset_generator = AnnotatedFreeFunctionWithDecoratorGenerator()
+        self.subset_generator = AnnotatedFreeFunctionWithDecoratorGenerator(
+            root=root, annotation_specifications=annotation_specifications
+        )
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
