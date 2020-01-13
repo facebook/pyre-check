@@ -254,13 +254,12 @@ class Statistics(Command):
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
-        statistics = parser.add_parser(cls.NAME)
+        statistics = parser.add_parser(
+            cls.NAME, epilog="Collect various syntactic metrics on type coverage."
+        )
         statistics.set_defaults(command=cls)
         statistics.add_argument(
-            "filter_paths",
-            nargs="*",
-            type=file_exists,
-            help="Source path(s) to gather metrics for.",
+            "filter_paths", nargs="*", type=file_exists, help=argparse.SUPPRESS
         )
 
     def _run(self) -> None:
