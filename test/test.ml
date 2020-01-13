@@ -775,6 +775,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class classmethod:
            def __init__(self, f: Callable[..., Any]): ...
+
+        def callable(__o: object) -> bool: ...
       |}
     in
     if include_helper_builtins then
