@@ -37,7 +37,22 @@ class ViewGeneratorTest(unittest.TestCase):
 
         with patch(f"{view_generator.__name__}.import_module", return_value=Urls):
             views = view_generator.get_all_views(
-                urls_module="urls", url_pattern_type=Url, url_resolver_type=Resolver
+                view_generator.DjangoUrls(
+                    urls_module="urls", url_pattern_type=Url, url_resolver_type=Resolver
+                )
             )
             values = [view() for view in views]
             self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7])
+
+        with patch.object(view_generator, "Configuration") as configuration:
+            configuration.urls_module = None
+            configuration.url_resolver_type = Resolver
+            configuration.url_pattern_type = Url
+            self.assertEqual(view_generator.django_urls_from_configuration(), None)
+            configuration.urls_module = "urls"
+            self.assertEqual(
+                view_generator.django_urls_from_configuration(),
+                view_generator.DjangoUrls(
+                    urls_module="urls", url_resolver_type=Resolver, url_pattern_type=Url
+                ),
+            )
