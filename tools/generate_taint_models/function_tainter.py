@@ -31,11 +31,11 @@ class FunctionTainter:
             else Configuration.whitelisted_classes
         )
 
-    def compute_models(
-        self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    def taint_functions(
+        self, functions_to_taint: Iterable[Callable[..., object]]
+    ) -> List[Model]:
         entry_points = set()
-        for function in functions_to_model:
+        for function in functions_to_taint:
             qualified_name = extract_qualified_name(function)
             if qualified_name in Configuration.whitelisted_views:
                 continue

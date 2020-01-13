@@ -7,7 +7,7 @@
 
 import logging
 from importlib import import_module
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable, List, Optional, Type
 
 from .model_generator import Configuration, ModelGenerator
 
@@ -22,8 +22,11 @@ def all_subclasses(parent_class: Type[object]) -> Iterable[Type[object]]:
 
 
 class ConstructorGenerator(ModelGenerator):
+    def __init__(self, classes_to_taint: Optional[List[str]]) -> None:
+        self.classes_to_taint = classes_to_taint
+
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        classes_to_taint = Configuration.classes_to_taint
+        classes_to_taint = self.classes_to_taint
         if classes_to_taint is None:
             LOG.warning(
                 f"No class to taint supplied, can't generate constructor models."

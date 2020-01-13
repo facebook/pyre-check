@@ -6,14 +6,21 @@
 # pyre-strict
 
 
+import logging
+from typing import Callable, Iterable, List, Optional
+
 from .constructor_generator import ConstructorGenerator
 from .function_tainter import FunctionTainter
-from .model_generator import Registry
+from .model import Model
+from .model_generator import Configuration, Registry
 
 
-class ClassSourceGenerator(FunctionTainter, ConstructorGenerator):
+LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class ClassSourceGenerator(ConstructorGenerator):
     """
-    This Generator uses Configuration.classes_to_taint to taint the __init__
+    This Generator uses classes_to_taint to taint the __init__
     functions of the classes passed as fully qualified strings. All recursive
     subclasses that have had their modules loaded at preprocessing time will
     also be tainted. The purpose of using this flag would be if it is not
@@ -21,9 +28,22 @@ class ClassSourceGenerator(FunctionTainter, ConstructorGenerator):
     (ex: dynamic subclassing).
     """
 
-    parameter_name_whitelist = {"self"}
+    def __init__(
+        self,
+        whitelisted_classes: Optional[List[str]] = None,
+        classes_to_taint: Optional[List[str]] = None,
+    ) -> None:
+        super().__init__(classes_to_taint or Configuration.classes_to_taint)
+        self.whitelisted_classes: List[str] = (
+            whitelisted_classes or Configuration.whitelisted_classes
+        )
 
-    pass
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[Model]:
+        return FunctionTainter(
+            whitelisted_classes=self.whitelisted_classes
+        ).taint_functions(functions_to_model)
 
 
 Registry.register("get_class_sources", ClassSourceGenerator, include_by_default=True)

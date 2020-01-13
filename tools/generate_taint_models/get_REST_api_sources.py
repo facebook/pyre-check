@@ -6,27 +6,34 @@
 # pyre-strict
 
 
-from typing import List, Optional
+from typing import Callable, Iterable, List, Optional
 
 from .function_tainter import FunctionTainter
-from .model_generator import Registry
+from .model import Model
+from .model_generator import Configuration, Registry
 from .view_generator import ViewGenerator
 
 
-class RESTApiSourceGenerator(FunctionTainter, ViewGenerator):
+class RESTApiSourceGenerator(ViewGenerator):
     def __init__(
         self,
         whitelisted_classes: Optional[List[str]] = None,
         taint_annotation: str = "TaintSource[UserControlled]",
     ) -> None:
-        FunctionTainter.__init__(
-            self,
-            arg=taint_annotation,
-            kwarg=taint_annotation,
-            vararg=taint_annotation,
-            whitelisted_classes=whitelisted_classes,
+        self.whitelisted_classes: List[str] = (
+            whitelisted_classes or Configuration.whitelisted_classes
         )
-        ViewGenerator.__init__(self)
+        self.taint_annotation = taint_annotation
+
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[Model]:
+        return FunctionTainter(
+            whitelisted_classes=self.whitelisted_classes,
+            arg=self.taint_annotation,
+            vararg=self.taint_annotation,
+            kwarg=self.taint_annotation,
+        ).taint_functions(functions_to_model)
 
 
 Registry.register(
