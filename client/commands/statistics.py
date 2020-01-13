@@ -61,18 +61,14 @@ class AnnotationCountCollector(StatisticsCollector):
             "annotated_attribute_count": self.annotated_attribute_count,
         }
 
-    def _is_self(self, parameter: cst.Param) -> bool:
-        return (
-            parameter.name.value == "self"
-            and self.in_class_definition
-            and not self.is_static_function
-        )
+    def _is_self_or_cls(self, index: int) -> bool:
+        return index == 0 and self.in_class_definition and not self.is_static_function
 
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> None:
-        for parameter in list(parameters):
+        for index, parameter in enumerate(parameters):
             self.parameter_count += 1
             annotation = parameter.annotation
-            if annotation is not None or self._is_self(parameter):
+            if annotation is not None or self._is_self_or_cls(index):
                 self.annotated_parameter_count += 1
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
