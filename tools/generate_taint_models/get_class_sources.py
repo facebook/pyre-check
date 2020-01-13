@@ -31,18 +31,23 @@ class ClassSourceGenerator(ConstructorGenerator):
     def __init__(
         self,
         whitelisted_classes: Optional[List[str]] = None,
+        whitelisted_views: Optional[List[str]] = None,
         classes_to_taint: Optional[List[str]] = None,
     ) -> None:
         super().__init__(classes_to_taint or Configuration.classes_to_taint)
         self.whitelisted_classes: List[str] = (
             whitelisted_classes or Configuration.whitelisted_classes
         )
+        self.whitelisted_views: List[str] = (
+            whitelisted_views or Configuration.whitelisted_views
+        )
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
         return FunctionTainter(
-            whitelisted_classes=self.whitelisted_classes
+            whitelisted_classes=self.whitelisted_classes,
+            whitelisted_views=self.whitelisted_views,
         ).taint_functions(functions_to_model)
 
 

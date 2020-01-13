@@ -14,8 +14,11 @@ from .test_functions import TestChildClassB, TestGrandChildClassA, __name__ as q
 
 class GetClassSourcesTest(unittest.TestCase):
     def test_gather_functions_to_model(self) -> None:
-        Configuration.classes_to_taint = [f"{qualifier}.TestClass"]
         self.assertEqual(
-            set(ClassSourceGenerator().gather_functions_to_model()),
+            set(
+                ClassSourceGenerator(
+                    classes_to_taint=[f"{qualifier}.TestClass"]
+                ).gather_functions_to_model()
+            ),
             {TestChildClassB.__init__, TestGrandChildClassA.__init__},
         )

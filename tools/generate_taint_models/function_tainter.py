@@ -9,7 +9,6 @@ from typing import Callable, Iterable, List, Optional, Set
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import Configuration
 
 
 class FunctionTainter:
@@ -18,6 +17,7 @@ class FunctionTainter:
     def __init__(
         self,
         whitelisted_classes: Optional[List[str]] = None,
+        whitelisted_views: Optional[List[str]] = None,
         arg: str = "TaintSource[UserControlled]",
         vararg: str = "TaintSource[UserControlled]",
         kwarg: str = "TaintSource[UserControlled]",
@@ -25,11 +25,8 @@ class FunctionTainter:
         self.arg = arg
         self.vararg = vararg
         self.kwarg = kwarg
-        self.whitelisted_classes: List[str] = (
-            whitelisted_classes
-            if whitelisted_classes
-            else Configuration.whitelisted_classes
-        )
+        self.whitelisted_classes: List[str] = whitelisted_classes or []
+        self.whitelisted_views: List[str] = whitelisted_views or []
 
     def taint_functions(
         self, functions_to_taint: Iterable[Callable[..., object]]
@@ -37,7 +34,7 @@ class FunctionTainter:
         entry_points = set()
         for function in functions_to_taint:
             qualified_name = extract_qualified_name(function)
-            if qualified_name in Configuration.whitelisted_views:
+            if qualified_name in self.whitelisted_views:
                 continue
             try:
                 model = CallableModel(
