@@ -234,13 +234,6 @@ val signature_select
   callable:Type.Callable.t ->
   AttributeResolution.sig_t
 
-val create_callable
-  :  resolution:t ->
-  parent:Type.t option ->
-  name:Identifier.t ->
-  (bool * Type.t Type.Callable.overload) list ->
-  Type.Callable.t
-
-val apply_decorators : resolution:t -> Define.Signature.t Node.t -> Type.t Type.Callable.overload
+val create_overload : resolution:t -> Define.Signature.t Node.t -> Type.t Type.Callable.overload
 
 val constructor : resolution:t -> ClassSummary.t Node.t -> instantiated:Type.t -> Type.t

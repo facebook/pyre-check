@@ -784,20 +784,12 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       Expression.expression Node.t ->
       Type.t;
-    apply_decorators:
+    create_overload:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
       ?dependency:SharedMemoryKeys.dependency ->
       Define.Signature.t Node.t ->
       Type.t Type.Callable.overload;
-    create_callable:
-      assumptions:Assumptions.t ->
-      class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-      ?dependency:SharedMemoryKeys.dependency ->
-      parent:Type.t option ->
-      name:string ->
-      (bool * Type.t Type.Callable.overload) list ->
-      Type.t Type.Callable.record;
     signature_select:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -1215,7 +1207,7 @@ module Implementation = struct
 
 
   let create_attribute
-      { parse_annotation; resolve_literal; apply_decorators; create_callable; generics; _ }
+      { parse_annotation; resolve_literal; create_overload; generics; full_order; _ }
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -1314,14 +1306,15 @@ module Implementation = struct
           annotation, original, value, class_attribute, visibility
       | Method { signatures; final; _ } ->
           (* Handle Callables *)
-          let annotation =
+          let callable =
             let instantiated =
               match instantiated with
               | Some instantiated -> instantiated
               | None -> class_annotation
             in
             match signatures with
-            | ({ Define.Signature.name = { Node.value = name; _ }; _ } as define) :: _ as defines ->
+            | ({ Define.Signature.name = { Node.value = name; _ }; _ } as define) :: _ as defines
+              -> (
                 let parent =
                   if
                     Define.Signature.is_class_method define
@@ -1337,48 +1330,131 @@ module Implementation = struct
                   else
                     Some instantiated
                 in
-                let apply_decorators define =
-                  ( Define.Signature.is_overloaded_function define,
-                    apply_decorators
-                      ~class_metadata_environment
-                      ~assumptions
-                      ?dependency
-                      (Node.create define ~location) )
+                let open Type.Callable in
+                let overloads =
+                  let create_overload define =
+                    ( Define.Signature.is_overloaded_function define,
+                      create_overload
+                        ~class_metadata_environment
+                        ~assumptions
+                        ?dependency
+                        (Node.create define ~location) )
+                  in
+                  List.map defines ~f:create_overload
                 in
-                List.map defines ~f:apply_decorators
-                |> create_callable
-                     ~class_metadata_environment
-                     ~assumptions
-                     ?dependency
-                     ~parent
-                     ~name:(Reference.show name)
-                |> fun callable -> Some (Type.Callable callable)
+                let implementation, overloads =
+                  let to_signature (implementation, overloads) (is_overload, signature) =
+                    if is_overload then
+                      implementation, signature :: overloads
+                    else
+                      signature, overloads
+                  in
+                  List.fold
+                    ~init:
+                      ( {
+                          annotation = Type.Top;
+                          parameters = Type.Callable.Undefined;
+                          define_location = None;
+                        },
+                        [] )
+                    ~f:to_signature
+                    overloads
+                in
+                let callable = { kind = Named name; implementation; overloads; implicit = None } in
+                match parent with
+                | Some parent when String.equal (Reference.last name) "__new__" ->
+                    (* Special case __new__ because it is the only static method with one of its
+                       parameters implicitly annotated. *)
+                    let { Type.Callable.kind; implementation; overloads; implicit } = callable in
+                    let add_class_annotation
+                        { Type.Callable.annotation; parameters; define_location }
+                      =
+                      let parameters =
+                        match parameters with
+                        | Defined
+                            (Named { Type.Callable.Parameter.name; annotation = Type.Top; default }
+                            :: parameters) ->
+                            Defined (Named { name; annotation = parent; default } :: parameters)
+                        | _ -> parameters
+                      in
+                      { Type.Callable.annotation; parameters; define_location }
+                    in
+                    {
+                      Type.Callable.kind;
+                      implementation = add_class_annotation implementation;
+                      overloads = List.map overloads ~f:add_class_annotation;
+                      implicit;
+                    }
+                | Some parent ->
+                    let { Type.Callable.kind; implementation; overloads; implicit } =
+                      match implementation, overloads with
+                      | { parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
+                          let callable =
+                            let implicit = { implicit_annotation = parent; name } in
+                            { callable with implicit = Some implicit }
+                          in
+                          let order =
+                            full_order ?dependency class_metadata_environment ~assumptions
+                          in
+                          let solution =
+                            try
+                              TypeOrder.solve_less_or_equal
+                                order
+                                ~left:parent
+                                ~right:annotation
+                                ~constraints:TypeConstraints.empty
+                              |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+                              |> List.hd
+                              |> Option.value ~default:TypeConstraints.Solution.empty
+                            with
+                            | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
+                          in
+                          let instantiated =
+                            TypeConstraints.Solution.instantiate solution (Type.Callable callable)
+                          in
+                          match instantiated with
+                          | Type.Callable callable -> callable
+                          | _ -> callable )
+                      (* We also need to set the implicit up correctly for overload-only methods. *)
+                      | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
+                          let implicit = { implicit_annotation = parent; name } in
+                          { callable with implicit = Some implicit }
+                      | _ -> callable
+                    in
+                    let drop_self { Type.Callable.annotation; parameters; define_location } =
+                      let parameters =
+                        match parameters with
+                        | Type.Callable.Defined (_ :: parameters) ->
+                            Type.Callable.Defined parameters
+                        | _ -> parameters
+                      in
+                      { Type.Callable.annotation; parameters; define_location }
+                    in
+                    {
+                      Type.Callable.kind;
+                      implementation = drop_self implementation;
+                      overloads = List.map overloads ~f:drop_self;
+                      implicit;
+                    }
+                | None -> callable )
             | [] -> failwith "impossible"
           in
           (* Special cases *)
-          let annotation =
-            match instantiated, attribute_name, annotation with
-            | ( Some (Type.TypedDictionary { fields; total; _ }),
-                method_name,
-                Some (Type.Callable callable) ) ->
+          let callable =
+            match instantiated, attribute_name, callable with
+            | Some (Type.TypedDictionary { fields; total; _ }), method_name, callable ->
                 Type.TypedDictionary.special_overloads ~fields ~method_name ~total
                 >>| (fun overloads ->
-                      Some
-                        (Type.Callable
-                           {
-                             callable with
-                             implementation =
-                               {
-                                 annotation = Type.Top;
-                                 parameters = Undefined;
-                                 define_location = None;
-                               };
-                             overloads;
-                           }))
-                |> Option.value ~default:annotation
+                      {
+                        callable with
+                        implementation =
+                          { annotation = Type.Top; parameters = Undefined; define_location = None };
+                        overloads;
+                      })
+                |> Option.value ~default:callable
             | ( Some (Type.Tuple (Bounded (Concrete members))),
                 "__getitem__",
-                Some (Type.Callable ({ overloads; _ } as callable)) ) ->
+                ({ overloads; _ } as callable) ) ->
                 let overload index member =
                   {
                     Type.Callable.annotation = member;
@@ -1392,10 +1468,10 @@ module Implementation = struct
                   }
                 in
                 let overloads = List.mapi ~f:overload members @ overloads in
-                Some (Type.Callable { callable with overloads })
+                { callable with overloads }
             | ( Some (Parametric { name = "type"; parameters = Concrete [Type.Primitive name] }),
                 "__getitem__",
-                Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
+                ({ kind = Named callable_name; _ } as callable) )
               when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
                 let implementation =
                   let generics =
@@ -1432,17 +1508,16 @@ module Implementation = struct
                         define_location = None;
                       }
                 in
-                Some (Type.Callable { callable with implementation; overloads = [] })
-            | _ -> annotation
+                { callable with implementation; overloads = [] }
+            | _ -> callable
           in
-          let annotation = Option.value annotation ~default:Type.Top in
           let visibility =
             if final then
               AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
             else
               ReadWrite
           in
-          annotation, annotation, None, default_class_attribute, visibility
+          Type.Callable callable, Type.Callable callable, None, default_class_attribute, visibility
       | Property { kind; class_property; _ } ->
           let annotation, original, visibility =
             match kind with
@@ -1799,7 +1874,7 @@ module Implementation = struct
     | _ -> Type.Any
 
 
-  let apply_decorators
+  let create_overload
       { full_order; parse_annotation; resolve_literal; signature_select; _ }
       ~assumptions
       ~class_metadata_environment
@@ -1831,7 +1906,7 @@ module Implementation = struct
                 let order = full_order ?dependency class_metadata_environment ~assumptions in
                 try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
                 | ClassHierarchy.Untracked _ ->
-                    (* Apply_decorators gets called when building the environment, which is unsound
+                    (* create_overload gets called when building the environment, which is unsound
                        and can raise. *)
                     Type.Any
               in
@@ -1980,108 +2055,11 @@ module Implementation = struct
             ?dependency;
       }
     in
-    let init = Node.create signature ~location |> AnnotatedCallable.create_overload ~parser in
+    let init =
+      Node.create signature ~location
+      |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
+    in
     decorators |> List.rev |> List.fold ~init ~f:apply_decorator
-
-
-  let create_callable
-      { full_order; _ }
-      ~assumptions
-      ~class_metadata_environment
-      ?dependency
-      ~parent
-      ~name
-      overloads
-    =
-    let open Type.Callable in
-    let implementation, overloads =
-      let to_signature (implementation, overloads) (is_overload, signature) =
-        if is_overload then
-          implementation, signature :: overloads
-        else
-          signature, overloads
-      in
-      List.fold
-        ~init:
-          ( { annotation = Type.Top; parameters = Type.Callable.Undefined; define_location = None },
-            [] )
-        ~f:to_signature
-        overloads
-    in
-    let callable =
-      { kind = Named (Reference.create name); implementation; overloads; implicit = None }
-    in
-    match parent with
-    | Some parent when String.equal (Reference.last (Reference.create name)) "__new__" ->
-        (* Special case __new__ because it is the only static method with one of its parameters
-           implicitly annotated. *)
-        let { Type.Callable.kind; implementation; overloads; implicit } = callable in
-        let add_class_annotation { Type.Callable.annotation; parameters; define_location } =
-          let parameters =
-            match parameters with
-            | Defined
-                (Named { Type.Callable.Parameter.name; annotation = Type.Top; default }
-                :: parameters) ->
-                Defined (Named { name; annotation = parent; default } :: parameters)
-            | _ -> parameters
-          in
-          { Type.Callable.annotation; parameters; define_location }
-        in
-        {
-          Type.Callable.kind;
-          implementation = add_class_annotation implementation;
-          overloads = List.map overloads ~f:add_class_annotation;
-          implicit;
-        }
-    | Some parent ->
-        let { Type.Callable.kind; implementation; overloads; implicit } =
-          match implementation, overloads with
-          | { parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
-              let callable =
-                let implicit = { implicit_annotation = parent; name } in
-                { callable with implicit = Some implicit }
-              in
-              let order = full_order ?dependency class_metadata_environment ~assumptions in
-              let solution =
-                try
-                  TypeOrder.solve_less_or_equal
-                    order
-                    ~left:parent
-                    ~right:annotation
-                    ~constraints:TypeConstraints.empty
-                  |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-                  |> List.hd
-                  |> Option.value ~default:TypeConstraints.Solution.empty
-                with
-                | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
-              in
-              let instantiated =
-                TypeConstraints.Solution.instantiate solution (Type.Callable callable)
-              in
-              match instantiated with
-              | Type.Callable callable -> callable
-              | _ -> callable )
-          (* We also need to set the implicit up correctly for overload-only methods. *)
-          | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
-              let implicit = { implicit_annotation = parent; name } in
-              { callable with implicit = Some implicit }
-          | _ -> callable
-        in
-        let drop_self { Type.Callable.annotation; parameters; define_location } =
-          let parameters =
-            match parameters with
-            | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
-            | _ -> parameters
-          in
-          { Type.Callable.annotation; parameters; define_location }
-        in
-        {
-          Type.Callable.kind;
-          implementation = drop_self implementation;
-          overloads = List.map overloads ~f:drop_self;
-          implicit;
-        }
-    | None -> callable
 
 
   let signature_select
@@ -2842,8 +2820,7 @@ let make_open_recurser ~given_attribute_table ~given_parse_annotation =
       constraints;
       generics;
       resolve_literal;
-      apply_decorators;
-      create_callable;
+      create_overload;
       signature_select;
       resolve_mutable_literals;
       constraints_solution_exists;
@@ -2859,8 +2836,7 @@ let make_open_recurser ~given_attribute_table ~given_parse_annotation =
   and constraints ~assumptions = Implementation.constraints open_recurser ~assumptions
   and generics ~assumptions = Implementation.generics open_recurser ~assumptions
   and resolve_literal ~assumptions = Implementation.resolve_literal open_recurser ~assumptions
-  and apply_decorators ~assumptions = Implementation.apply_decorators open_recurser ~assumptions
-  and create_callable ~assumptions = Implementation.create_callable open_recurser ~assumptions
+  and create_overload ~assumptions = Implementation.create_overload open_recurser ~assumptions
   and signature_select ~assumptions = Implementation.signature_select open_recurser ~assumptions
   and resolve_mutable_literals ~assumptions =
     Implementation.resolve_mutable_literals open_recurser ~assumptions
@@ -3124,9 +3100,7 @@ module ReadOnly = struct
 
   let resolve_literal = add_both_caches_and_empty_assumptions Implementation.resolve_literal
 
-  let apply_decorators = add_both_caches_and_empty_assumptions Implementation.apply_decorators
-
-  let create_callable = add_both_caches_and_empty_assumptions Implementation.create_callable
+  let create_overload = add_both_caches_and_empty_assumptions Implementation.create_overload
 
   let resolve_mutable_literals =
     add_both_caches_and_empty_assumptions Implementation.resolve_mutable_literals

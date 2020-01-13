@@ -201,19 +201,11 @@ module AttributeReadOnly : sig
     Expression.expression Node.t ->
     Type.t
 
-  val apply_decorators
+  val create_overload
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->
     Define.Signature.t Node.t ->
     Type.t Type.Callable.overload
-
-  val create_callable
-    :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
-    parent:Type.t option ->
-    name:string ->
-    (bool * Type.t Type.Callable.overload) list ->
-    Type.t Type.Callable.record
 
   val signature_select
     :  t ->

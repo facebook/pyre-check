@@ -62,7 +62,8 @@ let produce_undecorated_function class_hierarchy_environment name ~track_depende
               parse_as_parameter_specification_instance_annotation;
             }
           in
-          Node.create signature ~location |> AnnotatedCallable.create_overload ~parser
+          Node.create signature ~location
+          |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
         in
         List.find signatures ~f:(fun signature ->
             not (Define.Signature.is_overloaded_function (Node.value signature)))

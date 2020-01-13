@@ -20,7 +20,7 @@ type annotation_parser = {
     Type.Variable.Variadic.Parameters.t option;
 }
 
-let return_annotation
+let return_annotation_without_applying_decorators
     ~signature:({ Define.Signature.return_annotation; async; generator; _ } as signature)
     ~parser:{ parse_annotation; _ }
   =
@@ -37,7 +37,7 @@ let return_annotation
     annotation
 
 
-let create_overload
+let create_overload_without_applying_decorators
     ~parser:
       ( {
           parse_annotation;
@@ -89,4 +89,8 @@ let create_overload
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
-  { annotation = return_annotation ~signature ~parser; parameters; define_location = Some location }
+  {
+    annotation = return_annotation_without_applying_decorators ~signature ~parser;
+    parameters;
+    define_location = Some location;
+  }

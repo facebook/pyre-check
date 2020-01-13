@@ -13,7 +13,6 @@ open Pyre
 open Test
 module StatementClass = Class
 module StatementAttribute = Attribute
-module StatementDefine = Define
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Argument = Call.Argument

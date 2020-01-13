@@ -8,10 +8,8 @@ open OUnit2
 open Ast
 open Analysis
 open Expression
-open Pyre
 open Statement
 open Test
-module Callable = Annotated.Callable
 
 let test_apply_decorators context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
@@ -32,7 +30,7 @@ let test_apply_decorators context =
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
     let applied_return_annotation =
-      GlobalResolution.apply_decorators ~resolution define
+      GlobalResolution.create_overload ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -43,7 +41,7 @@ let test_apply_decorators context =
 
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      GlobalResolution.apply_decorators ~resolution define
+      GlobalResolution.create_overload ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -73,7 +71,7 @@ let test_apply_decorators context =
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
       let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-      GlobalResolution.apply_decorators ~resolution define
+      GlobalResolution.create_overload ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
       | Undefined -> 0
@@ -106,7 +104,7 @@ let test_apply_decorators context =
     ~decorators:["$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
-  |> (fun define -> GlobalResolution.apply_decorators ~resolution define)
+  |> (fun define -> GlobalResolution.create_overload ~resolution define)
   |> fun { Type.Callable.parameters; _ } ->
   assert_equal
     ~printer:Type.Callable.show_parameters
@@ -146,8 +144,17 @@ let test_create context =
       | _ -> None
     in
     let callable =
-      let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
-      let parent = parent >>| Reference.create in
+      let add_decorators ({ Ast.Statement.Define.Signature.decorators; _ } as define) =
+        let decorators =
+          if Option.is_some parent then
+            decorators
+          else
+            Test.parse_single_expression "staticmethod" :: decorators
+        in
+        { define with decorators }
+      in
+      let parent = Option.value parent ~default:"toast" in
+      let parent = parent |> Reference.create in
       let defines =
         AstEnvironment.ReadOnly.get_source
           (AstEnvironment.read_only ast_environment)
@@ -156,20 +163,32 @@ let test_create context =
         |> Preprocessing.defines ~include_stubs:true
         |> List.rev
       in
-      let { Define.signature = { name; _ }; _ } = List.hd_exn defines |> Node.value in
-      let to_overload define =
-        let parser = GlobalResolution.annotation_parser resolution in
-        ( Define.Signature.is_overloaded_function define,
-          Callable.create_overload ~parser (Node.create_with_default_location define) )
-      in
+      let { Define.signature = { name = _; _ }; _ } = List.hd_exn defines |> Node.value in
       defines
       |> List.map ~f:Node.value
-      |> List.map ~f:(fun define -> { define.Define.signature with parent })
-      |> (fun defines -> List.map defines ~f:to_overload)
-      |> GlobalResolution.create_callable
+      |> List.map ~f:(fun define -> { define.Define.signature with parent = Some parent })
+      |> List.map ~f:add_decorators
+      |> (fun signatures ->
+           Node.create_with_default_location
+             {
+               Ast.Statement.Attribute.name = "A";
+               kind = Method { signatures; static = false; final = false };
+             })
+      |> GlobalResolution.create_attribute
            ~resolution
-           ~parent:parent_annotation
-           ~name:(Reference.show (Node.value name))
+           ~parent:
+             (Node.create_with_default_location
+                {
+                  ClassSummary.name = parent;
+                  bases = [];
+                  decorators = [];
+                  attribute_components = Ast.Statement.Class.AttributeComponents.empty ();
+                })
+      |> Annotated.Attribute.annotation
+      |> Annotation.annotation
+      |> (function
+           | Callable callable -> callable
+           | _ -> failwith "not a callable")
       |> (fun callable ->
            check_implicit callable;
            callable)

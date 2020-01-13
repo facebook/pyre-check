@@ -948,7 +948,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
                 then
                   let parser = GlobalResolution.annotation_parser global_resolution in
                   Node.create signature ~location
-                  |> Annotated.Define.Callable.create_overload ~parser
+                  |> Annotated.Define.Callable.create_overload_without_applying_decorators ~parser
                   |> Type.Callable.create_from_implementation
                   |> Option.some
                 else

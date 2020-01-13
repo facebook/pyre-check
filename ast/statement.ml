@@ -379,6 +379,8 @@ and Class : sig
     type t [@@deriving compare, eq, sexp, show, hash]
 
     val create : class_t -> t
+
+    val empty : unit -> t
   end
 
   val implicit_attributes
@@ -912,6 +914,15 @@ end = struct
         constructor_attributes;
         test_setup_attributes;
         additional_attributes;
+      }
+
+
+    let empty () =
+      {
+        explicitly_assigned_attributes = Identifier.SerializableMap.empty;
+        constructor_attributes = Identifier.SerializableMap.empty;
+        test_setup_attributes = Identifier.SerializableMap.empty;
+        additional_attributes = Identifier.SerializableMap.empty;
       }
   end
 

@@ -64,7 +64,7 @@ module State (Context : Context) = struct
     let expected =
       let parser = GlobalResolution.annotation_parser global_resolution in
       let { Node.value = { Define.signature; _ }; _ } = Context.define in
-      Annotated.Callable.return_annotation ~signature ~parser
+      Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -391,7 +391,8 @@ module State (Context : Context) = struct
     let expected_return =
       let parser = GlobalResolution.annotation_parser (Resolution.global_resolution resolution) in
       let { Node.value = { Define.signature; _ }; _ } = Context.define in
-      Annotated.Callable.return_annotation ~signature ~parser |> Annotation.create
+      Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+      |> Annotation.create
     in
     let backward_initial_state =
       let resolution =

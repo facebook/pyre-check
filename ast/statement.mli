@@ -156,6 +156,8 @@ and Class : sig
     type t [@@deriving compare, eq, sexp, show, hash]
 
     val create : class_t -> t
+
+    val empty : unit -> t
   end
 
   val implicit_attributes

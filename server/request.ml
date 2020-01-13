@@ -631,7 +631,7 @@ let process_type_query_request
               let parser = GlobalResolution.annotation_parser global_resolution in
               let { Type.Callable.annotation; parameters; _ } =
                 Node.create signature ~location
-                |> Analysis.Annotated.Callable.create_overload ~parser
+                |> Analysis.Annotated.Callable.create_overload_without_applying_decorators ~parser
               in
               match parameters with
               | Type.Callable.Defined parameters ->

@@ -467,12 +467,8 @@ let resolve_mutable_literals ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let apply_decorators ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.apply_decorators ?dependency (attribute_resolution resolution)
-
-
-let create_callable ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.create_callable ?dependency (attribute_resolution resolution)
+let create_overload ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.create_overload ?dependency (attribute_resolution resolution)
 
 
 let signature_select ~global_resolution:({ dependency; _ } as resolution) =

@@ -106,7 +106,7 @@ module State (Context : Context) = struct
     let expected =
       let parser = GlobalResolution.annotation_parser global_resolution in
       let { Node.value = { Define.signature; _ }; _ } = Context.define in
-      Annotated.Callable.return_annotation ~signature ~parser
+      Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -468,7 +468,7 @@ module State (Context : Context) = struct
   let type_of_signature ~resolution ~location signature =
     let global_resolution = Resolution.global_resolution resolution in
     Node.create signature ~location
-    |> GlobalResolution.apply_decorators ~resolution:global_resolution
+    |> GlobalResolution.create_overload ~resolution:global_resolution
     |> Type.Callable.create_from_implementation
 
 
@@ -541,7 +541,7 @@ module State (Context : Context) = struct
         in
         let define_variables =
           Node.create signature ~location
-          |> AnnotatedCallable.create_overload ~parser
+          |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
           |> Type.Variable.all_free_variables
           |> List.dedup_and_sort ~compare:Type.Variable.compare
@@ -640,7 +640,7 @@ module State (Context : Context) = struct
         let return_annotation =
           let annotation =
             let parser = GlobalResolution.annotation_parser global_resolution in
-            Annotated.Callable.return_annotation ~signature ~parser
+            Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
           in
           if async then
             Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -3017,7 +3017,7 @@ module State (Context : Context) = struct
       let return_annotation =
         let annotation =
           let parser = GlobalResolution.annotation_parser global_resolution in
-          Annotated.Callable.return_annotation ~signature ~parser
+          Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
         in
         if async then
           Type.coroutine_value annotation |> Option.value ~default:Type.Top
