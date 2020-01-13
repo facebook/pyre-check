@@ -94,14 +94,16 @@ class Registry:
             cls.default_generators.append(name)
 
     @classmethod
-    def generate_models(cls, generator_names: Iterable[str]) -> Dict[str, Set[str]]:
+    def generate_models(
+        cls, generator_names: Iterable[str], logger: Optional[str] = None
+    ) -> Dict[str, Set[str]]:
         models = {}
         for name in generator_names:
             LOG.info("Computing models for `%s`", name)
             start = time.time()
             generator = cls.generators[name]()
             models[name] = generator.generate_models()
-            logger = Configuration.logger
+            logger = logger or Configuration.logger
             if logger is not None:
                 elapsed_time = int((time.time() - start) * 1000)
                 log_statistics(

@@ -46,8 +46,8 @@ class ClassSourceGenerator(ConstructorGenerator):
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
         return FunctionTainter(
-            whitelisted_classes=self.whitelisted_classes,
             whitelisted_views=self.whitelisted_views,
+            whitelisted_classes=self.whitelisted_classes,
         ).taint_functions(functions_to_model)
 
 
