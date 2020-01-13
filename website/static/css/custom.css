@@ -112,3 +112,7 @@ footer.nav-footer .sitemap {
 
 @media only screen and (min-width: 1500px) {
 }
+
+article a {
+  text-decoration: underline;
+}
