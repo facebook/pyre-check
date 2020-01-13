@@ -9,16 +9,16 @@
 import logging
 from typing import Callable, Iterable, List, Optional
 
-from .constructor_generator import ConstructorGenerator
+from .constructor_generator import gather_all_constructors_in_hierarchy
 from .function_tainter import taint_functions
 from .model import Model
-from .model_generator import Configuration, Registry
+from .model_generator import Configuration, ModelGenerator, Registry
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class ClassSourceGenerator(ConstructorGenerator):
+class ClassSourceGenerator(ModelGenerator):
     """
     This Generator uses classes_to_taint to taint the __init__
     functions of the classes passed as fully qualified strings. All recursive
@@ -34,13 +34,18 @@ class ClassSourceGenerator(ConstructorGenerator):
         whitelisted_views: Optional[List[str]] = None,
         classes_to_taint: Optional[List[str]] = None,
     ) -> None:
-        super().__init__(classes_to_taint or Configuration.classes_to_taint)
+        self.classes_to_taint: List[
+            str
+        ] = classes_to_taint or Configuration.classes_to_taint or []
         self.whitelisted_classes: List[str] = (
             whitelisted_classes or Configuration.whitelisted_classes
         )
         self.whitelisted_views: List[str] = (
             whitelisted_views or Configuration.whitelisted_views
         )
+
+    def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+        return gather_all_constructors_in_hierarchy(self.classes_to_taint)
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
