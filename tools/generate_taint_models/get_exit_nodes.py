@@ -10,11 +10,11 @@ from typing import Callable, Iterable, List, Optional
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import Configuration, Registry
-from .view_generator import DynamicURLType, ViewGenerator
+from .model_generator import Configuration, ModelGenerator, Registry
+from .view_generator import DynamicURLType, get_all_views
 
 
-class ExitNodeGenerator(ViewGenerator):
+class ExitNodeGenerator(ModelGenerator):
     def __init__(
         self,
         urls_module: Optional[str] = None,
@@ -22,14 +22,26 @@ class ExitNodeGenerator(ViewGenerator):
         url_pattern_type: Optional[DynamicURLType] = None,
         whitelisted_views: Optional[List[str]] = None,
     ) -> None:
-        super().__init__(
-            urls_module=urls_module,
-            url_resolver_type=url_resolver_type,
-            url_pattern_type=url_pattern_type,
+        self.urls_module: Optional[str] = urls_module or Configuration.urls_module
+        self.url_resolver_type: DynamicURLType = (
+            url_resolver_type or Configuration.url_resolver_type
+        )
+        self.url_pattern_type: DynamicURLType = (
+            url_pattern_type or Configuration.url_pattern_type
         )
         self.whitelisted_views: List[
             str
         ] = whitelisted_views or Configuration.whitelisted_views
+
+    def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+        urls_module = self.urls_module
+        if urls_module is None:
+            return []
+        return get_all_views(
+            urls_module=urls_module,
+            url_resolver_type=self.url_resolver_type,
+            url_pattern_type=self.url_pattern_type,
+        )
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
