@@ -440,6 +440,29 @@ let test_check_callable context =
       "Revealed type [-1]: Revealed type for `ret` is `typing.Callable[[], int]`.";
       "Revealed type [-1]: Revealed type for `ret` is `Optional[typing.Callable[[], int]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Union, Callable
+      def foo(x: Union[Callable[[], int], int]) -> None:
+        if callable(x):
+          reveal_type(x)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Union[typing.Callable[[], int], int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union, Type
+      class Constructable:
+        def __init__(self, x:int) -> None:
+          return
+      def foo(x: Union[int, Type[Constructable]]) -> None:
+        if callable(x):
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Type[Constructable]`."];
   ()
 
 
