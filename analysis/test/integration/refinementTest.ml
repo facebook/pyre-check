@@ -461,8 +461,52 @@ let test_check_callable context =
       def foo(x: Union[int, Type[Constructable]]) -> None:
         if callable(x):
           reveal_type(x)
+        else:
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `Type[Constructable]`."];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Type[Constructable]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union, Callable
+      def foo(x: Union[Callable[[int], str], int]) -> None:
+        if not callable(x):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int], str]`.";
+    ];
+  (* Look into bottoming callable expressions *)
+  assert_type_errors
+    {|
+      from typing import Callable
+      def foo(x: Callable[[], int]) -> None:
+        if callable(x):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], int]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x:int) -> None:
+        if callable(x):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[..., object]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
   ()
 
 

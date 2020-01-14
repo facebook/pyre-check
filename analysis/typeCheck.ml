@@ -4026,25 +4026,22 @@ module State (Context : Context) = struct
               arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
             }
           when is_simple_name name ->
+            let set_local reference annotation =
+              Resolution.set_local resolution ~reference ~annotation
+            in
             let resolution =
               match refinable_annotation name with
               | Some (reference, existing_annotation) ->
+                  let undefined =
+                    Type.Callable.create ~parameters:Undefined ~annotation:Type.object_primitive ()
+                  in
                   let { consistent_with_boundary; _ } =
-                    partition
-                      (Annotation.annotation existing_annotation)
-                      ~boundary:
-                        (Type.Callable.create
-                           ~parameters:Undefined
-                           ~annotation:Type.object_primitive
-                           ())
+                    partition (Annotation.annotation existing_annotation) ~boundary:undefined
                   in
                   if Type.equal consistent_with_boundary Type.Bottom then
-                    resolution
+                    Annotation.create undefined |> set_local reference
                   else
-                    Resolution.set_local
-                      resolution
-                      ~reference
-                      ~annotation:(Annotation.create consistent_with_boundary)
+                    Annotation.create consistent_with_boundary |> set_local reference
               | _ -> resolution
             in
             { state with resolution }
@@ -4122,6 +4119,41 @@ module State (Context : Context) = struct
             | _, { Node.value = Name name; _ } when is_simple_name name ->
                 { state with resolution = resolve ~reference:(name_to_reference_exn name) }
             | _ -> state )
+        | UnaryOperator
+            {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand =
+                {
+                  Node.value =
+                    Call
+                      {
+                        callee = { Node.value = Name (Name.Identifier "callable"); _ };
+                        arguments =
+                          [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+                      };
+                  _;
+                };
+            }
+          when is_simple_name name ->
+            let resolution =
+              match refinable_annotation name with
+              | Some (reference, existing_annotation) ->
+                  let { not_consistent_with_boundary; _ } =
+                    partition
+                      (Annotation.annotation existing_annotation)
+                      ~boundary:
+                        (Type.Callable.create
+                           ~parameters:Undefined
+                           ~annotation:Type.object_primitive
+                           ())
+                  in
+                  not_consistent_with_boundary
+                  >>| Annotation.create
+                  >>| (fun annotation -> Resolution.set_local resolution ~reference ~annotation)
+                  |> Option.value ~default:resolution
+              | _ -> resolution
+            in
+            { state with resolution }
         | Call
             {
               callee = { Node.value = Name (Name.Identifier "all"); _ };
