@@ -678,7 +678,7 @@ let test_lookup_imports context =
     |} in
   assert_annotation_list
     ~lookup:(generate_lookup ~context source)
-    ["2:19-2:23/typing.TypeAlias"; "2:27-2:28/typing.TypeAlias"];
+    ["2:19-2:23/typing.Type[list]"; "2:27-2:28/typing.Type[list]"];
 
   let source =
     {|

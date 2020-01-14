@@ -96,6 +96,42 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         >>| (fun callable -> Type.Callable callable)
         >>| Annotation.create_immutable ~global:true
         >>| Node.create ~location:(Node.location head)
+    | SimpleAssign
+        {
+          explicit_annotation = None;
+          value =
+            {
+              Node.value =
+                Call
+                  {
+                    callee =
+                      {
+                        value =
+                          Name
+                            (Attribute
+                              {
+                                base = { Node.value = Name (Identifier "typing"); _ };
+                                attribute = "TypeAlias";
+                                _;
+                              });
+                        _;
+                      };
+                    _;
+                  };
+              _;
+            };
+          target_location = location;
+        } ->
+        Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
+        |> Node.create ~location
+        |> AttributeResolution.ReadOnly.parse_annotation
+             ~allow_invalid_type_parameters:true
+             ?dependency
+             attribute_resolution
+        |> Type.meta
+        |> Annotation.create_immutable ~global:true
+        |> Node.create ~location
+        |> Option.some
     | SimpleAssign { explicit_annotation; value; target_location } ->
         let explicit_annotation =
           explicit_annotation

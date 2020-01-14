@@ -201,10 +201,22 @@ let test_check_assign context =
       import typing
       x = typing.List["foo"]
       reveal_type(x)
+      class foo: pass
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[foo]]`."];
+  assert_type_errors
+    {|
+      import typing
+      x = typing.List["foo"]
+      reveal_type(x)
     |}
     [
+      "Incomplete type [37]: Type `typing.Type[typing.List[Variable[_T]]]` inferred for `x` is \
+       incomplete, add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` for 1st anonymous \
+       parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[typing.Any]]`.";
     ];
   assert_type_errors
     {|

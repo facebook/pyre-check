@@ -660,11 +660,7 @@ let test_check_function_parameter_errors context =
       def meta(x: typing.Type[_T]) -> None: ...
       meta(typing.Dict)
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got "
-      ^ "`typing.TypeAlias`.";
-    ]
+    []
 
 
 let test_check_function_overloads context =
