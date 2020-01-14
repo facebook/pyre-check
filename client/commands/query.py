@@ -5,6 +5,7 @@
 
 
 import argparse
+import json
 import logging
 import os
 import re
@@ -14,7 +15,7 @@ from typing import Dict, List, Optional
 from .. import json_rpc, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command
+from .command import Command, Result
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -86,3 +87,10 @@ class Query(Command):
             result = self._call_client(command=self.NAME)
             result.check()
             log.stdout.write(result.output)
+
+    def _socket_result_handler(self, result: Result) -> None:
+        if self.query == "help":
+            response = json.loads(result.output).get("response")
+            log.stdout.write(response.get("help"))
+            return
+        log.stdout.write(result.output)

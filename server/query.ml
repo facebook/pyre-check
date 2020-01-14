@@ -69,6 +69,7 @@ let help () =
         Some
           "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
            to model path in configuration if no parameter is passed in."
+    | Help _ -> None
   in
   let path = Path.current_working_directory () in
   let empty = Expression.Name (Name.Identifier "") |> Node.create_with_default_location in
@@ -223,6 +224,7 @@ let parse_query
             | _ -> raise (InvalidQuery "Too many arguments to `dump_memory_to_sqlite`")
           in
           Request.TypeQueryRequest (DumpMemoryToSqlite path)
+      | "help", _ -> Request.TypeQueryRequest (Help (help ()))
       | "is_compatible_with", [left; right] ->
           Request.TypeQueryRequest (IsCompatibleWith (access left, access right))
       | "join", [left; right] -> Request.TypeQueryRequest (Join (access left, access right))
@@ -278,6 +280,7 @@ let parse_query
           in
           Request.TypeQueryRequest (ValidateTaintModels (Some path))
       | _ -> raise (InvalidQuery "unexpected query call") )
+  | _ when String.equal query "help" -> Request.TypeQueryRequest (Help (help ()))
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error message ->
       raise (InvalidQuery ("failed to parse query: " ^ message))

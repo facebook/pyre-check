@@ -60,6 +60,7 @@ module TypeQuery = struct
     | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
+    | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | Join of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
@@ -202,6 +203,7 @@ module TypeQuery = struct
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | Errors of Analysis.Error.Instantiated.t list
+    | Help of string
     | FoundAttributes of attribute list
     | FoundDefines of define list
     | FoundKeyMapping of key_mapping list
@@ -290,6 +292,7 @@ module TypeQuery = struct
                      Analysis.Error.Instantiated.to_json ~show_error_traces:true error)
                    errors) );
           ]
+    | Help string -> `Assoc ["help", `String string]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]

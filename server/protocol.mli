@@ -60,6 +60,7 @@ module TypeQuery : sig
     | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
+    | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | Join of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
@@ -200,6 +201,7 @@ module TypeQuery : sig
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | Errors of Error.Instantiated.t list
+    | Help of string
     | FoundAttributes of attribute list
     | FoundDefines of define list
     | FoundKeyMapping of key_mapping list

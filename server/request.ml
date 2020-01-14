@@ -529,6 +529,7 @@ let process_type_query_request
           (Timer.stop timer |> Time.Span.to_sec)
           path;
         TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
+    | TypeQuery.Help help_list -> TypeQuery.Response (TypeQuery.Help help_list)
     | TypeQuery.IsCompatibleWith (left, right) ->
         (* We need a special version of parse_and_validate to handle the "unknown" type that
            Monkeycheck may send us *)
