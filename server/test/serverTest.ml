@@ -23,7 +23,7 @@ let connections persistent_clients =
           Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           persistent_clients;
-          file_notifiers = [];
+          json_sockets = [];
         };
   }
 

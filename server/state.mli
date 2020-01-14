@@ -11,7 +11,7 @@ type raw_connections = {
   socket: Socket.t;
   json_socket: Socket.t;
   persistent_clients: int Socket.Map.t;
-  file_notifiers: Socket.t list;
+  json_sockets: Socket.t list;
 }
 
 type connections = {

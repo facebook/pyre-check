@@ -175,7 +175,7 @@ let test_invalid_configuration context =
     Network.Socket.initialize_unix_socket path
   in
   let connections =
-    ref { State.socket; persistent_clients = Network.Socket.Table.create (); file_notifiers = [] }
+    ref { State.socket; persistent_clients = Network.Socket.Table.create (); json_sockets = [] }
   in
   (* Trying to load from an incompatible configuration raises an exception. *)
   let saved_state_action =

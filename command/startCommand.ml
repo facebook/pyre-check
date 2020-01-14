@@ -118,13 +118,13 @@ let computation_thread
                 let out_channel = Unix.out_channel_of_descr socket in
                 LanguageServer.Protocol.write_message out_channel response;
                 Out_channel.flush out_channel;
-                Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
+                Connections.remove_json_socket ~connections:state.connections ~socket |> ignore
               with
               | Unix.Unix_error (name, kind, parameters) ->
-                  Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore;
+                  Connections.remove_json_socket ~connections:state.connections ~socket |> ignore;
                   Log.log_unix_error (name, kind, parameters)
               | _ ->
-                  Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore;
+                  Connections.remove_json_socket ~connections:state.connections ~socket |> ignore;
                   Log.error "Socket error"
             in
             ( match request with
@@ -271,10 +271,10 @@ let request_handler_thread
     | Yojson.Json_error _
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "File notifier disconnected";
-        Connections.remove_file_notifier ~connections ~socket
+        Connections.remove_json_socket ~connections ~socket
   in
   let rec loop () =
-    let { socket = server_socket; json_socket; persistent_clients; file_notifiers; _ } =
+    let { socket = server_socket; json_socket; persistent_clients; json_sockets; _ } =
       Mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
@@ -283,7 +283,7 @@ let request_handler_thread
     let readable =
       Unix.select
         ~restart:true
-        ~read:((server_socket :: json_socket :: Map.keys persistent_clients) @ file_notifiers)
+        ~read:((server_socket :: json_socket :: Map.keys persistent_clients) @ json_sockets)
         ~write:[]
         ~except:[]
         ~timeout:(`After (Time.of_sec 5.0))
@@ -325,7 +325,7 @@ let request_handler_thread
           |> LanguageServer.Protocol.read_message
           >>| LanguageServer.Types.HandshakeClient.of_yojson
           |> function
-          | Some (Ok _) -> Connections.add_file_notifier ~connections ~socket:new_socket
+          | Some (Ok _) -> Connections.add_json_socket ~connections ~socket:new_socket
           | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
           | None -> Log.warning "Failed to parse handshake as LSP."
         with
@@ -366,7 +366,7 @@ let serve
       {
         lock = Mutex.create ();
         connections =
-          ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] };
+          ref { socket; json_socket; persistent_clients = Socket.Map.empty; json_sockets = [] };
       }
     in
     (* Register signal handlers. *)

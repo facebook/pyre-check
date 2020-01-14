@@ -19,9 +19,9 @@ module type Connections = sig
 
   val broadcast_response : connections:State.connections -> response:Protocol.response -> unit
 
-  val add_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
+  val add_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
-  val remove_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
+  val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 end
 
 module Make (Socket : sig

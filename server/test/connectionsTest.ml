@@ -126,29 +126,29 @@ let test_remove_persistent_client _ =
   assert_equal true (Hash_set.mem TrackedWrites.closed !+42)
 
 
-let test_file_notifiers _ =
-  let assert_file_notifiers { Server.State.connections; lock = _ } expected =
-    let { Server.State.file_notifiers; _ } = !connections in
-    assert_equal expected file_notifiers
+let test_json_sockets _ =
+  let assert_json_sockets { Server.State.connections; lock = _ } expected =
+    let { Server.State.json_sockets; _ } = !connections in
+    assert_equal expected json_sockets
   in
   TrackedWrites.clear ();
   let mock_connections = ServerTest.connections [] in
-  assert_file_notifiers mock_connections [];
-  Connections.add_file_notifier ~connections:mock_connections ~socket:!+42;
-  assert_file_notifiers mock_connections [!+42];
-  Connections.add_file_notifier ~connections:mock_connections ~socket:!+43;
-  Connections.add_file_notifier ~connections:mock_connections ~socket:!+44;
-  assert_file_notifiers mock_connections [!+44; !+43; !+42];
+  assert_json_sockets mock_connections [];
+  Connections.add_json_socket ~connections:mock_connections ~socket:!+42;
+  assert_json_sockets mock_connections [!+42];
+  Connections.add_json_socket ~connections:mock_connections ~socket:!+43;
+  Connections.add_json_socket ~connections:mock_connections ~socket:!+44;
+  assert_json_sockets mock_connections [!+44; !+43; !+42];
   assert_equal false (Hash_set.mem TrackedWrites.closed !+43);
 
   (* Removing a file notifier preserves order. *)
-  Connections.remove_file_notifier ~connections:mock_connections ~socket:!+43;
-  assert_file_notifiers mock_connections [!+44; !+42];
+  Connections.remove_json_socket ~connections:mock_connections ~socket:!+43;
+  assert_json_sockets mock_connections [!+44; !+42];
   assert_equal true (Hash_set.mem TrackedWrites.closed !+43);
 
   (* It's a no-op to remove a non-existent file notifier. *)
-  Connections.remove_file_notifier ~connections:mock_connections ~socket:!+43;
-  assert_file_notifiers mock_connections [!+44; !+42]
+  Connections.remove_json_socket ~connections:mock_connections ~socket:!+43;
+  assert_json_sockets mock_connections [!+44; !+42]
 
 
 let () =
@@ -158,6 +158,6 @@ let () =
          "write_to_persistent_client" >:: test_write_to_persistent_client;
          "add_persistent_client" >:: test_add_persistent_client;
          "remove_persistent_client" >:: test_remove_persistent_client;
-         "file_notifiers" >:: test_file_notifiers;
+         "json_sockets" >:: test_json_sockets;
        ]
   |> Test.run

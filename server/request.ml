@@ -1074,8 +1074,8 @@ let rec process
           LookupCache.evict_path ~state ~configuration path;
           let check_on_save =
             Mutex.critical_section connections.lock ~f:(fun () ->
-                let { file_notifiers; _ } = !(connections.connections) in
-                List.is_empty file_notifiers)
+                let { json_sockets; _ } = !(connections.connections) in
+                List.is_empty json_sockets)
           in
           if check_on_save then
             let configuration = { configuration with include_hints = true } in

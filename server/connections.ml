@@ -19,9 +19,9 @@ module type Connections = sig
 
   val broadcast_response : connections:State.connections -> response:Protocol.response -> unit
 
-  val add_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
+  val add_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
-  val remove_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
+  val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 end
 
 module Make (Socket : sig
@@ -89,16 +89,16 @@ end) : Connections = struct
           { cached_connections with persistent_clients = Map.remove persistent_clients socket })
 
 
-  let add_file_notifier ~connections:{ State.lock; connections; _ } ~socket =
+  let add_json_socket ~connections:{ State.lock; connections; _ } ~socket =
     Mutex.critical_section lock ~f:(fun () ->
-        let { State.file_notifiers; _ } = !connections in
-        connections := { !connections with file_notifiers = socket :: file_notifiers })
+        let { State.json_sockets; _ } = !connections in
+        connections := { !connections with json_sockets = socket :: json_sockets })
 
 
-  let remove_file_notifier ~connections:{ State.lock; connections; _ } ~socket =
+  let remove_json_socket ~connections:{ State.lock; connections; _ } ~socket =
     Mutex.critical_section lock ~f:(fun () ->
-        let ({ State.file_notifiers; _ } as cached_connections) = !connections in
-        let file_notifiers =
+        let ({ State.json_sockets; _ } as cached_connections) = !connections in
+        let json_sockets =
           List.filter
             ~f:(fun file_notifier_socket ->
               if socket = file_notifier_socket then (
@@ -107,9 +107,9 @@ end) : Connections = struct
                 false )
               else
                 true)
-            file_notifiers
+            json_sockets
         in
-        connections := { cached_connections with file_notifiers })
+        connections := { cached_connections with json_sockets })
 end
 
 module Unix = Make (struct
