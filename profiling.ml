@@ -5,6 +5,7 @@
 
 open Core
 open Pyre
+module Worker = Hack_parallel.Std.Worker
 
 module Event = struct
   type event_type =
@@ -14,6 +15,7 @@ module Event = struct
 
   type t = {
     name: string;
+    worker_id: int;
     pid: int;
     event_type: event_type;
     timestamp: int;
@@ -32,7 +34,8 @@ module Event = struct
   let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
     let pid = Unix.getpid () |> Pid.to_int in
-    { name; pid; event_type; timestamp; tags }
+    let worker_id = Worker.current_worker_id () in
+    { name; worker_id; pid; event_type; timestamp; tags }
 end
 
 let log_to_path path ~event_creator =

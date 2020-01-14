@@ -37,8 +37,6 @@ exception Worker_failed_to_send_job of send_job_failure
 type t
 
 
-type call_wrapper = { wrap: 'x 'b. ('x -> 'b) -> 'x -> 'b }
-
 (*****************************************************************************)
 (* The handle is what we get back when we start a job. It's a "future"
  * (sometimes called a "promise"). The scheduler uses the handle to retrieve
@@ -51,9 +49,8 @@ type 'a entry
 val register_entry_point:
   restore:('a -> unit) -> 'a entry
 
-(** Creates a pool of workers. See docs in Worker.t for call_wrapper. *)
+(** Creates a pool of workers. *)
 val make:
-  ?call_wrapper: call_wrapper ->
   saved_state : 'a ->
   entry       : 'a entry ->
   nbr_procs   : int ->
@@ -79,3 +76,7 @@ val get_worker: 'a handle -> t
 
 (* Killall the workers *)
 val killall: unit -> unit
+
+
+(* Return the id of the worker to which the current process belong. 0 means the master process *)
+val current_worker_id: unit -> int

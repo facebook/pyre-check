@@ -11,6 +11,7 @@ module Event : sig
 
   type t = {
     name: string;
+    worker_id: int;
     pid: int;
     event_type: event_type;
     timestamp: int;

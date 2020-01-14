@@ -274,9 +274,6 @@ module Std : sig
     (* The type of a worker visible to the outside world *)
     type t
 
-
-    type call_wrapper = { wrap: 'x 'b. ('x -> 'b) -> 'x -> 'b }
-
     (*****************************************************************************)
     (* The handle is what we get back when we start a job. It's a "future"
      * (sometimes called a "promise"). The scheduler uses the handle to retrieve
@@ -289,9 +286,8 @@ module Std : sig
     val register_entry_point:
       restore:('a -> unit) -> 'a entry
 
-    (** Creates a pool of workers. See docs in Worker.t for call_wrapper. *)
+    (** Creates a pool of workers. *)
     val make:
-      ?call_wrapper: call_wrapper ->
       saved_state : 'a ->
       entry       : 'a entry ->
       nbr_procs   : int ->
@@ -317,6 +313,8 @@ module Std : sig
 
     (* Killall the workers *)
     val killall: unit -> unit
+
+    val current_worker_id: unit -> int
   end
 
 

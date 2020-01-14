@@ -26,7 +26,6 @@ let create
   let heap_handle = Memory.get_heap_handle configuration in
   let workers =
     Hack_parallel.Std.Worker.make
-      ?call_wrapper:None
       ~saved_state:()
       ~entry
       ~nbr_procs:number_of_workers

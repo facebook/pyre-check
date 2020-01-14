@@ -85,7 +85,7 @@ type t = {
    * This allows universal handling of workload at the time we create the actual
    * workers. For example, this can be useful to handle exceptions uniformly
    * across workers regardless what workload is called on them. *)
-  call_wrapper: call_wrapper option;
+  call_wrapper: call_wrapper;
 
   (* Sanity check: is the worker still available ? *)
   mutable killed: bool;
@@ -259,18 +259,23 @@ let register_entry_point ~restore =
 
 let workers = ref []
 
-(* Build one worker. *)
-let make_one ?call_wrapper spawn id =
-  if id >= max_workers then failwith "Too many workers";
+let current_worker_id = ref 0
 
+(* Build one worker. *)
+let make_one spawn id =
+  if id >= max_workers then failwith "Too many workers";
   let prespawned = if not use_prespawned then None else Some (spawn ()) in
-  let worker = { call_wrapper; id; busy = false; killed = false; prespawned; spawn } in
+  let wrap f input =
+    current_worker_id := id;
+    f input
+  in
+  let worker = { call_wrapper = { wrap }; id; busy = false; killed = false; prespawned; spawn } in
   workers := worker :: !workers;
   worker
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
- * the workload is wrapped in the calL_wrapper. *)
-let make ?call_wrapper ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
+ * the workload is wrapped in the call_wrapper. *)
+let make ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
   let spawn _log_fd =
     Unix.clear_close_on_exec heap_handle.SharedMem.h_fd;
     let handle =
@@ -283,9 +288,11 @@ let make ?call_wrapper ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
   in
   let made_workers = ref [] in
   for n = 1 to nbr_procs do
-    made_workers := make_one ?call_wrapper spawn n :: !made_workers
+    made_workers := make_one spawn n :: !made_workers
   done;
   !made_workers
+
+let current_worker_id () = !current_worker_id
 
 (**************************************************************************
  * Send a job to a worker
@@ -321,11 +328,9 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   let infd = Daemon.descr_of_in_channel inc in
   let slave = { result; slave_pid; infd; worker = w; } in
   w.busy <- true;
-  let request = match w.call_wrapper with
-    | Some { wrap } ->
-        (Request (fun { send } -> send (wrap f x)))
-    | None -> (Request (fun { send } -> send (f x)))
-
+  let request =
+    let { wrap } = w.call_wrapper in
+    Request (fun { send } -> send (wrap f x))
   in
   (* Send the job to the slave. *)
   let () = try Daemon.to_channel outc
