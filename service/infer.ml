@@ -71,7 +71,7 @@ let infer
   check_directory_exists local_root;
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
-  let scheduler = Scheduler.create ~configuration ~bucket_multiplier:10 () in
+  let scheduler = Scheduler.create ~configuration () in
 
   let module_tracker = ModuleTracker.create configuration in
   let ast_environment = AstEnvironment.create module_tracker in

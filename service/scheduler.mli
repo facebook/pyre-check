@@ -8,7 +8,7 @@ module Daemon = Daemon
 
 type t
 
-val create : configuration:Configuration.Analysis.t -> ?bucket_multiplier:int -> unit -> t
+val create : configuration:Configuration.Analysis.t -> unit -> t
 
 val run_process : configuration:Configuration.Analysis.t -> (unit -> 'result) -> 'result
 

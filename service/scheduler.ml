@@ -11,7 +11,6 @@ type t = {
   is_parallel: bool;
   workers: Worker.t list;
   number_of_workers: int;
-  bucket_multiplier: int;
 }
 
 let number_of_workers { number_of_workers; _ } = number_of_workers
@@ -20,7 +19,6 @@ let entry = Worker.register_entry_point ~restore:(fun _ -> ())
 
 let create
     ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
-    ?(bucket_multiplier = 10)
     ()
   =
   let heap_handle = Memory.get_heap_handle configuration in
@@ -32,7 +30,7 @@ let create
       ~heap_handle
       ~gc_control:Memory.worker_garbage_control
   in
-  { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
+  { workers; number_of_workers; is_parallel = parallel }
 
 
 let run_process
@@ -50,7 +48,7 @@ let run_process
 
 
 let map_reduce
-    { workers; bucket_multiplier; number_of_workers; is_parallel; _ }
+    { workers; number_of_workers; is_parallel; _ }
     ?bucket_size
     ~configuration
     ~initial
@@ -66,9 +64,7 @@ let map_reduce
         ( match bucket_size with
         | Some exact_size when exact_size > 0 -> (List.length inputs / exact_size) + 1
         | _ ->
-            let bucket_multiplier =
-              Core.Int.min bucket_multiplier (1 + (List.length inputs / 400))
-            in
+            let bucket_multiplier = Core.Int.min 10 (1 + (List.length inputs / 400)) in
             number_of_workers * bucket_multiplier )
     in
     let map accumulator inputs = (fun () -> map accumulator inputs) |> run_process ~configuration in
@@ -109,7 +105,7 @@ let single_job { workers; _ } ~f work =
 let mock () =
   let configuration = Configuration.Analysis.create () in
   Memory.get_heap_handle configuration |> ignore;
-  { workers = []; number_of_workers = 1; bucket_multiplier = 1; is_parallel = false }
+  { workers = []; number_of_workers = 1; is_parallel = false }
 
 
 let is_parallel { is_parallel; _ } = is_parallel

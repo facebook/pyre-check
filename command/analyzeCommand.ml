@@ -94,11 +94,7 @@ let run_analysis
   in
   (fun () ->
     let timer = Timer.start () in
-    let bucket_multiplier =
-      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value) with
-      | _ -> 10
-    in
-    let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
+    let scheduler = Scheduler.create ~configuration () in
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax.";
     Taint.Model.get_model_sources

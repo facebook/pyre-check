@@ -29,12 +29,8 @@ let check
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   let scheduler =
-    let bucket_multiplier =
-      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value) with
-      | _ -> 10
-    in
     match original_scheduler with
-    | None -> Scheduler.create ~configuration ~bucket_multiplier ()
+    | None -> Scheduler.create ~configuration ()
     | Some scheduler -> scheduler
   in
   (* Profiling helper *)
