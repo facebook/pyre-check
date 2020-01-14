@@ -669,8 +669,8 @@ class Command(CommandParser, ABC):
         try:
             with SocketConnection(self._log_directory) as socket_connection:
                 socket_connection.perform_handshake(version_hash)
-                socket_connection.send_request(request)
-                response = json_rpc.read_response(socket_connection.input)
+                socket_connection.send(request)
+                response = socket_connection.read()
                 result = _convert_json_response_to_result(response)
                 result.check()
                 self._socket_result_handler(result)

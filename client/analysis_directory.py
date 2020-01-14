@@ -286,7 +286,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         try:
             with SocketConnection(configuration.log_directory) as socket_connection:
                 socket_connection.perform_handshake(configuration.version_hash)
-                socket_connection.send_request(show_status_message)
+                socket_connection.send(show_status_message)
         except (
             SocketException,
             ResourceWarning,
