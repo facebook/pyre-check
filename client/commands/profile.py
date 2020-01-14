@@ -23,6 +23,7 @@ PHASE_NAME: str = "phase_name"
 @dataclass(frozen=True)
 class EventMetadata:
     name: str
+    worker_id: int
     pid: int
     timestamp: int
     tags: Dict[str, str]
@@ -58,9 +59,11 @@ def _parse_tags(input: List[List[str]]) -> Dict[str, str]:
 
 
 def _parse_metadata(input_json: Dict[str, Any]) -> EventMetadata:
+    pid = input_json["pid"]
     return EventMetadata(
         name=input_json["name"],
-        pid=input_json["pid"],
+        worker_id=input_json.get("worker_id", pid),
+        pid=pid,
         timestamp=input_json["timestamp"],
         tags=_parse_tags(input_json.get("tags", [])),
     )
@@ -101,8 +104,8 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
             duration_us = event.duration
             start_time_us = event.metadata.timestamp - duration_us
             return {
-                "pid": event.metadata.pid,
-                "tid": 0,
+                "pid": event.metadata.worker_id,
+                "tid": event.metadata.pid,
                 "ts": start_time_us,
                 "ph": "X",
                 "name": event.metadata.name,
@@ -115,8 +118,8 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
                 key: int(value) for key, value in event.metadata.tags.items()
             }
             return {
-                "pid": event.metadata.pid,
-                "tid": 0,
+                "pid": event.metadata.worker_id,
+                "tid": event.metadata.pid,
                 "ts": timestamp_us,
                 "ph": "C",
                 "name": event.metadata.name,

@@ -22,6 +22,7 @@ class ProfileTest(unittest.TestCase):
                 """
                 {
                   "name": "Kara",
+                  "worker_id": 579102694,
                   "pid": 400,
                   "event_type": [ "Duration", 11 ],
                   "timestamp": 42,
@@ -32,7 +33,11 @@ class ProfileTest(unittest.TestCase):
             DurationEvent(
                 duration=11,
                 metadata=EventMetadata(
-                    name="Kara", pid=400, timestamp=42, tags={"actor": "Valorie Curry"}
+                    name="Kara",
+                    worker_id=579102694,
+                    pid=400,
+                    timestamp=42,
+                    tags={"actor": "Valorie Curry"},
                 ),
             ),
         )
@@ -41,6 +46,7 @@ class ProfileTest(unittest.TestCase):
                 """
                 {
                   "name": "Conor",
+                  "worker_id": 313248317,
                   "pid": 800,
                   "event_type": [ "Counter" ],
                   "timestamp": 43,
@@ -51,7 +57,11 @@ class ProfileTest(unittest.TestCase):
             CounterEvent(
                 description=None,
                 metadata=EventMetadata(
-                    name="Conor", pid=800, timestamp=43, tags={"actor": "Bryan Dechart"}
+                    name="Conor",
+                    worker_id=313248317,
+                    pid=800,
+                    timestamp=43,
+                    tags={"actor": "Bryan Dechart"},
                 ),
             ),
         )
@@ -60,6 +70,7 @@ class ProfileTest(unittest.TestCase):
                 """
                 {
                   "name": "Marcus",
+                  "worker_id": 684842971,
                   "pid": 200,
                   "event_type": [ "Counter", "ra9" ],
                   "timestamp": 44
@@ -68,7 +79,9 @@ class ProfileTest(unittest.TestCase):
             ),
             CounterEvent(
                 description="ra9",
-                metadata=EventMetadata(name="Marcus", pid=200, timestamp=44, tags={}),
+                metadata=EventMetadata(
+                    name="Marcus", worker_id=684842971, pid=200, timestamp=44, tags={}
+                ),
             ),
         )
 
@@ -95,6 +108,7 @@ class ProfileTest(unittest.TestCase):
                         duration=11,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=0,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase1"},
@@ -103,13 +117,18 @@ class ProfileTest(unittest.TestCase):
                     DurationEvent(
                         duration=11,
                         metadata=EventMetadata(
-                            name="initialization", pid=400, timestamp=42, tags={}
+                            name="initialization",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
                         ),
                     ),
                     DurationEvent(
                         duration=11,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=2,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase1"},
@@ -119,6 +138,7 @@ class ProfileTest(unittest.TestCase):
                         duration=12,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=3,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase2"},
@@ -128,6 +148,7 @@ class ProfileTest(unittest.TestCase):
                         duration=13,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=0,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase3"},
@@ -136,13 +157,18 @@ class ProfileTest(unittest.TestCase):
                     DurationEvent(
                         duration=1,
                         metadata=EventMetadata(
-                            name="incremental check", pid=400, timestamp=42, tags={}
+                            name="incremental check",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
                         ),
                     ),
                     DurationEvent(
                         duration=21,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=2,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase1"},
@@ -152,6 +178,7 @@ class ProfileTest(unittest.TestCase):
                         duration=22,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=3,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase2"},
@@ -160,13 +187,18 @@ class ProfileTest(unittest.TestCase):
                     DurationEvent(
                         duration=2,
                         metadata=EventMetadata(
-                            name="incremental check", pid=400, timestamp=42, tags={}
+                            name="incremental check",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
                         ),
                     ),
                     DurationEvent(
                         duration=31,
                         metadata=EventMetadata(
                             name="SomeUpdate",
+                            worker_id=1,
                             pid=400,
                             timestamp=42,
                             tags={"phase_name": "phase1"},
