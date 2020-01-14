@@ -24,9 +24,6 @@ let recheck
   =
   let timer = Timer.start () in
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
-  let scheduler =
-    Scheduler.with_parallel scheduler ~is_parallel:(List.length module_updates > 10)
-  in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
   Log.info "Parsing %d updated modules..." (List.length module_updates);
