@@ -414,10 +414,10 @@ let test_assert_contains_none context =
 
 
 let test_check_callable context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
-      from typing import Any, Dict, Optional
+      from typing import Dict, Optional
       class CallableClass:
         def __call__(self, x:int) -> str:
           return "A"
@@ -426,7 +426,21 @@ let test_check_callable context =
         if callable(ret):
           reveal_type(ret)
     |}
-    ["Revealed type [-1]: Revealed type for `ret` is `Optional[CallableClass]`."]
+    ["Revealed type [-1]: Revealed type for `ret` is `CallableClass`."];
+  assert_type_errors
+    {|
+      from typing import Dict, Callable, Optional
+      def foo(x: Dict[int, Optional[Callable[[], int]]]) -> None:
+        ret = x[0]
+        if callable(ret):
+          reveal_type(ret)
+        reveal_type(ret)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `ret` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `ret` is `Optional[typing.Callable[[], int]]`.";
+    ];
+  ()
 
 
 let () =

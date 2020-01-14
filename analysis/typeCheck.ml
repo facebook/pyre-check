@@ -4020,6 +4020,34 @@ module State (Context : Context) = struct
                     Annotation.create consistent_with_boundary |> set_local reference
             in
             { state with resolution }
+        | Call
+            {
+              callee = { Node.value = Name (Name.Identifier "callable"); _ };
+              arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+            }
+          when is_simple_name name ->
+            let resolution =
+              match refinable_annotation name with
+              | Some (reference, existing_annotation) ->
+                  let { consistent_with_boundary; _ } =
+                    partition
+                      (Annotation.annotation existing_annotation)
+                      ~boundary:
+                        (Type.Callable.create
+                           ~parameters:Undefined
+                           ~annotation:Type.object_primitive
+                           ())
+                  in
+                  if Type.equal consistent_with_boundary Type.Bottom then
+                    resolution
+                  else
+                    Resolution.set_local
+                      resolution
+                      ~reference
+                      ~annotation:(Annotation.create consistent_with_boundary)
+              | _ -> resolution
+            in
+            { state with resolution }
         | ComparisonOperator
             {
               left =
