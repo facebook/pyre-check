@@ -1164,8 +1164,8 @@ let test_list_variadics context =
       pass
     |}
     [
-      "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
-       variadic type parameter `test.Ts` was given for generic type list.";
+      "Invalid type parameters [24]: Single type parameter `Variable[_T]` expected, but a type \
+       parameter group `[test.Ts]` was given for generic type list.";
     ];
   assert_type_errors
     {|
@@ -1175,12 +1175,10 @@ let test_list_variadics context =
        pass
      |}
     [
-      "Invalid type parameters [24]: Concrete type parameters `Variable[_T], Variable[_S]` \
-       expected, but a variadic type parameter `test.Ts` was given for generic type dict.";
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1, \
+       use `typing.Dict` to avoid runtime subscripting errors.";
     ];
 
-  (* Concatenation isn't implemented yet, and I'm not even sure this is going to be the final
-   * syntax for it *)
   assert_type_errors
     {|
     from typing import Tuple, Optional
@@ -1191,7 +1189,7 @@ let test_list_variadics context =
       reveal_type(x)
     |}
     [
-      "Undefined or invalid type [11]: Annotation `Ts` is not defined as a type.";
+      "Invalid type [31]: Expression `typing.Tuple[(object, $local_test$Ts)]` is not a valid type.";
       "Invalid type variable [34]: The type variable `Ts` isn't present in the function's \
        parameters.";
       "Incomplete type [37]: Type `typing.Tuple[test.Ts]` inferred for `x` is incomplete, add an \
@@ -1202,7 +1200,7 @@ let test_list_variadics context =
     {|
     from typing import Callable, Tuple
     Ts = pyre_extensions.ListVariadic("Ts")
-    def tuple_to_callable(x: Tuple[Ts]) -> Callable[[Ts], int]: ...
+    def tuple_to_callable(x: Tuple[Ts]) -> Callable[Ts, int]: ...
     def foo(x: int, y: str, z: bool) -> None:
       reveal_type(tuple_to_callable((x, y, z)))
     |}
@@ -1214,7 +1212,7 @@ let test_list_variadics context =
     {|
     from typing import Tuple, Optional, Callable
     Ts = pyre_extensions.ListVariadic("Ts")
-    def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[[Ts], int]: ...
+    def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[Ts, int]: ...
     def foo() -> Callable[[int, str, bool], int]:
       f = tuple_to_callable()
       reveal_type(f)
@@ -1229,7 +1227,7 @@ let test_list_variadics context =
     {|
     from typing import Tuple, Optional, Callable
     Ts = pyre_extensions.ListVariadic("Ts")
-    def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[[Ts], int]: ...
+    def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[Ts, int]: ...
     def foo() -> Callable[[int, str, bool], int]:
       f: Callable[[int, str, bool], int] = tuple_to_callable()
       reveal_type(f)
@@ -1240,7 +1238,7 @@ let test_list_variadics context =
     {|
     from typing import Tuple, Optional, Callable
     Ts = pyre_extensions.ListVariadic("Ts")
-    def callable_to_tuple(f: Callable[[Ts], int]) -> Tuple[Ts]: ...
+    def callable_to_tuple(f: Callable[Ts, int]) -> Tuple[Ts]: ...
     def bar(x: int, y: str, z: bool) -> int:
       return 7
     def foo() -> Tuple[int, str, bool]:
@@ -1253,7 +1251,7 @@ let test_list_variadics context =
     {|
     from typing import Tuple, Optional, Callable
     Ts = pyre_extensions.ListVariadic("Ts")
-    def two_callables_to_tuple(f1: Callable[[Ts], int], f2: Callable[[Ts], int]) -> Tuple[Ts]: ...
+    def two_callables_to_tuple(f1: Callable[Ts, int], f2: Callable[Ts, int]) -> Tuple[Ts]: ...
     def bar(x: int, y: str, z: bool) -> int:
       return 7
     def barrel(a: float, b: str, c: bool) -> int:
@@ -1269,7 +1267,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def call_with_tuple(f: Callable[[Ts], TReturn], tupleargs: Tuple[Ts]) -> TReturn:
+    def call_with_tuple(f: Callable[Ts, TReturn], tupleargs: Tuple[Ts]) -> TReturn:
       return f( *tupleargs)
     def foo(x: int, y: str, z: bool) -> str: ...
     def bar(x: bool, y: int, z: float) -> int: ...
@@ -1291,7 +1289,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, Protocol
     Ts = pyre_extensions.ListVariadic("Ts")
     Tparams = pyre_extensions.ParameterSpecification("Tparams")
-    def callable_to_callable(f: Callable[[Ts], int]) -> Callable[[Ts], int]:
+    def callable_to_callable(f: Callable[Ts, int]) -> Callable[Ts, int]:
       return f
     def rich_callable_to_callable(f: Callable[TParams, int]) -> Callable[TParams, int]:
       return f
@@ -1356,7 +1354,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+    def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
       return f( *args)
     def foo(x: int, y: str, z: bool) -> str: ...
     def bar(x: bool, y: int, z: float) -> int: ...
@@ -1376,7 +1374,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+    def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
       return f( *args)
     def foo(x: int, y: str, z: bool) -> str: ...
     def bar(x: int, y: int, z: int) -> int: ...
@@ -1394,7 +1392,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+    def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
       return f( *args)
     def foo(x: int, y: str, z: bool) -> str: ...
     def bar(x: bool, y: int, z: float) -> int: ...
@@ -1490,7 +1488,7 @@ let test_map context =
     from pyre_extensions.type_variable_operators import Map
     Ts = ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def unwrap_with(c: Callable[[Map[List, Ts]], TReturn], t: Tuple[Map[List, Ts]]) -> TReturn:
+    def unwrap_with(c: Callable[Map[List, Ts], TReturn], t: Tuple[Map[List, Ts]]) -> TReturn:
       return c( *t)
     def foo(lx: List[int], ly: List[str]) -> bool:
       return False
@@ -1508,7 +1506,7 @@ let test_map context =
     from pyre_extensions.type_variable_operators import Map
     Ts = ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def better_map(func: Callable[[Ts], TReturn], *args: Map[Iterable, Ts]) -> TReturn: ...
+    def better_map(func: Callable[Ts, TReturn], *args: Map[Iterable, Ts]) -> TReturn: ...
     def takes_int(x: int) -> str: ...
     def takes_int_str(x: int, y: str) -> str: ...
     def foo() -> None:
@@ -1557,8 +1555,8 @@ let test_map context =
        pass
      |}
     [
-      "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
-       variadic type parameter `Map[list, test.Ts]` was given for generic type list.";
+      "Invalid type parameters [24]: Single type parameter `Variable[_T]` expected, but a type \
+       parameter group `[Map[list, test.Ts]]` was given for generic type list.";
       "Revealed type [-1]: Revealed type for `x` is `List[typing.Any]`.";
     ];
 
@@ -1657,7 +1655,34 @@ let test_user_defined_variadics context =
       "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`.";
     ];
-
+  (* Distinguishing between these two cases is the main reason we introduce the intermediate type
+     Type.Single *)
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List, TypeVar
+    from typing_extensions import Literal
+    from pyre_extensions.type_variable_operators import Concatenate
+    Ts = pyre_extensions.ListVariadic("Ts")
+    T = TypeVar("T")
+    One = Literal[1]
+    Two = Literal[2]
+    Three = Literal[3]
+    class Tensor(typing.Generic[T, Ts]):
+      def el(self) -> T: ...
+      def dims(self) -> Tuple[Ts]: ...
+    def foo(
+      valid: Tensor[int, [One, Two, Three]],
+      invalid: Tensor[[int], [One, Two, Three]]
+    ) -> None:
+      reveal_type(valid.el())
+      reveal_type(invalid.el())
+    |}
+    [
+      "Invalid type parameters [24]: Single type parameter `Variable[T]` expected, but a type \
+       parameter group `[int]` was given for generic type Tensor.";
+      "Revealed type [-1]: Revealed type for `valid.el()` is `int`.";
+      "Revealed type [-1]: Revealed type for `invalid.el()` is `typing.Any`.";
+    ];
   ()
 
 
@@ -1711,13 +1736,13 @@ let test_concatenation_operator context =
     from pyre_extensions.type_variable_operators import Concatenate
     Ts = pyre_extensions.ListVariadic("Ts")
     T = TypeVar("T")
-    class Tensor(typing.Generic[Concatenate[T, Ts]]):
+    class Tensor(typing.Generic[T, Ts]):
       def el(self) -> T: ...
       def dims(self) -> Tuple[Ts]: ...
     One = Literal[1]
     Two = Literal[2]
     Three = Literal[3]
-    def bar(t: Tensor[int, One, Two, Three]) -> None:
+    def bar(t: Tensor[int, [One, Two, Three]]) -> None:
       el = t.el()
       reveal_type(el)
       dims = t.dims()
@@ -1734,7 +1759,7 @@ let test_concatenation_operator context =
       from pyre_extensions.type_variable_operators import Concatenate
       Ts = pyre_extensions.ListVariadic("Ts")
 
-      def prepend_addition_argument(f: Callable[[Ts], int]) -> Callable[[Concatenate[int, Ts]], str]:
+      def prepend_addition_argument(f: Callable[Ts, int]) -> Callable[Concatenate[int, Ts], str]:
            def inner(x: int, *args: Ts) -> str:
                return str(x + f( *args))
            return inner
@@ -1757,8 +1782,8 @@ let test_concatenation_operator context =
       TReturn = TypeVar("TReturn")
 
       def simple_partial_application(
-        f: Callable[[Concatenate[float, Ts]], TReturn]
-      ) -> Callable[[Ts], TReturn]:
+        f: Callable[Concatenate[float, Ts], TReturn]
+      ) -> Callable[Ts, TReturn]:
           def inner( *args: Ts) -> TReturn:
               return f(42.0, *args)
           return inner
@@ -1770,6 +1795,39 @@ let test_concatenation_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[str, bool], int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, List, TypeVar
+      from typing_extensions import Literal
+      Ts = pyre_extensions.ListVariadic("Ts")
+      T = TypeVar("T")
+      class Tensor(typing.Generic[T, Ts]):
+        pass
+      def bar(t: Tensor[int, str]) -> None:
+        pass
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter group expected for variadic parameter `Ts`, \
+       but a single type `str` was given for generic type Tensor.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Generic, Tuple, List, TypeVar
+      from typing_extensions import Literal
+      T = TypeVar("T")
+      Ts1 = pyre_extensions.ListVariadic("Ts1")
+      Ts2 = pyre_extensions.ListVariadic("Ts2")
+      class Multi(typing.Generic[Ts1, T, Ts2]):
+        def first(self) -> Tuple[Ts1]: ...
+        def second(self) -> Tuple[Ts2]: ...
+      def bar(m: Multi[[int, str], float, [bool, int, bool]]) -> None:
+        reveal_type(m.first())
+        reveal_type(m.second())
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `m.first()` is `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `m.second()` is `typing.Tuple[bool, int, bool]`.";
     ];
   ()
 

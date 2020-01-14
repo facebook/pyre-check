@@ -406,7 +406,16 @@ let test_check_invalid_type context =
        except e as myexception:
          takes_exception(myexception)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      x: typing.Dict[int, [str]]
+    |}
+    [
+      "Invalid type parameters [24]: Single type parameter `Variable[_S]` expected, but a type \
+       parameter group `[str]` was given for generic type dict.";
+    ];
+  ()
 
 
 let test_check_illegal_annotation_target context =

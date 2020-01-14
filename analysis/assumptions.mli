@@ -13,12 +13,12 @@ module ProtocolAssumptions : sig
     :  candidate:Type.t ->
     protocol:Identifier.t ->
     t ->
-    Type.OrderedTypes.t option
+    Type.Parameter.t list option
 
   val add
     :  candidate:Type.t ->
     protocol:Identifier.t ->
-    protocol_parameters:Type.OrderedTypes.t ->
+    protocol_parameters:Type.Parameter.t list ->
     t ->
     t
 

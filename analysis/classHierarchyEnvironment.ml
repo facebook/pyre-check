@@ -64,7 +64,7 @@ let get_parents alias_environment name ~track_dependencies =
     inferred_base @ bases
   in
   let add_special_parents parents =
-    let simples = List.map ~f:(fun parent -> parent, Type.OrderedTypes.Concrete []) in
+    let simples = List.map ~f:(fun parent -> parent, []) in
     match parents, name with
     | _, "int" -> simples ["float"; "numbers.Integral"]
     | _, "float" -> simples ["complex"; "numbers.Rational"; "numbers.Real"]
@@ -141,7 +141,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     Format.asprintf
       "%s[%a]"
       (IndexTracker.annotation target)
-      Type.OrderedTypes.pp_concise
+      (Type.pp_parameters ~pp_type:Type.pp_concise)
       parameters
 
 

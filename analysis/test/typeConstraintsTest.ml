@@ -446,8 +446,8 @@ let test_multiple_variable_solution _ =
            ( list_variadic_a,
              Concrete
                [
-                 Parametric { name = "Foo"; parameters = Concrete [Type.integer] };
-                 Parametric { name = "Foo"; parameters = Concrete [Type.string] };
+                 Parametric { name = "Foo"; parameters = [Single Type.integer] };
+                 Parametric { name = "Foo"; parameters = [Single Type.string] };
                ] );
          ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
        ]);

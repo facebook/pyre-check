@@ -187,7 +187,7 @@ let test_get_completion_items context =
         ~cursor_position
         ~label:"Foo"
         ~kind:Types.CompletionItems.Kind.Variable
-        ~detail:"Type[Foo]"
+        ~detail:"Type[derp.Foo]"
         ~new_text:"Foo";
       create_completion_item
         ~cursor_position

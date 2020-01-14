@@ -139,6 +139,12 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module Parameter : sig
+    type 'annotation record =
+      | Single of 'annotation
+      | Group of 'annotation OrderedTypes.record
+  end
 end
 
 module Primitive : sig
@@ -172,7 +178,7 @@ and t =
   | Optional of t
   | Parametric of {
       name: Identifier.t;
-      parameters: t Record.OrderedTypes.record;
+      parameters: t Record.Parameter.record list;
     }
   | ParameterVariadicComponent of Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
@@ -205,19 +211,35 @@ include Hashable with type t := t
 
 val pp_concise : Format.formatter -> t -> unit
 
+module Parameter : sig
+  include module type of struct
+    include Record.Parameter
+  end
+
+  type t = type_t Record.Parameter.record [@@deriving compare, eq, sexp, show, hash]
+
+  val all_singles : t list -> type_t list option
+end
+
+val pp_parameters
+  :  pp_type:(Format.formatter -> type_t -> unit) ->
+  Format.formatter ->
+  Parameter.t sexp_list ->
+  unit
+
 val show_concise : t -> string
 
 val show_for_hover : t -> string
 
 val serialize : t -> string
 
-val parametric : string -> t Record.OrderedTypes.record -> t
+val parametric : string -> Parameter.t list -> t
 
 val annotated : t -> t
 
 val awaitable : t -> t
 
-val coroutine : t Record.OrderedTypes.record -> t
+val coroutine : Parameter.t list -> t
 
 val bool : t
 
@@ -456,7 +478,7 @@ val awaitable_value : t -> t option
 
 val coroutine_value : t -> t option
 
-val parameters : t -> t Record.OrderedTypes.record option
+val parameters : t -> Parameter.t list option
 
 val single_parameter : t -> t
 
@@ -547,7 +569,7 @@ module OrderedTypes : sig
   val concatenate : left:t -> right:t -> t option
 end
 
-val split : t -> t * OrderedTypes.t
+val split : t -> t * Parameter.t list
 
 val class_name : t -> Reference.t
 

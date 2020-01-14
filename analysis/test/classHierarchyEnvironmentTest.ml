@@ -27,11 +27,15 @@ let test_simple_registration context =
     let expected =
       expected
       >>| List.map ~f:(fun name ->
-              { ClassHierarchy.Target.target = IndexTracker.index name; parameters = Concrete [] })
+              { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
     in
     let printer v =
       let show_target_readable { ClassHierarchy.Target.target; parameters } =
-        Printf.sprintf "%s[%s]" (IndexTracker.annotation target) (Type.OrderedTypes.show parameters)
+        Format.asprintf
+          "%s[%a]"
+          (IndexTracker.annotation target)
+          (Type.pp_parameters ~pp_type:Type.pp)
+          parameters
       in
       v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
     in
@@ -88,7 +92,7 @@ let test_inferred_generic_base context =
       >>| List.map ~f:(fun (name, concretes) ->
               {
                 ClassHierarchy.Target.target = IndexTracker.index name;
-                parameters = Concrete concretes;
+                parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
               })
     in
     let printer v =
@@ -199,20 +203,18 @@ let test_updates context =
       | `Edges (class_name, dependency, expectation) ->
           let printer v =
             let show_target_readable { ClassHierarchy.Target.target; parameters } =
-              Printf.sprintf
-                "%s[%s]"
+              Format.asprintf
+                "%s[%a]"
                 (IndexTracker.annotation target)
-                (Type.OrderedTypes.show parameters)
+                (Type.pp_parameters ~pp_type:Type.pp)
+                parameters
             in
             v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
           in
           let expectation =
             expectation
             >>| List.map ~f:(fun name ->
-                    {
-                      ClassHierarchy.Target.target = IndexTracker.index name;
-                      parameters = Concrete [];
-                    })
+                    { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
           in
           ClassHierarchyEnvironment.ReadOnly.get_edges
             read_only

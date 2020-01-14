@@ -230,28 +230,28 @@ let is_invariance_mismatch resolution ~left ~right =
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
-        match
-          ( ClassHierarchy.variables (class_hierarchy resolution) left_name,
-            left_parameters,
-            right_parameters )
-        with
-        | Some (Unaries variables), Concrete left_parameters, Concrete right_parameters -> (
-            List.map3
-              variables
-              left_parameters
-              right_parameters
-              ~f:(fun { variance; _ } left right -> variance, left, right)
-            |> function
-            | List.Or_unequal_lengths.Ok list -> Some list
+        let variances =
+          ClassHierarchy.variables (class_hierarchy resolution) left_name
+          (* TODO(T47346673): Do this check when list variadics have variance *)
+          >>= ClassHierarchy.Variable.all_unary
+          >>| List.map ~f:(fun { Type.Variable.Unary.variance; _ } -> variance)
+        in
+        match variances with
+        | Some variances -> (
+            match List.zip left_parameters right_parameters with
+            | Ok zipped -> (
+                match List.zip zipped variances with
+                | Ok zipped ->
+                    List.map zipped ~f:(fun ((left, right), variance) -> variance, left, right)
+                    |> Option.some
+                | _ -> None )
             | _ -> None )
-        | Some (Concatenation _), _, _ ->
-            (* TODO(T47346673): Do this check when list variadics have variance *)
-            None
         | _ -> None
       in
       let due_to_invariant_variable (variance, left, right) =
-        match variance with
-        | Type.Variable.Invariant -> less_or_equal resolution ~left ~right
+        match variance, left, right with
+        | Type.Variable.Invariant, Type.Parameter.Single left, Type.Parameter.Single right ->
+            less_or_equal resolution ~left ~right
         | _ -> false
       in
       zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false

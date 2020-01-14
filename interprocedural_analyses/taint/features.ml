@@ -110,9 +110,7 @@ let add_type_breadcrumb ~resolution annotation =
     | Some Type.Bottom ->
         false
     | Some (Type.Optional annotation)
-    | Some
-        (Type.Parametric
-          { name = "typing.Awaitable"; parameters = Type.OrderedTypes.Concrete [annotation] }) ->
+    | Some (Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] }) ->
         matches_modulo_optional_and_awaitable ~f (Some annotation)
     | Some annotation -> f annotation
   in

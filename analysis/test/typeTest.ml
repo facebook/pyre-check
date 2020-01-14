@@ -10,7 +10,7 @@ open Analysis
 open Pyre
 open Test
 
-let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
 let create_concatenation ?head ?tail ?mappers variable
     : (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
@@ -45,13 +45,15 @@ let test_create _ =
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
       | _ -> None)
     "foo[Ts]"
-    (Type.parametric "foo" (Type.Variable.Variadic.List.self_reference variadic));
+    (Type.parametric "foo" [Group (Type.Variable.Variadic.List.self_reference variadic)]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
       | _ -> None)
     "foo[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]"
-    (Type.parametric "foo" (Concatenation (create_concatenation ~mappers:["list"] variadic)));
+    (Type.parametric
+       "foo"
+       [Group (Concatenation (create_concatenation ~mappers:["list"] variadic))]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -59,7 +61,7 @@ let test_create _ =
     "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"
     (Type.parametric
        "foo"
-       (Concatenation (create_concatenation ~head:[Type.integer; Type.bool] variadic)));
+       [Group (Concatenation (create_concatenation ~head:[Type.integer; Type.bool] variadic))]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -67,7 +69,7 @@ let test_create _ =
     "foo[pyre_extensions.type_variable_operators.Concatenate[Ts, int, bool]]"
     (Type.parametric
        "foo"
-       (Concatenation (create_concatenation ~tail:[Type.integer; Type.bool] variadic)));
+       [Group (Concatenation (create_concatenation ~tail:[Type.integer; Type.bool] variadic))]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -75,7 +77,9 @@ let test_create _ =
     "foo[pyre_extensions.type_variable_operators.Concatenate[int, Ts, bool]]"
     (Type.parametric
        "foo"
-       (Concatenation (create_concatenation ~head:[Type.integer] ~tail:[Type.bool] variadic)));
+       [
+         Group (Concatenation (create_concatenation ~head:[Type.integer] ~tail:[Type.bool] variadic));
+       ]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
@@ -84,14 +88,21 @@ let test_create _ =
      pyre_extensions.type_variable_operators.Map[list, Ts], bool]]"
     (Type.parametric
        "foo"
-       (Concatenation
-          (create_concatenation ~head:[Type.integer] ~tail:[Type.bool] ~mappers:["list"] variadic)));
+       [
+         Group
+           (Concatenation
+              (create_concatenation
+                 ~head:[Type.integer]
+                 ~tail:[Type.bool]
+                 ~mappers:["list"]
+                 variadic));
+       ]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
       | _ -> None)
     "foo[...]"
-    (Type.parametric "foo" Any);
+    (Type.parametric "foo" [Group Any]);
   assert_create "typing.List.__getitem__(int)" (Type.list Type.integer);
   assert_create
     "typing.Dict.__getitem__((int, str))"
@@ -445,7 +456,7 @@ let test_create _ =
     ~aliases:(function
       | "Ts" -> Some (Type.VariableAlias (ListVariadic (Type.Variable.Variadic.List.create "Ts")))
       | _ -> None)
-    "typing.Callable[[Ts], int]"
+    "typing.Callable[Ts, int]"
     (Type.Callable.create
        ~parameters:
          (Defined
@@ -528,19 +539,23 @@ let test_expression _ =
     (Type.Parametric
        {
          name = "foo.Variadic";
-         parameters = Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts"));
+         parameters =
+           [Group (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")))];
        })
     "foo.Variadic.__getitem__(Ts)";
   assert_expression
-    (Type.Parametric { name = "foo.Variadic"; parameters = Any })
+    (Type.Parametric { name = "foo.Variadic"; parameters = [Group Any] })
     "foo.Variadic.__getitem__(...)";
   assert_expression
     (Type.Parametric
        {
          name = "foo.Variadic";
          parameters =
-           Concatenation
-             (create_concatenation ~mappers:["Foo"] (Type.Variable.Variadic.List.create "Ts"));
+           [
+             Group
+               (Concatenation
+                  (create_concatenation ~mappers:["Foo"] (Type.Variable.Variadic.List.create "Ts")));
+           ];
        })
     "foo.Variadic.__getitem__(pyre_extensions.type_variable_operators.Map.__getitem__((Foo, Ts)))";
 
@@ -1945,8 +1960,8 @@ let test_replace_all _ =
        (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
        (Type.parametric
           "Baz"
-          (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")))))
-    (Type.parametric "Baz" ![Type.integer; Type.string]);
+          [Group (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")))]))
+    (Type.parametric "Baz" [Group (Concrete [Type.integer; Type.string])]);
   ()
 
 
@@ -1995,7 +2010,7 @@ let test_collect_all _ =
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all
        (Type.parametric
           "Huh"
-          (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic))))
+          [Group (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic))]))
     [Type.Variable.Variadic.List.create "Ts"];
   ()
 
@@ -2039,7 +2054,7 @@ let test_middle_singleton_replace_variable _ =
     (Type.Parametric
        {
          name = "Foo";
-         parameters = Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
+         parameters = [Single (Parametric { name = "Bar"; parameters = [Single Type.integer] })];
        });
 
   (* This approach is used to solve concretes against maps *)
@@ -2051,8 +2066,10 @@ let test_middle_singleton_replace_variable _ =
        {
          name = "Foo";
          parameters =
-           Concrete
-             [Parametric { name = "Bar"; parameters = Concrete [Type.Variable unary_variable] }];
+           [
+             Single
+               (Parametric { name = "Bar"; parameters = [Single (Type.Variable unary_variable)] });
+           ];
        });
   ()
 
@@ -2115,7 +2132,7 @@ let test_concatenation_operator_replace_variable _ =
               {
                 name = "Foo";
                 parameters =
-                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
+                  [Single (Parametric { name = "Bar"; parameters = [Single Type.integer] })];
               };
           ]));
   assert_replaces_into
@@ -2128,7 +2145,7 @@ let test_concatenation_operator_replace_variable _ =
               {
                 name = "Foo";
                 parameters =
-                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
+                  [Single (Parametric { name = "Bar"; parameters = [Single Type.integer] })];
               };
             Parametric
               {
@@ -2189,14 +2206,11 @@ let test_infer_transform _ =
     assert_equal (Type.infer_transform annotation) expected
   in
   assert_transform
-    ~annotation:
-      (Type.Parametric { name = "_PathLike"; parameters = Concrete [Type.Primitive "string"] })
-    ~expected:
-      (Type.Parametric { name = "PathLike"; parameters = Concrete [Type.Primitive "string"] });
+    ~annotation:(Type.Parametric { name = "_PathLike"; parameters = ![Type.Primitive "string"] })
+    ~expected:(Type.Parametric { name = "PathLike"; parameters = ![Type.Primitive "string"] });
   assert_transform
-    ~annotation:
-      (Type.Parametric { name = "typing.Dict"; parameters = Concrete [Type.Bottom; Type.Bottom] })
-    ~expected:(Type.Parametric { name = "dict"; parameters = Concrete [Type.Any; Type.Any] });
+    ~annotation:(Type.Parametric { name = "typing.Dict"; parameters = ![Type.Bottom; Type.Bottom] })
+    ~expected:(Type.Parametric { name = "dict"; parameters = ![Type.Any; Type.Any] });
   assert_transform
     ~annotation:
       (Type.Tuple
@@ -2213,22 +2227,18 @@ let test_infer_transform _ =
       (Type.Parametric
          {
            name = "Union";
-           parameters =
-             Concrete [Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "int"];
+           parameters = ![Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "int"];
          })
     ~expected:(Type.Union [Type.Primitive "int"; Type.Primitive "string"]);
   assert_transform
     ~annotation:
       (Type.Parametric
-         {
-           name = "Union";
-           parameters = Concrete [Type.Primitive "string"; Type.Primitive "string"];
-         })
+         { name = "Union"; parameters = ![Type.Primitive "string"; Type.Primitive "string"] })
     ~expected:(Type.Primitive "string");
   assert_transform
     ~annotation:
       (Type.Parametric
-         { name = "Union"; parameters = Concrete [Type.Optional Bottom; Type.Primitive "string"] })
+         { name = "Union"; parameters = ![Type.Optional Bottom; Type.Primitive "string"] })
     ~expected:(Type.Optional (Type.Primitive "string"))
 
 

@@ -566,13 +566,13 @@ let test_populate context =
   assert_equal (parse_annotation environment !"foo.foo") (Type.Primitive "foo.foo");
   assert_equal
     (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
-    (Type.parametric "Optional" (Concrete [Type.Primitive "foo.foo"]));
+    (Type.parametric "Optional" [Single (Type.Primitive "foo.foo")]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
-    (Type.parametric "collections.defaultdict" (Concrete [Type.Any; Type.Any]));
+    (Type.parametric "collections.defaultdict" [Single Type.Any; Single Type.Any]);
 
   (* Check custom class definitions. *)
   let global_resolution = GlobalResolution.create environment in
@@ -591,12 +591,7 @@ let test_populate context =
   assert_equal (parse_annotation environment !"test._T") (Type.variable "test._T");
   assert_equal (parse_annotation environment !"test.S") Type.string;
   assert_equal (parse_annotation environment !"test.S2") Type.string;
-  let assert_superclasses
-      ?(superclass_parameters = fun _ -> Type.OrderedTypes.Concrete [])
-      ~environment
-      base
-      ~superclasses
-    =
+  let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
     let (module TypeOrderHandler) = class_hierarchy environment in
     let index annotation = IndexTracker.index annotation in
     let targets = TypeOrderHandler.edges (index base) in
@@ -612,7 +607,7 @@ let test_populate context =
           let show_target { ClassHierarchy.Target.target; parameters } =
             let index = IndexTracker.show target in
             let target = IndexTracker.annotation target in
-            Format.asprintf "%s: %s%a" index target Type.OrderedTypes.pp_concise parameters
+            Format.asprintf "%s: %s%a" index target (Type.pp_parameters ~pp_type:Type.pp) parameters
           in
           List.to_string targets ~f:show_target
     in
@@ -1068,10 +1063,10 @@ let test_class_definition context =
       class baz(): pass
     |}] in
   assert_true (is_defined environment (Type.Primitive "baz.baz"));
-  assert_true (is_defined environment (Type.parametric "baz.baz" (Concrete [Type.integer])));
+  assert_true (is_defined environment (Type.parametric "baz.baz" [Single Type.integer]));
   assert_is_some (class_definition environment (Type.Primitive "baz.baz"));
   assert_false (is_defined environment (Type.Primitive "bar.bar"));
-  assert_false (is_defined environment (Type.parametric "bar.bar" (Concrete [Type.integer])));
+  assert_false (is_defined environment (Type.parametric "bar.bar" [Single Type.integer]));
   assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
   let any = class_definition environment Type.object_primitive |> value |> Node.value in
   assert_equal any.ClassSummary.name !&"object"
@@ -1229,8 +1224,7 @@ let test_deduplicate context =
         ~cmp:ListOrSet.equal
         ~printer:(ListOrSet.to_string ~f:ClassHierarchy.Target.show)
         (find_unsafe edges (index_of from))
-        (create
-           { ClassHierarchy.Target.target = index_of target; parameters = Concrete parameters })
+        (create { ClassHierarchy.Target.target = index_of target; parameters })
   end
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
@@ -1239,7 +1233,7 @@ let test_deduplicate context =
     Handler.edges
     "test.Zero"
     "test.One"
-    [Type.integer; Type.integer]
+    [Single Type.integer; Single Type.integer]
     (fun target -> [target]);
   ()
 
@@ -1284,7 +1278,7 @@ let test_remove_extra_edges_to_object context =
   assert_equal
     ~printer
     (find_unsafe Handler.edges zero_index)
-    [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
+    [{ ClassHierarchy.Target.target = one_index; parameters = [] }];
   ()
 
 

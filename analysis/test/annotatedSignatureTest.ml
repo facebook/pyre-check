@@ -480,7 +480,7 @@ let test_select context =
     (`NotFoundMismatchWithClosest
       ( "[[typing.Sequence[_T]], int]",
         Type.literal_integer 1,
-        Type.parametric "typing.Sequence" (Concrete [Type.variable "test._T"]),
+        Type.parametric "typing.Sequence" [Single (Type.variable "test._T")],
         None,
         1 ));
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
@@ -658,7 +658,7 @@ let test_select context =
     "(a=1)"
     (`NotFound ("[Tparams, int]", Some AttributeResolution.CallingParameterVariadicTypeVariable));
   assert_select
-    "[[Ts], int]"
+    "[Ts, int]"
     "(1, 'string', 1, 'string')"
     (`Found "[[$literal_one, $literal_string, $literal_one, $literal_string], int]");
   assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "[[int], int]");
@@ -702,11 +702,11 @@ let test_select context =
                mismatch = ConstraintFailure (Concrete [Type.float]);
              }) ));
   assert_select
-    "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], int]"
+    "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], int]"
     "([1,2,3], ['string', 'string'])"
     (`Found "[[typing.List[int], typing.List[str]], int]");
   assert_select
-    "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], \
+    "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], \
      typing.Tuple[pyre_extensions.type_variable_operators.Map[typing.Type, Ts]]]"
     "([1,2,3], ['string', 'string'])"
     (`Found

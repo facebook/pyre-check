@@ -1798,7 +1798,7 @@ module MockClassHierarchyHandler = struct
           Format.asprintf
             "%s [%a]"
             (IndexTracker.annotation target)
-            Type.OrderedTypes.pp_concise
+            (Type.pp_parameters ~pp_type:Type.pp_concise)
             parameters
         in
         targets |> List.map ~f:target |> String.concat ~sep:", "
@@ -1821,7 +1821,7 @@ module MockClassHierarchyHandler = struct
     end : ClassHierarchy.Handler )
 
 
-  let connect ?(parameters = Type.OrderedTypes.Concrete []) order ~predecessor ~successor =
+  let connect ?(parameters = []) order ~predecessor ~successor =
     let predecessor = IndexTracker.index predecessor in
     let successor = IndexTracker.index successor in
     let edges = order.edges in

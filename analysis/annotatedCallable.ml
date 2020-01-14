@@ -26,10 +26,10 @@ let return_annotation_without_applying_decorators
   =
   let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Top in
   if async && not generator then
-    Type.coroutine (Concrete [Type.Any; Type.Any; annotation])
+    Type.coroutine [Single Type.Any; Single Type.Any; Single annotation]
   else if Define.Signature.is_coroutine signature then
     match annotation with
-    | Type.Parametric { name = "typing.Generator"; parameters = Concrete [_; _; return_annotation] }
+    | Type.Parametric { name = "typing.Generator"; parameters = [_; _; Single return_annotation] }
       ->
         Type.awaitable return_annotation
     | _ -> Type.Top

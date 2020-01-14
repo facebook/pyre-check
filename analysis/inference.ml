@@ -313,7 +313,7 @@ module State (Context : Context) = struct
         when is_simple_name name && Type.is_list (resolve base) ->
           let base_element =
             match resolve base with
-            | Type.Parametric { name = "list"; parameters = Concrete [parameter] } -> parameter
+            | Type.Parametric { name = "list"; parameters = [Single parameter] } -> parameter
             | base -> base
           in
           let annotation =

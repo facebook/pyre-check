@@ -17,7 +17,7 @@ module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Argument = Call.Argument
 
-let ( !! ) concretes = Type.OrderedTypes.Concrete concretes
+let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
 let value option = Option.value_exn option
 
@@ -40,10 +40,12 @@ let test_generics context =
     match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
         let resolution = GlobalResolution.create global_environment in
-        let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
+        let printer generics =
+          Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp) generics
+        in
         assert_equal
           ~printer
-          ~cmp:Type.OrderedTypes.equal
+          ~cmp:(List.equal Type.Parameter.equal)
           ( Node.create_with_default_location definition
           |> Node.map ~f:ClassSummary.create
           |> Class.create
@@ -51,7 +53,7 @@ let test_generics context =
           generics
     | _ -> assert_unreached ()
   in
-  assert_generics "class Foo(): pass" (Concrete []);
+  assert_generics "class Foo(): pass" [];
   assert_generics
     {|
       _T = typing.TypeVar('_T')

@@ -16,9 +16,13 @@ type generic_type_problems =
       actual: Type.t;
       expected: Type.Variable.Unary.t;
     }
-  | UnexpectedVariadic of {
+  | UnexpectedGroup of {
       actual: Type.OrderedTypes.t;
-      expected: Type.Variable.Unary.t list;
+      expected: Type.Variable.Unary.t;
+    }
+  | UnexpectedSingle of {
+      actual: Type.t;
+      expected: Type.Variable.Variadic.List.t;
     }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -183,7 +187,7 @@ module AttributeReadOnly : sig
   val constraints
     :  t ->
     ?target:ClassSummary.t Node.t ->
-    ?parameters:Type.t Type.OrderedTypes.record ->
+    ?parameters:Type.Parameter.t list ->
     ClassSummary.t Node.t ->
     ?dependency:SharedMemoryKeys.dependency ->
     instantiated:Type.t ->
@@ -193,7 +197,7 @@ module AttributeReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->
     ClassSummary.t Node.t ->
-    Type.t Type.OrderedTypes.record
+    Type.Parameter.t list
 
   val resolve_literal
     :  t ->

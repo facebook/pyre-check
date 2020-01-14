@@ -13,7 +13,7 @@ open TypeOrder
 open Annotated
 open Assumptions
 
-let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
+let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
 let environment ?source context =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -29,7 +29,7 @@ let resolution ?source context =
 
 
 let concrete_connect ?parameters =
-  let parameters = parameters >>| fun parameters -> Type.OrderedTypes.Concrete parameters in
+  let parameters = parameters >>| List.map ~f:(fun single -> Type.Parameter.Single single) in
   MockClassHierarchyHandler.connect ?parameters
 
 
@@ -363,7 +363,7 @@ let default =
   connect
     order
     ~predecessor:type_builtin
-    ~parameters:(Concrete [type_variable])
+    ~parameters:[Single type_variable]
     ~successor:"typing.Generic";
   let typed_dictionary = "TypedDictionary" in
   let non_total_typed_dictionary = "NonTotalTypedDictionary" in
@@ -372,10 +372,10 @@ let default =
   insert order typed_dictionary;
   insert order typing_mapping;
   connect order ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
-  connect
+  concrete_connect
     order
     ~predecessor:typed_dictionary
-    ~parameters:(Concrete [Type.string; Type.object_primitive])
+    ~parameters:[Type.string; Type.object_primitive]
     ~successor:typing_mapping;
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
@@ -899,7 +899,7 @@ let test_less_or_equal context =
                ~class_name:"MatchesProtocol"
                ["__call__", "typing.Callable[[float], str]"])
       | Type.Parametric
-          { name = "ParametricCallableToStr"; parameters = Concrete [Primitive parameter] } ->
+          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
           let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
           Some
             (parse_attributes
@@ -1678,7 +1678,7 @@ let test_join context =
                ~class_name:"MatchesProtocol"
                ["__call__", "typing.Callable[[int], str]"])
       | Type.Parametric
-          { name = "ParametricCallableToStr"; parameters = Concrete [Primitive parameter] } ->
+          { name = "ParametricCallableToStr"; parameters = [Single (Primitive parameter)] } ->
           let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
           Some
             (parse_attributes
@@ -2994,7 +2994,7 @@ let test_solve_less_or_equal context =
   assert_solve ~left:"typing.Tuple[...]" ~right:"typing.Tuple[Ts]" [[]];
   assert_solve
     ~left:"typing.Callable[[int, str, bool], int]"
-    ~right:"typing.Callable[[Ts], int]"
+    ~right:"typing.Callable[Ts, int]"
     [["Ts", "int, str, bool"]];
 
   (* This does not bind anything to Ts because the rule is that we assume that type variables in
@@ -3004,14 +3004,14 @@ let test_solve_less_or_equal context =
      marking scopes explicitly. *)
   assert_solve
     ~leave_unbound_in_left:["Ts"]
-    ~left:"typing.Callable[[Ts], int]"
+    ~left:"typing.Callable[Ts, int]"
     ~right:"typing.Callable[[int, str, bool], int]"
     [[]];
 
   (* This is the situation we are supporting with the above odd behavior *)
   assert_solve
     ~leave_unbound_in_left:["Ts"]
-    ~left:"typing.Callable[[Ts], typing.Tuple[Ts]]"
+    ~left:"typing.Callable[Ts, typing.Tuple[Ts]]"
     ~right:"typing.Callable[[int, str, bool], typing.Tuple[int, str, bool]]"
     [[]];
   assert_solve
@@ -3020,11 +3020,11 @@ let test_solve_less_or_equal context =
     [["Ts", ""]];
   assert_solve
     ~left:"typing.Callable[[Named(A, int), Named(B, str)], int]"
-    ~right:"typing.Callable[[Ts], int]"
+    ~right:"typing.Callable[Ts, int]"
     [["Ts", "int, str"]];
   assert_solve
     ~leave_unbound_in_left:["Ts"]
-    ~left:"typing.Callable[[Ts], int]"
+    ~left:"typing.Callable[Ts, int]"
     ~right:"typing.Callable[[Named(A, int), Named(B, str)], int]"
     [];
 
@@ -3191,7 +3191,9 @@ let test_instantiate_protocol_parameters context =
            ~allow_invalid_type_parameters:true
     in
     let optional_ordered_types_printer optional =
-      optional >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise |> Option.value ~default:"None"
+      optional
+      >>| Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp)
+      |> Option.value ~default:"None"
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =
@@ -3237,14 +3239,14 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", []]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete []));
+    (Some []);
   assert_instantiate_protocol_parameters
     ~source:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
     ~protocols:["P", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete []));
+    (Some []);
   assert_instantiate_protocol_parameters
     ~source:"class P(): pass"
     ~classes:["A", ["prop", "str"]]
@@ -3261,7 +3263,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["prop", "T1"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete [Type.integer]));
+    (Some [Single Type.integer]);
 
   (* Simple method protocols *)
   assert_instantiate_protocol_parameters
@@ -3270,7 +3272,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete []));
+    (Some []);
   assert_instantiate_protocol_parameters
     ~source:"class P(): pass"
     ~classes:["A", ["othermethod", "typing.Callable[[int], str]"]]
@@ -3295,7 +3297,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["method", "typing.Callable[[int], T1]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete [Type.string]));
+    (Some ![Type.string]);
 
   (* Primitive recursive protocol, primitive recursive candidate *)
   assert_instantiate_protocol_parameters
@@ -3304,7 +3306,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["prop", "P"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete []));
+    (Some []);
   assert_instantiate_protocol_parameters
     ~source:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
@@ -3321,7 +3323,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[T1]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete [Type.integer]));
+    (Some ![Type.integer]);
 
   assert_instantiate_protocol_parameters
     ~source:{|
@@ -3332,7 +3334,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[int]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some (Concrete [Type.integer]));
+    (Some ![Type.integer]);
 
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters
@@ -3344,7 +3346,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["P1", ["prop", "P2"]; "P2", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P1"
-    (Some (Concrete []));
+    (Some []);
   assert_instantiate_protocol_parameters
     ~source:
       {|
@@ -3355,7 +3357,7 @@ let test_instantiate_protocol_parameters context =
     ~protocols:["VariadicCol", ["prop", "typing.Tuple[Ts]"]]
     ~candidate:"A"
     ~protocol:"VariadicCol"
-    (Some (Concrete [Type.integer; Type.string]));
+    (Some [Group (Concrete [Type.integer; Type.string])]);
   assert_instantiate_protocol_parameters
     ~source:
       {|
@@ -3363,10 +3365,10 @@ let test_instantiate_protocol_parameters context =
       class VariadicCol(typing.Generic[Ts]): pass
     |}
     ~classes:["A", ["method", "typing.Callable[[int, str], bool]"]]
-    ~protocols:["VariadicCol", ["method", "typing.Callable[[Ts], bool]"]]
+    ~protocols:["VariadicCol", ["method", "typing.Callable[Ts, bool]"]]
     ~candidate:"A"
     ~protocol:"VariadicCol"
-    (Some (Concrete [Type.integer; Type.string]));
+    (Some [Group (Concrete [Type.integer; Type.string])]);
   ()
 
 

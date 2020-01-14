@@ -14,7 +14,7 @@ exception Untracked of Type.t
 module Target : sig
   type t = {
     target: IndexTracker.t;
-    parameters: Type.OrderedTypes.t;
+    parameters: Type.Parameter.t list;
   }
   [@@deriving compare, eq, sexp, show]
 
@@ -76,17 +76,31 @@ val method_resolution_order_linearize
 
 val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
-type variables =
-  | Unaries of Type.Variable.Unary.t list
-  | Concatenation of
-      (Type.Variable.Variadic.List.t, Type.Variable.Unary.t) Type.OrderedTypes.Concatenation.t
-[@@deriving compare, eq, sexp, show]
+module Variable : sig
+  type t =
+    | Unary of Type.Variable.Unary.t
+    | ListVariadic of Type.Variable.Variadic.List.t
+  [@@deriving compare, eq, sexp, show]
+
+  val zip_on_parameters
+    :  parameters:Type.Parameter.t sexp_list ->
+    t sexp_list ->
+    (Type.Parameter.t * t) sexp_list sexp_option
+
+  val zip_on_two_parameter_lists
+    :  left_parameters:Type.Parameter.t sexp_list ->
+    right_parameters:Type.Parameter.t sexp_list ->
+    t sexp_list ->
+    (Type.Parameter.t * Type.Parameter.t * t) sexp_list sexp_option
+
+  val all_unary : t list -> Type.Variable.Unary.t list option
+end
 
 val variables
-  :  ?default:variables option ->
+  :  ?default:Variable.t list option ->
   (module Handler) ->
   Type.Primitive.t ->
-  variables option
+  Variable.t list option
 
 val least_upper_bound
   :  (module Handler) ->
@@ -110,4 +124,4 @@ val instantiate_successors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  Type.OrderedTypes.t Option.t
+  Type.Parameter.t list option

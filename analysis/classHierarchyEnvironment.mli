@@ -18,11 +18,11 @@ module HierarchyReadOnly : sig
   val class_hierarchy : ?dependency:dependency -> t -> (module ClassHierarchy.Handler)
 
   val variables
-    :  ?default:ClassHierarchy.variables option ->
+    :  ?default:ClassHierarchy.Variable.t list option ->
     t ->
     ?dependency:dependency ->
     Type.Primitive.t ->
-    ClassHierarchy.variables option
+    ClassHierarchy.Variable.t list option
 end
 
 include

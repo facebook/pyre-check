@@ -8,7 +8,7 @@ open Ast
 module Callable = Type.Callable
 
 module ProtocolAssumptions = struct
-  type protocol_parameters = Type.OrderedTypes.t [@@deriving compare, sexp, hash, show]
+  type protocol_parameters = Type.Parameter.t list [@@deriving compare, sexp, hash, show]
 
   type assumption = {
     candidate: Type.t;

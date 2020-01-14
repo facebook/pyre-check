@@ -58,14 +58,14 @@ let test_apply_decorators context =
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:(Some (+Expression.String (StringLiteral.create "typing.Iterator[str]"))))
-    (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
+    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
   assert_apply_contextlib_decorators
     (create_define
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some (+Expression.String (StringLiteral.create "typing.Generator[str, None, None]"))))
-    (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
+    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
 
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =

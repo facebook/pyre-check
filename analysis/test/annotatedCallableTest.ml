@@ -49,7 +49,7 @@ let test_return_annotation context =
     ~return_annotation:(Some (Type.expression Type.integer))
     ~async:true
     ~generator:false
-    (Type.coroutine (Concrete [Type.Any; Type.Any; Type.integer]));
+    (Type.coroutine [Single Type.Any; Single Type.Any; Single Type.integer]);
   assert_return_annotation
     ~return_annotation:(Some (Type.expression Type.integer))
     ~async:true

@@ -43,7 +43,7 @@ val instantiate_protocol_parameters
   :  order ->
   candidate:Type.t ->
   protocol:Ast.Identifier.t ->
-  Type.OrderedTypes.t option
+  Type.Parameter.t list option
 
 val solve_ordered_types_less_or_equal
   :  order ->

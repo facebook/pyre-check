@@ -34,7 +34,7 @@ module type FullOrderTypeWithoutT = sig
     :  order ->
     candidate:Type.t ->
     protocol:Identifier.t ->
-    Type.OrderedTypes.t option
+    Type.Parameter.t list option
 
   val solve_ordered_types_less_or_equal
     :  order ->
@@ -394,9 +394,9 @@ module OrderImplementation = struct
       | Type.Bottom, _ -> [constraints]
       | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
           if
-            [%compare.equal: Type.OrderedTypes.t option]
+            [%compare.equal: Type.Parameter.t list option]
               (instantiate_protocol_parameters order ~protocol ~candidate:left)
-              (Some (Concrete []))
+              (Some [])
           then
             [constraints]
           else
@@ -456,79 +456,57 @@ module OrderImplementation = struct
                 solve_less_or_equal order ~constraints ~left ~right)
       | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
           let solve_parameters left_parameters =
-            let handle_variables variables =
-              match variables, left_parameters, right_parameters with
-              | ( ClassHierarchy.Unaries variables,
-                  Type.OrderedTypes.Concrete left_parameters,
-                  Concrete right_parameters ) ->
-                  let solve_parameter_pair constraints (variable, (left, right)) =
-                    match left, right, variable with
-                    (* TODO kill these special cases *)
-                    | Type.Bottom, _, _ ->
-                        (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
-                           variance. *)
-                        constraints
-                    | _, Type.Top, _ ->
-                        (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its
-                           variance. *)
-                        constraints
-                    | Type.Top, _, _ -> []
-                    | _, _, { Type.Variable.Unary.variance = Covariant; _ } ->
-                        constraints
-                        |> List.concat_map ~f:(fun constraints ->
-                               solve_less_or_equal order ~constraints ~left ~right)
-                    | _, _, { variance = Contravariant; _ } ->
-                        constraints
-                        |> List.concat_map ~f:(fun constraints ->
-                               solve_less_or_equal order ~constraints ~left:right ~right:left)
-                    | _, _, { variance = Invariant; _ } ->
-                        constraints
-                        |> List.concat_map ~f:(fun constraints ->
-                               solve_less_or_equal order ~constraints ~left ~right)
-                        |> List.concat_map ~f:(fun constraints ->
-                               solve_less_or_equal order ~constraints ~left:right ~right:left)
-                  in
-                  let zip_on_parameters variables =
-                    match List.zip left_parameters right_parameters with
-                    | Unequal_lengths -> None
-                    | Ok zipped -> (
-                        match List.zip variables zipped with
-                        | Unequal_lengths -> None
-                        | Ok zipped -> Some zipped )
-                  in
-                  variables
-                  |> zip_on_parameters
-                  >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
-              | Unaries _, Concatenation _, _
-              | Unaries _, Any, _ ->
-                  (* These should be impossible, since we shouldn't be propagating a variadic into
-                     something that is defined to be not variadic *)
-                  None
-              | Unaries _, _, Concatenation _
-              | Unaries _, _, Any ->
-                  (* These should be impossible, since we shouldn't be able to have a not variadic
-                     primitive paired with a variadic in a parametric *)
-                  None
-              | Concatenation _, left_parameters, right_parameters ->
-                  (* TODO the concatenated variables should lend their variances... *)
+            let handle_variables constraints (left, right, variable) =
+              match left, right, variable with
+              (* TODO kill these special cases *)
+              | Type.Parameter.Single Type.Bottom, _, _ ->
+                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
+                  constraints
+              | _, Type.Parameter.Single Type.Top, _ ->
+                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+                  constraints
+              | Single Top, _, _ -> []
+              | ( Single left,
+                  Single right,
+                  ClassHierarchy.Variable.Unary { Type.Variable.Unary.variance = Covariant; _ } ) ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+              | Single left, Single right, Unary { variance = Contravariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | Single left, Single right, Unary { variance = Invariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | Group left_parameters, Group right_parameters, ListVariadic _ ->
                   (* TODO(T47346673): currently all variadics are invariant, revisit this when we
                      add variance *)
-                  solve_ordered_types_less_or_equal
-                    order
-                    ~constraints
-                    ~left:left_parameters
-                    ~right:right_parameters
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_ordered_types_less_or_equal
+                           order
+                           ~constraints
+                           ~left:left_parameters
+                           ~right:right_parameters)
                   |> List.concat_map ~f:(fun constraints ->
                          solve_ordered_types_less_or_equal
                            order
                            ~constraints
                            ~left:right_parameters
                            ~right:left_parameters)
-                  |> Option.some
+              | _ -> []
             in
-            ClassHierarchy.variables handler right_name >>= handle_variables
+            ClassHierarchy.variables handler right_name
+            >>= ClassHierarchy.Variable.zip_on_two_parameter_lists
+                  ~left_parameters
+                  ~right_parameters
+            >>| List.fold ~f:handle_variables ~init:[constraints]
           in
-          let parameters : Type.OrderedTypes.t option =
+          let parameters =
             let parameters =
               ClassHierarchy.instantiate_successors_parameters
                 handler
@@ -547,9 +525,9 @@ module OrderImplementation = struct
             [constraints]
           else if
             is_protocol right ~protocol_assumptions
-            && [%compare.equal: Type.OrderedTypes.t option]
+            && [%compare.equal: Type.Parameter.t list option]
                  (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
-                 (Some (Concrete []))
+                 (Some [])
           then
             [constraints]
           else
@@ -569,14 +547,14 @@ module OrderImplementation = struct
           solve_less_or_equal
             order
             ~constraints
-            ~left:(Type.parametric "tuple" (Concrete [parameter]))
+            ~left:(Type.parametric "tuple" [Single parameter])
             ~right
       | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
           let parameter = List.fold ~f:(join order) ~init:left tail in
           solve_less_or_equal
             order
             ~constraints
-            ~left:(Type.parametric "tuple" (Concrete [parameter]))
+            ~left:(Type.parametric "tuple" [Single parameter])
             ~right
       | Type.Primitive name, Type.Tuple _ ->
           if Type.Primitive.equal name "tuple" then [constraints] else []
@@ -983,47 +961,51 @@ module OrderImplementation = struct
                   in
                   let variables = ClassHierarchy.variables handler target in
                   let parameters =
-                    let join_parameters left right { Type.Variable.Unary.variance; _ } =
-                      match left, right, variance with
-                      | Type.Bottom, other, _
-                      | other, Type.Bottom, _ ->
-                          other
-                      | Type.Top, _, _
-                      | _, Type.Top, _ ->
-                          Type.Top
-                      | _, _, Covariant -> join order left right
-                      | _, _, Contravariant -> meet order left right
-                      | _, _, Invariant ->
+                    let join_parameters (left, right, variable) =
+                      match left, right, variable with
+                      | Type.Parameter.Group _, _, _
+                      | _, Type.Parameter.Group _, _
+                      | _, _, ClassHierarchy.Variable.ListVariadic _ ->
+                          (* TODO(T47348395): Implement joining for variadics *)
+                          None
+                      | Single Type.Bottom, Single other, _
+                      | Single other, Single Type.Bottom, _ ->
+                          Some other
+                      | Single Type.Top, _, _
+                      | _, Single Type.Top, _ ->
+                          Some Type.Top
+                      | Single left, Single right, Unary { variance = Covariant; _ } ->
+                          Some (join order left right)
+                      | Single left, Single right, Unary { variance = Contravariant; _ } ->
+                          Some (meet order left right)
+                      | Single left, Single right, Unary { variance = Invariant; _ } ->
                           if
                             always_less_or_equal order ~left ~right
                             && always_less_or_equal order ~left:right ~right:left
                           then
-                            left
+                            Some left
                           else
                             (* We fallback to Type.Any if type equality fails to help display
                                meaningful error messages. *)
-                            Type.Any
+                            Some Type.Any
                     in
                     match left_parameters, right_parameters, variables with
-                    | Some (Concrete left), Some (Concrete right), Some (Unaries variables)
-                      when List.length left = List.length right
-                           && List.length left = List.length variables ->
-                        let join_parameters left right variable =
-                          let replace_free_unary_variables_with_top =
-                            let replace_if_free variable =
-                              Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
-                            in
-                            Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
+                    | Some left_parameters, Some right_parameters, Some variables ->
+                        let replace_free_unary_variables_with_top =
+                          let replace_if_free variable =
+                            Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
                           in
-                          join_parameters left right variable
-                          |> replace_free_unary_variables_with_top
+                          Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
                         in
-                        Some
-                          (Type.OrderedTypes.Concrete
-                             (List.map3_exn ~f:join_parameters left right variables))
-                    | _ ->
-                        (* TODO(T47348395): Implement joining for variadics *)
-                        None
+                        ClassHierarchy.Variable.zip_on_two_parameter_lists
+                          ~left_parameters
+                          ~right_parameters
+                          variables
+                        >>| List.map ~f:join_parameters
+                        >>= Option.all
+                        >>| List.map ~f:replace_free_unary_variables_with_top
+                        >>| List.map ~f:(fun single -> Type.Parameter.Single single)
+                    | _ -> None
                   in
                   match parameters with
                   | Some parameters -> Type.Parametric { name = target; parameters }
@@ -1033,13 +1015,12 @@ module OrderImplementation = struct
               in
               target >>| handle_target |> Option.value ~default:union
         (* Special case joins of optional collections with their uninstantated counterparts. *)
-        | ( Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other),
-            Type.Optional (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection))
-          )
-        | ( Type.Optional (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection)),
-            Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other) )
+        | ( Type.Parametric ({ parameters = [Single Type.Bottom]; _ } as other),
+            Type.Optional (Type.Parametric ({ parameters = [Single parameter]; _ } as collection)) )
+        | ( Type.Optional (Type.Parametric ({ parameters = [Single parameter]; _ } as collection)),
+            Type.Parametric ({ parameters = [Single Type.Bottom]; _ } as other) )
           when Identifier.equal other.name collection.name ->
-            Type.Parametric { other with parameters = Concrete [parameter] }
+            Type.Parametric { other with parameters = [Single parameter] }
         (* A <= B -> lub(A, Optional[B]) = Optional[B]. *)
         | other, Type.Optional parameter
         | Type.Optional parameter, other ->
@@ -1062,11 +1043,11 @@ module OrderImplementation = struct
         | Type.Tuple (Type.Unbounded parameter), (Type.Primitive _ as annotation)
         | (Type.Parametric _ as annotation), Type.Tuple (Type.Unbounded parameter)
         | (Type.Primitive _ as annotation), Type.Tuple (Type.Unbounded parameter) ->
-            join order (Type.parametric "tuple" (Concrete [parameter])) annotation
+            join order (Type.parametric "tuple" [Single parameter]) annotation
         | Type.Tuple (Type.Bounded (Concrete parameters)), (Type.Parametric _ as annotation) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
-            join order (Type.parametric "tuple" (Concrete [parameter])) annotation
+            join order (Type.parametric "tuple" [Single parameter]) annotation
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]
@@ -1083,7 +1064,7 @@ module OrderImplementation = struct
               Type.Parametric
                 {
                   name = "typing.Mapping";
-                  parameters = Concrete [Type.string; Type.object_primitive];
+                  parameters = [Single Type.string; Single Type.object_primitive];
                 }
             else
               let join_fields =
@@ -1315,7 +1296,7 @@ module OrderImplementation = struct
           } as order )
         ~candidate
         ~protocol
-        : Type.OrderedTypes.t option
+        : Type.Parameter.t list option
       =
       match candidate with
       | Type.Primitive candidate_name
@@ -1323,8 +1304,7 @@ module OrderImplementation = struct
           (* If we are given a "stripped" generic, we decline to do structural analysis, as these
              kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
           None
-      | Type.Primitive candidate_name when Identifier.equal candidate_name protocol ->
-          Some (Concrete [])
+      | Type.Primitive candidate_name when Identifier.equal candidate_name protocol -> Some []
       | Type.Parametric { name; parameters } when Identifier.equal name protocol -> Some parameters
       | _ -> (
           let assumed_protocol_parameters =
@@ -1339,16 +1319,16 @@ module OrderImplementation = struct
               let protocol_generics = ClassHierarchy.variables handler protocol in
               let new_assumptions =
                 let protocol_parameters =
-                  match protocol_generics with
-                  | Some (Unaries variables) ->
-                      List.map variables ~f:(fun variable -> Type.Variable variable)
-                      |> fun variables -> Type.OrderedTypes.Concrete variables
-                  | Some (Concatenation concatenation) ->
-                      let open Type.OrderedTypes.Concatenation in
-                      map_middle concatenation ~f:Middle.create_bare
-                      |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
-                      |> fun concatenation -> Type.OrderedTypes.Concatenation concatenation
-                  | None -> Concrete []
+                  protocol_generics
+                  >>| List.map ~f:(function
+                          | ClassHierarchy.Variable.Unary variable ->
+                              Type.Parameter.Single (Type.Variable variable)
+                          | ListVariadic variable ->
+                              Group
+                                (Concatenation
+                                   ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
+                                   |> Type.OrderedTypes.Concatenation.create )))
+                  |> Option.value ~default:[]
                 in
                 ProtocolAssumptions.add
                   protocol_assumptions
@@ -1471,24 +1451,39 @@ module OrderImplementation = struct
                       let desanitization_solution =
                         TypeConstraints.Solution.create desanitize_map
                       in
-                      TypeConstraints.Solution.instantiate_ordered_types desanitization_solution
+                      let instantiate = function
+                        | Type.Parameter.Single single ->
+                            Type.Parameter.Single
+                              (TypeConstraints.Solution.instantiate desanitization_solution single)
+                        | Group group ->
+                            Group
+                              (TypeConstraints.Solution.instantiate_ordered_types
+                                 desanitization_solution
+                                 group)
+                      in
+                      List.map ~f:instantiate
                     in
                     let instantiate = function
-                      | ClassHierarchy.Unaries variables ->
-                          List.map variables ~f:(fun variable -> Type.Variable variable)
-                          |> List.map ~f:(TypeConstraints.Solution.instantiate solution)
-                          |> fun instantiated -> Type.OrderedTypes.Concrete instantiated
-                      | Concatenation concatenation ->
-                          let open Type.OrderedTypes.Concatenation in
-                          map_middle concatenation ~f:Middle.create_bare
-                          |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
-                          |> (fun concatenation -> Type.OrderedTypes.Concatenation concatenation)
-                          |> TypeConstraints.Solution.instantiate_ordered_types solution
+                      | ClassHierarchy.Variable.Unary variable ->
+                          TypeConstraints.Solution.instantiate_single_variable solution variable
+                          |> Option.value ~default:(Type.Variable variable)
+                          |> fun instantiated -> Type.Parameter.Single instantiated
+                      | ListVariadic variable ->
+                          let default =
+                            Type.OrderedTypes.Concatenation
+                              ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
+                              |> Type.OrderedTypes.Concatenation.create )
+                          in
+                          TypeConstraints.Solution.instantiate_single_list_variadic_variable
+                            solution
+                            variable
+                          |> Option.value ~default
+                          |> fun instantiated -> Type.Parameter.Group instantiated
                     in
                     protocol_generics
-                    >>| instantiate
+                    >>| List.map ~f:instantiate
                     >>| desanitize
-                    |> Option.value ~default:(Type.OrderedTypes.Concrete [])
+                    |> Option.value ~default:[]
                   in
                   Identifier.Map.merge
                     (build_attribute_map all_candidate_attributes)
@@ -1540,12 +1535,17 @@ let rec is_compatible_with order ~left ~right =
   | left, Type.Union right ->
       List.exists ~f:(fun right -> is_compatible_with order ~left ~right) right
   (* Parametric *)
-  | ( Parametric { name = left_name; parameters = Concrete left_parameters },
-      Parametric { name = right_name; parameters = Concrete right_parameters } )
+  | ( Parametric { name = left_name; parameters = left_parameters },
+      Parametric { name = right_name; parameters = right_parameters } )
     when Type.Primitive.equal left_name right_name
-         && Int.equal (List.length left_parameters) (List.length right_parameters) ->
-      List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
-          is_compatible_with order ~left ~right)
+         && Int.equal (List.length left_parameters) (List.length right_parameters) -> (
+      match
+        Type.Parameter.all_singles left_parameters, Type.Parameter.all_singles right_parameters
+      with
+      | Some left_parameters, Some right_parameters ->
+          List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
+              is_compatible_with order ~left ~right)
+      | _ -> always_less_or_equal order ~left ~right )
   (* Fallback *)
   | _, _ -> always_less_or_equal order ~left ~right
 

@@ -60,10 +60,10 @@ val solve_less_or_equal
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val variables
-  :  ?default:ClassHierarchy.variables option ->
+  :  ?default:ClassHierarchy.Variable.t list option ->
   t ->
   Type.Primitive.t ->
-  ClassHierarchy.variables option
+  ClassHierarchy.Variable.t list option
 
 val check_invalid_type_parameters
   :  t ->
@@ -203,7 +203,7 @@ val summary_and_attribute_table
   Type.Primitive.t ->
   (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
 
-val generics : resolution:t -> ClassSummary.t Node.t -> Type.OrderedTypes.t
+val generics : resolution:t -> ClassSummary.t Node.t -> Type.Parameter.t list
 
 val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
 
@@ -222,7 +222,7 @@ val create_attribute
 val constraints
   :  resolution:t ->
   ?target:ClassSummary.t Node.t ->
-  ?parameters:Type.OrderedTypes.t ->
+  ?parameters:Type.Parameter.t list ->
   ClassSummary.t Node.t ->
   instantiated:Type.t ->
   TypeConstraints.Solution.t

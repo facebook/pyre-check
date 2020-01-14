@@ -958,26 +958,32 @@ let messages ~concise ~signature location kind =
           (Type.Variable expected)
           name;
       ]
-  | InvalidTypeParameters
-      { name; kind = AttributeResolution.UnexpectedVariadic { expected; actual } } ->
-      let parameter_pluralization =
-        match expected with
-        | [_] -> "parameter"
-        | _ -> "parameters"
-      in
-      let expected_types =
-        List.map ~f:(fun unary -> Format.asprintf "%a" pp_type (Type.Variable unary)) expected
-        |> String.concat ~sep:", "
-      in
+  | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedGroup { expected; actual } }
+    ->
       [
         Format.asprintf
-          "Concrete type %s `%s` expected, but a variadic type parameter `%a` was given for \
+          "Single type parameter `%a` expected, but a type parameter group `[%a]` was given for \
            generic type %s."
-          parameter_pluralization
-          expected_types
+          Type.pp
+          (Type.Variable expected)
           Type.OrderedTypes.pp_concise
           actual
           name;
+      ]
+  | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedSingle { expected; actual } }
+    ->
+      [
+        Format.asprintf
+          "Type parameter group expected for variadic parameter `%s`, but a single type `%a` was \
+           given for generic type %s."
+          (Type.Variable.Variadic.List.name expected)
+          Type.pp
+          actual
+          name;
+        Format.asprintf
+          "If you want to bind a one element list to that variadic, try [%a] instead"
+          Type.pp
+          actual;
       ]
   | InvalidTypeVariable { annotation; origin } when concise -> (
       let format : ('b, Format.formatter, unit, string) format4 =
@@ -2942,12 +2948,12 @@ let dequalify
               actual = dequalify actual;
               expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
             }
-      | AttributeResolution.UnexpectedVariadic { actual; expected } ->
-          AttributeResolution.UnexpectedVariadic
-            {
-              actual;
-              expected = List.map expected ~f:(Type.Variable.Unary.dequalify ~dequalify_map);
-            }
+      | AttributeResolution.UnexpectedGroup { actual; expected } ->
+          AttributeResolution.UnexpectedGroup
+            { actual; expected = Type.Variable.Unary.dequalify ~dequalify_map expected }
+      | AttributeResolution.UnexpectedSingle { actual; expected } ->
+          AttributeResolution.UnexpectedSingle
+            { actual; expected = Type.Variable.Variadic.List.dequalify ~dequalify_map expected }
       | AttributeResolution.IncorrectNumberOfParameters _ as problem -> problem
     in
     {

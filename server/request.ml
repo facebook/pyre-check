@@ -191,12 +191,15 @@ let process_type_query_request
             >>| GlobalResolution.generics ~resolution:global_resolution
           in
           match generics, annotation with
-          | Some (Type.OrderedTypes.Concrete generics), Type.Primitive primitive
-            when not (List.is_empty generics) ->
+          | Some generics, Type.Primitive primitive
+            when (not (List.is_empty generics))
+                 && List.for_all generics ~f:(function
+                        | Type.Parameter.Single _ -> true
+                        | _ -> false) ->
               Type.Parametric
                 {
                   name = primitive;
-                  parameters = Type.OrderedTypes.Concrete (List.map generics ~f:(fun _ -> Type.Any));
+                  parameters = List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any);
                 }
           | _ -> annotation
         else

@@ -808,7 +808,7 @@ let test_query context =
                        } );
                    6, 4, 6, 5, Type.literal_integer 2;
                    4, 8, 4, 9, Type.literal_integer 1;
-                   5, 9, 5, 18, Type.parametric "type" (Concrete [Type.Primitive "Exception"]);
+                   5, 9, 5, 18, Type.parametric "type" [Single (Type.Primitive "Exception")];
                    2, 13, 2, 17, Type.none;
                    6, 8, 6, 9, Type.literal_integer 2;
                    4, 4, 4, 5, Type.literal_integer 1;

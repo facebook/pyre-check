@@ -402,7 +402,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     }
     |> Node.create_with_default_location
   in
-  let catch_all_generic = [Type.parametric "typing.Generic" Any] in
+  let catch_all_generic = [Type.parametric "typing.Generic" [Group Any]] in
   let typing_classes =
     [
       make "typing.Optional" ~bases:catch_all_generic;
@@ -431,7 +431,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     in
     [
       make
-        ~bases:[Type.parametric "typing.Mapping" (Concrete [Type.string; Type.object_primitive])]
+        ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
         "TypedDictionary";
       make
@@ -470,8 +470,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
       match primitive with
       | "type" ->
           let value =
-            Type.expression
-              (Type.parametric "typing.Generic" (Concrete [Type.variable "typing._T"]))
+            Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
           in
           { definition with Class.bases = [{ name = None; value }] }
       | "typing.GenericMeta" ->
