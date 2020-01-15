@@ -911,6 +911,17 @@ let test_forward_expression context =
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none);
 
+  (* Meta-types *)
+  assert_forward "typing.Optional[int]" (Type.meta (Type.optional Type.integer));
+  assert_forward
+    "typing.Callable[[int, str], int]"
+    (Type.meta (Type.Callable.create ~annotation:Type.integer ()));
+  assert_forward "typing_extensions.Literal[1, 2, 3]" (Type.meta Type.Any);
+  assert_forward
+    "typing.ClassVar[int]"
+    (Type.meta (Type.parametric "typing.ClassVar" [Single Type.integer]));
+  assert_forward "typing.Union[int, str]" (Type.meta Type.Any);
+
   (* Resolved annotation field. *)
   let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =
     let expression =

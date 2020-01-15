@@ -1479,40 +1479,79 @@ module Implementation = struct
                     >>| generics ?dependency ~class_metadata_environment ~assumptions
                     |> Option.value ~default:[]
                   in
-                  match Type.Parameter.all_singles generics with
-                  | Some generics ->
-                      let parameters =
-                        let create_parameter annotation =
-                          Type.Callable.Parameter.Anonymous
-                            { index = 0; annotation; default = false }
-                        in
-                        match generics with
-                        | [] -> []
-                        | [generic] -> [create_parameter (Type.meta generic)]
-                        | generics ->
-                            [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
-                      in
+                  let create_parameter annotation =
+                    Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+                  in
+                  let synthetic =
+                    Type.Variable
+                      (Type.Variable.Unary.create "$synthetic_attribute_resolution_variable")
+                  in
+                  match name with
+                  (* This can't be expressed without IntVars, StrVars, and corresponding
+                     ListVariadic variants of them *)
+                  | "typing_extensions.Literal"
+                  (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
+                     don't yet support Union[Ts] *)
+                  | "typing.Union" ->
                       {
-                        Type.Callable.annotation =
-                          Type.meta
-                            (Type.Parametric
-                               {
-                                 name;
-                                 parameters =
-                                   List.map generics ~f:(fun single -> Type.Parameter.Single single);
-                               });
-                        parameters = Defined parameters;
-                        define_location = None;
-                      }
-                  | _ ->
-                      (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore
-                         the others *)
-                      {
-                        Type.Callable.annotation =
-                          Type.meta (Type.Parametric { name; parameters = generics });
+                        Type.Callable.annotation = Type.meta Type.Any;
                         parameters = Undefined;
                         define_location = None;
                       }
+                  | "typing.Optional" ->
+                      {
+                        Type.Callable.annotation = Type.meta (Type.Optional synthetic);
+                        parameters = Defined [create_parameter (Type.meta synthetic)];
+                        define_location = None;
+                      }
+                  | "typing.Callable" ->
+                      {
+                        Type.Callable.annotation =
+                          Type.meta (Type.Callable.create ~annotation:synthetic ());
+                        parameters =
+                          Defined
+                            [
+                              create_parameter
+                                (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
+                            ];
+                        define_location = None;
+                      }
+                  | _ -> (
+                      match Type.Parameter.all_singles generics with
+                      | Some generics ->
+                          let parameters =
+                            let create_parameter annotation =
+                              Type.Callable.Parameter.Anonymous
+                                { index = 0; annotation; default = false }
+                            in
+                            match generics with
+                            | [] -> []
+                            | [generic] -> [create_parameter (Type.meta generic)]
+                            | generics ->
+                                [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                          in
+                          {
+                            Type.Callable.annotation =
+                              Type.meta
+                                (Type.Parametric
+                                   {
+                                     name;
+                                     parameters =
+                                       List.map generics ~f:(fun single ->
+                                           Type.Parameter.Single single);
+                                   });
+                            parameters = Defined parameters;
+                            define_location = None;
+                          }
+                      | _ ->
+                          (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and
+                             ignore the others *)
+                          {
+                            Type.Callable.annotation =
+                              Type.meta (Type.Parametric { name; parameters = generics });
+                            parameters = Undefined;
+                            define_location = None;
+                          } )
                 in
                 { callable with implementation; overloads = [] }
             | _ -> callable

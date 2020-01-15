@@ -1274,8 +1274,7 @@ let test_check_aliases context =
       MyAlias = typing.Union[int, UndefinedName]
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `MyAlias` has type \
-       `typing.Type[typing.Union[...]]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
       "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
        control flow path that doesn't define `UndefinedName`.";
     ];
@@ -1301,10 +1300,7 @@ let test_check_aliases context =
       import typing
       MyAlias = typing.Union[int, 3]
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `MyAlias` has type \
-       `typing.Type[typing.Union[...]]` but no type is specified.";
-    ];
+    ["Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified."];
   assert_type_errors
     ~context
     {|
