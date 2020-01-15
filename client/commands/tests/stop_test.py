@@ -23,9 +23,6 @@ def _mark_processes_as_completed(process_id: int, signal: int) -> None:
 
 @patch.object(os, "kill", side_effect=_mark_processes_as_completed)
 @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
-@patch.object(
-    commands.stop.ProjectFilesMonitor, "pid_path", return_value="file_monitor.pid"
-)
 @patch.object(commands.stop, "open", side_effect=lambda filename: StringIO("42"))
 @patch.object(commands.Kill, "_run")
 @patch.object(commands.Command, "_state")
@@ -42,7 +39,6 @@ class StopTest(unittest.TestCase):
         commands_Command_state: MagicMock,
         kill_command_run: MagicMock,
         file_open: MagicMock,
-        pid_path: MagicMock,
         stop_subscriber: MagicMock,
         os_kill: MagicMock,
     ) -> None:
@@ -69,7 +65,6 @@ class StopTest(unittest.TestCase):
         commands_Command_state: MagicMock,
         kill_command_run: MagicMock,
         file_open: MagicMock,
-        pid_path: MagicMock,
         stop_subscriber: MagicMock,
         os_kill: MagicMock,
     ) -> None:
@@ -91,7 +86,6 @@ class StopTest(unittest.TestCase):
         commands_Command_state: MagicMock,
         kill_command_run: MagicMock,
         file_open: MagicMock,
-        pid_path: MagicMock,
         stop_subscriber: MagicMock,
         os_kill: MagicMock,
     ) -> None:
@@ -121,7 +115,6 @@ class StopTest(unittest.TestCase):
         commands_Command_state: MagicMock,
         kill_command_run: MagicMock,
         file_open: MagicMock,
-        pid_path: MagicMock,
         stop_subscriber: MagicMock,
         os_kill: MagicMock,
     ) -> None:
@@ -133,3 +126,23 @@ class StopTest(unittest.TestCase):
             self.analysis_directory,
         )._flags()
         self.assertEqual(flags, ["-log-directory", ".pyre"])
+
+    def test_stop_no_pid(
+        self,
+        commands_Command_state: MagicMock,
+        kill_command_run: MagicMock,
+        file_open: MagicMock,
+        stop_subscriber: MagicMock,
+        os_kill: MagicMock,
+    ) -> None:
+        with patch.object(commands.Stop, "_pid_file", return_value=None), patch.object(
+            commands.Command, "_call_client"
+        ) as call_client:
+            commands.Stop(
+                self.arguments,
+                self.original_directory,
+                self.configuration,
+                self.analysis_directory,
+            ).run()
+            call_client.assert_has_calls([call(command=commands.Stop.NAME)])
+            kill_command_run.assert_called_once()

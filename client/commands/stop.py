@@ -48,6 +48,15 @@ class Stop(Command):
             flags.extend(["-log-directory", log_directory])
         return flags
 
+    def _pid_file(self) -> Optional[int]:
+        try:
+            with open(
+                os.path.join(self._log_directory, "server", "server.pid")
+            ) as pid_file:
+                return int(pid_file.read())
+        except (OSError, ValueError):
+            return None
+
     def _run(self) -> None:
         def _kill() -> None:
             arguments = self._arguments
@@ -64,13 +73,7 @@ class Stop(Command):
             LOG.warning("No server running, cleaning up any left over Pyre processes.")
             _kill()
         else:
-            try:
-                with open(
-                    os.path.join(self._log_directory, "server", "server.pid")
-                ) as pid_file:
-                    pid_to_poll = int(pid_file.read())
-            except (OSError, ValueError):
-                pid_to_poll = None
+            pid_to_poll = self._pid_file()
             try:
                 stopped = False
                 # If this call fails, check() will throw a ClientException.
@@ -84,7 +87,7 @@ class Stop(Command):
                         # process has terminated, a ProcessLookupError will be thrown.
                         os.kill(pid_to_poll, 0)
                         time.sleep(0.1)
-                stopped = True
+                    stopped = True
             except ClientException:
                 # An error was encountered when running `pyre stop`.
                 stopped = False
