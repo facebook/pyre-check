@@ -19,6 +19,7 @@ from .filesystem import BuckBuilder, find_root
 
 LOG: Logger = logging.getLogger(__name__)
 
+
 class BuckOut(NamedTuple):
     source_directories: Set[str]
     targets_not_found: Set[str]
