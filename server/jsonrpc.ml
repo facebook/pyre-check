@@ -14,6 +14,10 @@ let handshake_message version =
   }
 
 
+let socket_added_message =
+  `Assoc ["jsonrpc", `String "2.0"; "method", `String "handshake/socket_added"; "parameters", `Null]
+
+
 module Response = struct
   module TypeErrors = struct
     let to_json errors =

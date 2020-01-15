@@ -22,3 +22,5 @@ end
 val handshake_message
   :  string ->
   LanguageServer.Types.NotificationMessage.Make(LanguageServer.Types.HandshakeServerParameters).t
+
+val socket_added_message : Yojson.Safe.t

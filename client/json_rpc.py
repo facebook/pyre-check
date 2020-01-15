@@ -142,8 +142,13 @@ def perform_handshake(
                         server_version, client_version
                     )
                 )
-            client_handshake = Request(method="handshake/client")
+            client_handshake = Request(
+                method="handshake/client", parameters={"send_confirmation": True}
+            )
             client_handshake.write(output_file)
+            request = read_request(input_file)
+            if not (request and request.method == "handshake/socket_added"):
+                raise ValueError("Handshake was not successful.")
         else:
             raise ValueError("Handshake parameters from server not found.")
     else:

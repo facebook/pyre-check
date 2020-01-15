@@ -115,9 +115,7 @@ let computation_thread
         | Protocol.Request.JSONSocket socket ->
             let write_to_json_socket response =
               try
-                let out_channel = Unix.out_channel_of_descr socket in
-                LanguageServer.Protocol.write_message out_channel response;
-                Out_channel.flush out_channel;
+                Connections.write_to_json_socket ~socket response;
                 Connections.remove_json_socket ~connections:state.connections ~socket |> ignore
               with
               | Unix.Unix_error (name, kind, parameters) ->
@@ -315,16 +313,25 @@ let request_handler_thread
             Log.log ~section:`Server "New json client connection";
             Unix.accept json_socket
           in
-          let out_channel = Unix.out_channel_of_descr new_socket in
           Jsonrpc.handshake_message (Option.value ~default:"-1" expected_version)
           |> LanguageServer.Types.HandshakeServer.to_yojson
-          |> LanguageServer.Protocol.write_message out_channel;
-          Out_channel.flush out_channel;
+          |> Connections.write_to_json_socket ~socket:new_socket;
           new_socket
           |> Unix.in_channel_of_descr
           |> LanguageServer.Protocol.read_message
           >>| LanguageServer.Types.HandshakeClient.of_yojson
           |> function
+          (* TODO: Once we have fully rolled out the socket fix - we can remove this special
+             handling. *)
+          | Some
+              (Ok
+                {
+                  parameters =
+                    Some { LanguageServer.Types.HandshakeClientParameters.send_confirmation = true };
+                  _;
+                }) ->
+              Connections.add_json_socket ~connections ~socket:new_socket;
+              Jsonrpc.socket_added_message |> Connections.write_to_json_socket ~socket:new_socket
           | Some (Ok _) -> Connections.add_json_socket ~connections ~socket:new_socket
           | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
           | None -> Log.warning "Failed to parse handshake as LSP."

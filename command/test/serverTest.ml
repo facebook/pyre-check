@@ -174,7 +174,7 @@ let test_json_socket context =
   {
     LanguageServer.Types.HandshakeClient.jsonrpc = "2.0";
     method_ = "handshake/client";
-    parameters = Some ();
+    parameters = Some { LanguageServer.Types.HandshakeClientParameters.send_confirmation = true };
   }
   |> LanguageServer.Types.HandshakeClient.to_yojson
   |> LanguageServer.Protocol.write_message out_channel;

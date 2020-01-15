@@ -127,6 +127,9 @@ class MonitorTest(unittest.TestCase):
                     errors.append("Client handshake malformed")
                     return
 
+                request = Request(method="handshake/socket_added")
+                request.write(outfile)
+
                 updated_message = read_request(infile)
                 if (
                     not updated_message

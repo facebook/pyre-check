@@ -22,6 +22,8 @@ module type Connections = sig
   val add_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
   val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
 end
 
 module Make (Socket : sig
@@ -110,6 +112,12 @@ end) : Connections = struct
             json_sockets
         in
         connections := { cached_connections with json_sockets })
+
+
+  let write_to_json_socket ~socket message =
+    let out_channel = Unix.out_channel_of_descr socket in
+    LanguageServer.Protocol.write_message out_channel message;
+    Out_channel.flush out_channel
 end
 
 module Unix = Make (struct

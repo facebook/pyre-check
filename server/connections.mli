@@ -22,6 +22,8 @@ module type Connections = sig
   val add_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
   val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
 end
 
 module Make (Socket : sig

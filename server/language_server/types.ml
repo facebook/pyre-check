@@ -317,7 +317,7 @@ module HandshakeServerParameters = struct
 end
 
 module HandshakeClientParameters = struct
-  type t = unit [@@deriving yojson]
+  type t = { send_confirmation: (bool[@default false]) } [@@deriving yojson]
 end
 
 module UpdateFilesParameters = struct
