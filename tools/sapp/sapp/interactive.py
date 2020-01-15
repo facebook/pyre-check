@@ -80,6 +80,7 @@ class IssueQueryResult(NamedTuple):
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
 
+
 class TraceFrameQueryResult(NamedTuple):
     id: DBID
     caller: str
@@ -1406,14 +1407,14 @@ details              show additional information about the current trace frame
         return "\n".join(
             [
                 f"Issue {issue.id}",
-                f"    Code: {issue.code}",
-                f" Message: {issue.message}",
-                f"Callable: {issue.callable}",
-                f" Sources: {sources_output if sources_output else 'No sources'}",
-                f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
-                (f"Location: {issue.filename}" f":{issue.location}"),
-                f"Min_trace_length_to_sources: {issue.min_trace_length_to_sources}",
-                f"Min_trace_length_to_sinks: {issue.min_trace_length_to_sinks}",            ]
+                f"            Code: {issue.code}",
+                f"         Message: {issue.message}",
+                f"        Callable: {issue.callable}",
+                f"         Sources: {sources_output if sources_output else 'No sources'}",
+                f"           Sinks: {sinks_output if sinks_output else 'No sinks'}",
+                f"        Location: {issue.filename}" f":{issue.location}",
+                f"Min Trace Length: Sink ({issue.min_trace_length_to_sources}) | Source ({issue.min_trace_length_to_sinks})",
+            ]
         )
 
     def _create_trace_frame_output_string(
