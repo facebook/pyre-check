@@ -269,14 +269,29 @@ module State (Context : Context) = struct
         expression
     in
     let errors =
-      if Type.is_top annotation then (* Could not even parse expression. *)
-        Error.create
-          ~location:(Location.with_module ~qualifier:Context.qualifier location)
-          ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
-          ~define:Context.define
-        |> ErrorMap.add ~errors
-      else
-        errors
+      match annotation with
+      | Type.Top ->
+          Error.create
+            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    { annotation = Type.Primitive (Expression.show expression); expected = "" }))
+            ~define:Context.define
+          |> ErrorMap.add ~errors
+      | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
+          Error.create
+            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    {
+                      annotation = Type.Primitive (Expression.show expression);
+                      expected = "`Callable[[<parameters>], <return type>]`";
+                    }))
+            ~define:Context.define
+          |> ErrorMap.add ~errors
+      | _ -> errors
     in
     let errors, annotation =
       check_and_correct_annotation errors ~resolution ~location ~annotation

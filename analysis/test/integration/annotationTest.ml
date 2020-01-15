@@ -952,6 +952,34 @@ let test_check_incomplete_annotations context =
     |} []
 
 
+let test_check_incomplete_callable context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return "foo"
+      bar: typing.Callable[[int], bool] = foo
+    |}
+    [
+      "Incompatible variable type [9]: bar is declared to have type `typing.Callable[[int], bool]` \
+       but is used as type `typing.Callable(foo)[[Named(x, int)], str]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return "foo"
+      bar: typing.Callable[[int]] = foo
+
+      def baz(x: typing.Callable[[int]]) -> typing.Callable[[int]]: ...
+    |}
+    [
+      "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
+      "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
+      "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
+    ];
+  ()
+
+
 let test_check_refinement context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -1367,6 +1395,7 @@ let () =
          "check_analysis_failure" >:: test_check_analysis_failure;
          "check_immutable_annotations" >:: test_check_immutable_annotations;
          "check_incomplete_annotations" >:: test_check_incomplete_annotations;
+         "check_incomplete_callable" >:: test_check_incomplete_callable;
          "check_refinement" >:: test_check_refinement;
          "check_aliases" >:: test_check_aliases;
          "check_final_type" >:: test_final_type;
