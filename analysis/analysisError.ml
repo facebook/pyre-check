@@ -1292,13 +1292,10 @@ let messages ~concise ~signature location kind =
       [Format.asprintf "Captured variable `%a` is not annotated." Identifier.pp_sanitized name]
   | MissingCaptureAnnotation name ->
       [
-        Format.asprintf
-          "Captured variable `%a` is not annotated and will be treated as having type `Any` in \
-           this function. Consider annotating the variable where it is first defined in the outer \
-           function, or passing the variable from the outer function to the inner function as an \
-           additional argument."
-          Identifier.pp_sanitized
-          name;
+        Format.asprintf "Captured variable `%a` is not annotated." Identifier.pp_sanitized name;
+        "It will be treated as having type `Any` in this function. Consider annotating the \
+         variable where it is first defined in the outer function, or passing the variable from \
+         the outer function to the inner function as an additional argument.";
       ]
   | MissingGlobalAnnotation { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
@@ -1727,10 +1724,11 @@ let messages ~concise ~signature location kind =
   | UndefinedImport reference ->
       [
         Format.asprintf
-          "Could not find a module corresponding to import `%a`. (For common reasons, see \
-           https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import)"
+          "Could not find a module corresponding to import `%a`."
           pp_reference
           reference;
+        "For common reasons, see \
+         https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import";
       ]
   | UndefinedType annotation ->
       [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]

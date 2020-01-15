@@ -368,7 +368,7 @@ let test_check_nested context =
     ~handle:"shadowing.py"
     {|
       def shadowing(i: int) -> None: ...
-      shadowing('asdf') 
+      shadowing('asdf')
     |}
     [
       "Incompatible parameter type [6]: "
@@ -421,10 +421,7 @@ let test_check_nested context =
         bar()
     |}
     [
-      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
-       will be treated as having type `Any` in this function. Consider annotating the variable \
-       where it is first defined in the outer function, or passing the variable from the outer \
-       function to the inner function as an additional argument.";
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
   assert_default_type_errors
@@ -447,10 +444,7 @@ let test_check_nested context =
         bar()
     |}
     [
-      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
-       will be treated as having type `Any` in this function. Consider annotating the variable \
-       where it is first defined in the outer function, or passing the variable from the outer \
-       function to the inner function as an additional argument.";
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
   assert_type_errors
@@ -462,10 +456,7 @@ let test_check_nested context =
         bar()
     |}
     [
-      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated and \
-       will be treated as having type `Any` in this function. Consider annotating the variable \
-       where it is first defined in the outer function, or passing the variable from the outer \
-       function to the inner function as an additional argument.";
+      "Missing annotation for captured variable [53]: Captured variable `x` is not annotated.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
     ];
   assert_type_errors
@@ -481,9 +472,7 @@ let test_check_nested context =
     |}
     [
       "Missing annotation for captured variable [53]: Captured variable `always_declared` is not \
-       annotated and will be treated as having type `Any` in this function. Consider annotating \
-       the variable where it is first defined in the outer function, or passing the variable from \
-       the outer function to the inner function as an additional argument.";
+       annotated.";
     ]
 
 
