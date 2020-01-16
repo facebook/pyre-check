@@ -86,9 +86,14 @@ module TypeQuery : sig
     | Untyped
   [@@deriving eq, show]
 
+  type attribute_kind =
+    | Regular
+    | Property
+
   type attribute = {
     name: string;
     annotation: Type.t;
+    kind: attribute_kind;
   }
   [@@deriving eq, show, to_yojson]
 

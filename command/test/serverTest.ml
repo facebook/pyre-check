@@ -1006,11 +1006,40 @@ let test_query context =
                     overloads = [];
                     implicit = Some { implicit_annotation = Type.Primitive "C"; name = "self" };
                   };
+              kind = Protocol.TypeQuery.Regular;
             };
-            { Protocol.TypeQuery.name = "x"; annotation = Type.integer };
-            { Protocol.TypeQuery.name = "y"; annotation = Type.string };
+            {
+              Protocol.TypeQuery.name = "x";
+              annotation = Type.integer;
+              kind = Protocol.TypeQuery.Regular;
+            };
+            {
+              Protocol.TypeQuery.name = "y";
+              annotation = Type.string;
+              kind = Protocol.TypeQuery.Regular;
+            };
           ]));
   ();
+  assert_type_query_response
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int:
+          return 0
+    |}
+    ~query:"attributes(test.C)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundAttributes
+          [
+            {
+              Protocol.TypeQuery.name = "foo";
+              annotation = Type.integer;
+              kind = Protocol.TypeQuery.Property;
+            };
+          ]));
+  ();
+
   assert_type_query_response
     ~source:{|
       def foo(x: int) -> int:

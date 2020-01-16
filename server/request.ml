@@ -243,8 +243,16 @@ let process_type_query_request
         in
         TypeQuery.Response (TypeQuery.Errors errors)
     | TypeQuery.Attributes annotation ->
-        let to_attribute { Node.value = { Annotated.Class.Attribute.name; annotation; _ }; _ } =
-          { TypeQuery.name; annotation }
+        let to_attribute
+            { Node.value = { Annotated.Class.Attribute.name; annotation; property; _ }; _ }
+          =
+          let kind =
+            if property then
+              TypeQuery.Property
+            else
+              TypeQuery.Regular
+          in
+          { TypeQuery.name; annotation; kind }
         in
         parse_and_validate (Expression.from_reference ~location:Location.any annotation)
         |> Type.split

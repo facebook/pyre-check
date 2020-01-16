@@ -86,9 +86,15 @@ module TypeQuery = struct
     | Untyped
   [@@deriving eq, show, to_yojson]
 
+  type attribute_kind =
+    | Regular
+    | Property
+  [@@deriving eq, show, to_yojson]
+
   type attribute = {
     name: string;
     annotation: Type.t;
+    kind: attribute_kind;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -295,6 +301,16 @@ module TypeQuery = struct
     | Help string -> `Assoc ["help", `String string]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
+        let attribute_to_yojson { name; annotation; kind } =
+          let kind =
+            match kind with
+            | Regular -> "regular"
+            | Property -> "property"
+          in
+
+          `Assoc
+            ["name", `String name; "annotation", Type.to_yojson annotation; "kind", `String kind]
+        in
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
     | FoundDefines defines ->
         let define_to_yojson { define_name; parameters; return_annotation } =
