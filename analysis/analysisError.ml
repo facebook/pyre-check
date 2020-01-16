@@ -1015,10 +1015,7 @@ let messages ~concise ~signature location kind =
             [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
-          if equal_type_variable_origin origin ClassToplevel then
-            ["Classes parameterized by list variadics are not supported at this time."]
-          else
-            [Format.asprintf format name] )
+          [Format.asprintf format name] )
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
       let format : ('b, Format.formatter, unit, string) format4 =
@@ -1044,15 +1041,7 @@ let messages ~concise ~signature location kind =
             [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
-          if equal_type_variable_origin origin ClassToplevel then
-            [
-              Format.asprintf
-                "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics are \
-                 not supported at this time."
-                name;
-            ]
-          else
-            [Format.asprintf format name] )
+          [Format.asprintf format name] )
   | InvalidTypeVariance { origin; _ } when concise -> (
       match origin with
       | Parameter -> ["Parameter type cannot be covariant."]
