@@ -260,7 +260,16 @@ let test_check_assign context =
     [
       "Incompatible variable type [9]: kwargs is declared to have type `typing.Dict[str, str]` but \
        is used as type `typing.Dict[str, int]`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import Dict, Union
+      D = Dict[str, Union[str, int]]
+      def foo(x: D) -> None:
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, Union[int, str]]`."];
+  ()
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run

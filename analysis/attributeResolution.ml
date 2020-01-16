@@ -1823,7 +1823,7 @@ module Implementation = struct
       expression
     =
     let open Ast.Expression in
-    let is_concrete_constructable class_type =
+    let is_concrete_class class_type =
       class_type
       |> class_definition class_metadata_environment ~dependency
       >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
@@ -1832,8 +1832,48 @@ module Implementation = struct
             ?dependency
             ~default:(Some [])
       >>| List.is_empty
-      |> Option.value ~default:false
     in
+    let fully_specified_type = function
+      | { Node.value = Expression.Name name; _ } as annotation when is_simple_name name ->
+          let class_type =
+            parse_annotation ?dependency ~assumptions ~class_metadata_environment annotation
+          in
+          if Type.is_none class_type || is_concrete_class class_type |> Option.value ~default:false
+          then
+            Some class_type
+          else
+            None
+      | {
+          Node.value =
+            Call
+              {
+                callee =
+                  {
+                    value =
+                      Name
+                        (Name.Attribute
+                          {
+                            base = { Node.value = Name generic_name; _ };
+                            attribute = "__getitem__";
+                            special = true;
+                          });
+                    _;
+                  };
+                _;
+              };
+          _;
+        } as annotation
+        when is_simple_name generic_name ->
+          let class_type =
+            parse_annotation ?dependency ~assumptions ~class_metadata_environment annotation
+          in
+          if is_concrete_class class_type >>| not |> Option.value ~default:false then
+            Some class_type
+          else
+            None
+      | _ -> None
+    in
+
     let order = full_order ?dependency class_metadata_environment ~assumptions in
     match Node.value expression with
     | Expression.Await expression ->
@@ -1848,27 +1888,23 @@ module Implementation = struct
             (resolve_literal ?dependency ~class_metadata_environment ~assumptions right)
         in
         if Type.is_concrete annotation then annotation else Type.Any
-    | Call { callee = { Node.value = Name name; _ } as callee; _ } when is_simple_name name ->
-        let class_type =
-          parse_annotation ?dependency ~assumptions ~class_metadata_environment callee
-        in
-        if is_concrete_constructable class_type then
-          class_type
-        else
-          Type.Top
-    | Call _
-    | Name _
-      when has_identifier_base expression ->
-        let class_type =
-          parse_annotation ?dependency ~assumptions ~class_metadata_environment expression
-        in
-        (* None is a special type that doesn't have a constructor. *)
-        if Type.is_none class_type then
-          Type.none
-        else if is_concrete_constructable class_type then
-          Type.meta class_type
-        else
-          Type.Top
+    | Call { callee; _ } -> (
+        match fully_specified_type expression with
+        | Some annotation ->
+            (* Literal generic type, e.g. global = List[int] *)
+            Type.meta annotation
+        | None ->
+            (* Constructor on concrete class or fully specified generic,
+             * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
+            Option.value (fully_specified_type callee) ~default:Top )
+    | Name _ when has_identifier_base expression -> (
+        match fully_specified_type expression with
+        | Some annotation ->
+            if Type.is_none annotation then
+              Type.none
+            else
+              Type.meta annotation
+        | None -> Type.Top )
     | Complex _ -> Type.complex
     | Dictionary { Dictionary.entries; keywords = [] } ->
         let key_annotation, value_annotation =

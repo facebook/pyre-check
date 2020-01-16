@@ -128,7 +128,7 @@ let test_resolve_literal context =
   assert_resolve_literal "await awaitable" Type.Top;
   assert_resolve_literal "\"\"" Type.string;
   assert_resolve_literal "1" Type.integer;
-  assert_resolve_literal "1+1" Type.Any;
+  assert_resolve_literal "1+1" Type.Top;
   assert_resolve_literal "j" Type.Top;
   assert_resolve_literal "foo()" Type.Top;
   assert_resolve_literal "C()" (Type.Primitive "C");
