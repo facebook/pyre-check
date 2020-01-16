@@ -1600,6 +1600,8 @@ class InteractiveTest(TestCase):
             code=1000,
             callable="module.function1",
             message="root",
+            min_trace_length_to_sources=1,
+            min_trace_length_to_sinks=1,
         )
         sources = []
         sinks = ["sink1", "sink2"]
@@ -1612,6 +1614,37 @@ class InteractiveTest(TestCase):
         result = self.interactive._create_issue_output_string(issue, sources, sinks)
         self.assertIn("Sources: source1", result)
         self.assertIn("Sinks: No sinks", result)
+
+    def testCreateIssueOutputStringTraceLength(self):
+        issue1 = IssueQueryResult(
+            id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            code=1000,
+            callable="module.function1",
+            message="root",
+            min_trace_length_to_sources=0,
+            min_trace_length_to_sinks=6,
+        )
+        sources = []
+        sinks = ["sink1", "sink2"]
+        result = self.interactive._create_issue_output_string(issue1, sources, sinks)
+        self.assertIn("Min Trace Length: Source (0) | Sink (6)", result)
+
+        issue2 = IssueQueryResult(
+            id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            code=1000,
+            callable="module.function1",
+            message="root",
+            min_trace_length_to_sources=3,
+            min_trace_length_to_sinks=1,
+        )
+        sources = []
+        sinks = ["sink1", "sink2"]
+        result = self.interactive._create_issue_output_string(issue2, sources, sinks)
+        self.assertIn("Min Trace Length: Source (3) | Sink (1)", result)
 
     def testListSourceCode(self):
         mock_data = """if this_is_true:
