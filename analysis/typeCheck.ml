@@ -3424,13 +3424,17 @@ module State (Context : Context) = struct
                 | _ -> false
               in
               let state =
+                let resolved =
+                  match resolved with
+                  | Type.Parametric _ -> Type.weaken_literals resolved
+                  | _ -> resolved
+                in
                 let is_valid_enumeration_assignment =
                   let parent_annotation =
                     match parent with
                     | None -> Type.Top
                     | Some reference -> Type.Primitive (Reference.show reference)
                   in
-                  let resolved = Type.weaken_literals resolved in
                   let compatible =
                     if explicit then
                       GlobalResolution.less_or_equal

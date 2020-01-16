@@ -1344,6 +1344,33 @@ let test_check_invalid_inheritance context =
   ()
 
 
+let test_check_literal_assignment context =
+  assert_type_errors
+    ~context
+    {|
+      from typing_extensions import Literal
+      x: Literal["on", "off"] = "on"
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar('T')
+      class Foo(Generic[T]):
+        foo: T
+        def __init__(self, foo: T) -> None:
+          self.foo = foo
+
+      def foo(s: str) -> None:
+        string: Foo[str] = Foo(s)
+        literal_string: Foo[str] = Foo("bar")
+    |}
+    [];
+  ()
+
+
 let test_check_safe_cast context =
   assert_type_errors
     ~context
@@ -1396,6 +1423,7 @@ let () =
          "check_aliases" >:: test_check_aliases;
          "check_final_type" >:: test_final_type;
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
+         "check_literal_assignment" >:: test_check_literal_assignment;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
        ]
