@@ -26,82 +26,6 @@ let last_statement_exn = function
   | _ -> failwith "Could not parse last statement"
 
 
-let test_generics context =
-  let assert_generics source generics =
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
-    in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-    in
-    let source = Option.value_exn source in
-    match source |> last_statement_exn with
-    | { Node.value = Statement.Class definition; _ } ->
-        let resolution = GlobalResolution.create global_environment in
-        let printer generics =
-          Format.asprintf "%a" (Type.pp_parameters ~pp_type:Type.pp) generics
-        in
-        assert_equal
-          ~printer
-          ~cmp:(List.equal Type.Parameter.equal)
-          ( Node.create_with_default_location definition
-          |> Node.map ~f:ClassSummary.create
-          |> Class.create
-          |> GlobalResolution.generics ~resolution )
-          generics
-    | _ -> assert_unreached ()
-  in
-  assert_generics "class Foo(): pass" [];
-  assert_generics
-    {|
-      _T = typing.TypeVar('_T')
-      class Foo(typing.Generic[_T]): pass
-    |}
-    !![Type.variable "test._T"];
-  assert_generics
-    {|
-      _T = typing.TypeVar('_T')
-      _S = typing.TypeVar('_S')
-      class Foo(typing.Generic[_T, _S]): pass
-    |}
-    !![Type.variable "test._T"; Type.variable "test._S"];
-  assert_generics
-    {|
-      _T = typing.TypeVar('_T')
-      class Foo(typing.Protocol[_T]): pass
-    |}
-    !![Type.variable "test._T"];
-  assert_generics
-    {|
-      _T = typing.TypeVar('_T')
-      class Foo(typing.Iterable[_T]): pass
-    |}
-    !![Type.variable "test._T"];
-  assert_generics
-    {|
-      _T1 = typing.TypeVar('_T1')
-      _T2 = typing.TypeVar('_T2')
-      class Foo(typing.Dict[_T1, _T2]): pass
-    |}
-    !![Type.variable "test._T1"; Type.variable "test._T2"];
-  assert_generics
-    {|
-      _T1 = typing.TypeVar('_T1')
-      _T2 = typing.TypeVar('_T2')
-      class Foo(typing.Iterable[_T1], typing.AsyncIterable[_T2]): pass
-    |}
-    !![Type.variable "test._T1"; Type.variable "test._T2"];
-  assert_generics
-    {|
-      _T1 = typing.TypeVar('_T1')
-      class Foo(typing.Dict[_T1, _T1]): pass
-    |}
-    !![Type.variable "test._T1"];
-  ()
-
-
 let test_superclasses context =
   let resolution =
     ScratchProject.setup
@@ -1249,7 +1173,6 @@ let () =
          "constraints" >:: test_constraints;
          "constructors" >:: test_constructors;
          "fallback_attribute" >:: test_fallback_attribute;
-         "generics" >:: test_generics;
          "get_decorator" >:: test_get_decorator;
          "is_protocol" >:: test_is_protocol;
          "metaclasses" >:: test_metaclasses;

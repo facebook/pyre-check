@@ -209,6 +209,12 @@ module Variable = struct
         | Unary unary -> Some unary
         | ListVariadic _ -> None)
     |> Option.all
+
+
+  let to_parameter = function
+    | Unary variable -> Type.Parameter.Single (Type.Variable variable)
+    | ListVariadic variable ->
+        Type.Parameter.Group (Type.Variable.Variadic.List.self_reference variable)
 end
 
 let clean not_clean =

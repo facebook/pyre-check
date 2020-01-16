@@ -1221,7 +1221,7 @@ let test_check_method_resolution context =
       def foo(input: typing.Type[typing.Protocol]) -> None:
         reveal_type(input[42])
     |}
-    ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[...]]`."];
+    ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`."];
   ()
 
 

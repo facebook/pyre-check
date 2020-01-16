@@ -184,26 +184,22 @@ let process_type_query_request
           annotation
       in
       let annotation =
-        if fill_missing_type_parameters_with_any && Type.is_primitive annotation then
-          let generics =
-            GlobalResolution.class_definition global_resolution annotation
-            >>| Annotated.Class.create
-            >>| GlobalResolution.generics ~resolution:global_resolution
-          in
-          match generics, annotation with
-          | Some generics, Type.Primitive primitive
-            when (not (List.is_empty generics))
-                 && List.for_all generics ~f:(function
-                        | Type.Parameter.Single _ -> true
-                        | _ -> false) ->
-              Type.Parametric
-                {
-                  name = primitive;
-                  parameters = List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any);
-                }
-          | _ -> annotation
-        else
-          annotation
+        match fill_missing_type_parameters_with_any, annotation with
+        | true, Type.Primitive annotation -> (
+            let generics = GlobalResolution.variables global_resolution annotation in
+            match generics with
+            | Some generics
+              when (not (List.is_empty generics))
+                   && List.for_all generics ~f:(function
+                          | ClassHierarchy.Variable.Unary _ -> true
+                          | _ -> false) ->
+                Type.Parametric
+                  {
+                    name = annotation;
+                    parameters = List.map generics ~f:(fun _ -> Type.Parameter.Single Type.Any);
+                  }
+            | _ -> Type.Primitive annotation )
+        | _ -> annotation
       in
       if ClassHierarchy.is_instantiated order annotation then
         let mismatches, _ =

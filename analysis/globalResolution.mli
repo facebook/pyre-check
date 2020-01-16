@@ -203,8 +203,6 @@ val summary_and_attribute_table
   Type.Primitive.t ->
   (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
 
-val generics : resolution:t -> ClassSummary.t Node.t -> Type.Parameter.t list
-
 val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
 
 val successors : resolution:t -> ClassSummary.t Node.t -> string list

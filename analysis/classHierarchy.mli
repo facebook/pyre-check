@@ -94,6 +94,8 @@ module Variable : sig
     (Type.Parameter.t * Type.Parameter.t * t) sexp_list sexp_option
 
   val all_unary : t list -> Type.Variable.Unary.t list option
+
+  val to_parameter : t -> Type.Parameter.t
 end
 
 val variables

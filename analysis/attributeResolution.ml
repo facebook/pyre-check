@@ -775,12 +775,6 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       instantiated:Type.t ->
       TypeConstraints.Solution.t;
-    generics:
-      assumptions:Assumptions.t ->
-      class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-      ?dependency:SharedMemoryKeys.dependency ->
-      ClassSummary.t Node.t ->
-      Type.Parameter.t list;
     resolve_literal:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -1207,7 +1201,7 @@ module Implementation = struct
 
 
   let create_attribute
-      { parse_annotation; resolve_literal; create_overload; generics; full_order; _ }
+      { parse_annotation; resolve_literal; create_overload; full_order; _ }
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -1475,8 +1469,11 @@ module Implementation = struct
               when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
                 let implementation, overloads =
                   let generics =
-                    class_definition class_metadata_environment (Type.Primitive name) ~dependency
-                    >>| generics ?dependency ~class_metadata_environment ~assumptions
+                    ClassHierarchyEnvironment.ReadOnly.variables
+                      (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                         class_metadata_environment)
+                      ?dependency
+                      name
                     |> Option.value ~default:[]
                   in
                   let create_parameter annotation =
@@ -1521,6 +1518,7 @@ module Implementation = struct
                         [] )
                   | _ -> (
                       let overload parameter =
+                        let generics = List.map generics ~f:ClassHierarchy.Variable.to_parameter in
                         {
                           Type.Callable.annotation =
                             Type.meta (Type.Parametric { name; parameters = generics });
@@ -1529,11 +1527,12 @@ module Implementation = struct
                         }
                       in
                       match generics with
-                      | [Group (Concatenation concatenation)] ->
+                      | [ListVariadic variable] ->
                           let meta_generics =
-                            Type.OrderedTypes.Concatenation.apply_mapping
-                              concatenation
-                              ~mapper:"type"
+                            Type.OrderedTypes.Concatenation.Middle.create
+                              ~variable
+                              ~mappers:["type"]
+                            |> Type.OrderedTypes.Concatenation.create
                           in
                           let single_type_case =
                             (* In the case of VariadicClass[int], it's being called with a
@@ -1546,18 +1545,21 @@ module Implementation = struct
                                  (Type.Tuple (Bounded (Concatenation meta_generics))))
                           in
                           single_type_case, [multiple_type_case; single_type_case]
-                      | [Single generic] -> overload (create_parameter (Type.meta generic)), []
+                      | [Unary generic] ->
+                          overload (create_parameter (Type.meta (Variable generic))), []
                       | _ ->
-                          let handle_groups = function
-                            | Type.Parameter.Single single as generic -> generic, Type.meta single
-                            | Group _ ->
+                          let handle_variadics = function
+                            | ClassHierarchy.Variable.Unary single ->
+                                ( Type.Parameter.Single (Type.Variable single),
+                                  Type.meta (Variable single) )
+                            | ListVariadic _ ->
                                 (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
                                    without that we can't actually return the correct metatype, which
                                    is a bummer *)
                                 Type.Parameter.Group Any, Type.Any
                           in
                           let return_parameters, parameter_parameters =
-                            List.map generics ~f:handle_groups |> List.unzip
+                            List.map generics ~f:handle_variadics |> List.unzip
                           in
                           ( {
                               Type.Callable.annotation =
@@ -1614,8 +1616,13 @@ module Implementation = struct
                 |> Type.Set.of_list
               in
               let generics =
-                generics parent ?dependency ~class_metadata_environment ~assumptions
-                |> Type.Parameter.all_singles
+                ClassHierarchyEnvironment.ReadOnly.variables
+                  (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                     class_metadata_environment)
+                  ?dependency
+                  (Reference.show (class_name parent))
+                >>= ClassHierarchy.Variable.all_unary
+                >>| List.map ~f:Type.Variable.Unary.self_reference
                 >>| Type.Set.of_list
                 (* TODO(T44676629): This case should be handled when we re-do this handling *)
                 |> Option.value ~default:Type.Set.empty
@@ -1749,7 +1756,7 @@ module Implementation = struct
 
 
   let constraints
-      { generics; full_order; _ }
+      { full_order; _ }
       ~assumptions
       ~class_metadata_environment
       ?target
@@ -1761,7 +1768,14 @@ module Implementation = struct
     let target = Option.value ~default:definition target in
     let parameters =
       match parameters with
-      | None -> generics ?dependency ~class_metadata_environment ~assumptions target
+      | None ->
+          ClassHierarchyEnvironment.ReadOnly.variables
+            (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+               class_metadata_environment)
+            ?dependency
+            (Reference.show (class_name target))
+          >>| List.map ~f:ClassHierarchy.Variable.to_parameter
+          |> Option.value ~default:[]
       | Some parameters -> parameters
     in
     let right =
@@ -1786,31 +1800,6 @@ module Implementation = struct
         |> List.hd
         (* TODO(T39598018): error in this case somehow, something must be wrong *)
         |> Option.value ~default:TypeConstraints.Solution.empty
-
-
-  let generics
-      { parse_annotation; _ }
-      ~assumptions
-      ~class_metadata_environment
-      ?dependency
-      { Node.value = { ClassSummary.bases; _ }; _ }
-    =
-    let parse_annotation =
-      parse_annotation
-        ~allow_invalid_type_parameters:true
-        ?dependency
-        ~class_metadata_environment
-        ~assumptions
-    in
-    let generic { Expression.Call.Argument.value; _ } =
-      match parse_annotation value with
-      | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
-      | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
-      | _ -> None
-    in
-    match List.find_map ~f:generic bases with
-    | None -> AnnotatedBases.find_propagated_type_variables bases ~parse_annotation
-    | Some parameters -> parameters
 
 
   (* In general, python expressions can be self-referential. This resolution only checks literals
@@ -2800,7 +2789,7 @@ module Implementation = struct
 
 
   let constructor
-      { generics; attribute_table; _ }
+      { attribute_table; _ }
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -2812,7 +2801,15 @@ module Implementation = struct
       match class_annotation with
       | Type.Primitive name
       | Type.Parametric { name; _ } -> (
-          let generics = generics ~assumptions ~class_metadata_environment ?dependency definition in
+          let generics =
+            ClassHierarchyEnvironment.ReadOnly.variables
+              (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                 class_metadata_environment)
+              ?dependency
+              (Reference.show (class_name definition))
+            >>| List.map ~f:ClassHierarchy.Variable.to_parameter
+            |> Option.value ~default:[]
+          in
           (* Tuples are special. *)
           if String.equal name "tuple" then
             match generics with
@@ -2913,7 +2910,6 @@ let make_open_recurser ~given_attribute_table ~given_parse_annotation =
       create_attribute;
       metaclass;
       constraints;
-      generics;
       resolve_literal;
       create_overload;
       signature_select;
@@ -2929,7 +2925,6 @@ let make_open_recurser ~given_attribute_table ~given_parse_annotation =
   and create_attribute ~assumptions = Implementation.create_attribute open_recurser ~assumptions
   and metaclass ~assumptions = Implementation.metaclass open_recurser ~assumptions
   and constraints ~assumptions = Implementation.constraints open_recurser ~assumptions
-  and generics ~assumptions = Implementation.generics open_recurser ~assumptions
   and resolve_literal ~assumptions = Implementation.resolve_literal open_recurser ~assumptions
   and create_overload ~assumptions = Implementation.create_overload open_recurser ~assumptions
   and signature_select ~assumptions = Implementation.signature_select open_recurser ~assumptions
@@ -3190,8 +3185,6 @@ module ReadOnly = struct
   let metaclass = add_both_caches_and_empty_assumptions Implementation.metaclass
 
   let constraints = add_both_caches_and_empty_assumptions Implementation.constraints
-
-  let generics = add_both_caches_and_empty_assumptions Implementation.generics
 
   let resolve_literal = add_both_caches_and_empty_assumptions Implementation.resolve_literal
 

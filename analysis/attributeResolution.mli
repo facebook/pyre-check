@@ -193,12 +193,6 @@ module AttributeReadOnly : sig
     instantiated:Type.t ->
     TypeConstraints.Solution.t
 
-  val generics
-    :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
-    ClassSummary.t Node.t ->
-    Type.Parameter.t list
-
   val resolve_literal
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->

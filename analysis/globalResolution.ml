@@ -427,10 +427,6 @@ let superclasses ~resolution:({ dependency; _ } as resolution) =
   ClassMetadataEnvironment.ReadOnly.superclasses ?dependency (class_metadata_environment resolution)
 
 
-let generics ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.generics ?dependency (attribute_resolution resolution)
-
-
 let summary_and_attribute_table ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.summary_and_attribute_table
     ?dependency
