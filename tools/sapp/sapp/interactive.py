@@ -1410,10 +1410,20 @@ details              show additional information about the current trace frame
                 f"            Code: {issue.code}",
                 f"         Message: {issue.message}",
                 f"        Callable: {issue.callable}",
-                f"         Sources: {sources_output if sources_output else 'No sources'}",
-                f"           Sinks: {sinks_output if sinks_output else 'No sinks'}",
-                f"        Location: {issue.filename}" f":{issue.location}",
-                f"Min Trace Length: Source ({issue.min_trace_length_to_sources}) | Sink ({issue.min_trace_length_to_sinks})",
+                (
+                    f"         Sources: "
+                    f"{sources_output if sources_output else 'No sources'}"
+                ),
+                (
+                    f"           Sinks: "
+                    f"{sinks_output if sinks_output else 'No sinks'}"
+                ),
+                (f"        Location: " f"{issue.filename}" f":{issue.location}"),
+                (
+                    f"Min Trace Length: "
+                    f"Source ({issue.min_trace_length_to_sources}) | "
+                    f"Sink ({issue.min_trace_length_to_sinks})"
+                ),
             ]
         )
 
