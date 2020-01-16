@@ -561,6 +561,13 @@ module OrderedTypes : sig
     val create : ?head:'outer list -> ?tail:'outer list -> 'middle -> ('middle, 'outer) t
 
     val zip : ('middle, 'outer) t -> against:'a list -> ('middle * 'a list, 'outer * 'a) t option
+
+    (* apply_mapping C ~mapper is equivalent to replace_variable ~replacement:(V -> O) Map[V,
+       mapper] *)
+    val apply_mapping
+      :  (type_t Middle.t, type_t) t ->
+      mapper:Primitive.t ->
+      (type_t Middle.t, type_t) t
   end
 
   val union_upper_bound : t -> type_t

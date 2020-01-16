@@ -1473,7 +1473,7 @@ module Implementation = struct
                 "__getitem__",
                 ({ kind = Named callable_name; _ } as callable) )
               when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
-                let implementation =
+                let implementation, overloads =
                   let generics =
                     class_definition class_metadata_environment (Type.Primitive name) ~dependency
                     >>| generics ?dependency ~class_metadata_environment ~assumptions
@@ -1493,67 +1493,82 @@ module Implementation = struct
                   (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
                      don't yet support Union[Ts] *)
                   | "typing.Union" ->
-                      {
-                        Type.Callable.annotation = Type.meta Type.Any;
-                        parameters = Undefined;
-                        define_location = None;
-                      }
+                      ( {
+                          Type.Callable.annotation = Type.meta Type.Any;
+                          parameters = Undefined;
+                          define_location = None;
+                        },
+                        [] )
                   | "typing.Optional" ->
-                      {
-                        Type.Callable.annotation = Type.meta (Type.Optional synthetic);
-                        parameters = Defined [create_parameter (Type.meta synthetic)];
-                        define_location = None;
-                      }
+                      ( {
+                          Type.Callable.annotation = Type.meta (Type.Optional synthetic);
+                          parameters = Defined [create_parameter (Type.meta synthetic)];
+                          define_location = None;
+                        },
+                        [] )
                   | "typing.Callable" ->
-                      {
-                        Type.Callable.annotation =
-                          Type.meta (Type.Callable.create ~annotation:synthetic ());
-                        parameters =
-                          Defined
-                            [
-                              create_parameter
-                                (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
-                            ];
-                        define_location = None;
-                      }
+                      ( {
+                          Type.Callable.annotation =
+                            Type.meta (Type.Callable.create ~annotation:synthetic ());
+                          parameters =
+                            Defined
+                              [
+                                create_parameter
+                                  (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
+                              ];
+                          define_location = None;
+                        },
+                        [] )
                   | _ -> (
-                      match Type.Parameter.all_singles generics with
-                      | Some generics ->
-                          let parameters =
-                            let create_parameter annotation =
-                              Type.Callable.Parameter.Anonymous
-                                { index = 0; annotation; default = false }
-                            in
-                            match generics with
-                            | [] -> []
-                            | [generic] -> [create_parameter (Type.meta generic)]
-                            | generics ->
-                                [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                      let overload parameter =
+                        {
+                          Type.Callable.annotation =
+                            Type.meta (Type.Parametric { name; parameters = generics });
+                          parameters = Defined [parameter];
+                          define_location = None;
+                        }
+                      in
+                      match generics with
+                      | [Group (Concatenation concatenation)] ->
+                          let meta_generics =
+                            Type.OrderedTypes.Concatenation.apply_mapping
+                              concatenation
+                              ~mapper:"type"
                           in
-                          {
-                            Type.Callable.annotation =
-                              Type.meta
-                                (Type.Parametric
-                                   {
-                                     name;
-                                     parameters =
-                                       List.map generics ~f:(fun single ->
-                                           Type.Parameter.Single single);
-                                   });
-                            parameters = Defined parameters;
-                            define_location = None;
-                          }
+                          let single_type_case =
+                            (* In the case of VariadicClass[int], it's being called with a
+                               Type[int], not a Tuple[Type[int]].*)
+                            overload (Variable (Concatenation meta_generics))
+                          in
+                          let multiple_type_case =
+                            overload
+                              (create_parameter
+                                 (Type.Tuple (Bounded (Concatenation meta_generics))))
+                          in
+                          single_type_case, [multiple_type_case; single_type_case]
+                      | [Single generic] -> overload (create_parameter (Type.meta generic)), []
                       | _ ->
-                          (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and
-                             ignore the others *)
-                          {
-                            Type.Callable.annotation =
-                              Type.meta (Type.Parametric { name; parameters = generics });
-                            parameters = Undefined;
-                            define_location = None;
-                          } )
+                          let handle_groups = function
+                            | Type.Parameter.Single single as generic -> generic, Type.meta single
+                            | Group _ ->
+                                (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
+                                   without that we can't actually return the correct metatype, which
+                                   is a bummer *)
+                                Type.Parameter.Group Any, Type.Any
+                          in
+                          let return_parameters, parameter_parameters =
+                            List.map generics ~f:handle_groups |> List.unzip
+                          in
+                          ( {
+                              Type.Callable.annotation =
+                                Type.meta (Type.Parametric { name; parameters = return_parameters });
+                              parameters =
+                                Defined [create_parameter (Type.tuple parameter_parameters)];
+                              define_location = None;
+                            },
+                            [] ) )
                 in
-                { callable with implementation; overloads = [] }
+                { callable with implementation; overloads }
             | _ -> callable
           in
           let visibility =

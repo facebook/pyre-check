@@ -2332,6 +2332,13 @@ module OrderedTypes = struct
   module Concatenation = struct
     include Record.OrderedTypes.RecordConcatenate
 
+    let apply_mapping { middle; wrapping = { head; tail } } ~mapper =
+      let apply concrete = Parametric { name = mapper; parameters = [Single concrete] } in
+      let wrapping = { head = List.map head ~f:apply; tail = List.map tail ~f:apply } in
+      let middle = { middle with Middle.mappers = mapper :: middle.Middle.mappers } in
+      { middle; wrapping }
+
+
     module Middle = struct
       include Record.OrderedTypes.RecordConcatenate.Middle
 
@@ -2350,10 +2357,8 @@ module OrderedTypes = struct
             let handle_replaced = function
               | Any -> Any
               | Concrete concretes -> Concrete (List.map concretes ~f:apply)
-              | Concatenation { middle; wrapping = { head; tail } } ->
-                  let wrapping = { head = List.map head ~f:apply; tail = List.map tail ~f:apply } in
-                  let middle = { middle with mappers = head_mapper :: middle.mappers } in
-                  Concatenation { middle; wrapping }
+              | Concatenation concatenation ->
+                  Concatenation (apply_mapping ~mapper:head_mapper concatenation)
             in
             replace_variable inner ~replacement >>| handle_replaced
 
