@@ -85,15 +85,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         return os.path.join(configuration.log_directory, ProjectFilesMonitor.NAME)
 
     @staticmethod
-    def pid_path(configuration: Configuration) -> str:
-        return os.path.join(
-            ProjectFilesMonitor.base_path(configuration),
-            "{}.pid".format(ProjectFilesMonitor.NAME),
-        )
-
-    @staticmethod
     def is_alive(configuration: Configuration) -> bool:
-        pid_path = ProjectFilesMonitor.pid_path(configuration)
+        pid_path = ProjectFilesMonitor._compute_pid_path(
+            ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
+        )
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -146,14 +141,3 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 "the current directory `{}`".format(directory)
             )
         return watchman_path
-
-    @staticmethod
-    def stop_project_monitor(configuration: Configuration) -> None:
-        try:
-            pid_path = ProjectFilesMonitor.pid_path(configuration)
-            with open(pid_path) as file:
-                pid = int(file.read())
-                os.kill(pid, 2)  # sigint
-                LOG.info("Stopped the file monitor.")
-        except (OSError, ValueError):
-            pass
