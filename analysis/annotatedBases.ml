@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Pyre
 
 let find_propagated_type_variables bases ~parse_annotation =
   let find_type_variables { Expression.Call.Argument.value; _ } =
@@ -30,19 +31,36 @@ let inferred_generic_base { Node.value = { ClassSummary.bases; _ }; _ } ~parse_a
     let primitive, _ = parse_annotation value |> Type.split in
     Type.is_generic_primitive primitive
   in
+  let extract_protocol_parameters { Expression.Call.Argument.value; _ } =
+    let primitive, parameters = parse_annotation value |> Type.split in
+    let is_protocol =
+      primitive
+      |> Type.primitive_name
+      >>| String.equal "typing.Protocol"
+      |> Option.value ~default:false
+    in
+    Option.some_if is_protocol parameters
+  in
   if List.exists ~f:is_generic bases then
     []
   else
-    let variables = find_propagated_type_variables bases ~parse_annotation in
-    if List.is_empty variables then
-      []
-    else
+    let create variables =
       [
         {
           Expression.Call.Argument.name = None;
           value = Type.parametric "typing.Generic" variables |> Type.expression;
         };
       ]
+    in
+    match List.find_map bases ~f:extract_protocol_parameters with
+    | Some parameters -> create parameters
+    | None ->
+        (* TODO:(T60673574) Ban propagating multiple type variables *)
+        let variables = find_propagated_type_variables bases ~parse_annotation in
+        if List.is_empty variables then
+          []
+        else
+          create variables
 
 
 let extends_placeholder_stub_class

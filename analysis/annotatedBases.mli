@@ -5,11 +5,6 @@
 
 open Ast
 
-val find_propagated_type_variables
-  :  Expression.Call.Argument.t list ->
-  parse_annotation:(Expression.t -> Type.t) ->
-  Type.Parameter.t list
-
 (* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
    typing.Generic[_S]): ...` and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
 

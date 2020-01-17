@@ -508,6 +508,35 @@ let test_check_generic_protocols context =
       "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st "
       ^ "anonymous parameter to call `foo` but got `Alpha`.";
     ];
+  assert_type_errors
+    {|
+      X = typing.TypeVar("X")
+      Y = typing.TypeVar("Y")
+      class PXY(typing.Protocol[X, Y]):
+        x: X
+        y: Y
+
+      class PYX(typing.Protocol[Y, X]):
+        x: X
+        y: Y
+
+      class Foo:
+        x: int = 1
+        y: str = "A"
+
+      def xy(x: PXY[X, Y]) -> PXY[X, Y]: ...
+      def yx(x: PYX[X, Y]) -> PYX[X, Y]: ...
+
+      def bar(f: Foo) -> None:
+        a = xy(f)
+        reveal_type(a)
+        b = yx(f)
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `PXY[int, str]`.";
+      "Revealed type [-1]: Revealed type for `b` is `PYX[str, int]`.";
+    ];
   ()
 
 
