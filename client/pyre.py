@@ -82,6 +82,9 @@ def main() -> int:
     exit_code = ExitCode.FAILURE
     start = time.time()
     try:
+        original_directory = os.getcwd()
+        # TODO(T57959968): Stop changing the directory in the client
+        os.chdir(find_project_root(original_directory))
         if arguments.version:
             binary_version = get_binary_version_from_file(arguments.local_configuration)
             log.stdout.write(
@@ -90,9 +93,6 @@ def main() -> int:
                 )
             )
             return ExitCode.SUCCESS
-        original_directory = os.getcwd()
-        # TODO(T57959968): Stop changing the directory in the client
-        os.chdir(find_project_root(original_directory))
         command: CommandParser = arguments.command(arguments, original_directory)
 
         log.initialize(command.noninteractive, command.log_directory)
