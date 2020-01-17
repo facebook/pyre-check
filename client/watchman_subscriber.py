@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
 from .filesystem import acquire_lock, remove_if_exists
+from .process import register_unique_process
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -52,6 +53,10 @@ class WatchmanSubscriber(object):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def _compute_pid_path(base_path: str, name: str) -> str:
+        return str(Path(base_path, f"{name}.pid"))
+
     @property
     @functools.lru_cache(1)
     def _watchman_client(self) -> "pywatchman.client":  # noqa
@@ -76,12 +81,10 @@ class WatchmanSubscriber(object):
         except OSError:
             pass
         lock_path: str = os.path.join(self._base_path, "{}.lock".format(self._name))
-        pid_path: str = os.path.join(self._base_path, "{}.pid".format(self._name))
         LOG.debug(f"WatchmanSubscriber: Trying to acquire lock file {lock_path}.")
 
         def cleanup() -> None:
             LOG.info("Cleaning up lock and pid files before exiting.")
-            remove_if_exists(pid_path)
             remove_if_exists(lock_path)
 
         def interrupt_handler(_signal_number=None, _frame=None) -> None:
@@ -92,7 +95,11 @@ class WatchmanSubscriber(object):
         signal.signal(signal.SIGINT, interrupt_handler)
 
         # Die silently if unable to acquire the lock.
-        with acquire_lock(lock_path, blocking=False):
+        with acquire_lock(lock_path, blocking=False), (
+            register_unique_process(
+                os.getpid(), self._compute_pid_path(self._base_path, self._name)
+            )
+        ):
             LOG.debug("Acquired lock on %s", lock_path)
             file_handler = logging.FileHandler(
                 os.path.join(self._base_path, "%s.log" % self._name), mode="w"
@@ -101,9 +108,6 @@ class WatchmanSubscriber(object):
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             )
             LOG.addHandler(file_handler)
-
-            with open(pid_path, "w+") as pid_file:
-                pid_file.write(str(os.getpid()))
 
             subscriptions = self._subscriptions
             for subscription in subscriptions:
@@ -156,7 +160,9 @@ class WatchmanSubscriber(object):
     @staticmethod
     def stop_subscriber(base_path: str, subscriber_name: str) -> None:
         try:
-            pid_path = Path(base_path, "{}.pid".format(subscriber_name))
+            pid_path = Path(
+                WatchmanSubscriber._compute_pid_path(base_path, subscriber_name)
+            )
             pid = int(pid_path.read_text())
             os.kill(pid, signal.SIGINT)
             LOG.info("Stopped the %s with pid %d.", subscriber_name, pid)

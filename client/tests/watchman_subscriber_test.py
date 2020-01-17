@@ -24,8 +24,9 @@ def send_sigint_to_self(
 
 
 class WatchmanSubscriberTest(unittest.TestCase):
+    @patch.object(watchman_subscriber, "register_unique_process")
     @patch.object(watchman_subscriber, "remove_if_exists")
-    @patch.object(watchman_subscriber, "acquire_lock", side_effect=send_sigint_to_self)
+    @patch.object(watchman_subscriber, "acquire_lock")
     @patch.object(sys, "exit")
     @patch.object(os, "close")
     @patch.object(os, "fork", return_value=0)
@@ -38,14 +39,19 @@ class WatchmanSubscriberTest(unittest.TestCase):
         exit: MagicMock,
         acquire_lock: MagicMock,
         remove_if_exists: MagicMock,
+        register_unique_process: MagicMock,
     ) -> None:
+        acquire_lock.side_effect = send_sigint_to_self
         # pyre-fixme[41]: `_name` cannot be reassigned. It is a read-only property.
-        WatchmanSubscriber._name = "TEST"
-        subscriber = WatchmanSubscriber(".pyre/TEST")
+        WatchmanSubscriber._name = "foo_subscriber"
+        subscriber = WatchmanSubscriber(".pyre/test")
         subscriber.daemonize()
 
-        remove_if_exists.assert_any_call(os.path.join(".pyre", "TEST", "TEST.pid"))
-        remove_if_exists.assert_any_call(os.path.join(".pyre", "TEST", "TEST.lock"))
+        self.assertEqual(fork.call_count, 2)
+        register_unique_process.assert_called_once()
+        remove_if_exists.assert_any_call(
+            os.path.join(".pyre", "test", "foo_subscriber.lock")
+        )
 
     @patch.object(os, "kill")
     @patch.object(watchman_subscriber.Path, "read_text")

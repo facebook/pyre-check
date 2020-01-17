@@ -30,6 +30,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import remove_if_exists, translate_path
+from ..process import register_non_unique_process
 from ..socket_connection import SocketConnection, SocketException
 
 
@@ -631,8 +632,12 @@ class Command(CommandParser, ABC):
             stderr_reader.daemon = True
             stderr_reader.start()
 
-            # Wait for the process to finish and clean up.
-            process.wait()
+            with register_non_unique_process(
+                process.pid, self.NAME, self.log_directory
+            ):
+                # Wait for the process to finish and clean up.
+                process.wait()
+
             # In the exceptional case, make sure that we print the error messages.
             if process.returncode != 0:
                 stderr_reader.join()

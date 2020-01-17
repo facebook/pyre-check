@@ -3,11 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 import io
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 from ... import commands, configuration_monitor, project_files_monitor
 from ...analysis_directory import AnalysisDirectory
@@ -20,7 +18,11 @@ class PersistentTest(unittest.TestCase):
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_persistent(
-        self, _daemonize, directories_to_analyze, run_null_server, Monitor
+        self,
+        _daemonize: MagicMock,
+        directories_to_analyze: MagicMock,
+        run_null_server: MagicMock,
+        Monitor: MagicMock,
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -70,7 +72,9 @@ class PersistentTest(unittest.TestCase):
     @patch("select.select")
     @patch("sys.stdout", new_callable=io.StringIO)
     @patch.object(commands.Command, "_call_client")
-    def test_null_server(self, call_client, stdout, select) -> None:
+    def test_null_server(
+        self, call_client: MagicMock, stdout: MagicMock, select: MagicMock
+    ) -> None:
         input = """
         {
             "jsonrpc": "2.0",
