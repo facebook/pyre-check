@@ -86,7 +86,6 @@ let call workers ~job ~merge ~neutral ~next =
   | None -> single_threaded_call job merge neutral next
   | Some workers -> multi_threaded_call workers job merge neutral next
 
-let next ?max_size workers =
+let next workers =
   Hack_bucket.make
     ~num_workers: (match workers with Some w -> List.length w | None -> 1)
-    ?max_size

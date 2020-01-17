@@ -14,7 +14,6 @@
 type 'a nextlist = 'a list Hack_bucket.next
 
 val next :
-  ?max_size: int ->
   Worker.t list option ->
   'a list ->
   'a list Hack_bucket.next

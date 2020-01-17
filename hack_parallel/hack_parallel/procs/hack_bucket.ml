@@ -34,12 +34,10 @@ let make_ bucket_size jobs =
     i := bucket_size + !i;
     Array.to_list result
 
-let make_list ~num_workers ?(max_size=500) jobs =
+let make_list ~num_workers jobs =
   let jobs = Array.of_list jobs in
   let bucket_size =
-    if Array.length jobs < num_workers * max_size
-    then max 1 (1 + ((Array.length jobs) / num_workers))
-    else max_size
+     max 1 (1 + ((Array.length jobs) / num_workers))
   in
   make_ bucket_size jobs
 
@@ -47,8 +45,8 @@ let of_list = function
   | [] -> Done
   | wl -> Job wl
 
-let make ~num_workers ?(max_size=500) jobs =
-  let maker = make_list ~num_workers ~max_size jobs in
+let make ~num_workers jobs =
+  let maker = make_list ~num_workers jobs in
   fun () -> of_list (maker ())
 
 type 'a of_n = { work: 'a; bucket: int; total: int }

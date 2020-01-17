@@ -17,15 +17,12 @@ module Std : sig
        size of the list.  *)
     val of_list : 'a list -> 'a list bucket
 
-    val make : num_workers:int -> ?max_size:int -> 'a list -> 'a list next
+    val make : num_workers:int -> 'a list -> 'a list next
 
     type 'a of_n = { work: 'a; bucket: int; total: int }
 
     val make_n_buckets : buckets:int -> split:(bucket:int -> 'a) ->
       'a of_n next
-
-    (* Specialized version to split into lists only. *)
-    val make_list : num_workers:int -> ?max_size:int -> 'a list -> (unit -> 'a list)
 
 
   end
@@ -326,7 +323,6 @@ module Std : sig
     type 'a nextlist = 'a list Bucket.next
 
     val next :
-      ?max_size: int ->
       Worker.t list option ->
       'a list ->
       'a list Bucket.next
