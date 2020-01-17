@@ -261,7 +261,12 @@ module EnvironmentTable = struct
         in
         Scheduler.iter
           scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunks_per_worker:1
+               ~minimum_chunk_size:100
+               ~preferred_chunks_per_worker:5
+               ())
           ~configuration
           ~f:register
           ~inputs:names_to_update
