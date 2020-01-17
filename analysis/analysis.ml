@@ -44,6 +44,7 @@ module NamedTuple = NamedTuple
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module Refinement = Refinement
+module RefinementUnit = RefinementUnit
 module Resolution = Resolution
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys

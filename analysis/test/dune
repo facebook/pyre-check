@@ -33,6 +33,7 @@
   namedTupleTest
   preprocessingTest
   refinementTest
+  refinementUnitTest
   resolutionTest
   resolvedCallableTest
   scopeTest
