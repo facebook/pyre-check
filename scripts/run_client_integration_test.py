@@ -92,8 +92,9 @@ class TestCommand(unittest.TestCase, ABC):
         Path(self.directory, relative_path).mkdir()
 
     def create_file(self, relative_path: str, contents: str = "") -> None:
-        with Path(self.directory, relative_path).open("w") as new_file:
-            new_file.write(textwrap.dedent(contents))
+        file_path = self.directory / relative_path
+        file_path.parent.mkdir(exist_ok=True)
+        file_path.write_text(textwrap.dedent(contents))
 
     def create_file_with_error(self, relative_path: str) -> None:
         contents = """
@@ -114,14 +115,18 @@ class TestCommand(unittest.TestCase, ABC):
         self,
         command: str,
         *arguments: str,
-        timeout: int = 20,
+        working_directory: Optional[str] = None,
+        timeout: int = 60,
         prompts: Optional[List[str]] = None
     ) -> PyreResult:
+        working_directory: Path = (
+            self.directory / working_directory if working_directory else self.directory
+        )
         prompt_inputs = "\n".join(prompts).encode() if prompts else None
         try:
             process = subprocess.run(
                 ["pyre", "--noninteractive", "--output=json", command, *arguments],
-                cwd=self.directory,
+                cwd=working_directory,
                 input=prompt_inputs,
                 timeout=timeout,
                 capture_output=True,
@@ -143,6 +148,15 @@ class TestCommand(unittest.TestCase, ABC):
 
     def assert_no_errors(self, result: PyreResult) -> None:
         self.assertTrue(result.return_code == 0, self.get_context(result))
+
+    def assert_file_exists(
+        self, relative_path: str, json_contents: Optional[Dict[str, Any]] = None
+    ) -> None:
+        file_path = self.directory / relative_path
+        self.assertTrue(file_path.exists())
+        if json_contents:
+            file_contents = file_path.read_text()
+            self.assertEqual(json_contents, json.loads(file_contents))
 
 
 class AnalyzeTest(TestCommand):
@@ -193,6 +207,33 @@ class InitializeTest(TestCommand):
             self.run_pyre(
                 "init",
                 prompts=["y", "fake_pyre.bin", "fake_typeshed", "//example:target"],
+            )
+            expected_contents = {
+                "binary": str(self.directory / "fake_pyre.bin"),
+                "source_directories": ["//example:target"],
+                "typeshed": str(self.directory / "fake_typeshed"),
+            }
+            self.assert_file_exists(
+                ".pyre_configuration", json_contents=expected_contents
+            )
+
+    def test_initialize_local_configuration(self) -> None:
+        self.create_directory("local_project")
+        with _watch_directory(self.directory):
+            self.run_pyre(
+                "init",
+                "--local",
+                working_directory="local_project",
+                prompts=["//example:target", "Y", "Y", "Y"],
+            )
+            expected_contents = {
+                "differential": True,
+                "push_blocking": True,
+                "targets": ["//example:target"],
+            }
+            self.assert_file_exists(
+                "local_project/.pyre_configuration.local",
+                json_contents=expected_contents,
             )
 
 
