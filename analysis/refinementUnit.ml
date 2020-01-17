@@ -11,6 +11,21 @@ type t = {
   attribute_refinements: t Identifier.Map.t;
 }
 
+let rec pp format { base; attribute_refinements } =
+  let attribute_map_entry (identifier, refinement_unit) =
+    Format.asprintf "%a -> %a" Identifier.pp identifier pp refinement_unit
+  in
+  ( match base with
+  | Some base -> Format.fprintf format "[Base: %a; " Annotation.pp base
+  | None -> Format.fprintf format "[Base: (); " );
+  Map.to_alist attribute_refinements
+  |> List.map ~f:attribute_map_entry
+  |> String.concat ~sep:", "
+  |> Format.fprintf format "Attributes: [%s]]"
+
+
+let show = Format.asprintf "%a" pp
+
 let create ?base ?(attribute_refinements = Identifier.Map.empty) () =
   { base; attribute_refinements }
 

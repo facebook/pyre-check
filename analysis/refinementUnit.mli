@@ -5,7 +5,7 @@
 
 open Ast
 
-type t
+type t [@@deriving show]
 
 val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.t -> unit -> t
 
