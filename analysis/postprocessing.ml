@@ -178,8 +178,8 @@ let run ~scheduler ~configuration ~environment sources =
   let _, errors =
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 200)
       ~configuration
-      ~bucket_size:200
       ~initial:(0, [])
       ~map
       ~reduce

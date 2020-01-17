@@ -2,6 +2,7 @@
  (names
   ignoreTest
   memoryTest
+  schedulerTest
   typeCheckTest)
  (preprocess
   (pps ppx_sexp_message ppx_hash))

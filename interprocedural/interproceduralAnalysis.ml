@@ -638,9 +638,9 @@ let compute_fixpoint
         let { callables_to_dump = iteration_callables_to_dump; _ } =
           Scheduler.map_reduce
             scheduler
+            ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
             ~configuration
             ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
-            ~bucket_size:1000
             ~initial:{ callables_processed = 0; callables_to_dump = Callable.Set.empty }
             ~reduce
             ~inputs:callables_to_analyze
@@ -710,6 +710,7 @@ let extract_errors scheduler ~configuration all_callables =
   in
   Scheduler.map_reduce
     scheduler
+    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
     ~configuration
     ~initial:[]
     ~map:(fun _ callables -> extract_errors callables)

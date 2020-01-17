@@ -13,7 +13,69 @@ type t = {
   number_of_workers: int;
 }
 
-let number_of_workers { number_of_workers; _ } = number_of_workers
+module Policy = struct
+  type t = number_of_workers:int -> number_of_tasks:int -> int
+
+  let divide_work ~number_of_workers ~number_of_tasks policy =
+    policy ~number_of_workers ~number_of_tasks
+
+
+  let legacy_fixed_chunk_size chunk_size =
+    assert (chunk_size > 0);
+    fun ~number_of_workers ~number_of_tasks ->
+      Core.Int.max number_of_workers ((number_of_tasks / chunk_size) + 1)
+
+
+  let legacy_fixed_chunk_count () ~number_of_workers ~number_of_tasks =
+    Core.Int.max
+      number_of_workers
+      (let chunk_multiplier = Core.Int.min 10 (1 + (number_of_tasks / 400)) in
+       number_of_workers * chunk_multiplier)
+
+
+  let fixed_chunk_size ?mininum_chunk_size ~minimum_chunks_per_worker ~preferred_chunk_size () =
+    let minimum_chunk_size = Option.value mininum_chunk_size ~default:preferred_chunk_size in
+    assert (minimum_chunk_size >= 0);
+    assert (preferred_chunk_size >= minimum_chunk_size);
+    assert (minimum_chunks_per_worker >= 0);
+    fun ~number_of_workers ~number_of_tasks ->
+      let preferred_chunk_count = (number_of_tasks / preferred_chunk_size) + 1 in
+      let minimum_chunk_count = minimum_chunks_per_worker * number_of_workers in
+      if preferred_chunk_count >= minimum_chunk_count then
+        preferred_chunk_count
+      else
+        let fallback_chunk_size = number_of_tasks / minimum_chunk_count in
+        if fallback_chunk_size >= minimum_chunk_size then
+          minimum_chunk_count
+        else
+          1
+
+
+  let fixed_chunk_count
+      ?minimum_chunks_per_worker
+      ~minimum_chunk_size
+      ~preferred_chunks_per_worker
+      ()
+    =
+    let minimum_chunks_per_worker =
+      Option.value minimum_chunks_per_worker ~default:preferred_chunks_per_worker
+    in
+    assert (minimum_chunks_per_worker >= 0);
+    assert (preferred_chunks_per_worker >= minimum_chunks_per_worker);
+    assert (minimum_chunks_per_worker >= 0);
+    fun ~number_of_workers ~number_of_tasks ->
+      let preferred_chunk_count = preferred_chunks_per_worker * number_of_workers in
+      let preferred_chunk_size = number_of_tasks / preferred_chunk_count in
+      if preferred_chunk_size >= minimum_chunk_size then
+        preferred_chunk_count
+      else
+        let minimum_chunk_count = minimum_chunks_per_worker * number_of_workers in
+        let fallback_chunk_count = (number_of_tasks / minimum_chunk_size) + 1 in
+        if fallback_chunk_count >= minimum_chunk_count then
+          fallback_chunk_count
+        else
+          1
+end
 
 let entry = Worker.register_entry_point ~restore:(fun _ -> ())
 
@@ -49,7 +111,7 @@ let run_process
 
 let map_reduce
     { workers; number_of_workers; is_parallel; _ }
-    ?bucket_size
+    ~policy
     ~configuration
     ~initial
     ~map
@@ -57,31 +119,31 @@ let map_reduce
     ~inputs
     ()
   =
+  let sequential_map_reduce () = map initial inputs |> fun mapped -> reduce mapped initial in
   if is_parallel then
-    let number_of_workers =
-      Core.Int.max
-        number_of_workers
-        ( match bucket_size with
-        | Some exact_size when exact_size > 0 -> (List.length inputs / exact_size) + 1
-        | _ ->
-            let bucket_multiplier = Core.Int.min 10 (1 + (List.length inputs / 400)) in
-            number_of_workers * bucket_multiplier )
+    let number_of_chunks =
+      Policy.divide_work ~number_of_workers ~number_of_tasks:(List.length inputs) policy
     in
-    let map accumulator inputs = (fun () -> map accumulator inputs) |> run_process ~configuration in
-    MultiWorker.call
-      (Some workers)
-      ~job:map
-      ~merge:reduce
-      ~neutral:initial
-      ~next:(Bucket.make ~num_workers:number_of_workers inputs)
+    if number_of_chunks = 1 then
+      sequential_map_reduce ()
+    else
+      let map accumulator inputs =
+        (fun () -> map accumulator inputs) |> run_process ~configuration
+      in
+      MultiWorker.call
+        (Some workers)
+        ~job:map
+        ~merge:reduce
+        ~neutral:initial
+        ~next:(Bucket.make ~num_workers:number_of_chunks inputs)
   else
-    map initial inputs |> fun mapped -> reduce mapped initial
+    sequential_map_reduce ()
 
 
-let iter ?bucket_size scheduler ~configuration ~f ~inputs =
+let iter scheduler ~policy ~configuration ~f ~inputs =
   map_reduce
     scheduler
-    ?bucket_size
+    ~policy
     ~configuration
     ~initial:()
     ~map:(fun _ inputs -> f inputs)
@@ -114,7 +176,11 @@ let workers { workers; _ } = workers
 
 let destroy _ = Worker.killall ()
 
-let once_per_worker scheduler ~configuration ~f =
-  let number_of_workers = number_of_workers scheduler in
-  let f _ = f () in
-  iter scheduler ~bucket_size:1 ~configuration ~f ~inputs:(List.init number_of_workers ~f:Fn.id)
+let once_per_worker { workers; number_of_workers; _ } ~configuration:_ ~f =
+  MultiWorker.call
+    (Some workers)
+    ~job:(fun _ _ -> f ())
+    ~merge:(fun _ _ -> ())
+    ~neutral:()
+    ~next:
+      (Bucket.make ~num_workers:number_of_workers (List.init number_of_workers ~f:(fun _ -> ())))

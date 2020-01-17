@@ -46,8 +46,8 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   let errors, _ =
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 75)
       ~configuration
-      ~bucket_size:75
       ~initial:([], 0)
       ~map
       ~reduce

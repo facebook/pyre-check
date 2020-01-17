@@ -259,7 +259,12 @@ module EnvironmentTable = struct
           in
           List.iter ~f:set
         in
-        Scheduler.iter scheduler ~configuration ~f:register ~inputs:names_to_update
+        Scheduler.iter
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~configuration
+          ~f:register
+          ~inputs:names_to_update
       in
       match configuration with
       | { incremental_style = FineGrained; _ } ->

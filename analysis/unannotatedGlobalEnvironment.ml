@@ -856,7 +856,14 @@ let update_this_and_all_preceding_environments
     List.iter sources ~f:register
   in
   let modified_qualifiers = Set.to_list modified_qualifiers in
-  let update () = Scheduler.iter scheduler ~configuration ~f:map ~inputs:modified_qualifiers in
+  let update () =
+    Scheduler.iter
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~configuration
+      ~f:map
+      ~inputs:modified_qualifiers
+  in
   let previous_classes_list = KeyTracker.get_keys modified_qualifiers in
   let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
   let previous_unannotated_globals_list =

@@ -116,6 +116,7 @@ let analyze
     in
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~configuration
       ~initial:DependencyGraph.empty_overrides
       ~map:(fun _ qualifiers ->
@@ -145,6 +146,7 @@ let analyze
     in
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~configuration
       ~initial:Callable.RealMap.empty
       ~map:(fun _ qualifiers ->

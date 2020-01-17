@@ -5323,8 +5323,8 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
   let _ =
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 500)
       ~configuration
-      ~bucket_size:500
       ~initial:0
       ~map
       ~reduce
@@ -5351,8 +5351,8 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_bui
     in
     Scheduler.map_reduce
       scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 75)
       ~configuration
-      ~bucket_size:75
       ~initial:[]
       ~map
       ~reduce:List.append
