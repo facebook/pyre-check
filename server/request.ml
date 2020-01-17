@@ -418,40 +418,43 @@ let process_type_query_request
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.Defines module_names ->
-        let ast_environment = TypeEnvironment.ast_environment environment in
+        let unannotated_global_environment =
+          GlobalResolution.unannotated_global_environment global_resolution
+        in
         let defines_of_module module_name =
-          match AstEnvironment.ReadOnly.get_source ast_environment module_name with
-          | Some definition ->
-              let defines =
-                Preprocessing.defines
-                  ~include_stubs:true
-                  ~include_nested:true
-                  ~include_methods:true
-                  definition
-              in
-              let represent
-                  {
-                    Node.value =
-                      { Statement.Define.signature = { name; return_annotation; parameters; _ }; _ };
-                    _;
-                  }
-                =
-                let represent_parameter
-                    { Node.value = { Expression.Parameter.name; annotation; _ }; _ }
-                  =
-                  {
-                    TypeQuery.parameter_name = Identifier.sanitized name;
-                    parameter_annotation = annotation;
-                  }
-                in
-                {
-                  TypeQuery.define_name = Node.value name;
-                  parameters = List.map parameters ~f:represent_parameter;
-                  return_annotation;
-                }
-              in
-              List.map defines ~f:represent
-          | None -> []
+          let defines =
+            UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+              unannotated_global_environment
+              module_name
+            |> List.filter_map ~f:(GlobalResolution.function_definitions global_resolution)
+            |> List.concat
+            |> List.filter ~f:(fun { Node.value = define; _ } ->
+                   not
+                     ( Statement.Define.is_toplevel define
+                     || Statement.Define.is_class_toplevel define
+                     || Statement.Define.is_overloaded_function define ))
+          in
+          let represent
+              {
+                Node.value =
+                  { Statement.Define.signature = { name; return_annotation; parameters; _ }; _ };
+                _;
+              }
+            =
+            let represent_parameter { Node.value = { Expression.Parameter.name; annotation; _ }; _ }
+              =
+              {
+                TypeQuery.parameter_name = Identifier.sanitized name;
+                parameter_annotation = annotation;
+              }
+            in
+            {
+              TypeQuery.define_name = Node.value name;
+              parameters = List.map parameters ~f:represent_parameter;
+              return_annotation;
+            }
+          in
+          List.map defines ~f:represent
         in
         List.concat_map module_names ~f:defines_of_module
         |> fun defines -> TypeQuery.Response (TypeQuery.FoundDefines defines)
