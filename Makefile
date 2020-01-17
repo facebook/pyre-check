@@ -19,6 +19,11 @@ test: all
 python_tests:
 	./scripts/run-python-tests.sh
 
+.PHONY: client_integration_test
+client_integration_test: all
+	buck build //tools/pyre/client:pyre;
+	PYRE_CLIENT="$(shell pwd)/../../buck-out/gen/tools/pyre/client/pyre.par" ./scripts/run_client_integration_test.py
+
 .PHONY: server_integration_test
 server_integration_test: all
 	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_server_integration_test.py command/test/integration/fake_repository/
