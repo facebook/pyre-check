@@ -71,15 +71,16 @@ let run_check
       ()
   in
   (fun () ->
+    let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
       if infer then
-        let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration () in
+        let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
         errors, ast_environment
       else
         let timer = Timer.start () in
         let { Check.errors; ast_environment; _ } =
           Check.check
-            ~scheduler:None
+            ~scheduler
             ~configuration
             ~build_legacy_dependency_graph:false
             ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)

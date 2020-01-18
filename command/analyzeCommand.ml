@@ -107,7 +107,7 @@ let run_analysis
         { configuration with analyze_external_sources = true }
       in
       Service.Check.check
-        ~scheduler:(Some scheduler)
+        ~scheduler
         ~configuration
         ~build_legacy_dependency_graph:false
         ~call_graph_builder:(module Taint.CallGraphBuilder)
@@ -164,8 +164,7 @@ let run_analysis
         Interprocedural.Error.instantiate ~lookup:filename_lookup error
         |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-    |> Log.print "%s";
-    Scheduler.destroy scheduler)
+    |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 
 

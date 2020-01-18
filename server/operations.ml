@@ -64,13 +64,9 @@ exception ConnectionFailure
 
 exception VersionMismatch of version_mismatch
 
-let start_from_scratch ?old_state ~connections ~configuration () =
+let start_from_scratch ~connections ~configuration () =
   Log.log ~section:`Server "Initializing server...";
-  let scheduler =
-    match old_state with
-    | Some { scheduler; _ } -> scheduler
-    | None -> Scheduler.create ~configuration ()
-  in
+  let scheduler = Scheduler.create ~configuration () in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
   let { Check.module_tracker; ast_environment; environment; errors } =
@@ -80,7 +76,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
       | _ -> true
     in
     Check.check
-      ~scheduler:(Some scheduler)
+      ~scheduler
       ~configuration
       ~build_legacy_dependency_graph
       ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
@@ -136,7 +132,6 @@ let log_configuration { Configuration.Analysis.features; incremental_style; _ } 
 
 
 let start
-    ?old_state
     ~connections
     ~configuration:
       ( {
@@ -177,8 +172,8 @@ let start
         | SavedState.IncompatibleState reason ->
             Log.warning "Unable to load saved state, falling back to a full start.";
             Statistics.event ~name:"saved state failure" ~normals:["reason", reason] ();
-            start_from_scratch ?old_state ~connections ~configuration () )
-    | _ -> start_from_scratch ?old_state ~connections ~configuration ()
+            start_from_scratch ~connections ~configuration () )
+    | _ -> start_from_scratch ~connections ~configuration ()
   in
   ( match saved_state_action with
   | Some (Save saved_state_path) -> SavedState.save ~configuration ~saved_state_path state

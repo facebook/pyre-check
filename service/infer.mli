@@ -10,4 +10,4 @@ type result = {
   errors: Analysis.Error.t list;
 }
 
-val infer : configuration:Configuration.Analysis.t -> unit -> result
+val infer : configuration:Configuration.Analysis.t -> scheduler:Scheduler.t -> unit -> result

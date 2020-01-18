@@ -14,7 +14,7 @@ type result = {
 }
 
 let check
-    ~scheduler:original_scheduler
+    ~scheduler
     ~configuration:
       ({ Configuration.Analysis.project_root; local_root; search_path; debug; _ } as configuration)
     ~build_legacy_dependency_graph
@@ -28,11 +28,6 @@ let check
   check_directory_exists local_root;
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
-  let scheduler =
-    match original_scheduler with
-    | None -> Scheduler.create ~configuration ()
-    | Some scheduler -> scheduler
-  in
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
 
@@ -145,7 +140,4 @@ let check
     ();
 
   (* Only destroy the scheduler if the check command created it. *)
-  ( match original_scheduler with
-  | None -> Scheduler.destroy scheduler
-  | Some _ -> () );
   { module_tracker; ast_environment; environment; errors }

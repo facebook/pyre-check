@@ -39,7 +39,7 @@ let assert_errors
   List.iter ~f:File.write files;
   let { Service.Check.ast_environment; errors; _ } =
     Service.Check.check
-      ~scheduler:(Some scheduler)
+      ~scheduler
       ~configuration
       ~build_legacy_dependency_graph:false
       ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)

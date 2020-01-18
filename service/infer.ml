@@ -61,6 +61,7 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
 let infer
     ~configuration:
       ({ Configuration.Analysis.project_root; local_root; search_path; _ } as configuration)
+    ~scheduler
     ()
   =
   (* Sanity check environment. *)
@@ -71,7 +72,6 @@ let infer
   check_directory_exists local_root;
   check_directory_exists project_root;
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
-  let scheduler = Scheduler.create ~configuration () in
 
   let module_tracker = ModuleTracker.create configuration in
   let ast_environment = AstEnvironment.create module_tracker in

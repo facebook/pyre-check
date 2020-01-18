@@ -13,7 +13,7 @@ type result = {
 }
 
 val check
-  :  scheduler:Scheduler.t option ->
+  :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   build_legacy_dependency_graph:bool ->
   call_graph_builder:(module Callgraph.Builder) ->

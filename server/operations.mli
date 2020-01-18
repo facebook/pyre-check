@@ -27,12 +27,7 @@ exception ConnectionFailure
 
 exception VersionMismatch of version_mismatch
 
-val start
-  :  ?old_state:State.t ->
-  connections:State.connections ->
-  configuration:Configuration.Server.t ->
-  unit ->
-  State.t
+val start : connections:State.connections -> configuration:Configuration.Server.t -> unit -> State.t
 
 val stop : reason:string -> configuration:Configuration.Server.t -> 'a
 
