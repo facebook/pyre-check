@@ -3370,20 +3370,57 @@ module State (Context : Context) = struct
                       match resolved_base, attribute with
                       | Some parent, Some (attribute, name)
                         when not (Annotated.Attribute.defined attribute) ->
-                          emit_error
-                            ~state
-                            ~location
-                            ~kind:
-                              (Error.UndefinedAttribute
-                                 {
-                                   attribute = name;
-                                   origin =
-                                     Error.Class
-                                       {
-                                         annotation = parent;
-                                         class_attribute = Type.is_meta resolved;
-                                       };
-                                 })
+                          (* Check if __setattr__ method is defined to accept value of type `Any` *)
+                          let is_setattr_any_defined =
+                            let attribute =
+                              match Type.resolve_class parent with
+                              | Some [{ instantiated; class_name; _ }] ->
+                                  GlobalResolution.attribute_from_class_name
+                                    class_name
+                                    ~class_attributes:false
+                                    ~transitive:false
+                                    ~resolution:global_resolution
+                                    ~name:"__setattr__"
+                                    ~instantiated
+                              | _ -> None
+                            in
+                            match attribute with
+                            | Some attribute when Annotated.Attribute.defined attribute -> (
+                                match
+                                  Annotated.Attribute.annotation attribute |> Annotation.annotation
+                                with
+                                | Type.Callable
+                                    {
+                                      implementation =
+                                        {
+                                          Type.Callable.parameters =
+                                            Type.Callable.Defined (_ :: value_parameter :: _);
+                                          _;
+                                        };
+                                      _;
+                                    } ->
+                                    Type.Callable.Parameter.annotation value_parameter
+                                    |> Option.value_map ~default:false ~f:Type.is_any
+                                | _ -> false )
+                            | _ -> false
+                          in
+                          if not is_setattr_any_defined then
+                            emit_error
+                              ~state
+                              ~location
+                              ~kind:
+                                (Error.UndefinedAttribute
+                                   {
+                                     attribute = name;
+                                     origin =
+                                       Error.Class
+                                         {
+                                           annotation = parent;
+                                           class_attribute = Type.is_meta resolved;
+                                         };
+                                   })
+                          else
+                            state
                       | _ -> state
                     in
                     let check_nested_explicit_type_alias state =
