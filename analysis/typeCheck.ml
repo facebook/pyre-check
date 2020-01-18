@@ -5323,7 +5323,12 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
   let _ =
     Scheduler.map_reduce
       scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 500)
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_size
+           ~mininum_chunk_size:10
+           ~minimum_chunks_per_worker:2
+           ~preferred_chunk_size:500
+           ())
       ~configuration
       ~initial:0
       ~map
@@ -5351,7 +5356,12 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_bui
     in
     Scheduler.map_reduce
       scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 75)
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
+           ())
       ~configuration
       ~initial:[]
       ~map
