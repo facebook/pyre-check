@@ -32,7 +32,7 @@ let test_policy _ =
     (Policy.fixed_chunk_size
        ~minimum_chunks_per_worker:3
        ~preferred_chunk_size:10
-       ~mininum_chunk_size:5
+       ~minimum_chunk_size:5
        ())
     ~number_of_workers:5
     ~number_of_tasks:101

@@ -33,8 +33,8 @@ module Policy = struct
        number_of_workers * chunk_multiplier)
 
 
-  let fixed_chunk_size ?mininum_chunk_size ~minimum_chunks_per_worker ~preferred_chunk_size () =
-    let minimum_chunk_size = Option.value mininum_chunk_size ~default:preferred_chunk_size in
+  let fixed_chunk_size ?minimum_chunk_size ~minimum_chunks_per_worker ~preferred_chunk_size () =
+    let minimum_chunk_size = Option.value minimum_chunk_size ~default:preferred_chunk_size in
     assert (minimum_chunk_size >= 0);
     assert (preferred_chunk_size >= minimum_chunk_size);
     assert (minimum_chunks_per_worker >= 0);

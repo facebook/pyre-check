@@ -25,7 +25,7 @@ module Policy : sig
   (* The fixed_chunk_size policy attempts to keep the size of each chunk constant. It also tries to
      make sure that the number of chunks does not fall below a given threshold. *)
   val fixed_chunk_size
-    :  ?mininum_chunk_size:int ->
+    :  ?minimum_chunk_size:int ->
     minimum_chunks_per_worker:int ->
     preferred_chunk_size:int ->
     unit ->
