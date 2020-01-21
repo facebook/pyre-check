@@ -11,13 +11,13 @@ from typing import Dict
 
 from libcst import Module, parse_module
 
-from ..statistics import (
+from ...statistics_collectors import (
     AnnotationCountCollector,
     FixmeCountCollector,
     IgnoreCountCollector,
     StrictCountCollector,
-    _find_paths,
 )
+from ..statistics import _find_paths
 from .command_test import mock_arguments
 
 

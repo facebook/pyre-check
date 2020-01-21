@@ -17,184 +17,14 @@ import libcst as cst
 from .. import log, log_statistics
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
+from ..statistics_collectors import (
+    AnnotationCountCollector,
+    FixmeCountCollector,
+    IgnoreCountCollector,
+    StatisticsCollector,
+    StrictCountCollector,
+)
 from .command import Command
-
-
-class StatisticsCollector(cst.CSTVisitor):
-    def build_json(self) -> Dict[str, int]:
-        return {}
-
-
-class AnnotationCountCollector(StatisticsCollector):
-    def __init__(
-        self,
-        return_count: int = 0,
-        annotated_return_count: int = 0,
-        globals_count: int = 0,
-        annotated_globals_count: int = 0,
-        parameter_count: int = 0,
-        annotated_parameter_count: int = 0,
-        attribute_count: int = 0,
-        annotated_attribute_count: int = 0,
-        partially_annotated_function_count: int = 0,
-        fully_annotated_function_count: int = 0,
-    ) -> None:
-        self.return_count = return_count
-        self.annotated_return_count = annotated_return_count
-        self.globals_count = globals_count
-        self.annotated_globals_count = annotated_globals_count
-        self.parameter_count = parameter_count
-        self.annotated_parameter_count = annotated_parameter_count
-        self.attribute_count = attribute_count
-        self.annotated_attribute_count = annotated_attribute_count
-        self.partially_annotated_function_count = partially_annotated_function_count
-        self.fully_annotated_function_count = fully_annotated_function_count
-        self.in_class_definition = False
-        self.in_function_definition = False
-        self.is_static_function = False
-
-    def build_json(self) -> Dict[str, int]:
-        return {
-            "return_count": self.return_count,
-            "annotated_return_count": self.annotated_return_count,
-            "globals_count": self.globals_count,
-            "annotated_globals_count": self.annotated_globals_count,
-            "parameter_count": self.parameter_count,
-            "annotated_parameter_count": self.annotated_parameter_count,
-            "attribute_count": self.attribute_count,
-            "annotated_attribute_count": self.annotated_attribute_count,
-            "partially_annotated_function_count": self.partially_annotated_function_count,
-            "fully_annotated_function_count": self.fully_annotated_function_count,
-        }
-
-    def _is_self_or_cls(self, index: int) -> bool:
-        return index == 0 and self.in_class_definition and not self.is_static_function
-
-    def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> int:
-        annotated_parameter_count = 0
-        for index, parameter in enumerate(parameters):
-            self.parameter_count += 1
-            annotation = parameter.annotation
-            if annotation is not None or self._is_self_or_cls(index):
-                annotated_parameter_count += 1
-        self.annotated_parameter_count += annotated_parameter_count
-        return annotated_parameter_count
-
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
-        for decorator in node.decorators:
-            decorator_node = decorator.decorator
-            if isinstance(decorator_node, cst.Name):
-                if decorator_node.value == "staticmethod":
-                    self.is_static_function = True
-        self.in_function_definition = True
-
-        self.return_count += 1
-        return_is_annotated = node.returns is not None
-        if return_is_annotated:
-            self.annotated_return_count += 1
-
-        annotated_default_parameters = self._check_parameter_annotations(
-            node.params.default_params
-        )
-        annotated_parameters = self._check_parameter_annotations(node.params.params)
-
-        if return_is_annotated and (
-            annotated_default_parameters + annotated_parameters
-            == len(node.params.default_params) + len(node.params.params)
-        ):
-            self.fully_annotated_function_count += 1
-        elif (
-            return_is_annotated
-            or annotated_default_parameters > 0
-            or annotated_parameters > 0
-        ):
-            self.partially_annotated_function_count += 1
-
-    def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
-        self.in_function_definition = False
-        self.is_static_function = False
-
-    def visit_Assign(self, node: cst.Assign) -> None:
-        if self.in_function_definition:
-            return
-        if self.in_class_definition:
-            self.attribute_count += 1
-        else:
-            self.globals_count += 1
-
-    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
-        if self.in_function_definition:
-            return
-        if self.in_class_definition:
-            self.attribute_count += 1
-            self.annotated_attribute_count += 1
-        else:
-            self.globals_count += 1
-            self.annotated_globals_count += 1
-
-    def visit_ClassDef(self, node: cst.ClassDef) -> None:
-        self.in_class_definition = True
-
-    def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
-        self.in_class_definition = False
-
-
-class CountCollector(StatisticsCollector):
-    def __init__(self, regex: str) -> None:
-        self.counts: Dict[str, int] = defaultdict(int)
-        self.regex: Pattern[str] = compile(regex)
-
-    def visit_Comment(self, node: cst.Comment) -> None:
-        match = self.regex.match(node.value)
-        if match:
-            self.counts[match.group(1)] += 1
-
-    def build_json(self) -> Dict[str, int]:
-        return dict(self.counts)
-
-
-class FixmeCountCollector(CountCollector):
-    def __init__(self) -> None:
-        super().__init__(r"# pyre-fixme\[(\d*)\]:")
-
-
-class IgnoreCountCollector(CountCollector):
-    def __init__(self) -> None:
-        super().__init__(r"# pyre-ignore\[(\d*)\]:")
-
-
-class StrictCountCollector(StatisticsCollector):
-    def __init__(self, strict_by_default: bool) -> None:
-        self.is_strict: bool = False
-        self.is_unsafe: bool = False
-        self.strict_count: int = 0
-        self.unsafe_count: int = 0
-        self.strict_by_default: bool = strict_by_default
-        self.unsafe_regex: Pattern[str] = compile(r"# pyre-unsafe")
-        self.strict_regex: Pattern[str] = compile(r"# pyre-strict")
-
-    def visit_Module(self, node: cst.Module) -> None:
-        self.is_strict = False
-        self.is_unsafe = False
-
-    def visit_Comment(self, node: cst.Comment) -> None:
-        strict_match = self.strict_regex.match(node.value)
-        if strict_match:
-            self.is_strict = True
-        unsafe_match = self.unsafe_regex.match(node.value)
-        if unsafe_match:
-            self.is_unsafe = True
-
-    def leave_Module(self, original_node: cst.Module) -> None:
-        if self.is_unsafe:
-            self.unsafe_count += 1
-        elif self.is_strict or self.strict_by_default:
-            self.strict_count += 1
-        else:
-            self.unsafe_count += 1
-
-    def build_json(self) -> Dict[str, int]:
-        return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
 
 
 def _get_paths(target_directory: Path) -> List[Path]:
@@ -205,27 +35,19 @@ def _get_paths(target_directory: Path) -> List[Path]:
     ]
 
 
-def _parse_directory(directory: Path) -> List[cst.Module]:
-    files = _get_paths(directory)
-    new_files = []
-    for file in files:
-        new_files.append(_parse_file(file))
-    return new_files
-
-
-def _parse_file(path: Path) -> cst.Module:
+def parse_path_to_module(path: Path) -> cst.Module:
     return cst.parse_module(path.read_text())
 
 
-def _parse_paths(paths: List[Path]) -> List[cst.Module]:
+def _parse_paths(paths: List[Path]) -> List[Path]:
     parsed_paths = []
     for path in paths:
         if path.is_dir():
-            parsed_directory_paths = _parse_directory(path)
+            parsed_directory_paths = _get_paths(path)
             for path in parsed_directory_paths:
                 parsed_paths.append(path)
         else:
-            parsed_paths.append(_parse_file(path))
+            parsed_paths.append(path)
     return parsed_paths
 
 
@@ -286,11 +108,11 @@ class Statistics(Command):
     def _run(self) -> None:
         self._analysis_directory.prepare()
         paths = _find_paths(self._local_configuration, self._filter_paths)
-        parsed_paths = _parse_paths(paths)
-        annotations = _count(parsed_paths, AnnotationCountCollector())
-        fixmes = _count(parsed_paths, FixmeCountCollector())
-        ignores = _count(parsed_paths, IgnoreCountCollector())
-        strict_files = _count(parsed_paths, StrictCountCollector(self._strict))
+        modules = [parse_path_to_module(path) for path in _parse_paths(paths)]
+        annotations = _count(modules, AnnotationCountCollector())
+        fixmes = _count(modules, FixmeCountCollector())
+        ignores = _count(modules, IgnoreCountCollector())
+        strict_files = _count(modules, StrictCountCollector(self._strict))
         data = {
             "annotations": annotations.build_json(),
             "fixmes": fixmes.build_json(),
