@@ -417,22 +417,42 @@ let process_type_query_request
           List.fold values ~init:{ TypeQuery.decoded = []; undecodable_keys = [] } ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
-    | TypeQuery.Defines module_names ->
+    | TypeQuery.Defines module_or_class_names ->
         let unannotated_global_environment =
           GlobalResolution.unannotated_global_environment global_resolution
         in
-        let defines_of_module module_name =
+        let ast_environment = TypeEnvironment.ast_environment environment in
+        let defines_of_module module_or_class_name =
+          let module_name, filter_define =
+            if AstEnvironment.ReadOnly.is_module ast_environment module_or_class_name then
+              Some module_or_class_name, fun _ -> false
+            else
+              let filter
+                  { Statement.Define.signature = { Statement.Define.Signature.parent; _ }; _ }
+                =
+                not (Option.equal Reference.equal parent (Some module_or_class_name))
+              in
+              let rec find_module_name current_reference =
+                if AstEnvironment.ReadOnly.is_module ast_environment current_reference then
+                  Some current_reference
+                else
+                  Reference.prefix current_reference >>= find_module_name
+              in
+              find_module_name module_or_class_name, filter
+          in
           let defines =
-            UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-              unannotated_global_environment
-              module_name
-            |> List.filter_map ~f:(GlobalResolution.function_definitions global_resolution)
-            |> List.concat
-            |> List.filter ~f:(fun { Node.value = define; _ } ->
-                   not
-                     ( Statement.Define.is_toplevel define
-                     || Statement.Define.is_class_toplevel define
-                     || Statement.Define.is_overloaded_function define ))
+            module_name
+            >>| UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+                  unannotated_global_environment
+            >>| List.filter_map ~f:(GlobalResolution.function_definitions global_resolution)
+            >>| List.concat
+            >>| List.filter ~f:(fun { Node.value = define; _ } ->
+                    not
+                      ( Statement.Define.is_toplevel define
+                      || Statement.Define.is_class_toplevel define
+                      || Statement.Define.is_overloaded_function define
+                      || filter_define define ))
+            |> Option.value ~default:[]
           in
           let represent
               {
@@ -456,7 +476,7 @@ let process_type_query_request
           in
           List.map defines ~f:represent
         in
-        List.concat_map module_names ~f:defines_of_module
+        List.concat_map module_or_class_names ~f:defines_of_module
         |> fun defines -> TypeQuery.Response (TypeQuery.FoundDefines defines)
     | TypeQuery.DumpCallGraph ->
         let get_callgraph module_qualifier =

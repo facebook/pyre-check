@@ -26,7 +26,10 @@ let help () =
         Some
           "callees_with_location(function): calls from a given function, including the locations \
            at which they are called."
-    | Defines _ -> Some "defines(module_name): Returns a JSON with the signature of a given define."
+    | Defines _ ->
+        Some
+          "defines(module_or_class_name): Returns a JSON with the signature of all defines for \
+           given module or class."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None

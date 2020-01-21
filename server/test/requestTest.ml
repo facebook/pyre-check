@@ -78,6 +78,7 @@ let test_process_type_query_request context =
          T = TypeVar("T")
          class C(Generic[T]):
            def foo(self, x: T) -> None: ...
+         def not_in_c() -> int: ...
         |}
         );
         ( "define_test.py",
@@ -320,10 +321,38 @@ let test_process_type_query_request context =
             }
           ],
           "return_annotation": "None"
+        },
+        {
+          "name": "classy.not_in_c",
+          "parameters": [],
+          "return_annotation":"int"
         }
       ]
     }
     |};
+  assert_response
+    (Protocol.TypeQuery.Defines [Reference.create "classy.C"])
+    {|
+    {
+      "response": [
+        {
+          "name": "classy.C.foo",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null
+            },
+            {
+              "name": "x",
+              "annotation": "T"
+            }
+          ],
+          "return_annotation": "None"
+        }
+      ]
+    }
+    |};
+
   assert_response
     (Protocol.TypeQuery.Defines [Reference.create "define_test"])
     {|
@@ -387,6 +416,11 @@ let test_process_type_query_request context =
             }
           ],
           "return_annotation": "None"
+        },
+        {
+          "name": "classy.not_in_c",
+          "parameters": [],
+          "return_annotation":"int"
         }
       ]
     }
