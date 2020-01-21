@@ -20,13 +20,21 @@ class FilteredSourceGenerator(ModelGenerator):
         annotation_specifications: Optional[
             List[DecoratorAnnotationSpecification]
         ] = None,
+        superset_generator: Optional[ModelGenerator] = None,
+        subset_generator: Optional[ModelGenerator] = None,
     ) -> None:
-        self.superset_generator = RESTApiSourceGenerator(
-            whitelisted_classes=["ViewerContext", "AuthenticatedVC"],
-            taint_annotation="TaintSource[DataFromGET]",
+        self.superset_generator: ModelGenerator = (
+            superset_generator
+            or RESTApiSourceGenerator(
+                whitelisted_classes=["ViewerContext", "AuthenticatedVC"],
+                taint_annotation="TaintSource[DataFromGET]",
+            )
         )
-        self.subset_generator = AnnotatedFreeFunctionWithDecoratorGenerator(
-            root=root, annotation_specifications=annotation_specifications
+        self.subset_generator: ModelGenerator = (
+            subset_generator
+            or AnnotatedFreeFunctionWithDecoratorGenerator(
+                root=root, annotation_specifications=annotation_specifications
+            )
         )
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
@@ -35,11 +43,10 @@ class FilteredSourceGenerator(ModelGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
-        superset_generator_functions = self.superset_generator.generate_models()
-        subset_generator_functions = self.subset_generator.generate_models()
-        all_functions = superset_generator_functions - subset_generator_functions
-
-        return all_functions
+        return (
+            self.superset_generator.generate_models()
+            - self.subset_generator.generate_models()
+        )
 
 
 Registry.register(

@@ -7,14 +7,16 @@
 
 import ast
 import unittest
-from unittest.mock import patch
+from typing import Callable, Iterable, Set
+from unittest.mock import MagicMock, patch
 
 from ..get_annotated_free_functions_with_decorator import (
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
 from ..get_filtered_sources import FilteredSourceGenerator
 from ..get_REST_api_sources import RESTApiSourceGenerator
-from ..model import CallableModel, FunctionDefinitionModel
+from ..model import CallableModel, FunctionDefinitionModel, Model
+from ..model_generator import ModelGenerator
 from .test_functions import all_functions, testB, testC
 
 
@@ -50,6 +52,27 @@ class GetFilteredSourcesTest(unittest.TestCase):
         # Functions from RESTApiSourceGenerator should appear
         self.assertEqual(
             [*map(str, FilteredSourceGenerator().compute_models(all_functions))],
+            [
+                "def tools.pyre.tools.generate_taint_models.tests.test_functions."
+                "testB(x: TaintSource[UserControlled]): ..."
+            ],
+        )
+        self.assertEqual(
+            [
+                *map(
+                    str,
+                    FilteredSourceGenerator(
+                        superset_generator=RESTApiSourceGenerator(
+                            django_urls=MagicMock(),
+                            whitelisted_classes=[],
+                            whitelisted_views=[],
+                        ),
+                        subset_generator=AnnotatedFreeFunctionWithDecoratorGenerator(
+                            root="/root", annotation_specifications=[]
+                        ),
+                    ).compute_models(all_functions),
+                )
+            ],
             [
                 "def tools.pyre.tools.generate_taint_models.tests.test_functions."
                 "testB(x: TaintSource[UserControlled]): ..."
@@ -130,3 +153,45 @@ class GetFilteredSourcesTest(unittest.TestCase):
             self.assertEqual(
                 [*map(str, FilteredSourceGenerator().compute_models(all_functions))], []
             )
+
+    def test_compute_models_for_arbitrary_generators(self) -> None:
+        class SupersetGenerator(ModelGenerator):
+            def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+                return []
+
+            def compute_models(
+                self, functions_to_model: Iterable[Callable[..., object]]
+            ) -> Iterable[Model]:
+                return []
+
+            def generate_models(self) -> Set[Model]:
+                return {
+                    CallableModel(testB, arg="TaintSource[Super]"),
+                    CallableModel(testC, arg="TaintSource[Super]"),
+                }
+
+        class SubsetGenerator(ModelGenerator):
+            def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+                return []
+
+            def compute_models(
+                self, functions_to_model: Iterable[Callable[..., object]]
+            ) -> Iterable[Model]:
+                return []
+
+            def generate_models(self) -> Set[Model]:
+                return {CallableModel(testC, arg="TaintSource[Subset]")}
+
+        self.assertEqual(
+            [
+                str(model)
+                for model in FilteredSourceGenerator(
+                    superset_generator=SupersetGenerator(),
+                    subset_generator=SubsetGenerator(),
+                ).generate_models()
+            ],
+            [
+                "def tools.pyre.tools.generate_taint_models.tests.test_functions.testB("
+                "x: TaintSource[Super]): ..."
+            ],
+        )
