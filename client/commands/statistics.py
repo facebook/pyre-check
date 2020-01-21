@@ -5,12 +5,13 @@
 
 
 import argparse
+import enum
 import json
 import os
 from collections import defaultdict
 from pathlib import Path
 from re import compile
-from typing import Dict, List, Optional, Pattern, Sequence, Set
+from typing import Any, Dict, List, Optional, Set
 
 import libcst as cst
 
@@ -79,6 +80,11 @@ def file_exists(path: str) -> str:
     return path
 
 
+class QualityType(enum.Enum):
+    STRICT = "unstrict_files"
+    MISSING_ANNOTATIONS = "missing_annotations"
+
+
 class Statistics(Command):
     NAME = "statistics"
 
@@ -94,6 +100,7 @@ class Statistics(Command):
         )
         self._filter_paths: Set[str] = set(arguments.filter_paths)
         self._strict: bool = self._configuration.strict
+        self._collect: QualityType = arguments.collect
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -104,23 +111,37 @@ class Statistics(Command):
         statistics.add_argument(
             "filter_paths", nargs="*", type=file_exists, help=argparse.SUPPRESS
         )
+        statistics.add_argument(
+            "--collect",
+            type=QualityType,
+            choices=list(QualityType),
+            default=None,
+            help="Which code quality issue you want to generate.",
+        )
 
     def _run(self) -> None:
-        self._analysis_directory.prepare()
-        paths = _find_paths(self._local_configuration, self._filter_paths)
-        modules = [parse_path_to_module(path) for path in _parse_paths(paths)]
-        annotations = _count(modules, AnnotationCountCollector())
-        fixmes = _count(modules, FixmeCountCollector())
-        ignores = _count(modules, IgnoreCountCollector())
-        strict_files = _count(modules, StrictCountCollector(self._strict))
-        data = {
-            "annotations": annotations.build_json(),
-            "fixmes": fixmes.build_json(),
-            "ignores": ignores.build_json(),
-            "strict": strict_files.build_json(),
-        }
-        log.stdout.write(json.dumps(data))
+        if self._collect is None:
+            self._analysis_directory.prepare()
+            paths = _find_paths(self._local_configuration, self._filter_paths)
+            modules = [parse_path_to_module(path) for path in _parse_paths(paths)]
+            annotations = _count(modules, AnnotationCountCollector())
+            fixmes = _count(modules, FixmeCountCollector())
+            ignores = _count(modules, IgnoreCountCollector())
+            strict_files = _count(modules, StrictCountCollector(self._strict))
+            data = {
+                "annotations": annotations.build_json(),
+                "fixmes": fixmes.build_json(),
+                "ignores": ignores.build_json(),
+                "strict": strict_files.build_json(),
+            }
+            log.stdout.write(json.dumps(data))
+            self._log_to_scuba(data)
+        elif self._collect == QualityType.MISSING_ANNOTATIONS:
+            log.stdout.write("Gathering missing annotations.")
+        elif self._collect == QualityType.STRICT:
+            log.stdout.write("Gathering strict file issues.")
 
+    def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
             root = str(_pyre_configuration_directory(self._local_configuration))
             log_statistics(
