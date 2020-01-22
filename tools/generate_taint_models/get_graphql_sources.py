@@ -10,7 +10,7 @@ from importlib import import_module
 from typing import Any, Callable, Iterable, List, Optional, Type, Union
 
 from .model import CallableModel, Model
-from .model_generator import Configuration, ModelGenerator, Registry
+from .model_generator import ModelGenerator, Registry
 
 
 # pyre-ignore: Too dynamic.
@@ -20,16 +20,12 @@ GraphQLObjectType = Type[Any]
 class GraphQLSourceGenerator(ModelGenerator):
     def __init__(
         self,
-        graphql_module: Optional[Union[List[str], str]] = None,
-        graphql_object_type: Optional[GraphQLObjectType] = None,
+        graphql_module: Union[List[str], str],
+        graphql_object_type: GraphQLObjectType,
     ) -> None:
         super().__init__()
-        self.graphql_module: Union[
-            List[str], str
-        ] = graphql_module or Configuration.graphql_module
-        self.graphql_object_type: GraphQLObjectType = (
-            graphql_object_type or Configuration.graphql_object_type
-        )
+        self.graphql_module: Union[List[str], str] = graphql_module
+        self.graphql_object_type: GraphQLObjectType = graphql_object_type
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         # Get all graphql import names.

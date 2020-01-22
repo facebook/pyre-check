@@ -27,19 +27,12 @@ from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetGraphQLSourcesTest(unittest.TestCase):
-    @patch.object(get_graphql_sources, "Configuration")
-    def test_gather_functions_to_model(self, configuration) -> None:
-        configuration.graphql_module = "tools.pyre.tools.generate_taint_models.tests"
-        configuration.graphql_object_type = GraphQLObjectType
+    def test_gather_functions_to_model(self) -> None:
         functions = GraphQLSourceGenerator(
             graphql_module="tools.pyre.tools.generate_taint_models.tests",
             graphql_object_type=GraphQLObjectType,
         ).gather_functions_to_model()
         self.assertSetEqual(set(functions), {function_1, function_2})
-        self.assertSetEqual(
-            set(GraphQLSourceGenerator().gather_functions_to_model()),
-            {function_1, function_2},
-        )
 
         # Run the same test again, passing in a list for 'graphql_module', to
         # ensure both work
@@ -49,17 +42,20 @@ class GetGraphQLSourcesTest(unittest.TestCase):
         ).gather_functions_to_model()
 
         self.assertSetEqual(set(functions), {function_1, function_2})
-        configuration.graphql_module = ["tools.pyre.tools.generate_taint_models.tests"]
-        self.assertSetEqual(
-            set(GraphQLSourceGenerator().gather_functions_to_model()),
-            {function_1, function_2},
-        )
 
     def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
-            [*map(str, GraphQLSourceGenerator().compute_models(all_functions))],
+            [
+                *map(
+                    str,
+                    GraphQLSourceGenerator(
+                        graphql_module="tools.pyre.tools.generate_taint_models.tests",
+                        graphql_object_type=GraphQLObjectType,
+                    ).compute_models(all_functions),
+                )
+            ],
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source}) -> {sink}: ...",
