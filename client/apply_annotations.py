@@ -217,10 +217,7 @@ class TypeCollector(cst.CSTVisitor):
                 updated_parameters.append(parameter)
             return updated_parameters
 
-        return parameters.with_changes(
-            params=update_annotations(parameters.params),
-            default_params=update_annotations(parameters.default_params),
-        )
+        return parameters.with_changes(params=update_annotations(parameters.params))
 
 
 class TypeTransformer(cst.CSTTransformer):
@@ -323,13 +320,9 @@ class TypeTransformer(cst.CSTTransformer):
             return annotated_parameters
 
         return annotations.parameters.with_changes(
-            default_params=update_annotation(
-                updated_node.params.default_params,
-                annotations.parameters.default_params,
-            ),
             params=update_annotation(
                 updated_node.params.params, annotations.parameters.params
-            ),
+            )
         )
 
     def _insert_empty_line(

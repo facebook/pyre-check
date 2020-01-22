@@ -86,21 +86,11 @@ class AnnotationCountCollector(StatisticsCollector):
         if return_is_annotated:
             self.annotated_return_count += 1
 
-        annotated_default_parameters = self._check_parameter_annotations(
-            node.params.default_params
-        )
         annotated_parameters = self._check_parameter_annotations(node.params.params)
 
-        if return_is_annotated and (
-            annotated_default_parameters + annotated_parameters
-            == len(node.params.default_params) + len(node.params.params)
-        ):
+        if return_is_annotated and (annotated_parameters == len(node.params.params)):
             self.fully_annotated_function_count += 1
-        elif (
-            return_is_annotated
-            or annotated_default_parameters > 0
-            or annotated_parameters > 0
-        ):
+        elif return_is_annotated or annotated_parameters > 0:
             self.partially_annotated_function_count += 1
 
     def leave_FunctionDef(self, original_node: cst.FunctionDef) -> None:
