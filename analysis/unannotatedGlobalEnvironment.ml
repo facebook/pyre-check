@@ -76,6 +76,8 @@ module ReadOnly = struct
 
   let ast_environment { ast_environment; _ } = ast_environment
 
+  let unannotated_global_environment = Fn.id
+
   let class_exists { class_exists; _ } = class_exists
 
   let all_classes { all_classes; _ } = all_classes ()

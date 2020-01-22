@@ -63,6 +63,8 @@ module ReadOnly : sig
 
   val class_exists : t -> ?dependency:dependency -> string -> bool
 
+  val unannotated_global_environment : t -> t
+
   (* APIs that start with prefix `all_` are not dependency tracked and are for testing purpose only.
      DO NOT USE THEM IN PROD. *)
 

@@ -14,6 +14,8 @@ module type ReadOnly = sig
   val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
   val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
 module type PreviousUpdateResult = sig
@@ -163,6 +165,8 @@ module EnvironmentTable = struct
       val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
       val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
     module UpdateResult :
@@ -186,32 +190,11 @@ module EnvironmentTable = struct
     module In = In
 
     module ReadOnly = struct
-      type t = {
-        upstream_environment: In.PreviousEnvironment.ReadOnly.t;
-        get: ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t;
-        hash_to_key_map: unit -> string String.Map.t;
-        serialize_decoded: Memory.decodable -> (string * string * string option) option;
-        decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
-      }
+      type t = { upstream_environment: In.PreviousEnvironment.ReadOnly.t }
 
-      let upstream_environment { upstream_environment; _ } = upstream_environment
+      let upstream_environment { upstream_environment } = upstream_environment
 
-      let get { get; _ } = get
-
-      let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
-
-      let serialize_decoded { serialize_decoded; _ } = serialize_decoded
-
-      let decoded_equal { decoded_equal; _ } = decoded_equal
-    end
-
-    module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
-
-    let read_only previous_update_result =
-      let upstream_environment =
-        In.PreviousEnvironment.UpdateResult.read_only previous_update_result
-      in
-      let get ?dependency key =
+      let get { upstream_environment } ?dependency key =
         match Table.get ?dependency key with
         | Some hit -> hit
         | None ->
@@ -221,30 +204,42 @@ module EnvironmentTable = struct
             Table.add key value;
             Option.iter dependency ~f:(Table.add_dependency key);
             value
-      in
-      let hash_to_key_map () =
+
+
+      let hash_to_key_map { upstream_environment } =
         let environment =
-          In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result
-            previous_update_result
-          |> UnannotatedGlobalEnvironment.UpdateResult.read_only
+          In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
         in
         Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
-      in
-      let serialize_decoded decoded =
+
+
+      let serialize_decoded _ decoded =
         match decoded with
         | Table.Decoded (key, value) ->
             let value = value >>| In.serialize_value in
             let key = In.show_key key in
             Some (In.Value.description, key, value)
         | _ -> None
-      in
-      let decoded_equal first second =
+
+
+      let decoded_equal _ first second =
         match first, second with
         | Table.Decoded (_, first), Table.Decoded (_, second) ->
             Some (Option.equal In.equal_value first second)
         | _ -> None
-      in
-      { ReadOnly.upstream_environment; get; hash_to_key_map; serialize_decoded; decoded_equal }
+
+
+      let unannotated_global_environment { upstream_environment } =
+        In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
+    end
+
+    module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
+
+    let read_only previous_update_result =
+      {
+        ReadOnly.upstream_environment =
+          In.PreviousEnvironment.UpdateResult.read_only previous_update_result;
+      }
 
 
     let update_only_this_environment ~scheduler ~configuration upstream_update =

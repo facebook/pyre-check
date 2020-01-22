@@ -13,6 +13,8 @@ module type ReadOnly = sig
   val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
   val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
 module type PreviousUpdateResult = sig
@@ -139,6 +141,8 @@ module EnvironmentTable : sig
       val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
       val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
     module UpdateResult :
