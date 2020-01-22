@@ -25,15 +25,17 @@ module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false) ?(immutables = []) ~resolution annotations =
     let module State = State (Context) in
     let resolution =
-      let annotations =
+      let annotation_store =
         let immutables = String.Map.of_alist_exn immutables in
         let annotify (name, annotation) =
           let annotation =
             let create annotation =
               match Map.find immutables name with
               | Some (global, original) ->
-                  Annotation.create_immutable ~original:(Some original) ~global annotation
-              | _ -> Annotation.create annotation
+                  RefinementUnit.create
+                    ~base:(Annotation.create_immutable ~original:(Some original) ~global annotation)
+                    ()
+              | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
             in
             create annotation
           in
@@ -41,7 +43,7 @@ module Create (Context : TypeCheck.Context) = struct
         in
         List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
       in
-      Resolution.with_annotations resolution ~annotations
+      Resolution.with_annotation_store resolution ~annotation_store
     in
     State.create ~bottom ~resolution ()
 end

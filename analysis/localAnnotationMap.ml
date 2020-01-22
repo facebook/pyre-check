@@ -9,14 +9,14 @@ open Pyre
 
 module Annotations = struct
   type t = {
-    precondition: Annotation.t Reference.Map.Tree.t;
-    postcondition: Annotation.t Reference.Map.Tree.t;
+    precondition: RefinementUnit.t Reference.Map.Tree.t;
+    postcondition: RefinementUnit.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
   let pp_state formatter map =
     let pp_element ~key ~data =
-      Format.fprintf formatter "\"%a\": \"%a\", " Reference.pp key Annotation.pp data
+      Format.fprintf formatter "\"%a\": \"%a\", " Reference.pp key RefinementUnit.pp data
     in
     Format.fprintf formatter "{";
     Reference.Map.Tree.iteri map ~f:pp_element;

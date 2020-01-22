@@ -9,17 +9,17 @@ open Ast
 
 type t = {
   global_resolution: GlobalResolution.t;
-  annotations: Annotation.t Reference.Map.t;
+  annotation_store: RefinementUnit.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
   resolve_assignment: resolution:t -> Statement.Assign.t -> t;
   parent: Reference.t option;
 }
 
-let create ~global_resolution ~annotations ~resolve ~resolve_assignment ?parent () =
+let create ~global_resolution ~annotation_store ~resolve ~resolve_assignment ?parent () =
   {
     global_resolution;
-    annotations;
+    annotation_store;
     type_variables = Type.Variable.Set.empty;
     resolve;
     resolve_assignment;
@@ -27,18 +27,18 @@ let create ~global_resolution ~annotations ~resolve ~resolve_assignment ?parent 
   }
 
 
-let pp format { annotations; type_variables; _ } =
-  let annotation_map_entry (reference, annotation) =
-    Format.asprintf "%a -> %a" Reference.pp reference Annotation.pp annotation
+let pp format { annotation_store; type_variables; _ } =
+  let annotation_store_entry (reference, refinement_unit) =
+    Format.asprintf "%a -> %a" Reference.pp reference RefinementUnit.pp refinement_unit
   in
   Type.Variable.Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
-  Map.to_alist annotations
-  |> List.map ~f:annotation_map_entry
+  Map.to_alist annotation_store
+  |> List.map ~f:annotation_store_entry
   |> String.concat ~sep:", "
-  |> Format.fprintf format "Annotations: [%s]"
+  |> Format.fprintf format "Annotation Store: [%s]"
 
 
 let show resolution = Format.asprintf "%a" pp resolution
@@ -47,21 +47,36 @@ let is_global { global_resolution; _ } ~reference =
   Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some
 
 
-let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
-  { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }
+let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
+  {
+    resolution with
+    annotation_store =
+      Map.set
+        annotation_store
+        ~key:reference
+        ~data:
+          ( Map.find annotation_store reference
+          |> Option.value ~default:(RefinementUnit.create ())
+          |> RefinementUnit.set_base ~base:annotation );
+  }
 
 
-let get_local ?(global_fallback = true) ~reference { annotations; global_resolution; _ } =
-  match Map.find annotations reference with
-  | Some result when global_fallback || not (Annotation.is_global result) -> Some result
+let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
+  match Map.find annotation_store reference with
+  | Some result
+    when global_fallback
+         || not
+              (result |> RefinementUnit.base >>| Annotation.is_global |> Option.value ~default:true)
+    ->
+      RefinementUnit.base result
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.delocalize reference |> global >>| Node.value
   | _ -> None
 
 
-let unset_local ({ annotations; _ } as resolution) ~reference =
-  { resolution with annotations = Map.remove annotations reference }
+let unset_local ({ annotation_store; _ } as resolution) ~reference =
+  { resolution with annotation_store = Map.remove annotation_store reference }
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
@@ -74,9 +89,9 @@ let type_variable_exists { type_variables; _ } ~variable =
 
 let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_list type_variables
 
-let annotations { annotations; _ } = annotations
+let annotation_store { annotation_store; _ } = annotation_store
 
-let with_annotations resolution ~annotations = { resolution with annotations }
+let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
 
 let parent { parent; _ } = parent
 

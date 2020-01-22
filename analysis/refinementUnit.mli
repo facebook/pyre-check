@@ -5,12 +5,30 @@
 
 open Ast
 
-type t [@@deriving show]
+type t [@@deriving eq, show]
+
+val base : t -> Annotation.t option
 
 val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.t -> unit -> t
 
 val add_attribute_refinement : t -> reference:Reference.t -> base:Annotation.t -> t
 
+val set_base : t -> base:Annotation.t -> t
+
 val annotation : t -> reference:Reference.t -> Annotation.t option
 
-val base : t -> Annotation.t option
+val refine : global_resolution:GlobalResolution.t -> Annotation.t -> Type.t -> Annotation.t
+
+val less_or_equal : global_resolution:GlobalResolution.t -> t -> t -> bool
+
+val join : global_resolution:GlobalResolution.t -> t -> t -> t
+
+val meet : global_resolution:GlobalResolution.t -> t -> t -> t
+
+val widen
+  :  global_resolution:GlobalResolution.t ->
+  widening_threshold:int ->
+  previous:t ->
+  next:t ->
+  iteration:int ->
+  t

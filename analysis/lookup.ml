@@ -115,12 +115,12 @@ module NodeVisitor = struct
       | DictionaryComprehension { element = { key; value }; generators; _ } ->
           let store_generator_annotation { Comprehension.Generator.target; iterator; conditions; _ }
             =
-            let annotations =
+            let annotation_store =
               LocalAnnotationMap.get_expression_postcondition resolution_lookup target.Node.location
               |> Option.value ~default:Reference.Map.empty
             in
             let annotate_expression ({ Node.location; _ } as expression) =
-              let resolution = TypeCheck.resolution global_resolution ~annotations () in
+              let resolution = TypeCheck.resolution global_resolution ~annotation_store () in
               resolve ~resolution ~expression >>| store_annotation location |> ignore
             in
             annotate_expression key;
@@ -134,12 +134,12 @@ module NodeVisitor = struct
       | SetComprehension { element; generators; _ } ->
           let store_generator_annotation { Comprehension.Generator.target; iterator; conditions; _ }
             =
-            let annotations =
+            let annotation_store =
               LocalAnnotationMap.get_expression_postcondition resolution_lookup target.Node.location
               |> Option.value ~default:Reference.Map.empty
             in
             let annotate_expression ({ Node.location; _ } as expression) =
-              let resolution = TypeCheck.resolution global_resolution ~annotations () in
+              let resolution = TypeCheck.resolution global_resolution ~annotation_store () in
               resolve ~resolution ~expression >>| store_annotation location |> ignore
             in
             annotate_expression element;
@@ -266,9 +266,11 @@ let create_of_source type_environment source =
           LocalAnnotationMap.get_statement_postcondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty )
       in
-      let pre_resolution = TypeCheck.resolution global_resolution ~annotations:pre_annotations () in
+      let pre_resolution =
+        TypeCheck.resolution global_resolution ~annotation_store:pre_annotations ()
+      in
       let post_resolution =
-        TypeCheck.resolution global_resolution ~annotations:post_annotations ()
+        TypeCheck.resolution global_resolution ~annotation_store:post_annotations ()
       in
       let statement =
         match Node.value statement with

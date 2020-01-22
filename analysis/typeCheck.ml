@@ -109,10 +109,10 @@ module State (Context : Context) = struct
       Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
     in
     let annotations =
-      let annotation_to_string (name, annotation) =
-        Format.asprintf "    %a -> %a" Reference.pp name Annotation.pp annotation
+      let annotation_to_string (name, refinement_unit) =
+        Format.asprintf "    %a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
       in
-      Resolution.annotations resolution
+      Resolution.annotation_store resolution
       |> Map.to_alist
       |> List.map ~f:annotation_to_string
       |> String.concat ~sep:"\n"
@@ -149,9 +149,9 @@ module State (Context : Context) = struct
   and equal left right =
     (* Ignore errors in unit tests. *)
     Map.equal
-      Annotation.equal
-      (Resolution.annotations left.resolution)
-      (Resolution.annotations right.resolution)
+      RefinementUnit.equal
+      (Resolution.annotation_store left.resolution)
+      (Resolution.annotation_store right.resolution)
     && Bool.equal left.bottom right.bottom
 
 
@@ -327,27 +327,9 @@ module State (Context : Context) = struct
            ~init:true
            ~f:
              (entry_less_or_equal
-                (Resolution.annotations right.resolution)
-                (Refinement.less_or_equal ~resolution:global_resolution))
-           (Resolution.annotations left.resolution)
-
-
-  let join_resolutions left_resolution right_resolution =
-    let merge_annotations ~key:_ = function
-      | `Both (left, right) ->
-          Some
-            (Refinement.join ~resolution:(Resolution.global_resolution left_resolution) left right)
-      | `Left _
-      | `Right _ ->
-          Some (Annotation.create Type.Top)
-    in
-    let annotations =
-      Map.merge
-        ~f:merge_annotations
-        (Resolution.annotations left_resolution)
-        (Resolution.annotations right_resolution)
-    in
-    Resolution.with_annotations left_resolution ~annotations
+                (Resolution.annotation_store right.resolution)
+                (RefinementUnit.less_or_equal ~global_resolution))
+           (Resolution.annotation_store left.resolution)
 
 
   let join left right =
@@ -357,24 +339,24 @@ module State (Context : Context) = struct
       left
     else
       let join_resolutions left_resolution right_resolution =
-        let merge_annotations ~key:_ = function
+        let merge_annotation_stores ~key:_ = function
           | `Both (left, right) ->
               Some
-                (Refinement.join
-                   ~resolution:(Resolution.global_resolution left_resolution)
+                (RefinementUnit.join
+                   ~global_resolution:(Resolution.global_resolution left_resolution)
                    left
                    right)
           | `Left _
           | `Right _ ->
-              Some (Annotation.create Type.Top)
+              Some (RefinementUnit.create ~base:(Annotation.create Type.Top) ())
         in
-        let annotations =
+        let annotation_store =
           Map.merge
-            ~f:merge_annotations
-            (Resolution.annotations left_resolution)
-            (Resolution.annotations right_resolution)
+            ~f:merge_annotation_stores
+            (Resolution.annotation_store left_resolution)
+            (Resolution.annotation_store right_resolution)
         in
-        Resolution.with_annotations left_resolution ~annotations
+        Resolution.with_annotation_store left_resolution ~annotation_store
       in
       let combine_errors ~key:_ left_error right_error =
         Error.join ~resolution:(Resolution.global_resolution left.resolution) left_error right_error
@@ -399,8 +381,8 @@ module State (Context : Context) = struct
         match annotation with
         | `Both (previous, next) ->
             Some
-              (Refinement.widen
-                 ~resolution:global_resolution
+              (RefinementUnit.widen
+                 ~global_resolution
                  ~widening_threshold
                  ~previous
                  ~next
@@ -409,11 +391,11 @@ module State (Context : Context) = struct
         | `Right previous
           when Reference.length key = 1 ->
             let widened =
-              Refinement.widen
-                ~resolution:global_resolution
+              RefinementUnit.widen
+                ~global_resolution
                 ~widening_threshold
                 ~previous
-                ~next:(Annotation.create Type.undeclared)
+                ~next:(RefinementUnit.create ~base:(Annotation.create Type.undeclared) ())
                 ~iteration
             in
             Some widened
@@ -422,11 +404,11 @@ module State (Context : Context) = struct
             Some previous
         | _ -> None
       in
-      let annotations =
+      let annotation_store =
         Map.merge
           ~f:widen_annotations
-          (Resolution.annotations previous.resolution)
-          (Resolution.annotations next.resolution)
+          (Resolution.annotation_store previous.resolution)
+          (Resolution.annotation_store next.resolution)
       in
       let resolution_fixpoint =
         LocalAnnotationMap.merge previous.resolution_fixpoint next.resolution_fixpoint
@@ -440,7 +422,7 @@ module State (Context : Context) = struct
       {
         previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
-        resolution = Resolution.with_annotations resolution ~annotations;
+        resolution = Resolution.with_annotation_store resolution ~annotation_store;
         resolution_fixpoint;
       }
 
@@ -744,13 +726,13 @@ module State (Context : Context) = struct
       List.fold captures ~init:state ~f:process_capture
     in
     let check_parameter_annotations ({ resolution; resolution_fixpoint; _ } as state) =
-      let state, annotations =
+      let state, annotation_store =
         let make_parameter_name name =
           name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
         in
         let check_parameter
             index
-            (state, annotations)
+            (state, annotation_store)
             { Node.location; value = { Parameter.name; value; annotation } }
           =
           let add_incompatible_variable_error ~state annotation default =
@@ -994,9 +976,9 @@ module State (Context : Context) = struct
           in
           ( state,
             Map.set
-              annotations
+              annotation_store
               ~key:(make_parameter_name name)
-              ~data:{ Annotation.annotation; mutability } )
+              ~data:(RefinementUnit.create ~base:{ Annotation.annotation; mutability } ()) )
         in
         let number_of_stars name = Identifier.split_star name |> fst |> String.length in
         match parameters, parent with
@@ -1013,7 +995,7 @@ module State (Context : Context) = struct
                 ~location
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
-            state, Resolution.annotations resolution
+            state, Resolution.annotation_store resolution
         | ( [
               {
                 Node.value = { name = first_name; value = None; annotation = Some first_annotation };
@@ -1040,13 +1022,14 @@ module State (Context : Context) = struct
                       keyword_component;
                     }
                   =
-                  Resolution.annotations resolution
+                  Resolution.annotation_store resolution
                   |> Map.set
                        ~key:(make_parameter_name first_name)
-                       ~data:(Annotation.create positional_component)
+                       ~data:
+                         (RefinementUnit.create ~base:(Annotation.create positional_component) ())
                   |> Map.set
                        ~key:(make_parameter_name second_name)
-                       ~data:(Annotation.create keyword_component)
+                       ~data:(RefinementUnit.create ~base:(Annotation.create keyword_component) ())
                 in
                 if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
                 then
@@ -1076,18 +1059,18 @@ module State (Context : Context) = struct
                   state, add_annotations { positional_component = Top; keyword_component = Top }
             | None ->
                 List.foldi
-                  ~init:(state, Resolution.annotations resolution)
+                  ~init:(state, Resolution.annotation_store resolution)
                   ~f:check_parameter
                   parameters )
         | _ ->
             List.foldi
-              ~init:(state, Resolution.annotations resolution)
+              ~init:(state, Resolution.annotation_store resolution)
               ~f:check_parameter
               parameters
       in
-      let resolution = Resolution.with_annotations resolution ~annotations in
+      let resolution = Resolution.with_annotation_store resolution ~annotation_store in
       let resolution_fixpoint =
-        let postcondition = Resolution.annotations resolution in
+        let postcondition = Resolution.annotation_store resolution in
         let key = [%hash: int * int] (Cfg.entry_index, 0) in
         LocalAnnotationMap.set_statement resolution_fixpoint ~key ~postcondition
       in
@@ -1456,8 +1439,8 @@ module State (Context : Context) = struct
         let ({ errors = iterator_errors; resolution = iterator_resolution; _ } as state) =
           forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
         in
-        let precondition = Resolution.annotations resolution in
-        let postcondition = Resolution.annotations iterator_resolution in
+        let precondition = Resolution.annotation_store resolution in
+        let postcondition = Resolution.annotation_store iterator_resolution in
         let resolution_fixpoint =
           LocalAnnotationMap.set_expression
             ~key:target.Node.location
@@ -2859,7 +2842,14 @@ module State (Context : Context) = struct
                     | None -> resolved
                   in
                   let join sofar element =
-                    let refined = Refinement.join ~resolution:global_resolution sofar element in
+                    let refined =
+                      RefinementUnit.join
+                        ~global_resolution
+                        (RefinementUnit.create ~base:sofar ())
+                        (RefinementUnit.create ~base:element ())
+                      |> RefinementUnit.base
+                      |> Option.value ~default:(Annotation.create Type.Bottom)
+                    in
                     { refined with annotation = Type.union [sofar.annotation; element.annotation] }
                   in
                   List.fold tail_resolveds ~init:head_resolved ~f:join |> apply_global_override
@@ -3779,7 +3769,7 @@ module State (Context : Context) = struct
                       state
                     else
                       let refine_annotation annotation refined =
-                        Refinement.refine ~resolution:global_resolution annotation refined
+                        RefinementUnit.refine ~global_resolution annotation refined
                       in
                       let annotation =
                         if explicit && is_valid_annotation then
@@ -4037,10 +4027,10 @@ module State (Context : Context) = struct
             let annotation = parse_refinement_annotation annotation in
             let resolution =
               let refinement_unnecessary existing_annotation =
-                Refinement.less_or_equal
-                  ~resolution:global_resolution
-                  existing_annotation
-                  (Annotation.create annotation)
+                RefinementUnit.less_or_equal
+                  ~global_resolution
+                  (RefinementUnit.create ~base:existing_annotation ())
+                  (RefinementUnit.create ~base:(Annotation.create annotation) ())
                 && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
                 && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
               in
@@ -4256,7 +4246,7 @@ module State (Context : Context) = struct
         | BooleanOperator { BooleanOperator.left; operator; right } -> (
             let update state expression =
               forward_statement ~state ~statement:(Statement.assume expression)
-              |> fun { resolution; _ } -> Resolution.annotations resolution
+              |> fun { resolution; _ } -> Resolution.annotation_store resolution
             in
             match operator with
             | BooleanOperator.And ->
@@ -4267,27 +4257,28 @@ module State (Context : Context) = struct
                 let left = update state left in
                 let right = update { state with resolution } right in
                 let merge ~key:_ = function
-                  | `Both (left, right) ->
-                      Some (Refinement.meet ~resolution:global_resolution left right)
+                  | `Both (left, right) -> Some (RefinementUnit.meet ~global_resolution left right)
                   | `Left left -> Some left
                   | `Right right -> Some right
                 in
-                let annotations = Map.merge ~f:merge left right in
-                let resolution = Resolution.with_annotations resolution ~annotations in
+                let annotation_store = Map.merge ~f:merge left right in
+                let resolution = Resolution.with_annotation_store resolution ~annotation_store in
                 { state with resolution }
             | BooleanOperator.Or ->
                 let negated_left = update state (normalize (negate left)) in
-                let resolution = Resolution.with_annotations resolution ~annotations:negated_left in
+                let resolution =
+                  Resolution.with_annotation_store resolution ~annotation_store:negated_left
+                in
                 let left = update state left in
                 let right = update { state with resolution } right in
                 join
                   {
                     state with
-                    resolution = Resolution.with_annotations resolution ~annotations:left;
+                    resolution = Resolution.with_annotation_store resolution ~annotation_store:left;
                   }
                   {
                     state with
-                    resolution = Resolution.with_annotations resolution ~annotations:right;
+                    resolution = Resolution.with_annotation_store resolution ~annotation_store:right;
                   } )
         | ComparisonOperator
             {
@@ -4306,7 +4297,12 @@ module State (Context : Context) = struct
             let refined = Annotation.create (Type.Optional Type.Bottom) in
             match refinable_annotation name with
             | Some (reference, previous) ->
-                if Refinement.less_or_equal ~resolution:global_resolution refined previous then
+                if
+                  RefinementUnit.less_or_equal
+                    ~global_resolution
+                    (RefinementUnit.create ~base:refined ())
+                    (RefinementUnit.create ~base:previous ())
+                then
                   let resolution = Resolution.set_local resolution ~reference ~annotation:refined in
                   { state with resolution }
                 else
@@ -4345,7 +4341,11 @@ module State (Context : Context) = struct
                         else
                           Annotation.create element_type
                       in
-                      if Refinement.less_or_equal ~resolution:global_resolution refined previous
+                      if
+                        RefinementUnit.less_or_equal
+                          ~global_resolution
+                          (RefinementUnit.create ~base:refined ())
+                          (RefinementUnit.create ~base:previous ())
                       then
                         let resolution =
                           Resolution.set_local resolution ~reference ~annotation:refined
@@ -4738,7 +4738,7 @@ module State (Context : Context) = struct
                   Reference.create_from_list
                     [StatementDefine.self_identifier define; Attribute.name attribute]
                 in
-                Map.mem (Resolution.annotations resolution) reference
+                Map.mem (Resolution.annotation_store resolution) reference
               in
               check_attribute_initialization ~is_dynamically_initialized definition errors
           | None -> errors
@@ -5063,8 +5063,8 @@ module State (Context : Context) = struct
       let resolution_fixpoint =
         match key, state with
         | Some key, { resolution = post_resolution; _ } ->
-            let precondition = Resolution.annotations resolution in
-            let postcondition = Resolution.annotations post_resolution in
+            let precondition = Resolution.annotation_store resolution in
+            let postcondition = Resolution.annotation_store post_resolution in
             LocalAnnotationMap.set_statement resolution_fixpoint ~key ~precondition ~postcondition
         | None, _ -> resolution_fixpoint
       in
@@ -5087,7 +5087,7 @@ module CheckResult = struct
         List.append errors errors_sofar)
 end
 
-let resolution global_resolution ?(annotations = Reference.Map.empty) () =
+let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
   in
@@ -5106,7 +5106,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
     let empty_resolution =
       Resolution.create
         ~global_resolution
-        ~annotations:Reference.Map.empty
+        ~annotation_store:Reference.Map.empty
         ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ~resolve_assignment:(fun ~resolution _ -> resolution)
         ()
@@ -5132,18 +5132,18 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
       ~statement:(Ast.Node.create_with_default_location (Statement.Assign assign))
     |> State.resolution
   in
-  Resolution.create ~global_resolution ~annotations ~resolve ~resolve_assignment ()
+  Resolution.create ~global_resolution ~annotation_store ~resolve ~resolve_assignment ()
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
-  let annotations =
+  let annotation_store =
     match key, local_annotations with
     | Some key, Some map ->
         LocalAnnotationMap.get_statement_precondition map key
         |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
-  resolution global_resolution ~annotations () |> Resolution.with_parent ~parent
+  resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
 
 
 let name = "TypeCheck"

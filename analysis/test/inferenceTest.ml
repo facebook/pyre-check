@@ -23,14 +23,15 @@ let assert_backward ~resolution precondition statement postcondition =
   in
   let create ?(immutables = []) annotations =
     let resolution =
-      let annotations =
+      let annotation_store =
         let immutables = String.Map.of_alist_exn immutables in
         let annotify (name, annotation) =
           let annotation =
             let create annotation =
               match Map.find immutables name with
-              | Some global -> Annotation.create_immutable ~global annotation
-              | _ -> Annotation.create annotation
+              | Some global ->
+                  RefinementUnit.create ~base:(Annotation.create_immutable ~global annotation) ()
+              | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
             in
             create annotation
           in
@@ -38,7 +39,7 @@ let assert_backward ~resolution precondition statement postcondition =
         in
         List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
       in
-      Resolution.with_annotations resolution ~annotations
+      Resolution.with_annotation_store resolution ~annotation_store
     in
     State.create ~resolution ()
   in

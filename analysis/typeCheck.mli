@@ -77,7 +77,7 @@ module State (Context : Context) : Signature
 
 val resolution
   :  GlobalResolution.t ->
-  ?annotations:Annotation.t Reference.Map.t ->
+  ?annotation_store:RefinementUnit.t Reference.Map.t ->
   unit ->
   Resolution.t
 
