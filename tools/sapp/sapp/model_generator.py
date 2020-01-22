@@ -82,6 +82,8 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         is seen."""
         count = dict.fromkeys([issue["callable"] for issue in iters["issues"]], 0)
         for issue in iters["issues"]:
+            # pyre-fixme[6]: Expected `typing_extensions.Literal[0]` for 2nd param
+            #  but got `int`.
             count[issue["callable"]] += 1
 
         return count

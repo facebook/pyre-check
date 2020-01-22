@@ -94,6 +94,7 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 def explore(ctx: Context):
     scope_vars = Interactive(
         database=ctx.database,
+        # pyre-fixme[6]: Expected `str` for 2nd param but got `Optional[str]`.
         repository_directory=ctx.repository,
         parser_class=ctx.parser_class,
     ).setup()
@@ -180,8 +181,13 @@ def analyze(
         ctx.parser_class(),
         ModelGenerator(),
         TrimTraceGraph(),
+        # pyre-fixme[6]: Expected `bool` for 2nd param but got `PrimaryKeyGenerator`.
         DatabaseSaver(ctx.database, PrimaryKeyGenerator()),
     ]
+    # pyre-fixme[6]: Expected
+    #  `List[tools.sapp.sapp.pipeline.PipelineStep[typing.Any, typing.Any]]` for 1st
+    #  param but got `List[typing.Union[DatabaseSaver, ModelGenerator, TrimTraceGraph,
+    #  tools.sapp.sapp.base_parser.BaseParser]]`.
     pipeline = Pipeline(pipeline_steps)
     pipeline.run(input_files, summary_blob)
 

@@ -439,6 +439,7 @@ details              show additional information about the current trace frame
     @catch_user_error()
     def issues(
         self,
+        # pyre-fixme[9]: use_pager has type `bool`; used as `None`.
         use_pager: bool = None,
         *,
         codes: Optional[Union[int, List[int]]] = None,
@@ -831,6 +832,8 @@ details              show additional information about the current trace frame
                         leaf
                         for leaf in self._get_leaves_trace_frame(
                             session,
+                            # pyre-fixme[6]: Expected `Union[bytes, str,
+                            #  typing.SupportsInt]` for 1st param but got `DBID`.
                             int(frame.id),
                             self._trace_kind_to_shared_text_kind(frame.kind),
                         )
@@ -1011,9 +1014,13 @@ details              show additional information about the current trace frame
 
     def _current_branch_index(self, branches: List[TraceFrameQueryResult]) -> int:
         selected_branch_id = int(
+            # pyre-fixme[6]: Expected `Union[bytes, str, typing.SupportsInt]` for
+            #  1st param but got `DBID`.
             self.trace_tuples[self.current_trace_frame_index].trace_frame.id
         )
         for i, branch in enumerate(branches):
+            # pyre-fixme[6]: Expected `Union[bytes, str, typing.SupportsInt]` for
+            #  1st param but got `DBID`.
             if selected_branch_id == int(branch.id):
                 return i
         return -1
@@ -1279,6 +1286,8 @@ details              show additional information about the current trace frame
             return []
 
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
+        # pyre-fixme[6]: Expected `Union[bytes, str, typing.SupportsInt]` for 1st
+        #  param but got `DBID`.
         visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
         while not self._is_leaf(trace_frames[-1][0]):
             trace_frame, branches = trace_frames[-1]
@@ -1302,6 +1311,8 @@ details              show additional information about the current trace frame
                 )
                 return trace_frames
 
+            # pyre-fixme[6]: Expected `Union[bytes, str, typing.SupportsInt]` for
+            #  1st param but got `DBID`.
             visited_ids.add(int(next_nodes[0].id))
             trace_frames.append((next_nodes[0], len(next_nodes)))
         return trace_frames
@@ -1645,7 +1656,7 @@ details              show additional information about the current trace frame
         if trace_kind == TraceKind.PRECONDITION:
             return SharedTextKind.SINK
 
-        assert False, f"{trace_kind} is invalid"
+        raise AssertionError(f"{trace_kind} is invalid")
 
     def _get_callable_from_trace_tuple(
         self, trace_tuple: TraceTuple
