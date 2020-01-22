@@ -1587,7 +1587,7 @@ end
 module TestOverUnderStringSet = TestAbstractDomain (OverUnderStringSet)
 
 let () =
-  "abstractDomainTest"
+  "domain"
   >::: [
          "string_set" >::: TestStringSet.suite ();
          "map_int_to_string_set" >::: TestIntToStringSet.suite ();

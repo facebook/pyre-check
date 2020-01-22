@@ -94,6 +94,6 @@ let test_create_overload context =
 
 
 let () =
-  "define"
-  >::: ["return_annotation" >:: test_return_annotation; "create_ovelroad" >:: test_create_overload]
+  "callable"
+  >::: ["return_annotation" >:: test_return_annotation; "create_overload" >:: test_create_overload]
   |> Test.run

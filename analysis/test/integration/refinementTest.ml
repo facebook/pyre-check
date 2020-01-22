@@ -511,7 +511,7 @@ let test_check_callable context =
 
 
 let () =
-  "assert_is_not_none"
+  "refinement"
   >::: [
          "check_assert_is_none" >:: test_assert_is_none;
          "check_global_refinement" >:: test_check_global_refinement;

@@ -155,4 +155,4 @@ let test_check_implementation context =
     ]
 
 
-let () = "method" >::: ["check_implementation" >:: test_check_implementation] |> Test.run
+let () = "overload" >::: ["check_implementation" >:: test_check_implementation] |> Test.run

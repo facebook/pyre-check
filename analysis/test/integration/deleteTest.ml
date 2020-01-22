@@ -37,4 +37,4 @@ let test_delete context =
     ]
 
 
-let () = "method" >::: ["check_delete" >:: test_delete] |> Test.run
+let () = "delete" >::: ["check_delete" >:: test_delete] |> Test.run
