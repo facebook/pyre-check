@@ -12,7 +12,7 @@ from typing import Callable, Iterable, List, Optional
 from .constructor_generator import gather_all_constructors_in_hierarchy
 from .function_tainter import taint_functions
 from .model import Model
-from .model_generator import Configuration, ModelGenerator, Registry
+from .model_generator import ModelGenerator, Registry
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -30,19 +30,13 @@ class ClassSourceGenerator(ModelGenerator):
 
     def __init__(
         self,
+        classes_to_taint: List[str],
         whitelisted_classes: Optional[List[str]] = None,
         whitelisted_views: Optional[List[str]] = None,
-        classes_to_taint: Optional[List[str]] = None,
     ) -> None:
-        self.classes_to_taint: List[
-            str
-        ] = classes_to_taint or Configuration.classes_to_taint or []
-        self.whitelisted_classes: List[str] = (
-            whitelisted_classes or Configuration.whitelisted_classes
-        )
-        self.whitelisted_views: List[str] = (
-            whitelisted_views or Configuration.whitelisted_views
-        )
+        self.classes_to_taint: List[str] = classes_to_taint
+        self.whitelisted_classes: List[str] = whitelisted_classes or []
+        self.whitelisted_views: List[str] = whitelisted_views or []
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return gather_all_constructors_in_hierarchy(self.classes_to_taint)

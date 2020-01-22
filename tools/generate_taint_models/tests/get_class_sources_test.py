@@ -8,7 +8,6 @@
 import unittest
 
 from ..get_class_sources import ClassSourceGenerator
-from ..model_generator import Configuration
 from .test_functions import TestChildClassB, TestGrandChildClassA, __name__ as qualifier
 
 
