@@ -10,7 +10,7 @@ from typing import Callable, Iterable, List, Optional
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import Configuration, ModelGenerator, Registry
+from .model_generator import Configuration, ModelGenerator
 from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
 
 
@@ -51,6 +51,3 @@ class ExitNodeGenerator(ModelGenerator):
                 pass
 
         return sorted(exit_nodes)
-
-
-Registry.register("get_exit_nodes", ExitNodeGenerator, include_by_default=True)

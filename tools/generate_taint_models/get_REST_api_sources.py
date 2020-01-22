@@ -10,7 +10,7 @@ from typing import Callable, Iterable, List, Optional
 
 from .function_tainter import taint_functions
 from .model import Model
-from .model_generator import Configuration, ModelGenerator, Registry
+from .model_generator import Configuration, ModelGenerator
 from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
 
 
@@ -48,8 +48,3 @@ class RESTApiSourceGenerator(ModelGenerator):
             whitelisted_views=self.whitelisted_views,
             taint_annotation=self.taint_annotation,
         )
-
-
-Registry.register(
-    "get_REST_api_sources", RESTApiSourceGenerator, include_by_default=True
-)

@@ -10,7 +10,7 @@ from typing import Callable, Iterable, List, Optional
 from .function_tainter import taint_functions
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import ModelGenerator, Registry
+from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, get_all_views
 
 
@@ -41,8 +41,3 @@ class RequestSpecificDataGenerator(ModelGenerator):
             whitelisted_views=self.whitelisted_views,
             whitelisted_classes=self.whitelisted_classes,
         )
-
-
-Registry.register(
-    "get_request_specific_data", RequestSpecificDataGenerator, include_by_default=False
-)

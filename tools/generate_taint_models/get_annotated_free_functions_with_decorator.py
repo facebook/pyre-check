@@ -12,7 +12,7 @@ from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel, Model
-from .model_generator import ModelGenerator, Registry, qualifier
+from .model_generator import ModelGenerator, qualifier
 from .module_loader import find_all_paths, load_module
 
 
@@ -186,10 +186,3 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                 )
 
         return sorted(annotated_functions)
-
-
-Registry.register(
-    "get_annotated_free_functions_with_decorator",
-    AnnotatedFreeFunctionWithDecoratorGenerator,
-    include_by_default=False,
-)

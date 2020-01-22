@@ -12,7 +12,7 @@ from typing import Callable, Iterable, List, Optional
 from .constructor_generator import gather_all_constructors_in_hierarchy
 from .function_tainter import taint_functions
 from .model import Model
-from .model_generator import ModelGenerator, Registry
+from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -49,6 +49,3 @@ class ClassSourceGenerator(ModelGenerator):
             whitelisted_views=self.whitelisted_views,
             whitelisted_classes=self.whitelisted_classes,
         )
-
-
-Registry.register("get_class_sources", ClassSourceGenerator, include_by_default=True)

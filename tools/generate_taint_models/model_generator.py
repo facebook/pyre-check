@@ -78,37 +78,3 @@ class Configuration:
     annotation_specifications: ClassVar[List[DecoratorAnnotationSpecification]] = []
     logger: ClassVar[Optional[str]] = None
     classes_to_taint: ClassVar[Optional[List[str]]] = []
-
-
-class Registry:
-    # Dynamically registered generators.
-    generators: ClassVar[Dict[str, Type[ModelGenerator]]] = {}
-    default_generators: List[str] = []
-
-    @classmethod
-    def register(
-        cls, name: str, generator: Type[ModelGenerator], include_by_default: bool
-    ) -> None:
-        cls.generators[name] = generator
-        if include_by_default:
-            cls.default_generators.append(name)
-
-    @classmethod
-    def generate_models(
-        cls, generator_names: Iterable[str], logger: Optional[str] = None
-    ) -> Dict[str, Set[Model]]:
-        models = {}
-        for name in generator_names:
-            LOG.info("Computing models for `%s`", name)
-            start = time.time()
-            generator = cls.generators[name]()
-            models[name] = generator.generate_models()
-            if logger is not None:
-                elapsed_time = int((time.time() - start) * 1000)
-                log_statistics(
-                    "perfpipe_pyre_performance",
-                    integers={"time": elapsed_time},
-                    normals={"name": "model generation", "model kind": name},
-                    logger=logger,
-                )
-        return models

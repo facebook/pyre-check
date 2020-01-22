@@ -10,7 +10,7 @@ from importlib import import_module
 from typing import Any, Callable, Iterable, List, Optional, Type, Union
 
 from .model import CallableModel, Model
-from .model_generator import ModelGenerator, Registry
+from .model_generator import ModelGenerator
 
 
 # pyre-ignore: Too dynamic.
@@ -80,8 +80,3 @@ class GraphQLSourceGenerator(ModelGenerator):
                 pass
 
         return sorted(graphql_models)
-
-
-Registry.register(
-    "get_graphql_sources", GraphQLSourceGenerator, include_by_default=True
-)

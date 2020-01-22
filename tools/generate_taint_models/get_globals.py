@@ -13,7 +13,7 @@ import os
 from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
 from .model import AssignmentModel, FunctionDefinitionModel, Model
-from .model_generator import ModelGenerator, Registry, qualifier
+from .model_generator import ModelGenerator, qualifier
 from .module_loader import find_all_paths, load_module
 
 
@@ -291,6 +291,3 @@ def _is_class_property_decorator(decorator: ast.expr) -> bool:
     if name is None:
         return False
     return "class" in name and "property" in name
-
-
-Registry.register("get_globals", GlobalModelGenerator, include_by_default=False)
