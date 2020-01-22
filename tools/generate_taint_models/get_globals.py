@@ -13,7 +13,7 @@ import os
 from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
 from .model import AssignmentModel, FunctionDefinitionModel, Model
-from .model_generator import Configuration, ModelGenerator, Registry, qualifier
+from .model_generator import ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
 
 
@@ -24,19 +24,16 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 class GlobalModelGenerator(ModelGenerator):
     def __init__(
         self,
-        root: Optional[str] = None,
+        root: str,
         stub_root: Optional[str] = None,
         blacklisted_globals: Optional[Set[str]] = None,
         blacklisted_global_directories: Optional[Set[str]] = None,
     ) -> None:
-        self.root: str = root or Configuration.root
-        self.stub_root: Optional[str] = stub_root or Configuration.stub_root
-        self.blacklisted_globals: Set[str] = (
-            blacklisted_globals or Configuration.blacklisted_globals
-        )
+        self.root: str = root
+        self.stub_root: Optional[str] = stub_root
+        self.blacklisted_globals: Set[str] = (blacklisted_globals or set())
         self.blacklisted_global_directories: Set[str] = (
-            blacklisted_global_directories
-            or Configuration.blacklisted_global_directories
+            blacklisted_global_directories or set()
         )
 
     def _globals(self, root: str, path: str) -> Iterable[Model]:
@@ -254,7 +251,7 @@ class GlobalModelGenerator(ModelGenerator):
                 sinks = sinks.union(self._globals(self.root, path))
 
         stub_root = self.stub_root
-        if stub_root:
+        if stub_root is not None:
             stub_root = os.path.abspath(stub_root)
             paths = [
                 path for path in glob.glob(stub_root + "/**/*.pyi", recursive=True)
