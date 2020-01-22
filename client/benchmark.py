@@ -34,7 +34,12 @@ def _parallel_check(command: Iterable[str], process_count: int) -> float:
     for _ in range(process_count):
         processes.append(
             subprocess.Popen(
-                command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                # pyre-fixme[6]: Expected
+                #  `Union[typing.Sequence[typing.Union[_PathLike[typing.Any], bytes,
+                #  str]], bytes, str]` for 1st param but got `Iterable[str]`.
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
         )
     for process in processes:

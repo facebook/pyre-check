@@ -368,9 +368,7 @@ class FixmeAllTest(unittest.TestCase):
 
     def test_preserve_ast(self) -> None:
         mock_arguments = argparse.Namespace()
-        # pyre-fixme[16]: `Namespace` has no attribute `max_line_length`.
         mock_arguments.max_line_length = 88
-        # pyre-fixme[16]: `Namespace` has no attribute `truncate`.
         mock_arguments.truncate = True
         error_map = {7: [{"code": "6", "description": "Foo"}]}
         with tempfile.NamedTemporaryFile(delete=False) as file:

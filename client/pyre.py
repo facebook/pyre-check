@@ -57,13 +57,9 @@ def main() -> int:
 
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
-            # pyre-fixme[16]: `Namespace` has no attribute `command`.
             arguments.command = commands.Incremental
-            # pyre-fixme[16]: `Namespace` has no attribute `nonblocking`.
             arguments.nonblocking = False
-            # pyre-fixme[16]: `Namespace` has no attribute `incremental_style`.
             arguments.incremental_style = None
-            # pyre-fixme[16]: `Namespace` has no attribute `no_start`.
             arguments.no_start = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"

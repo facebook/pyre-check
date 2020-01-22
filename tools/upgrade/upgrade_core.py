@@ -809,18 +809,14 @@ def run(version_control) -> None:
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
-        # pyre-fixme[16]: `Namespace` has no attribute `run`.
         arguments.run = False
-        # pyre-fixme[16]: `Namespace` has no attribute `function`.
         arguments.function = run_fixme
 
     # Initialize values that may be null-checked, but do not exist as a flag
     # for all subcommands
     if not hasattr(arguments, "paths"):
-        # pyre-fixme[16]: `Namespace` has no attribute `paths`.
         arguments.paths = None
     if not hasattr(arguments, "from_stdin"):
-        # pyre-fixme[16]: `Namespace` has no attribute `from_stdin`.
         arguments.from_stdin = None
 
     logging.basicConfig(

@@ -51,11 +51,8 @@ class Persistent(Command):
 
     def _run(self) -> None:
         arguments = self._arguments
-        # pyre-fixme[16]: `Namespace` has no attribute `terminal`.
         arguments.terminal = False
-        # pyre-fixme[16]: `Namespace` has no attribute `store_type_check_resolution`.
         arguments.store_type_check_resolution = False
-        # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
         arguments.incremental_style = None
         Start(
             arguments,

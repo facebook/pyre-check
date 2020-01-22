@@ -60,7 +60,6 @@ class Stop(Command):
     def _run(self) -> None:
         def _kill() -> None:
             arguments = self._arguments
-            # pyre-fixme[16]: `argparse.Namespace` has no attribute `with_fire`.
             arguments.with_fire = False
             Kill(
                 arguments,

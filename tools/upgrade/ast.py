@@ -19,6 +19,9 @@ Ts = ListVariadic("Ts")
 LOG: Logger = logging.getLogger(__name__)
 
 
+# pyre-fixme[11]: Annotation `Ts` is not defined as a type.
+# pyre-fixme[11]: Annotation `Ts` is not defined as a type.
+# pyre-fixme[11]: Annotation `Ts` is not defined as a type.
 def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:
     # pyre-fixme[2]: Missing parameter annotation for *args
     def wrapper(arguments: argparse.Namespace, filename: str, *args) -> None:
