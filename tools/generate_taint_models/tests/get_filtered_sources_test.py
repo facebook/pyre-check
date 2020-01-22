@@ -51,13 +51,6 @@ class GetFilteredSourcesTest(unittest.TestCase):
 
         # Functions from RESTApiSourceGenerator should appear
         self.assertEqual(
-            [*map(str, FilteredSourceGenerator().compute_models(all_functions))],
-            [
-                "def tools.pyre.tools.generate_taint_models.tests.test_functions."
-                "testB(x: TaintSource[UserControlled]): ..."
-            ],
-        )
-        self.assertEqual(
             [
                 *map(
                     str,
@@ -116,7 +109,21 @@ class GetFilteredSourcesTest(unittest.TestCase):
         # Functions that are in RESTApiSourceGenerator but not in
         # AnnotatedFreeFunctionWithDecoratorGenerator should appear
         self.assertEqual(
-            [*map(str, FilteredSourceGenerator().compute_models(all_functions))],
+            [
+                *map(
+                    str,
+                    FilteredSourceGenerator(
+                        superset_generator=RESTApiSourceGenerator(
+                            django_urls=MagicMock(),
+                            whitelisted_classes=[],
+                            whitelisted_views=[],
+                        ),
+                        subset_generator=AnnotatedFreeFunctionWithDecoratorGenerator(
+                            root="/root", annotation_specifications=[]
+                        ),
+                    ).compute_models(all_functions),
+                )
+            ],
             [
                 "def tools.pyre.tools.generate_taint_models.tests.test_functions."
                 "testC(x: TaintSource[UserControlled]): ..."
@@ -151,7 +158,24 @@ class GetFilteredSourcesTest(unittest.TestCase):
             }
 
             self.assertEqual(
-                [*map(str, FilteredSourceGenerator().compute_models(all_functions))], []
+                [
+                    *map(
+                        str,
+                        FilteredSourceGenerator(
+                            superset_generator=RESTApiSourceGenerator(
+                                django_urls=MagicMock(),
+                                whitelisted_classes=[],
+                                whitelisted_views=[],
+                            ),
+                            subset_generator=(
+                                AnnotatedFreeFunctionWithDecoratorGenerator(
+                                    root="/root", annotation_specifications=[]
+                                )
+                            ),
+                        ).compute_models(all_functions),
+                    )
+                ],
+                [],
             )
 
     def test_compute_models_for_arbitrary_generators(self) -> None:

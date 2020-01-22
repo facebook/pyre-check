@@ -12,7 +12,7 @@ from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel, Model
-from .model_generator import Configuration, ModelGenerator, Registry, qualifier
+from .model_generator import ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
 
 
@@ -23,14 +23,12 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     def __init__(
         self,
-        root: Optional[str] = None,
-        annotation_specifications: Optional[
-            List[DecoratorAnnotationSpecification]
-        ] = None,
+        root: str,
+        annotation_specifications: List[DecoratorAnnotationSpecification],
     ) -> None:
-        self.root: str = root or Configuration.root
+        self.root: str = root
         self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
-            annotation_specifications or Configuration.annotation_specifications
+            annotation_specifications
         )
 
     def _annotate_functions(
