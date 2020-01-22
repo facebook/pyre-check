@@ -10,26 +10,20 @@ from typing import Callable, Iterable, List, Optional
 from .function_tainter import taint_functions
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import Configuration, ModelGenerator, Registry
-from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
+from .model_generator import ModelGenerator, Registry
+from .view_generator import DjangoUrls, get_all_views
 
 
 class RequestSpecificDataGenerator(ModelGenerator):
     def __init__(
         self,
-        django_urls: Optional[DjangoUrls] = None,
+        django_urls: DjangoUrls,
         whitelisted_views: Optional[List[str]] = None,
         whitelisted_classes: Optional[List[str]] = None,
     ) -> None:
-        self.django_urls: Optional[
-            DjangoUrls
-        ] = django_urls or django_urls_from_configuration()
-        self.whitelisted_views: List[
-            str
-        ] = whitelisted_views or Configuration.whitelisted_views
-        self.whitelisted_classes: List[str] = (
-            whitelisted_classes or Configuration.whitelisted_classes
-        )
+        self.django_urls: DjangoUrls = django_urls
+        self.whitelisted_views: List[str] = whitelisted_views or []
+        self.whitelisted_classes: List[str] = whitelisted_classes or []
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         django_urls = self.django_urls

@@ -6,6 +6,7 @@
 # pyre-unsafe
 
 import unittest
+from unittest.mock import MagicMock
 
 from ..get_request_specific_data import RequestSpecificDataGenerator
 from .test_functions import __name__ as qualifier, all_functions
@@ -15,7 +16,14 @@ class GetRequestSpecificDataTest(unittest.TestCase):
     def test_compute_models(self) -> None:
         source = "TaintSource[RequestSpecificData]"
         self.assertEqual(
-            [*map(str, RequestSpecificDataGenerator().compute_models(all_functions))],
+            [
+                *map(
+                    str,
+                    RequestSpecificDataGenerator(
+                        django_urls=MagicMock()
+                    ).compute_models(all_functions),
+                )
+            ],
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x: {source}): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
