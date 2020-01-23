@@ -2961,6 +2961,8 @@ module ParseAnnotationCache = struct
     module KeySet = SharedMemoryKeys.ParseAnnotationKey.Set
     module HashableKey = SharedMemoryKeys.ParseAnnotationKey
 
+    let lazy_incremental = false
+
     let produce_value
         class_metadata_environment
         ( {
@@ -3041,6 +3043,8 @@ module Cache = ManagedCache.Make (struct
 
   module KeySet = SharedMemoryKeys.AttributeTableKey.Set
   module HashableKey = SharedMemoryKeys.AttributeTableKey
+
+  let lazy_incremental = false
 
   let produce_value
       parse_annotation_cache

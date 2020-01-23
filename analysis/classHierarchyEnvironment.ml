@@ -123,6 +123,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   module TriggerSet = Type.Primitive.Set
 
+  let lazy_incremental = false
+
   let produce_value = get_parents
 
   let filter_upstream_dependency = function

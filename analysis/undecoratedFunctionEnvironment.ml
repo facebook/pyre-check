@@ -86,6 +86,8 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
 
   module TriggerSet = Reference.Set
 
+  let lazy_incremental = false
+
   let produce_value = produce_undecorated_function
 
   let filter_upstream_dependency = function

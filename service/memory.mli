@@ -188,6 +188,11 @@ module DependencyTrackedTableWithCache
     :  DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t
+
+  val add_pessimistic_transaction
+    :  DependencyKey.Transaction.t ->
+    keys:KeySet.t ->
+    DependencyKey.Transaction.t
 end
 
 module DependencyTrackedTableNoCache
@@ -211,6 +216,11 @@ module DependencyTrackedTableNoCache
   val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
 
   val add_to_transaction
+    :  DependencyKey.Transaction.t ->
+    keys:KeySet.t ->
+    DependencyKey.Transaction.t
+
+  val add_pessimistic_transaction
     :  DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t

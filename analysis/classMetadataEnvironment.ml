@@ -108,6 +108,8 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   module TriggerSet = Type.Primitive.Set
 
+  let lazy_incremental = false
+
   let produce_value = produce_class_metadata
 
   let filter_upstream_dependency = function

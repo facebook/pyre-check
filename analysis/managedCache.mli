@@ -16,6 +16,8 @@ module type In = sig
 
   module HashableKey : Hashable with type t := Key.t
 
+  val lazy_incremental : bool
+
   val produce_value : PreviousEnvironment.ReadOnly.t -> Key.t -> track_dependencies:bool -> Value.t
 
   val filter_upstream_dependency : SharedMemoryKeys.dependency -> Key.t option

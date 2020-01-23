@@ -573,6 +573,15 @@ module DependencyTracking = struct
           before = (fun () -> deprecate_keys keys);
           after = (fun () -> dependencies_since_last_deprecate keys);
         }
+
+
+    let add_pessimistic_transaction (transaction : DependencyKey.Transaction.t) ~keys =
+      DependencyKey.Transaction.add
+        transaction
+        {
+          before = (fun () -> Table.remove_batch keys);
+          after = (fun () -> get_all_dependents keys);
+        }
   end
 end
 

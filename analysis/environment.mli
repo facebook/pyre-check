@@ -101,6 +101,8 @@ module EnvironmentTable : sig
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
+    val lazy_incremental : bool
+
     (* This function should extract the relevant updates from upstream triggers. Usually this
        selecting the relevant variant from SharedMemoryKeys.dependency *)
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option

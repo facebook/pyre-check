@@ -26,6 +26,8 @@ module EmptyStubCache = ManagedCache.Make (struct
   module KeySet = Reference.Set
   module HashableKey = Reference
 
+  let lazy_incremental = false
+
   let produce_value unannotated_global_environment reference ~track_dependencies =
     let dependency = Option.some_if track_dependencies (SharedMemoryKeys.FromEmptyStub reference) in
     let ast_environment =

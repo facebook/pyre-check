@@ -318,6 +318,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   module TriggerSet = Reference.Set
 
+  let lazy_incremental = false
+
   let produce_value = produce_alias
 
   let filter_upstream_dependency = function

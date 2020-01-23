@@ -118,6 +118,8 @@ module EnvironmentTable = struct
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
+    val lazy_incremental : bool
+
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
     val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
@@ -141,6 +143,11 @@ module EnvironmentTable = struct
     include Memory.NoCache.S
 
     val add_to_transaction
+      :  SharedMemoryKeys.DependencyKey.Transaction.t ->
+      keys:KeySet.t ->
+      SharedMemoryKeys.DependencyKey.Transaction.t
+
+    val add_pessimistic_transaction
       :  SharedMemoryKeys.DependencyKey.Transaction.t ->
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
@@ -291,10 +298,15 @@ module EnvironmentTable = struct
                   let keys =
                     List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list
                   in
-                  SharedMemoryKeys.DependencyKey.Transaction.empty
-                  |> Table.add_to_transaction ~keys
-                  |> SharedMemoryKeys.DependencyKey.Transaction.execute
-                       ~update:(update ~names_to_update ~track_dependencies:true)
+                  if In.lazy_incremental then
+                    SharedMemoryKeys.DependencyKey.Transaction.empty
+                    |> Table.add_pessimistic_transaction ~keys
+                    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(fun () -> ())
+                  else
+                    SharedMemoryKeys.DependencyKey.Transaction.empty
+                    |> Table.add_to_transaction ~keys
+                    |> SharedMemoryKeys.DependencyKey.Transaction.execute
+                         ~update:(update ~names_to_update ~track_dependencies:true)
                 in
                 triggered_dependencies)
           in

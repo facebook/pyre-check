@@ -16,6 +16,8 @@ module type In = sig
 
   module HashableKey : Hashable with type t := Key.t
 
+  val lazy_incremental : bool
+
   val produce_value : PreviousEnvironment.ReadOnly.t -> Key.t -> track_dependencies:bool -> Value.t
 
   val filter_upstream_dependency : SharedMemoryKeys.dependency -> Key.t option
@@ -41,6 +43,8 @@ module Make (In : In) = struct
     let key_to_trigger = Fn.id
 
     module TriggerSet = KeySet
+
+    let lazy_incremental = In.lazy_incremental
 
     (* In legacy mode we're actually using process-local caches, so we never need to do a
        legacy-style invalidate in the way this interface is designed to do *)
