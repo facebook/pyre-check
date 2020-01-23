@@ -1,2 +1,3 @@
 @generated
 Overrides
+object::__init__ (override) -> [dataclass_taint.DataClassWIthInit::__init__ (override)]

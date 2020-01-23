@@ -208,6 +208,15 @@
         ]
       },
       {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(benign)",
         "taint": [
           {
@@ -236,6 +245,15 @@
         ]
       },
       {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(benign)",
         "taint": [
           {
@@ -260,6 +278,15 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       },

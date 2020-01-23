@@ -1,5 +1,185 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.issue_in_dataclass_constructor",
+    "callable_line": 31,
+    "code": 5002,
+    "line": 32,
+    "start": 26,
+    "end": 41,
+    "filename": "dataclass_taint.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 32,
+              "start": 26,
+              "end": 41
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "dataclass_taint.py",
+                "line": 32,
+                "start": 26,
+                "end": 41
+              },
+              "resolves_to": [ "dataclass_taint.DataClassWIthInit.__init__" ],
+              "port": "formal(bad)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.DataClassWIthInit.__init__",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 28,
+              "start": 20,
+              "end": 23
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.bad_is_tainted",

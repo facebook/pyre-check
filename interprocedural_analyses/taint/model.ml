@@ -1237,7 +1237,7 @@ let infer_class_models ~environment =
             List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
           sink_taint = BackwardState.empty;
         };
-      mode = SkipAnalysis;
+      mode = Normal;
     }
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
@@ -1270,7 +1270,7 @@ let infer_class_models ~environment =
                     List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
                   sink_taint = BackwardState.empty;
                 };
-              mode = SkipAnalysis;
+              mode = Normal;
             }
       | _ -> None
   in
