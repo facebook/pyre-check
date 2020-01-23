@@ -13,7 +13,7 @@ class VersionControl:
         return ""
 
     @staticmethod
-    def submit_changes(submit: bool, message: str) -> None:
+    def submit_changes(submit: bool, message: str, ignore_failures: bool) -> None:
         pass
 
 

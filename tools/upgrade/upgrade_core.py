@@ -445,6 +445,7 @@ def run_global_version_update(arguments: argparse.Namespace, version_control) ->
             version_control.commit_message(
                 "global configuration", summary_override=commit_summary
             ),
+            ignore_failures=True,
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")

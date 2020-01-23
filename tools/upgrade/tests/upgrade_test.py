@@ -1261,6 +1261,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     "global configuration",
                     summary_override="Automatic upgrade to hash `abcd`",
                 ),
+                ignore_failures=True,
             )
         # Push blocking argument: Since the push blocking only argument is only used
         # when gathering local configurations (mocked here), this is a no-op.
@@ -1303,6 +1304,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     "global configuration",
                     summary_override="Automatic upgrade to hash `abcd`",
                 ),
+                ignore_failures=True,
             )
 
         # paths passed from arguments will override the local configuration list
