@@ -6,9 +6,10 @@
 
 from collections import defaultdict
 from re import compile
-from typing import Dict, Pattern, Sequence
+from typing import Any, Dict, List, Pattern, Sequence
 
 import libcst as cst
+from libcst.metadata import CodeRange, PositionProvider
 
 
 class StatisticsCollector(cst.CSTVisitor):
@@ -178,3 +179,47 @@ class StrictCountCollector(StatisticsCollector):
 
     def build_json(self) -> Dict[str, int]:
         return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
+
+
+class CodeQualityIssue:
+    def __init__(
+        self, code_range: CodeRange, path: str, category: str, message: str
+    ) -> None:
+        self.category: str = category
+        self.detail_message: str = message
+        self.line: int = code_range.start.line
+        self.line_end: int = code_range.end.line
+        self.column: int = code_range.start.column
+        self.column_end: int = code_range.end.column
+        self.path: str = path
+
+    def build_json(self) -> Dict[str, Any]:
+        return {
+            "category": self.category,
+            "detail_message": self.detail_message,
+            "line": self.line,
+            "line_end": self.line_end,
+            "column": self.column,
+            "column_end": self.column_end,
+            "path": self.path,
+        }
+
+
+class FunctionsCollector(cst.CSTVisitor):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+    path: str = ""
+
+    def __init__(self) -> None:
+        self.issues: List[CodeQualityIssue] = []
+
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        return_is_annotated = node.returns is not None
+        if not return_is_annotated:
+            code_range = self.get_metadata(PositionProvider, node)
+            issue = CodeQualityIssue(
+                code_range,
+                self.path,
+                "PYRE_MISSING_ANNOTATIONS",
+                "This function is missing a return annotation.",
+            )
+            self.issues.append(issue)

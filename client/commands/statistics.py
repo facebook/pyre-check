@@ -14,6 +14,7 @@ from re import compile
 from typing import Any, Dict, List, Optional, Set
 
 import libcst as cst
+from libcst.metadata import MetadataWrapper
 
 from .. import log, log_statistics
 from ..analysis_directory import AnalysisDirectory
@@ -21,6 +22,7 @@ from ..configuration import Configuration
 from ..statistics_collectors import (
     AnnotationCountCollector,
     FixmeCountCollector,
+    FunctionsCollector,
     IgnoreCountCollector,
     StatisticsCollector,
     StrictCountCollector,
@@ -38,6 +40,11 @@ def _get_paths(target_directory: Path) -> List[Path]:
 
 def parse_path_to_module(path: Path) -> cst.Module:
     return cst.parse_module(path.read_text())
+
+
+def parse_path_to_metadata_module(path: Path) -> MetadataWrapper:
+    module = cst.parse_module(path.read_text())
+    return MetadataWrapper(module)
 
 
 def _parse_paths(paths: List[Path]) -> List[Path]:
@@ -108,6 +115,7 @@ class Statistics(Command):
             cls.NAME, epilog="Collect various syntactic metrics on type coverage."
         )
         statistics.set_defaults(command=cls)
+        # TODO[T60916205]: Rename this argument, it doesn't make sense anymore
         statistics.add_argument(
             "filter_paths", nargs="*", type=file_exists, help=argparse.SUPPRESS
         )
@@ -137,9 +145,23 @@ class Statistics(Command):
             log.stdout.write(json.dumps(data))
             self._log_to_scuba(data)
         elif self._collect == QualityType.MISSING_ANNOTATIONS:
-            log.stdout.write("Gathering missing annotations.")
+            self._get_missing_annotation_issues()
         elif self._collect == QualityType.STRICT:
             log.stdout.write("Gathering strict file issues.")
+
+    def _get_missing_annotation_issues(self) -> None:
+        collector = FunctionsCollector()
+        paths = _find_paths(self._local_configuration, self._filter_paths)
+        paths = _parse_paths(paths)
+        modules = {
+            str(path): parse_path_to_metadata_module(path)
+            for path in _parse_paths(paths)
+        }
+        for path, module in modules.items():
+            collector.path = path
+            module.visit(collector)
+        issues = [issue.build_json() for issue in collector.issues]
+        log.stdout.write(str(issues))
 
     def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
