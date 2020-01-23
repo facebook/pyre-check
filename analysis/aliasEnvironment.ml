@@ -392,13 +392,10 @@ module ReadOnly = struct
         in
         Type.instantiate parsed ~constraints
     in
-    let contains_untracked annotation =
-      let is_tracked =
-        UnannotatedGlobalEnvironment.ReadOnly.class_exists
-          (unannotated_global_environment environment)
-          ?dependency
-      in
-      List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
+    let contains_untracked =
+      UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
+        (unannotated_global_environment environment)
+        ?dependency
     in
     if contains_untracked annotation && not allow_untracked then
       Type.Top

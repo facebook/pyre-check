@@ -115,6 +115,11 @@ module ReadOnly = struct
     >>| Node.value
     >>| ClassSummary.is_protocol
     |> Option.value ~default:false
+
+
+  let contains_untracked read_only ?dependency annotation =
+    let is_tracked = class_exists read_only ?dependency in
+    List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
 end
 
 (* The key tracking is necessary because there is no empirical way to determine which classes exist

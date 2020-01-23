@@ -495,16 +495,19 @@ let test_class_attributes context =
         ~resolution
         ~name:attribute_name
         ~instantiated
-      |> (fun a -> Option.value_exn a)
-      |> Node.value
+      >>| Node.value
     in
-    let cmp left right =
-      Attribute.equal_attribute
-        { left with value = Node.create_with_default_location Expression.True }
-        { right with value = Node.create_with_default_location Expression.True }
-      && Expression.location_insensitive_compare left.value right.value = 0
+    let cmp =
+      let equal left right =
+        Attribute.equal_attribute
+          { left with value = Node.create_with_default_location Expression.True }
+          { right with value = Node.create_with_default_location Expression.True }
+        && Expression.location_insensitive_compare left.value right.value = 0
+      in
+      Option.equal equal
     in
-    assert_equal ~cmp ~printer:Attribute.show_attribute expected_attribute actual_attribute
+    let printer = Option.value_map ~default:"None" ~f:Attribute.show_attribute in
+    assert_equal ~cmp ~printer expected_attribute actual_attribute
   in
   let create_expected_attribute
       ?(property = false)
@@ -515,21 +518,22 @@ let test_class_attributes context =
       callable
     =
     let annotation = parse_callable callable in
-    {
-      Class.Attribute.annotation;
-      original_annotation = annotation;
-      abstract = false;
-      async = false;
-      class_attribute = false;
-      defined = true;
-      initialized;
-      name;
-      parent;
-      property;
-      visibility;
-      static = false;
-      value = Node.create_with_default_location Expression.Ellipsis;
-    }
+    Some
+      {
+        Class.Attribute.annotation;
+        original_annotation = annotation;
+        abstract = false;
+        async = false;
+        class_attribute = false;
+        defined = true;
+        initialized;
+        name;
+        parent;
+        property;
+        visibility;
+        static = false;
+        value = Node.create_with_default_location Expression.Ellipsis;
+      }
   in
   assert_attribute
     ~parent
@@ -565,6 +569,11 @@ let test_class_attributes context =
          ~visibility:(ReadOnly Unrefinable)
          "property"
          "str");
+  assert_attribute
+    ~parent
+    ~parent_instantiated_type:(Type.Primitive "Nonsense")
+    ~attribute_name:"property"
+    ~expected_attribute:None;
   ()
 
 

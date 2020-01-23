@@ -264,6 +264,65 @@ let test_incremental_check context =
         );
       ]
     ~expected:[];
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+            class Base:
+              pass
+            class Initial(Base):
+              pass
+          |}
+        );
+        ( false,
+          "b.py",
+          {|
+            from a import Initial, Base
+            from typing import Generic, TypeVar
+
+            T = TypeVar("T", bound=Base)
+            class G(Generic[T]):
+              attribute: T
+              def __init__(self, t: T) -> None:
+                self.attribute = t
+
+            def foo(g: G[Initial]) -> None:
+              x = g.attribute
+          |}
+        );
+      ]
+    ~updated_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+            class Base:
+              pass
+            class Renamed(Base):
+              pass
+          |}
+        );
+        ( false,
+          "b.py",
+          {|
+            from a import Renamed, Base
+            from typing import Generic, TypeVar
+
+            T = TypeVar("T", bound=Base)
+            class G(Generic[T]):
+              attribute: T = ...
+              def __init__(self, t: T) -> None:
+                self.attribute = t
+
+            def foo(g: G[Renamed]) -> None:
+              x = g.attribute
+          |}
+        );
+      ]
+    ~expected:[];
 
   ()
 
