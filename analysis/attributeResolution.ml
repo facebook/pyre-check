@@ -3044,7 +3044,7 @@ module Cache = ManagedCache.Make (struct
   module KeySet = SharedMemoryKeys.AttributeTableKey.Set
   module HashableKey = SharedMemoryKeys.AttributeTableKey
 
-  let lazy_incremental = false
+  let lazy_incremental = true
 
   let produce_value
       parse_annotation_cache
