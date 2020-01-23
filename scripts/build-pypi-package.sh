@@ -163,6 +163,7 @@ import glob
 import json
 import os
 import sys
+from pathlib import Path
 from setuptools import setup, find_packages
 
 if sys.version_info < (3, 5):
@@ -184,7 +185,7 @@ def get_all_stubs(root: str):
 
 def get_data_files(directory: str, extension_glob: str):
   # We need to relativize data_files, see https://github.com/pypa/wheel/issues/92.
-  relative_directory = os.path.relpath(os.path.abspath(directory), "${BUILD_ROOT}")
+  relative_directory = os.path.relpath(os.path.abspath(directory), os.getcwd())
   return (
       relative_directory,
       glob.glob(os.path.join(relative_directory, extension_glob)),
@@ -192,10 +193,10 @@ def get_data_files(directory: str, extension_glob: str):
 
 def find_taint_stubs():
     _, taint_stubs = get_data_files(
-        directory=os.path.join("${BUILD_ROOT}", "taint"), extension_glob="*"
+        directory=os.path.join(os.getcwd(), "taint"), extension_glob="*"
     )
     _, third_party_taint_stubs = get_data_files(
-        directory=os.path.join("${BUILD_ROOT}", "third_party_taint"), extension_glob="*"
+        directory=os.path.join(os.getcwd(), "third_party_taint"), extension_glob="*"
     )
     taint_stubs += third_party_taint_stubs
     if not taint_stubs:
@@ -239,9 +240,9 @@ setup(
 
     packages=find_packages(exclude=['tests', 'pyre-check']),
     data_files=[('bin', ['bin/pyre.bin'])]
-    + get_all_stubs("${BUILD_ROOT}/typeshed")
-    + get_all_stubs("${BUILD_ROOT}/stubs/django")
-    + get_all_stubs("${BUILD_ROOT}/stubs/lxml")
+    + get_all_stubs(root=Path.cwd() / "typeshed")
+    + get_all_stubs(root=Path.cwd() / "stubs/django")
+    + get_all_stubs(root=Path.cwd() / "stubs/lxml")
     + find_taint_stubs(),
     python_requires='>=3.5',
     install_requires=[${RUNTIME_DEPENDENCIES}],
