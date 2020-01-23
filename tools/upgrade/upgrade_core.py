@@ -306,9 +306,9 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = get_lint_status()
+            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
-                apply_lint()
+                apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = configuration.get_errors(should_clean=False)
                 fix(arguments, sort_errors(errors))
     try:
@@ -451,7 +451,7 @@ def run_global_version_update(arguments: argparse.Namespace, version_control) ->
         LOG.info("Error while running hg.")
 
 
-def run_strict_default(arguments: argparse.Namespace, _version_control) -> None:
+def run_strict_default(arguments: argparse.Namespace, version_control) -> None:
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
@@ -473,9 +473,9 @@ def run_strict_default(arguments: argparse.Namespace, _version_control) -> None:
                 add_local_unsafe(arguments, filename)
 
             if arguments.lint:
-                lint_status = get_lint_status()
+                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
                 if lint_status:
-                    apply_lint()
+                    apply_lint(version_control.LINTERS_TO_SKIP)
 
 
 def run_fixme(arguments: argparse.Namespace, version_control) -> None:
@@ -484,9 +484,9 @@ def run_fixme(arguments: argparse.Namespace, version_control) -> None:
         fix(arguments, sort_errors(errors))
 
         if arguments.lint:
-            lint_status = get_lint_status()
+            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
-                apply_lint()
+                apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = errors_from_run(arguments)
                 fix(arguments, sort_errors(errors))
     else:
@@ -543,6 +543,7 @@ def run_fixme_targets_file(
     project_directory: Path,
     path: str,
     target_names: List[str],
+    version_control,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
     targets = [path + ":" + name + "-typecheck" for name in target_names]
@@ -595,10 +596,9 @@ def run_fixme_targets_file(
     fix(arguments, sort_errors(errors))
     if not arguments.lint:
         return
-    lint_status = get_lint_status()
+    lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
     if lint_status:
-        LOG.info("Linting...")
-        apply_lint()
+        apply_lint(version_control.LINTERS_TO_SKIP)
         errors = get_errors(path)
         if not errors:
             LOG.info("Errors unchanged after linting.")
@@ -662,7 +662,9 @@ def run_fixme_targets(arguments: argparse.Namespace, version_control) -> None:
         len(target_names),
     )
     for path, target_names in target_names.items():
-        run_fixme_targets_file(arguments, project_directory, path, target_names)
+        run_fixme_targets_file(
+            arguments, project_directory, path, target_names, version_control
+        )
     try:
         if not arguments.no_commit:
             version_control.submit_changes(

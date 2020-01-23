@@ -8,18 +8,21 @@
 import logging
 import subprocess
 from logging import Logger
+from typing import List
 
 
 LOG: Logger = logging.getLogger(__name__)
 
 
-def get_lint_status() -> int:
+def get_lint_status(skip: List[str]) -> int:
     lint_status = subprocess.run(
         [
             "arc",
             "lint",
             "--never-apply-patches",
             "--enforce-lint-clean",
+            "--skip",
+            ",".join(skip),
             "--output",
             "none",
         ]
@@ -27,6 +30,8 @@ def get_lint_status() -> int:
     return lint_status.returncode
 
 
-def apply_lint() -> None:
+def apply_lint(skip: List[str]) -> None:
     LOG.info("Lint was dirty after file modifications. Cleaning lint and re-checking.")
-    subprocess.run(["arc", "lint", "--apply-patches", "--output", "none"])
+    subprocess.run(
+        ["arc", "lint", "--apply-patches", "--skip", ",".join(skip), "--output", "none"]
+    )

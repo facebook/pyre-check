@@ -2,12 +2,16 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from typing import Optional
+from typing import List, Optional
+
+from typing_extensions import Final
 
 from . import upgrade_core
 
 
 class VersionControl:
+    LINTERS_TO_SKIP: Final[List[str]] = []
+
     @staticmethod
     def commit_message(directory: str, summary_override: Optional[str] = None) -> str:
         return ""

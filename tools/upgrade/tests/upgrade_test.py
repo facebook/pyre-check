@@ -30,7 +30,9 @@ class FixmeAllTest(unittest.TestCase):
         arguments.sandcastle = None
         arguments.push_blocking_only = None
 
-        def configuration_lists_equal(expected_configurations, actual_configurations):
+        def configuration_lists_equal(
+            expected_configurations, actual_configurations
+        ) -> bool:
             if len(expected_configurations) != len(actual_configurations):
                 print(
                     "Expected {} configurations, got {} configurations".format(
@@ -427,7 +429,7 @@ def bar(x: str) -> str:
         }
         """
 
-        def generate_sandcastle_command(binary_hash, paths, push_blocking):
+        def generate_sandcastle_command(binary_hash, paths, push_blocking) -> bytes:
             command = json.loads(command_json)
             if binary_hash:
                 command["args"]["hash"] = binary_hash
@@ -603,7 +605,10 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
-            upgrade_core.run_fixme(arguments, VERSION_CONTROL)
+            version_control_with_linters = VersionControl()
+            # pyre-ignore[41]: Assigning to final attribute for testing.
+            version_control_with_linters.LINTERS_TO_SKIP = ["TESTLINTER"]
+            upgrade_core.run_fixme(arguments, version_control_with_linters)
             calls = [
                 call("# pyre-fixme[1]: description\n1\n2"),
                 call("# pyre-fixme[1]: description\n1\n2"),
@@ -616,12 +621,24 @@ class FixmeTest(unittest.TestCase):
                         "lint",
                         "--never-apply-patches",
                         "--enforce-lint-clean",
+                        "--skip",
+                        "TESTLINTER",
                         "--output",
                         "none",
                     ]
                 ),
                 call().returncode.__bool__(),
-                call(["arc", "lint", "--apply-patches", "--output", "none"]),
+                call(
+                    [
+                        "arc",
+                        "lint",
+                        "--apply-patches",
+                        "--skip",
+                        "TESTLINTER",
+                        "--output",
+                        "none",
+                    ]
+                ),
             ]
             subprocess.assert_has_calls(calls)
         arguments.run = False
@@ -1048,7 +1065,7 @@ class FixmeTargetsTest(unittest.TestCase):
         subprocess.return_value = grep_return
         upgrade_core.run_fixme_targets(arguments, VERSION_CONTROL)
         fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"], VERSION_CONTROL
         )
         submit_changes.assert_called_once_with(
             arguments.submit, VERSION_CONTROL.commit_message(". (TARGETS)")
@@ -1073,7 +1090,7 @@ class FixmeTargetsTest(unittest.TestCase):
             stdout=-1,
         )
         fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"], VERSION_CONTROL
         )
         submit_changes.assert_called_once_with(
             arguments.submit, VERSION_CONTROL.commit_message("derp (TARGETS)")
@@ -1092,14 +1109,14 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_return.stderr = b"stderr"
         subprocess.return_value = buck_return
         upgrade_core.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+            arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
         fix.assert_not_called()
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
         upgrade_core.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+            arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
         fix.assert_not_called()
 
@@ -1164,7 +1181,7 @@ anonymous parameter to call `merp` but got `Optional[str]`.
             },
         ]
         upgrade_core.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+            arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
         fix.assert_called_once_with(arguments, expected_errors)
 
