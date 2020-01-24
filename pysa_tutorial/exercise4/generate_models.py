@@ -14,6 +14,9 @@ sys.path.append(str(current_file.parents[3]))
 generate_taint_models = importlib.import_module(
     "pyre-check.tools.generate_taint_models"
 )
+view_generator = importlib.import_module(
+    "pyre-check.tools.generate_taint_models.view_generator"
+)
 
 
 class Ignore:
@@ -21,32 +24,21 @@ class Ignore:
 
 
 def main() -> None:
-    configuration_arguments = generate_taint_models.ConfigurationArguments(
-        # These shouldn't need to be changed
-        root=str(current_file.parent),
-        stub_root=f"{current_file.parent.parent.parent}/stubs",
-        # Set up your generators here
-        urls_module="urls",
-        url_pattern_type=UrlPattern,
-        # These are just mandatory defaults; ignore them
-        url_resolver_type=Ignore,
-        annotation_specs=[],
-        whitelisted_views=[],
-        whitelisted_classes=[],
-        graphql_object_type=Ignore,
-        graphql_module=[],
-        blacklisted_global_directories={},
-        blacklisted_globals={},
-    )
-
-    generation_arguments = generate_taint_models.GenerationArguments(
-        mode=["get_REST_api_sources"],
-        verbose=True,
-        output_directory=str(current_file.parent),
-    )
-
-    generate_taint_models.run_from_global_state(
-        generation_arguments, configuration_arguments
+    # Here, specify all the generators that you might want to call.
+    generators = {
+        "get_REST_api_sources": generate_taint_models.RESTApiSourceGenerator(
+            django_urls=view_generator.DjangoUrls(
+                urls_module="urls",
+                url_pattern_type=UrlPattern,
+                url_resolver_type=Ignore,
+            )
+        )
+    }
+    # The `run_generators` function will take care of parsing command-line arguments, as
+    # well as executing the generators specified in `default_modes` unless you pass in a
+    # specific set from the command line.
+    generate_taint_models.run_generators(
+        generators, default_modes=["get_REST_api_sources"]
     )
 
 
