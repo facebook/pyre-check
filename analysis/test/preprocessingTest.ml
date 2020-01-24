@@ -3806,6 +3806,69 @@ let test_populate_captures _ =
                       (Expression.Name (Identifier "T")))) );
           ] );
       ];
+
+  (* Capture decorators correctly *)
+  assert_captures
+    {|
+     def foo(decorator) -> None:
+       @decorator # This decorator should refer to the argument of foo
+       def bar(decorator) -> None:
+         pass
+    |}
+    ~expected:[!&"bar", ["decorator", Annotation None]];
+  assert_captures
+    {|
+     def decorator(func): ...
+     def foo(decorator) -> None:
+       @decorator # This decorator should refer to the argument of foo
+       def bar(decorator) -> None:
+         pass
+    |}
+    ~expected:[!&"bar", ["decorator", Annotation None]];
+  assert_captures
+    {|
+     def decorator(func): ...
+     def foo() -> None:
+       @decorator # This decorator should refer to the global foo
+       def bar(decorator) -> None:
+         pass
+    |}
+    ~expected:[!&"bar", []];
+  assert_captures
+    {|
+     def foo() -> None:
+       def decorator(func): ...
+       @decorator # This decorator should refer to the foo defined above
+       def bar(decorator) -> None:
+         pass
+    |}
+    ~expected:
+      [
+        ( !&"bar",
+          [
+            ( "decorator",
+              DefineSignature
+                (Node.create
+                   {
+                     Define.Signature.name =
+                       Node.create ~location:(location (3, 6) (3, 15)) !&"decorator";
+                     parameters =
+                       [
+                         Node.create
+                           { Parameter.name = "func"; value = None; annotation = None }
+                           ~location:(location (3, 16) (3, 20));
+                       ];
+                     decorators = [];
+                     return_annotation = None;
+                     async = false;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   }
+                   ~location:(location (3, 2) (3, 26))) );
+          ] );
+      ];
+
   ()
 
 

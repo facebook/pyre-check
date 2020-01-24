@@ -2223,6 +2223,8 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
   { source with Source.statements = transform_statements ~nesting_define:None statements }
 
 
+module CaptureSet = Set.Make (Define.Capture)
+
 let populate_captures ({ Source.statements; _ } as source) =
   let open Scope in
   let collect_accesses ~decorators statements =
@@ -2397,11 +2399,10 @@ let populate_captures ({ Source.statements; _ } as source) =
     and collect_from_statements init statements =
       List.fold statements ~init ~f:collect_from_statement
     in
-    let collected = List.fold decorators ~init:Identifier.Set.empty ~f:collect_from_expression in
-    let collected = collect_from_statements collected statements in
-    Set.to_list collected
+    ( List.fold decorators ~init:Identifier.Set.empty ~f:collect_from_expression,
+      collect_from_statements Identifier.Set.empty statements )
   in
-  let to_capture ~scopes name =
+  let to_capture ~is_decorator ~scopes name =
     match ScopeStack.lookup scopes name with
     | None -> None
     | Some
@@ -2411,7 +2412,7 @@ let populate_captures ({ Source.statements; _ } as source) =
           binding = { Binding.kind = binding_kind; name; location };
         } -> (
         match access_kind with
-        | Access.Kind.CurrentScope ->
+        | Access.Kind.CurrentScope when not is_decorator ->
             (* We don't care about bindings that can be found in the current scope *)
             None
         | _ -> (
@@ -2614,9 +2615,27 @@ let populate_captures ({ Source.statements; _ } as source) =
        Statement.Define
          ({ signature = { Define.Signature.decorators; _ } as signature; body; _ } as define);
     } ->
-        let accesses = collect_accesses ~decorators body in
+        let decorator_accesses, body_accesses = collect_accesses ~decorators body in
+        let parent_scopes = scopes in
         let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
-        let captures = List.filter_map accesses ~f:(to_capture ~scopes) in
+        let captures =
+          let to_capture ~is_decorator ~scopes sofar name =
+            match to_capture ~is_decorator ~scopes name with
+            | None -> sofar
+            | Some capture -> CaptureSet.add sofar capture
+          in
+          let decorator_captures =
+            Set.fold
+              ~init:CaptureSet.empty
+              decorator_accesses
+              ~f:(to_capture ~is_decorator:true ~scopes:parent_scopes)
+          in
+          Set.fold
+            ~init:decorator_captures
+            body_accesses
+            ~f:(to_capture ~is_decorator:false ~scopes)
+          |> CaptureSet.to_list
+        in
         let body = transform_statements ~scopes body in
         { Node.location; value = Statement.Define { signature; body; captures } }
     (* The rest is just boilerplates to make sure every nested define gets visited *)
