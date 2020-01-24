@@ -8,8 +8,11 @@
 import argparse
 import platform
 import re
+import shutil
+import subprocess
 import tempfile
 from pathlib import Path
+from typing import List
 
 
 MODULE_NAME = "pyre_check"
@@ -65,6 +68,39 @@ def add_init_files(build_root: str) -> None:
     (module_path / "client").mkdir()
 
 
+def rsync_files(
+    filters: List[str], source_directory: Path, target_directory: Path
+) -> None:
+    command = ["rsync", "-avm"]
+    command.extend(["--filter=" + filter_string for filter_string in filters])
+    command.append(str(source_directory))
+    command.append(str(target_directory))
+    subprocess.call(command)
+
+
+def sync_python_files(build_root: str) -> None:
+    target_root = Path(build_root, MODULE_NAME)
+    filters = ["- tests/", "+ */", "-! *.py"]
+    rsync_files(filters, CLIENT_DIRECTORY, target_root)
+    rsync_files(filters, UPGRADE_DIRECTORY, target_root / "tools")
+
+
+def sync_pysa_stubs(build_root: str) -> None:
+    build_path = Path(build_root)
+    filters = ["+ */", "-! *.pysa"]
+    rsync_files(filters, STUBS_DIRECTORY / "taint", build_path)
+    rsync_files(filters, STUBS_DIRECTORY / "third_party_taint", build_path)
+    shutil.copy(
+        STUBS_DIRECTORY / "taint/taint.config", build_path / "taint/taint.config"
+    )
+
+
+def sync_sapp_files(build_root: str) -> None:
+    target_root = Path(build_root, MODULE_NAME)
+    filters = ["- tests/", "+ */", "+ *.py", "+ *requirements.json", "- *"]
+    rsync_files(filters, sapp_directory(), target_root / "tools")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=valid_typeshed, required=True)
@@ -73,6 +109,9 @@ def main() -> None:
     _ = parser.parse_args()
     with tempfile.TemporaryDirectory() as build_root:
         add_init_files(build_root)
+        sync_python_files(build_root)
+        sync_pysa_stubs(build_root)
+        sync_sapp_files(build_root)
 
 
 if __name__ == "__main__":
