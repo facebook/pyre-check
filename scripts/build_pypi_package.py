@@ -106,18 +106,38 @@ def patch_version(version: str, build_root: str) -> None:
     (Path(build_root) / MODULE_NAME / "client/version.py").write_text(file_contents)
 
 
+def binary_exists() -> bool:
+    return (PYRE_CHECK_DIRECTORY / "_build/default/main.exe").is_file()
+
+
+def sync_binary(build_root: str) -> None:
+    build_path = Path(build_root)
+    (build_path / "bin").mkdir()
+    shutil.copy(
+        PYRE_CHECK_DIRECTORY / "_build/default/main.exe", build_path / "bin/pyre.bin"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=valid_typeshed, required=True)
     parser.add_argument("--version", type=valid_version, required=True)
 
     arguments = parser.parse_args()
+
+    if not binary_exists():
+        raise ValueError(
+            "The binary file does not exist. \
+            Have you run 'make' in the toplevel directory?"
+        )
+
     with tempfile.TemporaryDirectory() as build_root:
         add_init_files(build_root)
         sync_python_files(build_root)
         sync_pysa_stubs(build_root)
         sync_sapp_files(build_root)
         patch_version(arguments.version, build_root)
+        sync_binary(build_root)
 
 
 if __name__ == "__main__":
