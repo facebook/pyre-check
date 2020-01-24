@@ -481,6 +481,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                         ),
                         kind=annotation["kind"],
                         message=annotation["msg"],
+                        leaf_id=None,
                         link=annotation.get("link", None),
                         trace_key=annotation.get("trace", None),
                     )

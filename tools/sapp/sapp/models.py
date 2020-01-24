@@ -1236,6 +1236,9 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
 
 # Extra bits of information we can show on a TraceFrame.
+# This may be a message description, or it may be the start of another series
+# of traces leading to some other leaf. TraceFrameAnnotationTraceFrameAssoc
+# contains the first hop towards that leaf..
 # pyre-fixme[11]: Type `Base` is not defined.
 class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
 
@@ -1253,6 +1256,13 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         String(length=4096),
         doc="Message describing info about the trace",
         nullable=False,
+    )
+
+    leaf_id = Column(BIGDBIDType, nullable=True)
+    leaf = relationship(
+        "SharedText",
+        primaryjoin="foreign(SharedText.id) == TraceFrameAnnotation.leaf_id",
+        uselist=False,
     )
 
     link: Optional[str] = Column(
@@ -1275,6 +1285,49 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         ),
         uselist=True,
     )
+
+
+# A TraceFrameAnnotation may indicate more traces branching out from a trace
+# frame towards a different leaf/trace kind. In that case, this assoc describes
+# the first hop trace frame from the annotation. It is similar to
+# IssueInstanceTraceFrameAssoc, which indicates the first hop trace frame from
+# the issue instance.
+# pyre-fixme[11]: Type `Base` is not defined.
+class TraceFrameAnnotationTraceFrameAssoc(Base, PrepareMixin, RecordMixin):  # noqa
+
+    __tablename__ = "trace_frame_annotation_trace_frame_assoc"
+
+    trace_frame_annotation_id = Column(
+        "trace_frame_annotation_id", BIGDBIDType, primary_key=True, nullable=False
+    )
+
+    trace_frame_id = Column(
+        "trace_frame_id", BIGDBIDType, primary_key=True, nullable=False, index=True
+    )
+
+    trace_frame_annotation = relationship(
+        "TraceFrameAnnotation",
+        primaryjoin=(
+            "TraceFrameAnnotationTraceFrameAssoc.trace_frame_annotation_id == "
+            "foreign(TraceFrameAnnotation.id)"
+        ),
+        uselist=False,
+    )
+
+    trace_frame = relationship(
+        "TraceFrame",
+        primaryjoin=(
+            "TraceFrameAnnotationTraceFrameAssoc.trace_frame_id == "
+            "foreign(TraceFrame.id)"
+        ),
+        uselist=False,
+    )
+
+    @classmethod
+    def merge(cls, session, items):
+        return cls._merge_assocs(
+            session, items, cls.trace_frame_annotation_id, cls.trace_frame_id
+        )
 
 
 # pyre-fixme[11]: Type `Base` is not defined.
