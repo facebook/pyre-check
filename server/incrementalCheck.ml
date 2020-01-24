@@ -131,8 +131,7 @@ let recheck
                   define_name
               with
               | None -> sofar
-              | Some { UnannotatedGlobalEnvironment.FunctionDefinition.qualifier; _ } ->
-                  Set.add sofar qualifier)
+              | Some { FunctionDefinition.qualifier; _ } -> Set.add sofar qualifier)
           |> Set.to_list
         in
         Log.log

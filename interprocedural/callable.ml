@@ -134,8 +134,8 @@ let get_module_and_definition ~resolution = function
   | `Function name ->
       Reference.create name
       |> GlobalResolution.function_definition resolution
-      >>= fun ({ UnannotatedGlobalEnvironment.FunctionDefinition.qualifier; _ } as definitions) ->
-      UnannotatedGlobalEnvironment.FunctionDefinition.all_bodies definitions
+      >>= fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
+      FunctionDefinition.all_bodies definitions
       |> List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value))
       >>= fun body -> Some (qualifier, body)
   | `Method { class_name; method_name } ->
@@ -143,10 +143,8 @@ let get_module_and_definition ~resolution = function
         Reference.combine (Reference.create class_name) (Reference.create method_name)
       in
       GlobalResolution.function_definition resolution define_name
-      >>= fun ({ UnannotatedGlobalEnvironment.FunctionDefinition.qualifier; _ } as definitions) ->
-      UnannotatedGlobalEnvironment.FunctionDefinition.all_bodies definitions
-      |> List.hd
-      >>= fun body -> Some (qualifier, body)
+      >>= fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
+      FunctionDefinition.all_bodies definitions |> List.hd >>= fun body -> Some (qualifier, body)
 
 
 let resolve_method ~resolution ~class_type ~method_name =

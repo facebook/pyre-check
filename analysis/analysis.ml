@@ -35,6 +35,7 @@ module EmptyStubEnvironment = EmptyStubEnvironment
 module Environment = Environment
 module Error = AnalysisError
 module Fixpoint = Fixpoint
+module FunctionDefinition = FunctionDefinition
 module GlobalResolution = GlobalResolution
 module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap

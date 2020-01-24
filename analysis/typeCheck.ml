@@ -5267,7 +5267,7 @@ let check_function_definition
     ~resolution
     ~name
     ?call_graph_builder
-    { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings; qualifier }
+    { FunctionDefinition.body; siblings; qualifier }
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." Reference.pp name;
@@ -5280,10 +5280,7 @@ let check_function_definition
     in
     check_define ~configuration ~resolution ~call_graph_builder ~qualifier
   in
-  let sibling_bodies =
-    List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
-        body)
-  in
+  let sibling_bodies = List.map siblings ~f:(fun { FunctionDefinition.Sibling.body; _ } -> body) in
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
   let result =
     let open CheckResult in

@@ -171,7 +171,7 @@ let containing_source resolution reference =
 let function_definitions resolution reference =
   let unannotated_global_environment = unannotated_global_environment resolution in
   UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment reference
-  >>| UnannotatedGlobalEnvironment.FunctionDefinition.all_bodies
+  >>| FunctionDefinition.all_bodies
 
 
 let class_definitions resolution reference =

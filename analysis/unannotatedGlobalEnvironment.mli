@@ -24,32 +24,6 @@ type unannotated_global =
   | Define of Define.Signature.t Node.t list
 [@@deriving compare, show, sexp]
 
-module FunctionDefinition : sig
-  module Sibling : sig
-    module Kind : sig
-      type t =
-        | Overload
-        | PropertySetter
-      [@@deriving sexp, compare]
-    end
-
-    type t = {
-      kind: Kind.t;
-      body: Define.t Node.t;
-    }
-    [@@deriving sexp, compare]
-  end
-
-  type t = {
-    qualifier: Reference.t;
-    body: Define.t Node.t option;
-    siblings: Sibling.t list;
-  }
-  [@@deriving sexp, compare]
-
-  val all_bodies : t -> Define.t Node.t list
-end
-
 module ReadOnly : sig
   type t
 
