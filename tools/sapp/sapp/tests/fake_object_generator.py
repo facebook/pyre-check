@@ -185,6 +185,8 @@ class FakeObjectGenerator:
         filename="/r/some/filename.py",
         callable="Foo.barMethod",
         issue_id=None,
+        min_trace_length_to_sources=None,
+        min_trace_length_to_sinks=None,
     ):
         issue_id = issue_id if issue_id is not None else DBID(1)
         filename = self.filename(filename)
@@ -198,6 +200,8 @@ class FakeObjectGenerator:
             callable_id=callable.id,
             run_id=self.run_id,
             issue_id=issue_id,
+            min_trace_length_to_sources=min_trace_length_to_sources,
+            min_trace_length_to_sinks=min_trace_length_to_sinks,
         )
         if self.graph:
             self.graph.add_issue_instance(result)

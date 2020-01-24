@@ -445,6 +445,10 @@ details              show additional information about the current trace frame
         codes: Optional[Union[int, List[int]]] = None,
         callables: Optional[Union[str, List[str]]] = None,
         filenames: Optional[Union[str, List[str]]] = None,
+        minTraceLength_to_sources: Optional[Union[int, List[int]]] = None,
+        minTraceLength_to_sinks: Optional[Union[int, List[int]]] = None,
+        minTraceLength_max_to_sources: Optional[int] = None,
+        minTraceLength_max_to_sinks: Optional[int] = None,
     ):
         """Lists issues for the selected run.
 
@@ -453,6 +457,14 @@ details              show additional information about the current trace frame
             codes: int or list[int]        issue codes to filter on
             callables: str or list[str]    callables to filter on (supports wildcards)
             filenames: str or list[str]    filenames to filter on (supports wildcards)
+            minTraceLength_to_sources: 
+                int or list[int]    min trace length to sources to filter on 
+            minTraceLength_to_sinks: 
+                int or list[int]    min trace length to sinks to filter on 
+            minTraceLength_max_to_sources: 
+                int    maximum min trace length to sources to filter on 
+            minTraceLength_max_to_sinks: 
+                int    maximum min trace length to sinks to filter on 
 
         String filters support LIKE wildcards (%, _) from SQL:
             % matches anything (like .* in regex)
@@ -498,6 +510,58 @@ details              show additional information about the current trace frame
             if filenames is not None:
                 query = self._add_list_or_string_filter_to_query(
                     filenames, query, FilenameText.contents, "filenames"
+                )
+
+            if (minTraceLength_to_sources is not None) and (
+                minTraceLength_max_to_sources is not None
+            ):
+                raise UserError(
+                    (
+                        f"'minTraceLength_to_sources' and "
+                        f"'minTraceLength_max_to_sources' can't be set together"
+                    )
+                )
+
+            if (minTraceLength_to_sinks is not None) and (
+                minTraceLength_max_to_sinks is not None
+            ):
+                raise UserError(
+                    (
+                        f"'minTraceLength_to_sinks' and "
+                        f"'minTraceLength_max_to_sinks' can't be set together"
+                    )
+                )
+
+            if minTraceLength_to_sources is not None:
+                query = self._add_list_or_int_filter_to_query(
+                    minTraceLength_to_sources,
+                    query,
+                    IssueInstance.min_trace_length_to_sources,
+                    "minTraceLength_to_sources",
+                )
+
+            if minTraceLength_to_sinks is not None:
+                query = self._add_list_or_int_filter_to_query(
+                    minTraceLength_to_sinks,
+                    query,
+                    IssueInstance.min_trace_length_to_sinks,
+                    "minTraceLength_to_sinks",
+                )
+
+            if minTraceLength_max_to_sources is not None:
+                query = self._add_max_int_filter_to_query(
+                    minTraceLength_max_to_sources,
+                    query,
+                    IssueInstance.min_trace_length_to_sources,
+                    "minTraceLength_max_to_sources",
+                )
+
+            if minTraceLength_max_to_sinks is not None:
+                query = self._add_max_int_filter_to_query(
+                    minTraceLength_max_to_sinks,
+                    query,
+                    IssueInstance.min_trace_length_to_sinks,
+                    "minTraceLength_max_to_sinks",
                 )
 
             issues = query.join(Issue, IssueInstance.issue_id == Issue.id).join(
@@ -1078,6 +1142,17 @@ details              show additional information about the current trace frame
         raise UserError(
             f"'{argument_name}' should be {element_type} or " f"list of {element_type}."
         )
+
+    def _add_max_int_filter_to_query(
+        self,
+        filter: int,
+        query: Query,
+        column: InstrumentedAttribute,
+        argument_name: str,
+    ):
+        if isinstance(filter, int):
+            return query.filter(column <= filter)
+        raise UserError(f"'{argument_name}' should be int.")
 
     def _output_file_lines(
         self, trace_frame: TraceFrameQueryResult, file_lines: List[str], context: int
