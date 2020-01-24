@@ -90,13 +90,13 @@ class InitializeTest(unittest.TestCase):
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "input", return_value="//target/..."
         ):
-            yes_no_input.side_effect = [False]
+            yes_no_input.side_effect = [True, False]
             self.assertEqual(
                 command._get_local_configuration(),
                 {"continuous": False, "targets": ["//target/..."]},
             )
 
-            yes_no_input.side_effect = [True, False]
+            yes_no_input.side_effect = [True, True, False]
             self.assertEqual(
                 command._get_local_configuration(),
                 {
@@ -106,7 +106,7 @@ class InitializeTest(unittest.TestCase):
                 },
             )
 
-            yes_no_input.side_effect = [True, True, False]
+            yes_no_input.side_effect = [True, True, True, False]
             self.assertEqual(
                 command._get_local_configuration(),
                 {
@@ -116,7 +116,7 @@ class InitializeTest(unittest.TestCase):
                 },
             )
 
-            yes_no_input.side_effect = [True, True, True]
+            yes_no_input.side_effect = [True, True, True, True]
             self.assertEqual(
                 command._get_local_configuration(),
                 {
@@ -124,4 +124,13 @@ class InitializeTest(unittest.TestCase):
                     "push_blocking": True,
                     "targets": ["//target/..."],
                 },
+            )
+
+        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
+            log, "input", return_value="project/a, project/b"
+        ):
+            yes_no_input.side_effect = [False, False]
+            self.assertEqual(
+                command._get_local_configuration(),
+                {"continuous": False, "source_directories": ["project/a", "project/b"]},
             )
