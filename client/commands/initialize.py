@@ -126,9 +126,11 @@ class Initialize(CommandParser):
         configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
             if self._local:
-                error = "Local configurations must be created in subdirectories of `{}`"
-                "as it already contains a `.pyre_configuration`.".format(
-                    self._original_directory
+                error = (
+                    "Local configurations must be created in subdirectories of `{}`"
+                    "as it already contains a `.pyre_configuration`.".format(
+                        self._original_directory
+                    )
                 )
             else:
                 error = "A pyre configuration already exists at `{}`.".format(
