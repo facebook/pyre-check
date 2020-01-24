@@ -32,6 +32,20 @@ from .postprocess import apply_lint, get_lint_status
 LOG: Logger = logging.getLogger(__name__)
 
 
+class VersionControl:
+    LINTERS_TO_SKIP: List[str] = []
+
+    @staticmethod
+    def commit_message(directory: str, summary_override: Optional[str] = None) -> str:
+        return ""
+
+    @staticmethod
+    def submit_changes(
+        submit: bool, message: str, ignore_failures: bool = False
+    ) -> None:
+        pass
+
+
 class Configuration:
     def __init__(self, path: Path, json_contents: Dict[str, Any]) -> None:
         self._path = path
@@ -290,7 +304,7 @@ def _upgrade_project(
     arguments: argparse.Namespace,
     configuration: Configuration,
     root: Path,
-    version_control,
+    version_control: VersionControl,
 ) -> None:
     LOG.info("Processing %s", configuration.get_directory())
     if not configuration.is_local or not configuration.version:
@@ -385,7 +399,9 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
     path.write_text(new_text)
 
 
-def run_global_version_update(arguments: argparse.Namespace, version_control) -> None:
+def run_global_version_update(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
     global_configuration = Configuration.find_project_configuration()
     if global_configuration is None:
         LOG.error("No global configuration file found.")
@@ -451,7 +467,9 @@ def run_global_version_update(arguments: argparse.Namespace, version_control) ->
         LOG.info("Error while running hg.")
 
 
-def run_strict_default(arguments: argparse.Namespace, version_control) -> None:
+def run_strict_default(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
@@ -478,7 +496,7 @@ def run_strict_default(arguments: argparse.Namespace, version_control) -> None:
                     apply_lint(version_control.LINTERS_TO_SKIP)
 
 
-def run_fixme(arguments: argparse.Namespace, version_control) -> None:
+def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
     if arguments.run:
         errors = errors_from_run(arguments)
         fix(arguments, sort_errors(errors))
@@ -494,7 +512,9 @@ def run_fixme(arguments: argparse.Namespace, version_control) -> None:
         fix(arguments, sort_errors(errors))
 
 
-def run_fixme_single(arguments: argparse.Namespace, version_control) -> None:
+def run_fixme_single(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
@@ -507,7 +527,9 @@ def run_fixme_single(arguments: argparse.Namespace, version_control) -> None:
         )
 
 
-def run_fixme_all(arguments: argparse.Namespace, version_control) -> None:
+def run_fixme_all(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
     # Create sandcastle command.
     if arguments.sandcastle:
         configurations = Configuration.gather_local_configurations(arguments)
@@ -543,7 +565,7 @@ def run_fixme_targets_file(
     project_directory: Path,
     path: str,
     target_names: List[str],
-    version_control,
+    version_control: VersionControl,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
     targets = [path + ":" + name + "-typecheck" for name in target_names]
@@ -607,7 +629,9 @@ def run_fixme_targets_file(
         fix(arguments, sort_errors(errors))
 
 
-def run_fixme_targets(arguments: argparse.Namespace, version_control) -> None:
+def run_fixme_targets(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
     # Currently does not support sandcastle integration, or setting the global hash
     # at the same time. As-is, run this locally after the global hash is updated.
     subdirectory = arguments.subdirectory
@@ -682,7 +706,7 @@ def path_exists(filename: str) -> Path:
     return path
 
 
-def run(version_control) -> None:
+def run(version_control: VersionControl) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(

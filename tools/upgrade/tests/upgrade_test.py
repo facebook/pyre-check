@@ -14,10 +14,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import errors, postprocess, upgrade, upgrade_core
-from ..upgrade import VersionControl
+from ..upgrade import ExternalVersionControl
 
 
-VERSION_CONTROL = VersionControl()
+VERSION_CONTROL = ExternalVersionControl()
 
 
 class FixmeAllTest(unittest.TestCase):
@@ -176,7 +176,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch("%s.errors_from_stdin" % upgrade_core.__name__)
     @patch("%s.run_global_version_update" % upgrade_core.__name__)
     @patch("%s.fix" % upgrade_core.__name__)
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     def test_upgrade_project(
         self,
         submit_changes,
@@ -274,7 +274,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade_core.Configuration, "get_errors")
     @patch("%s.run_global_version_update" % upgrade_core.__name__)
     @patch("%s.fix" % upgrade_core.__name__)
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     def test_run_fixme_all(
         self,
         submit_changes,
@@ -482,7 +482,7 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(upgrade_core.Configuration, "remove_version")
     @patch.object(upgrade_core.Configuration, "get_errors")
     @patch("%s.fix" % upgrade_core.__name__)
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     def test_run_fixme_single(
         self,
         submit_changes,
@@ -544,7 +544,7 @@ class FixmeTest(unittest.TestCase):
     @patch.object(Path, "read_text")
     @patch("%s.errors_from_run" % upgrade_core.__name__)
     @patch("%s.errors_from_stdin" % upgrade_core.__name__)
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     def test_run_fixme(
         self, submit_changes, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
@@ -605,8 +605,7 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
-            version_control_with_linters = VersionControl()
-            # pyre-ignore[41]: Assigning to final attribute for testing.
+            version_control_with_linters = ExternalVersionControl()
             version_control_with_linters.LINTERS_TO_SKIP = ["TESTLINTER"]
             upgrade_core.run_fixme(arguments, version_control_with_linters)
             calls = [
@@ -1032,7 +1031,7 @@ class FixmeTargetsTest(unittest.TestCase):
         return_value=Path(".pyre_configuration"),
     )
     @patch("%s.run_fixme_targets_file" % upgrade_core.__name__)
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     def test_run_fixme_targets(
         self, submit_changes, fix_file, find_configuration, subprocess
     ) -> None:
@@ -1212,7 +1211,7 @@ class DecodeTest(unittest.TestCase):
 
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch("%s.VersionControl.submit_changes" % upgrade.__name__)
+    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
     @patch.object(
         upgrade_core.Configuration, "find_project_configuration", return_value="/root"
     )

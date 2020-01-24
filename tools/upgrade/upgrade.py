@@ -4,25 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 from typing import List, Optional
 
-from typing_extensions import Final
-
 from . import upgrade_core
 
 
-class VersionControl:
-    LINTERS_TO_SKIP: Final[List[str]] = []
-
-    @staticmethod
-    def commit_message(directory: str, summary_override: Optional[str] = None) -> str:
-        return ""
-
-    @staticmethod
-    def submit_changes(submit: bool, message: str, ignore_failures: bool) -> None:
-        pass
+class ExternalVersionControl(upgrade_core.VersionControl):
+    pass
 
 
 def main() -> None:
-    version_control = VersionControl()
+    version_control = ExternalVersionControl()
     upgrade_core.run(version_control)
 
 
