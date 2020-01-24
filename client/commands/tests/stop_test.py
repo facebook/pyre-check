@@ -77,7 +77,7 @@ class StopTest(unittest.TestCase):
                 self.analysis_directory,
             ).run()
             call_client.assert_not_called()
-            kill_command_run.assert_called_once()
+            kill_command_run.assert_not_called()
             os_kill.assert_not_called()
             self.assertEqual(stop_subscriber.call_count, 2)
 
@@ -106,7 +106,7 @@ class StopTest(unittest.TestCase):
                 self.analysis_directory,
             ).run()
             call_client.assert_has_calls([call(command=commands.Stop.NAME)])
-            kill_command_run.assert_called_once()
+            kill_command_run.assert_not_called()
             os_kill.assert_not_called()
             self.assertEqual(stop_subscriber.call_count, 2)
 
@@ -145,4 +145,4 @@ class StopTest(unittest.TestCase):
                 self.analysis_directory,
             ).run()
             call_client.assert_has_calls([call(command=commands.Stop.NAME)])
-            kill_command_run.assert_called_once()
+            kill_command_run.assert_not_called()

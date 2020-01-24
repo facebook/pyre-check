@@ -58,19 +58,8 @@ class Stop(Command):
             return None
 
     def _run(self) -> None:
-        def _kill() -> None:
-            arguments = self._arguments
-            arguments.with_fire = False
-            Kill(
-                arguments,
-                self._original_directory,
-                self._configuration,
-                self._analysis_directory,
-            ).run()
-
         if self._state() == State.DEAD:
-            LOG.warning("No server running, cleaning up any left over Pyre processes.")
-            _kill()
+            LOG.warning("No server running.")
         else:
             pid_to_poll = self._pid_file()
             try:
@@ -95,8 +84,10 @@ class Stop(Command):
                 stopped = True
 
             if not stopped:
-                LOG.warning("Could not stop server, attempting to kill.")
-                _kill()
+                LOG.warning(
+                    "Could not stop server. "
+                    "Run `pyre kill` if you want to force-kill all existing servers."
+                )
             else:
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
