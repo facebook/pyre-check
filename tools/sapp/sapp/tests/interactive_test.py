@@ -262,90 +262,90 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
 
-        self.interactive.issues(minTraceLength_to_sources="1")
+        self.interactive.issues(exact_trace_length_to_sources="1")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'minTraceLength_to_sources' should be", stderr)
+        self.assertIn("'exact_trace_length_to_sources' should be", stderr)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_to_sinks="1")
+        self.interactive.issues(exact_trace_length_to_sinks="1")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'minTraceLength_to_sinks' should be", stderr)
+        self.assertIn("'exact_trace_length_to_sinks' should be", stderr)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sources="1")
+        self.interactive.issues(max_trace_length_to_sources="1")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'minTraceLength_max_to_sources' should be", stderr)
+        self.assertIn("'max_trace_length_to_sources' should be", stderr)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sinks="1")
+        self.interactive.issues(max_trace_length_to_sinks="1")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'minTraceLength_max_to_sinks' should be", stderr)
+        self.assertIn("'max_trace_length_to_sinks' should be", stderr)
         self._clear_stdout()
 
         self.interactive.issues(
-            minTraceLength_to_sources=1, minTraceLength_max_to_sources=1
+            exact_trace_length_to_sources=1, max_trace_length_to_sources=1
         )
         stderr = self.stderr.getvalue().strip()
         self.assertIn("can't be set together", stderr)
         self._clear_stdout()
 
         self.interactive.issues(
-            minTraceLength_to_sinks=1, minTraceLength_max_to_sinks=1
+            exact_trace_length_to_sinks=1, max_trace_length_to_sinks=1
         )
         stderr = self.stderr.getvalue().strip()
         self.assertIn("can't be set together", stderr)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_to_sources=1)
+        self.interactive.issues(exact_trace_length_to_sources=1)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_to_sinks=1)
+        self.interactive.issues(exact_trace_length_to_sinks=1)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_to_sources=[1, 2])
+        self.interactive.issues(exact_trace_length_to_sources=[1, 2])
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_to_sinks=[1, 2])
+        self.interactive.issues(exact_trace_length_to_sinks=[1, 2])
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sources=1)
+        self.interactive.issues(max_trace_length_to_sources=1)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sinks=1)
+        self.interactive.issues(max_trace_length_to_sinks=1)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sources=2)
+        self.interactive.issues(max_trace_length_to_sources=2)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(minTraceLength_max_to_sinks=2)
+        self.interactive.issues(max_trace_length_to_sinks=2)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -353,7 +353,7 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
 
         self.interactive.issues(
-            minTraceLength_max_to_sources=1, minTraceLength_max_to_sinks=1,
+            max_trace_length_to_sources=1, max_trace_length_to_sinks=1,
         )
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
@@ -362,7 +362,7 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
 
         self.interactive.issues(
-            minTraceLength_max_to_sources=1, minTraceLength_max_to_sinks=2,
+            max_trace_length_to_sources=1, max_trace_length_to_sinks=2,
         )
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
