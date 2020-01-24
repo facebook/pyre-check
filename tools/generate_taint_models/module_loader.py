@@ -11,8 +11,6 @@ import logging
 import os
 from typing import Iterator, Optional
 
-from .model_generator import Configuration
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

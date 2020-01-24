@@ -9,7 +9,7 @@ import logging
 from importlib import import_module
 from typing import Callable, Iterable, List, Optional, Type
 
-from .model_generator import Configuration, ModelGenerator
+from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
