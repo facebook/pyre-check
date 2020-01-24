@@ -608,6 +608,7 @@ module ReadOnly = struct
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
     get_module_metadata: ?dependency:SharedMemoryKeys.dependency -> Reference.t -> Module.t option;
+    module_exists: ?dependency:SharedMemoryKeys.dependency -> Reference.t -> bool;
   }
 
   let create
@@ -617,6 +618,7 @@ module ReadOnly = struct
       ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
       ?(get_module_metadata = fun ?dependency:_ _ -> None)
+      ?(module_exists = fun ?dependency:_ _ -> false)
       ()
     =
     {
@@ -626,6 +628,7 @@ module ReadOnly = struct
       is_module;
       all_explicit_modules;
       get_module_metadata;
+      module_exists;
     }
 
 
@@ -660,6 +663,8 @@ module ReadOnly = struct
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 
   let get_module_metadata { get_module_metadata; _ } = get_module_metadata
+
+  let module_exists { module_exists; _ } = module_exists
 
   let resolve_exports read_only ?dependency reference =
     (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
@@ -747,6 +752,16 @@ let read_only ({ module_tracker } as environment) =
             | true -> Some (Module.create_implicit ())
             | false -> None ) )
   in
+  let module_exists ?dependency qualifier =
+    match Reference.as_list qualifier with
+    | ["future"; "builtins"]
+    | ["builtins"] ->
+        true
+    | _ -> (
+        match ModuleMetadata.mem ?dependency qualifier with
+        | true -> true
+        | false -> ModuleTracker.is_module_tracked module_tracker qualifier )
+  in
   {
     ReadOnly.get_source = get_source environment;
     get_wildcard_exports = get_wildcard_exports environment;
@@ -754,4 +769,5 @@ let read_only ({ module_tracker } as environment) =
     is_module = ModuleTracker.is_module_tracked module_tracker;
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
     get_module_metadata;
+    module_exists;
   }

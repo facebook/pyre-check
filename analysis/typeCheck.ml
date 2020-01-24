@@ -1586,15 +1586,12 @@ module State (Context : Context) = struct
             base = None;
           }
       | None -> (
-          match GlobalResolution.module_definition global_resolution reference with
-          | None when not (GlobalResolution.is_suppressed_module global_resolution reference) ->
+          match GlobalResolution.module_exists global_resolution reference with
+          | false when not (GlobalResolution.is_suppressed_module global_resolution reference) ->
               let state =
                 match Reference.prefix reference with
                 | Some qualifier when not (Reference.is_empty qualifier) ->
-                    if
-                      Option.is_some
-                        (GlobalResolution.module_definition global_resolution qualifier)
-                    then
+                    if GlobalResolution.module_exists global_resolution qualifier then
                       Error.UndefinedAttribute
                         { attribute = Reference.last reference; origin = Error.Module qualifier }
                       |> (fun kind ->
@@ -3658,10 +3655,11 @@ module State (Context : Context) = struct
                   when is_simple_name base && insufficiently_annotated ->
                     (* Module *)
                     let reference = name_to_reference_exn base in
-                    let definition =
-                      GlobalResolution.module_definition global_resolution reference
-                    in
-                    if explicit && (not is_type_alias) && not (Option.is_some definition) then
+                    if
+                      explicit
+                      && (not is_type_alias)
+                      && not (GlobalResolution.module_exists global_resolution reference)
+                    then
                       Error.create
                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
                         ~kind:
@@ -4427,9 +4425,9 @@ module State (Context : Context) = struct
             | name :: rest -> (
                 let lead = lead @ [name] in
                 let reference = Reference.create_from_list lead in
-                match GlobalResolution.module_definition global_resolution reference with
-                | Some _ -> check_lead lead rest
-                | None -> (
+                match GlobalResolution.module_exists global_resolution reference with
+                | true -> check_lead lead rest
+                | false -> (
                     match Resolution.resolve_reference resolution reference with
                     | Type.Any ->
                         (* Import from Any is ok *)

@@ -1035,8 +1035,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           if Reference.length name > 1 then
             Reference.head name
             |> (fun head -> Option.value_exn head)
-            |> GlobalResolution.module_definition global_resolution
-            |> Option.is_none
+            |> fun reference -> not (GlobalResolution.module_exists global_resolution reference)
           else
             false
         in

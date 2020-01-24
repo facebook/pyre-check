@@ -219,7 +219,7 @@ let get_global ~resolution name =
         let name = name_to_reference name in
         let base_name = name_to_reference base_name in
         let is_module name =
-          name >>= GlobalResolution.module_definition global_resolution |> Option.is_some
+          Option.value_map name ~default:false ~f:(GlobalResolution.module_exists global_resolution)
         in
         name >>= Option.some_if (is_module base_name && not (is_module name))
     | _ -> None

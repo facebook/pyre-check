@@ -18,6 +18,7 @@ module ReadOnly : sig
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
     ?get_module_metadata:(?dependency:dependency -> Reference.t -> Module.t option) ->
+    ?module_exists:(?dependency:dependency -> Reference.t -> bool) ->
     unit ->
     t
 
@@ -46,6 +47,8 @@ module ReadOnly : sig
   val all_explicit_modules : t -> Reference.t list
 
   val get_module_metadata : t -> ?dependency:dependency -> Reference.t -> Module.t option
+
+  val module_exists : t -> ?dependency:dependency -> Reference.t -> bool
 
   val resolve_exports : t -> ?dependency:dependency -> Reference.t -> Reference.t
 

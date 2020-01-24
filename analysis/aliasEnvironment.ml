@@ -80,13 +80,12 @@ module UnresolvedAlias = struct
                   (EmptyStubEnvironment.ReadOnly.unannotated_global_environment
                      empty_stub_environment)
                   primitive
-                || Option.is_some
-                     (AstEnvironment.ReadOnly.get_module_metadata
-                        ( EmptyStubEnvironment.ReadOnly.unannotated_global_environment
-                            empty_stub_environment
-                        |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment )
-                        ?dependency
-                        (Reference.create primitive))
+                || AstEnvironment.ReadOnly.module_exists
+                     ( EmptyStubEnvironment.ReadOnly.unannotated_global_environment
+                         empty_stub_environment
+                     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment )
+                     ?dependency
+                     (Reference.create primitive)
               then
                 (), annotation
               else

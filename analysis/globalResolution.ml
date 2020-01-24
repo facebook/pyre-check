@@ -119,8 +119,8 @@ let aliases ({ dependency; _ } as resolution) =
   AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
 
 
-let module_definition ({ dependency; _ } as resolution) =
-  AstEnvironment.ReadOnly.get_module_metadata ?dependency (ast_environment resolution)
+let module_exists ({ dependency; _ } as resolution) =
+  AstEnvironment.ReadOnly.module_exists ?dependency (ast_environment resolution)
 
 
 module DefinitionsCache (Type : sig
@@ -158,7 +158,7 @@ let containing_source resolution reference =
     match tail with
     | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
-        if Option.is_none (module_definition resolution new_lead) then
+        if not (module_exists resolution new_lead) then
           lead
         else
           qualifier ~lead:new_lead ~tail

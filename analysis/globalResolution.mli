@@ -102,7 +102,7 @@ val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.
 
 val aliases : t -> Type.Primitive.t -> Type.alias option
 
-val module_definition : t -> Reference.t -> Module.t option
+val module_exists : t -> Reference.t -> bool
 
 val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata option
 

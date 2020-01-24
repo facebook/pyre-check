@@ -419,11 +419,8 @@ let test_register_implicit_submodules context =
     (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c") |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"
-    ( GlobalResolution.module_definition global_resolution (Reference.create "a.b.c")
-    |> Option.is_some );
-  let is_module name =
-    GlobalResolution.module_definition global_resolution name |> Option.is_some
-  in
+    (GlobalResolution.module_exists global_resolution (Reference.create "a.b.c"));
+  let is_module = GlobalResolution.module_exists global_resolution in
   assert_true (is_module (Reference.create "a.b"));
   assert_true (is_module (Reference.create "a"))
 
@@ -1075,17 +1072,11 @@ let test_class_definition context =
 let test_modules context =
   let environment = populate ~context ["wingus.py", ""; "dingus.py", ""; "os/path.py", ""] in
   let global_resolution = GlobalResolution.create environment in
-  assert_is_some (GlobalResolution.module_definition global_resolution !&"wingus");
-  assert_is_some (GlobalResolution.module_definition global_resolution !&"dingus");
-  assert_is_none (GlobalResolution.module_definition global_resolution !&"zap");
-  assert_is_some (GlobalResolution.module_definition global_resolution !&"os");
-  assert_is_some (GlobalResolution.module_definition global_resolution !&"os.path");
-  let is_module name =
-    GlobalResolution.module_definition global_resolution name |> Option.is_some
-  in
-  assert_true (is_module !&"wingus");
-  assert_true (is_module !&"dingus");
-  assert_false (is_module !&"zap");
+  assert_true (GlobalResolution.module_exists global_resolution !&"wingus");
+  assert_true (GlobalResolution.module_exists global_resolution !&"dingus");
+  assert_false (GlobalResolution.module_exists global_resolution !&"zap");
+  assert_true (GlobalResolution.module_exists global_resolution !&"os");
+  assert_true (GlobalResolution.module_exists global_resolution !&"os.path");
   ()
 
 
