@@ -93,7 +93,7 @@ let test_less_or_equal context =
        (create ~base:(Annotation.create Type.float) ())
        (create ~base:(Annotation.create Type.integer) ()));
 
-  (* Mutable <= Local <= Local. *)
+  (* Mutable <= Local <= Global. *)
   assert_true
     (less_or_equal
        ~global_resolution
