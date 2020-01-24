@@ -12,7 +12,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from ..build_pypi_package import (
+    MODULE_NAME,
     add_init_files,
+    patch_version,
     sync_pysa_stubs,
     sync_python_files,
     valid_version,
@@ -65,3 +67,10 @@ class TestCreatingWheel(unittest.TestCase):
             self.assertTrue(all(x in args[0] for x in expected_args))
             subprocess_call.assert_called()
             copy.assert_called()
+
+    def test_patch_version(self) -> None:
+        with tempfile.TemporaryDirectory() as build_root:
+            add_init_files(build_root)
+            patch_version("0.0.21", build_root)
+            path = Path(build_root) / MODULE_NAME / "client/version.py"
+            self.assertTrue(path.is_file())

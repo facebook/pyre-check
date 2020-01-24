@@ -101,17 +101,23 @@ def sync_sapp_files(build_root: str) -> None:
     rsync_files(filters, sapp_directory(), target_root / "tools")
 
 
+def patch_version(version: str, build_root: str) -> None:
+    file_contents = "__version__ = {}".format(version)
+    (Path(build_root) / MODULE_NAME / "client/version.py").write_text(file_contents)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=valid_typeshed, required=True)
     parser.add_argument("--version", type=valid_version, required=True)
 
-    _ = parser.parse_args()
+    arguments = parser.parse_args()
     with tempfile.TemporaryDirectory() as build_root:
         add_init_files(build_root)
         sync_python_files(build_root)
         sync_pysa_stubs(build_root)
         sync_sapp_files(build_root)
+        patch_version(arguments.version, build_root)
 
 
 if __name__ == "__main__":
