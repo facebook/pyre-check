@@ -594,7 +594,6 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
-  (* TODO(T53500184): need to add an existence-only dependency "kind" *)
   assert_updates
     ~original_source:{|
       class Foo:
@@ -605,7 +604,7 @@ let test_updates context =
         x: str
     |}
     ~middle_actions:[`Mem ("test.Foo", dependency, true)]
-    ~expected_triggers:[dependency]
+    ~expected_triggers:[]
     ();
 
   (* all_classes *)

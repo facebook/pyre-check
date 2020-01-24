@@ -154,7 +154,13 @@ module EnvironmentTable = struct
 
     val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
 
-    val add_dependency : key -> SharedMemoryKeys.DependencyKey.t -> unit
+    val mem : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> bool
+
+    val add_dependency
+      :  kind:Memory.DependencyKind.t ->
+      key ->
+      SharedMemoryKeys.DependencyKey.t ->
+      unit
   end
 
   module type S = sig
@@ -194,6 +200,8 @@ module EnvironmentTable = struct
       (In : In)
       (Table : Table with type t = In.Value.t and type key = In.Key.t and type key_out = In.Key.out) =
   struct
+    let _ = Table.mem
+
     module In = In
 
     module ReadOnly = struct
@@ -209,7 +217,7 @@ module EnvironmentTable = struct
               In.produce_value upstream_environment (In.key_to_trigger key) ~track_dependencies:true
             in
             Table.add key value;
-            Option.iter dependency ~f:(Table.add_dependency key);
+            Option.iter dependency ~f:(Table.add_dependency ~kind:Get key);
             value
 
 

@@ -216,24 +216,26 @@ let test_dependency_table _ =
   let function_2 = "function_2" in
   let function_3 = "function_3" in
   let function_4 = "function_4" in
-  TableA.add_dependency "Foo" function_1;
-  TableA.add_dependency "Bar" function_1;
-  TableA.add_dependency "Foo" function_2;
-  TableA.add_dependency "Foo" function_3;
+  TableA.add_dependency ~kind:Get "Foo" function_1;
+  TableA.add_dependency ~kind:Get "Bar" function_1;
+  TableA.add_dependency ~kind:Get "Foo" function_2;
+  TableA.add_dependency ~kind:Get "Foo" function_3;
 
-  assert_dependency ~expected:[function_3; function_2; function_1] (TableA.get_dependents "Foo");
-  assert_dependency ~expected:[function_1] (TableA.get_dependents "Bar");
-  TableB.add_dependency "Foo" function_4;
+  assert_dependency
+    ~expected:[function_3; function_2; function_1]
+    (TableA.get_dependents ~kind:Get "Foo");
+  assert_dependency ~expected:[function_1] (TableA.get_dependents ~kind:Get "Bar");
+  TableB.add_dependency "Foo" ~kind:Get function_4;
 
   (* Ensure that different tables' same keys are encoded differently *)
-  assert_dependency ~expected:[function_4] (TableB.get_dependents "Foo");
+  assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
 
   (* Ensure that `reset_shared_memory` correctly resets all dependency-related info *)
   Memory.reset_shared_memory ();
-  assert_dependency ~expected:[] (TableA.get_dependents "Foo");
-  assert_dependency ~expected:[] (TableB.get_dependents "Foo");
-  TableB.add_dependency "Foo" function_4;
-  assert_dependency ~expected:[function_4] (TableB.get_dependents "Foo");
+  assert_dependency ~expected:[] (TableA.get_dependents ~kind:Get "Foo");
+  assert_dependency ~expected:[] (TableB.get_dependents ~kind:Get "Foo");
+  TableB.add_dependency ~kind:Get "Foo" function_4;
+  assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
 
   (* Ensure that the `get` interface also adds the corresponding dependencies *)
   TableA.get "Foo" ~dependency:function_1 |> ignore;
@@ -241,8 +243,10 @@ let test_dependency_table _ =
   TableA.get "Foo" ~dependency:function_2 |> ignore;
   TableA.get "Foo" ~dependency:function_3 |> ignore;
 
-  assert_dependency ~expected:[function_3; function_2; function_1] (TableA.get_dependents "Foo");
-  assert_dependency ~expected:[function_1] (TableA.get_dependents "Bar");
+  assert_dependency
+    ~expected:[function_3; function_2; function_1]
+    (TableA.get_dependents ~kind:Get "Foo");
+  assert_dependency ~expected:[function_1] (TableA.get_dependents ~kind:Get "Bar");
 
   (* Final cleanup *)
   Memory.reset_shared_memory ();
@@ -254,14 +258,16 @@ module UpdateDependencyTest = struct
     key: string;
     old_value: string option;
     new_value: string option;
-    dependencies: string list;
+    get_dependencies: string list;
+    mem_dependencies: string list;
   }
 
   let assert_dependencies ~expected specification =
     let open Core in
-    let setup_old_state { key; old_value; dependencies; _ } =
+    let setup_old_state { key; old_value; get_dependencies; mem_dependencies; _ } =
       Option.iter old_value ~f:(TableA.add key);
-      List.iter dependencies ~f:(TableA.add_dependency key)
+      List.iter get_dependencies ~f:(TableA.add_dependency ~kind:Get key);
+      List.iter mem_dependencies ~f:(TableA.add_dependency ~kind:Mem key)
     in
     List.iter specification ~f:setup_old_state;
     let setup_new_state { key; new_value; _ } = Option.iter new_value ~f:(TableA.add key) in
@@ -278,19 +284,70 @@ end
 
 let test_update_dependency_table _ =
   UpdateDependencyTest.assert_dependencies
-    [{ key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] }]
+    [
+      {
+        key = "A";
+        old_value = None;
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+    ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [{ key = "A"; old_value = Some "AVal"; new_value = None; dependencies = ["dep_a"] }]
+    [
+      {
+        key = "A";
+        old_value = None;
+        new_value = Some "NewAVal";
+        get_dependencies = [];
+        mem_dependencies = ["dep_a"];
+      };
+    ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [{ key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] }]
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = None;
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+    ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [{ key = "A"; old_value = None; new_value = None; dependencies = ["dep_a"] }]
-    ~expected:[];
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = None;
+        get_dependencies = [];
+        mem_dependencies = ["dep_a"];
+      };
+    ]
+    ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [{ key = "A"; old_value = Some "AVal"; new_value = Some "AVal"; dependencies = ["dep_a"] }]
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+    ]
+    ~expected:["dep_a"];
+  UpdateDependencyTest.assert_dependencies
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "NewAVal";
+        get_dependencies = [];
+        mem_dependencies = ["dep_a"];
+      };
+    ]
     ~expected:[];
   UpdateDependencyTest.assert_dependencies
     [
@@ -298,45 +355,162 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
-        dependencies = ["dep_a"; "dep_b"];
+        get_dependencies = ["dep_a"];
+        mem_dependencies = ["dep_a"];
+      };
+    ]
+    ~expected:["dep_a"];
+  UpdateDependencyTest.assert_dependencies
+    [
+      {
+        key = "A";
+        old_value = None;
+        new_value = None;
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+    ]
+    ~expected:[];
+  UpdateDependencyTest.assert_dependencies
+    [
+      {
+        key = "A";
+        old_value = None;
+        new_value = None;
+        get_dependencies = [];
+        mem_dependencies = ["dep_a"];
+      };
+    ]
+    ~expected:[];
+  UpdateDependencyTest.assert_dependencies
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "AVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+    ]
+    ~expected:[];
+  UpdateDependencyTest.assert_dependencies
+    [
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"; "dep_b"];
+        mem_dependencies = [];
       };
     ]
     ~expected:["dep_a"; "dep_b"];
 
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = None; new_value = Some "NewBVal"; dependencies = ["dep_b"] };
+      {
+        key = "A";
+        old_value = None;
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "B";
+        old_value = None;
+        new_value = Some "NewBVal";
+        get_dependencies = ["dep_b"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A"; old_value = Some "AVal"; new_value = None; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] };
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = None;
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "B";
+        old_value = Some "BVal";
+        new_value = None;
+        get_dependencies = ["dep_b"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] };
+      {
+        key = "A";
+        old_value = None;
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "B";
+        old_value = Some "BVal";
+        new_value = None;
+        get_dependencies = ["dep_b"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A1"; old_value = Some "A1Val"; new_value = Some "NewA1Val"; dependencies = ["dep_a"] };
-      { key = "A2"; old_value = Some "A2Val"; new_value = Some "A2Val"; dependencies = ["dep_a"] };
+      {
+        key = "A1";
+        old_value = Some "A1Val";
+        new_value = Some "NewA1Val";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "A2";
+        old_value = Some "A2Val";
+        new_value = Some "A2Val";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = Some "NewBVal"; dependencies = ["dep_b"] };
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "B";
+        old_value = Some "BVal";
+        new_value = Some "NewBVal";
+        get_dependencies = ["dep_b"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
     [
-      { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = Some "BVal"; dependencies = ["dep_b"] };
+      {
+        key = "A";
+        old_value = Some "AVal";
+        new_value = Some "NewAVal";
+        get_dependencies = ["dep_a"];
+        mem_dependencies = [];
+      };
+      {
+        key = "B";
+        old_value = Some "BVal";
+        new_value = Some "BVal";
+        get_dependencies = ["dep_b"];
+        mem_dependencies = [];
+      };
     ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
@@ -345,13 +519,15 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "AVal";
-        dependencies = ["dep_a"; "dep_b"];
+        get_dependencies = ["dep_a"; "dep_b"];
+        mem_dependencies = [];
       };
       {
         key = "B";
         old_value = Some "BVal";
         new_value = Some "NewBVal";
-        dependencies = ["dep_b"; "dep_c"];
+        get_dependencies = ["dep_b"; "dep_c"];
+        mem_dependencies = [];
       };
     ]
     ~expected:["dep_b"; "dep_c"];
@@ -362,19 +538,22 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "AVal";
-        dependencies = ["dep_a_b"; "dep_a_c"];
+        get_dependencies = ["dep_a_b"; "dep_a_c"];
+        mem_dependencies = [];
       };
       {
         key = "B";
         old_value = Some "BVal";
         new_value = Some "BVal";
-        dependencies = ["dep_a_b"; "dep_b_c"];
+        get_dependencies = ["dep_a_b"; "dep_b_c"];
+        mem_dependencies = [];
       };
       {
         key = "C";
         old_value = Some "CVal";
         new_value = Some "CVal";
-        dependencies = ["dep_a_c"; "dep_b_c"];
+        get_dependencies = ["dep_a_c"; "dep_b_c"];
+        mem_dependencies = [];
       };
     ]
     ~expected:[];
@@ -384,19 +563,22 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
-        dependencies = ["dep_a_b"; "dep_a_c"];
+        get_dependencies = ["dep_a_b"; "dep_a_c"];
+        mem_dependencies = [];
       };
       {
         key = "B";
         old_value = Some "BVal";
         new_value = Some "BVal";
-        dependencies = ["dep_a_b"; "dep_b_c"];
+        get_dependencies = ["dep_a_b"; "dep_b_c"];
+        mem_dependencies = [];
       };
       {
         key = "C";
         old_value = Some "CVal";
         new_value = Some "CVal";
-        dependencies = ["dep_a_c"; "dep_b_c"];
+        get_dependencies = ["dep_a_c"; "dep_b_c"];
+        mem_dependencies = [];
       };
     ]
     ~expected:["dep_a_b"; "dep_a_c"];
@@ -406,19 +588,22 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
-        dependencies = ["dep_a_b"; "dep_a_c"];
+        get_dependencies = ["dep_a_b"; "dep_a_c"];
+        mem_dependencies = [];
       };
       {
         key = "B";
         old_value = Some "BVal";
         new_value = Some "NewBVal";
-        dependencies = ["dep_a_b"; "dep_b_c"];
+        get_dependencies = ["dep_a_b"; "dep_b_c"];
+        mem_dependencies = [];
       };
       {
         key = "C";
         old_value = Some "CVal";
         new_value = Some "CVal";
-        dependencies = ["dep_a_c"; "dep_b_c"];
+        get_dependencies = ["dep_a_c"; "dep_b_c"];
+        mem_dependencies = [];
       };
     ]
     ~expected:["dep_a_b"; "dep_a_c"; "dep_b_c"];
@@ -429,19 +614,22 @@ let test_update_dependency_table _ =
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
-        dependencies = ["dep_a_b"; "dep_a_c"];
+        get_dependencies = ["dep_a_b"; "dep_a_c"];
+        mem_dependencies = [];
       };
       {
         key = "B";
         old_value = Some "BVal";
         new_value = Some "NewBVal";
-        dependencies = ["dep_a_b"; "dep_b_c"];
+        get_dependencies = ["dep_a_b"; "dep_b_c"];
+        mem_dependencies = [];
       };
       {
         key = "C";
         old_value = Some "CVal";
         new_value = Some "NewCVal";
-        dependencies = ["dep_a_c"; "dep_b_c"];
+        get_dependencies = ["dep_a_c"; "dep_b_c"];
+        mem_dependencies = [];
       };
     ]
     ~expected:["dep_a_b"; "dep_a_c"; "dep_b_c"];

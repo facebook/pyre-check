@@ -299,10 +299,7 @@ end = struct
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment
       |> KeyTracker.get_define_body_keys
     in
-    let class_exists ?dependency name =
-      Option.iter dependency ~f:(ClassDefinitions.add_dependency name);
-      ClassDefinitions.mem name
-    in
+    let class_exists ?dependency name = ClassDefinitions.mem ?dependency name in
     let hash_to_key_map () =
       let extend_map map ~new_map =
         Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
