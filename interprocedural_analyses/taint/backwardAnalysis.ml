@@ -520,6 +520,38 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           } ->
           let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
+      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
+         being frozen post-initialization. *)
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "object"); _ };
+                        attribute = "__setattr__";
+                        _;
+                      });
+                _;
+              };
+            arguments =
+              [
+                { Call.Argument.value = self; name = None };
+                {
+                  Call.Argument.value = { Node.value = Expression.String _; _ } as attribute;
+                  name = None;
+                };
+                { Call.Argument.value; name = None };
+              ];
+          } ->
+          analyze_assignment
+            ~resolution
+            ~target:self
+            ~fields:[AccessPath.get_index attribute]
+            ~value
+            state
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state

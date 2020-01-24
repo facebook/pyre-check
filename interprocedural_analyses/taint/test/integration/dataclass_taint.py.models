@@ -65,7 +65,33 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
+    "sources": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      }
+    ],
     "sinks": [
       {
         "port": "formal(bad)",
@@ -94,7 +120,7 @@
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -173,6 +199,61 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.WeirdDataClass.__init__",
+    "sources": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 37,
+              "start": 23,
+              "end": 26
+            },
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }
@@ -299,6 +380,36 @@
               { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.test_weird_dataclass_taint",
+    "sources": [
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "dataclass_taint.py",
+                "line": 42,
+                "start": 11,
+                "end": 32
+              },
+              "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
+              "port": "result[bad]",
+              "length": 1
+            },
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "always-type": "scalar" } ]
           }
         ]
       }

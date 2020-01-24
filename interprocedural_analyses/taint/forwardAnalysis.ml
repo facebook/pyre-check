@@ -650,6 +650,47 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
              tainted. *)
           analyze_call ~resolution ~location ~state callee arguments
+      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
+         being frozen post-initialization. *)
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "object"); _ };
+                        attribute = "__setattr__";
+                        _;
+                      });
+                _;
+              };
+            arguments =
+              [
+                { Call.Argument.value = self; name = None };
+                {
+                  Call.Argument.value =
+                    { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+                  name = None;
+                };
+                { Call.Argument.value = assigned_value; name = None };
+              ];
+          } ->
+          let taint, state = analyze_expression ~resolution ~state ~expression:assigned_value in
+          let state =
+            analyze_assignment
+              ~resolution
+              {
+                Node.value =
+                  Expression.Name (Name.Attribute { base = self; attribute; special = false });
+                location = { Location.start = location.start; stop = location.stop };
+              }
+              taint
+              taint
+              state
+          in
+          taint, state
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary { Dictionary.entries; keywords } ->

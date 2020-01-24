@@ -30,3 +30,13 @@ class DataClassWIthInit:
 
 def issue_in_dataclass_constructor() -> None:
     DataClassWIthInit(bad=__test_source())
+
+
+@dataclass
+class WeirdDataClass:
+    def __init__(self, bad: int) -> None:
+        object.__setattr__(self, "bad", bad)
+
+
+def test_weird_dataclass_taint() -> WeirdDataClass:
+    return WeirdDataClass(bad=1)
