@@ -26,6 +26,7 @@ from ..statistics_collectors import (
     IgnoreCountCollector,
     StatisticsCollector,
     StrictCountCollector,
+    StrictIssueCollector,
 )
 from .command import Command
 
@@ -85,6 +86,12 @@ def file_exists(path: str) -> str:
     if not os.path.exists(path):
         raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
     return path
+
+
+def is_strict(configuration: Path) -> bool:
+    path = Path(configuration, ".pyre_configuration.local")
+    json_configuration = json.loads(path.read_text())
+    return json_configuration.get("strict", False)
 
 
 class QualityType(enum.Enum):
@@ -147,7 +154,7 @@ class Statistics(Command):
         elif self._collect == QualityType.MISSING_ANNOTATIONS:
             self._get_missing_annotation_issues()
         elif self._collect == QualityType.STRICT:
-            log.stdout.write("Gathering strict file issues.")
+            self._get_strict_issues()
 
     def _get_missing_annotation_issues(self) -> None:
         collector = FunctionsCollector()
@@ -160,6 +167,23 @@ class Statistics(Command):
         for path, module in modules.items():
             collector.path = path
             module.visit(collector)
+        issues = [issue.build_json() for issue in collector.issues]
+        log.stdout.write(str(issues))
+
+    def _get_strict_issues(self) -> None:
+        collector = StrictIssueCollector(strict_by_default=False)
+        paths = _find_paths(self._local_configuration, self._filter_paths)
+        for configuration in paths:
+            is_default_strict = is_strict(configuration)
+            paths = _parse_paths([Path(configuration)])
+            modules = {
+                str(path): parse_path_to_metadata_module(path)
+                for path in _parse_paths(paths)
+            }
+            for path, module in modules.items():
+                collector.path = path
+                collector.is_strict = is_default_strict
+                module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
         log.stdout.write(str(issues))
 

@@ -157,6 +157,13 @@ class StrictCountCollector(StatisticsCollector):
         self.unsafe_regex: Pattern[str] = compile(r"# pyre-unsafe")
         self.strict_regex: Pattern[str] = compile(r"# pyre-strict")
 
+    def is_unsafe_module(self) -> bool:
+        if self.is_unsafe:
+            return True
+        elif self.is_strict or self.strict_by_default:
+            return False
+        return True
+
     def visit_Module(self, node: cst.Module) -> None:
         self.is_strict = False
         self.is_unsafe = False
@@ -170,12 +177,10 @@ class StrictCountCollector(StatisticsCollector):
             self.is_unsafe = True
 
     def leave_Module(self, original_node: cst.Module) -> None:
-        if self.is_unsafe:
+        if self.is_unsafe_module():
             self.unsafe_count += 1
-        elif self.is_strict or self.strict_by_default:
-            self.strict_count += 1
         else:
-            self.unsafe_count += 1
+            self.strict_count += 1
 
     def build_json(self) -> Dict[str, int]:
         return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
@@ -223,3 +228,20 @@ class FunctionsCollector(cst.CSTVisitor):
                 "This function is missing a return annotation.",
             )
             self.issues.append(issue)
+
+
+class StrictIssueCollector(StrictCountCollector):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+    path: str = ""
+    issues: List[CodeQualityIssue] = []
+
+    def _create_issue(self, node: cst.Module) -> None:
+        code_range = self.get_metadata(PositionProvider, node)
+        issue = CodeQualityIssue(
+            code_range, self.path, "PYRE_STRICT", "Unsafe Pyre file."
+        )
+        self.issues.append(issue)
+
+    def leave_Module(self, original_node: cst.Module) -> None:
+        if self.is_unsafe_module():
+            self._create_issue(original_node)
