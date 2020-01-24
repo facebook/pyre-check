@@ -496,12 +496,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
           let state = analyze_call ~resolution location ~taint ~state callee arguments in
           (* Handle base[index] = value. *)
-          let taint =
-            compute_assignment_taint ~resolution base state
-            |> fst
-            |> BackwardState.Tree.read [AccessPath.get_index index]
-          in
-          analyze_expression ~resolution ~taint ~state ~expression:value
+          analyze_assignment
+            ~resolution
+            ~fields:[AccessPath.get_index index]
+            ~target:base
+            ~value
+            state
       | Call
           {
             callee =
@@ -627,7 +627,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Returns the taint, and whether to collapse one level (due to star expression) *)
     and compute_assignment_taint ~resolution target state =
       match target.Node.value with
-      | Starred (Once target | Twice target) ->
+      | Expression.Starred (Once target | Twice target) ->
           (* This is approximate. Unless we can get the tuple type on the right to tell how many
              total elements there will be, we just pick up the entire collection. *)
           let taint, _ = compute_assignment_taint ~resolution target state in
@@ -679,18 +679,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           taint, false
 
 
+    and analyze_assignment ~resolution ?(fields = []) ~target ~value state =
+      let taint =
+        compute_assignment_taint ~resolution target state |> fst |> BackwardState.Tree.read fields
+      in
+      let state =
+        match of_expression ~resolution target with
+        | Some { root; path } ->
+            {
+              taint =
+                BackwardState.assign
+                  ~root
+                  ~path:(path @ fields)
+                  BackwardState.Tree.empty
+                  state.taint;
+            }
+        | None -> state
+      in
+      analyze_expression ~resolution ~taint ~state ~expression:value
+
+
     let analyze_statement ~resolution state statement =
       log "State: %a\nStmt: %a" pp state pp_statement statement;
       match statement with
-      | Statement.Assign { target; value; _ } ->
-          let taint, _ = compute_assignment_taint ~resolution target state in
-          let state =
-            match of_expression ~resolution target with
-            | Some { root; path } ->
-                { taint = BackwardState.assign ~root ~path BackwardState.Tree.empty state.taint }
-            | None -> state
-          in
-          analyze_expression ~resolution ~taint ~state ~expression:value
+      | Statement.Assign { target; value; _ } -> analyze_assignment ~resolution ~target ~value state
       | Assert _
       | Break
       | Class _

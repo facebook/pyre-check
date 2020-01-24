@@ -111,3 +111,8 @@ def lists_of_dictionary_iteration_is_precise():
     for dict in list_of_dicts:
         __test_sink(dict["with_feature"])
         __test_sink(dict["without_feature"])
+
+
+def reassignment_removes_backwards_taint(d):
+    d["a"] = 0
+    __test_sink(d["a"])
