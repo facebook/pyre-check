@@ -11,7 +11,7 @@ from typing import Callable, Iterable, List, Optional
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
 from .model_generator import ModelGenerator
-from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
+from .view_generator import DjangoUrls, get_all_views
 
 
 class ExitNodeGenerator(ModelGenerator):

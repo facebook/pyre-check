@@ -10,8 +10,6 @@ from abc import ABC
 from importlib import import_module
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Type
 
-from .model_generator import Configuration
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -23,17 +21,6 @@ class DjangoUrls(NamedTuple):
     urls_module: str
     url_resolver_type: DynamicURLType
     url_pattern_type: DynamicURLType
-
-
-def django_urls_from_configuration() -> Optional[DjangoUrls]:
-    urls_module = Configuration.urls_module
-    if urls_module is not None:
-        return DjangoUrls(
-            urls_module=urls_module,
-            url_resolver_type=Configuration.url_resolver_type,
-            url_pattern_type=Configuration.url_pattern_type,
-        )
-    return None
 
 
 def get_all_views(django_urls: DjangoUrls) -> Iterable[Callable[..., object]]:

@@ -11,7 +11,7 @@ from typing import Callable, Iterable, List, Optional
 from .function_tainter import taint_functions
 from .model import Model
 from .model_generator import ModelGenerator
-from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
+from .view_generator import DjangoUrls, get_all_views
 
 
 class RESTApiSourceGenerator(ModelGenerator):
