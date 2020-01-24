@@ -418,9 +418,6 @@ let process_type_query_request
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.Defines module_or_class_names ->
-        let unannotated_global_environment =
-          GlobalResolution.unannotated_global_environment global_resolution
-        in
         let ast_environment = TypeEnvironment.ast_environment environment in
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
@@ -442,10 +439,10 @@ let process_type_query_request
           in
           let defines =
             module_name
-            >>| UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-                  unannotated_global_environment
-            >>| List.filter_map ~f:(GlobalResolution.function_definitions global_resolution)
-            >>| List.concat
+            >>= AstEnvironment.ReadOnly.get_source ast_environment
+            >>| Analysis.FunctionDefinition.collect_defines
+            >>| List.map ~f:snd
+            >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies
             >>| List.filter ~f:(fun { Node.value = define; _ } ->
                     not
                       ( Statement.Define.is_toplevel define

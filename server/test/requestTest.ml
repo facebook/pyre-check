@@ -309,6 +309,11 @@ let test_process_type_query_request context =
     {
       "response": [
         {
+          "name": "classy.not_in_c",
+          "parameters": [],
+          "return_annotation":"int"
+        },
+        {
           "name": "classy.C.foo",
           "parameters": [
             {
@@ -321,11 +326,6 @@ let test_process_type_query_request context =
             }
           ],
           "return_annotation": "None"
-        },
-        {
-          "name": "classy.not_in_c",
-          "parameters": [],
-          "return_annotation":"int"
         }
       ]
     }
@@ -359,20 +359,20 @@ let test_process_type_query_request context =
     {
       "response": [
         {
-          "name": "define_test.with_kwargs",
+          "name": "define_test.with_var",
           "parameters": [
             {
-              "name": "**kwargs",
+              "name": "*args",
               "annotation": null
             }
           ],
           "return_annotation": null
         },
         {
-          "name": "define_test.with_var",
+          "name": "define_test.with_kwargs",
           "parameters": [
             {
-              "name": "*args",
+              "name": "**kwargs",
               "annotation": null
             }
           ],
@@ -404,6 +404,11 @@ let test_process_type_query_request context =
           "return_annotation": "int"
         },
         {
+          "name": "classy.not_in_c",
+          "parameters": [],
+          "return_annotation":"int"
+        },
+        {
           "name": "classy.C.foo",
           "parameters": [
             {
@@ -416,11 +421,6 @@ let test_process_type_query_request context =
             }
           ],
           "return_annotation": "None"
-        },
-        {
-          "name": "classy.not_in_c",
-          "parameters": [],
-          "return_annotation":"int"
         }
       ]
     }
