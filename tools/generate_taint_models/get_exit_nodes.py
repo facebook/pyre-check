@@ -10,28 +10,19 @@ from typing import Callable, Iterable, List, Optional
 
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
-from .model_generator import Configuration, ModelGenerator
+from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
 
 
 class ExitNodeGenerator(ModelGenerator):
     def __init__(
-        self,
-        django_urls: Optional[DjangoUrls] = None,
-        whitelisted_views: Optional[List[str]] = None,
+        self, django_urls: DjangoUrls, whitelisted_views: Optional[List[str]] = None
     ) -> None:
-        self.django_urls: Optional[
-            DjangoUrls
-        ] = django_urls or django_urls_from_configuration()
-        self.whitelisted_views: List[
-            str
-        ] = whitelisted_views or Configuration.whitelisted_views
+        self.django_urls = django_urls
+        self.whitelisted_views: List[str] = whitelisted_views or []
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        django_urls = self.django_urls
-        if django_urls is None:
-            return []
-        return get_all_views(django_urls)
+        return get_all_views(self.django_urls)
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
