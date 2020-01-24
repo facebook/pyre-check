@@ -61,6 +61,25 @@ let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
   }
 
 
+let set_local_with_attributes
+    ({ annotation_store; _ } as resolution)
+    ~object_reference
+    ~attribute_path
+    ~annotation
+  =
+  {
+    resolution with
+    annotation_store =
+      Map.set
+        annotation_store
+        ~key:object_reference
+        ~data:
+          ( Map.find annotation_store object_reference
+          |> Option.value ~default:(RefinementUnit.create ())
+          |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation );
+  }
+
+
 let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
   match Map.find annotation_store reference with
   | Some result
@@ -72,6 +91,27 @@ let get_local ?(global_fallback = true) ~reference { annotation_store; global_re
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.delocalize reference |> global >>| Node.value
+  | _ -> None
+
+
+let get_local_with_attributes
+    ?(global_fallback = true)
+    ~object_reference
+    ~attribute_path
+    { annotation_store; global_resolution; _ }
+  =
+  match Map.find annotation_store object_reference with
+  | Some result
+    when global_fallback
+         || not
+              ( result
+              |> RefinementUnit.annotation ~reference:attribute_path
+              >>| Annotation.is_global
+              |> Option.value ~default:true ) ->
+      RefinementUnit.annotation result ~reference:attribute_path
+  | _ when global_fallback ->
+      let global = GlobalResolution.global global_resolution in
+      Reference.(combine object_reference attribute_path |> delocalize) |> global >>| Node.value
   | _ -> None
 
 

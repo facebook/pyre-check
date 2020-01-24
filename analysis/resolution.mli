@@ -18,7 +18,21 @@ val create
 
 val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t
 
+val set_local_with_attributes
+  :  t ->
+  object_reference:Reference.t ->
+  attribute_path:Reference.t ->
+  annotation:Annotation.t ->
+  t
+
 val get_local : ?global_fallback:bool -> reference:Reference.t -> t -> Annotation.t option
+
+val get_local_with_attributes
+  :  ?global_fallback:bool ->
+  object_reference:Reference.t ->
+  attribute_path:Reference.t ->
+  t ->
+  Annotation.t option
 
 val unset_local : t -> reference:Reference.t -> t
 

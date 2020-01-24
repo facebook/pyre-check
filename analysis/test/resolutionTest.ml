@@ -33,6 +33,68 @@ let test_set_local context =
   assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
 
+let test_set_local_with_attributes context =
+  let assert_local_with_attributes
+      ?(global_fallback = true)
+      ~resolution
+      ~head
+      ~attributes
+      ~expected
+      ()
+    =
+    assert_equal
+      ~cmp:(Option.equal Type.equal)
+      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
+      ( Resolution.get_local_with_attributes
+          ~global_fallback
+          resolution
+          ~object_reference:!&head
+          ~attribute_path:!&attributes
+      >>| Annotation.annotation )
+  in
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"" ~expected:None ();
+  let resolution =
+    Resolution.set_local_with_attributes
+      resolution
+      ~object_reference:!&"local"
+      ~attribute_path:!&"a.x"
+      ~annotation:(Annotation.create Type.integer)
+  in
+  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"a.x" ~expected:(Some "int") ();
+  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"a.y" ~expected:None ();
+  let resolution =
+    Resolution.set_local_with_attributes
+      resolution
+      ~object_reference:!&"local"
+      ~attribute_path:!&"a.x"
+      ~annotation:(Annotation.create Type.float)
+  in
+  assert_local_with_attributes
+    ~resolution
+    ~head:"local"
+    ~attributes:"a.x"
+    ~expected:(Some "float")
+    ();
+  let resolution =
+    Resolution.set_local_with_attributes
+      resolution
+      ~object_reference:!&"global"
+      ~attribute_path:!&"a.x"
+      ~annotation:
+        (Annotation.create
+           ~mutability:(Immutable { scope = Global; original = Type.integer; final = false })
+           Type.integer)
+  in
+  assert_local_with_attributes
+    ~global_fallback:false
+    ~resolution
+    ~head:"global"
+    ~attributes:"a.x."
+    ~expected:None
+    ()
+
+
 let test_parse_annotation context =
   let assert_parse_annotation ?(allow_untracked = false) ~resolution ~expected expression =
     assert_equal
@@ -687,6 +749,7 @@ let () =
   "resolution"
   >::: [
          "set_local" >:: test_set_local;
+         "set_local_with_attributes" >:: test_set_local_with_attributes;
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
          "resolve_literal" >:: test_resolve_literal;
