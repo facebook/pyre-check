@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import json
 import logging
 import shutil
@@ -23,6 +24,11 @@ class FilesystemError(IOError):
     pass
 
 
+class CommandData(NamedTuple):
+    working_directory: str
+    command: List[str]
+
+
 class PyreResult(NamedTuple):
     output: Optional[str]
     error_output: Optional[str]
@@ -44,15 +50,14 @@ def _watch_directory(source_directory: str) -> Generator[None, None, None]:
     )
 
 
-# TODO(T57341910): Add structure for verifying output/logs/results/timeouts/processes
-# TODO(T57341910): Command to re-run only failing tests in debug, & for stress testing
-# TODO(T57341910): Fill in test cases
 class TestCommand(unittest.TestCase, ABC):
     directory: Path
+    command_history: List[CommandData]
 
     def __init__(self, methodName: str) -> None:
         super(TestCommand, self).__init__(methodName)
         self.directory = Path(".")  # workaround for initialization type errors
+        self.command_history = []
 
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
@@ -60,6 +65,7 @@ class TestCommand(unittest.TestCase, ABC):
 
     def tearDown(self) -> None:
         self.cleanup()
+        self.command_history = []
         shutil.rmtree(self.directory)
 
     def initial_filesystem(self) -> None:
@@ -124,8 +130,16 @@ class TestCommand(unittest.TestCase, ABC):
         )
         prompt_inputs = "\n".join(prompts).encode() if prompts else None
         try:
+            command: List[str] = [
+                "pyre",
+                "--noninteractive",
+                "--output=json",
+                command,
+                *arguments,
+            ]
+            self.command_history.append(CommandData(str(working_directory), command))
             process = subprocess.run(
-                ["pyre", "--noninteractive", "--output=json", command, *arguments],
+                command,
                 cwd=working_directory,
                 input=prompt_inputs,
                 timeout=timeout,
@@ -135,30 +149,89 @@ class TestCommand(unittest.TestCase, ABC):
                 process.stdout.decode(), process.stderr.decode(), process.returncode
             )
         except subprocess.TimeoutExpired as error:
+            # TODO(T57341910): Timeout logs are still ugly and unhelpful
             LOG.error(error.stderr)
             LOG.error(error.stdout)
             raise error
 
-    def get_context(self, result: PyreResult) -> str:
-        # TODO(T57341910): Provide repro and full env info for failure cases
-        return result.error_output or ""
+    def get_context(self, result: Optional[PyreResult] = None) -> str:
+        context = ""
 
+        def format_section(title: str, *contents: str) -> str:
+            divider = "=" * 15
+            # pyre-ignore[9]: Unable to unpack `str`, expected a tuple.
+            contents = "\n\n".join([content.strip() for content in contents])
+            section = "\n\n{} {} {}\n\n{}\n".format(divider, title, divider, contents)
+            return section
+
+        if result:
+            error_output = result.error_output
+            if error_output:
+                context += format_section("Pyre Output", error_output)
+
+        filesystem_structure = subprocess.run(
+            ["tree", self.directory, "-a", "-I", "typeshed"], capture_output=True
+        ).stdout.decode()
+        context += format_section("Filesystem Structure", filesystem_structure)
+
+        version_output = subprocess.run(
+            ["pyre", "--version"], cwd=self.directory, capture_output=True
+        ).stdout.decode()
+        configurations = glob.glob(
+            str(self.directory / "**/.pyre_configuration*"), recursive=True
+        )
+        configuration_contents = ""
+        for configuration in configurations:
+            configuration_contents += configuration + "\n  "
+            configuration_contents += Path(configuration).read_text() + "\n\n"
+        context += format_section("Versioning", version_output, configuration_contents)
+
+        instructions = ""
+        if self.command_history:
+            instructions += "- Create directory structure above and run:\n\t"
+            instructions += "\n\t".join(
+                [
+                    "["
+                    + str(command.working_directory).replace(
+                        str(self.directory), "$project_root"
+                    )
+                    + "] "
+                    + " ".join(command.command)
+                    for command in self.command_history
+                ]
+            )
+        instructions += "\n\n- Re-run only this failing test:\n\t"
+        # TODO(T57341910): Support individual run
+        test_name = "ClassName.test_name"
+        instructions += "[tools/pyre] python3 scripts/run_client_integration_test.py {}".format(
+            test_name
+        )
+        instructions += "\n\n- Flaky? Stress test this failing test:\n\t"
+        # TODO(T57341910): Support stress test
+        instructions += "[tools/pyre] ???"
+        context += format_section("Repro Instructions", instructions)
+        return context
+
+    # TODO(T57341910): Improve structure for verifying output/logs/timeouts/processes
     def assert_has_errors(self, result: PyreResult) -> None:
-        self.assertTrue(result.return_code == 1, self.get_context(result))
+        self.assertEqual(result.return_code, 1, self.get_context(result))
 
     def assert_no_errors(self, result: PyreResult) -> None:
-        self.assertTrue(result.return_code == 0, self.get_context(result))
+        self.assertEqual(result.return_code, 0, self.get_context(result))
 
     def assert_file_exists(
         self, relative_path: str, json_contents: Optional[Dict[str, Any]] = None
     ) -> None:
         file_path = self.directory / relative_path
-        self.assertTrue(file_path.exists())
+        self.assertTrue(file_path.exists(), self.get_context())
         if json_contents:
             file_contents = file_path.read_text()
-            self.assertEqual(json_contents, json.loads(file_contents))
+            self.assertEqual(
+                json.loads(file_contents), json_contents, self.get_context()
+            )
 
 
+# TODO(T57341910): Fill in test cases
 class AnalyzeTest(TestCommand):
     pass
 
@@ -183,7 +256,7 @@ class IncrementalTest(TestCommand):
         self.create_project_configuration()
         self.create_directory("local_project")
         self.create_local_configuration("local_project", {"source_directories": ["."]})
-        self.create_file_with_error("local_project/test.py")
+        self.create_file_with_error("local_project/has_type_error.py")
         self.create_file(".watchmanconfig", "{}")
 
     def test_no_existing_server(self) -> None:
