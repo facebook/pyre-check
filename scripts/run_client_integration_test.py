@@ -155,6 +155,7 @@ class TestCommand(unittest.TestCase, ABC):
             raise error
 
     def get_context(self, result: Optional[PyreResult] = None) -> str:
+        # TODO(T60769864): Avoid printing context twice in buck runs.
         context = ""
 
         def format_section(title: str, *contents: str) -> str:
@@ -200,15 +201,19 @@ class TestCommand(unittest.TestCase, ABC):
                     for command in self.command_history
                 ]
             )
+        test_id = self.id()
         instructions += "\n\n- Re-run only this failing test:\n\t"
-        # TODO(T57341910): Support individual run
-        test_name = "ClassName.test_name"
-        instructions += "[tools/pyre] python3 scripts/run_client_integration_test.py {}".format(
-            test_name
+        instructions += "[tools/pyre] python3 {} {}".format(
+            "scripts/run_client_integration_test.py", test_id
         )
         instructions += "\n\n- Flaky? Stress test this failing test:\n\t"
-        # TODO(T57341910): Support stress test
-        instructions += "[tools/pyre] ???"
+        test_target = "//tools/pyre/scripts:pyre_client_integration_test_runner"
+        buck_arguments = "--jobs 18 --stress-runs 20 --record-results"
+        test_name = test_id.split(".")[-1]
+        test_qualifier = r"\.".join(test_id.split(".")[:-1])
+        instructions += r"[tools/pyre] buck test {} -- '{} \({}\)' {}".format(
+            test_target, test_name, test_qualifier, buck_arguments
+        )
         context += format_section("Repro Instructions", instructions)
         return context
 
