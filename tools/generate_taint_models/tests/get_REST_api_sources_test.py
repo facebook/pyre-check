@@ -6,6 +6,7 @@
 # pyre-unsafe
 
 import unittest
+from unittest.mock import MagicMock
 
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from .test_functions import __name__ as qualifier, all_functions
@@ -19,7 +20,9 @@ class GetRESTApiSourcesTest(unittest.TestCase):
                 *map(
                     str,
                     RESTApiSourceGenerator(
-                        whitelisted_classes=[], whitelisted_views=[]
+                        django_urls=MagicMock(),
+                        whitelisted_classes=[],
+                        whitelisted_views=[],
                     ).compute_models(all_functions),
                 )
             ],
@@ -39,6 +42,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
                 *map(
                     str,
                     RESTApiSourceGenerator(
+                        django_urls=MagicMock(),
                         whitelisted_classes=["int"],
                         whitelisted_views=[f"{qualifier}.testA"],
                     ).compute_models(all_functions),

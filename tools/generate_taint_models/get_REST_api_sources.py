@@ -10,34 +10,25 @@ from typing import Callable, Iterable, List, Optional
 
 from .function_tainter import taint_functions
 from .model import Model
-from .model_generator import Configuration, ModelGenerator
+from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, django_urls_from_configuration, get_all_views
 
 
 class RESTApiSourceGenerator(ModelGenerator):
     def __init__(
         self,
-        django_urls: Optional[DjangoUrls] = None,
+        django_urls: DjangoUrls,
         whitelisted_classes: Optional[List[str]] = None,
         whitelisted_views: Optional[List[str]] = None,
         taint_annotation: str = "TaintSource[UserControlled]",
     ) -> None:
-        self.whitelisted_classes: List[str] = (
-            whitelisted_classes or Configuration.whitelisted_classes
-        )
-        self.django_urls: Optional[
-            DjangoUrls
-        ] = django_urls or django_urls_from_configuration()
-        self.whitelisted_views: List[
-            str
-        ] = whitelisted_views or Configuration.whitelisted_views
+        self.django_urls: DjangoUrls = django_urls
+        self.whitelisted_classes: List[str] = whitelisted_classes or []
+        self.whitelisted_views: List[str] = whitelisted_views or []
         self.taint_annotation = taint_annotation
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        django_urls = self.django_urls
-        if django_urls is None:
-            return []
-        return get_all_views(django_urls)
+        return get_all_views(self.django_urls)
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
