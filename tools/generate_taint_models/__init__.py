@@ -32,33 +32,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ConfigurationArguments:
-    """
-    When adding new configuration options, make sure to add a default value for
-    them for backwards compatibility. We construct ConfigurationArguments objects
-    outside the current directory, and adding a non-optional argument will break those.
-    """
-
-    annotation_specifications: List[DecoratorAnnotationSpecification]
-    whitelisted_views: List[str]
-    whitelisted_classes: List[str]
-    # pyre-ignore[4]: Too dynamic.
-    url_resolver_type: Type[Any]
-    # pyre-ignore[4]: Too dynamic.
-    url_pattern_type: Type[Any]
-    root: str
-    stub_root: Optional[str]
-    # pyre-ignore[4]: Too dynamic.
-    graphql_object_type: Type[Any]
-    urls_module: Optional[str]
-    graphql_module: List[str]
-    blacklisted_global_directories: Set[str]
-    blacklisted_globals: Set[str]
-    logger: Optional[str] = None
-    classes_to_taint: Optional[List[str]] = None
-
-
-@dataclass
 class GenerationArguments:
     """
     When adding new generation options, make sure to add a default value for
