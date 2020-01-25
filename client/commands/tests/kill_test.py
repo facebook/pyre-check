@@ -66,6 +66,31 @@ class KillTest(unittest.TestCase):
         # Ensure that we don't crash even if os.kill fails to find a process.
         kill_command._kill_client_processes()
 
+    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
+    @patch.object(psutil, "process_iter")
+    @patch.object(os, "getpgid", side_effect=lambda id: id)
+    @patch.object(os, "getpid", return_value=1234)
+    @patch.object(os, "kill")
+    @patch.object(Kill, "__init__", return_value=None)
+    def test_kill_client_processes_permission_error(
+        self,
+        kill_init: MagicMock,
+        os_kill: MagicMock,
+        get_process_id: MagicMock,
+        get_process_group_id: MagicMock,
+        process_iterator: MagicMock,
+        stop_subscriber: MagicMock,
+    ) -> None:
+        process_iterator.return_value = [
+            Mock(info={"name": "pyre-client"}, pid=1234),
+            Mock(info={"name": "pyre-client"}, pid=5678),
+        ]
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._configuration = MagicMock(log_directory=".pyre")
+        os_kill.side_effect = PermissionError
+        # Ensure that we don't crash even if os.kill fails due to permissions.
+        kill_command._kill_client_processes()
+
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(self, kill_init: MagicMock, remove_tree: MagicMock) -> None:

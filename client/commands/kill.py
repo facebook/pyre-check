@@ -122,8 +122,12 @@ class Kill(Command):
                     )
                 )
                 os.kill(pid_to_kill, signal.SIGKILL)
-            except ProcessLookupError:
-                continue
+            except (ProcessLookupError, PermissionError) as exception:
+                LOG.debug(
+                    "Failed to kill process {} with pid {} due to exception {}".format(
+                        process.info["name"], pid_to_kill, exception
+                    )
+                )
         WatchmanSubscriber.stop_subscriber(
             ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
         )
