@@ -457,14 +457,14 @@ details              show additional information about the current trace frame
             codes: int or list[int]        issue codes to filter on
             callables: str or list[str]    callables to filter on (supports wildcards)
             filenames: str or list[str]    filenames to filter on (supports wildcards)
-            exact_trace_length_to_sources: 
-                int or list[int]    min trace length to sources to filter on 
-            exact_trace_length_to_sinks: 
-                int or list[int]    min trace length to sinks to filter on 
-            max_trace_length_to_sources: 
-                int    maximum min trace length to sources to filter on 
-            max_trace_length_to_sinks: 
-                int    maximum min trace length to sinks to filter on 
+            exact_trace_length_to_sources: int or list[int]
+                exact values for min trace length to sources to filter on
+            exact_trace_length_to_sinks: int or list[int]
+                exact values for min trace length to sinks to filter on
+            max_trace_length_to_sources: int
+                maximum value for min trace length to sources to filter on
+            max_trace_length_to_sinks: int
+                maximum value for min trace length to sinks to filter on
 
         String filters support LIKE wildcards (%, _) from SQL:
             % matches anything (like .* in regex)

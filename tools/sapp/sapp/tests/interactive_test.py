@@ -353,7 +353,7 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
 
         self.interactive.issues(
-            max_trace_length_to_sources=1, max_trace_length_to_sinks=1,
+            max_trace_length_to_sources=1, max_trace_length_to_sinks=1
         )
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
@@ -362,7 +362,7 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
 
         self.interactive.issues(
-            max_trace_length_to_sources=1, max_trace_length_to_sinks=2,
+            max_trace_length_to_sources=1, max_trace_length_to_sinks=2
         )
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
