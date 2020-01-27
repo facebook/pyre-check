@@ -61,4 +61,4 @@ let test_of_expression context =
     (Some { AccessPath.root = AccessPath.Root.Variable "$local_qualifier$missing"; path = [] })
 
 
-let () = "taintaccesspath" >::: ["of_expression" >:: test_of_expression] |> Test.run
+let () = "accessPath" >::: ["of_expression" >:: test_of_expression] |> Test.run
