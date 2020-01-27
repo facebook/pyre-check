@@ -72,9 +72,8 @@ class GlobalModelGenerator(ModelGenerator):
             def visit_Subscript(self, subscript: ast.Subscript) -> None:
                 return
 
-        visitor = NameVisitor(globals)
+        visitor: NameVisitor = NameVisitor(globals)
 
-        # pyre-fixme[53]: Captured variable `visitor` is not annotated.
         def visit_assignment(target: ast.expr, value: ast.expr) -> None:
             if value is not None:
                 # namedtuples get preprocessed out by Pyre, and shouldn't be added
@@ -97,7 +96,6 @@ class GlobalModelGenerator(ModelGenerator):
                     return
             visitor.visit(target)
 
-        # pyre-fixme[53]: Captured variable `visitor` is not annotated.
         def should_visit_class(class_definition: ast.ClassDef) -> bool:
             # Ensure that we don't visit nested classes for now.
             if visitor.parent is not None:
@@ -149,7 +147,6 @@ class GlobalModelGenerator(ModelGenerator):
                             attributes.add(attribute)
             return attributes
 
-        # pyre-fixme[53]: Captured variable `visitor` is not annotated.
         def visit_statement(statement: ast.stmt) -> None:
             if isinstance(statement, ast.Assign):
                 # Omit pure aliases of the form `x = alias`.
@@ -231,9 +228,8 @@ class GlobalModelGenerator(ModelGenerator):
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
 
-    # pyre-fixme[14]: inconsistent method override from `ModelGenerator`
     def compute_models(
-        self, functions_to_model: Iterable[Callable[..., None]]
+        self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
         sinks: Set[Model] = set()
 

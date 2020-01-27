@@ -45,7 +45,7 @@ class RawCallableModel(Model):
 
     def __init__(
         self,
-        callable_name: str,
+        callable_name: Optional[str],
         parameters: List[Parameter],
         returns: Optional[str] = None,
     ) -> None:
@@ -114,7 +114,6 @@ class CallableModel(RawCallableModel):
         self.parameter_name_whitelist = parameter_name_whitelist
         view_parameters = CallableModel._get_view_parameters(callable_object)
         super().__init__(
-            # pyre-ignore[6]: Expected str but got optional[str].
             callable_name=extract_qualified_name(callable_object),
             parameters=self._generate_parameters(view_parameters),
             returns=returns,
@@ -128,7 +127,7 @@ class CallableModel(RawCallableModel):
         if isinstance(callable_object, types.FunctionType):
             view_parameters = inspect.signature(callable_object).parameters
         elif isinstance(callable_object, types.MethodType):
-            # pyre-fixme
+            # pyre-ignore: Too dynamic
             view_parameters = inspect.signature(callable_object.__func__).parameters
         return view_parameters
 

@@ -29,7 +29,7 @@ class GraphQLSourceGenerator(ModelGenerator):
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         # Get all graphql import names.
-        views = []
+        views: List[Callable[..., object]] = []
         modules = []
 
         module_argument = self.graphql_module
@@ -44,7 +44,6 @@ class GraphQLSourceGenerator(ModelGenerator):
                 if path.endswith(".py") and path != "__init__.py":
                     modules.append(f"{graphql_module}.{path[:-3]}")
 
-            # pyre-fixme[53]: Captured variable `views` is not annotated.
             def visit_all_graphql_resolvers(module_name: str) -> None:
                 module = import_module(module_name)
                 for key in module.__dict__:

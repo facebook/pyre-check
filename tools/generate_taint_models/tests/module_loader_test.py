@@ -19,28 +19,25 @@ from .. import module_loader
 class ModuleLoaderTest(unittest.TestCase):
     @patch("builtins.open")
     def test_load_module(self, open: MagicMock) -> None:
-        valid_path = "/valid"
-        invalid_syntax_path = "/syntax"
-        invalid_path = "/invalid"
+        valid_path: str = "/valid"
+        invalid_syntax_path: str = "/syntax"
+        invalid_path: str = "/invalid"
 
-        valid_syntax = textwrap.dedent(
+        valid_syntax: str = textwrap.dedent(
             """
             def my_function():
                 pass
         """
         )
 
-        invalid_syntax = textwrap.dedent(
+        invalid_syntax: str = textwrap.dedent(
             """
             def: () my_function:
                 pass
         """
         )
 
-        # pyre-ignore[3]: Return type must be specified as type that does not
-        # contain Any.
-        # pyre-fixme[53]: Captured variable `invalid_syntax` is not annotated.
-        def _open_implementation(path: str, mode: str) -> IO[Any]:
+        def _open_implementation(path: str, mode: str) -> IO[str]:
             if path == valid_path:
                 return mock_open(read_data=valid_syntax).return_value
             elif path == invalid_syntax_path:
