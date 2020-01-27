@@ -118,6 +118,11 @@ def sync_binary(build_root: str) -> None:
     )
 
 
+def sync_documentation_files(build_root: str) -> None:
+    shutil.copy(PYRE_CHECK_DIRECTORY / "README.md", build_root)
+    shutil.copy(PYRE_CHECK_DIRECTORY / "LICENSE", build_root)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=valid_typeshed, required=True)
@@ -133,11 +138,13 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as build_root:
         add_init_files(build_root)
+        patch_version(arguments.version, build_root)
+
         sync_python_files(build_root)
         sync_pysa_stubs(build_root)
         sync_sapp_files(build_root)
-        patch_version(arguments.version, build_root)
         sync_binary(build_root)
+        sync_documentation_files(build_root)
 
 
 if __name__ == "__main__":
