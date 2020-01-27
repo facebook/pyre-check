@@ -51,7 +51,7 @@ type argument_match = {
   actual_path: AbstractTreeDomain.Label.path;
   formal_path: AbstractTreeDomain.Label.path;
 }
-[@@deriving show]
+[@@deriving show, compare]
 
 val match_actuals_to_formals
   :  Call.Argument.t list ->

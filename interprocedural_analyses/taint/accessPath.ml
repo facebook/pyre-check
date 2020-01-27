@@ -78,7 +78,7 @@ type argument_match = {
   actual_path: AbstractTreeDomain.Label.path;
   formal_path: AbstractTreeDomain.Label.path;
 }
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, compare]
 
 type argument_position =
   [ `Precise of int
