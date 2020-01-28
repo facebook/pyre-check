@@ -58,10 +58,9 @@ def mkdir_and_init(module_path: Path) -> None:
     (module_path / "__init__.py").touch()
 
 
-def add_init_files(build_root: str) -> None:
+def add_init_files(build_root: Path) -> None:
     # setup.py sdist will refuse to work for directories without a `__init__.py`.
-    build_path = Path(build_root)
-    module_path = build_path / MODULE_NAME
+    module_path = build_root / MODULE_NAME
     mkdir_and_init(module_path)
     mkdir_and_init(module_path / "tools")
     mkdir_and_init(module_path / "tools/upgrade")
@@ -69,56 +68,74 @@ def add_init_files(build_root: str) -> None:
 
 
 def rsync_files(
-    filters: List[str], source_directory: Path, target_directory: Path
+    filters: List[str],
+    source_directory: Path,
+    target_directory: Path,
+    arguments: List[str],
 ) -> None:
-    command = ["rsync", "-avm"]
+    command = ["rsync"]
+    command.extend(arguments)
     command.extend(["--filter=" + filter_string for filter_string in filters])
     command.append(str(source_directory))
     command.append(str(target_directory))
     subprocess.call(command)
 
 
-def sync_python_files(build_root: str) -> None:
-    target_root = Path(build_root, MODULE_NAME)
+def sync_python_files(build_root: Path) -> None:
+    target_root = build_root / MODULE_NAME
     filters = ["- tests/", "+ */", "-! *.py"]
-    rsync_files(filters, CLIENT_DIRECTORY, target_root)
-    rsync_files(filters, UPGRADE_DIRECTORY, target_root / "tools")
+    rsync_files(filters, CLIENT_DIRECTORY, target_root, ["-avm"])
+    rsync_files(filters, UPGRADE_DIRECTORY, target_root / "tools", ["-avm"])
 
 
-def sync_pysa_stubs(build_root: str) -> None:
-    build_path = Path(build_root)
+def sync_pysa_stubs(build_root: Path) -> None:
     filters = ["+ */", "-! *.pysa"]
-    rsync_files(filters, STUBS_DIRECTORY / "taint", build_path)
-    rsync_files(filters, STUBS_DIRECTORY / "third_party_taint", build_path)
+    rsync_files(filters, STUBS_DIRECTORY / "taint", build_root, ["-avm"])
+    rsync_files(filters, STUBS_DIRECTORY / "third_party_taint", build_root, ["-avm"])
     shutil.copy(
-        STUBS_DIRECTORY / "taint/taint.config", build_path / "taint/taint.config"
+        STUBS_DIRECTORY / "taint/taint.config", build_root / "taint/taint.config"
     )
 
 
-def sync_sapp_files(build_root: str) -> None:
-    target_root = Path(build_root, MODULE_NAME)
+def sync_sapp_files(build_root: Path) -> None:
     filters = ["- tests/", "+ */", "+ *.py", "+ *requirements.json", "- *"]
-    rsync_files(filters, sapp_directory(), target_root / "tools")
+    rsync_files(filters, sapp_directory(), build_root / MODULE_NAME / "tools", ["-avm"])
 
 
-def patch_version(version: str, build_root: str) -> None:
+def sync_stubs(build_root: Path) -> None:
+    rsync_files(
+        [],
+        STUBS_DIRECTORY,
+        build_root,
+        [
+            "--recursive",
+            "--copy-links",
+            "--prune-empty-dirs",
+            "--verbose",
+            "--include='django/***'",
+            "--include='lxml/***'",
+            "--exclude='*'",
+        ],
+    )
+
+
+def patch_version(version: str, build_root: Path) -> None:
     file_contents = "__version__ = {}".format(version)
-    (Path(build_root) / MODULE_NAME / "client/version.py").write_text(file_contents)
+    (build_root / MODULE_NAME / "client/version.py").write_text(file_contents)
 
 
 def binary_exists() -> bool:
     return (PYRE_CHECK_DIRECTORY / "_build/default/main.exe").is_file()
 
 
-def sync_binary(build_root: str) -> None:
-    build_path = Path(build_root)
-    (build_path / "bin").mkdir()
+def sync_binary(build_root: Path) -> None:
+    (build_root / "bin").mkdir()
     shutil.copy(
-        PYRE_CHECK_DIRECTORY / "_build/default/main.exe", build_path / "bin/pyre.bin"
+        PYRE_CHECK_DIRECTORY / "_build/default/main.exe", build_root / "bin/pyre.bin"
     )
 
 
-def sync_documentation_files(build_root: str) -> None:
+def sync_documentation_files(build_root: Path) -> None:
     shutil.copy(PYRE_CHECK_DIRECTORY / "README.md", build_root)
     shutil.copy(PYRE_CHECK_DIRECTORY / "LICENSE", build_root)
 
@@ -137,14 +154,18 @@ def main() -> None:
         )
 
     with tempfile.TemporaryDirectory() as build_root:
-        add_init_files(build_root)
-        patch_version(arguments.version, build_root)
+        build_path = Path(build_root)
 
-        sync_python_files(build_root)
-        sync_pysa_stubs(build_root)
-        sync_sapp_files(build_root)
-        sync_binary(build_root)
-        sync_documentation_files(build_root)
+        add_init_files(build_path)
+        patch_version(arguments.version, build_path)
+
+        sync_python_files(build_path)
+        sync_pysa_stubs(build_path)
+        sync_stubs(build_path)
+        sync_sapp_files(build_path)
+        sync_binary(build_path)
+        sync_documentation_files(build_path)
+        sync_stubs(build_path)
 
 
 if __name__ == "__main__":
