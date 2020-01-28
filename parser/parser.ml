@@ -29,11 +29,12 @@ let sanitize_input lines =
 
 let parse ?start_line ?start_column ?relative lines =
   let input = sanitize_input lines in
+  let file_name = Option.value relative ~default:"$invalid_path" in
   let buffer =
     let buffer = Lexing.from_string input in
     buffer.Lexing.lex_curr_p <-
       {
-        Lexing.pos_fname = Option.value relative ~default:"$invalid_path";
+        Lexing.pos_fname = file_name;
         pos_lnum = Option.value start_line ~default:1;
         pos_bol = -Option.value start_column ~default:0;
         pos_cnum = 0;
@@ -51,7 +52,9 @@ let parse ?start_line ?start_column ?relative lines =
       let line = location.Location.start.Location.line - 1
       and column = location.Location.start.Location.column in
       let error =
-        let header = Format.asprintf "Could not parse file at %a" Location.pp location in
+        let header =
+          Format.asprintf "Could not parse file at %s:%a" file_name Location.pp location
+        in
         let indicator =
           if column > 0 then
             String.make (column - 1) ' ' ^ "^"
