@@ -195,7 +195,7 @@ let show = function
 
 
 let external_target_name = function
-  | `Function target -> target
+  | `Function target -> target |> Reference.create |> Reference.delocalize |> Reference.show
   | `Method { class_name; method_name } -> Format.sprintf "%s.%s" class_name method_name
   | `OverrideTarget { class_name; method_name } ->
       Format.sprintf "Ovr{%s::%s}" class_name method_name

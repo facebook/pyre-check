@@ -1,0 +1,3 @@
+@generated
+Call dependencies
+nested_callables.foo (fun) -> []

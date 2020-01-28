@@ -155,7 +155,8 @@ module Make (Kind : Kind) = struct
           ( "concise_description",
             `String (description error ~show_error_traces ~concise:true ~separator:"\n") );
           "inference", Kind.inference_information ~signature:signature_node kind;
-          "define", `String (Reference.show_sanitized (Node.value signature.name));
+          ( "define",
+            `String (Reference.show_sanitized (Reference.delocalize (Node.value signature.name))) );
         ]
   end
 
