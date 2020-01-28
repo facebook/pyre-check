@@ -1224,10 +1224,7 @@ let test_actual_parameter_matching context =
         ~kind:`Function
         ~tito_parameters:["approximate"; "arg"]
         "qualifier.pass_positional_at_all_star";
-      outcome
-        ~kind:`Function
-        ~tito_parameters:["approximate"; "arg"]
-        "qualifier.pass_named_after_star";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.pass_named_after_star";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.pass_named_as_positional";
       outcome
         ~kind:`Function

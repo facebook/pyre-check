@@ -95,7 +95,7 @@ let match_actuals_to_formals arguments roots =
     | `Precise n -> `Approximate n
     | `Approximate n -> `Approximate n
   in
-  let filter_to_named name_or_star_star formal =
+  let filter_to_named matched_names name_or_star_star formal =
     match name_or_star_star, formal with
     | `Name actual_name, (NamedParameter { name } | PositionalParameter { name; _ })
       when Identifier.equal actual_name name ->
@@ -109,7 +109,9 @@ let match_actuals_to_formals arguments roots =
             actual_path = [];
             formal_path = [AbstractTreeDomain.Label.create_name_field field_name];
           }
-    | `StarStar, NamedParameter { name } ->
+    | `StarStar, NamedParameter { name }
+    | `StarStar, PositionalParameter { name; _ }
+      when not (Set.mem matched_names name) ->
         Some
           { root = formal; actual_path = [AbstractTreeDomain.Label.Field name]; formal_path = [] }
     | `StarStar, StarStarParameter _ ->
@@ -144,32 +146,69 @@ let match_actuals_to_formals arguments roots =
             actual_path = [];
             formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)];
           }
-    | `Approximate minimal_position, StarParameter { position; _ } when minimal_position <= position
-      ->
-        (* Approximate: can't match up range *)
+    | `Approximate _, StarParameter _ ->
+        (* Approximate: We can't filter by minimal position in either direction here. Think about
+           the two following cases:
+
+           1. ```def f(x, y, *z): ... f( *[1, 2], approx) ``` In this case, even though the minimal
+           position for approx is < the starred parameter, it will match to z.
+
+           2. ```def f( *z): ... f( *[], 1, approx) ``` In this case, we'll have approx, which has a
+           minimal position > the starred parameter, flow to z. *)
         Some { root = formal; actual_path = []; formal_path = [AbstractTreeDomain.Label.Any] }
     | `Star _, StarParameter _ ->
         (* Approximate: can't match up ranges, so pass entire structure *)
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Star _ | `Precise _ | `Approximate _), _ -> None
   in
-  let match_actual (position, matches) { Call.Argument.name; value } =
+  let match_actual matched_names (position, matches) { Call.Argument.name; value } =
     match name, value.Node.value with
     | None, Starred (Once _) ->
         let formals = List.filter_map roots ~f:(filter_to_positional (`Star position)) in
         approximate position, (value, formals) :: matches
     | None, Starred (Twice _) ->
-        let formals = List.filter_map roots ~f:(filter_to_named `StarStar) in
+        let formals = List.filter_map roots ~f:(filter_to_named matched_names `StarStar) in
         position, (value, formals) :: matches
     | None, _ ->
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
         increment position, (value, formals) :: matches
     | Some { value = name; _ }, _ ->
         let normal_name = chop_parameter_prefix name in
-        let formals = List.filter_map roots ~f:(filter_to_named (`Name normal_name)) in
+        let formals =
+          List.filter_map roots ~f:(filter_to_named matched_names (`Name normal_name))
+        in
         position, (value, formals) :: matches
   in
-  let _, result = List.fold arguments ~f:match_actual ~init:(`Precise 0, []) in
+  let matched_names =
+    let matched_named_arguments =
+      List.map arguments ~f:(fun { Call.Argument.name; _ } -> name)
+      |> List.filter_opt
+      |> List.map ~f:Node.value
+      |> List.map ~f:Identifier.sanitized
+    in
+    let matched_positional_arguments =
+      let matched_positions =
+        let unstarred_positional = function
+          | { Call.Argument.name = Some _; _ }
+          (* We deliberately ignore starred arguments here, and pessimistically assume they match 0
+             parameters. *)
+          | { Call.Argument.name = None; value = { Node.value = Starred _; _ } } ->
+              false
+          | { Call.Argument.name = None; _ } -> true
+        in
+        List.count arguments ~f:unstarred_positional
+      in
+      let get_matched_root = function
+        (* Positions are 0 indexed, hence the < instead of <=. *)
+        | PositionalParameter { position; name } when position < matched_positions -> Some name
+        | _ -> None
+      in
+      List.filter_map roots ~f:get_matched_root
+    in
+    String.Set.of_list (matched_named_arguments @ matched_positional_arguments)
+  in
+
+  let _, result = List.fold arguments ~f:(match_actual matched_names) ~init:(`Precise 0, []) in
   result
 
 

@@ -79,12 +79,15 @@ let test_match_actuals_to_formals _ =
       formal_path = [AbstractTreeDomain.Label.Field (Int.to_string formal_path)];
     }
   in
-  let double_starred formal_path =
+  let double_starred ?(excluded = []) formal_path =
     {
-      AccessPath.root = AccessPath.Root.StarStarParameter { excluded = [] };
+      AccessPath.root = AccessPath.Root.StarStarParameter { excluded };
       actual_path = [];
       formal_path = [AbstractTreeDomain.Label.Field formal_path];
     }
+  in
+  let named ?(actual_path = []) name =
+    { AccessPath.root = AccessPath.Root.NamedParameter { name }; actual_path; formal_path = [] }
   in
   let assert_match ~signature ~call ~expected =
     let actuals = Test.parse_single_call call |> fun { Call.arguments; _ } -> arguments in
@@ -151,8 +154,49 @@ let test_match_actuals_to_formals _ =
     ~signature:"def foo(**kwargs): ..."
     ~call:"foo(x=1)"
     ~expected:["1", [double_starred "x"]];
-  (* TODO(T60098832): Fix this. *)
-  assert_match ~signature:"def foo(x): ..." ~call:"foo(**{'x': 1})" ~expected:[{|**{ "x":1 }|}, []]
+  assert_match
+    ~signature:"def foo(a, b, *rest, c, d, **kw): ..."
+    ~call:"foo(1, 2, 3, *[4], 5, c = 6, q = 7, r = 8, **{9:9})"
+    ~expected:
+      [
+        "1", [positional (0, "a")];
+        "2", [positional (1, "b")];
+        "3", [starred ~position:2 ~formal_path:0];
+        ( "*[4]",
+          [
+            {
+              AccessPath.root = AccessPath.Root.StarParameter { position = 2 };
+              actual_path = [];
+              formal_path = [];
+            };
+          ] );
+        ( "5",
+          [
+            {
+              AccessPath.root = AccessPath.Root.StarParameter { position = 2 };
+              actual_path = [];
+              formal_path = [AbstractTreeDomain.Label.Any];
+            };
+          ] );
+        "6", [named "c"];
+        "7", [double_starred ~excluded:["d"; "c"; "b"; "a"] "q"];
+        "8", [double_starred ~excluded:["d"; "c"; "b"; "a"] "r"];
+        ( "**{ 9:9 }",
+          [
+            {
+              AccessPath.root = AccessPath.Root.StarStarParameter { excluded = ["d"; "c"; "b"; "a"] };
+              actual_path = [];
+              formal_path = [];
+            };
+            named ~actual_path:[AbstractTreeDomain.Label.Field "d"] "d";
+          ] );
+      ];
+  assert_match
+    ~signature:"def foo(x): ..."
+    ~call:"foo(**{'x': 1})"
+    ~expected:
+      [{|**{ "x":1 }|}, [positional ~actual_path:[AbstractTreeDomain.Label.Field "x"] (0, "x")]];
+  ()
 
 
 let () =
