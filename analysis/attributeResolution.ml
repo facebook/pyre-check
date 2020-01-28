@@ -3032,7 +3032,7 @@ module Cache = ManagedCache.Make (struct
   module Key = SharedMemoryKeys.AttributeTableKey
 
   module Value = struct
-    type t = (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option [@@deriving compare]
+    type t = AnnotatedAttribute.Table.t option [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -3090,19 +3090,16 @@ module Cache = ManagedCache.Make (struct
         unannotated_global_environment
         ?dependency
         name
-      >>| fun definition ->
-      ( definition,
-        Implementation.attribute_table
-          open_recurser_with_parse_annotation_cache
-          ~transitive
-          ~class_attributes
-          ~include_generated_attributes
-          ~special_method
-          ?instantiated
-          ?dependency
-          ~class_metadata_environment
-          ~assumptions
-          definition )
+      >>| Implementation.attribute_table
+            open_recurser_with_parse_annotation_cache
+            ~transitive
+            ~class_attributes
+            ~include_generated_attributes
+            ~special_method
+            ?instantiated
+            ?dependency
+            ~class_metadata_environment
+            ~assumptions
 
 
   let filter_upstream_dependency = function
@@ -3122,7 +3119,7 @@ module ReadOnly = struct
     ParseAnnotationCache.ReadOnly.upstream_environment (upstream_environment read_only)
 
 
-  let summary_and_attribute_table
+  let attribute_table
       read_only
       ~transitive
       ~class_attributes
@@ -3175,7 +3172,6 @@ module ReadOnly = struct
         instantiated;
         assumptions;
       }
-    >>| snd
     |> Option.value ~default:(AnnotatedAttribute.Table.create ())
 
 

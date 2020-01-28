@@ -317,6 +317,37 @@ let global ({ dependency; _ } as resolution) reference =
         reference
 
 
+let summary_and_attribute_table
+    ~resolution:({ dependency; _ } as resolution)
+    ~transitive
+    ~class_attributes
+    ~include_generated_attributes
+    ?special_method
+    ?instantiated
+    class_name
+  =
+  let summary =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      (unannotated_global_environment resolution)
+      ?dependency
+      class_name
+  in
+  let table =
+    AttributeResolution.ReadOnly.attribute_table
+      ?instantiated
+      ~transitive
+      ~class_attributes
+      ?special_method
+      ~include_generated_attributes
+      ?dependency
+      (attribute_resolution resolution)
+      class_name
+  in
+  match summary, table with
+  | Some summary, Some table -> Some (summary, table)
+  | _ -> None
+
+
 let attribute_from_class_name
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
@@ -354,14 +385,13 @@ let attribute_from_class_name
               };
           }
   in
-  AttributeResolution.ReadOnly.summary_and_attribute_table
-    ~instantiated
+  summary_and_attribute_table
+    ~resolution
     ~transitive
     ~class_attributes
-    ~special_method
     ~include_generated_attributes:true
-    ?dependency
-    (attribute_resolution resolution)
+    ~special_method
+    ~instantiated
     class_name
   >>| access
 
@@ -427,12 +457,6 @@ let superclasses ~resolution:({ dependency; _ } as resolution) =
   ClassMetadataEnvironment.ReadOnly.superclasses ?dependency (class_metadata_environment resolution)
 
 
-let summary_and_attribute_table ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.summary_and_attribute_table
-    ?dependency
-    (attribute_resolution resolution)
-
-
 let attributes
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
@@ -441,7 +465,7 @@ let attributes
     ?instantiated
     name
   =
-  AttributeResolution.ReadOnly.summary_and_attribute_table
+  AttributeResolution.ReadOnly.attribute_table
     (attribute_resolution resolution)
     ~transitive
     ~class_attributes
@@ -449,7 +473,6 @@ let attributes
     ?instantiated
     name
     ?dependency
-  >>| snd
   >>| AnnotatedAttribute.Table.to_list
 
 
