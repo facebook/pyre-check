@@ -242,8 +242,8 @@ let get_heap_handle { Configuration.Analysis.debug; _ } =
       0
   in
   let heap_size =
-    (* 4 GB *)
-    4096 * 1024 * 1024
+    (* 8 GB *)
+    8192 * 1024 * 1024
   in
   let dep_table_pow = 27 in
   let hash_table_pow = 24 in
