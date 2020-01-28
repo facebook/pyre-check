@@ -51,14 +51,14 @@ class TestCreatingWheel(unittest.TestCase):
             command_directory = build_path / "pyre_check/client/commands"
             self.assertTrue(command_directory.is_dir())
 
-    @patch("subprocess.call")
+    @patch("subprocess.run")
     @patch("shutil.copy")
-    def test_rsync(self, copy: Mock, subprocess_call: Mock) -> None:
+    def test_rsync(self, copy: Mock, subprocess_run: Mock) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
             add_init_files(build_path)
             sync_pysa_stubs(build_path)
-            args, _ = subprocess_call.call_args
+            args, _ = subprocess_run.call_args
             expected_args = [
                 "rsync",
                 "-avm",
@@ -67,7 +67,7 @@ class TestCreatingWheel(unittest.TestCase):
                 build_root,
             ]
             self.assertTrue(all(x in args[0] for x in expected_args))
-            subprocess_call.assert_called()
+            subprocess_run.assert_called()
             copy.assert_called()
 
     def test_patch_version(self) -> None:

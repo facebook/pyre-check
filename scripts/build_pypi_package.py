@@ -13,20 +13,23 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 
 MODULE_NAME = "pyre_check"
 RUNTIME_DEPENDENCIES = ["typeshed", "pywatchman", "psutil", "libcst", "pyre_extensions"]
 
-PYRE_CHECK_DIRECTORY: Path = Path(__file__).parent.parent
+SCRIPTS_DIRECTORY: Path = Path(__file__).parent
+PYRE_CHECK_DIRECTORY: Path = SCRIPTS_DIRECTORY.parent
 STUBS_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "stubs"
 CLIENT_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "client"
 UPGRADE_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "tools/upgrade"
 
 
-def is_linux() -> bool:
-    return platform.system() == "Linux"
+def distribution_platform() -> str:
+    if platform.system() == "Linux":
+        return "-manylinux1_x86_64"
+    return "-macosx_10_11_x86_64"
 
 
 def valid_typeshed(typeshed_path: str) -> str:
@@ -79,7 +82,7 @@ def rsync_files(
     command.extend(["--filter=" + filter_string for filter_string in filters])
     command.append(str(source_directory))
     command.append(str(target_directory))
-    subprocess.call(command)
+    subprocess.run(command)
 
 
 def sync_python_files(build_root: Path) -> None:
@@ -154,9 +157,51 @@ def generate_setup_py(version: str) -> str:
     )
 
 
+def create_setup_cfg(build_root: Path) -> None:
+    setup_cfg = build_root / "setup.cfg"
+    setup_cfg.touch()
+    setup_cfg.write_text("[metadata]\nlicense_file = LICENSE")
+
+
 def create_setup_py(version: str, build_root: Path) -> None:
     setup_contents = generate_setup_py(version)
     (build_root / "setup.py").write_text(setup_contents)
+
+
+def build_distribution(build_root: Path) -> None:
+    subprocess.run(["python3", "setup.py", "sdist"], cwd=build_root)
+
+
+def build_wheel(build_root: Path) -> None:
+    subprocess.run(["python3", "setup.py", "bdist_wheel"], cwd=build_root)
+
+
+def create_dist_directory() -> None:
+    (SCRIPTS_DIRECTORY / "dist").mkdir(exist_ok=True)
+
+
+def rename_and_move_artifacts(build_root: Path) -> Tuple[Path, Path]:
+    dist_directory = build_root / "dist"
+    wheel = list(dist_directory.glob("**/*.whl"))
+    source_distribution = list(dist_directory.glob("**/*.tar.gz"))
+    # make sure the appropriate numbers of files are present in the dist folder
+    if not len(wheel) == 1 and not len(source_distribution) == 1:
+        raise ValueError("Unexpected files found in {}/dist.".format(build_root))
+    source_distribution, wheel = source_distribution[0], wheel[0]
+    destination_path = SCRIPTS_DIRECTORY / "dist"
+    source_distribution_name = source_distribution.name
+    source_distribution_destination = destination_path / (
+        source_distribution_name.split(".tar.gz")[0]
+        + distribution_platform()
+        + ".tar.gz"
+    )
+    wheel_name = wheel.name
+    wheel_destination = destination_path / wheel_name.replace(
+        "-none-any", distribution_platform()
+    )
+    shutil.move(wheel, wheel_destination)
+    shutil.move(source_distribution, source_distribution_destination)
+    return wheel_destination, source_distribution_destination
 
 
 def main() -> None:
@@ -185,6 +230,23 @@ def main() -> None:
         sync_binary(build_path)
         sync_documentation_files(build_path)
         sync_stubs(build_path)
+
+        build_distribution(build_path)
+        create_dist_directory()
+        create_setup_cfg(build_path)
+        subprocess.run(["twine", "check", build_path / "dist"])
+        build_wheel(build_path)
+
+        wheel_destination, distribution_destination = rename_and_move_artifacts(
+            build_path
+        )
+        print("\nAll done.")
+        print("\n Build artifact available at:\n {}\n".format(wheel_destination))
+        print(
+            "\n Source distribution available at:\n {}\n".format(
+                distribution_destination
+            )
+        )
 
 
 if __name__ == "__main__":
