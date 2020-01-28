@@ -135,13 +135,13 @@ class _ConfigurationFile:
         """
         Return all keys not consumed yet. Some keys are explicitly whitelisted.
         """
-
         return self._configuration.keys() - {
             "buck_builder_binary",
             "continuous",
             "coverage",
             "differential",
             "push_blocking",
+            "pyre_client",
             "saved_state",
             "taint_models_path",
         }
