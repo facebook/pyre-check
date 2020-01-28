@@ -1469,9 +1469,8 @@ let test_check_callable_protocols context =
         type(obj)(v for v in obj)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[int]` for 1st "
-      ^ "anonymous parameter to call `tuple.__init__` but got "
-      ^ "`typing.Generator[int, None, None]`.";
+      "Incompatible parameter type [6]: Expected `typing.List[Variable[_T_co](covariant)]` for 1st \
+       anonymous parameter to call `tuple.__init__` but got `typing.Generator[int, None, None]`.";
     ];
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any

@@ -2849,7 +2849,7 @@ module Implementation = struct
         ~class_attributes:false
         ~include_generated_attributes:true
         ?special_method:None
-        ?instantiated:(Some instantiated)
+        ?instantiated:(Some return_annotation)
         ?dependency
         definition
         ~class_metadata_environment

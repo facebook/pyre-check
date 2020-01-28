@@ -1344,6 +1344,184 @@ let test_check_invalid_inheritance context =
   ()
 
 
+let test_check_invalid_generic_inheritance context =
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        class Base(Generic[T]):
+          def __init__(self, foo: T) -> None:
+            self.foo = foo
+        class Child(Base[T]): pass
+        class InstantiatedChild(Base[int]): pass
+
+        y: Base[str] = Base(0)
+        # Check __init__.
+        InstantiatedChild("foo")
+
+        x: Child[str] = Child(0)
+        correct: Child[str] = Child("bar")
+      |}
+    [
+      "Incompatible variable type [9]: y is declared to have type `Base[str]` but is used as type \
+       `Base[int]`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Base.__init__` but got `str`.";
+      "Incompatible variable type [9]: x is declared to have type `Child[str]` but is used as type \
+       `Child[int]`.";
+    ];
+  (* Check __new__. *)
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class Base(Generic[T, T2]):
+          def __new__(cls, foo: T, bar: T2) -> Base[T, T2]:
+            self = super(Base, cls).__new__(cls)
+            self.foo = foo
+            self.bar = bar
+            return self
+        class PartialChild(Base[int, T2], Generic[T2]): pass
+
+        PartialChild("hello", "world")
+      |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Base.__new__` but got `str`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class Base(Generic[T, T2]):
+          def __init__(self, foo: T, bar: T2) -> None:
+            self.foo = foo
+            self.bar = bar
+        class PartialChild(Base[int, T2], Generic[T2]): pass
+
+        PartialChild("hello", "world")
+        y1: PartialChild[str] = PartialChild(0, "hello")
+        y2: PartialChild[str] = PartialChild(0, 1)
+        y3: PartialChild[str] = PartialChild("hello", 0)
+        y4: PartialChild[int] = PartialChild(0, "hello")
+      |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Base.__init__` but got `str`.";
+      "Incompatible variable type [9]: y2 is declared to have type `PartialChild[str]` but is used \
+       as type `PartialChild[int]`.";
+      "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
+       as type `PartialChild[int]`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Base.__init__` but got `str`.";
+      "Incompatible variable type [9]: y4 is declared to have type `PartialChild[int]` but is used \
+       as type `PartialChild[str]`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class Base(Generic[T, T2]):
+          def __init__(self, foo: T, bar: T2) -> None:
+            self.foo = foo
+            self.bar = bar
+        class PartialChildWithConstructor(Base[int, T2], Generic[T2]):
+          def __init__(self, first: T2, second: int, third: str) -> None:
+            self.foo: int = second
+            self.bar: T2 = first
+            self.third: str = third
+
+        PartialChildWithConstructor("hello", 0, 0)
+        y3: PartialChildWithConstructor[str] = PartialChildWithConstructor(0, 0, "world")
+      |}
+    [
+      "Incompatible parameter type [6]: Expected `str` for 3rd anonymous parameter to call \
+       `PartialChildWithConstructor.__init__` but got `int`.";
+      "Incompatible variable type [9]: y3 is declared to have type \
+       `PartialChildWithConstructor[str]` but is used as type `PartialChildWithConstructor[int]`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        T3 = TypeVar('T3')
+        class Base(Generic[T, T2]):
+          def __init__(self, foo: T, bar: T2) -> None:
+            self.foo = foo
+            self.bar = bar
+        class TypeNotUsedInConstructor(Base[int, T2], Generic[T2, T3]):
+          def __init__(self, first: T2, second: int, third: str) -> None:
+            self.foo: int = second
+            self.bar: T2 = first
+            self.third: str = third
+
+          def identity(self, x: T3) -> T3: ...
+
+        y1: TypeNotUsedInConstructor[str, int]
+        reveal_type(y1.identity(0))
+        y1.identity("hello")
+        reveal_type(y1.identity("hello"))
+      |}
+    [
+      "Revealed type [-1]: Revealed type for `y1.identity(0)` is `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `TypeNotUsedInConstructor.identity` but got `str`.";
+      "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        class Base(Generic[T, T2]):
+          def __init__(self, foo: T, bar: T2) -> None:
+            self.foo = foo
+            self.bar = bar
+          def generic_method(self, x: T, y: T2) -> None: ...
+
+        class Child(Base[T, T2]): pass
+        class PartialChild(Base[int, T2], Generic[T2]): pass
+
+        y1: Base[str, int] = Base("hello", 1)
+        y2: Child[str, int] = Child("hello", 1)
+        y3: PartialChild[str] = PartialChild(0, "hello")
+        def call_base(x: Base[str, int]) -> None:
+          x.generic_method("hello", 1)
+          x.generic_method("hello", "world")
+        def call_child(x: Child[str, int]) -> None:
+          x.generic_method("hello", 1)
+          x.generic_method("hello", "world")
+        def call_partial_child(x: PartialChild[str]) -> None:
+          x.generic_method(1, "world")
+          x.generic_method("hello", "world")
+      |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `Base.generic_method` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `Base.generic_method` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Base.generic_method` but got `str`.";
+    ];
+  ()
+
+
 let test_check_literal_assignment context =
   assert_type_errors
     ~context
@@ -1423,6 +1601,7 @@ let () =
          "check_aliases" >:: test_check_aliases;
          "check_final_type" >:: test_final_type;
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
+         "check_invalid_generic_inheritance" >:: test_check_invalid_generic_inheritance;
          "check_literal_assignment" >:: test_check_literal_assignment;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
