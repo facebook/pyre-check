@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import json
 import platform
 import re
 import shutil
@@ -16,7 +17,7 @@ from typing import List
 
 
 MODULE_NAME = "pyre_check"
-
+RUNTIME_DEPENDENCIES = ["typeshed", "pywatchman", "psutil", "libcst", "pyre_extensions"]
 
 PYRE_CHECK_DIRECTORY: Path = Path(__file__).parent.parent
 STUBS_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "stubs"
@@ -140,6 +141,24 @@ def sync_documentation_files(build_root: Path) -> None:
     shutil.copy(PYRE_CHECK_DIRECTORY / "LICENSE", build_root)
 
 
+def generate_setup_py(version: str) -> str:
+    path = PYRE_CHECK_DIRECTORY / "scripts/setup_template.py"
+    setup_template = path.read_text()
+    sapp_dependencies = json.loads((sapp_directory() / "requirements.json").read_text())
+    return setup_template.format(
+        PACKAGE_NAME="pyre-check",
+        PACKAGE_VERSION=version,
+        MODULE_NAME=MODULE_NAME,
+        RUNTIME_DEPENDENCIES=RUNTIME_DEPENDENCIES,
+        SAPP_DEPENDENCIES=sapp_dependencies,
+    )
+
+
+def create_setup_py(version: str, build_root: Path) -> None:
+    setup_contents = generate_setup_py(version)
+    (build_root / "setup.py").write_text(setup_contents)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")
     parser.add_argument("--typeshed-path", type=valid_typeshed, required=True)
@@ -155,9 +174,9 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
-
         add_init_files(build_path)
         patch_version(arguments.version, build_path)
+        create_setup_py(arguments.version, build_path)
 
         sync_python_files(build_path)
         sync_pysa_stubs(build_path)
