@@ -2114,6 +2114,20 @@ let test_lambda _ =
                       arguments = [{ Call.Argument.name = None; value = +Expression.Integer 1 }];
                     };
              });
+    ];
+  assert_parsed_equal
+    "lambda *, x: x"
+    [
+      +Statement.Expression
+         (+Expression.Lambda
+             {
+               Lambda.parameters =
+                 [
+                   +{ Parameter.name = "*"; value = None; annotation = None };
+                   +{ Parameter.name = "x"; value = None; annotation = None };
+                 ];
+               body = !"x";
+             });
     ]
 
 

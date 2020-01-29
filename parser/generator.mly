@@ -1032,6 +1032,17 @@ define_parameters:
   ;
 
 %inline lambda_parameter:
+  (* `*` is a valid parameter for lambdas as well. *)
+  | asteriks = ASTERIKS {
+      {
+        Node.location = Location.create ~start:(fst asteriks) ~stop:(snd asteriks);
+        value = {
+            Parameter.name = "*";
+            value = None;
+            annotation = None;
+        };
+      }
+    }
   | name = name {
       {
         Node.location = fst name;
