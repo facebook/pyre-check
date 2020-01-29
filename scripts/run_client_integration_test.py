@@ -3,6 +3,7 @@
 import glob
 import json
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
@@ -13,6 +14,8 @@ from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Generator, List, NamedTuple, Optional
+
+from pyre_paths import pyre_client
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -58,6 +61,8 @@ class TestCommand(unittest.TestCase, ABC):
         super(TestCommand, self).__init__(methodName)
         self.directory = Path(".")  # workaround for initialization type errors
         self.command_history = []
+        if not os.environ.get("PYRE_CLIENT"):
+            os.environ["PYRE_CLIENT"] = pyre_client
 
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
@@ -82,7 +87,7 @@ class TestCommand(unittest.TestCase, ABC):
         if not contents:
             # TODO(T57341910): grab version from pyre --version, hard code other fields
             contents = {
-                "version": "135a0b724041385fe600e6c624e61a16691fcf90",
+                "version": "cf916fada4604b809774d337cabf9ac68c8d0901",
                 "use_buck_builder": True,
             }
         with configuration_path.open("w") as configuration_file:
@@ -302,7 +307,7 @@ class InitializeTest(TestCommand):
                 "init",
                 "--local",
                 working_directory="local_project",
-                prompts=["//example:target", "Y", "Y", "Y"],
+                prompts=["Y", "//example:target", "Y", "Y", "Y"],
             )
             expected_contents = {
                 "differential": True,
