@@ -21,8 +21,10 @@ python_tests:
 
 .PHONY: client_integration_test
 client_integration_test: all
-	buck build //tools/pyre/client:pyre;
-	PYRE_CLIENT="$(shell pwd)/../../buck-out/gen/tools/pyre/client/pyre.par" ./scripts/run_client_integration_test.py
+	buck build //tools/pyre/client:pyre
+	PYRE_CLIENT="$(shell pwd)/../../buck-out/gen/tools/pyre/client/pyre.par" \
+	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" \
+	./scripts/run_client_integration_test.py
 
 .PHONY: server_integration_test
 server_integration_test: all
