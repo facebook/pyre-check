@@ -32,9 +32,10 @@ open Hack_core
  *
  *****************************************************************************)
 
-exception Worker_exited_abnormally of int
+exception Worker_exited_abnormally of int * Unix.process_status
 exception Worker_oomed
 exception Worker_busy
+exception Worker_killed
 
 type send_job_failure =
   | Worker_already_exited of Unix.process_status
@@ -300,7 +301,7 @@ let current_worker_id () = !current_worker_id
  **************************************************************************)
 
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
-  if w.killed then Printf.ksprintf failwith "killed worker (%d)" w.id;
+  if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
   (* Spawn the slave, if not prespawned. *)
   let { Daemon.pid = slave_pid; channels = (inc, outc) } as h =
@@ -317,13 +318,9 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
         fst res
     | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
         raise SharedMem.Out_of_shared_memory
-    | _, Unix.WEXITED i ->
-        Printf.eprintf "Subprocess(%d): fail %d" slave_pid i;
-        raise (Worker_exited_abnormally i)
-    | _, Unix.WSTOPPED i ->
-        Printf.ksprintf failwith "Subprocess(%d): stopped %d" slave_pid i
-    | _, Unix.WSIGNALED i ->
-        Printf.ksprintf failwith "Subprocess(%d): signaled %d" slave_pid i in
+    | _, exit_status ->
+        raise (Worker_exited_abnormally (slave_pid, exit_status))
+  in
   (* Mark the worker as busy. *)
   let infd = Daemon.descr_of_in_channel inc in
   let slave = { result; slave_pid; infd; worker = w; } in

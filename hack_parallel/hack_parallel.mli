@@ -253,7 +253,7 @@ module Std : sig
 
 
   module Worker : sig
-    exception Worker_exited_abnormally of int
+    exception Worker_exited_abnormally of int * Unix.process_status
 
     (** Worker killed by Out Of Memory. *)
     exception Worker_oomed
@@ -261,6 +261,10 @@ module Std : sig
     (** Raise this exception when sending work to a worker that is already busy.
      * We should never be doing that, and this is an assertion error. *)
     exception Worker_busy
+
+    (** Raise this exception when sending work to a worker that is already killed.
+    * We should never be doing that, and this is an assertion error. *)
+    exception Worker_killed
 
     type send_job_failure =
       | Worker_already_exited of Unix.process_status
