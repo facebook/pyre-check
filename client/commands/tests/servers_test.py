@@ -3,14 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import subprocess
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
 
-from ... import commands
+from ... import commands, log
+from ...analysis_directory import AnalysisDirectory
 from .. import servers
+from ..command import JSON, TEXT
 from ..servers import ServerDetails, Servers
+from .command_test import mock_arguments, mock_configuration
 
 
 class ServersCommandTest(unittest.TestCase):
@@ -18,8 +21,8 @@ class ServersCommandTest(unittest.TestCase):
     def test_dot_pyre_root(self, find_project_root: MagicMock) -> None:
         self.assertEqual(Servers._dot_pyre_root(), Path("/root/.pyre"))
 
-    @patch("builtins.print")
-    def test_print_server_details(self, print_function: MagicMock) -> None:
+    @patch.object(log.stdout, "write")
+    def test_print_server_details(self, log_stdout: MagicMock) -> None:
         commands.Servers._print_server_details(
             [
                 ServerDetails(
@@ -37,25 +40,60 @@ class ServersCommandTest(unittest.TestCase):
                     local_root="foo",
                     server_pid_path=Path("/root/.pyre/foo/server/server.pid"),
                 ),
-            ]
+            ],
+            output_format=TEXT,
         )
-        print_function.assert_has_calls(
+        log_stdout.assert_has_calls(
             [
-                call("Pyre servers: <pid> <server-root>"),
+                call("Pyre servers:\n<pid> <server-root>"),
                 call("789        <root>"),
                 call("456        bar/baz"),
                 call("123        foo"),
             ]
         )
 
-    @patch.object(Servers, "__init__", return_value=None)
+        log_stdout.reset_mock()
+        commands.Servers._print_server_details(
+            [
+                ServerDetails(
+                    pid=789,
+                    local_root=".",
+                    server_pid_path=Path("/root/.pyre/server/server.pid"),
+                ),
+                ServerDetails(
+                    pid=456,
+                    local_root="bar/baz",
+                    server_pid_path=Path("/root/.pyre/bar/baz/server/server.pid"),
+                ),
+                ServerDetails(
+                    pid=123,
+                    local_root="foo",
+                    server_pid_path=Path("/root/.pyre/foo/server/server.pid"),
+                ),
+            ],
+            output_format=JSON,
+        )
+        log_stdout.assert_called_once_with(
+            json.dumps(
+                [
+                    {"pid": 789, "name": "<root>"},
+                    {"pid": 456, "name": "bar/baz"},
+                    {"pid": 123, "name": "foo"},
+                ]
+            )
+        )
+
     @patch.object(Servers, "_dot_pyre_root", return_value=Path("/root/.pyre"))
     @patch.object(servers, "Stop")
     def test_stop_servers(
-        self, stop_class: MagicMock, dot_pyre_root: MagicMock, constructor: MagicMock
+        self, stop_class: MagicMock, dot_pyre_root: MagicMock
     ) -> None:
-        servers = Servers(arguments=MagicMock(), original_directory=MagicMock())
-        servers._arguments = Mock()
+        servers = Servers(
+            arguments=mock_arguments(),
+            original_directory="/",
+            configuration=mock_configuration(),
+            analysis_directory=AnalysisDirectory("."),
+        )
         servers._stop_servers(
             [
                 ServerDetails(
@@ -84,7 +122,6 @@ class ServersCommandTest(unittest.TestCase):
             any_order=True,
         )
 
-    @patch.object(Servers, "__init__", return_value=None)
     @patch.object(Servers, "_find_servers")
     @patch.object(ServerDetails, "_from_server_path")
     @patch.object(Servers, "_print_server_details")
@@ -95,20 +132,27 @@ class ServersCommandTest(unittest.TestCase):
         print_server_details: MagicMock,
         find_servers: MagicMock,
         fetch_server_details: MagicMock,
-        constructor: MagicMock,
     ) -> None:
-        servers = Servers(arguments=MagicMock(), original_directory=MagicMock())
-        servers._arguments = Mock(servers_subcommand=None)
+        arguments = mock_arguments()
+        arguments.servers_subcommand = None
+        servers = Servers(
+            arguments,
+            original_directory="/",
+            configuration=mock_configuration(),
+            analysis_directory=AnalysisDirectory("."),
+        )
         servers._run()
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        servers._arguments = Mock(servers_subcommand="list")
+        arguments.servers_subcommand = "list"
+        servers._arguments = arguments
         servers._run()
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        servers._arguments = Mock(servers_subcommand="stop")
+        arguments.servers_subcommand = "stop"
+        servers._arguments = arguments
         servers._run()
         stop_servers.assert_called_once()
         print_server_details.assert_not_called()

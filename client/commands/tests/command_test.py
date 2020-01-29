@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
-from ..command import __name__ as client_name
+from ..command import TEXT, __name__ as client_name
 
 
 def mock_arguments(
@@ -23,7 +23,7 @@ def mock_arguments(
     no_saved_state=False,
     no_verify=False,
     no_watchman=False,
-    output=None,
+    output=TEXT,
     save_initial_state_to=None,
     saved_state_project=None,
     source_directories=None,
