@@ -55,17 +55,22 @@ def _watch_directory(source_directory: str) -> Generator[None, None, None]:
 
 class TestCommand(unittest.TestCase, ABC):
     directory: Path
+    typeshed: Path
     command_history: List[CommandData]
 
     def __init__(self, methodName: str) -> None:
         super(TestCommand, self).__init__(methodName)
-        self.directory = Path(".")  # workaround for initialization type errors
+        # workaround for initialization type errors
+        self.directory = Path(".")
+        self.typeshed = Path(".")
         self.command_history = []
         if not os.environ.get("PYRE_CLIENT"):
             os.environ["PYRE_CLIENT"] = pyre_client
 
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
+        self.typeshed = Path(self.directory, "fake_typeshed")
+        Path(self.typeshed, "stdlib").mkdir(parents=True)
         self.initial_filesystem()
 
     def tearDown(self) -> None:
@@ -139,6 +144,8 @@ class TestCommand(unittest.TestCase, ABC):
                 "pyre",
                 "--noninteractive",
                 "--output=json",
+                "--typeshed",
+                str(self.typeshed),
                 command,
                 *arguments,
             ]
@@ -283,7 +290,6 @@ class InferTest(TestCommand):
 class InitializeTest(TestCommand):
     def initial_filesystem(self) -> None:
         self.create_file("fake_pyre.bin")
-        self.create_directory("fake_typeshed")
 
     def test_initialize_project_configuration(self) -> None:
         with _watch_directory(self.directory):
