@@ -8,9 +8,11 @@ import functools
 import json
 import logging
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 from .. import LOG_DIRECTORY, find_project_root, log
+from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .command import JSON, Command
 from .stop import Stop
 
@@ -40,6 +42,18 @@ class ServerDetails(NamedTuple):
 
 class Servers(Command):
     NAME: str = "servers"
+
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
+        super(Servers, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
+        self._subcommand: Optional[str] = arguments.servers_subcommand
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -108,7 +122,7 @@ class Servers(Command):
             key=lambda details: details.local_root,
         )
 
-        subcommand = self._arguments.servers_subcommand
+        subcommand = self._subcommand
         if subcommand == "list" or subcommand is None:
             self._print_server_details(all_server_details, self._output)
         elif subcommand == "stop":

@@ -145,14 +145,12 @@ class ServersCommandTest(unittest.TestCase):
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        arguments.servers_subcommand = "list"
-        servers._arguments = arguments
+        servers._subcommand = "list"
         servers._run()
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        arguments.servers_subcommand = "stop"
-        servers._arguments = arguments
+        servers._subcommand = "stop"
         servers._run()
         stop_servers.assert_called_once()
         print_server_details.assert_not_called()
