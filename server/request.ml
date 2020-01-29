@@ -1156,6 +1156,10 @@ let rec process
     | Analysis.ClassHierarchy.Untracked annotation ->
         log_request_error ~error:(Format.sprintf "Untracked %s" (Type.show annotation));
         { state; response = None }
+    | Worker.Worker_exited_abnormally (pid, status) ->
+        Statistics.log_worker_exception ~pid status ~origin:"server";
+        Mutex.critical_section connections.lock ~f:(fun () ->
+            Operations.stop ~reason:"Worker exited abnormally" ~configuration:server_configuration)
     | uncaught_exception ->
         let should_stop =
           match request with

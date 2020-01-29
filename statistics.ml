@@ -204,6 +204,31 @@ let log_exception caught_exception ~fatal ~origin =
     ()
 
 
+let log_worker_exception ~pid ~origin status =
+  let message =
+    match status with
+    | Caml.Unix.WEXITED exit_code ->
+        Printf.sprintf "Worker process %d exited with code %d" pid exit_code
+    | Caml.Unix.WSTOPPED signal_number ->
+        Printf.sprintf "Worker process %d was stopped by signal %d" pid signal_number
+    | Caml.Unix.WSIGNALED signal_number ->
+        Printf.sprintf "Worker process %d was kill by signal %d" pid signal_number
+  in
+  event
+    ~section:`Error
+    ~flush:true
+    ~name:"Worker exited abnormally"
+    ~integers:[]
+    ~normals:
+      [
+        "exception", message;
+        "exception backtrace", Printexc.get_backtrace ();
+        "exception origin", origin;
+        "fatal", "true";
+      ]
+    ()
+
+
 let server_telemetry normals =
   sample ~integers:["time", Unix.time () |> Int.of_float] ~normals ~metadata:false ()
   |> log ~flush:true "perfpipe_pyre_server_telemetry"
