@@ -10,6 +10,13 @@ open Analysis
 open Interprocedural
 open TestHelper
 
+type mismatch_file = {
+  path: Path.t;
+  suffix: string;
+  expected: string;
+  actual: string;
+}
+
 let test_integration context =
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
   let test_paths =
@@ -23,7 +30,7 @@ let test_integration context =
     |> fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ()
   in
   let run_test path =
-    let check_expectation ~suffix actual =
+    let create_expected_and_actual_files ~suffix actual =
       let output_filename ~suffix ~initial =
         if initial then
           Path.with_suffix path ~suffix
@@ -48,23 +55,27 @@ let test_integration context =
       match get_expected ~suffix with
       | None ->
           (* expected file does not exist, create it *)
-          write_output ~suffix actual ~initial:true
+          write_output ~suffix actual ~initial:true;
+          None
       | Some expected ->
-          if String.equal expected actual then
-            remove_old_output ~suffix
+          if String.equal expected actual then (
+            remove_old_output ~suffix;
+            None )
           else (
             write_output ~suffix actual;
-            Printf.printf "Expectations differ for %s %s\n" suffix (Path.show path);
-            assert_bool
-              (Format.asprintf
-                 "Expectations differ for %s %s\n%a"
-                 suffix
-                 (Path.show path)
-                 (Test.diff ~print:String.pp)
-                 (expected, actual))
-              false )
+            Some { path; suffix; expected; actual } )
     in
-    let serialized_models =
+    let error_on_actual_files { path; suffix; expected; actual } =
+      Printf.printf
+        "%s"
+        (Format.asprintf
+           "Expectations differ for %s %s\n%a"
+           suffix
+           (Path.show path)
+           (Test.diff ~print:String.pp)
+           (expected, actual))
+    in
+    let divergent_files, serialized_models =
       let source = File.create path |> File.content |> fun content -> Option.value_exn content in
       let model_source =
         try
@@ -74,18 +85,18 @@ let test_integration context =
         | Unix.Unix_error _ -> None
       in
       let handle = Path.show path |> String.split ~on:'/' |> List.last_exn in
-      let check_call_graph_expectation call_graph =
+      let create_call_graph_files call_graph =
         let dependencies = DependencyGraph.from_callgraph call_graph in
         let actual =
           Format.asprintf "@%s\nCall dependencies\n%a" "generated" DependencyGraph.pp dependencies
         in
-        check_expectation ~suffix:".cg" actual
+        create_expected_and_actual_files ~suffix:".cg" actual
       in
-      let check_overrides_expectation overrides =
+      let create_overrides_files overrides =
         let actual =
           Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides
         in
-        check_expectation ~suffix:".overrides" actual
+        create_expected_and_actual_files ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
         initialize ~handle ?models:model_source ~context source
@@ -95,8 +106,6 @@ let test_integration context =
         |> DependencyGraph.union overrides
         |> DependencyGraph.reverse
       in
-      check_call_graph_expectation callgraph;
-      check_overrides_expectation overrides;
       let configuration = Configuration.Analysis.create () in
       Analysis.compute_fixpoint
         ~configuration
@@ -123,11 +132,27 @@ let test_integration context =
         in
         externalization
       in
-      List.map all_callables ~f:serialized_model
-      |> List.sort ~compare:String.compare
-      |> String.concat ~sep:""
+
+      let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
+      ( divergent_files,
+        List.map all_callables ~f:serialized_model
+        |> List.sort ~compare:String.compare
+        |> String.concat ~sep:"" )
     in
-    check_expectation ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
+    let divergent_files =
+      create_expected_and_actual_files ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
+      :: divergent_files
+      |> List.filter_opt
+    in
+    List.iter divergent_files ~f:error_on_actual_files;
+    if not (List.is_empty divergent_files) then
+      let message =
+        List.map divergent_files ~f:(fun { path; suffix; _ } ->
+            Format.asprintf "%a%s" Path.pp path suffix)
+        |> String.concat ~sep:", "
+        |> Format.sprintf "Found differences in %s."
+      in
+      assert_bool message false
   in
   assert_bool "No test paths to check." (not (List.is_empty test_paths));
   List.iter test_paths ~f:run_test
