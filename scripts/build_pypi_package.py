@@ -123,6 +123,24 @@ def sync_stubs(build_root: Path) -> None:
     )
 
 
+def sync_typeshed(build_root: Path, typeshed_path: str) -> None:
+    rsync_files(
+        [],
+        build_root / "typeshed",
+        build_root,
+        [
+            "--recursive",
+            "--copy-links",
+            "--prune-empty-dirs",
+            "--verbose",
+            "--chmod='+w'",
+            "--include='stdlib/***'",
+            "--include='third_party/***'",
+            "--exclude='*'",
+        ],
+    )
+
+
 def patch_version(version: str, build_root: Path) -> None:
     file_contents = "__version__ = {}".format(version)
     (build_root / MODULE_NAME / "client/version.py").write_text(file_contents)
@@ -210,6 +228,8 @@ def main() -> None:
     parser.add_argument("--version", type=valid_version, required=True)
 
     arguments = parser.parse_args()
+    version = arguments.version
+    typeshed_path = arguments.typeshed_path
 
     if not binary_exists():
         raise ValueError(
@@ -220,8 +240,8 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
         add_init_files(build_path)
-        patch_version(arguments.version, build_path)
-        create_setup_py(arguments.version, build_path)
+        patch_version(version, build_path)
+        create_setup_py(version, build_path)
 
         sync_python_files(build_path)
         sync_pysa_stubs(build_path)
@@ -230,6 +250,7 @@ def main() -> None:
         sync_binary(build_path)
         sync_documentation_files(build_path)
         sync_stubs(build_path)
+        sync_typeshed(build_path, typeshed_path)
 
         build_distribution(build_path)
         create_dist_directory()
