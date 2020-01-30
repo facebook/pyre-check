@@ -26,7 +26,8 @@ class FilteredSourceGenerator(ModelGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
-        return (
-            self.superset_generator.generate_models()
-            - self.subset_generator.generate_models()
-        )
+        LOG.info("Computing models for the superset...")
+        superset_models = self.superset_generator.generate_models()
+        LOG.info("Computing models for the subset...")
+        subset_models = self.subset_generator.generate_models()
+        return superset_models - subset_models
