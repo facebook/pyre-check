@@ -215,7 +215,7 @@ def rename_and_move_artifacts(build_root: Path) -> Tuple[Path, Path]:
     )
     wheel_name = wheel.name
     wheel_destination = destination_path / wheel_name.replace(
-        "-none-any", distribution_platform()
+        "-any", distribution_platform()
     )
     shutil.move(wheel, wheel_destination)
     shutil.move(source_distribution, source_distribution_destination)
