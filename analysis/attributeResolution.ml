@@ -514,10 +514,8 @@ module Implementation = struct
               let methods =
                 if init && not (already_in_table "__init__") then
                   let parameters =
-                    let extract_dataclass_field_arguments
-                        { Node.value = { AnnotatedAttribute.value; _ }; _ }
-                      =
-                      match value with
+                    let extract_dataclass_field_arguments attribute =
+                      match AnnotatedAttribute.value attribute with
                       | {
                        Node.value =
                          Expression.Call
@@ -559,10 +557,9 @@ module Implementation = struct
                       | Some arguments -> not (List.exists arguments ~f:is_disable_init)
                       | _ -> true
                     in
-                    let extract_init_value
-                        ( { Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as
-                        attribute )
-                      =
+                    let extract_init_value attribute =
+                      let initialized = AnnotatedAttribute.initialized attribute in
+                      let value = AnnotatedAttribute.value attribute in
                       let get_default_value { Call.Argument.name; value } =
                         match name with
                         | Some { Node.value = parameter_name; _ } ->
@@ -633,7 +630,9 @@ module Implementation = struct
                     in
                     let parent_attributes parent =
                       let compare_by_location left right =
-                        Ast.Location.compare (Node.location left) (Node.location right)
+                        Ast.Location.compare
+                          (AnnotatedAttribute.location left)
+                          (AnnotatedAttribute.location right)
                       in
                       AnnotatedAttribute.Table.to_list parent
                       |> List.sort ~compare:compare_by_location
@@ -684,22 +683,21 @@ module Implementation = struct
               methods
             in
             let make_attribute (attribute_name, annotation) =
-              Node.create_with_default_location
-                {
-                  AnnotatedAttribute.annotation;
-                  original_annotation = annotation;
-                  abstract = false;
-                  async = false;
-                  class_attribute = false;
-                  defined = true;
-                  initialized = true;
-                  name = attribute_name;
-                  parent = Reference.show name;
-                  visibility = ReadWrite;
-                  static = false;
-                  property = false;
-                  value = Node.create_with_default_location Expression.Ellipsis;
-                }
+              AnnotatedAttribute.create
+                ~location:Location.any
+                ~annotation
+                ~original_annotation:annotation
+                ~abstract:false
+                ~async:false
+                ~class_attribute:false
+                ~defined:true
+                ~initialized:true
+                ~name:attribute_name
+                ~parent:(Reference.show name)
+                ~visibility:ReadWrite
+                ~static:false
+                ~property:false
+                ~value:(Node.create_with_default_location Expression.Ellipsis)
             in
             List.map generated_methods ~f:make_attribute
       in
@@ -759,7 +757,7 @@ module Implementation = struct
       ?inherited:bool ->
       ?default_class_attribute:bool ->
       Attribute.attribute Node.t ->
-      AnnotatedAttribute.attribute Node.t;
+      AnnotatedAttribute.t;
     metaclass:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -1073,42 +1071,40 @@ module Implementation = struct
           let annotation = Type.Callable.create ~annotation:Type.none () in
           AnnotatedAttribute.Table.add
             table
-            (Node.create_with_default_location
-               {
-                 AnnotatedAttribute.annotation;
-                 original_annotation = annotation;
-                 abstract = false;
-                 async = false;
-                 class_attribute = false;
-                 defined = true;
-                 initialized = true;
-                 name = "__init__";
-                 parent = Reference.show name;
-                 visibility = ReadWrite;
-                 static = true;
-                 property = false;
-                 value = Node.create_with_default_location Expression.Expression.Ellipsis;
-               });
+            (AnnotatedAttribute.create
+               ~location:Location.any
+               ~annotation
+               ~original_annotation:annotation
+               ~abstract:false
+               ~async:false
+               ~class_attribute:false
+               ~defined:true
+               ~initialized:true
+               ~name:"__init__"
+               ~parent:(Reference.show name)
+               ~visibility:ReadWrite
+               ~static:true
+               ~property:false
+               ~value:(Node.create_with_default_location Expression.Expression.Ellipsis));
           if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
             let annotation = Type.Callable.create ~annotation:Type.Any () in
             AnnotatedAttribute.Table.add
               table
-              (Node.create_with_default_location
-                 {
-                   AnnotatedAttribute.annotation;
-                   original_annotation = annotation;
-                   abstract = false;
-                   async = false;
-                   class_attribute = false;
-                   defined = true;
-                   initialized = true;
-                   name = "__getattr__";
-                   parent = Reference.show name;
-                   visibility = ReadWrite;
-                   static = true;
-                   property = false;
-                   value = Node.create_with_default_location Expression.Expression.Ellipsis;
-                 }) )
+              (AnnotatedAttribute.create
+                 ~location:Location.any
+                 ~annotation
+                 ~original_annotation:annotation
+                 ~abstract:false
+                 ~async:false
+                 ~class_attribute:false
+                 ~defined:true
+                 ~initialized:true
+                 ~name:"__getattr__"
+                 ~parent:(Reference.show name)
+                 ~visibility:ReadWrite
+                 ~static:true
+                 ~property:false
+                 ~value:(Node.create_with_default_location Expression.Expression.Ellipsis)) )
       in
       add_actual ();
       if
@@ -1641,46 +1637,41 @@ module Implementation = struct
           in
           annotation, original, None, class_property, visibility
     in
-    {
-      Node.location;
-      value =
-        {
-          AnnotatedAttribute.annotation;
-          original_annotation;
-          visibility;
-          abstract =
-            ( match kind with
-            | Method { signatures; _ } ->
-                List.exists signatures ~f:Define.Signature.is_abstract_method
-            | _ -> false );
-          async =
-            ( match kind with
-            | Property { async; _ } -> async
-            | _ -> false );
-          class_attribute;
-          defined;
-          initialized =
-            ( match kind with
-            | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
-            | Simple { value = None; _ } ->
-                false
-            | Simple { value = Some _; _ }
-            | Method _
-            | Property _ ->
-                true );
-          name = attribute_name;
-          parent = Reference.show (class_name parent);
-          static =
-            ( match kind with
-            | Method { static; _ } -> static
-            | _ -> false );
-          property =
-            ( match kind with
-            | Property _ -> true
-            | _ -> false );
-          value = Option.value value ~default:(Node.create Expression.Expression.Ellipsis ~location);
-        };
-    }
+    AnnotatedAttribute.create
+      ~location
+      ~annotation
+      ~original_annotation
+      ~visibility
+      ~abstract:
+        ( match kind with
+        | Method { signatures; _ } -> List.exists signatures ~f:Define.Signature.is_abstract_method
+        | _ -> false )
+      ~async:
+        ( match kind with
+        | Property { async; _ } -> async
+        | _ -> false )
+      ~class_attribute
+      ~defined
+      ~initialized:
+        ( match kind with
+        | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
+        | Simple { value = None; _ } ->
+            false
+        | Simple { value = Some _; _ }
+        | Method _
+        | Property _ ->
+            true )
+      ~name:attribute_name
+      ~parent:(Reference.show (class_name parent))
+      ~static:
+        ( match kind with
+        | Method { static; _ } -> static
+        | _ -> false )
+      ~property:
+        ( match kind with
+        | Property _ -> true
+        | _ -> false )
+      ~value:(Option.value value ~default:(Node.create Expression.Expression.Ellipsis ~location))
 
 
   let metaclass

@@ -33,7 +33,44 @@ type attribute = {
 }
 [@@deriving eq, show, compare, sexp]
 
-type t = attribute Node.t [@@deriving eq, show]
+type t = attribute Node.t [@@deriving eq, show, sexp]
+
+let create
+    ~abstract
+    ~annotation
+    ~original_annotation
+    ~async
+    ~class_attribute
+    ~defined
+    ~initialized
+    ~name
+    ~parent
+    ~visibility
+    ~property
+    ~static
+    ~value
+    ~location
+  =
+  {
+    Node.location;
+    value =
+      {
+        abstract;
+        annotation;
+        original_annotation;
+        async;
+        class_attribute;
+        defined;
+        initialized;
+        name;
+        parent;
+        visibility;
+        property;
+        static;
+        value;
+      };
+  }
+
 
 let name { Node.value = { name; _ }; _ } = name
 
@@ -82,6 +119,8 @@ let static { Node.value = { static; _ }; _ } = static
 
 let property { Node.value = { property; _ }; _ } = property
 
+let visibility { Node.value = { visibility; _ }; _ } = visibility
+
 let instantiate
     ({ Node.value = { annotation; original_annotation; _ } as attribute; _ } as attribute_node)
     ~constraints
@@ -97,6 +136,12 @@ let instantiate
       };
   }
 
+
+let with_value { Node.location; value = attribute } ~value =
+  { Node.location; value = { attribute with value } }
+
+
+let with_location attribute ~location = { attribute with Node.location }
 
 module Table = struct
   type element = t [@@deriving compare]

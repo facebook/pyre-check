@@ -7,7 +7,6 @@ open Core
 open Ast
 open Expression
 open Pyre
-open Annotated.Class.Attribute
 
 let is_named_tuple ~global_resolution ~annotation =
   GlobalResolution.less_or_equal global_resolution ~left:annotation ~right:Type.named_tuple
@@ -23,8 +22,9 @@ let field_annotations ~global_resolution annotation =
   in
   match class_name with
   | Some class_name ->
-      let field_names = function
-        | { value = { Node.value = Tuple fields; _ }; _ } ->
+      let field_names attribute =
+        match AnnotatedAttribute.value attribute with
+        | { Node.value = Tuple fields; _ } ->
             let name = function
               | { Node.value = Expression.String { StringLiteral.value; _ }; _ } -> Some value
               | _ -> None
@@ -42,7 +42,7 @@ let field_annotations ~global_resolution annotation =
         in
         match attribute with
         | Some attribute when AnnotatedAttribute.defined attribute ->
-            attribute |> Node.value |> fun { annotation; _ } -> annotation |> Option.some
+            attribute |> AnnotatedAttribute.annotation |> Annotation.annotation |> Option.some
         | _ -> None
       in
       GlobalResolution.attribute_from_class_name
@@ -51,7 +51,6 @@ let field_annotations ~global_resolution annotation =
         ~instantiated:(Primitive class_name)
         class_name
       >>= (fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute)
-      >>| Node.value
       >>| field_names
       >>| List.filter_map ~f:matching_annotation
   | None -> None

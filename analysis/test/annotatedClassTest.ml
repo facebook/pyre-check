@@ -410,7 +410,7 @@ let test_class_attributes context =
       List.equal equal
     in
     let print_attributes attributes =
-      let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } = name in
+      let print_attribute = Annotated.Attribute.name in
       List.map attributes ~f:print_attribute |> String.concat ~sep:", "
     in
     assert_equal
@@ -493,18 +493,20 @@ let test_class_attributes context =
         ~resolution
         ~name:attribute_name
         ~instantiated
-      >>| Node.value
     in
     let cmp =
       let equal left right =
-        Attribute.equal_attribute
-          { left with value = Node.create_with_default_location Expression.True }
-          { right with value = Node.create_with_default_location Expression.True }
-        && Expression.location_insensitive_compare left.value right.value = 0
+        let without_locations attribute =
+          Attribute.with_value attribute ~value:(Node.create_with_default_location Expression.True)
+          |> Attribute.with_location ~location:Location.any
+        in
+        Attribute.equal (without_locations left) (without_locations right)
+        && Expression.location_insensitive_compare (Attribute.value left) (Attribute.value right)
+           = 0
       in
       Option.equal equal
     in
-    let printer = Option.value_map ~default:"None" ~f:Attribute.show_attribute in
+    let printer = Option.value_map ~default:"None" ~f:Attribute.show in
     assert_equal ~cmp ~printer expected_attribute actual_attribute
   in
   let create_expected_attribute
@@ -517,21 +519,21 @@ let test_class_attributes context =
     =
     let annotation = parse_callable callable in
     Some
-      {
-        Class.Attribute.annotation;
-        original_annotation = annotation;
-        abstract = false;
-        async = false;
-        class_attribute = false;
-        defined = true;
-        initialized;
-        name;
-        parent;
-        property;
-        visibility;
-        static = false;
-        value = Node.create_with_default_location Expression.Ellipsis;
-      }
+      (Annotated.Attribute.create
+         ~annotation
+         ~original_annotation:annotation
+         ~abstract:false
+         ~async:false
+         ~class_attribute:false
+         ~defined:true
+         ~initialized
+         ~name
+         ~parent
+         ~property
+         ~visibility
+         ~static:false
+         ~value:(Node.create_with_default_location Expression.Ellipsis)
+         ~location:Location.any)
   in
   assert_attribute
     ~parent

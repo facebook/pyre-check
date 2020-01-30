@@ -91,9 +91,9 @@ let get_class_attributes_list ~resolution ~cursor_position:{ Location.line; colu
   let open LanguageServer.Types in
   let position = Position.from_pyre_position ~line ~column in
   let text_edit_range = { Range.start = position; end_ = position } in
-  let filter_name_and_type
-      { Node.value = { Annotated.Attribute.name = item_name; annotation = item_type; _ }; _ }
-    =
+  let filter_name_and_type annotation =
+    let item_name = Annotated.Attribute.name annotation in
+    let item_type = Annotated.Attribute.annotation annotation |> Annotation.annotation in
     get_completion_item ~range:text_edit_range ~item_name ~item_type
   in
   let get_attributes_name_and_type { Type.class_name; _ } =

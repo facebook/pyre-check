@@ -1709,15 +1709,15 @@ let assert_equivalent_attributes ~context source expected =
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in
-    let ignore_value_location ({ Annotated.Attribute.value; _ } as attribute) =
-      { attribute with value = Node.create_with_default_location value.value }
+    let ignore_value_location attribute =
+      let value = Annotated.Attribute.value attribute in
+      Annotated.Attribute.with_value
+        attribute
+        ~value:(Node.create_with_default_location value.value)
     in
-    let ignore_callable_define_location
-        ({ Annotated.Attribute.annotation; original_annotation; _ } as attribute)
-      =
-      let annotation, original_annotation =
-        match annotation with
-        | Callable ({ implementation; overloads; _ } as callable) ->
+    let ignore_callable_define_location attribute =
+      let constraints = function
+        | Type.Callable ({ implementation; overloads; _ } as callable) ->
             let callable =
               let remove callable = { callable with Type.Callable.define_location = None } in
               {
@@ -1726,10 +1726,10 @@ let assert_equivalent_attributes ~context source expected =
                 overloads = List.map overloads ~f:remove;
               }
             in
-            Type.Callable callable, Type.Callable callable
-        | _ -> annotation, original_annotation
+            Some (Type.Callable callable)
+        | _ -> None
       in
-      { attribute with annotation; original_annotation }
+      Annotated.Attribute.instantiate attribute ~constraints
     in
     Type.split class_type
     |> fst
@@ -1737,7 +1737,7 @@ let assert_equivalent_attributes ~context source expected =
     >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
     |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
-    |> List.map ~f:Node.value
+    |> List.map ~f:(Annotated.Attribute.with_location ~location:Location.any)
     |> List.map ~f:ignore_value_location
     |> List.map ~f:ignore_callable_define_location
   in
@@ -1757,13 +1757,15 @@ let assert_equivalent_attributes ~context source expected =
   in
   let assert_class_equal class_type expected =
     let pp_as_sexps format l =
-      List.map l ~f:Annotated.Attribute.sexp_of_attribute
+      List.map l ~f:Annotated.Attribute.sexp_of_t
       |> List.map ~f:Sexp.to_string_hum
       |> String.concat ~sep:"\n"
       |> Format.fprintf format "%s\n"
     in
     let simple_print l =
-      let simple { Annotated.Attribute.annotation; name; _ } =
+      let simple attribute =
+        let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
+        let name = Annotated.Attribute.name attribute in
         Printf.sprintf "%s, %s" name (Type.show annotation)
       in
       List.map l ~f:simple |> String.concat ~sep:"\n"

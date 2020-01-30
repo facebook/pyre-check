@@ -36,22 +36,21 @@ let concrete_connect ?parameters =
 let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
     let annotation = parse_annotation annotation in
-    {
-      Attribute.annotation;
-      original_annotation = annotation;
-      visibility = ReadWrite;
-      abstract = false;
-      async = false;
-      class_attribute = false;
-      defined = true;
-      initialized = true;
-      name;
-      parent = class_name;
-      property = false;
-      static = false;
-      value = Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
-    }
-    |> Ast.Node.create_with_default_location
+    Attribute.create
+      ~annotation
+      ~original_annotation:annotation
+      ~visibility:ReadWrite
+      ~abstract:false
+      ~async:false
+      ~class_attribute:false
+      ~defined:true
+      ~initialized:true
+      ~parent:class_name
+      ~property:false
+      ~static:false
+      ~value:(Ast.Node.create_with_default_location Expression.Expression.Ellipsis)
+      ~name
+      ~location:Location.any
   in
   List.map ~f:parse_attribute
 

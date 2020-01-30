@@ -180,7 +180,7 @@ module AttributeReadOnly : sig
     ?inherited:bool ->
     ?default_class_attribute:bool ->
     Attribute.attribute Node.t ->
-    AnnotatedAttribute.attribute Node.t
+    AnnotatedAttribute.t
 
   val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
 

@@ -76,18 +76,12 @@ module OrderImplementation = struct
                   callable_assumptions;
             }
           in
-          let find_call = function
-            | {
-                Node.value =
-                  {
-                    AnnotatedAttribute.name = "__call__";
-                    annotation = Type.Callable _ as annotation;
-                    _;
-                  };
-                _;
-              } ->
-                Some annotation
-            | _ -> None
+          let find_call attribute =
+            if String.equal (AnnotatedAttribute.name attribute) "__call__" then
+              let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+              Option.some_if (Type.is_callable annotation) annotation
+            else
+              None
           in
           attributes annotation ~assumptions:new_assumptions >>= List.find_map ~f:find_call
 
@@ -1337,9 +1331,8 @@ module OrderImplementation = struct
                   ~protocol_parameters
               in
               let protocol_attributes =
-                let is_not_object_or_generic_method
-                    { Ast.Node.value = { AnnotatedAttribute.parent; _ }; _ }
-                  =
+                let is_not_object_or_generic_method attribute =
+                  let parent = AnnotatedAttribute.parent attribute in
                   (not (Type.is_object (Primitive parent)))
                   && not (Type.is_generic_primitive (Primitive parent))
                 in
@@ -1353,23 +1346,22 @@ module OrderImplementation = struct
                 | Type.Callable _ as callable ->
                     let attributes =
                       [
-                        Ast.Node.create_with_default_location
-                          {
-                            AnnotatedAttribute.annotation = callable;
-                            original_annotation = callable;
-                            abstract = false;
-                            async = false;
-                            class_attribute = false;
-                            defined = true;
-                            initialized = true;
-                            name = "__call__";
-                            parent = "typing.Callable";
-                            static = false;
-                            visibility = ReadWrite;
-                            property = false;
-                            value =
-                              Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
-                          };
+                        AnnotatedAttribute.create
+                          ~location:Location.any
+                          ~annotation:callable
+                          ~original_annotation:callable
+                          ~abstract:false
+                          ~async:false
+                          ~class_attribute:false
+                          ~defined:true
+                          ~initialized:true
+                          ~name:"__call__"
+                          ~parent:"typing.Callable"
+                          ~static:false
+                          ~visibility:ReadWrite
+                          ~property:false
+                          ~value:
+                            (Ast.Node.create_with_default_location Expression.Expression.Ellipsis);
                       ]
                       |> Option.some
                     in

@@ -15,24 +15,24 @@ type visibility =
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
-type attribute = {
-  abstract: bool;
-  annotation: Type.t;
-  original_annotation: Type.t;
-  async: bool;
-  class_attribute: bool;
-  defined: bool;
-  initialized: bool;
-  name: Identifier.t;
-  parent: Type.Primitive.t;
-  visibility: visibility;
-  property: bool;
-  static: bool;
-  value: Expression.t;
-}
-[@@deriving eq, show, compare, sexp]
+type t [@@deriving eq, show, sexp]
 
-type t = attribute Node.t [@@deriving eq, show]
+val create
+  :  abstract:bool ->
+  annotation:Type.t ->
+  original_annotation:Type.t ->
+  async:bool ->
+  class_attribute:bool ->
+  defined:bool ->
+  initialized:bool ->
+  name:Identifier.t ->
+  parent:Type.Primitive.t ->
+  visibility:visibility ->
+  property:bool ->
+  static:bool ->
+  value:Expression.t ->
+  location:Location.t ->
+  t
 
 val name : t -> Identifier.t
 
@@ -58,7 +58,13 @@ val static : t -> bool
 
 val property : t -> bool
 
+val visibility : t -> visibility
+
 val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
+
+val with_value : t -> value:Expression.t -> t
+
+val with_location : t -> location:Location.t -> t
 
 module Table : sig
   type element = t

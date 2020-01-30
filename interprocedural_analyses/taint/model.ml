@@ -1248,12 +1248,9 @@ let infer_class_models ~environment =
     then
       None
     else
-      let is_fields = function
-        | { Node.value = { Annotated.Attribute.name = "_fields"; _ }; _ } -> true
-        | _ -> false
-      in
-      match List.find attributes ~f:is_fields with
-      | Some { Node.value = { value = { Node.value = Tuple names; _ }; _ }; _ } ->
+      let is_fields attribute = Annotated.Attribute.name attribute |> String.equal "_fields" in
+      match List.find attributes ~f:is_fields >>| Annotated.Attribute.value with
+      | Some { Node.value = Tuple names; _ } ->
           let to_string_literal { Node.value = name; _ } =
             match name with
             | Expression.String { StringLiteral.value; _ } -> Some value
