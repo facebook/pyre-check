@@ -1340,7 +1340,8 @@ module OrderImplementation = struct
                 let is_not_object_or_generic_method
                     { Ast.Node.value = { AnnotatedAttribute.parent; _ }; _ }
                   =
-                  (not (Type.is_object parent)) && not (Type.is_generic_primitive parent)
+                  (not (Type.is_object (Primitive parent)))
+                  && not (Type.is_generic_primitive (Primitive parent))
                 in
                 attributes
                   ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
@@ -1362,7 +1363,7 @@ module OrderImplementation = struct
                             defined = true;
                             initialized = true;
                             name = "__call__";
-                            parent = callable;
+                            parent = "typing.Callable";
                             static = false;
                             visibility = ReadWrite;
                             property = false;

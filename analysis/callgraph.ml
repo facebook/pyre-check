@@ -157,17 +157,13 @@ module DefaultBuilder : Builder = struct
   let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~qualifier ~location =
     let property_callables = ref [] in
     let register_attribute_callable ?(is_optional_class_attribute = false) class_name attribute =
-      let direct_target_name =
+      let direct_target =
         Annotated.Attribute.parent attribute
-        |> Type.primitive_name
-        >>| fun parent -> Reference.create ~prefix:(Reference.create parent) name
+        |> fun parent -> Reference.create ~prefix:(Reference.create parent) name
       in
-      match direct_target_name with
-      | Some direct_target ->
-          property_callables :=
-            Method { direct_target; class_name; dispatch = Dynamic; is_optional_class_attribute }
-            :: !property_callables
-      | None -> ()
+      property_callables :=
+        Method { direct_target; class_name; dispatch = Dynamic; is_optional_class_attribute }
+        :: !property_callables
     in
     let register (attribute, instantiated) =
       if Annotated.Attribute.property attribute then

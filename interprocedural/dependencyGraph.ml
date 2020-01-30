@@ -216,7 +216,7 @@ let create_overrides ~environment ~source =
         >>| fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
-          parent_annotation |> Type.expression |> Expression.show |> Reference.create
+          Type.Primitive parent_annotation |> Type.expression |> Expression.show |> Reference.create
         in
         Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
       in

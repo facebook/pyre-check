@@ -1145,7 +1145,7 @@ module State (Context : Context) = struct
                      Node.value = { visibility = ReadOnly (Refinable { overridable = false }); _ };
                      _;
                     } ->
-                        let parent = overridden_attribute |> Attribute.parent |> Type.show in
+                        let parent = overridden_attribute |> Attribute.parent in
                         let error =
                           Error.create
                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -1162,7 +1162,7 @@ module State (Context : Context) = struct
                            (Attribute.static overridden_attribute)
                            (StatementDefine.is_static_method define))
                     then
-                      let parent = overridden_attribute |> Attribute.parent |> Type.show in
+                      let parent = overridden_attribute |> Attribute.parent in
                       let decorator =
                         if Attribute.static overridden_attribute then
                           Error.StaticSuper
@@ -1212,9 +1212,7 @@ module State (Context : Context) = struct
                                    {
                                      overridden_method = StatementDefine.unqualified_name define;
                                      parent =
-                                       Attribute.parent overridden_attribute
-                                       |> Type.show
-                                       |> Reference.create;
+                                       Attribute.parent overridden_attribute |> Reference.create;
                                      override_kind = Method;
                                      override =
                                        Error.WeakenedPostcondition
@@ -1275,7 +1273,6 @@ module State (Context : Context) = struct
                                                StatementDefine.unqualified_name define;
                                              parent =
                                                Attribute.parent overridden_attribute
-                                               |> Type.show
                                                |> Reference.create;
                                              override_kind = Method;
                                              override =
@@ -1320,7 +1317,6 @@ module State (Context : Context) = struct
                                            override_kind = Method;
                                            parent =
                                              Attribute.parent overridden_attribute
-                                             |> Type.show
                                              |> Reference.create;
                                            override =
                                              Error.StrengthenedPrecondition
@@ -3496,7 +3492,7 @@ module State (Context : Context) = struct
                 | Some (attribute, name), _ when is_incompatible ->
                     Error.IncompatibleAttributeType
                       {
-                        parent = Attribute.parent attribute;
+                        parent = Primitive (Attribute.parent attribute);
                         incompatible_type =
                           {
                             Error.name = Reference.create name;
@@ -3574,7 +3570,7 @@ module State (Context : Context) = struct
                     | None -> Type.Top
                     | Some reference -> Type.Primitive (Reference.show reference)
                   in
-                  explicit && not (Type.equal parent_annotation attribute_parent)
+                  explicit && not (Type.equal parent_annotation (Primitive attribute_parent))
                 in
                 let parent_class =
                   match name with
@@ -3711,7 +3707,7 @@ module State (Context : Context) = struct
                             ~kind:
                               (Error.MissingAttributeAnnotation
                                  {
-                                   parent = Annotated.Attribute.parent attribute;
+                                   parent = Primitive (Annotated.Attribute.parent attribute);
                                    missing_annotation =
                                      {
                                        Error.name = reference;
@@ -4827,10 +4823,7 @@ module State (Context : Context) = struct
                             Error.InconsistentOverride
                               {
                                 overridden_method = name;
-                                parent =
-                                  Attribute.parent overridden_attribute
-                                  |> Type.show
-                                  |> Reference.create;
+                                parent = Attribute.parent overridden_attribute |> Reference.create;
                                 override_kind = Attribute;
                                 override =
                                   Error.WeakenedPostcondition

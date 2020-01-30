@@ -44,7 +44,7 @@ let get_property_defining_parent ~resolution ~base ~attribute =
   let annotation = Resolution.resolve resolution base |> strip_optional_and_meta in
   match defining_attribute ~resolution annotation attribute with
   | Some property when Annotated.Attribute.property property ->
-      Annotated.Attribute.parent property |> Type.primitive_name >>| Reference.create
+      Annotated.Attribute.parent property |> Reference.create |> Option.some
   | _ -> None
 
 

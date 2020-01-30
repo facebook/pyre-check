@@ -694,7 +694,7 @@ module Implementation = struct
                   defined = true;
                   initialized = true;
                   name = attribute_name;
-                  parent = Type.Primitive (Reference.show name);
+                  parent = Reference.show name;
                   visibility = ReadWrite;
                   static = false;
                   property = false;
@@ -1083,7 +1083,7 @@ module Implementation = struct
                  defined = true;
                  initialized = true;
                  name = "__init__";
-                 parent = Primitive (Reference.show name);
+                 parent = Reference.show name;
                  visibility = ReadWrite;
                  static = true;
                  property = false;
@@ -1103,7 +1103,7 @@ module Implementation = struct
                    defined = true;
                    initialized = true;
                    name = "__getattr__";
-                   parent = Primitive (Reference.show name);
+                   parent = Reference.show name;
                    visibility = ReadWrite;
                    static = true;
                    property = false;
@@ -1179,7 +1179,9 @@ module Implementation = struct
            ~table);
     let instantiate ~instantiated attribute =
       AnnotatedAttribute.parent attribute
-      |> class_definition class_metadata_environment ~dependency
+      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+           (unannotated_global_environment class_metadata_environment)
+           ?dependency
       >>| fun target ->
       let solution =
         constraints
@@ -1672,7 +1674,7 @@ module Implementation = struct
             | Property _ ->
                 true );
           name = attribute_name;
-          parent = class_annotation;
+          parent = Reference.show (class_name parent);
           static =
             ( match kind with
             | Method { static; _ } -> static
@@ -2859,7 +2861,7 @@ module Implementation = struct
         match AnnotatedAttribute.Table.lookup_name attribute_table name with
         | Some attribute ->
             ( AnnotatedAttribute.annotation attribute |> Annotation.annotation,
-              AnnotatedAttribute.parent attribute )
+              Type.Primitive (AnnotatedAttribute.parent attribute) )
         | None -> Type.Top, class_annotation definition
       in
       signature, definition_index parent

@@ -25,7 +25,7 @@ type attribute = {
   defined: bool;
   initialized: bool;
   name: Identifier.t;
-  parent: Type.t;
+  parent: Type.Primitive.t;
   visibility: visibility;
   property: bool;
   static: bool;

@@ -407,7 +407,7 @@ let test_class_attributes context =
     let attribute_list_equal =
       let equal left right =
         Attribute.name left = Attribute.name right
-        && Type.equal (Attribute.parent left) (Attribute.parent right)
+        && String.equal (Attribute.parent left) (Attribute.parent right)
       in
       List.equal equal
     in
@@ -512,7 +512,7 @@ let test_class_attributes context =
   let create_expected_attribute
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
-      ?(parent = Type.Primitive "test.Attributes")
+      ?(parent = "test.Attributes")
       ?(initialized = true)
       name
       callable
@@ -555,7 +555,7 @@ let test_class_attributes context =
     ~attribute_name:"implicit"
     ~expected_attribute:
       (create_expected_attribute
-         ~parent:(Type.Primitive "test.Metaclass")
+         ~parent:"test.Metaclass"
          "implicit"
          "typing.Callable('test.Metaclass.implicit')[[], int]");
   assert_attribute
@@ -1141,7 +1141,7 @@ let test_overrides context =
   let overrides = Class.overrides definition ~resolution ~name:"foo" in
   assert_is_some overrides;
   assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
-  assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "test.Foo"
+  assert_equal (Option.value_exn overrides |> Attribute.parent) "test.Foo"
 
 
 let test_implicit_attributes context =

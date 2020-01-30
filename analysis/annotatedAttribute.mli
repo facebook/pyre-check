@@ -24,7 +24,7 @@ type attribute = {
   defined: bool;
   initialized: bool;
   name: Identifier.t;
-  parent: Type.t;
+  parent: Type.Primitive.t;
   visibility: visibility;
   property: bool;
   static: bool;
@@ -42,7 +42,7 @@ val async : t -> bool
 
 val annotation : t -> Annotation.t
 
-val parent : t -> Type.t
+val parent : t -> Type.Primitive.t
 
 val value : t -> Expression.t
 

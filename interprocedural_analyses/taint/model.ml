@@ -1119,7 +1119,7 @@ let get_global_model ~resolution ~expression =
           in
           match attribute with
           | Some attribute when Annotated.Attribute.defined attribute ->
-              Annotated.Attribute.parent attribute |> Type.class_name
+              Type.Primitive (Annotated.Attribute.parent attribute) |> Type.class_name
           | _ -> Type.class_name annotation
         in
         let attribute =
