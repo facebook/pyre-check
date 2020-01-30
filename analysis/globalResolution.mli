@@ -190,16 +190,6 @@ val attribute_from_class_name
   instantiated:Type.t ->
   AnnotatedAttribute.t option
 
-val summary_and_attribute_table
-  :  resolution:t ->
-  transitive:bool ->
-  class_attributes:bool ->
-  include_generated_attributes:bool ->
-  ?special_method:bool ->
-  ?instantiated:Type.t ->
-  Type.Primitive.t ->
-  (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
-
 val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
 
 val successors : resolution:t -> ClassSummary.t Node.t -> string list
@@ -232,3 +222,12 @@ val signature_select
 val create_overload : resolution:t -> Define.Signature.t Node.t -> Type.t Type.Callable.overload
 
 val constructor : resolution:t -> ClassSummary.t Node.t -> instantiated:Type.t -> Type.t
+
+val attribute_names
+  :  resolution:t ->
+  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?include_generated_attributes:bool ->
+  ?instantiated:Type.t ->
+  Type.Primitive.t ->
+  string list option

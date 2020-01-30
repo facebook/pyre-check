@@ -122,6 +122,8 @@ module Table = struct
 
   let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
 
+  let names { names; _ } = !names
+
   let clear { attributes; names } =
     Caml.Hashtbl.clear attributes;
     names := []

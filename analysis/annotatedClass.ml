@@ -4,8 +4,8 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Ast
 open Pyre
+open Ast
 open Expression
 open Statement
 module StatementAttribute = Attribute
@@ -38,16 +38,11 @@ let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ };
 
 let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   match
-    GlobalResolution.summary_and_attribute_table
-      class_name
-      ~class_attributes:false
-      ~transitive:true
-      ~resolution:(Resolution.global_resolution resolution)
-      ~instantiated:(Type.Primitive class_name)
-      ~include_generated_attributes:true
+    GlobalResolution.class_definition
+      (Resolution.global_resolution resolution)
+      (Primitive class_name)
   with
-  | Some (({ Node.value = { ClassSummary.name = class_name_reference; _ }; _ } as summary), table)
-    -> (
+  | Some ({ Node.value = { ClassSummary.name = class_name_reference; _ }; _ } as summary) -> (
       let compound_backup =
         let name =
           match name with
@@ -68,7 +63,14 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
           | _ -> None
         in
         match name with
-        | Some name -> AnnotatedAttribute.Table.lookup_name table name
+        | Some name ->
+            GlobalResolution.attribute_from_class_name
+              ~resolution:(Resolution.global_resolution resolution)
+              class_name
+              ~class_attributes:false
+              ~transitive:true
+              ~instantiated:(Type.Primitive class_name)
+              ~name
         | _ -> None
       in
       let getitem_backup () =
@@ -146,21 +148,23 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
 
 
 let has_explicit_constructor class_name ~resolution =
-  match
-    GlobalResolution.summary_and_attribute_table
+  let summary = GlobalResolution.class_definition resolution (Primitive class_name) in
+  let names =
+    GlobalResolution.attribute_names
+      ~resolution
       ~transitive:false
       ~class_attributes:false
-      ~include_generated_attributes:true
       ?instantiated:None
       class_name
-      ~resolution
-  with
-  | Some (summary, table) ->
+    >>| Identifier.Set.of_list
+  in
+  match summary, names with
+  | Some summary, Some names ->
       let in_test =
         let superclasses = GlobalResolution.superclasses ~resolution summary in
         List.exists ~f:is_unit_test (summary :: superclasses)
       in
-      let mem name = AnnotatedAttribute.Table.lookup_name table name |> Option.is_some in
+      let mem = Identifier.Set.mem names in
       mem "__init__"
       || mem "__new__"
       || in_test
@@ -169,34 +173,34 @@ let has_explicit_constructor class_name ~resolution =
             || mem "_setup"
             || mem "_async_setup"
             || mem "with_context" )
-  | None -> false
+  | _ -> false
 
 
 let overrides definition ~resolution ~name =
   let find_override parent =
-    let summary_and_attribute =
-      GlobalResolution.summary_and_attribute_table
-        ~transitive:false
-        ~class_attributes:true
-        parent
-        ~resolution
-        ~instantiated:(Type.Primitive parent)
-        ~include_generated_attributes:true
-      >>= fun (summary, table) ->
-      AnnotatedAttribute.Table.lookup_name table name >>| fun attribute -> summary, attribute
-    in
-    match summary_and_attribute with
-    | Some (summary, attribute) ->
-        annotation definition
-        |> (fun instantiated ->
-             GlobalResolution.constraints ~target:summary definition ~resolution ~instantiated)
-        |> (fun solution ->
-             AnnotatedAttribute.instantiate
-               ~constraints:(fun annotation ->
-                 Some (TypeConstraints.Solution.instantiate solution annotation))
-               attribute)
-        |> Option.some
+    match GlobalResolution.class_definition resolution (Primitive parent) with
     | None -> None
+    | Some summary -> (
+        match
+          GlobalResolution.attribute_from_class_name
+            ~transitive:false
+            ~class_attributes:true
+            parent
+            ~resolution
+            ~instantiated:(Type.Primitive parent)
+            ~name
+        with
+        | Some attribute when AnnotatedAttribute.defined attribute ->
+            annotation definition
+            |> (fun instantiated ->
+                 GlobalResolution.constraints ~target:summary definition ~resolution ~instantiated)
+            |> (fun solution ->
+                 AnnotatedAttribute.instantiate
+                   ~constraints:(fun annotation ->
+                     Some (TypeConstraints.Solution.instantiate solution annotation))
+                   attribute)
+            |> Option.some
+        | _ -> None )
   in
   GlobalResolution.successors definition ~resolution |> List.find_map ~f:find_override
 
