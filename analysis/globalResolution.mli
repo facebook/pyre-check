@@ -206,10 +206,10 @@ val create_attribute
 
 val constraints
   :  resolution:t ->
-  ?target:ClassSummary.t Node.t ->
+  target:Type.Primitive.t ->
   ?parameters:Type.Parameter.t list ->
-  ClassSummary.t Node.t ->
   instantiated:Type.t ->
+  unit ->
   TypeConstraints.Solution.t
 
 val signature_select

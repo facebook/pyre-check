@@ -19,8 +19,6 @@ module Argument = Call.Argument
 
 let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
-let value option = Option.value_exn option
-
 let last_statement_exn = function
   | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
   | _ -> failwith "Could not parse last statement"
@@ -704,36 +702,12 @@ let test_fallback_attribute context =
 
 let test_constraints context =
   let assert_constraints ~target ~instantiated ?parameters source expected =
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-    in
-    let source = Option.value_exn source in
-    let target =
-      let { Source.statements; _ } = source in
-      let target = function
-        | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when Reference.show (Node.value name) = target ->
-            Some
-              ( { Node.location; value = definition }
-              |> Node.map ~f:ClassSummary.create
-              |> Class.create )
-        | _ -> None
-      in
-      List.find_map ~f:target statements |> value
-    in
     let constraints =
-      last_statement_exn source
-      |> (function
-           | { Node.location; value = Statement.Class definition; _ } ->
-               Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
-           | _ -> failwith "Last statement was not a class")
-      |> GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated
+      GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated ()
     in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))

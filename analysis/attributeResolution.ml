@@ -769,11 +769,11 @@ module Implementation = struct
     constraints:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-      ?target:ClassSummary.t Node.t ->
+      target:Type.Primitive.t ->
       ?parameters:Type.Parameter.t list ->
-      ClassSummary.t Node.t ->
       ?dependency:SharedMemoryKeys.dependency ->
       instantiated:Type.t ->
+      unit ->
       TypeConstraints.Solution.t;
     resolve_literal:
       assumptions:Assumptions.t ->
@@ -1178,19 +1178,14 @@ module Implementation = struct
            ~class_attributes:false
            ~table);
     let instantiate ~instantiated attribute =
-      AnnotatedAttribute.parent attribute
-      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-           (unannotated_global_environment class_metadata_environment)
-           ?dependency
-      >>| fun target ->
       let solution =
         constraints
           ?dependency
-          ~target
+          ~target:(AnnotatedAttribute.parent attribute)
           ~instantiated
           ~class_metadata_environment
           ~assumptions
-          definition
+          ()
       in
       AnnotatedAttribute.instantiate
         ~constraints:(fun annotation ->
@@ -1198,7 +1193,7 @@ module Implementation = struct
         attribute
     in
     Option.iter original_instantiated ~f:(fun instantiated ->
-        AnnotatedAttribute.Table.filter_map table ~f:(instantiate ~instantiated));
+        AnnotatedAttribute.Table.map table ~f:(instantiate ~instantiated));
     table
 
 
@@ -1761,13 +1756,12 @@ module Implementation = struct
       { full_order; _ }
       ~assumptions
       ~class_metadata_environment
-      ?target
+      ~target
       ?parameters
-      definition
       ?dependency
       ~instantiated
+      ()
     =
-    let target = Option.value ~default:definition target in
     let parameters =
       match parameters with
       | None ->
@@ -1775,17 +1769,12 @@ module Implementation = struct
             (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
                class_metadata_environment)
             ?dependency
-            (Reference.show (class_name target))
+            target
           >>| List.map ~f:ClassHierarchy.Variable.to_parameter
           |> Option.value ~default:[]
       | Some parameters -> parameters
     in
-    let right =
-      let target = class_annotation target in
-      match target with
-      | Primitive name -> Type.parametric name parameters
-      | _ -> target
-    in
+    let right = Type.parametric target parameters in
     match instantiated, right with
     | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
         (* TODO(T42259381) This special case is only necessary because constructor calls attributes

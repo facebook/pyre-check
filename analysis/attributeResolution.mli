@@ -186,11 +186,11 @@ module AttributeReadOnly : sig
 
   val constraints
     :  t ->
-    ?target:ClassSummary.t Node.t ->
+    target:Type.Primitive.t ->
     ?parameters:Type.Parameter.t list ->
-    ClassSummary.t Node.t ->
     ?dependency:SharedMemoryKeys.dependency ->
     instantiated:Type.t ->
+    unit ->
     TypeConstraints.Solution.t
 
   val resolve_literal

@@ -78,4 +78,6 @@ module Table : sig
   val filter_map : f:(element -> element option) -> t -> unit
 
   val names : t -> string list
+
+  val map : f:(element -> element) -> t -> unit
 end

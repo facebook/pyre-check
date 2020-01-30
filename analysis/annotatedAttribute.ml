@@ -136,4 +136,11 @@ module Table = struct
     let attributes = to_list table in
     clear table;
     List.iter attributes ~f:add_attribute
+
+
+  let map ~f table =
+    let add_attribute attribute = add table (f attribute) in
+    let attributes = to_list table in
+    clear table;
+    List.iter attributes ~f:add_attribute
 end
