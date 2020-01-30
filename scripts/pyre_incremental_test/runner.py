@@ -101,7 +101,9 @@ class PyreRunner:
             f"restart {self._specification.pyre_start_options}"
         ).rstrip()
         self._environment.checked_run(
-            working_directory=self._working_directory, command=pyre_start_command
+            working_directory=self._working_directory,
+            command=pyre_start_command,
+            expected_return_codes=(0, 1),
         )
         return self.run_profile("cold_start_phases")
 
