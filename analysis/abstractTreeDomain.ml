@@ -3,6 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+[@@@ocamlformat "wrap-comments=false"]
+
 open Core
 open Pyre
 
@@ -389,15 +391,20 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     (* Merging is tricky because of the special meaning of [*] and [f]. We have to identify the
        three sets of indices:
 
-       L : indices [f] only in left_tree R : indices [f] only in right_tree C : indices [f] common
-       in left_tree and right_tree.
+       L : indices [f] only in left_tree
+       R : indices [f] only in right_tree
+       C : indices [f] common in left_tree and right_tree.
 
        Let left_star be the tree associated with left_tree[*] and right_star = right_tree[*].
 
-       The merge result r is then: r.element = pointwise merge of left_tree.element and
-       right_tree.element (if element is not an index) r.[*] = left_star merge right_star r.[c] =
-       left_tree[c] merge right_tree[c] if c in C f.[l] = left_tree[l] merge right_star if l in L
-       f.[r] = right_tree[r] merge left_star if r in R *)
+       The merge result joined is then:
+         joined.element = pointwise merge of left_tree.element and right_tree.element
+           (if element is not an index)
+         joined.[*] = left_star merge right_star
+         joined.[c] = left_tree[c] merge right_tree[c] if c in C
+         joined.[l] = left_tree[l] merge right_star if l in L
+         joined.[r] = right_tree[r] merge left_star if r in R
+    *)
     let left_star = LabelMap.find left_tree Label.Any in
     let right_star = LabelMap.find right_tree Label.Any in
     (* merge_left takes care of C and L *)
@@ -636,11 +643,13 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       (* Check that all on the left <= right_ancestors *)
       less_or_equal_all left_label_map right_ancestors
     else
-      (* Pointwise on non-index elements, and common index elements. Let L, R be the index elements
-         present only in left_label_map and right_label_map respectively, and let left_star,
-         right_star be the [*] subtrees of left_label_map and right_label_map respectively. Then,
+      (* Pointwise on non-index elements, and common index elements.
+         Let L, R be the index elements present only in left_label_map and right_label_map
+         respectively, and let left_star, right_star be the [*] subtrees of left_label_map and
+         right_label_map respectively.Then,
 
-         left_star <= right_star /\ left_star <= right_label_map[r] for all r in R /\
+         left_star <= right_star /\
+         left_star <= right_label_map[r] for all r in R /\
          left_label_map[l] <= right_star for all l in L. *)
       let left_star = LabelMap.find left_label_map Label.Any in
       let right_star = LabelMap.find right_label_map Label.Any in
