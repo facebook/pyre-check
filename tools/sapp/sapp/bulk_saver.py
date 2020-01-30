@@ -22,6 +22,7 @@ from .models import (
     SharedText,
     TraceFrame,
     TraceFrameAnnotation,
+    TraceFrameAnnotationTraceFrameAssoc,
     TraceFrameLeafAssoc,
 )
 
@@ -43,6 +44,7 @@ class BulkSaver:
         IssueInstanceTraceFrameAssoc,
         TraceFrameAnnotation,
         TraceFrameLeafAssoc,
+        TraceFrameAnnotationTraceFrameAssoc,
     ]
 
     BATCH_SIZE = 30000
@@ -73,7 +75,7 @@ class BulkSaver:
         saving_classes = [
             cls
             for cls in self.SAVING_CLASSES_ORDER
-            if len(self.saving[cls.__name__]) is not 0
+            if len(self.saving[cls.__name__]) != 0
         ]
 
         item_counts = {
@@ -126,6 +128,16 @@ class BulkSaver:
         self.add(
             IssueInstanceSharedTextAssoc.Record(
                 issue_instance_id=issue_instance.id, shared_text_id=shared_text.id
+            )
+        )
+
+    def add_trace_frame_annotation_trace_frame_assoc(
+        self, trace_frame_annotation, trace_frame
+    ):
+        self.add(
+            TraceFrameAnnotationTraceFrameAssoc.Record(
+                trace_frame_annotation_id=trace_frame_annotation.id,
+                trace_frame_id=trace_frame.id,
             )
         )
 

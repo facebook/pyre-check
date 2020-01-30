@@ -257,7 +257,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callinfo["leaves"],  # sources
             callinfo["type_interval"],
             titos=titos,
-            features=callinfo.get("features", []),
+            annotations=callinfo.get("annotations", []),
         )
         keys = [(call_tf.callee_id, callee_port)]
         while len(keys) > 0:
@@ -294,7 +294,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             sources=entry["sources"],
             type_interval=entry["type_interval"],
             titos=titos,
-            features=entry.get("features", []),
+            annotations=entry.get("annotations", []),
         )
 
     def _generate_raw_postcondition(
@@ -309,7 +309,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         sources,
         type_interval,
         titos,
-        features,
+        annotations,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
 
@@ -342,7 +342,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self.graph.add_trace_frame_leaf_assoc(trace_frame, source_record, depth)
 
         self.graph.add_trace_frame(trace_frame)
-        self._generate_trace_annotations(trace_frame.id, features)
+        self._generate_trace_annotations(
+            trace_frame.id, filename, caller, annotations, run
+        )
         return trace_frame
 
     def _generate_issue_precondition(self, run, issue, callinfo):
@@ -365,9 +367,16 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos,  # titos
             callinfo["leaves"],  # sinks
             callinfo["type_interval"],
-            callinfo["features"],
+            callinfo.get("annotations", []),
         )
-        keys = [(call_tf.callee_id, callee_port)]
+        self._generate_transitive_preconditions(run, [(call_tf.callee_id, callee_port)])
+        return call_tf
+
+    def _generate_transitive_preconditions(self, run, initial_keys):
+        """Generates all reachable preconditions starting from the ones given
+        in initial_keys. Keys contain a (caller_id, caller_port) pair.
+        """
+        keys = initial_keys.copy()
         while len(keys) > 0:
             key = keys.pop()
             if self.graph.has_preconditions_with_caller(key[0], key[1]):
@@ -382,8 +391,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 self.summary["missing_preconditions"].add(key)
 
             keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
-
-        return call_tf
 
     def _generate_precondition(self, run, entry):
         callee_location = entry["callee_location"]
@@ -400,7 +407,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos=titos,
             sinks=entry["sinks"],
             type_interval=entry["type_interval"],
-            features=entry["features"],
+            annotations=entry.get("annotations", []),
         )
 
     def _generate_raw_precondition(
@@ -415,7 +422,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         titos,
         sinks,
         type_interval,
-        features,
+        annotations,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
         caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
@@ -447,7 +454,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self.graph.add_trace_frame_leaf_assoc(trace_frame, sink_record, depth)
 
         self.graph.add_trace_frame(trace_frame)
-        self._generate_trace_annotations(trace_frame.id, features)
+        self._generate_trace_annotations(
+            trace_frame.id, filename, caller, annotations, run
+        )
         return trace_frame
 
     def _generate_issue_feature_contents(self, issue, feature):
@@ -467,25 +476,63 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         preserves_type_context = ti.get("preserves_type_context", False)
         return (lower, upper, preserves_type_context)
 
-    def _generate_trace_annotations(self, frame_id, features) -> None:
-        for f in features:
-            if "extra_trace" in f:
-                annotation = f["extra_trace"]
-                location = annotation["position"]
-                self.graph.add_trace_annotation(
-                    TraceFrameAnnotation.Record(
-                        id=DBID(),
-                        trace_frame_id=frame_id,
-                        location=SourceLocation(
-                            location["line"], location["start"], location["end"]
-                        ),
-                        kind=annotation["kind"],
-                        message=annotation["msg"],
-                        leaf_id=None,
-                        link=annotation.get("link", None),
-                        trace_key=annotation.get("trace", None),
-                    )
+    def _generate_trace_annotations(
+        self, parent_id, parent_filename, parent_caller, annotations, run
+    ) -> None:
+        for annotation in annotations:
+            location = annotation["location"]
+            leaf_kind = annotation.get("leaf_kind")
+            annotation_record = TraceFrameAnnotation.Record(
+                id=DBID(),
+                trace_frame_id=parent_id,
+                location=SourceLocation(
+                    location["line"], location["start"], location["end"]
+                ),
+                kind=annotation["kind"],
+                message=annotation["msg"],
+                leaf_id=(
+                    None
+                    if not leaf_kind
+                    else self._get_shared_text(SharedTextKind.SINK, leaf_kind).id
+                ),
+                link=annotation.get("link"),
+                trace_key=annotation.get("trace_key"),
+            )
+            self.graph.add_trace_annotation(annotation_record)
+
+            traces = annotation.get("preconditions", [])
+            for trace in traces:
+                tf = self._generate_annotation_precondition(
+                    run, parent_filename, parent_caller, trace, annotation
                 )
+                self.graph.add_trace_frame_annotation_trace_frame_assoc(
+                    annotation_record, tf
+                )
+
+    def _generate_annotation_precondition(
+        self, run, parent_filename, parent_caller, trace, annotation
+    ):
+        # Generates the first-hop trace frames from the annotation and
+        # all dependencies of these preconditions. If this gets called, it is
+        # assumed that the annotation leads to traces, and that the leaf kind
+        # and depth are specified.
+        callee = trace["callee"]
+        callee_port = trace["port"]
+        call_tf = self._generate_raw_precondition(
+            run,
+            parent_filename,
+            parent_caller,
+            "root",
+            callee,
+            callee_port,
+            annotation["location"],
+            [],  # no additional positions in an annotation's root traces
+            [(annotation["leaf_kind"], annotation["leaf_depth"])],
+            annotation["type_interval"],
+            [],  # no more annotations for a precond coming from an annotation
+        )
+        self._generate_transitive_preconditions(run, [(call_tf.callee_id, callee_port)])
+        return call_tf
 
     def _get_issue_handle(self, entry):
         return entry["handle"]

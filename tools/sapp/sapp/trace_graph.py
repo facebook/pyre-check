@@ -66,6 +66,13 @@ class TraceGraph(object):
             int, Set[int]
         ] = defaultdict(set)
 
+        self._trace_frame_annotation_trace_frame_assoc: DefaultDict[
+            int, Set[int]
+        ] = defaultdict(set)
+        self._trace_frame_trace_frame_annotation_assoc: DefaultDict[
+            int, Set[int]
+        ] = defaultdict(set)
+
         self._issue_instance_shared_text_assoc: DefaultDict[
             int, Set[int]
         ] = defaultdict(set)
@@ -222,6 +229,16 @@ class TraceGraph(object):
             instance.id.local_id
         )
 
+    def add_trace_frame_annotation_trace_frame_assoc(
+        self, annotation: TraceFrameAnnotation, trace_frame: TraceFrame
+    ) -> None:
+        self._trace_frame_annotation_trace_frame_assoc[annotation.id.local_id].add(
+            trace_frame.id.local_id
+        )
+        self._trace_frame_trace_frame_annotation_assoc[trace_frame.id.local_id].add(
+            annotation.id.local_id
+        )
+
     def get_issue_instance_trace_frames(
         self, instance: IssueInstance
     ) -> List[TraceFrame]:
@@ -272,6 +289,7 @@ class TraceGraph(object):
         self._save_issue_instance_trace_frame_assoc(bulk_saver)
         self._save_trace_frame_leaf_assoc(bulk_saver)
         self._save_issue_instance_shared_text_assoc(bulk_saver)
+        self._save_trace_frame_annotation_trace_frame_assoc(bulk_saver)
 
     def _save_issue_instance_trace_frame_assoc(self, bulk_saver: BulkSaver) -> None:
         for (
@@ -281,6 +299,19 @@ class TraceGraph(object):
             for instance_id in instance_ids:
                 bulk_saver.add_issue_instance_trace_frame_assoc(
                     self._issue_instances[instance_id],
+                    self._trace_frames[trace_frame_id],
+                )
+
+    def _save_trace_frame_annotation_trace_frame_assoc(
+        self, bulk_saver: BulkSaver
+    ) -> None:
+        for (
+            trace_annotation_id,
+            trace_frame_ids,
+        ) in self._trace_frame_annotation_trace_frame_assoc.items():
+            for trace_frame_id in trace_frame_ids:
+                bulk_saver.add_trace_frame_annotation_trace_frame_assoc(
+                    self._trace_annotations[trace_annotation_id],
                     self._trace_frames[trace_frame_id],
                 )
 

@@ -1286,6 +1286,17 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         uselist=True,
     )
 
+    child_trace_frames = association_proxy(
+        "trace_frame_annotation_trace_frame", "trace_frame"
+    )
+    trace_frame_annotation_trace_frame = relationship(
+        "TraceFrameAnnotationTraceFrameAssoc",
+        primaryjoin=(
+            "TraceFrameAnnotation.id == "
+            "foreign(TraceFrameAnnotationTraceFrameAssoc.trace_frame_annotation_id)"
+        ),
+    )
+
 
 # A TraceFrameAnnotation may indicate more traces branching out from a trace
 # frame towards a different leaf/trace kind. In that case, this assoc describes
