@@ -14,28 +14,44 @@ let is_named_tuple ~global_resolution ~annotation =
 
 
 let field_annotations ~global_resolution annotation =
-  let field_names attributes =
-    let is_fields_attribute = function
-      | { Node.value = { name = "_fields"; _ }; _ } -> true
-      | _ -> false
-    in
-    match List.find ~f:is_fields_attribute attributes >>| Node.value with
-    | Some { value = { Node.value = Tuple fields; _ }; _ } -> fields
-    | _ -> []
+  let class_name =
+    annotation
+    |> Option.some_if (is_named_tuple ~global_resolution ~annotation)
+    >>| Type.split
+    >>| fst
+    >>= Type.primitive_name
   in
-  let matching_annotation attributes field =
-    let annotation_if_name_equals field { Node.value = { name; annotation; _ }; _ } =
-      match Node.value field with
-      | Expression.String { StringLiteral.value; _ } when String.equal name value -> Some annotation
-      | _ -> None
-    in
-    List.find_map ~f:(annotation_if_name_equals field) attributes
-  in
-  annotation
-  |> Option.some_if (is_named_tuple ~global_resolution ~annotation)
-  >>| Type.split
-  >>| fst
-  >>= Type.primitive_name
-  >>= GlobalResolution.attributes ~resolution:global_resolution
-  >>| fun attributes ->
-  field_names attributes |> List.filter_map ~f:(matching_annotation attributes)
+  match class_name with
+  | Some class_name ->
+      let field_names = function
+        | { value = { Node.value = Tuple fields; _ }; _ } ->
+            let name = function
+              | { Node.value = Expression.String { StringLiteral.value; _ }; _ } -> Some value
+              | _ -> None
+            in
+            List.filter_map fields ~f:name
+        | _ -> []
+      in
+      let matching_annotation name =
+        let attribute =
+          GlobalResolution.attribute_from_class_name
+            ~resolution:global_resolution
+            ~name
+            ~instantiated:(Primitive class_name)
+            class_name
+        in
+        match attribute with
+        | Some attribute when AnnotatedAttribute.defined attribute ->
+            attribute |> Node.value |> fun { annotation; _ } -> annotation |> Option.some
+        | _ -> None
+      in
+      GlobalResolution.attribute_from_class_name
+        ~resolution:global_resolution
+        ~name:"_fields"
+        ~instantiated:(Primitive class_name)
+        class_name
+      >>= (fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute)
+      >>| Node.value
+      >>| field_names
+      >>| List.filter_map ~f:matching_annotation
+  | None -> None
