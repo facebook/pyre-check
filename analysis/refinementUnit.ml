@@ -111,25 +111,54 @@ let refine ~global_resolution { annotation; mutability } refined =
         { annotation; mutability }
 
 
-let less_or_equal ~global_resolution { base = left; _ } { base = right; _ } =
-  (* TODO: Add handling for comparing attributes *)
-  match left, right with
-  | Some left, Some right ->
-      let mutability_less_or_equal =
-        match left.mutability, right.mutability with
-        | _, Immutable { scope = Global; _ } -> true
-        | Immutable { scope = Local; _ }, Immutable { scope = Local; _ }
-        | Mutable, Immutable { scope = Local; _ } ->
-            true
-        | Mutable, Mutable -> true
-        | _ -> false
+let less_or_equal
+    ~global_resolution
+    { base = left_base; attribute_refinements = left_attributes }
+    { base = right_base; attribute_refinements = right_attributes }
+  =
+  let annotation_less_or_equal left_base right_base =
+    match left_base, right_base with
+    | Some left, Some right ->
+        let mutability_less_or_equal =
+          match left.mutability, right.mutability with
+          | _, Immutable { scope = Global; _ } -> true
+          | Immutable { scope = Local; _ }, Immutable { scope = Local; _ }
+          | Mutable, Immutable { scope = Local; _ } ->
+              true
+          | Mutable, Mutable -> true
+          | _ -> false
+        in
+        mutability_less_or_equal
+        && GlobalResolution.less_or_equal
+             global_resolution
+             ~left:left.annotation
+             ~right:right.annotation
+    | None, None -> true (* intermediate refinement units don't require computation *)
+    | _ -> false
+  in
+  let attributes_less_or_equal =
+    let rec less_or_equal left_attributes right_attributes =
+      let compare_refinement_units ~key:_ ~data sofar =
+        match data with
+        | `Both
+            ( { base = left_base; attribute_refinements = left_attributes },
+              { base = right_base; attribute_refinements = right_attributes } ) ->
+            let inner () = annotation_less_or_equal left_base right_base in
+            sofar && inner () && less_or_equal left_attributes right_attributes
+        | `Left _
+        | `Right _ ->
+            (* only compare refinement units which possess the same attributes *)
+            false
       in
-      mutability_less_or_equal
-      && GlobalResolution.less_or_equal
-           global_resolution
-           ~left:left.annotation
-           ~right:right.annotation
-  | _ -> false
+      Identifier.Map.Tree.fold2
+        left_attributes
+        right_attributes
+        ~init:true
+        ~f:compare_refinement_units
+    in
+    less_or_equal left_attributes right_attributes
+  in
+  annotation_less_or_equal left_base right_base && attributes_less_or_equal
 
 
 let join ~global_resolution { base = left; _ } { base = right; _ } =

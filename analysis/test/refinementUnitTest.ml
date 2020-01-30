@@ -92,6 +92,39 @@ let test_less_or_equal context =
        ~global_resolution
        (create ~base:(Annotation.create Type.float) ())
        (create ~base:(Annotation.create Type.integer) ()));
+  assert_true
+    (less_or_equal
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) ));
+  assert_true
+    (less_or_equal
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float) ));
+  assert_false
+    (less_or_equal
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) ));
+  assert_false
+    (less_or_equal
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement
+            ~reference:!&"a.x"
+            ~base:(Annotation.create Type.object_primitive) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement
+            ~reference:!&"a.x"
+            ~base:(Annotation.create Type.object_primitive)
+       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer) ));
 
   (* Mutable <= Local <= Global. *)
   assert_true
