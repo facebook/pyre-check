@@ -36,7 +36,7 @@ def assert_is_instance(obj: object, cls: Type[TClass]) -> TClass:
 def safe_cast(new_type: Type[_T], value: Any) -> _T:
     """safe_cast will change the type checker's inference of x if it was
     already a subtype of what we are casting to, and error otherwise."""
-    return new_type(value)
+    return value
 
 
 class ParameterSpecification(list):

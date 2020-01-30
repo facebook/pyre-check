@@ -1,6 +1,6 @@
 # pyre-ignore-all-errors
 import unittest
-from typing import Callable, Iterable, Iterator, List, TypeVar
+from typing import Any, Callable, Iterable, Iterator, List, TypeVar
 
 
 class BasicTestCase(unittest.TestCase):
@@ -51,6 +51,16 @@ class BasicTestCase(unittest.TestCase):
             none_throws(0, "custom message")
         except Exception:
             self.fail("none_throws missing or broken")
+
+    def test_safe_cast(self) -> None:
+        try:
+            from .. import safe_cast
+
+            safe_cast(float, 1)
+            safe_cast(1, float)
+            safe_cast(Any, "string")
+        except Exception:
+            self.fail("safe_cast should not have runtime implications")
 
     def test_generic(self) -> None:
         try:
