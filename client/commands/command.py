@@ -401,7 +401,7 @@ class CommandParser(ABC):
     def cleanup(self) -> None:
         pass
 
-    def exit_code(self) -> int:
+    def exit_code(self) -> ExitCode:
         return self._exit_code
 
     @property
