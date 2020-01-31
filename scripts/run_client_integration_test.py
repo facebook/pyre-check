@@ -74,6 +74,7 @@ class TestCommand(unittest.TestCase, ABC):
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
         self.typeshed = Path(self.directory, "fake_typeshed")
+        self.buck_config = Path(self.directory, ".buckconfig").touch()
         Path(self.typeshed, "stdlib").mkdir(parents=True)
         self.initial_filesystem()
 
@@ -116,21 +117,21 @@ class TestCommand(unittest.TestCase, ABC):
                         )
                         raise FilesystemError
                     contents = {"binary": binary_location}
-        with configuration_path.open("w") as configuration_file:
+        with configuration_path.open("w+") as configuration_file:
             json.dump(contents, configuration_file)
 
     def create_local_configuration(self, root: str, contents: Dict[str, Any]) -> None:
-        with Path(self.directory, root, LOCAL_CONFIGURATION).open(
-            "w"
-        ) as configuration_file:
+        root: Path = self.directory / root
+        root.mkdir(exist_ok=True)
+        with (root / LOCAL_CONFIGURATION).open("w+") as configuration_file:
             json.dump(contents, configuration_file)
 
     def create_directory(self, relative_path: str) -> None:
-        Path(self.directory, relative_path).mkdir()
+        Path(self.directory, relative_path).mkdir(parents=True)
 
     def create_file(self, relative_path: str, contents: str = "") -> None:
         file_path = self.directory / relative_path
-        file_path.parent.mkdir(exist_ok=True)
+        file_path.parent.mkdir(exist_ok=True, parents=True)
         file_path.write_text(textwrap.dedent(contents))
 
     def create_file_with_error(self, relative_path: str) -> None:
@@ -250,6 +251,12 @@ class TestCommand(unittest.TestCase, ABC):
         context += format_section("Repro Instructions", instructions)
         return context
 
+    def assert_succeeded(self, result: PyreResult) -> None:
+        self.assertEqual(result.return_code, 0)
+
+    def assert_failed(self, result: PyreResult) -> None:
+        self.assertEqual(result.return_code, 2)
+
     # TODO(T57341910): Improve structure for verifying output/logs/timeouts/processes
     def assert_has_errors(self, result: PyreResult) -> None:
         self.assertEqual(result.return_code, 1, self.get_context(result))
@@ -268,21 +275,56 @@ class TestCommand(unittest.TestCase, ABC):
                 json.loads(file_contents), json_contents, self.get_context()
             )
 
+    def assert_server_exists(self, server_name: str) -> None:
+        # TODO(T57341910): print output & context here when JSON throws error
+        # pyre-fixme[6]: Will catch invalid JSON errors
+        running_servers = json.loads(self.run_pyre("--output=json", "servers").output)
+        server_exists = any(server["name"] == server_name for server in running_servers)
+        self.assertTrue(server_exists)
 
-# TODO(T57341910): Fill in test cases
+    def assert_no_servers_exist(self) -> None:
+        # TODO(T57341910): print output & context here when JSON throws error
+        # pyre-fixme[6]: Will catch invalid JSON errors
+        running_servers = json.loads(self.run_pyre("--output=json", "servers").output)
+        self.assertEqual(running_servers, [])
+
+
 class AnalyzeTest(TestCommand):
+    # TODO(T57341910): Fill in test cases
+    # Currently fails with invalid model error.
     pass
 
 
 class CheckTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_file_with_error("local_project/has_type_error.py")
+
+    def test_command_line_source_directory_check(self) -> None:
+        result = self.run_pyre("--source-directory", "local_project", "check")
+        self.assert_has_errors(result)
+
+        result = self.run_pyre("-l", "local_project", "check")
+        self.assert_failed(result)
+
+    def test_command_line_targets_check(self) -> None:
+        pass
+
+    def test_local_configuration_check(self) -> None:
+        self.create_local_configuration("local_project", {"source_directories": ["."]})
+        result = self.run_pyre("-l", "local_project", "check")
+        self.assert_has_errors(result)
 
 
 class ColorTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
+    # pyre -l project path current fails with server connection failure.
     pass
 
 
 class DeobfuscateTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
+    # Currently fails with error parsing command line, no help.
     pass
 
 
@@ -305,7 +347,33 @@ class IncrementalTest(TestCommand):
 
 
 class InferTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_project", {"source_directories": ["."]})
+        contents = """
+            def foo():
+                return 1
+        """
+        self.create_file("local_project/missing_annotation.py", contents)
+
+    def test_infer_stubs(self) -> None:
+        self.run_pyre("-l", "local_project", "infer")
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation.pyi"
+        )
+
+    def test_infer_in_place(self) -> None:
+        pass
+
+    def test_infer_from_existing_stubs(self) -> None:
+        pass
+
+    def test_infer_from_json(self) -> None:
+        pass
+
+    def test_infer_options(self) -> None:
+        # print-only, full-only, recursive
+        pass
 
 
 class InitializeTest(TestCommand):
@@ -348,35 +416,96 @@ class InitializeTest(TestCommand):
 
 
 class KillTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_file_with_error("local_one/has_type_error.py")
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.create_file_with_error("local_two/has_type_error.py")
+
+    def test_kill_without_server(self) -> None:
+        result = self.run_pyre("kill")
+        self.assert_succeeded(result)
+        self.assert_no_servers_exist()
+
+    def test_kill(self) -> None:
+        self.run_pyre("-l", "local_one", "start")
+        self.assert_server_exists("local_one")
+        self.run_pyre("kill")
+        self.assert_no_servers_exist()
+
+        self.run_pyre("-l", "local_one", "restart")
+        self.assert_server_exists("local_one")
+        self.run_pyre("kill")
+        self.assert_no_servers_exist()
+
+        self.run_pyre("-l", "local_one")
+        self.run_pyre("-l", "local_two")
+        self.assert_server_exists("local_one")
+        self.assert_server_exists("local_two")
+        self.run_pyre("kill")
+        self.assert_no_servers_exist()
 
 
 class PersistentTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class ProfileTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class QueryTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class RageTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class ReportingTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class RestartTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_file_with_error("local_one/has_type_error.py")
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.create_file_with_error("local_two/has_type_error.py")
+
+    def test_restart(self) -> None:
+        # TODO(T57341910): Test blank restart
+        self.assert_no_servers_exist()
+
+        self.run_pyre("-l", "local_one", "restart")
+        # TODO(T57341910): Test assert_has_errors, but restart returns 0 exit code
+        self.assert_server_exists("local_one")
+
+        self.run_pyre("-l", "local_one", "restart")
+        self.assert_server_exists("local_one")
 
 
 class ServersTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_file_with_error("local_one/has_type_error.py")
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.create_file_with_error("local_two/has_type_error.py")
+
+    def test_list_servers(self) -> None:
+        self.run_pyre("servers", "list")
+        self.run_pyre("-l", "local_one")
+        self.run_pyre("servers", "list")
+        self.run_pyre("-l", "local_two")
+        self.run_pyre("servers", "list")
 
 
 class StartTest(TestCommand):
@@ -396,11 +525,33 @@ class StartTest(TestCommand):
 
 
 class StatisticsTest(TestCommand):
+    # TODO(T57341910): Fill in test cases.
     pass
 
 
 class StopTest(TestCommand):
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_file_with_error("local_one/has_type_error.py")
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.create_file_with_error("local_two/has_type_error.py")
+
+    def test_stop_without_server(self) -> None:
+        self.run_pyre("stop")
+        self.run_pyre("-l", "local_one", "stop")
+
+    def test_stop(self) -> None:
+        self.run_pyre("-l", "local_one", "start")
+        self.run_pyre("-l", "local_two", "stop")
+        self.run_pyre("-l", "local_one", "stop")
+
+        self.run_pyre("-l", "local_one", "restart")
+        self.run_pyre("-l", "local_one", "stop")
+
+        self.run_pyre("-l", "local_one", "start")
+        self.run_pyre("-l", "local_two", "start")
+        self.run_pyre("-l", "local_one", "stop")
 
 
 if __name__ == "__main__":
