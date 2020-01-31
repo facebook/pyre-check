@@ -57,7 +57,6 @@ def _watch_directory(source_directory: str) -> Generator[None, None, None]:
     )
 
 
-# TODO(T57341910): Debug timeout flakiness; SIGTERM flakiness
 class TestCommand(unittest.TestCase, ABC):
     directory: Path
     typeshed: Path
