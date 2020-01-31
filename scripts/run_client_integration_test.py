@@ -57,6 +57,7 @@ def _watch_directory(source_directory: str) -> Generator[None, None, None]:
     )
 
 
+# TODO(T57341910): Debug timeout flakiness; SIGTERM flakiness
 class TestCommand(unittest.TestCase, ABC):
     directory: Path
     typeshed: Path
@@ -97,6 +98,7 @@ class TestCommand(unittest.TestCase, ABC):
         if not contents:
             # Use binary override if it is built.
             binary_override = os.environ.get(BINARY_OVERRIDE)
+            # TODO(T57341910): Set binary override in buck test.
             if binary_override:
                 contents = {"version": "$BINARY_OVERRIDE"}
             else:
@@ -183,7 +185,8 @@ class TestCommand(unittest.TestCase, ABC):
                 process.stdout.decode(), process.stderr.decode(), process.returncode
             )
         except subprocess.TimeoutExpired as error:
-            # TODO(T57341910): Timeout logs are still ugly and unhelpful
+            # TODO(T57341910): Timeout logs are still ugly and unhelpful.
+            # Log pyre rage/debug.
             LOG.error(error.stderr)
             LOG.error(error.stdout)
             raise error
@@ -292,6 +295,11 @@ class TestCommand(unittest.TestCase, ABC):
 
     def assert_no_servers_exist(self, result: Optional[PyreResult] = None) -> None:
         self.assertEqual(self.get_servers(), [], self.get_context(result))
+
+
+class BaseCommandTest(TestCommand):
+    # TODO(T57341910): Test command-agnostic behavior like `pyre --version`
+    pass
 
 
 class AnalyzeTest(TestCommand):
@@ -464,6 +472,7 @@ class ProfileTest(TestCommand):
 
 class QueryTest(TestCommand):
     # TODO(T57341910): Fill in test cases.
+    # TODO(T57341910): Test pyre query help.
     pass
 
 
@@ -528,6 +537,8 @@ class StartTest(TestCommand):
         with _watch_directory(self.directory):
             result = self.run_pyre("-l", "local_project", "start")
             self.assert_no_errors(result)
+
+        # TODO(T57341910): Test concurrent pyre server processes.
 
 
 class StatisticsTest(TestCommand):
