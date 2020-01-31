@@ -345,6 +345,7 @@ class Configuration:
                     not os.path.isdir(typeshed_subdirectory)
                     or typeshed_subdirectory_name == "tests"
                     or typeshed_subdirectory_name[0] == "."
+                    or typeshed_subdirectory_name == "__pycache__"
                 ):
                     # Ignore some well-known directories we do not care about.
                     continue
