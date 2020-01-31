@@ -99,6 +99,8 @@ let start_from_scratch ~connections ~configuration () =
     ();
   Log.log ~section:`Server "Server initialized";
   Memory.SharedMemory.init_done ();
+  if configuration.debug then
+    Memory.report_statistics ();
   let errors =
     let table = Ast.Reference.Table.create () in
     let add_error error =
