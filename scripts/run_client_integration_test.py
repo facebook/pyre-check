@@ -188,6 +188,15 @@ class TestCommand(unittest.TestCase, ABC):
             LOG.error(error.stdout)
             raise error
 
+    def get_servers(self) -> List[Dict[str, Any]]:
+        result = self.run_pyre("--output=json", "servers")
+        try:
+            running_servers = json.loads(result.output or "")
+        except json.JSONDecodeError as json_error:
+            LOG.error(self.get_context(result))
+            raise json_error
+        return running_servers
+
     def get_context(self, result: Optional[PyreResult] = None) -> str:
         # TODO(T60769864): Avoid printing context twice in buck runs.
         context = ""
@@ -257,7 +266,6 @@ class TestCommand(unittest.TestCase, ABC):
     def assert_failed(self, result: PyreResult) -> None:
         self.assertEqual(result.return_code, 2)
 
-    # TODO(T57341910): Improve structure for verifying output/logs/timeouts/processes
     def assert_has_errors(self, result: PyreResult) -> None:
         self.assertEqual(result.return_code, 1, self.get_context(result))
 
@@ -275,18 +283,15 @@ class TestCommand(unittest.TestCase, ABC):
                 json.loads(file_contents), json_contents, self.get_context()
             )
 
-    def assert_server_exists(self, server_name: str) -> None:
-        # TODO(T57341910): print output & context here when JSON throws error
-        # pyre-fixme[6]: Will catch invalid JSON errors
-        running_servers = json.loads(self.run_pyre("--output=json", "servers").output)
+    def assert_server_exists(
+        self, server_name: str, result: Optional[PyreResult] = None
+    ) -> None:
+        running_servers = self.get_servers()
         server_exists = any(server["name"] == server_name for server in running_servers)
-        self.assertTrue(server_exists)
+        self.assertTrue(server_exists, self.get_context(result))
 
-    def assert_no_servers_exist(self) -> None:
-        # TODO(T57341910): print output & context here when JSON throws error
-        # pyre-fixme[6]: Will catch invalid JSON errors
-        running_servers = json.loads(self.run_pyre("--output=json", "servers").output)
-        self.assertEqual(running_servers, [])
+    def assert_no_servers_exist(self, result: Optional[PyreResult] = None) -> None:
+        self.assertEqual(self.get_servers(), [], self.get_context(result))
 
 
 class AnalyzeTest(TestCommand):
