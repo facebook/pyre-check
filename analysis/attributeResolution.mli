@@ -171,17 +171,6 @@ module AttributeReadOnly : sig
     string ->
     AnnotatedAttribute.Table.t option
 
-  val create_attribute
-    :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
-    parent:ClassSummary.t Node.t ->
-    ?instantiated:Type.t ->
-    ?defined:bool ->
-    ?inherited:bool ->
-    ?default_class_attribute:bool ->
-    Attribute.attribute Node.t ->
-    AnnotatedAttribute.t
-
   val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
 
   val constraints

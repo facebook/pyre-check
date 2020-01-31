@@ -42,7 +42,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
       (Resolution.global_resolution resolution)
       (Primitive class_name)
   with
-  | Some ({ Node.value = { ClassSummary.name = class_name_reference; _ }; _ } as summary) -> (
+  | Some { Node.value = { ClassSummary.name = class_name_reference; _ }; _ } -> (
       let compound_backup =
         let name =
           match name with
@@ -118,26 +118,21 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                 in
                 let return_annotation = Type.Callable.Overload.return_annotation implementation in
                 Some
-                  (GlobalResolution.create_attribute
-                     ~resolution:(Resolution.global_resolution resolution)
-                     ~parent:summary
-                     {
-                       Node.location;
-                       value =
-                         {
-                           StatementAttribute.name;
-                           kind =
-                             Simple
-                               {
-                                 annotation = Some (Type.expression return_annotation);
-                                 value = None;
-                                 primitive = true;
-                                 toplevel = true;
-                                 frozen = false;
-                                 implicit = false;
-                               };
-                         };
-                     })
+                  (AnnotatedAttribute.create
+                     ~annotation:return_annotation
+                     ~original_annotation:return_annotation
+                     ~abstract:false
+                     ~async:false
+                     ~class_attribute:false
+                     ~defined:true
+                     ~initialized:false
+                     ~name
+                     ~parent:(Reference.show class_name_reference)
+                     ~visibility:ReadWrite
+                     ~property:false
+                     ~static:false
+                     ~value:(Node.create Ast.Expression.Expression.Ellipsis ~location)
+                     ~location)
             | _ -> None )
         | _ -> None
       in

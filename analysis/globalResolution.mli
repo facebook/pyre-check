@@ -194,16 +194,6 @@ val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.
 
 val successors : resolution:t -> ClassSummary.t Node.t -> string list
 
-val create_attribute
-  :  resolution:t ->
-  parent:ClassSummary.t Node.t ->
-  ?instantiated:Type.t ->
-  ?defined:bool ->
-  ?inherited:bool ->
-  ?default_class_attribute:bool ->
-  Attribute.t ->
-  AnnotatedAttribute.t
-
 val constraints
   :  resolution:t ->
   target:Type.Primitive.t ->

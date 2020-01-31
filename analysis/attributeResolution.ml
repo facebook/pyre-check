@@ -3181,8 +3181,6 @@ module ReadOnly = struct
 
   let parse_annotation = add_both_caches_and_empty_assumptions Implementation.parse_annotation
 
-  let create_attribute = add_both_caches_and_empty_assumptions Implementation.create_attribute
-
   let metaclass = add_both_caches_and_empty_assumptions Implementation.metaclass
 
   let constraints = add_both_caches_and_empty_assumptions Implementation.constraints

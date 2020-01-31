@@ -387,18 +387,27 @@ let test_class_attributes context =
       |}
   in
   let create_simple_attribute
-      ?(annotation = Some !"int")
-      ?(frozen = false)
-      ?(implicit = false)
-      ?(primitive = false)
-      ?(toplevel = true)
+      ?(annotation = Type.integer)
+      ?(class_attribute = false)
       ?value
+      ~parent:{ Node.value = { ClassSummary.name = parent; _ }; _ }
       name
     =
-    +{
-       StatementAttribute.kind = Simple { annotation; frozen; implicit; primitive; toplevel; value };
-       name;
-     }
+    Annotated.Attribute.create
+      ~abstract:false
+      ~annotation
+      ~original_annotation:annotation
+      ~async:false
+      ~class_attribute
+      ~defined:true
+      ~initialized:(Option.is_some value)
+      ~name
+      ~parent:(Reference.show parent)
+      ~visibility:ReadWrite
+      ~property:false
+      ~static:false
+      ~value:(Option.value value ~default:(Node.create_with_default_location Expression.Ellipsis))
+      ~location:Location.any
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -422,43 +431,15 @@ let test_class_attributes context =
   assert_attributes
     (Reference.show (Class.name parent))
     [
-      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "__init__");
-      GlobalResolution.create_attribute
-        ~resolution
-        ~parent
-        (create_simple_attribute "class_attribute");
-      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "first");
-      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "implicit");
-      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "second");
-      GlobalResolution.create_attribute
-        ~resolution
-        ~parent
-        (create_simple_attribute "third" ~value:(+Expression.Integer 1));
+      create_simple_attribute ~parent "__init__";
+      create_simple_attribute ~parent ~class_attribute:true "class_attribute";
+      create_simple_attribute ~parent "first";
+      create_simple_attribute ~parent "implicit";
+      create_simple_attribute ~parent "second";
+      create_simple_attribute ~parent ~value:(+Expression.Integer 1) "third";
     ];
 
-  (* Test `Attribute`. *)
-  let attribute =
-    GlobalResolution.create_attribute
-      ~resolution
-      ~parent
-      (create_simple_attribute ~annotation:(Some !"int") "first")
-  in
-  assert_equal (Attribute.name attribute) "first";
-  assert_equal
-    (Attribute.annotation attribute)
-    (Annotation.create_immutable ~global:true (Type.Primitive "int"));
-  assert_false (Attribute.class_attribute attribute);
-  let attribute =
-    GlobalResolution.create_attribute
-      ~resolution
-      ~parent
-      (create_simple_attribute
-         ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" !![Type.integer])))
-         "first")
-  in
-  assert_true (Attribute.class_attribute attribute);
-
-  (* Test 'attribute' *)
+  (*(* Test 'attribute' *)*)
   let resolution, parent =
     setup
       {|

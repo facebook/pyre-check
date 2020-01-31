@@ -336,30 +336,22 @@ let attribute_from_class_name
             ?dependency
             class_name
         with
-        | Some ({ Node.location; _ } as summary) ->
-            AttributeResolution.ReadOnly.create_attribute
-              ?dependency
-              (attribute_resolution resolution)
-              ~parent:summary
+        | Some { Node.location; _ } ->
+            AnnotatedAttribute.create
+              ~annotation:Type.Top
+              ~original_annotation:Type.Top
+              ~abstract:false
+              ~async:false
+              ~class_attribute:class_attributes
               ~defined:false
-              ~default_class_attribute:class_attributes
-              {
-                Node.location;
-                value =
-                  {
-                    Attribute.name;
-                    kind =
-                      Simple
-                        {
-                          annotation = None;
-                          value = None;
-                          primitive = true;
-                          toplevel = true;
-                          frozen = false;
-                          implicit = false;
-                        };
-                  };
-              }
+              ~initialized:false
+              ~name
+              ~parent:class_name
+              ~visibility:ReadWrite
+              ~property:false
+              ~static:false
+              ~value:(Node.create Expression.Expression.Ellipsis ~location)
+              ~location
             |> Option.some
         | None -> None )
   in
@@ -422,10 +414,6 @@ let is_transitive_successor resolution ~predecessor ~successor =
 
 let constraints ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
-
-
-let create_attribute ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.create_attribute ?dependency (attribute_resolution resolution)
 
 
 let successors ~resolution:({ dependency; _ } as resolution) =
