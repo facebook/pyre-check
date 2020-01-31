@@ -14,17 +14,17 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    FrozenSet,
     Iterable,
     List,
     Optional,
-    Set,
     Type,
     Union,
 )
 
 from ...client import log_statistics
 from .generator_specifications import DecoratorAnnotationSpecification
-from .model import Model
+from .model import CallableModel, Model
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -53,5 +53,16 @@ class ModelGenerator(ABC):
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         pass
 
-    def generate_models(self) -> Set[Model]:
-        return set(self.compute_models(self.gather_functions_to_model()))
+    def generate_models(self) -> Iterable[Model]:
+        return self.compute_models(self.gather_functions_to_model())
+
+
+class CallableModelGenerator(ModelGenerator):
+    @abstractmethod
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[CallableModel]:
+        pass
+
+    def generate_models(self) -> Iterable[CallableModel]:
+        return self.compute_models(self.gather_functions_to_model())

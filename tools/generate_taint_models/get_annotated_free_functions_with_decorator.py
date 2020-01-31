@@ -20,15 +20,27 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
+    paths: Iterable[str]
+
     def __init__(
         self,
         root: str,
         annotation_specifications: List[DecoratorAnnotationSpecification],
+        paths: Optional[List[str]] = None,
     ) -> None:
-        self.root: str = root
+        self._paths: Optional[List[str]] = paths
+        self.root = root
         self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
             annotation_specifications
         )
+
+    @property
+    def paths(self) -> List[str]:
+        paths = self._paths
+        if paths is None:
+            paths = list(find_all_paths(self.root))
+            self._paths = paths
+        return paths
 
     def _annotate_functions(
         self, annotation_specification: DecoratorAnnotationSpecification, path: str
@@ -87,7 +99,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
     ) -> Iterable[Model]:
         annotated_functions = set()
 
-        for path in find_all_paths(self.root):
+        for path in self.paths:
             for annotation_specification in self.annotation_specifications:
                 annotated_functions.update(
                     self._annotate_functions(annotation_specification, path)

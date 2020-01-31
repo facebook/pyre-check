@@ -8,7 +8,7 @@
 from typing import Callable, Iterable, List, Optional, Set
 
 from .inspect_parser import extract_qualified_name
-from .model import CallableModel, Model
+from .model import CallableModel
 
 
 def taint_functions(
@@ -17,7 +17,7 @@ def taint_functions(
     whitelisted_views: Optional[List[str]] = None,
     whitelisted_classes: Optional[List[str]] = None,
     parameter_name_whitelist: Optional[Set[str]] = None,
-) -> List[Model]:
+) -> List[CallableModel]:
     whitelisted_views = whitelisted_views or []
     whitelisted_classes = whitelisted_classes or []
     parameter_name_whitelist = parameter_name_whitelist or set()

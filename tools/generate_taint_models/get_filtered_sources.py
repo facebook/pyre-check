@@ -30,4 +30,4 @@ class FilteredSourceGenerator(ModelGenerator):
         superset_models = self.superset_generator.generate_models()
         LOG.info("Computing models for the subset...")
         subset_models = self.subset_generator.generate_models()
-        return superset_models - subset_models
+        return set(superset_models) - set(subset_models)

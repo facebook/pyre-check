@@ -24,6 +24,7 @@ from .get_globals import GlobalModelGenerator  # noqa
 from .get_graphql_sources import GraphQLSourceGenerator  # noqa
 from .get_request_specific_data import RequestSpecificDataGenerator  # noqa
 from .get_REST_api_sources import RESTApiSourceGenerator  # noqa
+from .get_undecorated_sources import UndecoratedSourceGenerator  # noqa
 from .model import Model
 from .model_generator import ModelGenerator
 
@@ -108,7 +109,7 @@ def run_generators(
         LOG.info("Computing models for `%s`", mode)
         start = time.time()
 
-        generated_models[mode] = generator_options[mode].generate_models()
+        generated_models[mode] = set(generator_options[mode].generate_models())
 
         if logger_executable is not None:
             elapsed_time = int((time.time() - start) * 1000)
