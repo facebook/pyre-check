@@ -1765,23 +1765,27 @@ module Implementation = struct
           |> Option.value ~default:[]
       | Some parameters -> parameters
     in
-    let right = Type.parametric target parameters in
-    match instantiated, right with
-    | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
-        (* TODO(T42259381) This special case is only necessary because constructor calls attributes
-           with an "instantiated" type of a bare parametric, which will fill with Anys *)
-        TypeConstraints.Solution.empty
-    | _ ->
-        let order = full_order ?dependency class_metadata_environment ~assumptions in
-        TypeOrder.solve_less_or_equal
-          order
-          ~constraints:TypeConstraints.empty
-          ~left:instantiated
-          ~right
-        |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-        |> List.hd
-        (* TODO(T39598018): error in this case somehow, something must be wrong *)
-        |> Option.value ~default:TypeConstraints.Solution.empty
+    if List.is_empty parameters then
+      TypeConstraints.Solution.empty
+    else
+      let right = Type.parametric target parameters in
+      match instantiated, right with
+      | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name
+        ->
+          (* TODO(T42259381) This special case is only necessary because constructor calls
+             attributes with an "instantiated" type of a bare parametric, which will fill with Anys *)
+          TypeConstraints.Solution.empty
+      | _ ->
+          let order = full_order ?dependency class_metadata_environment ~assumptions in
+          TypeOrder.solve_less_or_equal
+            order
+            ~constraints:TypeConstraints.empty
+            ~left:instantiated
+            ~right
+          |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+          |> List.hd
+          (* TODO(T39598018): error in this case somehow, something must be wrong *)
+          |> Option.value ~default:TypeConstraints.Solution.empty
 
 
   (* In general, python expressions can be self-referential. This resolution only checks literals
