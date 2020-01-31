@@ -489,11 +489,12 @@ class RestartTest(TestCommand):
         # TODO(T57341910): Test blank restart
         self.assert_no_servers_exist()
 
-        self.run_pyre("-l", "local_one", "restart")
-        # TODO(T57341910): Test assert_has_errors, but restart returns 0 exit code
+        result = self.run_pyre("-l", "local_one", "restart")
+        self.assert_has_errors(result)
         self.assert_server_exists("local_one")
 
-        self.run_pyre("-l", "local_one", "restart")
+        result = self.run_pyre("-l", "local_one", "restart")
+        self.assert_has_errors(result)
         self.assert_server_exists("local_one")
 
 
