@@ -19,12 +19,9 @@ import java.io.Writer;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-public final class BuilderCache {
-
-  public static final String LOCK_PATH = "/tmp/pyre/buck_builder_cache/builder.lock";
-  public static final String THRIFT_CACHE_PATH = "/tmp/pyre/buck_builder_cache/thrift-gen";
-  public static final String WHEEL_CACHE_PATH = "/tmp/pyre/buck_builder_cache/downloaded-wheels";
+public class BuilderCache {
 
   private final long lastBuiltTime;
   private final Set<ThriftLibraryTarget> thriftCaches;
@@ -38,18 +35,18 @@ public final class BuilderCache {
     this(0, ImmutableSet.of());
   }
 
-  public static String getCachePath(ImmutableList<String> targets) {
+  public static String getCachePath(ImmutableList<String> targets, String buckRoot) throws IOException {
     String escapedTargets = DigestUtils.md5Hex(String.join(";", targets));
     if (escapedTargets.length() > 255) {
       // 255 is the Linux filename length limit for EXT4.
       // Most target list is not crazily long, and collision is unlikely to happen.
       escapedTargets = escapedTargets.substring(0, 255);
     }
-    return Paths.get("/tmp/pyre/buck_builder_cache", escapedTargets).toString();
+    return Paths.get(BuilderCache.getBuckBuilderCachePath(buckRoot), escapedTargets).toString();
   }
 
-  private static File getCacheJsonFile(ImmutableList<String> targets) {
-    return Paths.get(getCachePath(targets), "cache.json").toFile();
+  private static File getCacheJsonFile(ImmutableList<String> targets, String buckRoot) throws IOException {
+    return Paths.get(getCachePath(targets, buckRoot), "cache.json").toFile();
   }
 
   @VisibleForTesting
@@ -63,8 +60,9 @@ public final class BuilderCache {
     }
   }
 
-  public static BuilderCache readFromCache(ImmutableList<String> targets) {
-    File cacheJson = getCacheJsonFile(targets);
+  public static BuilderCache readFromCache(ImmutableList<String> targets, String buckRoot)
+      throws IOException {
+    File cacheJson = getCacheJsonFile(targets, buckRoot);
     try (FileReader reader = new FileReader(cacheJson)) {
       return readFromCache(reader);
     } catch (IOException exception) {
@@ -79,8 +77,8 @@ public final class BuilderCache {
     new Gson().toJson(this, writer);
   }
 
-  public void writeToCache(ImmutableList<String> targets) {
-    File cacheJsonFile = getCacheJsonFile(targets);
+  public void writeToCache(ImmutableList<String> targets, String buckRoot) throws IOException {
+    File cacheJsonFile = getCacheJsonFile(targets, buckRoot);
     if (cacheJsonFile.exists()) {
       cacheJsonFile.delete();
     }
@@ -98,6 +96,22 @@ public final class BuilderCache {
 
   public Set<ThriftLibraryTarget> getThriftCaches() {
     return thriftCaches;
+  }
+
+  public static String getBuckBuilderCachePath(String buckRoot) throws IOException {
+    return Paths.get(ScratchPath.getScratchPath(buckRoot), ".buck_builder_cache").toString();
+  }
+
+  public static String getLockPath(String buckRoot) throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot), "builder.lock").toString();
+  }
+
+  public static String getThriftCachePath(String buckRoot) throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot), "thrift-gen").toString();
+  }
+
+  public static String getWheelCachePath(String buckRoot) throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot), "downloaded-wheels").toString();
   }
 
   @Override

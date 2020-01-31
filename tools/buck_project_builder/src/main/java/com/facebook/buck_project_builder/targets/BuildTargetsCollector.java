@@ -12,6 +12,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
+
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -88,7 +90,7 @@ public final class BuildTargetsCollector {
 
   /** @return a builder that contains all the target information necessary for building. */
   public BuildTargetsBuilder getBuilder(long startTime, ImmutableList<String> targets)
-      throws BuilderException {
+      throws BuilderException, IOException {
     collectBuildTargets(BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets));
     // Filter thrift libraries
     this.thriftLibraryTargets.removeIf(
@@ -115,7 +117,8 @@ public final class BuildTargetsCollector {
   }
 
   @VisibleForTesting
-  void collectBuildTargets(ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap) {
+  void collectBuildTargets(ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap)
+      throws IOException {
     // The first pass collects python_library that refers to a remote python_file
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
@@ -133,7 +136,8 @@ public final class BuildTargetsCollector {
   }
 
   private void collectBuildTarget(
-      JsonObject targetJsonObject, @Nullable String cellPath, String buildTargetName) {
+      JsonObject targetJsonObject, @Nullable String cellPath, String buildTargetName)
+      throws IOException {
     String type = targetJsonObject.get("buck.type").getAsString();
     switch (type) {
       case "python_binary":
@@ -225,7 +229,8 @@ public final class BuildTargetsCollector {
       return;
     }
     if (versionedTarget.get("buck.type").getAsString().equals("prebuilt_python_library")) {
-      this.requiredRemoteFiles.add("//" + basePath + versionedTarget.get("binary_src").getAsString());
+      this.requiredRemoteFiles.add(
+          "//" + basePath + versionedTarget.get("binary_src").getAsString());
       return;
     }
     String wheelSuffix =

@@ -66,7 +66,7 @@ public final class BuildTargetsBuilder {
 
   private static void logCodeGenerationIOException(IOException exception) {
     SimpleLogger.error("IOException during python code generation: " + exception.getMessage());
-    for (StackTraceElement element: exception.getStackTrace()) {
+    for (StackTraceElement element : exception.getStackTrace()) {
       SimpleLogger.warning(element.toString());
     }
   }
@@ -81,15 +81,15 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Built python sources in " + time + "ms.");
   }
 
-  private void buildPythonWheels() {
+  private void buildPythonWheels(String buckRoot) throws IOException {
     if (pythonWheelUrls.isEmpty()) {
       return;
     }
     SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
-    new File(BuilderCache.WHEEL_CACHE_PATH).mkdirs();
+    new File(BuilderCache.getWheelCachePath(buckRoot)).mkdirs();
     try {
-      FileUtils.cleanDirectory(new File(BuilderCache.WHEEL_CACHE_PATH));
+      FileUtils.cleanDirectory(new File(BuilderCache.getWheelCachePath(buckRoot)));
     } catch (IOException exception) {
       // Silently fail if the cache wasn't found.
     }
@@ -101,13 +101,13 @@ public final class BuildTargetsBuilder {
               try {
                 ImmutableSet<String> conflictingFiles =
                     FileSystem.unzipRemoteFile(
-                        url, BuilderCache.WHEEL_CACHE_PATH, outputDirectoryFile);
+                        url, BuilderCache.getWheelCachePath(buckRoot), outputDirectoryFile);
                 this.conflictingFiles.addAll(conflictingFiles);
               } catch (IOException firstException) {
                 try {
                   ImmutableSet<String> conflictingFiles =
                       FileSystem.unzipRemoteFile(
-                          url, BuilderCache.WHEEL_CACHE_PATH, outputDirectoryFile);
+                          url, BuilderCache.getWheelCachePath(buckRoot), outputDirectoryFile);
                   this.conflictingFiles.addAll(conflictingFiles);
                 } catch (IOException secondException) {
                   SimpleLogger.error(
@@ -147,13 +147,13 @@ public final class BuildTargetsBuilder {
     }
   }
 
-  private void buildThriftLibraries() throws BuilderException {
+  private void buildThriftLibraries() throws BuilderException, IOException {
     if (this.thriftLibraryTargets.isEmpty()) {
       return;
     }
-    new File(BuilderCache.THRIFT_CACHE_PATH).mkdirs();
+    new File(BuilderCache.getThriftCachePath(buckRoot)).mkdirs();
     try {
-      FileUtils.cleanDirectory(new File(BuilderCache.THRIFT_CACHE_PATH));
+      FileUtils.cleanDirectory(new File(BuilderCache.getThriftCachePath(buckRoot)));
     } catch (IOException exception) {
       // Silently fail if there was nothing to clean.
     }
@@ -183,9 +183,10 @@ public final class BuildTargetsBuilder {
     this.thriftLibraryTargets.forEach(
         command -> {
           String baseModulePath = command.getBaseModulePath();
-          Path generatedCodeRoot =
-              Paths.get(BuilderCache.THRIFT_CACHE_PATH, DigestUtils.md5Hex(baseModulePath));
           try {
+            Path generatedCodeRoot =
+                Paths.get(
+                    BuilderCache.getThriftCachePath(buckRoot), DigestUtils.md5Hex(baseModulePath));
             Files.walk(Paths.get(generatedCodeRoot.toString(), baseModulePath))
                 .forEach(
                     absolutePath -> {
@@ -281,12 +282,12 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Generate empty stubs in " + time + "ms.");
   }
 
-  public DebugOutput buildTargets() throws BuilderException {
+  public DebugOutput buildTargets(String buckRoot) throws BuilderException, IOException {
     this.buildThriftLibraries();
     this.buildSwigLibraries();
     this.buildAntlr4Libraries();
     this.buildPythonSources();
-    this.buildPythonWheels();
+    this.buildPythonWheels(buckRoot);
     this.generateEmptyStubs();
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }

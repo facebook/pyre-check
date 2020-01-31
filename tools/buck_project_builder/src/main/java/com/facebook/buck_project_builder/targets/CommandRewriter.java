@@ -2,11 +2,13 @@ package com.facebook.buck_project_builder.targets;
 
 import com.google.common.collect.ImmutableList;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface CommandRewriter {
   default String rewriteThriftLibraryBuildCommand(
-      String command, String baseModulePath, List<String> sources) {
+      String command, String baseModulePath, List<String> sources, String buckRoot)
+      throws IOException {
     return command;
   }
 

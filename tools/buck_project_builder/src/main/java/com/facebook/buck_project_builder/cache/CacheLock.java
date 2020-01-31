@@ -12,8 +12,9 @@ import java.nio.channels.FileLock;
 
 public final class CacheLock {
 
-  public static void synchronize(Builder builder) throws BuilderException {
-    File lockFile = new File(BuilderCache.LOCK_PATH);
+  public static void synchronize(Builder builder, String buckRoot)
+      throws BuilderException, IOException {
+    File lockFile = new File(BuilderCache.getLockPath(buckRoot));
     try {
       FileUtils.touch(lockFile);
     } catch (IOException exception) {
@@ -37,6 +38,6 @@ public final class CacheLock {
   }
 
   public interface Builder {
-    void build() throws BuilderException;
+    void build() throws BuilderException, IOException;
   }
 }

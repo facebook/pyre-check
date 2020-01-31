@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 public final class BuckProjectBuilder {
 
@@ -20,7 +21,8 @@ public final class BuckProjectBuilder {
    * in standard error.
    */
   public BuckProjectBuilder(
-      String[] arguments, PlatformSelector platformSelector, CommandRewriter commandRewriter) {
+      String[] arguments, PlatformSelector platformSelector, CommandRewriter commandRewriter)
+      throws IOException {
     long start = System.currentTimeMillis();
     BuilderCommand command;
     try {
@@ -38,24 +40,25 @@ public final class BuckProjectBuilder {
       CacheLock.synchronize(
           () -> {
             DebugOutput debugOutput =
-              new BuildTargetsCollector(
-                  buckRoot, outputDirectory, platformSelector, commandRewriter)
-              .getBuilder(start, targets)
-              .buildTargets();
+                new BuildTargetsCollector(
+                        buckRoot, outputDirectory, platformSelector, commandRewriter)
+                    .getBuilder(start, targets)
+                    .buildTargets(buckRoot);
             if (command.isDebug()) {
               System.out.println(new Gson().toJson(debugOutput));
             }
-          });
+          },
+          buckRoot);
       BuildTimeLogger.logBuildTime(start, System.currentTimeMillis(), targets);
     } catch (BuilderException exception) {
       SimpleLogger.error(exception.getMessage());
       SimpleLogger.error("Build failure. Invalidating all build cache.");
-      FileUtils.deleteQuietly(new File(BuilderCache.getCachePath(targets)));
+      FileUtils.deleteQuietly(new File(BuilderCache.getCachePath(targets, buckRoot)));
       System.exit(1);
     }
   }
 
-  public static void main(String[] arguments) {
+  public static void main(String[] arguments) throws IOException {
     System.setProperty("java.net.preferIPv6Addresses", "true");
     new BuckProjectBuilder(arguments, new PlatformSelector() {}, new CommandRewriter() {});
   }

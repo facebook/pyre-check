@@ -100,11 +100,33 @@ class Kill(Command):
             shutil.rmtree(str(root_log_directory / "resource_cache"))
         except OSError:
             pass
+
         # If a buck builder cache exists, also remove it.
+        scratch_path = None
         try:
-            shutil.rmtree("/tmp/pyre/buck_builder_cache")
-        except OSError:
-            pass
+            scratch_path = (
+                subprocess.check_output(
+                    f"mkscratch path --subdir pyre {self._current_directory}".split()
+                )
+                .decode()
+                .strip()
+            )
+        except Exception as exception:
+            LOG.debug("Could not find scratch path because of exception: %s", exception)
+        if scratch_path is not None:
+            buck_builder_cache_directory = str(
+                Path(scratch_path, ".buck_builder_cache")
+            )
+            try:
+                LOG.debug(
+                    "Deleting buck builder cache at %s", buck_builder_cache_directory
+                )
+                shutil.rmtree(buck_builder_cache_directory)
+            except OSError as exception:
+                LOG.debug(
+                    "Failed to delete buck builder cache due to exception: %s.",
+                    exception,
+                )
 
     def _kill_client_processes(self) -> None:
         for process in psutil.process_iter(attrs=["name"]):

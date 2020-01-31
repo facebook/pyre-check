@@ -47,7 +47,8 @@ public final class ThriftLibraryTarget {
       @Nullable String cellPath,
       String buckRoot,
       CommandRewriter rewriter,
-      JsonObject targetJsonObject) {
+      JsonObject targetJsonObject)
+      throws IOException {
     JsonElement labelsField = targetJsonObject.get("labels");
     if (labelsField == null) {
       return null;
@@ -75,7 +76,7 @@ public final class ThriftLibraryTarget {
     if (sources == null) {
       return null;
     }
-    command = rewriter.rewriteThriftLibraryBuildCommand(command, baseModulePath, sources);
+    command = rewriter.rewriteThriftLibraryBuildCommand(command, baseModulePath, sources, buckRoot);
     return new ThriftLibraryTarget(command, baseModulePath, sources);
   }
 
