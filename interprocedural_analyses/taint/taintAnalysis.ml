@@ -31,7 +31,7 @@ include TaintResult.Register (struct
     in
     let create_models ~configuration sources =
       List.fold sources ~init:models ~f:(fun models (path, source) ->
-          Model.parse
+          ModelParser.parse
             ~resolution:(Analysis.TypeCheck.resolution global_resolution ())
             ~path
             ~source

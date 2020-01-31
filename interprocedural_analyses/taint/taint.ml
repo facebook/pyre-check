@@ -12,7 +12,18 @@ module Domains = Domains
 module Features = Features
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis
-module Model = Model
+
+module Model = struct
+  include Model
+
+  let parse = ModelParser.parse
+
+  let verify_model_syntax = ModelParser.verify_model_syntax
+
+  (* Exposed for testing. *)
+  let demangle_class_attribute = ModelVerifier.demangle_class_attribute
+end
+
 module Result = TaintResult
 module Sinks = Sinks
 module Sources = Sources

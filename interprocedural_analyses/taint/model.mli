@@ -17,9 +17,6 @@ type t = {
 
 exception InvalidModel of string
 
-(* Exposed for testing. *)
-val demangle_class_attribute : string -> string
-
 val get_callsite_model
   :  call_target:[< Callable.t ] ->
   arguments:Expression.Call.Argument.t list ->
@@ -31,19 +28,7 @@ val get_global_sink_model
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 
-val parse
-  :  resolution:Resolution.t ->
-  ?path:PyrePath.t ->
-  ?verify:bool ->
-  ?rule_filter:int list ->
-  source:string ->
-  configuration:Configuration.t ->
-  TaintResult.call_model Callable.Map.t ->
-  TaintResult.call_model Callable.Map.t
-
 val get_model_sources : directories:Path.t list -> (Path.t * string) list
-
-val verify_model_syntax : path:Path.t -> source:string -> unit
 
 val infer_class_models
   :  environment:TypeEnvironment.ReadOnly.t ->
