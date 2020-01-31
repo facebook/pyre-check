@@ -37,6 +37,7 @@ class CommandData(NamedTuple):
 
 
 class PyreResult(NamedTuple):
+    command: str
     output: Optional[str]
     error_output: Optional[str]
     return_code: int
@@ -155,23 +156,23 @@ class TestCommand(unittest.TestCase, ABC):
         command: str,
         *arguments: str,
         working_directory: Optional[str] = None,
-        timeout: int = 60,
+        timeout: int = 30,
         prompts: Optional[List[str]] = None
     ) -> PyreResult:
         working_directory: Path = (
             self.directory / working_directory if working_directory else self.directory
         )
         prompt_inputs = "\n".join(prompts).encode() if prompts else None
+        command: List[str] = [
+            "pyre",
+            "--noninteractive",
+            "--output=json",
+            "--typeshed",
+            str(self.typeshed),
+            command,
+            *arguments,
+        ]
         try:
-            command: List[str] = [
-                "pyre",
-                "--noninteractive",
-                "--output=json",
-                "--typeshed",
-                str(self.typeshed),
-                command,
-                *arguments,
-            ]
             self.command_history.append(CommandData(str(working_directory), command))
             process = subprocess.run(
                 command,
@@ -181,13 +182,21 @@ class TestCommand(unittest.TestCase, ABC):
                 capture_output=True,
             )
             return PyreResult(
-                process.stdout.decode(), process.stderr.decode(), process.returncode
+                " ".join(command),
+                process.stdout.decode(),
+                process.stderr.decode(),
+                process.returncode,
             )
         except subprocess.TimeoutExpired as error:
-            # TODO(T57341910): Timeout logs are still ugly and unhelpful.
-            # Log pyre rage/debug.
-            LOG.error(error.stderr)
-            LOG.error(error.stdout)
+            stdout = error.stdout
+            stderr = error.stderr
+            result = PyreResult(
+                " ".join(command),
+                stdout.decode() if stdout else "",
+                stderr.decode() if stderr else "",
+                -1,
+            )
+            LOG.error(self.get_context(result))
             raise error
 
     def get_servers(self) -> List[Dict[str, Any]]:
@@ -201,6 +210,7 @@ class TestCommand(unittest.TestCase, ABC):
 
     def get_context(self, result: Optional[PyreResult] = None) -> str:
         # TODO(T60769864): Avoid printing context twice in buck runs.
+        # TODO(T57341910): Log pyre rage / debug when appropriate.
         context = ""
 
         def format_section(title: str, *contents: str) -> str:
@@ -210,16 +220,23 @@ class TestCommand(unittest.TestCase, ABC):
             section = "\n\n{} {} {}\n\n{}\n".format(divider, title, divider, contents)
             return section
 
+        # Pyre Output
         if result:
-            error_output = result.error_output
-            if error_output:
-                context += format_section("Pyre Output", error_output)
+            if result.output or result.error_output:
+                context += format_section(
+                    "Pyre Output",
+                    "Command: `" + result.command + "`",
+                    result.output or "",
+                    result.error_output or "",
+                )
 
+        # Filesystem Structure
         filesystem_structure = subprocess.run(
             ["tree", self.directory, "-a", "-I", "typeshed"], capture_output=True
         ).stdout.decode()
         context += format_section("Filesystem Structure", filesystem_structure)
 
+        # Version Information
         version_output = subprocess.run(
             ["pyre", "--version"], cwd=self.directory, capture_output=True
         ).stdout.decode()
@@ -232,6 +249,7 @@ class TestCommand(unittest.TestCase, ABC):
             configuration_contents += Path(configuration).read_text() + "\n\n"
         context += format_section("Versioning", version_output, configuration_contents)
 
+        # Repro Instructions
         instructions = ""
         if self.command_history:
             instructions += "- Create directory structure above and run:\n\t"
