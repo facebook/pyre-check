@@ -1391,7 +1391,7 @@ let create_type_alias_table type_aliases =
 
 let mock_scheduler () =
   Analysis.GlobalResolution.ClassDefinitionsCache.invalidate ();
-  Scheduler.mock ()
+  Scheduler.create_sequential ()
 
 
 let update_environments
@@ -1586,7 +1586,7 @@ module ScratchProject = struct
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
     |> TypeCheck.legacy_run_on_modules
-         ~scheduler:(Scheduler.mock ())
+         ~scheduler:(Scheduler.create_sequential ())
          ~configuration
          ~environment:type_environment
          ?call_graph_builder;
@@ -1600,7 +1600,7 @@ module ScratchProject = struct
         built_type_environment.sources
         ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
       |> Postprocessing.run
-           ~scheduler:(Scheduler.mock ())
+           ~scheduler:(Scheduler.create_sequential ())
            ~configuration:(configuration_of project)
            ~environment:(TypeEnvironment.read_only built_type_environment.type_environment)
     in

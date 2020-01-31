@@ -45,6 +45,8 @@ type t
 
 val create : configuration:Configuration.Analysis.t -> unit -> t
 
+val create_sequential : unit -> t
+
 val run_process : configuration:Configuration.Analysis.t -> (unit -> 'result) -> 'result
 
 val map_reduce
@@ -66,13 +68,7 @@ val iter
   inputs:'input list ->
   unit
 
-val single_job : t -> f:('a -> 'b) -> 'a -> 'b
-
 val is_parallel : t -> bool
-
-val workers : t -> Worker.t list
-
-val mock : unit -> t
 
 val destroy : t -> unit
 

@@ -7,11 +7,9 @@ open Hack_parallel.Std
 module Daemon = Daemon
 open Core
 
-type t = {
-  is_parallel: bool;
-  workers: Worker.t list;
-  number_of_workers: int;
-}
+type t =
+  | SequentialScheduler
+  | ParallelScheduler of Worker.t list
 
 module Policy = struct
   type t = number_of_workers:int -> number_of_tasks:int -> int
@@ -84,16 +82,21 @@ let create
     ()
   =
   let heap_handle = Memory.get_heap_handle configuration in
-  let workers =
-    Hack_parallel.Std.Worker.make
-      ~saved_state:()
-      ~entry
-      ~nbr_procs:number_of_workers
-      ~heap_handle
-      ~gc_control:Memory.worker_garbage_control
-  in
-  { workers; number_of_workers; is_parallel = parallel }
+  if parallel then
+    let workers =
+      Hack_parallel.Std.Worker.make
+        ~saved_state:()
+        ~entry
+        ~nbr_procs:number_of_workers
+        ~heap_handle
+        ~gc_control:Memory.worker_garbage_control
+    in
+    ParallelScheduler workers
+  else
+    SequentialScheduler
 
+
+let create_sequential () = SequentialScheduler
 
 let run_process
     ~configuration:({ Configuration.Analysis.verbose; sections; _ } as configuration)
@@ -109,35 +112,27 @@ let run_process
   | error -> raise error
 
 
-let map_reduce
-    { workers; number_of_workers; is_parallel; _ }
-    ~policy
-    ~configuration
-    ~initial
-    ~map
-    ~reduce
-    ~inputs
-    ()
-  =
+let map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs () =
   let sequential_map_reduce () = map initial inputs |> fun mapped -> reduce mapped initial in
-  if is_parallel then
-    let number_of_chunks =
-      Policy.divide_work ~number_of_workers ~number_of_tasks:(List.length inputs) policy
-    in
-    if number_of_chunks = 1 then
-      sequential_map_reduce ()
-    else
-      let map accumulator inputs =
-        (fun () -> map accumulator inputs) |> run_process ~configuration
+  match scheduler with
+  | ParallelScheduler workers ->
+      let number_of_workers = List.length workers in
+      let number_of_chunks =
+        Policy.divide_work ~number_of_workers ~number_of_tasks:(List.length inputs) policy
       in
-      MultiWorker.call
-        (Some workers)
-        ~job:map
-        ~merge:reduce
-        ~neutral:initial
-        ~next:(Bucket.make ~num_workers:number_of_chunks inputs)
-  else
-    sequential_map_reduce ()
+      if number_of_chunks = 1 then
+        sequential_map_reduce ()
+      else
+        let map accumulator inputs =
+          (fun () -> map accumulator inputs) |> run_process ~configuration
+        in
+        MultiWorker.call
+          (Some workers)
+          ~job:map
+          ~merge:reduce
+          ~neutral:initial
+          ~next:(Bucket.make ~num_workers:number_of_chunks inputs)
+  | SequentialScheduler -> sequential_map_reduce ()
 
 
 let iter scheduler ~policy ~configuration ~f ~inputs =
@@ -152,35 +147,27 @@ let iter scheduler ~policy ~configuration ~f ~inputs =
     ()
 
 
-let single_job { workers; _ } ~f work =
-  let rec wait_until_ready handle =
-    let { Worker.readys; _ } = Worker.select [handle] in
-    match readys with
-    | [] -> wait_until_ready handle
-    | ready :: _ -> ready
-  in
-  match workers with
-  | worker :: _ -> Worker.call worker f work |> wait_until_ready |> Worker.get_result
-  | [] -> failwith "This service contains no workers"
+let is_parallel = function
+  | SequentialScheduler -> false
+  | ParallelScheduler _ -> true
 
 
-let mock () =
-  let configuration = Configuration.Analysis.create () in
-  Memory.get_heap_handle configuration |> ignore;
-  { workers = []; number_of_workers = 1; is_parallel = false }
+let destroy = function
+  | SequentialScheduler -> ()
+  | ParallelScheduler _ -> Worker.killall ()
 
 
-let is_parallel { is_parallel; _ } = is_parallel
-
-let workers { workers; _ } = workers
-
-let destroy _ = Worker.killall ()
-
-let once_per_worker { workers; number_of_workers; _ } ~configuration:_ ~f =
-  MultiWorker.call
-    (Some workers)
-    ~job:(fun _ _ -> f ())
-    ~merge:(fun _ _ -> ())
-    ~neutral:()
-    ~next:
-      (Bucket.make ~num_workers:number_of_workers (List.init number_of_workers ~f:(fun _ -> ())))
+let once_per_worker scheduler ~configuration:_ ~f =
+  match scheduler with
+  | SequentialScheduler -> ()
+  | ParallelScheduler workers ->
+      let number_of_workers = List.length workers in
+      MultiWorker.call
+        (Some workers)
+        ~job:(fun _ _ -> f ())
+        ~merge:(fun _ _ -> ())
+        ~neutral:()
+        ~next:
+          (Bucket.make
+             ~num_workers:number_of_workers
+             (List.init number_of_workers ~f:(fun _ -> ())))
