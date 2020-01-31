@@ -193,13 +193,31 @@ module Solution = struct
 
 
   let instantiate { unaries; callable_parameters; list_variadics } annotation =
-    Type.Variable.GlobalTransforms.Unary.replace_all
-      (fun variable -> UnaryVariable.Map.find unaries variable)
-      annotation
-    |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all (fun variable ->
-           ParameterVariable.Map.find callable_parameters variable)
-    |> Type.Variable.GlobalTransforms.ListVariadic.replace_all (fun variable ->
-           ListVariadic.Map.find list_variadics variable)
+    let annotation =
+      if UnaryVariable.Map.is_empty unaries then
+        annotation
+      else
+        Type.Variable.GlobalTransforms.Unary.replace_all
+          (fun variable -> UnaryVariable.Map.find unaries variable)
+          annotation
+    in
+    let annotation =
+      if ParameterVariable.Map.is_empty callable_parameters then
+        annotation
+      else
+        Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
+          (fun variable -> ParameterVariable.Map.find callable_parameters variable)
+          annotation
+    in
+    let annotation =
+      if ListVariadic.Map.is_empty list_variadics then
+        annotation
+      else
+        Type.Variable.GlobalTransforms.ListVariadic.replace_all
+          (fun variable -> ListVariadic.Map.find list_variadics variable)
+          annotation
+    in
+    annotation
 
 
   let instantiate_single_variable { unaries; _ } = UnaryVariable.Map.find unaries
