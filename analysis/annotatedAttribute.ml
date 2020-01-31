@@ -33,7 +33,7 @@ type attribute = {
 }
 [@@deriving eq, show, compare, sexp]
 
-type t = attribute Node.t [@@deriving eq, show, sexp]
+type t = attribute Node.t [@@deriving eq, show, sexp, compare]
 
 let create
     ~abstract
@@ -142,50 +142,3 @@ let with_value { Node.location; value = attribute } ~value =
 
 
 let with_location attribute ~location = { attribute with Node.location }
-
-module Table = struct
-  type element = t [@@deriving compare]
-
-  type table = (string, element) Caml.Hashtbl.t
-
-  type t = {
-    attributes: table;
-    names: string list ref;
-  }
-
-  let create () = { attributes = Caml.Hashtbl.create 15; names = ref [] }
-
-  let add { attributes; names } ({ Node.value = { name; _ }; _ } as attribute) =
-    if Caml.Hashtbl.mem attributes name then
-      ()
-    else (
-      Caml.Hashtbl.add attributes name attribute;
-      names := name :: !names )
-
-
-  let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
-
-  let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
-
-  let names { names; _ } = !names
-
-  let clear { attributes; names } =
-    Caml.Hashtbl.clear attributes;
-    names := []
-
-
-  let compare left right = List.compare compare_element (to_list left) (to_list right)
-
-  let filter_map ~f table =
-    let add_attribute attribute = Option.iter (f attribute) ~f:(add table) in
-    let attributes = to_list table in
-    clear table;
-    List.iter attributes ~f:add_attribute
-
-
-  let map ~f table =
-    let add_attribute attribute = add table (f attribute) in
-    let attributes = to_list table in
-    clear table;
-    List.iter attributes ~f:add_attribute
-end

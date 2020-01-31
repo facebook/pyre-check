@@ -160,7 +160,19 @@ module AttributeReadOnly : sig
     Expression.expression Node.t ->
     Type.t
 
-  val attribute_table
+  val attribute
+    :  t ->
+    transitive:bool ->
+    class_attributes:bool ->
+    include_generated_attributes:bool ->
+    ?special_method:bool ->
+    ?instantiated:Type.t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    attribute_name:Identifier.t ->
+    string ->
+    AnnotatedAttribute.t option
+
+  val attribute_names
     :  t ->
     transitive:bool ->
     class_attributes:bool ->
@@ -169,7 +181,18 @@ module AttributeReadOnly : sig
     ?instantiated:Type.t ->
     ?dependency:SharedMemoryKeys.dependency ->
     string ->
-    AnnotatedAttribute.Table.t option
+    Identifier.t list option
+
+  val all_attributes
+    :  t ->
+    transitive:bool ->
+    class_attributes:bool ->
+    include_generated_attributes:bool ->
+    ?special_method:bool ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    ?instantiated:Type.t ->
+    string ->
+    AnnotatedAttribute.t list option
 
   val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
 

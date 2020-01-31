@@ -495,6 +495,7 @@ let test_class_attributes context =
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
       ?(initialized = true)
+      ?(defined = true)
       name
       callable
     =
@@ -506,7 +507,7 @@ let test_class_attributes context =
          ~abstract:false
          ~async:false
          ~class_attribute:false
-         ~defined:true
+         ~defined
          ~initialized
          ~name
          ~parent
@@ -554,7 +555,8 @@ let test_class_attributes context =
     ~parent
     ~parent_instantiated_type:(Type.Primitive "Nonsense")
     ~attribute_name:"property"
-    ~expected_attribute:None;
+    ~expected_attribute:
+      (create_expected_attribute ~initialized:false ~defined:false "property" "$unknown");
   ()
 
 

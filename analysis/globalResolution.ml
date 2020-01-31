@@ -326,8 +326,7 @@ let attribute_from_class_name
     ~name
     ~instantiated
   =
-  let access table =
-    match AnnotatedAttribute.Table.lookup_name table name with
+  let access = function
     | Some attribute -> Some attribute
     | None -> (
         match
@@ -355,7 +354,7 @@ let attribute_from_class_name
             |> Option.some
         | None -> None )
   in
-  AttributeResolution.ReadOnly.attribute_table
+  AttributeResolution.ReadOnly.attribute
     ~instantiated
     ~transitive
     ~class_attributes
@@ -363,8 +362,9 @@ let attribute_from_class_name
     ~include_generated_attributes:true
     ?dependency
     (attribute_resolution resolution)
+    ~attribute_name:name
     class_name
-  >>= access
+  |> access
 
 
 let attribute_from_annotation resolution ~parent:annotation ~name =
@@ -432,7 +432,7 @@ let attributes
     ?instantiated
     name
   =
-  AttributeResolution.ReadOnly.attribute_table
+  AttributeResolution.ReadOnly.all_attributes
     (attribute_resolution resolution)
     ~transitive
     ~class_attributes
@@ -440,7 +440,6 @@ let attributes
     ?instantiated
     name
     ?dependency
-  >>| AnnotatedAttribute.Table.to_list
 
 
 let metaclass ~resolution:({ dependency; _ } as resolution) =
@@ -537,7 +536,7 @@ let attribute_names
     ?instantiated
     name
   =
-  AttributeResolution.ReadOnly.attribute_table
+  AttributeResolution.ReadOnly.attribute_names
     (attribute_resolution resolution)
     ~transitive
     ~class_attributes
@@ -545,4 +544,3 @@ let attribute_names
     ?instantiated
     name
     ?dependency
-  >>| AnnotatedAttribute.Table.names

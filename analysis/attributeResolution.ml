@@ -9,6 +9,47 @@ open Ast
 open Statement
 open Assumptions
 
+module AttributeTable = struct
+  type element = AnnotatedAttribute.t [@@deriving compare]
+
+  type table = (string, element) Caml.Hashtbl.t
+
+  type t = {
+    attributes: table;
+    names: string list ref;
+  }
+
+  let create () = { attributes = Caml.Hashtbl.create 15; names = ref [] }
+
+  let add { attributes; names } attribute =
+    let name = AnnotatedAttribute.name attribute in
+    if Caml.Hashtbl.mem attributes name then
+      ()
+    else (
+      Caml.Hashtbl.add attributes name attribute;
+      names := name :: !names )
+
+
+  let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
+
+  let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
+
+  let names { names; _ } = !names
+
+  let clear { attributes; names } =
+    Caml.Hashtbl.clear attributes;
+    names := []
+
+
+  let compare left right = List.compare compare_element (to_list left) (to_list right)
+
+  let map ~f table =
+    let add_attribute attribute = add table (f attribute) in
+    let attributes = to_list table in
+    clear table;
+    List.iter attributes ~f:add_attribute
+end
+
 (* These modules get included at the bottom of this file, they're just here for aesthetic purposes *)
 module TypeParameterValidationTypes = struct
   type generic_type_problems =
@@ -487,9 +528,7 @@ module Implementation = struct
       in
       let { Node.value = { ClassSummary.name; _ }; _ } = definition in
       let generate_attributes ~options =
-        let already_in_table name =
-          AnnotatedAttribute.Table.lookup_name table name |> Option.is_some
-        in
+        let already_in_table name = AttributeTable.lookup_name table name |> Option.is_some in
         let make_callable ~parameters ~annotation ~attribute_name =
           let parameters =
             if class_attributes then
@@ -634,8 +673,7 @@ module Implementation = struct
                           (AnnotatedAttribute.location left)
                           (AnnotatedAttribute.location right)
                       in
-                      AnnotatedAttribute.Table.to_list parent
-                      |> List.sort ~compare:compare_by_location
+                      AttributeTable.to_list parent |> List.sort ~compare:compare_by_location
                     in
                     parent_attribute_tables @ [get_table definition]
                     |> List.map ~f:parent_attributes
@@ -709,8 +747,7 @@ module Implementation = struct
         (* TODO (T41039225): Add support for other methods *)
         generate_attributes ~options:(attrs_attributes ~class_metadata_environment ?dependency)
       in
-      dataclass_attributes () @ attrs_attributes ()
-      |> List.iter ~f:(AnnotatedAttribute.Table.add table)
+      dataclass_attributes () @ attrs_attributes () |> List.iter ~f:(AttributeTable.add table)
   end
 
   type dependency = SharedMemoryKeys.dependency
@@ -731,7 +768,7 @@ module Implementation = struct
       ?dependency:dependency ->
       ClassSummary.t Node.t ->
       class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-      AnnotatedAttribute.Table.t;
+      AttributeTable.t;
     check_invalid_type_parameters:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -854,7 +891,7 @@ module Implementation = struct
                   ?dependency
                   definition
                   ~class_metadata_environment)
-          >>| AnnotatedAttribute.Table.to_list
+          >>| AttributeTable.to_list
       | Some (_ :: _) ->
           (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
              indirectly by breaking apart the union before doing the
@@ -1060,16 +1097,16 @@ module Implementation = struct
             ~instantiated
             ~inherited:(not (Reference.equal name parent_name))
             ~default_class_attribute:class_attributes
-          |> AnnotatedAttribute.Table.add table
+          |> AttributeTable.add table
         in
         Class.attributes ~include_generated_attributes ~in_test attribute_components
         |> fun attribute_map ->
         Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
       in
       let add_placeholder_stub_inheritances () =
-        if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__init__") then (
+        if Option.is_none (AttributeTable.lookup_name table "__init__") then (
           let annotation = Type.Callable.create ~annotation:Type.none () in
-          AnnotatedAttribute.Table.add
+          AttributeTable.add
             table
             (AnnotatedAttribute.create
                ~location:Location.any
@@ -1086,9 +1123,9 @@ module Implementation = struct
                ~static:true
                ~property:false
                ~value:(Node.create_with_default_location Expression.Expression.Ellipsis));
-          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
+          if Option.is_none (AttributeTable.lookup_name table "__getattr__") then
             let annotation = Type.Callable.create ~annotation:Type.Any () in
-            AnnotatedAttribute.Table.add
+            AttributeTable.add
               table
               (AnnotatedAttribute.create
                  ~location:Location.any
@@ -1143,7 +1180,7 @@ module Implementation = struct
       List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
           ClassSummary.is_unit_test value)
     in
-    let table = AnnotatedAttribute.Table.create () in
+    let table = AttributeTable.create () in
     (* Pass over normal class hierarchy. *)
     let definitions =
       if class_attributes && special_method then
@@ -1189,7 +1226,7 @@ module Implementation = struct
         attribute
     in
     Option.iter original_instantiated ~f:(fun instantiated ->
-        AnnotatedAttribute.Table.map table ~f:(instantiate ~instantiated));
+        AttributeTable.map table ~f:(instantiate ~instantiated));
     table
 
 
@@ -2842,7 +2879,7 @@ module Implementation = struct
     in
     let signature_and_index ~name =
       let signature, parent =
-        match AnnotatedAttribute.Table.lookup_name attribute_table name with
+        match AttributeTable.lookup_name attribute_table name with
         | Some attribute ->
             ( AnnotatedAttribute.annotation attribute |> Annotation.annotation,
               Type.Primitive (AnnotatedAttribute.parent attribute) )
@@ -3018,7 +3055,7 @@ module Cache = ManagedCache.Make (struct
   module Key = SharedMemoryKeys.AttributeTableKey
 
   module Value = struct
-    type t = AnnotatedAttribute.Table.t option [@@deriving compare]
+    type t = AttributeTable.t option [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -3105,30 +3142,6 @@ module ReadOnly = struct
     ParseAnnotationCache.ReadOnly.upstream_environment (upstream_environment read_only)
 
 
-  let attribute_table
-      read_only
-      ~transitive
-      ~class_attributes
-      ~include_generated_attributes
-      ?(special_method = false)
-      ?instantiated
-      ?dependency
-      name
-    =
-    get
-      read_only
-      ?dependency
-      {
-        SharedMemoryKeys.AttributeTableKey.transitive;
-        class_attributes;
-        include_generated_attributes;
-        special_method;
-        name;
-        instantiated;
-        assumptions = empty_assumptions;
-      }
-
-
   let cached_attribute_table
       read_only
       (* There's no need to use the given open recurser since we're already using the uncached
@@ -3158,7 +3171,7 @@ module ReadOnly = struct
         instantiated;
         assumptions;
       }
-    |> Option.value ~default:(AnnotatedAttribute.Table.create ())
+    |> Option.value ~default:(AttributeTable.create ())
 
 
   let open_recurser_with_both_caches read_only =
@@ -3173,6 +3186,82 @@ module ReadOnly = struct
       (open_recurser_with_both_caches read_only)
       ~assumptions:empty_assumptions
       ~class_metadata_environment:(class_metadata_environment read_only)
+
+
+  let attribute
+      read_only
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?(special_method = false)
+      ?instantiated
+      ?dependency
+      ~attribute_name
+      class_name
+    =
+    get
+      read_only
+      ?dependency
+      {
+        SharedMemoryKeys.AttributeTableKey.transitive;
+        class_attributes;
+        include_generated_attributes;
+        special_method;
+        name = class_name;
+        assumptions = empty_assumptions;
+        instantiated;
+      }
+    >>= fun table -> AttributeTable.lookup_name table attribute_name
+
+
+  let attribute_names
+      read_only
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?(special_method = false)
+      ?instantiated
+      ?dependency
+      class_name
+    =
+    get
+      read_only
+      ?dependency
+      {
+        SharedMemoryKeys.AttributeTableKey.transitive;
+        class_attributes;
+        include_generated_attributes;
+        special_method;
+        name = class_name;
+        assumptions = empty_assumptions;
+        instantiated;
+      }
+    >>| AttributeTable.names
+
+
+  let all_attributes
+      read_only
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?(special_method = false)
+      ?dependency
+      ?instantiated
+      class_name
+    =
+    get
+      read_only
+      ?dependency
+      {
+        SharedMemoryKeys.AttributeTableKey.transitive;
+        class_attributes;
+        include_generated_attributes;
+        special_method;
+        name = class_name;
+        assumptions = empty_assumptions;
+        instantiated;
+      }
+    >>| AttributeTable.to_list
 
 
   let check_invalid_type_parameters =

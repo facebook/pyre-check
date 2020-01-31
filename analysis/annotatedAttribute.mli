@@ -15,7 +15,7 @@ type visibility =
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
-type t [@@deriving eq, show, sexp]
+type t [@@deriving eq, show, sexp, compare]
 
 val create
   :  abstract:bool ->
@@ -65,25 +65,3 @@ val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
 val with_value : t -> value:Expression.t -> t
 
 val with_location : t -> location:Location.t -> t
-
-module Table : sig
-  type element = t
-
-  type t [@@deriving compare]
-
-  val create : unit -> t
-
-  val add : t -> element -> unit
-
-  val lookup_name : t -> string -> element option
-
-  val to_list : t -> element list
-
-  val clear : t -> unit
-
-  val filter_map : f:(element -> element option) -> t -> unit
-
-  val names : t -> string list
-
-  val map : f:(element -> element) -> t -> unit
-end
