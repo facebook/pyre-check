@@ -301,23 +301,35 @@ class Configuration:
                     "the root of the `typeshed` directory.".format(self.typeshed)
                 )
 
-            for element in self.ignore_all_errors:
-                if not os.path.exists(element):
-                    LOG.warning(
-                        "Nonexistent path passed in to `ignore_all_errors` \
-                        field: `{}`".format(
-                            element
-                        )
+            non_existent_ignore_paths = [
+                path for path in self.ignore_all_errors if not os.path.exists(path)
+            ]
+            if non_existent_ignore_paths:
+                LOG.warning(
+                    "Nonexistent paths passed in to `ignore_all_errors`: `{}`".format(
+                        non_existent_ignore_paths
                     )
+                )
+                self.ignore_all_errors = [
+                    path
+                    for path in self.ignore_all_errors
+                    if path not in non_existent_ignore_paths
+                ]
 
-            for element in self.ignore_infer:
-                if not os.path.exists(element):
-                    LOG.warning(
-                        "Nonexistent path passed in to `ignore_infer` \
-                        field: `{}`".format(
-                            element
-                        )
+            non_existent_infer_paths = [
+                path for path in self.ignore_infer if not os.path.exists(path)
+            ]
+            if non_existent_infer_paths:
+                LOG.warning(
+                    "Nonexistent paths passed in to `ignore_infer`: `{}`".format(
+                        non_existent_infer_paths
                     )
+                )
+                self.ignore_infer = [
+                    path
+                    for path in self.ignore_infer
+                    if path not in non_existent_infer_paths
+                ]
 
             typeshed_subdirectories = os.listdir(self.typeshed)
             if "stdlib" not in typeshed_subdirectories:
