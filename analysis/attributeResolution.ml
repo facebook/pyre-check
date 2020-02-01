@@ -1104,27 +1104,8 @@ module Implementation = struct
         Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
       in
       let add_placeholder_stub_inheritances () =
-        if Option.is_none (AttributeTable.lookup_name table "__init__") then (
-          let annotation = Type.Callable.create ~annotation:Type.none () in
-          AttributeTable.add
-            table
-            (AnnotatedAttribute.create
-               ~location:Location.any
-               ~annotation
-               ~original_annotation:annotation
-               ~abstract:false
-               ~async:false
-               ~class_attribute:false
-               ~defined:true
-               ~initialized:true
-               ~name:"__init__"
-               ~parent:(Reference.show name)
-               ~visibility:ReadWrite
-               ~static:true
-               ~property:false
-               ~value:(Node.create_with_default_location Expression.Expression.Ellipsis));
-          if Option.is_none (AttributeTable.lookup_name table "__getattr__") then
-            let annotation = Type.Callable.create ~annotation:Type.Any () in
+        let add_if_missing ~attribute_name ~annotation =
+          if Option.is_none (AttributeTable.lookup_name table attribute_name) then
             AttributeTable.add
               table
               (AnnotatedAttribute.create
@@ -1136,12 +1117,21 @@ module Implementation = struct
                  ~class_attribute:false
                  ~defined:true
                  ~initialized:true
-                 ~name:"__getattr__"
+                 ~name:attribute_name
                  ~parent:(Reference.show name)
                  ~visibility:ReadWrite
                  ~static:true
                  ~property:false
-                 ~value:(Node.create_with_default_location Expression.Expression.Ellipsis)) )
+                 ~value:(Node.create_with_default_location Expression.Expression.Ellipsis))
+          else
+            ()
+        in
+        add_if_missing
+          ~attribute_name:"__init__"
+          ~annotation:(Type.Callable.create ~annotation:Type.none ());
+        add_if_missing
+          ~attribute_name:"__getattr__"
+          ~annotation:(Type.Callable.create ~annotation:Type.Any ())
       in
       add_actual ();
       if

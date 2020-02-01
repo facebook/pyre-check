@@ -508,17 +508,22 @@ let test_check_attributes context =
       from typing import Any
       from placeholder_stub import StubbedBase
       class Else(StubbedBase):
-          actually_there : int = 9
+          def __init__(self, actually_there: int) -> None:
+             self.actually_there = actually_there
+             super().__init__()
       def main() -> None:
-          instance = Else()
-          reveal_type(instance.prop)
-          reveal_type(Else.class_prop)
-          reveal_type(instance.actually_there)
+          instance = Else(1)
+          a = instance.prop
+          reveal_type(a)
+          a = Else.class_prop
+          reveal_type(a)
+          a = instance.actually_there
+          reveal_type(a)
     |}
     [
-      "Revealed type [-1]: Revealed type for `instance.prop` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `test.Else.class_prop` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `instance.actually_there` is `int`.";
+      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
     ];
 
   (* We allow instance attributes to be accessed via class objects. *)
