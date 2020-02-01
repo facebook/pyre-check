@@ -6,7 +6,7 @@
 from collections import Counter
 from typing import Any, Iterable, List, Optional, Set, Tuple
 
-from .models import SharedTextKind, TraceFrame, TraceKind
+from .models import SharedTextKind, TraceFrame, TraceFrameAnnotation, TraceKind
 from .trace_graph import TraceGraph
 
 
@@ -404,6 +404,11 @@ class TrimmedTraceGraph(TraceGraph):
         """
         trace_frame_id = trace_frame.id.local_id
         self.add_trace_frame(trace_frame)
+
+        annotations = graph.get_condition_annotations(trace_frame_id)
+        for annotation in annotations:
+            self._add_trace_annotation(graph, annotation)
+
         self._populate_shared_text(graph, trace_frame.filename_id)
         self._populate_shared_text(graph, trace_frame.caller_id)
         self._populate_shared_text(graph, trace_frame.callee_id)
@@ -421,3 +426,17 @@ class TrimmedTraceGraph(TraceGraph):
         text = graph._shared_texts[id.local_id]
         if text.id.local_id not in self._shared_texts:
             self.add_shared_text(text)
+
+    def _add_trace_annotation(
+        self, graph: TraceGraph, annotation: TraceFrameAnnotation
+    ) -> None:
+        """Copies the annotation from 'graph' to this (self) graph.
+        Also copies children TraceFrames of the annotation (if any). The
+        parent TraceFrame of the annotation is NOT copied.
+        """
+        self.add_trace_annotation(annotation)
+        children = graph.get_annotation_trace_frames(annotation.id.local_id)
+        child_ids = [child.id.local_id for child in children]
+        for child in children:
+            self.add_trace_frame_annotation_trace_frame_assoc(annotation, child)
+        self._populate_trace(graph, child_ids)

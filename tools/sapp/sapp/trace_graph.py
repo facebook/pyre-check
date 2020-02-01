@@ -151,12 +151,21 @@ class TraceGraph(object):
     def add_trace_annotation(self, annotation: TraceFrameAnnotation) -> None:
         self._trace_annotations[annotation.id.local_id] = annotation
 
-    def get_precondition_annotations(self, pre_id: int) -> List[TraceFrameAnnotation]:
+    def get_condition_annotations(self, cond_id: int) -> List[TraceFrameAnnotation]:
         return [
             t
             for t in self._trace_annotations.values()
-            if t.trace_frame_id.local_id == pre_id
+            if t.trace_frame_id.local_id == cond_id
         ]
+
+    def get_annotation_trace_frames(self, ann_id: int) -> List[TraceFrame]:
+        if ann_id in self._trace_frame_annotation_trace_frame_assoc:
+            return [
+                self.get_trace_frame_from_id(tf_id)
+                for tf_id in self._trace_frame_annotation_trace_frame_assoc[ann_id]
+            ]
+        else:
+            return []
 
     def add_trace_frame(self, trace_frame: TraceFrame) -> None:
         key = (trace_frame.caller_id.local_id, trace_frame.caller_port)
