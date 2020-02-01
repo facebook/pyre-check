@@ -97,7 +97,6 @@ class Persistent(Command):
             match = re.match(r"Content-Length: (?P<bytes>[0-9]+)", line)
             if match:
                 length = int(match.group("bytes"))
-                standard_input.readline()
                 serialized_json = standard_input.read(length)
                 try:
                     parsed = json.loads(serialized_json)
