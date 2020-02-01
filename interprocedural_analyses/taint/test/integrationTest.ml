@@ -20,6 +20,11 @@ type mismatch_file = {
 let test_integration context =
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
   let test_paths =
+    let file_filter name =
+      String.is_suffix ~suffix:".py" name
+      && (not (String.contains name '#'))
+      && not (String.contains name '~')
+    in
     (* Shameful things happen here... *)
     Path.current_working_directory ()
     |> Path.show
@@ -27,7 +32,7 @@ let test_integration context =
     |> (fun root -> Path.create_absolute root)
     |> (fun root ->
          Path.create_relative ~root ~relative:"interprocedural_analyses/taint/test/integration/")
-    |> fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ()
+    |> fun root -> Path.list ~file_filter ~root ()
   in
   let run_test path =
     let create_expected_and_actual_files ~suffix actual =
