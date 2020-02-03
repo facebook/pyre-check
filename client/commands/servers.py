@@ -90,10 +90,10 @@ class Servers(Command):
         if output_format == JSON:
             log.stdout.write(json.dumps(server_details))
         else:
-            log.stdout.write("Pyre servers:\n<pid> <server-root>\n")
+            log.stdout.write("Pyre servers:\n<pid> <server-root>")
             for details in server_details:
                 log.stdout.write(
-                    "{:<{column_one_width}} {}".format(
+                    "\n{:<{column_one_width}} {}".format(
                         details["pid"],
                         details["name"],
                         column_one_width=PID_MAXIMUM_WIDTH,
