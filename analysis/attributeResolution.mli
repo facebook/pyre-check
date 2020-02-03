@@ -170,7 +170,7 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     attribute_name:Identifier.t ->
     string ->
-    AnnotatedAttribute.t option
+    AnnotatedAttribute.instantiated option
 
   val attribute_names
     :  t ->
@@ -192,7 +192,7 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     ?instantiated:Type.t ->
     string ->
-    AnnotatedAttribute.t list option
+    AnnotatedAttribute.instantiated list option
 
   val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
 

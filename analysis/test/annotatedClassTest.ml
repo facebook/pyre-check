@@ -481,13 +481,13 @@ let test_class_attributes context =
           Attribute.with_value attribute ~value:(Node.create_with_default_location Expression.True)
           |> Attribute.with_location ~location:Location.any
         in
-        Attribute.equal (without_locations left) (without_locations right)
+        Attribute.equal_instantiated (without_locations left) (without_locations right)
         && Expression.location_insensitive_compare (Attribute.value left) (Attribute.value right)
            = 0
       in
       Option.equal equal
     in
-    let printer = Option.value_map ~default:"None" ~f:Attribute.show in
+    let printer = Option.value_map ~default:"None" ~f:Attribute.show_instantiated in
     assert_equal ~cmp ~printer expected_attribute actual_attribute
   in
   let create_expected_attribute

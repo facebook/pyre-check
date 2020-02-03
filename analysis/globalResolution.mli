@@ -142,7 +142,11 @@ val global : t -> Reference.t -> AnnotatedGlobalEnvironment.global option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
-val attribute_from_annotation : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
+val attribute_from_annotation
+  :  t ->
+  parent:Type.t ->
+  name:string ->
+  AnnotatedAttribute.instantiated option
 
 val annotation_parser
   :  ?allow_invalid_type_parameters:bool ->
@@ -176,7 +180,7 @@ val attributes
   ?include_generated_attributes:bool ->
   ?instantiated:Type.t ->
   Type.Primitive.t ->
-  AnnotatedAttribute.t list option
+  AnnotatedAttribute.instantiated list option
 
 val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
 
@@ -188,7 +192,7 @@ val attribute_from_class_name
   Type.Primitive.t ->
   name:Identifier.t ->
   instantiated:Type.t ->
-  AnnotatedAttribute.t option
+  AnnotatedAttribute.instantiated option
 
 val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
 

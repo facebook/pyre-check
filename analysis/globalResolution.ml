@@ -533,7 +533,7 @@ let attribute_names
     ?(transitive = false)
     ?(class_attributes = false)
     ?(include_generated_attributes = true)
-    ?instantiated
+    ?instantiated:_
     name
   =
   AttributeResolution.ReadOnly.attribute_names
@@ -541,6 +541,5 @@ let attribute_names
     ~transitive
     ~class_attributes
     ~include_generated_attributes
-    ?instantiated
     name
     ?dependency

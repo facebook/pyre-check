@@ -29,7 +29,7 @@ val has_abstract_base : t -> bool
 val get_abstract_attributes
   :  resolution:GlobalResolution.t ->
   Type.Primitive.t ->
-  AnnotatedAttribute.t list
+  AnnotatedAttribute.instantiated list
 
 val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
 
@@ -38,8 +38,12 @@ val fallback_attribute
   :  resolution:Resolution.t ->
   name:Identifier.t ->
   Type.Primitive.t ->
-  Attribute.t option
+  Attribute.instantiated option
 
 val has_explicit_constructor : Type.Primitive.t -> resolution:GlobalResolution.t -> bool
 
-val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option
+val overrides
+  :  t ->
+  resolution:GlobalResolution.t ->
+  name:Identifier.t ->
+  Attribute.instantiated option

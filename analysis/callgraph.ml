@@ -88,7 +88,7 @@ module type Builder = sig
   val add_property_callees
     :  global_resolution:GlobalResolution.t ->
     resolved_base:Type.t ->
-    attributes:(AnnotatedAttribute.t * Type.t) list ->
+    attributes:(AnnotatedAttribute.instantiated * Type.t) list ->
     name:string ->
     qualifier:Reference.t ->
     location:Location.t ->
