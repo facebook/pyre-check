@@ -258,6 +258,45 @@ let test_meet context =
        (create ~base:(Annotation.create Type.integer) ())
        (create ~base:(Annotation.create Type.float) ()))
     (create ~base:(Annotation.create Type.integer) ());
+  assert_equal
+    (meet
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) );
+  assert_equal
+    (meet
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.float) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) );
+  assert_equal
+    (meet
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.Bottom) );
+  assert_equal
+    (meet
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement
+            ~reference:!&"a.x"
+            ~base:(Annotation.create Type.object_primitive)
+       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) );
 
   (* Mutability. *)
   assert_equal

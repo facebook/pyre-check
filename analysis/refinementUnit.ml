@@ -238,45 +238,86 @@ let join
   valid_join left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
 
-let meet ~global_resolution { base = left; _ } { base = right; _ } =
-  (* TODO: Add handling for meeting attributes *)
-  match left, right with
-  | Some left, Some right ->
-      let mutability =
-        match left.mutability, right.mutability with
-        | Mutable, _
-        | _, Mutable ->
-            Mutable
-        | ( Immutable ({ scope = Local; final = left_final; _ } as left),
-            Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
-            Immutable
-              {
-                scope = Local;
-                original = GlobalResolution.meet global_resolution left.original right.original;
-                final = left_final || right_final;
-              }
-        | (Immutable { scope = Local; _ } as immutable), _
-        | _, (Immutable { scope = Local; _ } as immutable) ->
-            immutable
-        | ( Immutable ({ scope = Global; final = left_final; _ } as left),
-            Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
-            Immutable
-              {
-                scope = Global;
-                original = GlobalResolution.meet global_resolution left.original right.original;
-                final = left_final || right_final;
-              }
-      in
-      create
-        ~base:
-          {
-            annotation = GlobalResolution.meet global_resolution left.annotation right.annotation;
-            mutability;
-          }
-        ()
-  | Some left, _ -> create ~base:left ()
-  | _, Some right -> create ~base:right ()
-  | _ -> create ~base:(Annotation.create Type.Top) ()
+let meet
+    ~global_resolution
+    { base = left_base; attribute_refinements = left_attributes }
+    { base = right_base; attribute_refinements = right_attributes }
+  =
+  let valid_meet left_base right_base =
+    match left_base, right_base with
+    | Some left, Some right ->
+        let mutability =
+          match left.mutability, right.mutability with
+          | Mutable, _
+          | _, Mutable ->
+              Mutable
+          | ( Immutable ({ scope = Local; final = left_final; _ } as left),
+              Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
+              Immutable
+                {
+                  scope = Local;
+                  original = GlobalResolution.meet global_resolution left.original right.original;
+                  final = left_final || right_final;
+                }
+          | (Immutable { scope = Local; _ } as immutable), _
+          | _, (Immutable { scope = Local; _ } as immutable) ->
+              immutable
+          | ( Immutable ({ scope = Global; final = left_final; _ } as left),
+              Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
+              Immutable
+                {
+                  scope = Global;
+                  original = GlobalResolution.meet global_resolution left.original right.original;
+                  final = left_final || right_final;
+                }
+        in
+        let left, right = left.annotation, right.annotation in
+        let base =
+          { annotation = GlobalResolution.meet global_resolution left right; mutability }
+        in
+        ( GlobalResolution.less_or_equal global_resolution ~left ~right
+          || GlobalResolution.less_or_equal global_resolution ~left:right ~right:left,
+          Some base )
+    | None, None ->
+        (* you only want to continue the nested meet should both attribute trees exist *)
+        not (Map.Tree.is_empty left_attributes || Map.Tree.is_empty right_attributes), None
+    | _ -> false, None
+  in
+  let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
+    let attribute_refinements =
+      if valid then
+        meet left_attributes right_attributes
+      else
+        Identifier.Map.Tree.empty
+    in
+    create ~attribute_refinements ()
+    |> fun refinement_unit ->
+    match base with
+    | Some base -> set_base refinement_unit ~base
+    | _ -> refinement_unit
+  and meet left_attributes right_attributes =
+    let meet_refinement_units ~key ~data sofar =
+      match data with
+      | `Both
+          ( { base = left_base; attribute_refinements = left_attributes },
+            { base = right_base; attribute_refinements = right_attributes } ) ->
+          valid_meet left_base right_base
+          |> fun annotation ->
+          Identifier.Map.Tree.set
+            sofar
+            ~key
+            ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
+      | `Left _
+      | `Right _ ->
+          sofar
+    in
+    Identifier.Map.Tree.fold2
+      left_attributes
+      right_attributes
+      ~init:Identifier.Map.Tree.empty
+      ~f:meet_refinement_units
+  in
+  valid_meet left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
 
 let widen ~global_resolution ~widening_threshold ~previous ~next ~iteration =
