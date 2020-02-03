@@ -3,11 +3,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-module Analyze = AnalyzeCommand
 (** Exports Pyre commands exposed in command line interface *)
 
+module Analyze = AnalyzeCommand
 module Check = CheckCommand
 module Incremental = IncrementalCommand
+module Infer = InferCommand
 module Persistent = PersistentCommand
 module Query = QueryCommand
 module Rage = RageCommand
