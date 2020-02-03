@@ -108,6 +108,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         match index with
         | AbstractTreeDomain.Label.Field name when is_numeric name -> "<numeric>"
         | Field name -> name
+        | DictionaryKeys -> "<keys>"
         | Any -> "<unknown>"
       in
       add_first Features.Breadcrumb.FirstIndex feature

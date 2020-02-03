@@ -1175,26 +1175,40 @@ module TreeOfStringSets = struct
             (StringSet)
             ()
 
-  let make_path path = List.map path ~f:AbstractTreeDomain.Label.create_name_field
+  let parse_path path =
+    let parse_element element =
+      match element with
+      | "$keys" -> AbstractTreeDomain.Label.DictionaryKeys
+      | _ -> AbstractTreeDomain.Label.create_name_field element
+    in
+    String.split path ~on:'.' |> List.map ~f:parse_element
+
+
+  let parse_tree components =
+    let parse_component (path, elements) =
+      AbstractDomain.Part (Path, (parse_path path, StringSet.of_list elements))
+    in
+    List.map components ~f:parse_component |> create
+
 
   let unrelated =
     [
-      create [Part (Path, (make_path ["a"], StringSet.of_list ["aa"]))];
-      create [Part (Path, (make_path ["b"], StringSet.of_list ["bb"]))];
+      create [Part (Path, (parse_path "a", StringSet.of_list ["aa"]))];
+      create [Part (Path, (parse_path "b", StringSet.of_list ["bb"]))];
       create
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["ab"]));
-          Part (Path, (make_path ["c"; "d"], StringSet.of_list ["cd"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["ab"]));
+          Part (Path, (parse_path "c.d", StringSet.of_list ["cd"]));
         ];
     ]
 
 
   let values =
     [
-      create [Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]))];
-      create [Part (Path, (make_path ["b"; "c"], StringSet.of_list ["bb"]))];
-      create [Part (Path, (make_path [], StringSet.of_list ["ab"]))];
-      create [Part (Path, (make_path [], StringSet.of_list ["cd"]))];
+      create [Part (Path, (parse_path "a.b", StringSet.of_list ["aa"]))];
+      create [Part (Path, (parse_path "b.c", StringSet.of_list ["bb"]))];
+      create [Part (Path, ([], StringSet.of_list ["ab"]))];
+      create [Part (Path, ([], StringSet.of_list ["cd"]))];
     ]
 
 
@@ -1214,20 +1228,20 @@ module TreeOfStringSets = struct
           Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
     in
     test
-      ~initial:[Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]))]
+      ~initial:[Part (Path, (parse_path "a.b", StringSet.of_list ["aa"]))]
       ~by:StringSet.Element
       ~f:Fn.id
       ~expected:["aa"];
     test
-      ~initial:[Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]))]
+      ~initial:[Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]))]
       ~by:StringSet.Element
       ~f:Fn.id
       ~expected:["bb"; "aa"];
     test
       ~initial:
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:RawPath
       ~f:show_path_element
@@ -1251,8 +1265,8 @@ module TreeOfStringSets = struct
     test
       ~initial:
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:StringSet.Element
       ~f:(fun x -> "t." ^ x)
@@ -1265,8 +1279,8 @@ module TreeOfStringSets = struct
     test
       ~initial:
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:Path
       ~f:(fun (path, element) -> AbstractTreeDomain.Label.Field "prefix" :: path, element)
@@ -1292,8 +1306,8 @@ module TreeOfStringSets = struct
     test
       ~initial:
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:StringSet.Element
       ~f:Fn.id
@@ -1306,8 +1320,8 @@ module TreeOfStringSets = struct
     test
       ~initial:
         [
-          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+          Part (Path, (parse_path "a.b", StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:Path
       ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
@@ -1325,12 +1339,10 @@ module TreeOfStringSets = struct
 
 
   let test_additional _ =
-    let deep_element =
-      create [Part (Path, (make_path ["a"; "b"; "c"; "d"], StringSet.of_list ["x"; "y"]))]
-    in
+    let deep_element = create [Part (Path, (parse_path "a.b.c.d", StringSet.of_list ["x"; "y"]))] in
     assert_equal
       (widen ~iteration:0 ~previous:deep_element ~next:deep_element)
-      (create [Part (Path, (make_path ["a"; "b"; "c"], StringSet.of_list ["x"; "y"]))])
+      (create [Part (Path, (parse_path "a.b.c", StringSet.of_list ["x"; "y"]))])
       ~printer:show
       ~cmp:compare;
     let () =
@@ -1349,28 +1361,64 @@ module TreeOfStringSets = struct
       let tree =
         create
           [
-            Part (Path, (make_path ["a"; "b"], StringSet.of_list ["x"; "y"]));
-            Part (Path, (make_path ["c"], StringSet.of_list ["z"]));
-            Part (Path, (make_path ["d"], StringSet.of_list ["q"]));
+            Part (Path, (parse_path "a.b", StringSet.of_list ["x"; "y"]));
+            Part (Path, (parse_path "c", StringSet.of_list ["z"]));
+            Part (Path, (parse_path "d", StringSet.of_list ["q"]));
           ]
       in
       let mold =
         create
           [
-            Part (Path, (make_path ["a"], StringSet.of_list ["x"; "z"]));
-            Part (Path, (make_path ["c"], StringSet.of_list ["p"]));
+            Part (Path, (parse_path "a", StringSet.of_list ["x"; "z"]));
+            Part (Path, (parse_path "c", StringSet.of_list ["p"]));
           ]
       in
       let expected =
         create
           [
-            Part (Path, (make_path ["a"], StringSet.of_list ["x"; "y"; "z"]));
-            Part (Path, (make_path ["c"], StringSet.of_list ["p"; "z"]));
-            Part (Path, (make_path [], StringSet.of_list ["q"]));
+            Part (Path, (parse_path "a", StringSet.of_list ["x"; "y"; "z"]));
+            Part (Path, (parse_path "c", StringSet.of_list ["p"; "z"]));
+            Part (Path, ([], StringSet.of_list ["q"]));
           ]
       in
       assert_equal expected (shape tree ~mold) ~msg:"molded tree" ~printer:show ~cmp:compare
     in
+    (* Test less or equal. *)
+    assert_equal
+      true
+      (less_or_equal ~left:(parse_tree ["$keys", ["a"]]) ~right:(parse_tree ["$keys", ["a"]]));
+    assert_equal
+      true
+      (less_or_equal ~left:(parse_tree ["$keys", ["a"]]) ~right:(parse_tree ["$keys", ["a"; "b"]]));
+    assert_equal
+      false
+      (less_or_equal ~left:(parse_tree ["$keys", ["a"]]) ~right:(parse_tree ["f", ["b"]]));
+    assert_equal
+      true
+      (less_or_equal
+         ~left:(parse_tree ["a", ["v"]])
+         ~right:(parse_tree ["a", ["v"]; "$keys", ["w"]]));
+    assert_equal
+      false
+      (less_or_equal ~left:(parse_tree ["$keys", ["a"; "b"]]) ~right:(parse_tree ["$keys", ["a"]]));
+    assert_equal
+      false
+      (less_or_equal ~left:(parse_tree ["$keys", ["a"; "b"]]) ~right:(parse_tree []));
+    (* Even though the key taint is not LEQ the any taint in the [*] of the right tree, we view the
+       tree as <= the other one since the key can never be accessed as a value. *)
+    assert_equal
+      false
+      (less_or_equal
+         ~left:(parse_tree ["$keys", ["a"]])
+         ~right:
+           (create [Part (Path, ([AbstractTreeDomain.Label.Any], StringSet.of_list ["distinct"]))]));
+    let assert_join ~expected left right =
+      assert_equal ~cmp:compare ~printer:show expected (join left right)
+    in
+    assert_join
+      (parse_tree ["$keys", ["a"]; "a", ["v"]])
+      (parse_tree ["$keys", ["b"]; "b", ["other"]])
+      ~expected:(parse_tree ["$keys", ["a"; "b"]; "a", ["v"]; "b", ["other"]]);
     ()
 end
 

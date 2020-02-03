@@ -96,6 +96,7 @@ end
 module Label = struct
   type t =
     | Field of string
+    | DictionaryKeys
     | Any
   [@@deriving eq, show, compare, sexp, hash]
 
@@ -103,6 +104,7 @@ module Label = struct
 
   let show = function
     | Field name -> Format.sprintf "[%s]" name
+    | DictionaryKeys -> "[**keys]"
     | Any -> "[*]"
 
 
@@ -404,16 +406,18 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
          joined.[c] = left_tree[c] merge right_tree[c] if c in C
          joined.[l] = left_tree[l] merge right_star if l in L
          joined.[r] = right_tree[r] merge left_star if r in R
+         joined.[<keys>] = left_tree[<keys>] merge right_tree[<keys>]
+
     *)
     let left_star = LabelMap.find left_tree Label.Any in
     let right_star = LabelMap.find right_tree Label.Any in
-    (* merge_left takes care of C and L *)
-    let merge_left ~key:element ~data:left_tree accumulator =
+    (* merge_left takes care of C and L, as well as the dictionary keys *)
+    let merge_left ~key:element ~data:left_subtree accumulator =
       match element with
       | Label.Any ->
           set_or_remove
             element
-            (join_option_trees ancestors ~widen_depth (Some left_tree) right_star)
+            (join_option_trees ancestors ~widen_depth (Some left_subtree) right_star)
             accumulator
       | Label.Field _ -> (
           match LabelMap.find right_tree element with
@@ -421,15 +425,24 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
               (* f in C *)
               set_or_remove
                 element
-                (join_trees ancestors ~widen_depth left_tree right_subtree)
+                (join_trees ancestors ~widen_depth left_subtree right_subtree)
                 accumulator
           | None ->
               (* f in L *)
               set_or_remove
                 element
-                (join_option_trees ancestors ~widen_depth (Some left_tree) right_star)
+                (join_option_trees ancestors ~widen_depth (Some left_subtree) right_star)
                 accumulator )
+      | Label.DictionaryKeys -> (
+          match LabelMap.find right_tree element with
+          | Some right_subtree ->
+              set_or_remove
+                element
+                (join_trees ancestors ~widen_depth left_subtree right_subtree)
+                accumulator
+          | None -> LabelMap.set accumulator ~key:element ~data:left_subtree )
     in
+
     (* merge_right takes care of R *)
     let merge_right ~key:element ~data:right_subtree accumulator =
       match LabelMap.find left_tree element with
@@ -445,7 +458,8 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
               set_or_remove element join_tree accumulator
           | Label.Any ->
               let join_tree = join_option_trees ancestors ~widen_depth None (Some right_subtree) in
-              set_or_remove element join_tree accumulator )
+              set_or_remove element join_tree accumulator
+          | Label.DictionaryKeys -> LabelMap.set accumulator ~key:element ~data:right_subtree )
     in
     let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
     LabelMap.fold ~init:left_done right_tree ~f:merge_right
@@ -479,7 +493,8 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
                 LabelMap.filter_mapi ~f:(join_each_index ~ancestors rest ~subtree) augmented
               in
               create_node_option element children
-          | Label.Field _ ->
+          | Label.Field _
+          | Label.DictionaryKeys ->
               let children =
                 set_or_remove
                   label_element
@@ -492,7 +507,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
   and join_each_index ~ancestors rest ~subtree ~key:element ~data:tree =
     match element with
     | Label.Any -> assign_or_join_path ~do_join:true ~ancestors ~tree rest ~subtree
-    | Label.Field _ -> Some tree
+    | Label.Field _
+    | Label.DictionaryKeys ->
+        Some tree
 
 
   (** Assign subtree subtree into existing tree at path. *)
@@ -510,6 +527,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
         match key with
         | Label.Field _ -> join_path ~ancestors ~tree [Label.Any] ~subtree
         | Label.Any as i -> join_path ~ancestors ~tree [i] ~subtree
+        | Label.DictionaryKeys ->
+            (* Dictionary keys do not collapse into Any, as you can't get them by accessing it. *)
+            Some tree
       in
       option_node_tree acc_opt ~message
     in
@@ -643,14 +663,20 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       (* Check that all on the left <= right_ancestors *)
       less_or_equal_all left_label_map right_ancestors
     else
-      (* Pointwise on non-index elements, and common index elements.
+      (* Pointwise on non-index elements, common index elements, and on dictionary keys.
          Let L, R be the index elements present only in left_label_map and right_label_map
          respectively, and let left_star, right_star be the [*] subtrees of left_label_map and
-         right_label_map respectively.Then,
+         right_label_map respectively. Then,
 
          left_star <= right_star /\
          left_star <= right_label_map[r] for all r in R /\
-         left_label_map[l] <= right_star for all l in L. *)
+         left_label_map[l] <= right_star for all l in L.
+
+         And with the understanding of left_label_map[<keys>] bottom and
+         right_label_map[<keys>] = top if the index is missing (we choose this behavior to ensure
+         that key taint doesn't interfere with value taint),
+
+         left_label_map[<keys>] <= right_label_map[<keys>] *)
       let left_star = LabelMap.find left_label_map Label.Any in
       let right_star = LabelMap.find right_label_map Label.Any in
       let check_less_or_equal ~key:label_element ~data:left_subtree accumulator =
@@ -671,6 +697,10 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
                   (* in common *)
                   less_or_equal_tree left_subtree right_ancestors right_subtree
                   |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
+          | Label.DictionaryKeys -> (
+              match LabelMap.find right_label_map label_element with
+              | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
+              | None -> Checks.false_witness ~message:(fun () -> "[right <keys>]") )
       in
       (* Check that all non-star index fields on right are larger than star1, unless they were
          matched directly. *)

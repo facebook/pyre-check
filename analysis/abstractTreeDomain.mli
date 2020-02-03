@@ -12,6 +12,7 @@ end
 module Label : sig
   type t =
     | Field of string
+    | DictionaryKeys
     | Any
   [@@deriving eq, show, compare, sexp, hash]
 
