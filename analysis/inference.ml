@@ -8,7 +8,7 @@ open Ast
 open Expression
 open Pyre
 open Statement
-module Error = AnalysisError
+module Error = InferenceError
 
 let add_local ~resolution ~name ~annotation =
   match name_to_reference name with

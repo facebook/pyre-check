@@ -66,7 +66,7 @@ let make_errors ~context ?(handle = "test.py") source =
     List.map
       errors
       ~f:
-        (Error.instantiate
+        (AnalysisError.instantiate
            ~lookup:
              (AstEnvironment.ReadOnly.get_real_path_relative
                 ~configuration:(ScratchProject.configuration_of project)
@@ -174,7 +174,7 @@ module ScratchServer = struct
     (* Associate the new errors with new files *)
     let errors = Ast.Reference.Table.create () in
     List.iter type_errors ~f:(fun error ->
-        let key = Error.path error in
+        let key = AnalysisError.path error in
         Hashtbl.add_multi errors ~key ~data:error);
     let server_configuration =
       Server.Operations.create_configuration

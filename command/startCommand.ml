@@ -30,7 +30,7 @@ let computation_thread
           | None -> [error]
           | Some errors -> error :: errors
         in
-        let key = Error.Instantiated.path error in
+        let key = Analysis.AnalysisError.Instantiated.path error in
         Hashtbl.update table key ~f:update
       in
       let add_empty_error_array reference =

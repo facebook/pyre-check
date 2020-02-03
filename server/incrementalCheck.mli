@@ -4,7 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 open Core
 
-type errors = State.Error.t list [@@deriving show]
+type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 val recheck
   :  module_tracker:Analysis.ModuleTracker.t ->
@@ -15,7 +15,7 @@ val recheck
   lookups:Analysis.Lookup.t String.Table.t ->
   configuration:Configuration.Analysis.t ->
   PyrePath.t list ->
-  Analysis.TypeEnvironment.t * Analysis.Error.t list
+  Analysis.TypeEnvironment.t * Analysis.AnalysisError.t list
 
 val recheck_with_state
   :  state:State.t ->

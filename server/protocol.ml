@@ -208,7 +208,7 @@ module TypeQuery = struct
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
-    | Errors of Analysis.Error.Instantiated.t list
+    | Errors of AnalysisError.Instantiated.t list
     | Help of string
     | FoundAttributes of attribute list
     | FoundDefines of define list
@@ -295,7 +295,7 @@ module TypeQuery = struct
               `List
                 (List.map
                    ~f:(fun error ->
-                     Analysis.Error.Instantiated.to_json ~show_error_traces:true error)
+                     AnalysisError.Instantiated.to_json ~show_error_traces:true error)
                    errors) );
           ]
     | Help string -> `Assoc ["help", `String string]
@@ -450,7 +450,7 @@ type response =
   | LanguageServerProtocolResponse of string
   | ClientConnectionResponse of client
   | ClientExitResponse of client
-  | TypeCheckResponse of Error.Instantiated.t list
+  | TypeCheckResponse of AnalysisError.Instantiated.t list
   | TypeQueryResponse of TypeQuery.response
   | StopResponse
   | GetDefinitionResponse of Location.WithPath.t option

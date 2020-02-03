@@ -7,7 +7,7 @@ type result = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
   global_environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
-  errors: Analysis.Error.t list;
+  errors: Analysis.InferenceError.t list;
 }
 
 val infer : configuration:Configuration.Analysis.t -> scheduler:Scheduler.t -> unit -> result

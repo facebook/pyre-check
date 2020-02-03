@@ -20,7 +20,7 @@ module AnnotationEdit : sig
 
   val new_text : t -> string
 
-  val create : file:File.t -> error:Analysis.Error.t option -> t option
+  val create : file:File.t -> error:Analysis.AnalysisError.t option -> t option
 end
 
 val process_client_shutdown_request

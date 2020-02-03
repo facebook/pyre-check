@@ -8,4 +8,4 @@ val run_additional_check
   environment:Analysis.TypeEnvironment.t ->
   source_paths:Ast.SourcePath.t list ->
   check:string ->
-  Analysis.Error.Instantiated.t list
+  Analysis.AnalysisError.Instantiated.t list

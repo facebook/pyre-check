@@ -5,7 +5,7 @@
 
 module Response : sig
   module TypeErrors : sig
-    val to_json : Analysis.Error.Instantiated.t list -> Yojson.Safe.json
+    val to_json : Analysis.AnalysisError.Instantiated.t list -> Yojson.Safe.json
   end
 
   module Stop : sig

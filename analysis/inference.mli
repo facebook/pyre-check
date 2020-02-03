@@ -5,7 +5,6 @@
 
 open Ast
 open Statement
-module Error = AnalysisError
 
 module type Context = sig
   val configuration : Configuration.Analysis.t
@@ -37,4 +36,4 @@ val run
   :  configuration:Configuration.Analysis.t ->
   global_resolution:GlobalResolution.t ->
   source:Source.t ->
-  Error.t list
+  InferenceError.t list

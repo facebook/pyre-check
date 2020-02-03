@@ -22,7 +22,7 @@ let run_additional_check ~configuration ~environment ~source_paths ~check =
           Check.run ~configuration ~environment:(TypeEnvironment.read_only environment) ~source)
       |> List.map
            ~f:
-             (Analysis.Error.instantiate
+             (AnalysisError.instantiate
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
   | None ->

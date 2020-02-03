@@ -5,7 +5,6 @@
 
 open Core
 open Network
-module Error = Analysis.Error
 
 type raw_connections = {
   socket: Socket.t;
@@ -23,7 +22,7 @@ type t = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.TypeEnvironment.t;
-  errors: Error.t list Ast.Reference.Table.t;
+  errors: Analysis.AnalysisError.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
   symlink_targets_to_sources: PyrePath.t String.Table.t;
   scheduler: Scheduler.t;

@@ -1577,11 +1577,11 @@ let test_incremental_attribute_caching context =
       |> List.map ~f:snd
       |> List.concat
       |> List.map ~f:(fun error ->
-             Error.instantiate
+             AnalysisError.instantiate
                ~lookup:
                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
                error
-             |> Error.Instantiated.description ~show_error_traces:false)
+             |> AnalysisError.Instantiated.description ~show_error_traces:false)
     in
     let printer = String.concat ~sep:"\n" in
     assert_equal ~printer expected (get_error_strings state)

@@ -7,7 +7,7 @@ module TypeCheck = Analysis.TypeCheck
 open Core
 open OUnit2
 open Analysis
-module AnalysisError = Analysis.Error
+module AnalysisError = Analysis.AnalysisError
 open Ast
 open Pyre
 open Taint

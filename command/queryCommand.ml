@@ -30,7 +30,7 @@ let run_query log_directory serialized local_root () =
                   ( "response",
                     `List
                       (List.map
-                         ~f:(Analysis.Error.Instantiated.to_json ~show_error_traces:false)
+                         ~f:(Analysis.AnalysisError.Instantiated.to_json ~show_error_traces:false)
                          errors) );
                 ]
           | response ->

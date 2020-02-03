@@ -10,7 +10,7 @@ type result = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.TypeEnvironment.t;
-  errors: Analysis.Error.t list;
+  errors: Analysis.AnalysisError.t list;
 }
 
 let check

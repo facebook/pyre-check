@@ -11,7 +11,7 @@ type result = {
   module_tracker: ModuleTracker.t;
   ast_environment: AstEnvironment.t;
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
-  errors: Error.t list;
+  errors: Analysis.InferenceError.t list;
 }
 
 let run_infer ~scheduler ~configuration ~global_resolution qualifiers =

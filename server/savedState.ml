@@ -47,10 +47,10 @@ module StoredConfiguration = Memory.Serializer (struct
 end)
 
 module ServerErrors = Memory.Serializer (struct
-  type t = Analysis.Error.t list Reference.Table.t
+  type t = Analysis.AnalysisError.t list Reference.Table.t
 
   module Serialized = struct
-    type t = (Reference.t * Analysis.Error.t list) list
+    type t = (Reference.t * Analysis.AnalysisError.t list) list
 
     let prefix = Prefix.make ()
 

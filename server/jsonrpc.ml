@@ -26,8 +26,9 @@ module Response = struct
           [
             ( "errors",
               `List
-                (List.map errors ~f:(Analysis.Error.Instantiated.to_json ~show_error_traces:false))
-            );
+                (List.map
+                   errors
+                   ~f:(Analysis.AnalysisError.Instantiated.to_json ~show_error_traces:false)) );
           ]
       in
       `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", errors]

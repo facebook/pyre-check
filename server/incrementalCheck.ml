@@ -6,11 +6,10 @@
 open Core
 open Ast
 open Analysis
-open State
 open Configuration.Analysis
 open Pyre
 
-type errors = State.Error.t list [@@deriving show]
+type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 let recheck
     ~module_tracker
@@ -219,7 +218,7 @@ let recheck
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
-      let key = Error.path error in
+      let key = AnalysisError.path error in
       Hashtbl.add_multi errors ~key ~data:error);
 
   Statistics.performance

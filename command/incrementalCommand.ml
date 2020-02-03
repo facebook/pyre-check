@@ -89,7 +89,7 @@ let run
                   `List
                     (List.map
                        ~f:(fun error ->
-                         Analysis.Error.Instantiated.to_json ~show_error_traces error)
+                         Analysis.AnalysisError.Instantiated.to_json ~show_error_traces error)
                        errors) );
               ]
         | _ -> failwith "Unexpected response in incremental check."

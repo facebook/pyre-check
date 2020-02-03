@@ -104,7 +104,7 @@ let start_from_scratch ~connections ~configuration () =
   let errors =
     let table = Ast.Reference.Table.create () in
     let add_error error =
-      let key = Error.path error in
+      let key = Analysis.AnalysisError.path error in
       Hashtbl.add_multi table ~key ~data:error
     in
     List.iter errors ~f:add_error;

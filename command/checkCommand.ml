@@ -108,7 +108,7 @@ let run_check
       List.map
         errors
         ~f:
-          (Error.instantiate
+          (AnalysisError.instantiate
              ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     Yojson.Safe.to_string
@@ -117,7 +117,7 @@ let run_check
           ( "errors",
             `List
               (List.map
-                 ~f:(fun error -> Error.Instantiated.to_json ~show_error_traces error)
+                 ~f:(fun error -> AnalysisError.Instantiated.to_json ~show_error_traces error)
                  errors) );
         ])
     |> Log.print "%s")

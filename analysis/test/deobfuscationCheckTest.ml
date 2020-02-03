@@ -26,7 +26,7 @@ let assert_deobfuscation ~context source expected =
         ~source
     in
     match errors with
-    | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
+    | [{ AnalysisError.kind = AnalysisError.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
   (assert_source_equal ~location_insensitive:true) (parse ~handle expected) actual;

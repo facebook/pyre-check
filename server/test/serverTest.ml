@@ -48,7 +48,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
   in
   let errors = Reference.Table.create () in
   List.iter type_errors ~f:(fun error ->
-      let key = Error.path error in
+      let key = AnalysisError.path error in
       Hashtbl.add_multi errors ~key ~data:error);
   let state =
     {

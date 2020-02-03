@@ -47,13 +47,13 @@ let assert_errors
   let errors =
     errors
     |> List.map ~f:(fun error ->
-           Analysis.Error.instantiate
+           Analysis.AnalysisError.instantiate
              ~lookup:
                (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
                   ~configuration
                   (Analysis.AstEnvironment.read_only ast_environment))
              error
-           |> Analysis.Error.Instantiated.description ~show_error_traces:false)
+           |> Analysis.AnalysisError.Instantiated.description ~show_error_traces:false)
   in
   Memory.reset_shared_memory ();
   assert_equal

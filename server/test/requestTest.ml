@@ -10,6 +10,7 @@ open Pyre
 open Server
 open Test
 open CommandTest
+module Error = Analysis.AnalysisError
 
 let int_request_id id = LanguageServer.Types.RequestId.Int id
 
@@ -447,7 +448,7 @@ let test_process_type_query_request context =
 
 let assert_errors_equal ~actual_errors ~expected_errors =
   let actual_errors =
-    List.map actual_errors ~f:(Analysis.Error.Instantiated.description ~show_error_traces:false)
+    List.map actual_errors ~f:(Error.Instantiated.description ~show_error_traces:false)
   in
   let equal left right =
     List.equal
@@ -741,7 +742,7 @@ let test_process_get_definition_request context =
 
 let test_create_annotation_edit context =
   let root = bracket_tmpdir context |> Path.create_absolute in
-  let mock_missing_annotation : Analysis.Error.missing_annotation =
+  let mock_missing_annotation : Error.missing_annotation =
     {
       name = Reference.create "x";
       annotation = Some (Type.Literal (Integer 1));
@@ -750,7 +751,7 @@ let test_create_annotation_edit context =
       thrown_at_source = true;
     }
   in
-  let mock_mismatch : Analysis.Error.mismatch =
+  let mock_mismatch : Error.mismatch =
     { actual = Type.integer; expected = Type.string; due_to_invariance = false }
   in
   let location = { Location.WithModule.any with start = { line = 0; column = 0 } } in
@@ -789,8 +790,8 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
-           kind = Analysis.Error.MissingReturnAnnotation mock_missing_annotation;
+           Error.location;
+           kind = Error.MissingReturnAnnotation mock_missing_annotation;
            signature = +mock_signature;
          });
   assert_edit
@@ -806,8 +807,8 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
-           kind = Analysis.Error.MissingGlobalAnnotation mock_missing_annotation;
+           Error.location;
+           kind = Error.MissingGlobalAnnotation mock_missing_annotation;
            signature = +mock_signature;
          });
   assert_edit
@@ -824,8 +825,8 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
-           kind = Analysis.Error.MissingParameterAnnotation mock_missing_annotation;
+           Error.location;
+           kind = Error.MissingParameterAnnotation mock_missing_annotation;
            signature = +mock_signature;
          });
   assert_edit
@@ -842,9 +843,9 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
+           Error.location;
            kind =
-             Analysis.Error.MissingAttributeAnnotation
+             Error.MissingAttributeAnnotation
                { parent = Type.Any; missing_annotation = mock_missing_annotation };
            signature = +mock_signature;
          });
@@ -862,9 +863,9 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
+           Error.location;
            kind =
-             Analysis.Error.IncompatibleReturnType
+             Error.IncompatibleReturnType
                {
                  mismatch = mock_mismatch;
                  is_implicit = false;
@@ -886,9 +887,9 @@ let test_create_annotation_edit context =
     ~error:
       (Some
          {
-           Analysis.Error.location;
+           Error.location;
            kind =
-             Analysis.Error.IncompatibleVariableType
+             Error.IncompatibleVariableType
                { name = !&"x"; mismatch = mock_mismatch; declare_location = instantiated_location };
            signature = +mock_signature;
          })

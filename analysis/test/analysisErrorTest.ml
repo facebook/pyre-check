@@ -10,6 +10,7 @@ open Analysis
 open Pyre
 open Statement
 open Test
+module Error = Analysis.AnalysisError
 
 let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
   {

@@ -1671,27 +1671,28 @@ let assert_errors
       check ~configuration ~environment ~source
       |> List.map
            ~f:
-             (Error.instantiate
+             (AnalysisError.instantiate
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->
-          let location = Error.Instantiated.location error in
+          let location = AnalysisError.Instantiated.location error in
           Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
     in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then
         let errors =
           List.map
-            ~f:(fun error -> Error.Instantiated.description error ~show_error_traces ~concise)
+            ~f:(fun error ->
+              AnalysisError.Instantiated.description error ~show_error_traces ~concise)
             errors
           |> String.concat ~sep:"\n"
         in
         Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
     assert_false found_any;
     List.map
-      ~f:(fun error -> Error.Instantiated.description error ~show_error_traces ~concise)
+      ~f:(fun error -> AnalysisError.Instantiated.description error ~show_error_traces ~concise)
       errors
   in
   Memory.reset_shared_memory ();

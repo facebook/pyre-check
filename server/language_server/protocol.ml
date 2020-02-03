@@ -29,8 +29,8 @@ module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
   let diagnostic_severity error =
-    let kind = Error.Instantiated.kind error in
-    match Error.language_server_hint kind with
+    let kind = AnalysisError.Instantiated.kind error in
+    match AnalysisError.language_server_hint kind with
     | true -> Some DiagnosticSeverity.Information
     | false -> Some DiagnosticSeverity.Error
 

@@ -24,7 +24,7 @@ let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } pat
 
 let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
   let ast_environment = AstEnvironment.read_only ast_environment in
-  Error.instantiate
+  AnalysisError.instantiate
     ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
     error
 
@@ -49,31 +49,32 @@ module AnnotationEdit = struct
 
   let is_replacement_edit kind =
     match kind with
-    | Error.IncompatibleVariableType _
-    | Error.IncompatibleReturnType _ ->
+    | AnalysisError.IncompatibleVariableType _
+    | AnalysisError.IncompatibleReturnType _ ->
         true
     | _ -> false
 
 
-  let create_range ~error:{ Error.kind = error_kind; location; _ } ~file =
+  let create_range ~error:{ AnalysisError.kind = error_kind; location; _ } ~file =
     let token =
       match error_kind with
-      | Error.MissingReturnAnnotation _ -> Some "):"
-      | Error.MissingAttributeAnnotation { missing_annotation = { name; _ }; _ }
-      | Error.MissingParameterAnnotation { name; _ }
-      | Error.MissingGlobalAnnotation { name; _ } ->
+      | AnalysisError.MissingReturnAnnotation _ -> Some "):"
+      | AnalysisError.MissingAttributeAnnotation { missing_annotation = { name; _ }; _ }
+      | AnalysisError.MissingParameterAnnotation { name; _ }
+      | AnalysisError.MissingGlobalAnnotation { name; _ } ->
           Some (Format.asprintf "%a" Reference.pp_sanitized name)
-      | Error.IncompatibleReturnType { mismatch = { expected; _ }; _ } ->
+      | AnalysisError.IncompatibleReturnType { mismatch = { expected; _ }; _ } ->
           Some (Format.asprintf " -> %s" (Type.show expected))
-      | Error.IncompatibleVariableType { name; mismatch = { expected; _ }; _ } ->
+      | AnalysisError.IncompatibleVariableType { name; mismatch = { expected; _ }; _ } ->
           Some (Format.asprintf "%a: %s" Reference.pp_sanitized name (Type.show expected))
       | _ -> None
     in
     let start_line =
       let line =
         match error_kind with
-        | Error.IncompatibleReturnType { define_location; _ } -> Location.line define_location
-        | Error.IncompatibleVariableType { declare_location; _ } ->
+        | AnalysisError.IncompatibleReturnType { define_location; _ } ->
+            Location.line define_location
+        | AnalysisError.IncompatibleVariableType { declare_location; _ } ->
             Location.WithPath.line declare_location
         | _ -> Location.WithModule.line location
       in
@@ -90,10 +91,10 @@ module AnnotationEdit = struct
             in
             let end_ =
               match error_kind with
-              | Error.IncompatibleVariableType _
-              | Error.IncompatibleReturnType _
-              | Error.MissingGlobalAnnotation _
-              | Error.MissingAttributeAnnotation _ ->
+              | AnalysisError.IncompatibleVariableType _
+              | AnalysisError.IncompatibleReturnType _
+              | AnalysisError.MissingGlobalAnnotation _
+              | AnalysisError.MissingAttributeAnnotation _ ->
                   let { LanguageServer.Types.Position.character; _ } = position in
                   { position with character = character + String.length token }
               | _ -> position
@@ -111,22 +112,22 @@ module AnnotationEdit = struct
 
   let create ~file ~error =
     error
-    >>| (fun ({ Error.kind; _ } as error) ->
+    >>| (fun ({ AnalysisError.kind; _ } as error) ->
           let format_type annotation =
             Type.weaken_literals annotation |> Type.infer_transform |> Type.show
           in
           let new_text =
             match kind with
-            | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
+            | AnalysisError.MissingReturnAnnotation { annotation = Some annotation; _ } ->
                 Some (" -> " ^ format_type annotation)
-            | Error.MissingAttributeAnnotation
+            | AnalysisError.MissingAttributeAnnotation
                 { missing_annotation = { annotation = Some annotation; _ }; _ }
-            | Error.MissingParameterAnnotation { annotation = Some annotation; _ }
-            | Error.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
+            | AnalysisError.MissingParameterAnnotation { annotation = Some annotation; _ }
+            | AnalysisError.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
                 Some (": " ^ format_type annotation)
-            | Error.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
+            | AnalysisError.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
                 Some (Format.asprintf "-> %s:" @@ format_type annotation)
-            | Error.IncompatibleVariableType { mismatch = { actual = annotation; _ }; _ } ->
+            | AnalysisError.IncompatibleVariableType { mismatch = { actual = annotation; _ }; _ } ->
                 Some (Format.asprintf ": %s " @@ format_type annotation)
             | _ -> None
           in
@@ -730,8 +731,8 @@ let process_type_query_request
                   reference
               in
               errors
-              |> List.map ~f:(Analysis.Error.instantiate ~lookup)
-              |> List.map ~f:(Analysis.Error.Instantiated.description ~show_error_traces:false)
+              |> List.map ~f:(AnalysisError.instantiate ~lookup)
+              |> List.map ~f:(AnalysisError.Instantiated.description ~show_error_traces:false)
               |> String.concat ~sep:", "
             in
             TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions) )
@@ -823,7 +824,7 @@ let process_display_type_errors_request ~state ~configuration paths =
   let errors =
     let { errors; _ } = state in
     match paths with
-    | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:Error.compare
+    | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:AnalysisError.compare
     | _ -> List.concat_map ~f:(errors_of_path ~configuration ~state) paths
   in
   let errors = List.map errors ~f:(instantiate_error ~configuration ~state) in
