@@ -169,6 +169,39 @@ let test_join context =
        (create ~base:(Annotation.create Type.integer) ())
        (create ~base:(Annotation.create Type.float) ()))
     (create ~base:(Annotation.create Type.float) ());
+  assert_equal
+    (join
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) );
+  assert_equal
+    (join
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement
+         ~reference:!&"a.x"
+         ~base:(Annotation.create Type.(Union [integer; string])) );
+  assert_equal
+    (join
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement
+            ~reference:!&"a.x"
+            ~base:(Annotation.create Type.object_primitive)
+       |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.object_primitive)
+    );
 
   (* Mutability. *)
   assert_equal

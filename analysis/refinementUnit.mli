@@ -9,7 +9,7 @@ type t [@@deriving eq, show]
 
 val base : t -> Annotation.t option
 
-val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.t -> unit -> t
+val create : ?base:Annotation.t -> ?attribute_refinements:t Identifier.Map.Tree.t -> unit -> t
 
 val add_attribute_refinement : t -> reference:Reference.t -> base:Annotation.t -> t
 
