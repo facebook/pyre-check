@@ -163,6 +163,7 @@ class TestCommand(unittest.TestCase, ABC):
             self.directory / working_directory if working_directory else self.directory
         )
         prompt_inputs = "\n".join(prompts).encode() if prompts else None
+        # TODO(T60769864): Consider building shim if it exists.
         command: List[str] = [
             "pyre",
             "--noninteractive",
@@ -281,10 +282,17 @@ class TestCommand(unittest.TestCase, ABC):
         return context
 
     def assert_succeeded(self, result: PyreResult) -> None:
-        self.assertEqual(result.return_code, 0)
+        self.assertEqual(result.return_code, 0, self.get_context(result))
 
     def assert_failed(self, result: PyreResult) -> None:
-        self.assertEqual(result.return_code, 2)
+        self.assertEqual(result.return_code, 2, self.get_context(result))
+
+    def assert_output_matches(
+        self, result: PyreResult, expected_pattern: Pattern[str]
+    ) -> None:
+        output = result.output or ""
+        result_match = re.match(expected_pattern, output.strip())
+        self.assertTrue(result_match is not None, self.get_context(result))
 
     def assert_has_errors(self, result: PyreResult) -> None:
         self.assertEqual(result.return_code, 1, self.get_context(result))
@@ -309,6 +317,13 @@ class TestCommand(unittest.TestCase, ABC):
         running_servers = self.get_servers()
         server_exists = any(server["name"] == server_name for server in running_servers)
         self.assertTrue(server_exists, self.get_context(result))
+
+    def assert_server_does_not_exist(
+        self, server_name: str, result: Optional[PyreResult] = None
+    ) -> None:
+        running_servers = self.get_servers()
+        server_exists = any(server["name"] == server_name for server in running_servers)
+        self.assertFalse(server_exists, self.get_context(result))
 
     def assert_no_servers_exist(self, result: Optional[PyreResult] = None) -> None:
         self.assertEqual(self.get_servers(), [], self.get_context(result))
@@ -410,6 +425,7 @@ class InitializeTest(TestCommand):
     def initial_filesystem(self) -> None:
         self.create_file("fake_pyre.bin")
 
+    # TODO(T57341910): Make prompting explicit, test conditions that skip prompts.
     def test_initialize_project_configuration(self) -> None:
         with _watch_directory(self.directory):
             self.run_pyre(
@@ -454,6 +470,7 @@ class KillTest(TestCommand):
         self.create_file_with_error("local_two/has_type_error.py")
 
     def test_kill_without_server(self) -> None:
+        self.assert_no_servers_exist()
         result = self.run_pyre("kill")
         self.assert_succeeded(result)
         self.assert_no_servers_exist()
@@ -533,11 +550,22 @@ class ServersTest(TestCommand):
         self.create_file_with_error("local_two/has_type_error.py")
 
     def test_list_servers(self) -> None:
-        self.run_pyre("servers", "list")
+        result = self.run_pyre("--output=json", "servers", "list")
+        self.assert_output_matches(result, re.compile(r"\[\]"))
         self.run_pyre("-l", "local_one")
-        self.run_pyre("servers", "list")
+        result = self.run_pyre("servers", "list")
+        self.assert_output_matches(
+            result, re.compile(r"\[\{\"pid\": .*, \"name\": \"local_one\"\}\]")
+        )
         self.run_pyre("-l", "local_two")
-        self.run_pyre("servers", "list")
+        result = self.run_pyre("servers", "list")
+        self.assert_output_matches(
+            result,
+            re.compile(
+                r"\[\{\"pid\": .*, \"name\": \"(local_one|local_two)\"\}, "
+                + r"{\"pid\": .*, \"name\": \"(local_one|local_two)\"\}\]"
+            ),
+        )
 
 
 class StartTest(TestCommand):
@@ -572,20 +600,31 @@ class StopTest(TestCommand):
         self.create_file_with_error("local_two/has_type_error.py")
 
     def test_stop_without_server(self) -> None:
-        self.run_pyre("stop")
-        self.run_pyre("-l", "local_one", "stop")
+        self.assert_no_servers_exist()
+        result = self.run_pyre("stop")
+        self.assert_succeeded(result)
+        result = self.run_pyre("-l", "local_one", "stop")
+        self.assert_succeeded(result)
+        self.assert_no_servers_exist()
 
     def test_stop(self) -> None:
         self.run_pyre("-l", "local_one", "start")
+        self.assert_server_exists("local_one")
         self.run_pyre("-l", "local_two", "stop")
+        self.assert_server_exists("local_one")
         self.run_pyre("-l", "local_one", "stop")
+        self.assert_no_servers_exist()
 
         self.run_pyre("-l", "local_one", "restart")
+        self.assert_server_exists("local_one")
         self.run_pyre("-l", "local_one", "stop")
+        self.assert_no_servers_exist()
 
         self.run_pyre("-l", "local_one", "start")
         self.run_pyre("-l", "local_two", "start")
         self.run_pyre("-l", "local_one", "stop")
+        self.assert_server_exists("local_two")
+        self.assert_server_does_not_exist("local_one")
 
 
 if __name__ == "__main__":
