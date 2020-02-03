@@ -208,16 +208,17 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
 
 
 let resolve_property_targets ~resolution ~base ~attribute =
-  let receiver_type = Resolution.resolve resolution base in
   match get_property_defining_parent ~resolution ~base ~attribute with
   | None -> None
-  | Some defining_parent when Type.is_meta receiver_type ->
-      Some [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
   | Some defining_parent ->
-      let callee = Reference.create ~prefix:defining_parent attribute in
-      compute_indirect_targets ~resolution ~receiver_type callee
-      |> List.map ~f:(fun target -> target, None)
-      |> Option.some
+      let receiver_type = Resolution.resolve resolution base in
+      if Type.is_meta receiver_type then
+        Some [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
+      else
+        let callee = Reference.create ~prefix:defining_parent attribute in
+        compute_indirect_targets ~resolution ~receiver_type callee
+        |> List.map ~f:(fun target -> target, None)
+        |> Option.some
 
 
 let resolve_call_targets ~resolution call =
