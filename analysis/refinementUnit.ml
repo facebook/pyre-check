@@ -14,10 +14,6 @@ type t = {
 }
 [@@deriving eq]
 
-let to_tree attribute_refinements = Identifier.Map.to_tree attribute_refinements
-
-let from_tree attribute_refinements = Identifier.Map.of_tree attribute_refinements
-
 let rec pp format { base; attribute_refinements } =
   let attribute_map_entry (identifier, refinement_unit) =
     Format.asprintf "%a -> %a" Identifier.pp identifier pp refinement_unit
@@ -25,7 +21,7 @@ let rec pp format { base; attribute_refinements } =
   ( match base with
   | Some base -> Format.fprintf format "[Base: %a; " Annotation.pp base
   | None -> Format.fprintf format "[Base: (); " );
-  Map.to_alist (from_tree attribute_refinements)
+  Map.Tree.to_alist attribute_refinements
   |> List.map ~f:attribute_map_entry
   |> String.concat ~sep:", "
   |> Format.fprintf format "Attributes: [%s]]"
@@ -33,7 +29,7 @@ let rec pp format { base; attribute_refinements } =
 
 let show = Format.asprintf "%a" pp
 
-let find = Identifier.Map.find
+let find = Identifier.Map.Tree.find
 
 let base { base; _ } = base
 
@@ -53,15 +49,13 @@ let add_attribute_refinement refinement_unit ~reference ~base =
         {
           refinement_unit with
           attribute_refinements =
-            (let attribute_refinements = from_tree attribute_refinements in
-             attribute_refinements
-             |> Map.set
-                  ~key:attribute
-                  ~data:
-                    ( find attribute_refinements attribute
-                    |> Option.value ~default:(create ())
-                    |> add_attribute_refinement ~base ~attributes )
-             |> to_tree);
+            attribute_refinements
+            |> Identifier.Map.Tree.set
+                 ~key:attribute
+                 ~data:
+                   ( find attribute_refinements attribute
+                   |> Option.value ~default:(create ())
+                   |> add_attribute_refinement ~base ~attributes );
         }
   in
   add_attribute_refinement refinement_unit ~base ~attributes:(reference |> Reference.as_list)
@@ -74,7 +68,7 @@ let annotation refinement_unit ~reference =
     match attributes with
     | [] -> base
     | attribute :: attributes -> (
-        match find (from_tree attribute_refinements) attribute with
+        match find attribute_refinements attribute with
         | Some refinement_unit -> annotation refinement_unit ~attributes
         | None -> None )
   in
