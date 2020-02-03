@@ -7,6 +7,7 @@ module Analyze = AnalyzeCommand
 module Check = CheckCommand
 module Incremental = IncrementalCommand
 module Infer = InferCommand
+module Lint = LintCommand
 module Persistent = PersistentCommand
 module Query = QueryCommand
 module Rage = RageCommand
