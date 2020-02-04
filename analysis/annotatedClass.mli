@@ -29,7 +29,7 @@ val has_abstract_base : t -> bool
 val get_abstract_attributes
   :  resolution:GlobalResolution.t ->
   Type.Primitive.t ->
-  AnnotatedAttribute.instantiated list
+  AttributeResolution.uninstantiated_attribute list
 
 val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
 

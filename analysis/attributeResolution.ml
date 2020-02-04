@@ -29,6 +29,10 @@ module UninstantiatedAnnotation = struct
   [@@deriving compare]
 end
 
+type uninstantiated = UninstantiatedAnnotation.t
+
+type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
+
 module UninstantiatedAttributeTable = struct
   type element = UninstantiatedAnnotation.t AnnotatedAttribute.t [@@deriving compare]
 
@@ -3295,7 +3299,6 @@ module ReadOnly = struct
       ~include_generated_attributes
       ?(special_method = false)
       ?dependency
-      ?instantiated
       class_name
     =
     get
@@ -3310,7 +3313,6 @@ module ReadOnly = struct
         assumptions = empty_assumptions;
       }
     >>| UninstantiatedAttributeTable.to_list
-    >>| List.map ~f:(instantiate_attribute read_only ?instantiated)
 
 
   let check_invalid_type_parameters =

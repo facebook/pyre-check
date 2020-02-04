@@ -425,7 +425,9 @@ let test_class_attributes context =
     assert_equal
       ~cmp:attribute_list_equal
       ~printer:print_attributes
-      (GlobalResolution.attributes ~resolution definition |> fun a -> Option.value_exn a)
+      ( GlobalResolution.attributes ~resolution definition
+      |> (fun a -> Option.value_exn a)
+      |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution) )
       attributes
   in
   assert_attributes

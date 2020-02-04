@@ -138,6 +138,10 @@ val weaken_mutable_literals
   comparator:(left:Type.t -> right:Type.t -> bool) ->
   Type.t
 
+type uninstantiated
+
+type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
+
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
@@ -189,9 +193,8 @@ module AttributeReadOnly : sig
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
-    ?instantiated:Type.t ->
     string ->
-    AnnotatedAttribute.instantiated list option
+    uninstantiated_attribute list option
 
   val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
 
@@ -246,6 +249,13 @@ module AttributeReadOnly : sig
     ClassSummary.t Node.t ->
     instantiated:Type.t ->
     Type.t
+
+  val instantiate_attribute
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    ?instantiated:Type.t ->
+    uninstantiated_attribute ->
+    AnnotatedAttribute.instantiated
 end
 
 include Environment.S with module ReadOnly = AttributeReadOnly

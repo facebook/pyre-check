@@ -429,7 +429,6 @@ let attributes
     ?(transitive = false)
     ?(class_attributes = false)
     ?(include_generated_attributes = true)
-    ?instantiated
     name
   =
   AttributeResolution.ReadOnly.all_attributes
@@ -437,9 +436,15 @@ let attributes
     ~transitive
     ~class_attributes
     ~include_generated_attributes
-    ?instantiated
     name
     ?dependency
+
+
+let instantiate_attribute ~resolution:({ dependency; _ } as resolution) ?instantiated =
+  AttributeResolution.ReadOnly.instantiate_attribute
+    (attribute_resolution resolution)
+    ?dependency
+    ?instantiated
 
 
 let metaclass ~resolution:({ dependency; _ } as resolution) =

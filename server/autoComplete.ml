@@ -93,7 +93,11 @@ let get_class_attributes_list ~resolution ~cursor_position:{ Location.line; colu
   let text_edit_range = { Range.start = position; end_ = position } in
   let filter_name_and_type annotation =
     let item_name = Annotated.Attribute.name annotation in
-    let item_type = Annotated.Attribute.annotation annotation |> Annotation.annotation in
+    let item_type =
+      GlobalResolution.instantiate_attribute ~resolution annotation
+      |> Annotated.Attribute.annotation
+      |> Annotation.annotation
+    in
     get_completion_item ~range:text_edit_range ~item_name ~item_type
   in
   let get_attributes_name_and_type { Type.class_name; _ } =

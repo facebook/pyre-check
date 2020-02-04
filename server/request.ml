@@ -243,7 +243,9 @@ let process_type_query_request
         let to_attribute attribute =
           let name = Annotated.Class.Attribute.name attribute in
           let annotation =
-            Annotated.Class.Attribute.annotation attribute |> Annotation.annotation
+            GlobalResolution.instantiate_attribute ~resolution:global_resolution attribute
+            |> Annotated.Class.Attribute.annotation
+            |> Annotation.annotation
           in
           let property = Annotated.Class.Attribute.property attribute in
           let kind =
@@ -590,8 +592,18 @@ let process_type_query_request
         GlobalResolution.meet global_resolution left right
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.Methods annotation ->
+        let parsed_annotation =
+          parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
+        in
         let to_method attribute =
-          match Annotated.Attribute.annotation attribute |> Annotation.annotation with
+          match
+            GlobalResolution.instantiate_attribute
+              ~resolution:global_resolution
+              ~instantiated:parsed_annotation
+              attribute
+            |> Annotated.Attribute.annotation
+            |> Annotation.annotation
+          with
           | Callable
               {
                 implementation = { annotation; parameters = Defined parameters; _ };
@@ -607,16 +619,11 @@ let process_type_query_request
               Some { TypeQuery.name = Reference.last name; parameters; return_annotation }
           | _ -> None
         in
-        let parsed_annotation =
-          parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
-        in
         parsed_annotation
         |> Type.split
         |> fst
         |> Type.primitive_name
-        >>= GlobalResolution.attributes
-              ~instantiated:parsed_annotation
-              ~resolution:global_resolution
+        >>= GlobalResolution.attributes ~resolution:global_resolution
         >>| List.filter_map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value

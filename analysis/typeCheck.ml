@@ -4622,7 +4622,12 @@ module State (Context : Context) = struct
                 in
                 let add_to_map sofar attribute =
                   let annotation =
-                    Annotated.Attribute.annotation attribute |> Annotation.annotation
+                    GlobalResolution.instantiate_attribute
+                      ~resolution:global_resolution
+                      ?instantiated:None
+                      attribute
+                    |> Annotated.Attribute.annotation
+                    |> Annotation.annotation
                   in
                   let name = Annotated.Attribute.name attribute in
                   match String.Map.add sofar ~key:name ~data:(annotation, definition) with
@@ -4780,7 +4785,12 @@ module State (Context : Context) = struct
               (Reference.show (AnnotatedClass.name definition))
             >>| List.filter_map ~f:(fun attribute ->
                     let annotation =
-                      Annotated.Attribute.annotation attribute |> Annotation.annotation
+                      GlobalResolution.instantiate_attribute
+                        ~resolution:global_resolution
+                        ?instantiated:None
+                        attribute
+                      |> Annotated.Attribute.annotation
+                      |> Annotation.annotation
                     in
                     let name = Annotated.Attribute.name attribute in
                     let location = Annotated.Attribute.location attribute in
