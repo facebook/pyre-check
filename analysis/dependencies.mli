@@ -9,8 +9,6 @@ type t
 
 val create : AstEnvironment.ReadOnly.t -> t
 
-val transitive_of_list : t -> modules:Reference.t list -> Reference.Set.t
-
 val of_list : t -> modules:Reference.t list -> Reference.Set.t
 
 val to_dot : t -> qualifier:Reference.t -> string

@@ -10,7 +10,7 @@ open Server
 
 let run
     _
-    transitive
+    _transitive
     verbose
     expected_version
     sections
@@ -71,7 +71,7 @@ let run
         ~extensions
         ?log_directory
         ~local_root:(Path.create_absolute local_root)
-        ~incremental_style:(if transitive then Transitive else Shallow)
+        ~incremental_style:Shallow
         ()
     in
     (fun () ->

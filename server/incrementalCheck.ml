@@ -51,9 +51,6 @@ let recheck
     | FineGrained
     | Shallow ->
         Reference.Set.of_list reparsed_sources
-    | Transitive ->
-        Dependencies.transitive_of_list legacy_dependency_tracker ~modules:reparsed_sources
-        |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
   in
   Log.info
     "Repopulating the environment for %d modules."

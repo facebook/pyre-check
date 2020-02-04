@@ -21,7 +21,6 @@ end
 module Analysis : sig
   type incremental_style =
     | Shallow
-    | Transitive
     | FineGrained
   [@@deriving show]
 

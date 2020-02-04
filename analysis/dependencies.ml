@@ -102,29 +102,6 @@ let normalize _ qualifiers =
   |> List.iter ~f:normalize_dependents
 
 
-let transitive_of_list _ ~modules =
-  let rec transitive ~visited ~frontier =
-    if Reference.Set.Tree.is_empty frontier then
-      visited
-    else
-      let visited = Reference.Set.Tree.union visited frontier in
-      let frontier =
-        let add_dependencies current node =
-          match get_dependencies node with
-          | Some dependencies -> Reference.Set.Tree.union current dependencies
-          | None -> current
-        in
-        Reference.Set.Tree.fold frontier ~init:Reference.Set.Tree.empty ~f:add_dependencies
-        |> fun new_frontier -> Reference.Set.Tree.diff new_frontier visited
-      in
-      transitive ~visited ~frontier
-  in
-  let modules = Reference.Set.Tree.of_list modules in
-  transitive ~visited:Reference.Set.Tree.empty ~frontier:modules
-  |> (fun dependents -> Reference.Set.Tree.diff dependents modules)
-  |> Reference.Set.of_tree
-
-
 let register_dependencies { ast_environment } source =
   let module Visit = Visit.MakeStatementVisitor (struct
     open Statement

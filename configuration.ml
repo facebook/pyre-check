@@ -30,7 +30,6 @@ end
 module Analysis = struct
   type incremental_style =
     | Shallow
-    | Transitive
     | FineGrained
   [@@deriving show]
 

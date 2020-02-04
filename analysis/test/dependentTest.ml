@@ -68,35 +68,6 @@ let test_dependent_of_list_duplicates context =
   assert_dependencies ~modules:["a"] ~expected:["b"; "c"]
 
 
-let test_transitive_dependent_of_list context =
-  let environment = default_environment context in
-  purge ();
-  add_dependent environment "b" "a";
-  add_dependent environment "c" "a";
-  add_dependent environment "c" "b";
-  add_dependent environment "a" "test";
-  let assert_dependencies ~modules ~expected =
-    assert_dependencies ~environment ~modules ~expected Dependencies.transitive_of_list
-  in
-  assert_dependencies ~modules:["b"; "c"] ~expected:["a"; "test"];
-  assert_dependencies ~modules:["c"] ~expected:["a"; "b"; "test"];
-  assert_dependencies ~modules:["test"] ~expected:[]
-
-
-let test_transitive_dependents context =
-  let environment = default_environment context in
-  purge ();
-  add_dependent environment "b" "a";
-  add_dependent environment "c" "a";
-  add_dependent environment "c" "b";
-  add_dependent environment "a" "test";
-  let assert_dependents ~handle ~expected =
-    assert_dependencies ~environment ~modules:[handle] ~expected Dependencies.transitive_of_list
-  in
-  assert_dependents ~handle:"c" ~expected:["a"; "b"; "test"];
-  ()
-
-
 let test_import_dependencies context =
   purge ();
   let project =
@@ -196,8 +167,6 @@ let test_register_dependencies context =
 let () =
   "dependencies"
   >::: [
-         "transitive_dependents" >:: test_transitive_dependents;
-         "transitive_dependent_of_list" >:: test_transitive_dependent_of_list;
          "dependent_of_list" >:: test_dependent_of_list;
          "dependent_of_list_duplicates" >:: test_dependent_of_list_duplicates;
          "import_dependencies" >:: test_import_dependencies;

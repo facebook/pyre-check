@@ -446,10 +446,6 @@ let run
             Log.warning
               "Starting server in legacy incremental mode. Incremental Pyre check will only get \
                triggered on changed files but not on any of their dependencies."
-        | Configuration.Analysis.Transitive ->
-            Log.warning
-              "Starting server in transitive incremental mode. Incremental Pyre check is likely \
-               going to take a long time."
       in
       if daemonize then
         Version.log_version_banner ();
@@ -494,7 +490,7 @@ let run_start_command
     saved_state_metadata
     configuration_file_hash
     store_type_check_resolution
-    transitive
+    _transitive
     new_incremental_check
     perform_autocompletion
     features
@@ -538,8 +534,6 @@ let run_start_command
     let incremental_style =
       if new_incremental_check then
         Configuration.Analysis.FineGrained
-      else if transitive then
-        Transitive
       else
         Shallow
     in
