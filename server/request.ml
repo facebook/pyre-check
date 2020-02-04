@@ -525,23 +525,6 @@ let process_type_query_request
           ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
         in
         TypeQuery.Response (TypeQuery.ClassHierarchy class_hierarchy_json)
-    | TypeQuery.DumpDependencies path ->
-        let () =
-          match ModuleTracker.lookup_path ~configuration module_tracker path with
-          | None -> ()
-          | Some { SourcePath.qualifier; _ } ->
-              let ast_environment =
-                TypeEnvironment.global_environment environment
-                |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
-              in
-              let legacy_dependency_tracker = Dependencies.create ast_environment in
-              Path.create_relative
-                ~root:(Configuration.Analysis.log_directory configuration)
-                ~relative:"dependencies.dot"
-              |> File.create ~content:(Dependencies.to_dot legacy_dependency_tracker ~qualifier)
-              |> File.write
-        in
-        TypeQuery.Response (TypeQuery.Success "Dependencies dumped.")
     | TypeQuery.DumpMemoryToSqlite path ->
         let path = Path.absolute path in
         let () =
@@ -550,10 +533,6 @@ let process_type_query_request
         in
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
-        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
-        let ast_environment = TypeEnvironment.ast_environment environment in
-        let legacy_dependency_tracker = Dependencies.create ast_environment in
-        Dependencies.normalize legacy_dependency_tracker qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
         Log.info

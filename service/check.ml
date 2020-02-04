@@ -17,7 +17,6 @@ let check
     ~scheduler
     ~configuration:
       ({ Configuration.Analysis.project_root; local_root; search_path; debug; _ } as configuration)
-    ~build_legacy_dependency_graph
     ~call_graph_builder
   =
   (* Sanity check environment. *)
@@ -39,23 +38,6 @@ let check
     Analysis.AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
   in
   let qualifiers = Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-  let build_legacy_dependencies () =
-    let sources =
-      qualifiers
-      |> List.filter_map
-           ~f:
-             (Analysis.AstEnvironment.ReadOnly.get_source
-                (Analysis.AstEnvironment.read_only ast_environment))
-    in
-    let legacy_dependency_tracker =
-      Analysis.Dependencies.create (Analysis.AstEnvironment.read_only ast_environment)
-    in
-    Analysis.Dependencies.register_all_dependencies legacy_dependency_tracker sources
-  in
-  if build_legacy_dependency_graph then (
-    Log.info "Building legacy dependency graph...";
-    Profiling.track_duration_and_shared_memory "Build legacy dependency graph" ~f:(fun _ ->
-        build_legacy_dependencies ()) );
   let environment =
     let open Analysis in
     let ast_environment = AstEnvironment.read_only ast_environment in

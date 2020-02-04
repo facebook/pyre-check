@@ -124,10 +124,6 @@ let test_parse_query context =
     (SaveServerState (Path.create_absolute ~follow_symbolic_links:false "state"));
   assert_fails_to_parse "save_server_state(state)";
   assert_parses
-    "dump_dependencies('quoted.py')"
-    (DumpDependencies (Path.create_relative ~root:local_root ~relative:"quoted.py"));
-  assert_fails_to_parse "dump_dependencies(unquoted)";
-  assert_parses
     "dump_memory_to_sqlite()"
     (DumpMemoryToSqlite (Path.create_relative ~root:local_root ~relative:".pyre/memory.sqlite"));
   let memory_file, _ = bracket_tmpfile context in

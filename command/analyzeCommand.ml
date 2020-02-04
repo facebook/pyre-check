@@ -109,7 +109,6 @@ let run_analysis
       Service.Check.check
         ~scheduler
         ~configuration
-        ~build_legacy_dependency_graph:false
         ~call_graph_builder:(module Taint.CallGraphBuilder)
       |> fun { module_tracker; environment; ast_environment; _ } ->
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in

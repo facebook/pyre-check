@@ -22,7 +22,6 @@
   customAnalysisTest
   deobfuscationCheckTest
   dataClassTest
-  dependentTest
   environmentTest
   fixpointTest
   inferenceTest

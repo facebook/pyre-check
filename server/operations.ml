@@ -70,15 +70,9 @@ let start_from_scratch ~connections ~configuration () =
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
   let { Check.module_tracker; ast_environment; environment; errors } =
-    let build_legacy_dependency_graph =
-      match configuration with
-      | { Configuration.Analysis.incremental_style = FineGrained; _ } -> false
-      | _ -> true
-    in
     Check.check
       ~scheduler
       ~configuration
-      ~build_legacy_dependency_graph
       ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
   in
   let symlink_targets_to_sources =

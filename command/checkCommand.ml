@@ -82,7 +82,6 @@ let run_check
           Check.check
             ~scheduler
             ~configuration
-            ~build_legacy_dependency_graph:false
             ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
         in
         let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in

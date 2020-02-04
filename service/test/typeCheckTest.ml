@@ -41,7 +41,6 @@ let assert_errors
     Service.Check.check
       ~scheduler
       ~configuration
-      ~build_legacy_dependency_graph:false
       ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
   in
   let errors =

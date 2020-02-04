@@ -40,12 +40,6 @@ let help () =
         Some
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
            elides type variables."
-    | DumpDependencies _ ->
-        Some
-          (Format.sprintf
-             "%s: %s"
-             "dump_dependencies('path')"
-             "Writes the dependencies of 'path' to `.pyre/dependencies.dot`.")
     | DumpMemoryToSqlite _ -> None
     | IsCompatibleWith _ ->
         Some "is_compatible_with(T1, T2): Returns whether T2 can be used in place of T1."
@@ -89,7 +83,6 @@ let help () =
       Defines [Reference.create ""];
       DumpCallGraph;
       DumpClassHierarchy;
-      DumpDependencies path;
       DumpMemoryToSqlite path;
       IsCompatibleWith (empty, empty);
       Join (empty, empty);
@@ -208,9 +201,6 @@ let parse_query
           | None -> raise (InvalidQuery (Format.sprintf "Malformatted file at `%s`" (string path)))
           )
       | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
-      | "dump_dependencies", [path] ->
-          let path = Path.create_relative ~root ~relative:(string path) in
-          Request.TypeQueryRequest (DumpDependencies path)
       | "dump_memory_to_sqlite", arguments ->
           let path =
             match arguments with
