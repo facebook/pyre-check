@@ -165,11 +165,11 @@ class WatchmanSubscriber(object):
             )
             pid = int(pid_path.read_text())
             os.kill(pid, signal.SIGINT)
-            LOG.info("Stopped the %s with pid %d.", subscriber_name, pid)
+            LOG.debug("Stopped the %s with pid %d.", subscriber_name, pid)
         except FileNotFoundError:
             LOG.debug(f"Could not stop the {subscriber_name} because it was not found.")
         except (OSError, ValueError) as exception:
-            LOG.info(
+            LOG.debug(
                 f"Could not stop the {subscriber_name} "
                 f"because of exception `{exception}`."
             )
