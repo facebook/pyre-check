@@ -234,3 +234,25 @@ class BuckTest(unittest.TestCase):
             self.assertRaises(
                 buck.BuckException, buck.query_buck_relative_paths, [], ["targetA"]
             )
+
+    @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
+    def test_query_buck_relative_paths_base_module(
+        self, find_buck_root: MagicMock
+    ) -> None:
+        with patch.object(subprocess, "check_output") as check_output:
+            # It should prefer base_module over buck.base_path.
+            check_output.return_value = json.dumps(
+                {
+                    "targetA": {
+                        "base_module": "",
+                        "buck.base_path": "src/python",
+                        "srcs": {"package.py": "package.py"},
+                    }
+                }
+            ).encode("utf-8")
+
+            paths = ["/BUCK_ROOT/src/python/package.py"]  # tracked paths
+            self.assertDictEqual(
+                buck.query_buck_relative_paths(paths, targets=["targetA"]),
+                {"/BUCK_ROOT/src/python/package.py": "package.py"},
+            )

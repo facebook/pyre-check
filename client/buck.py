@@ -344,6 +344,8 @@ def query_buck_relative_paths(
 
             if "buck.base_module" in target_data:
                 base_path = os.path.join(*target_data["buck.base_module"].split("."))
+            elif "base_module" in target_data:
+                base_path = os.path.join(*target_data["base_module"].split("."))
             else:
                 base_path = target_data["buck.base_path"]
             results[project_path] = os.path.join(base_path, target_data["srcs"][suffix])
