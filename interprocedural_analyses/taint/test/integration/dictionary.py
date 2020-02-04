@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 
 def dictionary_source():
@@ -116,3 +116,39 @@ def lists_of_dictionary_iteration_is_precise():
 def reassignment_removes_backwards_taint(d):
     d["a"] = 0
     __test_sink(d["a"])
+
+
+def copy_untainted_values_with_tainted_keys():
+    d = {__test_source(): 1}
+    values_not_tainted = {}
+    for key in d:
+        res[key] = d[key]
+    return values_not_tainted
+
+
+def dict_with_tainted_key_flows_to_sink():
+    d = {__test_source(): 1}
+    __test_sink(d)
+
+
+def sink_dictionary_through_keys(d: Dict[str, str]) -> None:
+    [__test_sink(k) for k in d]
+
+
+def get_keys(d: Dict[str, str]) -> Iterable[str]:
+    return [k for k in d]
+
+
+def return_comprehension_with_tained_keys():
+    d = {__test_source(): 1}
+    return [k for k in d]
+
+
+def return_comprehension_with_untainted_keys():
+    d = {1: __test_source()}
+    return [k for k in d]
+
+
+def backwards_model_for_dictionary_comprehension(d) -> None:
+    inferred = {k: d[k] for k in d}
+    sink_dictionary_through_keys(inferred)

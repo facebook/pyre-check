@@ -822,6 +822,8 @@ let complex = Primitive "complex"
 
 let dictionary ~key ~value = Parametric { name = "dict"; parameters = [Single key; Single value] }
 
+let mapping_primitive = "typing.Mapping"
+
 let enumeration = Primitive "enum.Enum"
 
 let float = Primitive "float"

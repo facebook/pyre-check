@@ -271,6 +271,8 @@ val lambda : parameters:(Identifier.t * t) list -> return_annotation:t -> t
 
 val list : t -> t
 
+val mapping_primitive : string
+
 val meta : t -> t
 
 val named_tuple : t

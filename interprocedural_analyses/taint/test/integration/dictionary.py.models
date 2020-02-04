@@ -2,6 +2,60 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.dict_with_tainted_key_flows_to_sink",
+    "callable_line": 129,
+    "code": 5002,
+    "line": 131,
+    "start": 16,
+    "end": 17,
+    "filename": "dictionary.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 130,
+              "start": 9,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 131,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.flow_through_keywords",
     "callable_line": 73,
     "code": 5002,
@@ -356,6 +410,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.backwards_model_for_dictionary_comprehension",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 154,
+                "start": 33,
+                "end": 41
+              },
+              "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
+              "port": "formal(d)[**keys]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.dictionary_assign_to_index",
     "sources": [
       {
@@ -599,7 +685,7 @@
     "callable": "dictionary.forward_comprehension_key_source",
     "sources": [
       {
-        "port": "result",
+        "port": "result[**keys]",
         "taint": [
           {
             "root": {
@@ -679,6 +765,83 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.get_keys",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(d)[**keys]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.return_comprehension_with_tained_keys",
+    "sources": [
+      {
+        "port": "result[*]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 143,
+              "start": 9,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.sink_dictionary_through_keys",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(d)[**keys]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 135,
+              "start": 17,
+              "end": 18
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
     "tito": []
   }
 }

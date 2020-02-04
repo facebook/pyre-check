@@ -360,7 +360,24 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let access_path = of_expression ~resolution target in
         let bound_variable_taint = get_taint access_path state in
         let iterator_taint =
-          BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] bound_variable_taint
+          (* If the type is a dict, we special case `DictionaryKeys` as the taint being iterated on. *)
+          let global_resolution = Resolution.global_resolution resolution in
+          let label =
+            let iterator_is_dictionary =
+              match Resolution.resolve resolution iterator with
+              | Type.Parametric { name; _ } ->
+                  GlobalResolution.is_transitive_successor
+                    global_resolution
+                    ~predecessor:name
+                    ~successor:Type.mapping_primitive
+              | _ -> false
+            in
+            if iterator_is_dictionary then
+              AbstractTreeDomain.Label.DictionaryKeys
+            else
+              AbstractTreeDomain.Label.Any
+          in
+          BackwardState.Tree.prepend [label] bound_variable_taint
         in
         analyze_expression ~resolution ~taint:iterator_taint ~state ~expression:iterator
       in
@@ -566,7 +583,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | DictionaryComprehension
           { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ } ->
           let resolution = generator_resolution ~resolution generators in
-          let state = analyze_expression ~resolution ~taint ~state ~expression:key in
+          let state =
+            analyze_expression
+              ~resolution
+              ~taint:(read_tree [AbstractTreeDomain.Label.DictionaryKeys] taint)
+              ~state
+              ~expression:key
+          in
           let state =
             analyze_expression
               ~resolution

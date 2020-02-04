@@ -379,9 +379,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | String literal -> AbstractTreeDomain.Label.Field literal.value
         | _ -> AbstractTreeDomain.Label.Any
       in
-      (* Since we don't keep track of which keys are tainted, don't require an index for the key
-         taint, and join it as is. *)
-      let key_taint, state = analyze_expression ~resolution ~state ~expression:key in
+      let key_taint, state =
+        analyze_expression ~resolution ~state ~expression:key
+        |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.DictionaryKeys]
+      in
       analyze_expression ~resolution ~state ~expression:value
       |>> ForwardState.Tree.prepend [field_name]
       |>> ForwardState.Tree.join taint
@@ -409,8 +410,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ({ Comprehension.Generator.target; iterator; _ } as generator)
         =
         let taint, state =
+          let iterator_is_dictionary =
+            match Resolution.resolve resolution iterator with
+            | Type.Parametric { name; _ } ->
+                GlobalResolution.is_transitive_successor
+                  (Resolution.global_resolution resolution)
+                  ~predecessor:name
+                  ~successor:Type.mapping_primitive
+            | _ -> false
+          in
+          let label =
+            if iterator_is_dictionary then
+              AbstractTreeDomain.Label.DictionaryKeys
+            else
+              AbstractTreeDomain.Label.Any
+          in
           analyze_expression ~resolution ~state ~expression:iterator
-          |>> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
+          |>> ForwardState.Tree.read [label]
         in
         (* Since generators create variables that Pyre sees as scoped within the generator, handle
            them by adding the generator's bindings to the resolution. *)
@@ -443,7 +459,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_expression ~resolution ~state ~expression:value
         |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any]
       in
-      let key_taint, state = analyze_expression ~resolution ~state ~expression:key in
+      let key_taint, state =
+        analyze_expression ~resolution ~state ~expression:key
+        |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.DictionaryKeys]
+      in
       ForwardState.Tree.join key_taint value_taint, state
 
 
