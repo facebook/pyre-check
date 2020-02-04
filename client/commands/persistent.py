@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command
+from .command import Command, IncrementalStyle
 from .start import Start
 
 
@@ -53,7 +53,7 @@ class Persistent(Command):
         arguments = self._arguments
         arguments.terminal = False
         arguments.store_type_check_resolution = False
-        arguments.incremental_style = None
+        arguments.incremental_style = IncrementalStyle.FINE_GRAINED
         Start(
             arguments,
             self._original_directory,

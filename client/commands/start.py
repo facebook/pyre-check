@@ -21,13 +21,6 @@ from .reporting import Reporting
 LOG: Logger = logging.getLogger(__name__)
 
 
-def _fine_grained_incremental_override(feature_string: str) -> bool:
-    try:
-        return json.loads(feature_string).get("enable_fine_grained_incremental", False)
-    except Exception:
-        return False
-
-
 class Start(Reporting):
     NAME = "start"
 
@@ -45,20 +38,7 @@ class Start(Reporting):
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
         self._use_watchman: bool = not arguments.no_watchman
 
-        features = self._features
-        fine_grained_override = (
-            _fine_grained_incremental_override(features)
-            if features is not None
-            else False
-        )
-        default_incremental_style = (
-            IncrementalStyle.FINE_GRAINED
-            if fine_grained_override
-            else IncrementalStyle.SHALLOW
-        )
-        self._incremental_style: IncrementalStyle = (
-            arguments.incremental_style or default_incremental_style
-        )
+        self._incremental_style: IncrementalStyle = arguments.incremental_style
 
         if self._no_saved_state:
             self._save_initial_state_to: Optional[str] = None
@@ -87,7 +67,7 @@ class Start(Reporting):
             "--incremental-style",
             type=IncrementalStyle,
             choices=list(IncrementalStyle),
-            default=None,
+            default=IncrementalStyle.FINE_GRAINED,
             help="How to approach doing incremental checks.",
         )
 

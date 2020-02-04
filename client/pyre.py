@@ -21,7 +21,7 @@ from . import (
     log,
     log_statistics,
 )
-from .commands import CommandParser, ExitCode
+from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -59,7 +59,7 @@ def main() -> int:
         if shutil.which("watchman"):
             arguments.command = commands.Incremental
             arguments.nonblocking = False
-            arguments.incremental_style = None
+            arguments.incremental_style = IncrementalStyle.FINE_GRAINED
             arguments.no_start = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
