@@ -52,7 +52,6 @@ module AttributeTableKey = struct
       include_generated_attributes: bool;
       special_method: bool;
       name: Type.Primitive.t;
-      instantiated: Type.t option;
       assumptions: Assumptions.t;
     }
     [@@deriving compare, sexp, hash, show]

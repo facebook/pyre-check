@@ -556,7 +556,12 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.Primitive "Nonsense")
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~initialized:false ~defined:false "property" "$unknown");
+      (create_expected_attribute
+         ~initialized:true
+         ~property:true
+         ~visibility:(ReadOnly Unrefinable)
+         "property"
+         "str");
   ()
 
 

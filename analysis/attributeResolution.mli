@@ -178,7 +178,6 @@ module AttributeReadOnly : sig
     class_attributes:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
-    ?instantiated:Type.t ->
     ?dependency:SharedMemoryKeys.dependency ->
     string ->
     Identifier.t list option

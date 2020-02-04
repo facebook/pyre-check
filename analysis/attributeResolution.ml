@@ -53,32 +53,6 @@ module UninstantiatedAttributeTable = struct
   let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
 
   let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
-end
-
-module InstantiatedAttributeTable = struct
-  type element = AnnotatedAttribute.instantiated [@@deriving compare]
-
-  type table = (string, element) Caml.Hashtbl.t
-
-  type t = {
-    attributes: table;
-    names: string list ref;
-  }
-
-  let create () = { attributes = Caml.Hashtbl.create 15; names = ref [] }
-
-  let add { attributes; names } attribute =
-    let name = AnnotatedAttribute.name attribute in
-    if Caml.Hashtbl.mem attributes name then
-      ()
-    else (
-      Caml.Hashtbl.add attributes name attribute;
-      names := name :: !names )
-
-
-  let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
-
-  let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
 
   let names { names; _ } = !names
 
@@ -810,17 +784,16 @@ module Implementation = struct
       ?dependency:dependency ->
       ClassMetadataEnvironment.ReadOnly.t ->
       TypeOrder.order;
-    attribute_table:
+    uninstantiated_attribute_table:
       assumptions:Assumptions.t ->
       transitive:sexp_bool ->
       class_attributes:sexp_bool ->
       include_generated_attributes:sexp_bool ->
       ?special_method:sexp_bool ->
       ?dependency:dependency ->
-      ?instantiated:Type.t ->
       ClassSummary.t Node.t ->
       class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-      InstantiatedAttributeTable.t;
+      UninstantiatedAttributeTable.t;
     check_invalid_type_parameters:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -915,7 +888,7 @@ module Implementation = struct
   }
 
   let full_order
-      { constructor; attribute_table; _ }
+      { constructor; uninstantiated_attribute_table; instantiate_attribute; _ }
       ~assumptions
       ?dependency
       class_metadata_environment
@@ -940,17 +913,18 @@ module Implementation = struct
             ?dependency
             class_name
           >>| (fun definition ->
-                attribute_table
+                uninstantiated_attribute_table
                   ~assumptions
                   ~transitive:true
                   ~class_attributes
                   ~include_generated_attributes:true
                   ?special_method:None
-                  ~instantiated
                   ?dependency
                   definition
                   ~class_metadata_environment)
-          >>| InstantiatedAttributeTable.to_list
+          >>| UninstantiatedAttributeTable.to_list
+          >>| List.map
+                ~f:(instantiate_attribute ~assumptions ~class_metadata_environment ~instantiated)
       | Some (_ :: _) ->
           (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
              indirectly by breaking apart the union before doing the
@@ -1572,42 +1546,6 @@ module Implementation = struct
       | None -> annotation, original
     in
     AnnotatedAttribute.instantiate attribute ~annotation ~original_annotation:original
-
-
-  let attribute_table
-      open_recurser
-      ~assumptions
-      ~transitive
-      ~class_attributes
-      ~include_generated_attributes
-      ?special_method
-      ?dependency
-      ?instantiated
-      definition
-      ~class_metadata_environment
-    =
-    let table = InstantiatedAttributeTable.create () in
-    uninstantiated_attribute_table
-      open_recurser
-      ~assumptions
-      ~transitive
-      ~class_attributes
-      ~include_generated_attributes
-      ?special_method
-      ?dependency
-      definition
-      ~class_metadata_environment
-    |> UninstantiatedAttributeTable.to_list
-    |> List.map
-         ~f:
-           (instantiate_attribute
-              open_recurser
-              ~assumptions
-              ~class_metadata_environment
-              ?dependency
-              ?instantiated)
-    |> List.iter ~f:(InstantiatedAttributeTable.add table);
-    table
 
 
   let create_attribute
@@ -2926,7 +2864,7 @@ module Implementation = struct
 
 
   let constructor
-      { attribute_table; _ }
+      { uninstantiated_attribute_table; instantiate_attribute; _ }
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -2979,23 +2917,28 @@ module Implementation = struct
       >>| fst
       |> Option.value ~default:Int.max_value
     in
-    let attribute_table =
-      attribute_table
+    let uninstantiated_attribute_table =
+      uninstantiated_attribute_table
         ~assumptions
         ~transitive:true
         ~class_attributes:false
         ~include_generated_attributes:true
         ?special_method:None
-        ~instantiated:return_annotation
         ?dependency
         definition
         ~class_metadata_environment
     in
     let signature_and_index ~name =
       let signature, parent =
-        match InstantiatedAttributeTable.lookup_name attribute_table name with
+        match UninstantiatedAttributeTable.lookup_name uninstantiated_attribute_table name with
         | Some attribute ->
-            ( attribute |> AnnotatedAttribute.annotation |> Annotation.annotation,
+            ( instantiate_attribute
+                ~assumptions
+                ~class_metadata_environment
+                ?instantiated:(Some return_annotation)
+                attribute
+              |> AnnotatedAttribute.annotation
+              |> Annotation.annotation,
               Type.Primitive (AnnotatedAttribute.parent attribute) )
         | None -> Type.Top, class_annotation definition
       in
@@ -3037,11 +2980,11 @@ module Implementation = struct
     | _ -> signature
 end
 
-let make_open_recurser ~given_attribute_table ~given_parse_annotation =
+let make_open_recurser ~given_uninstantiated_attribute_table ~given_parse_annotation =
   let rec open_recurser =
     {
       Implementation.full_order;
-      attribute_table;
+      uninstantiated_attribute_table;
       check_invalid_type_parameters;
       parse_annotation;
       create_attribute;
@@ -3055,7 +2998,8 @@ let make_open_recurser ~given_attribute_table ~given_parse_annotation =
       constructor;
       instantiate_attribute;
     }
-  and attribute_table ~assumptions = given_attribute_table open_recurser ~assumptions
+  and uninstantiated_attribute_table ~assumptions =
+    given_uninstantiated_attribute_table open_recurser ~assumptions
   and parse_annotation ~assumptions = given_parse_annotation open_recurser ~assumptions
   and full_order ~assumptions = Implementation.full_order open_recurser ~assumptions
   and check_invalid_type_parameters ~assumptions =
@@ -3117,7 +3061,7 @@ module ParseAnnotationCache = struct
       =
       let uncached_open_recurser =
         make_open_recurser
-          ~given_attribute_table:Implementation.attribute_table
+          ~given_uninstantiated_attribute_table:Implementation.uninstantiated_attribute_table
           ~given_parse_annotation:Implementation.parse_annotation
       in
       let dependency =
@@ -3173,7 +3117,7 @@ module Cache = ManagedCache.Make (struct
   module Key = SharedMemoryKeys.AttributeTableKey
 
   module Value = struct
-    type t = InstantiatedAttributeTable.t option [@@deriving compare]
+    type t = UninstantiatedAttributeTable.t option [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -3196,7 +3140,6 @@ module Cache = ManagedCache.Make (struct
           special_method;
           name;
           assumptions;
-          instantiated;
         } as key )
       ~track_dependencies
     =
@@ -3209,38 +3152,25 @@ module Cache = ManagedCache.Make (struct
     let unannotated_global_environment =
       unannotated_global_environment class_metadata_environment
     in
-    let instantiated_contains_untracked =
-      instantiated
-      >>| UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
-            unannotated_global_environment
-            ?dependency
-      |> Option.value ~default:false
+    let open_recurser_with_parse_annotation_cache =
+      make_open_recurser
+        ~given_uninstantiated_attribute_table:Implementation.uninstantiated_attribute_table
+        ~given_parse_annotation:
+          (ParseAnnotationCache.ReadOnly.cached_parse_annotation parse_annotation_cache)
     in
-    (* TypeCheck/AnnotatedGlobalEnvironment won't actually call this with any untracked types, but
-       recalculation could give us one, leading to a crash *)
-    if instantiated_contains_untracked then
-      None
-    else
-      let open_recurser_with_parse_annotation_cache =
-        make_open_recurser
-          ~given_attribute_table:Implementation.attribute_table
-          ~given_parse_annotation:
-            (ParseAnnotationCache.ReadOnly.cached_parse_annotation parse_annotation_cache)
-      in
-      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-        unannotated_global_environment
-        ?dependency
-        name
-      >>| Implementation.attribute_table
-            open_recurser_with_parse_annotation_cache
-            ~transitive
-            ~class_attributes
-            ~include_generated_attributes
-            ~special_method
-            ?instantiated
-            ?dependency
-            ~class_metadata_environment
-            ~assumptions
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      unannotated_global_environment
+      ?dependency
+      name
+    >>| Implementation.uninstantiated_attribute_table
+          open_recurser_with_parse_annotation_cache
+          ~transitive
+          ~class_attributes
+          ~include_generated_attributes
+          ~special_method
+          ?dependency
+          ~class_metadata_environment
+          ~assumptions
 
 
   let filter_upstream_dependency = function
@@ -3271,7 +3201,6 @@ module ReadOnly = struct
       ~include_generated_attributes
       ?(special_method = false)
       ?dependency
-      ?instantiated
       { Node.value = { ClassSummary.name; _ }; _ }
       ~class_metadata_environment:
         (* Similarly the class_metadata_environment is already baked into the get *)
@@ -3287,14 +3216,13 @@ module ReadOnly = struct
         special_method;
         name = Reference.show name;
         assumptions;
-        instantiated;
       }
-    |> Option.value ~default:(InstantiatedAttributeTable.create ())
+    |> Option.value ~default:(UninstantiatedAttributeTable.create ())
 
 
   let open_recurser_with_both_caches read_only =
     make_open_recurser
-      ~given_attribute_table:(cached_attribute_table read_only)
+      ~given_uninstantiated_attribute_table:(cached_attribute_table read_only)
       ~given_parse_annotation:
         (ParseAnnotationCache.ReadOnly.cached_parse_annotation (parse_annotation_cache read_only))
 
@@ -3304,6 +3232,10 @@ module ReadOnly = struct
       (open_recurser_with_both_caches read_only)
       ~assumptions:empty_assumptions
       ~class_metadata_environment:(class_metadata_environment read_only)
+
+
+  let instantiate_attribute =
+    add_both_caches_and_empty_assumptions Implementation.instantiate_attribute
 
 
   let attribute
@@ -3327,9 +3259,10 @@ module ReadOnly = struct
         special_method;
         name = class_name;
         assumptions = empty_assumptions;
-        instantiated;
       }
-    >>= fun table -> InstantiatedAttributeTable.lookup_name table attribute_name
+    >>= fun table ->
+    UninstantiatedAttributeTable.lookup_name table attribute_name
+    >>| instantiate_attribute read_only ?instantiated
 
 
   let attribute_names
@@ -3338,7 +3271,6 @@ module ReadOnly = struct
       ~class_attributes
       ~include_generated_attributes
       ?(special_method = false)
-      ?instantiated
       ?dependency
       class_name
     =
@@ -3352,9 +3284,8 @@ module ReadOnly = struct
         special_method;
         name = class_name;
         assumptions = empty_assumptions;
-        instantiated;
       }
-    >>| InstantiatedAttributeTable.names
+    >>| UninstantiatedAttributeTable.names
 
 
   let all_attributes
@@ -3377,9 +3308,9 @@ module ReadOnly = struct
         special_method;
         name = class_name;
         assumptions = empty_assumptions;
-        instantiated;
       }
-    >>| InstantiatedAttributeTable.to_list
+    >>| UninstantiatedAttributeTable.to_list
+    >>| List.map ~f:(instantiate_attribute read_only ?instantiated)
 
 
   let check_invalid_type_parameters =
