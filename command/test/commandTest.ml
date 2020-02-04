@@ -153,7 +153,7 @@ module ScratchServer = struct
   let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let start
-      ?(incremental_style = Configuration.Analysis.Shallow)
+      ?(incremental_style = Configuration.Analysis.FineGrained)
       ~context
       ?(external_sources = [])
       sources
