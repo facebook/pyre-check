@@ -1412,6 +1412,13 @@ module TreeOfStringSets = struct
          ~left:(parse_tree ["$keys", ["a"]])
          ~right:
            (create [Part (Path, ([AbstractTreeDomain.Label.Any], StringSet.of_list ["distinct"]))]));
+    assert_equal
+      true
+      (less_or_equal ~left:(parse_tree ["a.$keys", ["val"]]) ~right:(parse_tree ["a", ["val"]]));
+    assert_equal
+      false
+      (less_or_equal ~left:(parse_tree ["a.$keys", ["val"]]) ~right:(parse_tree ["a", ["other"]]));
+
     let assert_join ~expected left right =
       assert_equal ~cmp:compare ~printer:show expected (join left right)
     in
@@ -1419,6 +1426,14 @@ module TreeOfStringSets = struct
       (parse_tree ["$keys", ["a"]; "a", ["v"]])
       (parse_tree ["$keys", ["b"]; "b", ["other"]])
       ~expected:(parse_tree ["$keys", ["a"; "b"]; "a", ["v"]; "b", ["other"]]);
+    assert_join
+      (parse_tree ["$keys", ["a"]])
+      (create [Part (Path, ([], StringSet.of_list ["a"]))])
+      ~expected:(create [Part (Path, ([], StringSet.of_list ["a"]))]);
+    assert_join
+      (create [Part (Path, ([], StringSet.of_list ["a"]))])
+      (parse_tree ["$keys", ["a"]])
+      ~expected:(create [Part (Path, ([], StringSet.of_list ["a"]))]);
     ()
 end
 

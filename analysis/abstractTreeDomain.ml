@@ -440,7 +440,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
                 element
                 (join_trees ancestors ~widen_depth left_subtree right_subtree)
                 accumulator
-          | None -> LabelMap.set accumulator ~key:element ~data:left_subtree )
+          | None ->
+              let join_tree = join_option_trees ancestors ~widen_depth (Some left_subtree) None in
+              set_or_remove element join_tree accumulator )
     in
 
     (* merge_right takes care of R *)
@@ -456,10 +458,10 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
                 join_option_trees ancestors ~widen_depth left_star (Some right_subtree)
               in
               set_or_remove element join_tree accumulator
-          | Label.Any ->
+          | Label.Any
+          | Label.DictionaryKeys ->
               let join_tree = join_option_trees ancestors ~widen_depth None (Some right_subtree) in
-              set_or_remove element join_tree accumulator
-          | Label.DictionaryKeys -> LabelMap.set accumulator ~key:element ~data:right_subtree )
+              set_or_remove element join_tree accumulator )
     in
     let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
     LabelMap.fold ~init:left_done right_tree ~f:merge_right
@@ -602,7 +604,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
   let join_tree_path ~tree path ~subtree =
     let message () =
       Format.sprintf
-        "join tree: %s :to: %s :in: %s"
+        "join tree:%s :to: %s :in: %s"
         (show subtree)
         (Label.show_path path)
         (show tree)
@@ -700,7 +702,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
           | Label.DictionaryKeys -> (
               match LabelMap.find right_label_map label_element with
               | Some right_subtree -> less_or_equal_tree left_subtree right_ancestors right_subtree
-              | None -> Checks.false_witness ~message:(fun () -> "[right <keys>]") )
+              | None ->
+                  less_or_equal_option_tree (Some left_subtree) right_ancestors None
+                  |> Checks.option_construct ~message:(fun () -> "[right <keys>]") )
       in
       (* Check that all non-star index fields on right are larger than star1, unless they were
          matched directly. *)
