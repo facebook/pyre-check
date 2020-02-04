@@ -61,7 +61,6 @@ class ExitCode(enum.IntEnum):
 
 class IncrementalStyle(enum.Enum):
     SHALLOW = "shallow"
-    TRANSITIVE = "transitive"
     FINE_GRAINED = "fine_grained"
 
     def __str__(self) -> str:

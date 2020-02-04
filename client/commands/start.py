@@ -194,9 +194,7 @@ class Start(Reporting):
         for extension in extensions:
             flags.extend(["-extension", extension])
 
-        if self._incremental_style == IncrementalStyle.TRANSITIVE:
-            flags.append("-transitive")
-        elif self._incremental_style == IncrementalStyle.FINE_GRAINED:
+        if self._incremental_style != IncrementalStyle.SHALLOW:
             flags.append("-new-incremental-check")
 
         if self._configuration.autocomplete:

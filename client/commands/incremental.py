@@ -157,9 +157,6 @@ class Incremental(Reporting):
         if self._nonblocking:
             flags.append("-nonblocking")
 
-        if self._incremental_style == IncrementalStyle.TRANSITIVE:
-            flags.append("-transitive")
-
         return flags
 
     def _read_stderr(self, _stream) -> None:
