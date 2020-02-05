@@ -151,6 +151,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._symbolic_links: Dict[str, str] = {}
 
         self._configuration = configuration
+        self._last_singly_deleted_path_and_link: Optional[Tuple[str, str]] = None
 
     def get_scratch_directory(self) -> str:
         try:
@@ -294,6 +295,55 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         ) as exception:
             LOG.error("Error while communicating with server: %s", str(exception))
 
+    def _cache_last_deleted_link(
+        self,
+        deleted_paths: List[str],
+        deleted_scratch_paths: List[str],
+        tracked_search_paths: List[str],
+    ) -> None:
+        """Cache the current deleted path and link if there is only one updated
+        path and it is deleted. This will help avoid a costly buck query for
+        Vim's behavior of deletion followed by addition."""
+        if (
+            len(deleted_scratch_paths) == 1
+            and tracked_search_paths == deleted_scratch_paths
+        ):
+            self._last_singly_deleted_path_and_link = (
+                deleted_paths[0],
+                deleted_scratch_paths[0],
+            )
+            LOG.debug(
+                "Caching singly-deleted file and link: %s",
+                self._last_singly_deleted_path_and_link,
+            )
+        else:
+            self._last_singly_deleted_path_and_link = None
+
+    def _fetch_cached_absolute_link_map(
+        self, new_paths: List[str], deleted_paths: List[str]
+    ) -> Optional[Dict[str, str]]:
+        """Fetch a cached absolute link map if it exists.
+
+        Editing a file in Vim leads to a "deletion" and "addition" for the
+        edited file. If the user calls `pyre` after we process the deletion but
+        before we process the addition, then we get spurious "could not find the
+        module" errors. So, cache the link map that the seconds-long `buck
+        query` would have returned so that there is less chance of such a
+        race."""
+        last_singly_deleted_path_and_link = self._last_singly_deleted_path_and_link
+        if (
+            last_singly_deleted_path_and_link is not None
+            and new_paths == [last_singly_deleted_path_and_link[0]]
+            and deleted_paths == []
+        ):
+            return {
+                last_singly_deleted_path_and_link[0]: last_singly_deleted_path_and_link[
+                    1
+                ]
+            }
+        else:
+            return None
+
     def _process_rebuilt_files(
         self, tracked_paths: List[str], deleted_paths: List[str]
     ) -> Tuple[List[str], List[str]]:
@@ -316,19 +366,25 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         return tracked_paths, deleted_scratch_paths
 
     def _process_new_paths(
-        self, new_paths: List[str], tracked_paths: List[str]
+        self, new_paths: List[str], tracked_paths: List[str], deleted_paths: List[str]
     ) -> List[str]:
-        relative_link_map = {}
-        try:
-            relative_link_map = buck.query_buck_relative_paths(new_paths, self._targets)
-        except buck.BuckException as error:
-            LOG.error("Exception occurred when querying buck: %s", error)
-            LOG.error("No new paths will be added to the analysis directory.")
+        absolute_link_map = self._fetch_cached_absolute_link_map(
+            new_paths, deleted_paths
+        )
+        if absolute_link_map is None:
+            relative_link_map = {}
+            try:
+                relative_link_map = buck.query_buck_relative_paths(
+                    new_paths, self._targets
+                )
+            except buck.BuckException as error:
+                LOG.error("Exception occurred when querying buck: %s", error)
+                LOG.error("No new paths will be added to the analysis directory.")
 
-        absolute_link_map = {
-            path: os.path.join(self.get_root(), relative_link)
-            for path, relative_link in relative_link_map.items()
-        }
+            absolute_link_map = {
+                path: os.path.join(self.get_root(), relative_link)
+                for path, relative_link in relative_link_map.items()
+            }
         tracked_paths.extend(absolute_link_map.keys())
         for path, absolute_link in absolute_link_map.items():
             try:
@@ -338,27 +394,33 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 LOG.warning("Failed to add link at %s.", absolute_link)
         return tracked_paths
 
-    def _process_deleted_paths(self, deleted_paths: List[str]) -> List[str]:
+    def _process_deleted_paths(
+        self, deleted_paths: List[str]
+    ) -> Tuple[List[str], List[str]]:
         # Translate the paths here because we need the old symbolic links
         # mapping to get their old scratch path.
-        deleted_scratch_paths = [
-            self._symbolic_links.get(project_path, project_path)
+        tracked_deleted_paths = [
+            project_path
             for project_path in deleted_paths
             if project_path in self._symbolic_links
         ]
-        for path in deleted_paths:
+        deleted_scratch_paths = [
+            self._symbolic_links[path] for path in tracked_deleted_paths
+        ]
+        for path in tracked_deleted_paths:
             link = self._symbolic_links.pop(path, None)
             if link:
                 try:
                     _delete_symbolic_link(link)
                 except OSError:
                     LOG.warning("Failed to delete link at `%s`.", link)
-        return deleted_scratch_paths
+        return tracked_deleted_paths, deleted_scratch_paths
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """Update the analysis directory for any new or deleted files.
         Rebuild the directory using buck if needed.
         Return the updated and deleted paths."""
+        deleted_scratch_paths = []
         tracked_paths = []
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
         new_paths = [
@@ -381,25 +443,32 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if SharedAnalysisDirectory.should_rebuild(
             tracked_paths, new_paths, deleted_paths
         ):
-            tracked_paths, deleted_paths = self._process_rebuilt_files(
+            tracked_paths, deleted_scratch_paths = self._process_rebuilt_files(
                 tracked_paths, deleted_paths
             )
         elif new_paths or deleted_paths:
             if new_paths:
                 LOG.info("Detected new paths: %s.", ",".join(new_paths))
-                tracked_paths = self._process_new_paths(new_paths, tracked_paths)
+                tracked_paths = self._process_new_paths(
+                    new_paths, tracked_paths, deleted_paths
+                )
             if deleted_paths:
                 LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
-                deleted_paths = self._process_deleted_paths(deleted_paths)
+                deleted_paths, deleted_scratch_paths = self._process_deleted_paths(
+                    deleted_paths
+                )
 
-        tracked_paths.extend(deleted_paths)
+        tracked_scratch_paths = [
+            self._symbolic_links.get(path, path) for path in tracked_paths
+        ] + deleted_scratch_paths
+
+        self._cache_last_deleted_link(
+            deleted_paths, deleted_scratch_paths, tracked_scratch_paths
+        )
+
+        # The server expects scratch paths.
         return UpdatedPaths(
-            updated_paths=[
-                self._symbolic_links.get(path, path) for path in tracked_paths
-            ],
-            deleted_paths=[
-                self._symbolic_links.get(path, path) for path in deleted_paths
-            ],
+            updated_paths=tracked_scratch_paths, deleted_paths=deleted_scratch_paths
         )
 
     def cleanup(self) -> None:

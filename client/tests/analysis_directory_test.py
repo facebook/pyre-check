@@ -219,6 +219,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         rebuild.assert_not_called()
         add_symbolic_link.assert_not_called()
         self.assertEqual(shared_analysis_directory._symbolic_links, old_symbolic_links)
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
 
     @patch.object(analysis_directory, "add_symbolic_link")
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
@@ -269,6 +270,55 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         add_symbolic_link.assert_called_once_with(
             "scratch/foo/new_file.py", "project/something/new_file.py"
         )
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+
+    @patch.object(analysis_directory, "add_symbolic_link")
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
+    @patch.object(buck, "query_buck_relative_paths")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile", return_value=True)
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files_same_file_after_deletion(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+        rebuild: MagicMock,
+        query_buck_relative_paths: MagicMock,
+        get_root: MagicMock,
+        add_symbolic_link: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+
+        shared_analysis_directory._symbolic_links = {
+            "project/foo1.py": "scratch/bar/foo1.py"
+        }
+        shared_analysis_directory._last_singly_deleted_path_and_link = (
+            "project/foo2.py",
+            "scratch/bar/foo2.py",
+        )
+        actual = shared_analysis_directory.process_updated_files(["project/foo2.py"])
+        expected = UpdatedPaths(updated_paths=["scratch/bar/foo2.py"], deleted_paths=[])
+        self.assertEqual(actual, expected)
+        query_buck_relative_paths.assert_not_called()
+        self.assertEqual(
+            shared_analysis_directory._symbolic_links,
+            {
+                "project/foo1.py": "scratch/bar/foo1.py",
+                "project/foo2.py": "scratch/bar/foo2.py",
+            },
+        )
+
+        add_symbolic_link.assert_called_once_with(
+            "scratch/bar/foo2.py", "project/foo2.py"
+        )
+        rebuild.assert_not_called()
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
 
     @patch.object(analysis_directory, "_delete_symbolic_link")
     @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
@@ -303,6 +353,10 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertEqual(shared_analysis_directory._symbolic_links, {})
         rebuild.assert_not_called()
         delete_symbolic_link.assert_called_once_with("scratch/bar/deleted.py")
+        self.assertEqual(
+            shared_analysis_directory._last_singly_deleted_path_and_link,
+            ("project/deleted.py", "scratch/bar/deleted.py"),
+        )
 
     @patch.object(SharedAnalysisDirectory, "rebuild")
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=True)
@@ -359,6 +413,54 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             deleted_paths=["scratch/deleted_by_rebuild.py"],
         )
         self.assertEqual(actual, expected)
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+
+    def test_cache_last_deleted_link(self) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+        shared_analysis_directory._cache_last_deleted_link(
+            ["foo.py"], ["scratch/foo.py"], ["scratch/foo.py", "scratch/bar.py"]
+        )
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+        shared_analysis_directory._cache_last_deleted_link(
+            [], [], ["scratch/foo.py", "scratch/bar.py"]
+        )
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+
+        # Note: The deleted path won't be in the symbolic links map.
+        shared_analysis_directory._symbolic_links = {}
+        shared_analysis_directory._cache_last_deleted_link(
+            ["foo.py"], ["scratch/foo.py"], ["scratch/foo.py"]
+        )
+        self.assertEqual(
+            shared_analysis_directory._last_singly_deleted_path_and_link,
+            ("foo.py", "scratch/foo.py"),
+        )
+
+    def test_fetch_cached_absolute_link_map(self) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+        self.assertIsNone(
+            shared_analysis_directory._fetch_cached_absolute_link_map(["foo.py"], [])
+        )
+
+        shared_analysis_directory._last_singly_deleted_path_and_link = (
+            "foo.py",
+            "scratch/foo.py",
+        )
+        self.assertEqual(
+            shared_analysis_directory._fetch_cached_absolute_link_map(["foo.py"], []),
+            {"foo.py": "scratch/foo.py"},
+        )
+        self.assertIsNone(
+            shared_analysis_directory._fetch_cached_absolute_link_map(
+                ["foo.py", "bar.py"], []
+            )
+        )
 
     @patch.object(
         buck,
