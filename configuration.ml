@@ -6,8 +6,6 @@
 open Core
 open Pyre
 
-exception InvalidFeatureJSON of string
-
 module Features = struct
   type t = {
     click_to_fix: bool;
@@ -19,12 +17,27 @@ module Features = struct
   let default = { click_to_fix = true; go_to_definition = false; hover = false }
 
   let create feature_string =
-    match feature_string >>| Yojson.Safe.from_string >>| of_yojson with
-    | Some (Ok features) -> features
-    | Some (Error error) ->
-        Log.error "Invalid JSON: %s" error;
-        raise (InvalidFeatureJSON error)
-    | _ -> default
+    feature_string
+    >>| (fun feature_string ->
+          let json_string = Yojson.Safe.from_string feature_string in
+          let default_from_string string =
+            let { click_to_fix; go_to_definition; hover } = default in
+            match string with
+            | "click_to_fix" -> click_to_fix
+            | "go_to_definition" -> go_to_definition
+            | "hover" -> hover
+            | _ -> false
+          in
+          let parse_feature string =
+            match Yojson.Safe.Util.member string json_string with
+            | `Bool value -> value
+            | _ -> default_from_string string
+          in
+          let click_to_fix = parse_feature "click_to_fix" in
+          let go_to_definition = parse_feature "go_to_definition" in
+          let hover = parse_feature "hover" in
+          { click_to_fix; go_to_definition; hover })
+    |> Option.value ~default
 end
 
 module Analysis = struct
