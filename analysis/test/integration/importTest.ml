@@ -63,11 +63,11 @@ let test_check_imports context =
           handle = "durp.py";
           source =
             {|
-          from typing import Any
-          class Foo:
-            a: int = 1
-          b: int = 2
-          c: Any = ...
+                from typing import Any
+                class Foo:
+                  a: int = 1
+                b: int = 2
+                c: Any = ...
         |};
         };
       ]
@@ -161,6 +161,52 @@ let test_check_imports context =
       from derp import a
       from derp.a import b
       from derp.a.b import c
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "constants.py";
+          source =
+            {|
+                class StoryEvent:
+                  USERNAME = "username"
+                  PASSWORD = "password"
+        |};
+        };
+      ]
+    {|
+      from constants import StoryEvent
+      from typing import List
+      keys: List[str] = list()
+      def expects_str(x: str) -> None:
+        pass
+      if StoryEvent.USERNAME in keys:
+        expects_str(StoryEvent.USERNAME)
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "utils/constants.py";
+          source =
+            {|
+                class StoryEvent:
+                  USERNAME = "username"
+                  PASSWORD = "password"
+        |};
+        };
+      ]
+    {|
+      from utils.constants import StoryEvent
+      from typing import Dict
+      keys: Dict[str, int] = {}
+      def expects_str(x: str) -> None:
+        pass
+      if StoryEvent.USERNAME in keys:
+        expects_str(StoryEvent.USERNAME)
     |}
     [];
   ()
