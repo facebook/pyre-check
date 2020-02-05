@@ -78,15 +78,8 @@ class Query(Command):
         return flags
 
     def _run(self) -> None:
-        if self._configuration._use_json_sockets:
-            request = json_rpc.Request(
-                method="typeQuery", parameters={"query": self.query}
-            )
-            self._send_and_handle_socket_request(request, self._version_hash)
-        else:
-            result = self._call_client(command=self.NAME)
-            result.check()
-            log.stdout.write(result.output)
+        request = json_rpc.Request(method="typeQuery", parameters={"query": self.query})
+        self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
         if self.query == "help":

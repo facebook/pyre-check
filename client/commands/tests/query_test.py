@@ -8,6 +8,8 @@ from unittest.mock import MagicMock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ...json_rpc import read_response
+from ...socket_connection import SocketConnection
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -18,15 +20,15 @@ class QueryTest(unittest.TestCase):
         arguments.query = ""
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client:
+        with patch.object(SocketConnection, "connect") as connect:
             result = MagicMock()
             result.output = "{}"
-            call_client.return_value = result
+            read_response.return_value = result
 
             commands.Query(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
             ).run()
-            call_client.assert_called_once_with(command=commands.Query.NAME)
+            connect.assert_called_once()
 
         arguments.log_directory = "/tmp/foo"
         arguments.query = "query"
