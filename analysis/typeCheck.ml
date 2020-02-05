@@ -3791,10 +3791,11 @@ module State (Context : Context) = struct
                   let resolution =
                     match name with
                     | Identifier identifier ->
-                        Resolution.set_local
-                          resolution
-                          ~reference:(Reference.create identifier)
-                          ~annotation
+                        let reference = Reference.create identifier in
+                        resolution
+                        (* first, invalidate previously held refinements *)
+                        |> Resolution.unset_local ~reference
+                        |> Resolution.set_local ~reference ~annotation
                     | Attribute _ as name when is_simple_name name -> (
                         match resolved_base, attribute with
                         | Some parent, Some (attribute, _)
@@ -3967,7 +3968,6 @@ module State (Context : Context) = struct
           | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
               let attribute =
                 refinable_annotation base
-                >>= (fun annotation -> Option.some_if (Annotation.is_final annotation) annotation)
                 >>| Annotation.annotation
                 >>= fun parent ->
                 Type.split parent
