@@ -16,6 +16,23 @@ val create
   unit ->
   t
 
+val resolve : t -> Expression.t -> Type.t
+
+val resolve_to_annotation : t -> Expression.t -> Annotation.t
+
+val resolve_reference : t -> Reference.t -> Type.t
+
+val resolve_assignment : t -> Statement.Assign.t -> t
+
+val resolve_mutable_literals
+  :  t ->
+  expression:Ast.Expression.t option ->
+  resolved:Type.t ->
+  expected:Type.t ->
+  Type.t
+
+val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
+
 val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t
 
 val set_local_with_attributes
@@ -51,21 +68,6 @@ val with_annotation_store : t -> annotation_store:RefinementUnit.t Reference.Map
 val parent : t -> Reference.t option
 
 val with_parent : t -> parent:Reference.t option -> t
-
-val resolve : t -> Expression.t -> Type.t
-
-val resolve_to_annotation : t -> Expression.t -> Annotation.t
-
-val resolve_reference : t -> Reference.t -> Type.t
-
-val resolve_assignment : t -> Statement.Assign.t -> t
-
-val resolve_mutable_literals
-  :  t ->
-  expression:Ast.Expression.t option ->
-  resolved:Type.t ->
-  expected:Type.t ->
-  Type.t
 
 val is_consistent_with : t -> Type.t -> Type.t -> expression:Ast.Expression.t option -> bool
 

@@ -151,6 +151,43 @@ let test_parse_reference context =
   assert_parse_reference "typing.List" (Type.Primitive "list")
 
 
+let test_partition_name context =
+  let resolution =
+    make_resolution
+      ~context
+      {|
+      from dataclasses import dataclass
+      from typing import Optional, Final
+      @dataclass(frozen=True)
+      class InnerFrozenDataClass():
+        x: Optional[int]
+      @dataclass(frozen=True)
+      class FrozenDataClass():
+        inner: InnerFrozenDataClass
+      @dataclass
+      class UnfrozenDataClass():
+        inner: InnerFrozenDataClass
+      def foo() -> None:
+        unfrozen_dataclass: Final[UnfrozenDataClass] = ...
+        frozen_dataclass: Final[FrozenDataClass] = ...
+        if unfrozen_dataclass.inner.x is not None:
+          reveal_type(unfrozen_dataclass.inner.x)
+        if frozen_dataclass.inner.x is not None:
+          reveal_type(frozen_dataclass.inner.x)
+    |}
+  in
+  let assert_resolve_name expression (object_reference, attribute_path) =
+    let name = Expression.create_name ~location:Location.any expression in
+    let test_reference, test_attribute_path, _ = Resolution.partition_name resolution ~name in
+    assert_equal
+      (test_reference, test_attribute_path)
+      (Reference.create object_reference, Reference.create attribute_path)
+  in
+  assert_resolve_name "unfrozen_dataclass.inner.x" ("unfrozen_dataclass", "inner.x");
+  assert_resolve_name "frozen_dataclass.inner.x" ("frozen_dataclass", "inner.x");
+  assert_resolve_name "a.b.c" ("a", "b.c")
+
+
 let test_resolve_literal context =
   let resolution =
     make_resolution
@@ -752,6 +789,7 @@ let () =
          "set_local_with_attributes" >:: test_set_local_with_attributes;
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
+         "partition_name" >:: test_partition_name;
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;

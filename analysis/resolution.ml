@@ -47,6 +47,46 @@ let is_global { global_resolution; _ } ~reference =
   Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some
 
 
+let resolve ({ resolve; _ } as resolution) expression =
+  resolve ~resolution expression |> Annotation.annotation
+
+
+let resolve_to_annotation ({ resolve; _ } as resolution) expression = resolve ~resolution expression
+
+let resolve_reference ({ resolve; _ } as resolution) reference =
+  Expression.from_reference ~location:Location.any reference
+  |> resolve ~resolution
+  |> Annotation.annotation
+
+
+let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
+  resolve_assignment ~resolution assignment
+
+
+let resolve_mutable_literals ({ global_resolution; _ } as resolution) =
+  GlobalResolution.resolve_mutable_literals global_resolution ~resolve:(resolve resolution)
+
+
+let partition_name resolution ~name =
+  let identifiers = Reference.as_list (Expression.name_to_reference_exn name) in
+  match identifiers with
+  | head :: attributes ->
+      let rec partition_attribute base attribute_list =
+        let base_type = resolve_reference resolution base in
+        if Type.is_untyped base_type then
+          match attribute_list with
+          | [] -> Reference.create head, attributes, None
+          | attribute :: attribute_list ->
+              partition_attribute Reference.(attribute |> create |> combine base) attribute_list
+        else
+          base, attribute_list, Some (Annotation.create base_type)
+      in
+      partition_attribute (Reference.create head) attributes
+      |> fun (base, attributes, annotation) ->
+      base, Reference.create_from_list attributes, annotation
+  | _ -> Reference.create_from_list identifiers, Reference.create "", None
+
+
 let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
   {
     resolution with
@@ -136,26 +176,6 @@ let with_annotation_store resolution ~annotation_store = { resolution with annot
 let parent { parent; _ } = parent
 
 let with_parent resolution ~parent = { resolution with parent }
-
-let resolve ({ resolve; _ } as resolution) expression =
-  resolve ~resolution expression |> Annotation.annotation
-
-
-let resolve_to_annotation ({ resolve; _ } as resolution) expression = resolve ~resolution expression
-
-let resolve_reference ({ resolve; _ } as resolution) reference =
-  Expression.from_reference ~location:Location.any reference
-  |> resolve ~resolution
-  |> Annotation.annotation
-
-
-let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
-  resolve_assignment ~resolution assignment
-
-
-let resolve_mutable_literals ({ global_resolution; _ } as resolution) =
-  GlobalResolution.resolve_mutable_literals global_resolution ~resolve:(resolve resolution)
-
 
 let is_consistent_with ({ global_resolution; _ } as resolution) =
   GlobalResolution.is_consistent_with global_resolution ~resolve:(resolve resolution)
