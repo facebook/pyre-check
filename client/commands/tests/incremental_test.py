@@ -10,9 +10,10 @@ import subprocess
 import unittest
 from unittest.mock import MagicMock, Mock, call, patch
 
-from ... import commands
+from ... import commands, json_rpc
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
-from ...commands import incremental, stop
+from ...commands import command, incremental, stop  # noqa
+from ...socket_connection import SocketConnection
 from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
@@ -23,6 +24,15 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch.object(
+        command,
+        "_convert_json_response_to_result",
+        return_value=command.Result(output="{}", code=0),
+    )
+    @patch.object(json_rpc.Request, "write")
+    @patch.object(json_rpc, "read_response")
+    @patch.object(SocketConnection, "connect")
+    @patch.object(SocketConnection, "perform_handshake")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
@@ -40,6 +50,11 @@ class IncrementalTest(unittest.TestCase):
         exists,
         find_local_root,
         find_project_root,
+        perform_handshake,
+        connect,
+        read_response,
+        write,
+        _convert_to_result,
     ) -> None:
         state = MagicMock()
         state.running = ["running"]
@@ -61,7 +76,7 @@ class IncrementalTest(unittest.TestCase):
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads", return_value=[]
         ):
             test_command = incremental.Incremental(
@@ -84,7 +99,7 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
-            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            connect.assert_called_once()
             Monitor.is_alive.assert_called_once_with(configuration)
             Monitor.assert_called_once_with(configuration, ".", analysis_directory)
             file_monitor_instance.daemonize.assert_called_once_with()
@@ -92,7 +107,7 @@ class IncrementalTest(unittest.TestCase):
         Monitor.reset_mock()
         Monitor.is_alive.return_value = True
         file_monitor_instance.reset_mock()
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads", return_value=[]
         ):
             nonblocking_arguments = mock_arguments()
@@ -121,7 +136,7 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
-            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            connect.assert_called_once()
             Monitor.is_alive.assert_called_once_with(configuration)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
@@ -129,7 +144,7 @@ class IncrementalTest(unittest.TestCase):
         commands_Command_state.return_value = commands.command.State.DEAD
         Monitor.reset_mock()
         file_monitor_instance.reset_mock()
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads", return_value=[]
         ):
             test_command = commands.Incremental(
@@ -155,13 +170,11 @@ class IncrementalTest(unittest.TestCase):
             commands_Start.assert_called_with(
                 arguments, original_directory, configuration, analysis_directory
             )
-            call_client.assert_has_calls(
-                [call(command=commands.Incremental.NAME)], any_order=True
-            )
+            connect.assert_called_once()
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads", return_value=[]
         ), patch.object(SharedAnalysisDirectory, "prepare") as prepare:
             test_command = incremental.Incremental(
@@ -184,7 +197,7 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
-            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            connect.assert_called_once()
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
             # Prepare only gets called when actually starting the server.
@@ -194,7 +207,7 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments(
             load_initial_state_from="/a/b", changed_files_path="/c/d"
         )
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads", return_value=[]
         ):
             test_command = commands.Incremental(
@@ -220,9 +233,7 @@ class IncrementalTest(unittest.TestCase):
             commands_Start.assert_called_with(
                 arguments, original_directory, configuration, analysis_directory
             )
-            call_client.assert_has_calls(
-                [call(command=commands.Incremental.NAME)], any_order=True
-            )
+            connect.assert_called_once()
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
@@ -233,7 +244,7 @@ class IncrementalTest(unittest.TestCase):
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
+        with patch.object(SocketConnection, "connect") as connect, patch(
             "json.loads",
             return_value=[
                 {
@@ -268,19 +279,19 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
-            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            connect.assert_called_once()
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
             self.assertEqual(test_command._exit_code, commands.ExitCode.FOUND_ERRORS)
 
         # If Start returns with an error, fail early
         start_exit_code.return_value = commands.ExitCode.FAILURE
-        with patch.object(commands.Command, "_call_client") as call_client:
+        with patch.object(SocketConnection, "connect") as connect:
             test_command = incremental.Incremental(
                 arguments, original_directory, configuration, analysis_directory
             )
             test_command.run()
-            call_client.assert_not_called()
+            connect.assert_not_called()
             self.assertEqual(test_command._exit_code, commands.ExitCode.FAILURE)
 
     def test_read_stderr(self) -> None:
