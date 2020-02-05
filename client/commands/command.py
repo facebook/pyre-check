@@ -560,6 +560,15 @@ class Command(CommandParser, ABC):
 
     # temporarily always return empty list to unblock client release
     def _feature_flags(self) -> List[str]:
+        features = self._features
+        if features:
+            lsp_features = ["click_to_fix", "hover", "go_to_definition"]
+            filtered = {
+                key: value
+                for key, value in json.loads(features).items()
+                if key in lsp_features
+            }
+            return ["-features", json.dumps(filtered)]
         return []
 
     def _read_stdout(self, stdout: Iterable[bytes]) -> None:

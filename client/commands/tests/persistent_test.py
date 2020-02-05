@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import io
+import json
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -33,7 +34,7 @@ class PersistentTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            arguments.features = str(
+            arguments.features = json.dumps(
                 {"click_to_fix": True, "go_to_definition": True, "hover": True}
             )
             command = commands.Persistent(
@@ -48,6 +49,8 @@ class PersistentTest(unittest.TestCase):
                     "hash",
                     "-log-directory",
                     ".pyre",
+                    "-features",
+                    '{"click_to_fix": true, "go_to_definition": true, "hover": true}',
                 ],
             )
             self.assertEqual(arguments.store_type_check_resolution, False)
