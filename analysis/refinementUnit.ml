@@ -202,6 +202,28 @@ let join
     | _ -> false, None
   in
   let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
+    let join left_attributes right_attributes =
+      let join_refinement_units ~key ~data sofar =
+        match data with
+        | `Both
+            ( { base = left_base; attribute_refinements = left_attributes },
+              { base = right_base; attribute_refinements = right_attributes } ) ->
+            valid_join left_base right_base
+            |> fun annotation ->
+            Identifier.Map.Tree.set
+              sofar
+              ~key
+              ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
+        | `Left _
+        | `Right _ ->
+            sofar
+      in
+      Identifier.Map.Tree.fold2
+        left_attributes
+        right_attributes
+        ~init:Identifier.Map.Tree.empty
+        ~f:join_refinement_units
+    in
     let attribute_refinements =
       if valid then
         join left_attributes right_attributes
@@ -213,27 +235,6 @@ let join
     match base with
     | Some base -> set_base refinement_unit ~base
     | _ -> refinement_unit
-  and join left_attributes right_attributes =
-    let join_refinement_units ~key ~data sofar =
-      match data with
-      | `Both
-          ( { base = left_base; attribute_refinements = left_attributes },
-            { base = right_base; attribute_refinements = right_attributes } ) ->
-          valid_join left_base right_base
-          |> fun annotation ->
-          Identifier.Map.Tree.set
-            sofar
-            ~key
-            ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
-      | `Left _
-      | `Right _ ->
-          sofar
-    in
-    Identifier.Map.Tree.fold2
-      left_attributes
-      right_attributes
-      ~init:Identifier.Map.Tree.empty
-      ~f:join_refinement_units
   in
   valid_join left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
@@ -284,6 +285,28 @@ let meet
     | _ -> false, None
   in
   let rec create_refinement_unit (valid, base) ~left_attributes ~right_attributes =
+    let meet left_attributes right_attributes =
+      let meet_refinement_units ~key ~data sofar =
+        match data with
+        | `Both
+            ( { base = left_base; attribute_refinements = left_attributes },
+              { base = right_base; attribute_refinements = right_attributes } ) ->
+            valid_meet left_base right_base
+            |> fun annotation ->
+            Identifier.Map.Tree.set
+              sofar
+              ~key
+              ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
+        | `Left _
+        | `Right _ ->
+            sofar
+      in
+      Identifier.Map.Tree.fold2
+        left_attributes
+        right_attributes
+        ~init:Identifier.Map.Tree.empty
+        ~f:meet_refinement_units
+    in
     let attribute_refinements =
       if valid then
         meet left_attributes right_attributes
@@ -295,27 +318,6 @@ let meet
     match base with
     | Some base -> set_base refinement_unit ~base
     | _ -> refinement_unit
-  and meet left_attributes right_attributes =
-    let meet_refinement_units ~key ~data sofar =
-      match data with
-      | `Both
-          ( { base = left_base; attribute_refinements = left_attributes },
-            { base = right_base; attribute_refinements = right_attributes } ) ->
-          valid_meet left_base right_base
-          |> fun annotation ->
-          Identifier.Map.Tree.set
-            sofar
-            ~key
-            ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
-      | `Left _
-      | `Right _ ->
-          sofar
-    in
-    Identifier.Map.Tree.fold2
-      left_attributes
-      right_attributes
-      ~init:Identifier.Map.Tree.empty
-      ~f:meet_refinement_units
   in
   valid_meet left_base right_base |> create_refinement_unit ~left_attributes ~right_attributes
 
