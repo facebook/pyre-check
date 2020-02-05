@@ -35,19 +35,13 @@ val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * 
 
 val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t
 
-val set_local_with_attributes
-  :  t ->
-  object_reference:Reference.t ->
-  attribute_path:Reference.t ->
-  annotation:Annotation.t ->
-  t
+val set_local_with_attributes : t -> name:Expression.Name.t -> annotation:Annotation.t -> t
 
 val get_local : ?global_fallback:bool -> reference:Reference.t -> t -> Annotation.t option
 
 val get_local_with_attributes
   :  ?global_fallback:bool ->
-  object_reference:Reference.t ->
-  attribute_path:Reference.t ->
+  name:Expression.Name.t ->
   t ->
   Annotation.t option
 

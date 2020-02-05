@@ -101,12 +101,13 @@ let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
   }
 
 
-let set_local_with_attributes
-    ({ annotation_store; _ } as resolution)
-    ~object_reference
-    ~attribute_path
-    ~annotation
-  =
+let set_local_with_attributes ({ annotation_store; _ } as resolution) ~name ~annotation =
+  let object_reference, attribute_path, base = partition_name resolution ~name in
+  let set_base refinement_unit ~base =
+    match RefinementUnit.base refinement_unit, base with
+    | None, Some base -> RefinementUnit.set_base refinement_unit ~base
+    | _ -> refinement_unit
+  in
   {
     resolution with
     annotation_store =
@@ -116,7 +117,8 @@ let set_local_with_attributes
         ~data:
           ( Map.find annotation_store object_reference
           |> Option.value ~default:(RefinementUnit.create ())
-          |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation );
+          |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
+          |> set_base ~base );
   }
 
 
@@ -136,10 +138,10 @@ let get_local ?(global_fallback = true) ~reference { annotation_store; global_re
 
 let get_local_with_attributes
     ?(global_fallback = true)
-    ~object_reference
-    ~attribute_path
-    { annotation_store; global_resolution; _ }
+    ~name
+    ({ annotation_store; global_resolution; _ } as resolution)
   =
+  let object_reference, attribute_path, _ = partition_name resolution ~name in
   match Map.find annotation_store object_reference with
   | Some result
     when global_fallback

@@ -34,53 +34,37 @@ let test_set_local context =
 
 
 let test_set_local_with_attributes context =
-  let assert_local_with_attributes
-      ?(global_fallback = true)
-      ~resolution
-      ~head
-      ~attributes
-      ~expected
-      ()
-    =
+  let assert_local_with_attributes ?(global_fallback = true) ~resolution ~name ~expected () =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
       ( Resolution.get_local_with_attributes
           ~global_fallback
+          ~name:(Expression.create_name ~location:Location.any name)
           resolution
-          ~object_reference:!&head
-          ~attribute_path:!&attributes
       >>| Annotation.annotation )
   in
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"" ~expected:None ();
+  assert_local_with_attributes ~resolution ~name:"local" ~expected:None ();
   let resolution =
     Resolution.set_local_with_attributes
       resolution
-      ~object_reference:!&"local"
-      ~attribute_path:!&"a.x"
+      ~name:(Expression.create_name ~location:Location.any "local.a.x")
       ~annotation:(Annotation.create Type.integer)
   in
-  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"a.x" ~expected:(Some "int") ();
-  assert_local_with_attributes ~resolution ~head:"local" ~attributes:"a.y" ~expected:None ();
+  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "int") ();
+  assert_local_with_attributes ~resolution ~name:"local.a.y" ~expected:None ();
   let resolution =
     Resolution.set_local_with_attributes
       resolution
-      ~object_reference:!&"local"
-      ~attribute_path:!&"a.x"
+      ~name:(Expression.create_name ~location:Location.any "local.a.x")
       ~annotation:(Annotation.create Type.float)
   in
-  assert_local_with_attributes
-    ~resolution
-    ~head:"local"
-    ~attributes:"a.x"
-    ~expected:(Some "float")
-    ();
+  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "float") ();
   let resolution =
     Resolution.set_local_with_attributes
       resolution
-      ~object_reference:!&"global"
-      ~attribute_path:!&"a.x"
+      ~name:(Expression.create_name ~location:Location.any "global.a.x")
       ~annotation:
         (Annotation.create
            ~mutability:(Immutable { scope = Global; original = Type.integer; final = false })
@@ -89,8 +73,7 @@ let test_set_local_with_attributes context =
   assert_local_with_attributes
     ~global_fallback:false
     ~resolution
-    ~head:"global"
-    ~attributes:"a.x."
+    ~name:"global.a.x"
     ~expected:None
     ()
 
