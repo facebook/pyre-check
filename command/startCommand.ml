@@ -511,7 +511,7 @@ let run_start_command
     memory_profiling_output
     project_root
     search_path
-    taint_models_directories
+    taint_model_paths
     excludes
     extensions
     log_directory
@@ -556,7 +556,7 @@ let run_start_command
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map search_path ~f:SearchPath.create)
-      ~taint_models_directories:(List.map taint_models_directories ~f:Path.create_absolute)
+      ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)

@@ -178,16 +178,14 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~rule_filter ~directories =
-  let create_rule directory =
-    if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-    let configuration_path = Path.append directory ~element:"taint.config" in
-    if not (Path.file_exists configuration_path) then
+let create ~rule_filter ~paths =
+  let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
+  let parse_configuration config_file =
+    if not (Path.file_exists config_file) then
       None
     else
       try
-        configuration_path
+        config_file
         |> File.create
         |> File.content
         |> Option.value ~default:""
@@ -195,7 +193,7 @@ let create ~rule_filter ~directories =
         |> Option.some
       with
       | Yojson.Json_error parse_error ->
-          raise (MalformedConfiguration { path = Path.absolute configuration_path; parse_error })
+          raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
   in
   let merge_rules left right =
     {
@@ -205,12 +203,12 @@ let create ~rule_filter ~directories =
       rules = left.rules @ right.rules;
     }
   in
-  let rules = directories |> List.filter_map ~f:create_rule in
-  if List.is_empty rules then
-    raise (Invalid_argument "No `taint.config` was found in the taint directories.");
+  let configurations = file_paths |> List.filter_map ~f:parse_configuration in
+  if List.is_empty configurations then
+    raise (Invalid_argument "No `.config` was found in the taint directories.");
   let ({ rules; _ } as configuration) =
     List.fold_left
-      rules
+      configurations
       ~f:merge_rules
       ~init:{ sources = []; sinks = []; features = []; rules = [] }
   in

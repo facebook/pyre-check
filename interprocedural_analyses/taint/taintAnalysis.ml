@@ -40,19 +40,19 @@ include TaintResult.Register (struct
             ?rule_filter
             models)
     in
-    let model_directories =
-      Yojson.Safe.Util.member "model_directories" taint
+    let model_paths =
+      Yojson.Safe.Util.member "model_paths" taint
       |> Yojson.Safe.Util.to_list
       |> List.map ~f:Yojson.Safe.Util.to_string
     in
-    match model_directories with
+    match model_paths with
     | [] -> models
     | _ -> (
         try
-          let directories = List.map model_directories ~f:Path.create_absolute in
-          let configuration = Configuration.create ~rule_filter ~directories in
+          let paths = List.map model_paths ~f:Path.create_absolute in
+          let configuration = Configuration.create ~rule_filter ~paths in
           Configuration.register configuration;
-          Model.get_model_sources ~directories |> create_models ~configuration
+          Model.get_model_sources ~paths |> create_models ~configuration
         with
         | exn ->
             Log.error "Error getting taint models.";

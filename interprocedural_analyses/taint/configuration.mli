@@ -34,4 +34,4 @@ val register : t -> unit
 
 val default : t
 
-val create : rule_filter:int list option -> directories:Path.t list -> t
+val create : rule_filter:int list option -> paths:Path.t list -> t

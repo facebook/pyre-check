@@ -193,8 +193,8 @@ let analyze
     List.fold qualifiers ~f:make_callables ~init:Callable.Set.empty
   in
   let configuration_json =
-    let taint_models_directories =
-      configuration.Configuration.Analysis.taint_models_directories
+    let taint_model_paths =
+      configuration.Configuration.Analysis.taint_model_paths
       |> List.map ~f:Path.absolute
       |> List.map ~f:(fun directory -> `String directory)
     in
@@ -207,10 +207,7 @@ let analyze
       [
         ( "taint",
           `Assoc
-            ( [
-                "model_directories", `List taint_models_directories;
-                "verify_models", `Bool verify_models;
-              ]
+            ( ["model_paths", `List taint_model_paths; "verify_models", `Bool verify_models]
             @ rule_settings ) );
       ]
   in

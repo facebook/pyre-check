@@ -38,7 +38,7 @@ let run_analysis
     memory_profiling_output
     project_root
     search_path
-    taint_models_directories
+    taint_models_paths
     excludes
     extensions
     log_directory
@@ -77,7 +77,7 @@ let run_analysis
       ?ignore_all_errors
       ~number_of_workers
       ~search_path:(List.map search_path ~f:SearchPath.create)
-      ~taint_models_directories:(List.map taint_models_directories ~f:Path.create_absolute)
+      ~taint_model_paths:(List.map taint_models_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions
       ?log_directory
@@ -97,8 +97,7 @@ let run_analysis
     let scheduler = Scheduler.create ~configuration () in
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax.";
-    Taint.Model.get_model_sources
-      ~directories:configuration.Configuration.Analysis.taint_models_directories
+    Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
     |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
     let environment, ast_environment, qualifiers =
       let configuration =

@@ -758,12 +758,12 @@ let process_type_query_request
           TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
     | TypeQuery.ValidateTaintModels path -> (
         try
-          let directories =
+          let paths =
             match path with
             | Some path -> [path]
-            | None -> configuration.Configuration.Analysis.taint_models_directories
+            | None -> configuration.Configuration.Analysis.taint_model_paths
           in
-          let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~directories in
+          let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~paths in
           let create_models sources =
             let create_model (path, source) =
               Taint.Model.parse
@@ -777,12 +777,12 @@ let process_type_query_request
             in
             List.iter sources ~f:create_model
           in
-          Taint.Model.get_model_sources ~directories |> create_models;
+          Taint.Model.get_model_sources ~paths |> create_models;
           TypeQuery.Response
             (TypeQuery.Success
                (Format.asprintf
                   "Models in `%s` are valid."
-                  (directories |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+                  (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
         with
         | error -> TypeQuery.Error (Exn.to_string error) )
   in

@@ -88,3 +88,6 @@ val with_suffix : t -> suffix:string -> t
 val get_directory : t -> t
 
 val project_directory : local_root:string -> filter_directories:string list -> string
+
+(* paths can be files or directories *)
+val get_matching_files_recursively : suffix:string -> paths:t list -> t list

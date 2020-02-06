@@ -234,3 +234,24 @@ let project_directory ~local_root ~filter_directories =
     | _ -> ""
   else
     local_root
+
+
+let get_matching_files_recursively ~suffix ~paths =
+  let rec expand path =
+    if is_directory path then
+      let expand_directory_entry entry =
+        let path = append path ~element:entry in
+        if is_directory path then
+          expand path
+        else if String.is_suffix ~suffix entry then
+          [path]
+        else
+          []
+      in
+      Sys.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
+    else if String.is_suffix ~suffix (absolute path) then
+      [path]
+    else
+      []
+  in
+  List.concat_map ~f:expand paths

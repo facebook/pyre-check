@@ -38,7 +38,7 @@ module Analysis : sig
     debug: bool;
     project_root: Path.t;
     search_path: SearchPath.t list;
-    taint_models_directories: Path.t list;
+    taint_model_paths: Path.t list;
     verbose: bool;
     expected_version: string option;
     strict: bool;
@@ -73,7 +73,7 @@ module Analysis : sig
     ?sections:string list ->
     ?project_root:Path.t ->
     ?search_path:SearchPath.t list ->
-    ?taint_models_directories:Path.t list ->
+    ?taint_model_paths:Path.t list ->
     ?verbose:bool ->
     ?expected_version:string ->
     ?strict:bool ->
