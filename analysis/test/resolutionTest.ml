@@ -61,21 +61,7 @@ let test_set_local_with_attributes context =
       ~annotation:(Annotation.create Type.float)
   in
   assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "float") ();
-  let resolution =
-    Resolution.set_local_with_attributes
-      resolution
-      ~name:(Expression.create_name ~location:Location.any "global.a.x")
-      ~annotation:
-        (Annotation.create
-           ~mutability:(Immutable { scope = Global; original = Type.integer; final = false })
-           Type.integer)
-  in
-  assert_local_with_attributes
-    ~global_fallback:false
-    ~resolution
-    ~name:"global.a.x"
-    ~expected:None
-    ()
+  ()
 
 
 let test_parse_annotation context =

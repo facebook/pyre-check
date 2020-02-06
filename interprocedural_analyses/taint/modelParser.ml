@@ -742,7 +742,10 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
       let () =
         if
           Type.is_top (Annotation.annotation callable_annotation)
-          && not (Annotation.is_global callable_annotation)
+          (* FIXME: We are relying on the fact that nonexistent functions&attributes resolve to
+             mutable callable annotation, while existing ones resolve to immutable callable
+             annotation. This is fragile! *)
+          && not (Annotation.is_immutable callable_annotation)
         then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
