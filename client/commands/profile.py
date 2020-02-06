@@ -18,6 +18,7 @@ from .command import Command, ProfileOutput
 LOG: logging.Logger = logging.getLogger(__name__)
 
 PHASE_NAME: str = "phase_name"
+TRIGGERED_DEPENDENCIES: str = "number_of_triggered_dependencies"
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,10 @@ class DurationEvent(Event):
         if PHASE_NAME in tags:
             phase_name = tags[PHASE_NAME]
             result[phase_name] = self.duration
+            if TRIGGERED_DEPENDENCIES in tags:
+                result[phase_name + ": triggered dependencies"] = int(
+                    tags[TRIGGERED_DEPENDENCIES]
+                )
 
 
 @dataclass(frozen=True)
