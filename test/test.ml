@@ -1722,7 +1722,6 @@ let assert_equivalent_attributes ~context source expected =
     >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
     |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
-    |> List.map ~f:(Annotated.Attribute.with_location ~location:Location.any)
     |> List.map ~f:ignore_value_location
     |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution:global_resolution)
     |> List.map ~f:Annotated.Attribute.ignore_callable_define_locations

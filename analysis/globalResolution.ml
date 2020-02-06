@@ -350,7 +350,6 @@ let attribute_from_class_name
               ~property:false
               ~static:false
               ~value:(Node.create Expression.Expression.Ellipsis ~location)
-              ~location
             |> Option.some
         | None -> None )
   in

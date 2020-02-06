@@ -407,7 +407,6 @@ let test_class_attributes context =
       ~property:false
       ~static:false
       ~value:(Option.value value ~default:(Node.create_with_default_location Expression.Ellipsis))
-      ~location:Location.any
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -481,7 +480,6 @@ let test_class_attributes context =
       let equal left right =
         let without_locations attribute =
           Attribute.with_value attribute ~value:(Node.create_with_default_location Expression.True)
-          |> Attribute.with_location ~location:Location.any
         in
         Attribute.equal_instantiated (without_locations left) (without_locations right)
         && Expression.location_insensitive_compare (Attribute.value left) (Attribute.value right)
@@ -516,8 +514,7 @@ let test_class_attributes context =
          ~property
          ~visibility
          ~static:false
-         ~value:(Node.create_with_default_location Expression.Ellipsis)
-         ~location:Location.any)
+         ~value:(Node.create_with_default_location Expression.Ellipsis))
   in
   assert_attribute
     ~parent

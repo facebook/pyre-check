@@ -50,7 +50,6 @@ let parse_attributes ~parse_annotation ~class_name =
       ~static:false
       ~value:(Ast.Node.create_with_default_location Expression.Expression.Ellipsis)
       ~name
-      ~location:Location.any
   in
   List.map ~f:parse_attribute
 

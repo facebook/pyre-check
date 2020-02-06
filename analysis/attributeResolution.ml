@@ -534,7 +534,7 @@ module Implementation = struct
         ~definition
         ~class_metadata_environment
         ~class_attributes
-        ~get_table
+        ~create_attribute
         ~instantiate_attribute
         ?dependency
         table
@@ -684,23 +684,40 @@ module Implementation = struct
                           override_existing_parameters parameters
                       | _ -> parameters
                     in
+                    let get_table
+                        ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
+                      =
+                      let create =
+                        create_attribute
+                          ~class_metadata_environment
+                          ?dependency
+                          ~parent
+                          ?defined:None
+                          ?inherited:None
+                          ?default_class_attribute:None
+                          ~accessed_via_metaclass:false
+                      in
+                      let compare_by_location left right =
+                        Ast.Location.compare (Node.location left) (Node.location right)
+                      in
+                      Class.attributes
+                        ~include_generated_attributes:false
+                        ~in_test:false
+                        attribute_components
+                      |> Identifier.SerializableMap.bindings
+                      |> List.unzip
+                      |> snd
+                      |> List.sort ~compare:compare_by_location
+                      |> List.map ~f:create
+                    in
+
                     let parent_attribute_tables =
                       parent_dataclasses
                       |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
                       |> List.rev
                       |> List.map ~f:get_table
                     in
-                    let parent_attributes parent =
-                      let compare_by_location left right =
-                        Ast.Location.compare
-                          (AnnotatedAttribute.location left)
-                          (AnnotatedAttribute.location right)
-                      in
-                      UninstantiatedAttributeTable.to_list parent
-                      |> List.sort ~compare:compare_by_location
-                    in
                     parent_attribute_tables @ [get_table definition]
-                    |> List.map ~f:parent_attributes
                     |> List.map ~f:(List.filter ~f:init_not_disabled)
                     |> List.fold ~init:[] ~f:(fun parameters ->
                            List.fold ~init:parameters ~f:collect_parameters)
@@ -746,7 +763,6 @@ module Implementation = struct
             in
             let make_attribute (attribute_name, annotation) =
               AnnotatedAttribute.create_uninstantiated
-                ~location:Location.any
                 ~uninstantiated_annotation:
                   {
                     UninstantiatedAnnotation.accessed_via_metaclass = false;
@@ -1102,8 +1118,8 @@ module Implementation = struct
     result
 
 
-  let rec uninstantiated_attribute_table
-      ({ create_attribute; metaclass; instantiate_attribute; _ } as open_recurser)
+  let uninstantiated_attribute_table
+      { create_attribute; metaclass; instantiate_attribute; _ }
       ~assumptions
       ~transitive
       ~class_attributes
@@ -1143,7 +1159,6 @@ module Implementation = struct
             UninstantiatedAttributeTable.add
               table
               (AnnotatedAttribute.create_uninstantiated
-                 ~location:Location.any
                  ~uninstantiated_annotation:
                    {
                      UninstantiatedAnnotation.accessed_via_metaclass;
@@ -1181,23 +1196,12 @@ module Implementation = struct
              ~from_empty_stub:(is_suppressed_module class_metadata_environment ~dependency)
       then
         add_placeholder_stub_inheritances ();
-      let get_table =
-        uninstantiated_attribute_table
-          open_recurser
-          ~transitive:false
-          ~class_attributes:false
-          ~include_generated_attributes:false
-          ~special_method:false
-          ?dependency
-          ~class_metadata_environment
-          ~assumptions
-      in
       if include_generated_attributes then
         ClassDecorators.apply
           ~definition:parent
           ~class_metadata_environment
           ~class_attributes
-          ~get_table
+          ~create_attribute:(create_attribute ~assumptions)
           ~instantiate_attribute:
             (instantiate_attribute
                ?dependency
@@ -1731,7 +1735,6 @@ module Implementation = struct
             visibility )
     in
     AnnotatedAttribute.create_uninstantiated
-      ~location
       ~uninstantiated_annotation:
         { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
       ~visibility

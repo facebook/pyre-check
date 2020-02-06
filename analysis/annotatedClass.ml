@@ -88,19 +88,21 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
             let annotation = fallback |> AnnotatedAttribute.annotation |> Annotation.annotation in
             match annotation with
             | Type.Callable ({ implementation; _ } as callable) ->
-                let location = AnnotatedAttribute.location fallback in
                 let arguments =
                   let self_argument =
                     {
                       Call.Argument.name = None;
-                      value = from_reference ~location class_name_reference;
+                      value = from_reference ~location:Location.any class_name_reference;
                     }
                   in
                   let name_argument =
                     {
                       Call.Argument.name = None;
                       value =
-                        { Node.location; value = Expression.String (StringLiteral.create name) };
+                        {
+                          Node.location = Location.any;
+                          value = Expression.String (StringLiteral.create name);
+                        };
                     }
                   in
                   [self_argument; name_argument]
@@ -131,8 +133,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                      ~visibility:ReadWrite
                      ~property:false
                      ~static:false
-                     ~value:(Node.create Ast.Expression.Expression.Ellipsis ~location)
-                     ~location)
+                     ~value:(Node.create Ast.Expression.Expression.Ellipsis ~location:Location.any))
             | _ -> None )
         | _ -> None
       in

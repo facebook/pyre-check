@@ -65,7 +65,8 @@ module AnnotationEdit = struct
           Some (Format.asprintf "%a" Reference.pp_sanitized name)
       | AnalysisError.IncompatibleReturnType { mismatch = { expected; _ }; _ } ->
           Some (Format.asprintf " -> %s" (Type.show expected))
-      | AnalysisError.IncompatibleVariableType { name; mismatch = { expected; _ }; _ } ->
+      | AnalysisError.IncompatibleVariableType
+          { incompatible_type = { name; mismatch = { expected; _ }; _ }; _ } ->
           Some (Format.asprintf "%a: %s" Reference.pp_sanitized name (Type.show expected))
       | _ -> None
     in
@@ -127,7 +128,8 @@ module AnnotationEdit = struct
                 Some (": " ^ format_type annotation)
             | AnalysisError.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
                 Some (Format.asprintf "-> %s:" @@ format_type annotation)
-            | AnalysisError.IncompatibleVariableType { mismatch = { actual = annotation; _ }; _ } ->
+            | AnalysisError.IncompatibleVariableType
+                { incompatible_type = { mismatch = { actual = annotation; _ }; _ }; _ } ->
                 Some (Format.asprintf ": %s " @@ format_type annotation)
             | _ -> None
           in

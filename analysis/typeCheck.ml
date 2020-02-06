@@ -752,13 +752,16 @@ module State (Context : Context) = struct
                 ~kind:
                   (Error.IncompatibleVariableType
                      {
-                       name = Reference.create name;
-                       mismatch =
-                         Error.create_mismatch
-                           ~resolution:global_resolution
-                           ~expected:annotation
-                           ~actual:default
-                           ~covariant:true;
+                       incompatible_type =
+                         {
+                           name = Reference.create name;
+                           mismatch =
+                             Error.create_mismatch
+                               ~resolution:global_resolution
+                               ~expected:annotation
+                               ~actual:default
+                               ~covariant:true;
+                         };
                        declare_location = instantiate location;
                      })
           in
@@ -3485,20 +3488,22 @@ module State (Context : Context) = struct
                                 ~actual:resolved
                                 ~expected
                                 ~covariant:true;
-                            declare_location = instantiate (Attribute.location attribute);
                           };
                       }
                     |> fun kind -> emit_error ~state ~location ~kind
                 | _, Some reference when is_incompatible ->
                     Error.IncompatibleVariableType
                       {
-                        Error.name = reference;
-                        mismatch =
-                          Error.create_mismatch
-                            ~resolution:global_resolution
-                            ~actual:resolved
-                            ~expected
-                            ~covariant:true;
+                        incompatible_type =
+                          {
+                            Error.name = reference;
+                            mismatch =
+                              Error.create_mismatch
+                                ~resolution:global_resolution
+                                ~actual:resolved
+                                ~expected
+                                ~covariant:true;
+                          };
                         declare_location = instantiate location;
                       }
                     |> fun kind -> emit_error ~state ~location ~kind
@@ -3682,10 +3687,8 @@ module State (Context : Context) = struct
                         else if
                           Annotated.Class.Attribute.defined attribute && insufficiently_annotated
                         then
-                          let attribute_location = Annotated.Attribute.location attribute in
                           Error.create
-                            ~location:
-                              (Location.with_module ~qualifier:Context.qualifier attribute_location)
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
                             ~kind:
                               (Error.MissingAttributeAnnotation
                                  {
@@ -4796,7 +4799,14 @@ module State (Context : Context) = struct
           else
             errors
         in
-        let check_overrides definition errors =
+        let check_overrides
+            ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as definition)
+            errors
+          =
+          let components =
+            Ast.Statement.Class.attributes ~include_generated_attributes:true attribute_components
+          in
+
           let override_errors =
             let open Annotated in
             GlobalResolution.attributes
@@ -4813,7 +4823,6 @@ module State (Context : Context) = struct
                       |> Annotation.annotation
                     in
                     let name = Annotated.Attribute.name attribute in
-                    let location = Annotated.Attribute.location attribute in
                     let actual = annotation in
                     let check_override overridden_attribute =
                       let annotation =
@@ -4856,6 +4865,12 @@ module State (Context : Context) = struct
                                        ~covariant:false);
                               }
                         in
+                        let location =
+                          Identifier.SerializableMap.find_opt name components
+                          >>| Node.location
+                          |> Option.value ~default:location
+                        in
+
                         Some
                           (Error.create
                              ~location:(Location.with_module ~qualifier:Context.qualifier location)

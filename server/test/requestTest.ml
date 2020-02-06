@@ -890,7 +890,10 @@ let test_create_annotation_edit context =
            Error.location;
            kind =
              Error.IncompatibleVariableType
-               { name = !&"x"; mismatch = mock_mismatch; declare_location = instantiated_location };
+               {
+                 incompatible_type = { name = !&"x"; mismatch = mock_mismatch };
+                 declare_location = instantiated_location;
+               };
            signature = +mock_signature;
          })
 

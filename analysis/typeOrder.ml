@@ -1347,7 +1347,6 @@ module OrderImplementation = struct
                     let attributes =
                       [
                         AnnotatedAttribute.create
-                          ~location:Location.any
                           ~annotation:callable
                           ~original_annotation:callable
                           ~abstract:false

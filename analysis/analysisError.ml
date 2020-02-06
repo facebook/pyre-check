@@ -55,7 +55,6 @@ and mismatch = {
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.WithPath.t;
 }
 
 and invalid_argument =
@@ -179,7 +178,10 @@ type kind =
       is_unimplemented: bool;
       define_location: Location.t;
     }
-  | IncompatibleVariableType of incompatible_type
+  | IncompatibleVariableType of {
+      incompatible_type: incompatible_type;
+      declare_location: Location.WithPath.t;
+    }
   | IncompatibleOverload of incompatible_overload_kind
   | IncompleteType of {
       target: Expression.t;
@@ -441,8 +443,13 @@ let weaken_literals kind =
           attribute with
           incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
         }
-  | IncompatibleVariableType ({ mismatch; _ } as incompatible) ->
-      IncompatibleVariableType { incompatible with mismatch = weaken_mismatch mismatch }
+  | IncompatibleVariableType ({ incompatible_type = { mismatch; _ } as incompatible; _ } as variable)
+    ->
+      IncompatibleVariableType
+        {
+          variable with
+          incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
+        }
   | InconsistentOverride ({ override = WeakenedPostcondition mismatch; _ } as inconsistent) ->
       InconsistentOverride
         { inconsistent with override = WeakenedPostcondition (weaken_mismatch mismatch) }
@@ -672,8 +679,7 @@ let messages ~concise ~signature location kind =
   | IncompatibleAttributeType
       {
         parent;
-        incompatible_type =
-          { name; mismatch = { actual; expected; due_to_invariance; _ }; declare_location };
+        incompatible_type = { name; mismatch = { actual; expected; due_to_invariance; _ } };
       } ->
       let message =
         if concise then
@@ -692,17 +698,14 @@ let messages ~concise ~signature location kind =
       in
       let trace =
         if due_to_invariance then
-          invariance_message
+          [invariance_message]
         else
-          Format.asprintf
-            "Attribute `%a` declared on line %d, incorrectly used on line %d."
-            pp_reference
-            name
-            declare_location.Location.WithPath.start.Location.line
-            start_line
+          []
       in
-      [message; trace]
-  | IncompatibleVariableType { name; mismatch = { actual; expected; due_to_invariance; _ }; _ } ->
+      message :: trace
+  | IncompatibleVariableType
+      { incompatible_type = { name; mismatch = { actual; expected; due_to_invariance; _ }; _ }; _ }
+    ->
       let message =
         if Type.is_tuple expected && not (Type.is_tuple actual) then
           Format.asprintf "Unable to unpack `%a`, expected a tuple." pp_type actual
@@ -1958,7 +1961,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; _ }; _ }
+  | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
@@ -2071,7 +2074,8 @@ let less_or_equal ~resolution left right =
     when Type.equal left.parent right.parent
          && Reference.equal left.incompatible_type.name right.incompatible_type.name ->
       less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
-  | IncompatibleVariableType left, IncompatibleVariableType right
+  | ( IncompatibleVariableType { incompatible_type = left; _ },
+      IncompatibleVariableType { incompatible_type = right; _ } )
     when Reference.equal left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | InconsistentOverride left, InconsistentOverride right -> (
@@ -2415,8 +2419,17 @@ let join ~resolution left right =
         IncompatibleAttributeType
           { parent = left.parent; incompatible_type = { left.incompatible_type with mismatch } }
     | IncompatibleVariableType left, IncompatibleVariableType right
-      when Reference.equal left.name right.name ->
-        IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
+      when Reference.equal left.incompatible_type.name right.incompatible_type.name ->
+        IncompatibleVariableType
+          {
+            left with
+            incompatible_type =
+              {
+                left.incompatible_type with
+                mismatch =
+                  join_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch;
+              };
+          }
     | ( InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
         InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) )
       -> (
@@ -2689,7 +2702,7 @@ let filter ~resolution errors =
       | IncompatibleAwaitableType actual
       | IncompatibleParameterType { mismatch = { actual; _ }; _ }
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
-      | IncompatibleVariableType { mismatch = { actual; _ }; _ }
+      | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
             try
@@ -2753,7 +2766,8 @@ let filter ~resolution errors =
       | IncompatibleReturnType { mismatch = { expected; actual; _ }; _ }
       | IncompatibleAttributeType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ }
-      | IncompatibleVariableType { mismatch = { expected; actual; _ }; _ } -> (
+      | IncompatibleVariableType
+          { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ } -> (
           match actual with
           | Type.Callable _ ->
               GlobalResolution.less_or_equal
@@ -3079,8 +3093,13 @@ let dequalify
             parent = dequalify parent;
             incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch };
           }
-    | IncompatibleVariableType ({ mismatch; _ } as incompatible_type) ->
-        IncompatibleVariableType { incompatible_type with mismatch = dequalify_mismatch mismatch }
+    | IncompatibleVariableType ({ incompatible_type = { mismatch; _ }; _ } as variable) ->
+        IncompatibleVariableType
+          {
+            variable with
+            incompatible_type =
+              { variable.incompatible_type with mismatch = dequalify_mismatch mismatch };
+          }
     | InconsistentOverride
         ( { override = StrengthenedPrecondition (Found mismatch); parent; overridden_method; _ } as
         inconsistent_override ) ->

@@ -35,7 +35,6 @@ val create
   property:bool ->
   static:bool ->
   value:Expression.t ->
-  location:Location.t ->
   instantiated
 
 val create_uninstantiated
@@ -51,7 +50,6 @@ val create_uninstantiated
   property:bool ->
   static:bool ->
   value:Expression.t ->
-  location:Location.t ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -70,8 +68,6 @@ val value : 'a t -> Expression.t
 
 val initialized : 'a t -> bool
 
-val location : 'a t -> Location.t
-
 val defined : 'a t -> bool
 
 val class_attribute : 'a t -> bool
@@ -83,8 +79,6 @@ val property : 'a t -> bool
 val visibility : 'a t -> visibility
 
 val with_value : 'a t -> value:Expression.t -> 'a t
-
-val with_location : 'a t -> location:Location.t -> 'a t
 
 val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated
 

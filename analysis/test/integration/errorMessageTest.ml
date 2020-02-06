@@ -62,8 +62,7 @@ let test_show_error_traces context =
     |}
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
-      ^ "`int` but is used as type `str`. Attribute `attribute` declared on line 3, incorrectly "
-      ^ "used on line 5.";
+      ^ "`int` but is used as type `str`.";
     ];
   assert_type_errors
     {|

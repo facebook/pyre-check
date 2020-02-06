@@ -46,7 +46,6 @@ and mismatch = {
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.WithPath.t;
 }
 
 and invalid_argument =
@@ -170,7 +169,10 @@ type kind =
       is_unimplemented: bool;
       define_location: Location.t;
     }
-  | IncompatibleVariableType of incompatible_type
+  | IncompatibleVariableType of {
+      incompatible_type: incompatible_type;
+      declare_location: Location.WithPath.t;
+    }
   | IncompatibleOverload of incompatible_overload_kind
   | IncompleteType of {
       target: Expression.t;

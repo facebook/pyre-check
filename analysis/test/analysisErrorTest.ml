@@ -105,7 +105,6 @@ let test_due_to_analysis_limitations _ =
            {
              Error.name = !&"";
              mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-             declare_location = Location.WithPath.any;
            };
        });
   assert_due_to_analysis_limitations
@@ -117,7 +116,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              mismatch =
                { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
-             declare_location = Location.WithPath.any;
            };
        });
   assert_not_due_to_analysis_limitations
@@ -129,7 +127,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              mismatch =
                { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
-             declare_location = Location.WithPath.any;
            };
        });
 
@@ -363,14 +360,17 @@ let test_join context =
                 Error.name = !&"";
                 mismatch =
                   { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
-                declare_location = Location.WithPath.any;
               };
           }))
     (error
        (Error.IncompatibleVariableType
           {
-            Error.name = !&"";
-            mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
+            incompatible_type =
+              {
+                Error.name = !&"";
+                mismatch =
+                  { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
+              };
             declare_location = Location.WithPath.any;
           }))
     (error Error.Top);

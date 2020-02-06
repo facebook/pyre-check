@@ -16,7 +16,7 @@ type visibility =
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
-type 'a attribute = {
+type 'a t = {
   payload: 'a;
   abstract: bool;
   async: bool;
@@ -31,8 +31,6 @@ type 'a attribute = {
   value: Expression.t;
 }
 [@@deriving eq, show, compare, sexp]
-
-type 'a t = 'a attribute Node.t [@@deriving eq, show, compare, sexp]
 
 type instantiated_annotation = {
   annotation: Type.t;
@@ -56,25 +54,20 @@ let create
     ~property
     ~static
     ~value
-    ~location
   =
   {
-    Node.location;
-    value =
-      {
-        payload = { annotation; original_annotation };
-        abstract;
-        async;
-        class_attribute;
-        defined;
-        initialized;
-        name;
-        parent;
-        visibility;
-        property;
-        static;
-        value;
-      };
+    payload = { annotation; original_annotation };
+    abstract;
+    async;
+    class_attribute;
+    defined;
+    initialized;
+    name;
+    parent;
+    visibility;
+    property;
+    static;
+    value;
   }
 
 
@@ -91,34 +84,24 @@ let create_uninstantiated
     ~property
     ~static
     ~value
-    ~location
   =
   {
-    Node.location;
-    value =
-      {
-        payload = uninstantiated_annotation;
-        abstract;
-        async;
-        class_attribute;
-        defined;
-        initialized;
-        name;
-        parent;
-        visibility;
-        property;
-        static;
-        value;
-      };
+    payload = uninstantiated_annotation;
+    abstract;
+    async;
+    class_attribute;
+    defined;
+    initialized;
+    name;
+    parent;
+    visibility;
+    property;
+    static;
+    value;
   }
 
 
-let annotation
-    {
-      Node.value = { payload = { annotation; original_annotation }; async; defined; visibility; _ };
-      _;
-    }
-  =
+let annotation { payload = { annotation; original_annotation }; async; defined; visibility; _ } =
   let annotation, original =
     if async then
       Type.awaitable annotation, Type.awaitable original_annotation
@@ -141,44 +124,37 @@ let annotation
   { Annotation.annotation; mutability }
 
 
-let uninstantiated_annotation { Node.value = { payload; _ }; _ } = payload
+let uninstantiated_annotation { payload; _ } = payload
 
-let name { Node.value = { name; _ }; _ } = name
+let name { name; _ } = name
 
-let parent { Node.value = { parent; _ }; _ } = parent
+let parent { parent; _ } = parent
 
-let value { Node.value = { value; _ }; _ } = value
+let value { value; _ } = value
 
-let initialized { Node.value = { initialized; _ }; _ } = initialized
+let initialized { initialized; _ } = initialized
 
-let location { Node.location; _ } = location
+let defined { defined; _ } = defined
 
-let defined { Node.value = { defined; _ }; _ } = defined
+let class_attribute { class_attribute; _ } = class_attribute
 
-let class_attribute { Node.value = { class_attribute; _ }; _ } = class_attribute
+let abstract { abstract; _ } = abstract
 
-let abstract { Node.value = { abstract; _ }; _ } = abstract
+let async { async; _ } = async
 
-let async { Node.value = { async; _ }; _ } = async
+let static { static; _ } = static
 
-let static { Node.value = { static; _ }; _ } = static
+let property { property; _ } = property
 
-let property { Node.value = { property; _ }; _ } = property
+let visibility { visibility; _ } = visibility
 
-let visibility { Node.value = { visibility; _ }; _ } = visibility
+let with_value attribute ~value = { attribute with value }
 
-let with_value { Node.location; value = attribute } ~value =
-  { Node.location; value = { attribute with value } }
-
-
-let with_location attribute ~location = { attribute with Node.location }
-
-let instantiate { Node.location; value = attribute } ~annotation ~original_annotation =
-  { Node.location; value = { attribute with payload = { annotation; original_annotation } } }
+let instantiate attribute ~annotation ~original_annotation =
+  { attribute with payload = { annotation; original_annotation } }
 
 
-let ignore_callable_define_locations
-    { Node.location; value = { payload = { annotation; original_annotation }; _ } as value }
+let ignore_callable_define_locations ({ payload = { annotation; original_annotation }; _ } as value)
   =
   let remove =
     let constraints = function
@@ -200,4 +176,4 @@ let ignore_callable_define_locations
   let payload =
     { annotation = remove annotation; original_annotation = remove original_annotation }
   in
-  { Node.location; value = { value with payload } }
+  { value with payload }
