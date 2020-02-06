@@ -31,6 +31,13 @@ val log_performance_event : (unit -> Event.t) -> unit
 
 val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> string -> 'a
 
+type 'a result_with_tags = {
+  result: 'a;
+  tags: unit -> (string * string) list;
+}
+
+val track_duration_event_with_dynamic_tags : f:(unit -> 'a result_with_tags) -> string -> 'a
+
 val track_shared_memory_usage : ?name:string -> unit -> unit
 
 val track_duration_and_shared_memory
@@ -38,4 +45,9 @@ val track_duration_and_shared_memory
   f:(unit -> 'a) ->
   string ->
   'a
-(** Convenient function to track both time and shared memory usage *)
+
+val track_duration_and_shared_memory_with_dynamic_tags
+  :  f:(unit -> 'a result_with_tags) ->
+  string ->
+  'a
+(** Convenient functions to track both time and shared memory usage *)

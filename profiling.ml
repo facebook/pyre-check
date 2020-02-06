@@ -57,13 +57,26 @@ let log_memory_event event_creator =
   |> Option.iter ~f:(log_to_path ~event_creator)
 
 
-let track_duration_event ?(tags = []) ~f name =
+type 'a result_with_tags = {
+  result: 'a;
+  tags: unit -> (string * string) list;
+}
+
+let track_duration_event_with_dynamic_tags ~f name =
   let timer = Timer.start () in
-  let result = f () in
+  let { result; tags } = f () in
   let duration = Timer.stop_in_us timer in
-  let create_event () = Event.create name ~tags ~event_type:(Duration duration) in
+  let create_event () =
+    let tags = tags () in
+    Event.create name ~tags ~event_type:(Duration duration)
+  in
   log_performance_event create_event;
   result
+
+
+let track_duration_event ?(tags = []) ~f name =
+  let f () = { result = f (); tags = (fun () -> tags) } in
+  track_duration_event_with_dynamic_tags ~f name
 
 
 let track_shared_memory_usage ?name () =
@@ -90,8 +103,18 @@ let track_shared_memory_usage ?name () =
   log_memory_event create_event
 
 
-let track_duration_and_shared_memory ?tags ~f name =
+let with_before_and_after_shared_memory_tracking f ~name =
   track_shared_memory_usage () ~name:(Format.sprintf "Before %s" name);
-  let result = track_duration_event name ?tags ~f in
+  let result = f () in
   track_shared_memory_usage () ~name:(Format.sprintf "After %s" name);
   result
+
+
+let track_duration_and_shared_memory ?tags ~f name =
+  with_before_and_after_shared_memory_tracking (fun () -> track_duration_event name ?tags ~f) ~name
+
+
+let track_duration_and_shared_memory_with_dynamic_tags ~f name =
+  with_before_and_after_shared_memory_tracking
+    (fun () -> track_duration_event_with_dynamic_tags name ~f)
+    ~name

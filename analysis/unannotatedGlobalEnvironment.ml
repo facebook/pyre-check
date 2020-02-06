@@ -709,9 +709,8 @@ let update_this_and_all_preceding_environments
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
-        Profiling.track_duration_and_shared_memory
+        Profiling.track_duration_and_shared_memory_with_dynamic_tags
           "TableUpdate(Unannotated globals)"
-          ~tags:["phase_name", "Global discovery"]
           ~f:(fun _ ->
             let (), mutation_triggers =
               DependencyKey.Transaction.empty
@@ -741,7 +740,20 @@ let update_this_and_all_preceding_environments
                 ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
                 ~define_additions:(Set.to_list define_additions)
             in
-            define_additions, DependencyKey.KeySet.union addition_triggers mutation_triggers)
+            let triggered_dependencies =
+              DependencyKey.KeySet.union addition_triggers mutation_triggers
+            in
+            let tags () =
+              let triggered_dependencies_size =
+                SharedMemoryKeys.DependencyKey.KeySet.cardinal triggered_dependencies
+                |> Format.sprintf "%d"
+              in
+              [
+                "phase_name", "Global discovery";
+                "number_of_triggered_dependencies", triggered_dependencies_size;
+              ]
+            in
+            { Profiling.result = define_additions, triggered_dependencies; tags })
       in
       {
         UpdateResult.previous_classes;

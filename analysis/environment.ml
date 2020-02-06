@@ -286,10 +286,7 @@ module EnvironmentTable = struct
       | { incremental_style = FineGrained; _ } ->
           let triggered_dependencies =
             let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
-            Profiling.track_duration_and_shared_memory
-              name
-              ~tags:["phase_name", In.Value.description]
-              ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
                 let names_to_update =
                   In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
                   |> List.fold ~init:In.TriggerSet.empty ~f:(fun triggers upstream_dependencies ->
@@ -316,7 +313,17 @@ module EnvironmentTable = struct
                     |> SharedMemoryKeys.DependencyKey.Transaction.execute
                          ~update:(update ~names_to_update ~track_dependencies:true)
                 in
-                triggered_dependencies)
+                let tags () =
+                  let triggered_dependencies_size =
+                    SharedMemoryKeys.DependencyKey.KeySet.cardinal triggered_dependencies
+                    |> Format.sprintf "%d"
+                  in
+                  [
+                    "phase_name", In.Value.description;
+                    "number_of_triggered_dependencies", triggered_dependencies_size;
+                  ]
+                in
+                { Profiling.result = triggered_dependencies; tags })
           in
           {
             UpdateResult.triggered_dependencies;
