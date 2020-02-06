@@ -3577,8 +3577,7 @@ module State (Context : Context) = struct
                     then
                       let global_location =
                         Reference.delocalize reference
-                        |> GlobalResolution.global global_resolution
-                        >>| Node.location
+                        |> GlobalResolution.global_location global_resolution
                         |> Option.value ~default:location
                       in
                       Error.create

@@ -98,6 +98,7 @@ type dependency =
   | RegisterClassMetadata of Type.Primitive.t
   | UndecoratedFunction of Reference.t
   | AnnotateGlobal of Reference.t
+  | AnnotateGlobalLocation of Reference.t
   | FromEmptyStub of Reference.t
   | AttributeTable of AttributeTableKey.t
   | ParseAnnotation of ParseAnnotationKey.t

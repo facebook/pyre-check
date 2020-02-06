@@ -299,15 +299,11 @@ let global ({ dependency; _ } as resolution) reference =
   | "__doc__"
   | "__file__"
   | "__name__" ->
-      let annotation =
-        Annotation.create_immutable Type.string |> Node.create_with_default_location
-      in
+      let annotation = Annotation.create_immutable Type.string in
       Some annotation
   | "__dict__" ->
       let annotation =
-        Type.dictionary ~key:Type.string ~value:Type.Any
-        |> Annotation.create_immutable
-        |> Node.create_with_default_location
+        Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable
       in
       Some annotation
   | _ ->
@@ -546,4 +542,10 @@ let attribute_names
     ~class_attributes
     ~include_generated_attributes
     name
+    ?dependency
+
+
+let global_location ({ dependency; _ } as resolution) =
+  AnnotatedGlobalEnvironment.ReadOnly.get_global_location
+    (annotated_global_environment resolution)
     ?dependency

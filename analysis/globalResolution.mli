@@ -230,3 +230,5 @@ val attribute_names
   ?instantiated:Type.t ->
   Type.Primitive.t ->
   string list option
+
+val global_location : t -> Reference.t -> Location.t option

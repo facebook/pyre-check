@@ -5,12 +5,14 @@
 open Ast
 open SharedMemoryKeys
 
-type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
+type global = Annotation.t [@@deriving eq, show, compare, sexp]
 
 module AnnotatedReadOnly : sig
   include Environment.ReadOnly
 
   val get_global : t -> ?dependency:dependency -> Reference.t -> global option
+
+  val get_global_location : t -> ?dependency:dependency -> Reference.t -> Location.t option
 
   val attribute_resolution : t -> AttributeResolution.ReadOnly.t
 
@@ -20,7 +22,6 @@ module AnnotatedReadOnly : sig
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 end
 
-include
-  Environment.S
-    with module ReadOnly = AnnotatedReadOnly
-     and module PreviousEnvironment = AttributeResolution
+include Environment.S with module ReadOnly = AnnotatedReadOnly
+
+module PreviousEnvironment = AttributeResolution

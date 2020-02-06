@@ -429,9 +429,7 @@ let test_register_globals context =
   let environment = create_environment ~context () in
   let resolution = GlobalResolution.create environment in
   let assert_global reference expected =
-    let actual =
-      !&reference |> GlobalResolution.global resolution >>| Node.value >>| Annotation.annotation
-    in
+    let actual = !&reference |> GlobalResolution.global resolution >>| Annotation.annotation in
     assert_equal
       ~printer:(function
         | Some annotation -> Type.show annotation
@@ -652,7 +650,7 @@ let test_populate context =
         | Some global -> Annotation.show global
         | None -> "None")
       expected
-      (GlobalResolution.global global_resolution !&actual >>| Node.value)
+      (GlobalResolution.global global_resolution !&actual)
   in
   let assert_global =
     populate
@@ -1331,7 +1329,13 @@ let test_update_and_compute_dependencies context =
           ~ast_environment_update_result
           ()
       in
-      AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result
+      AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
+      |> List.fold
+           ~f:SharedMemoryKeys.DependencyKey.KeySet.union
+           ~init:SharedMemoryKeys.DependencyKey.KeySet.empty
+      |> SharedMemoryKeys.DependencyKey.KeySet.filter (function
+             | SharedMemoryKeys.TypeCheckDefine _ -> true
+             | _ -> false)
     in
     List.iter expected_state_after_update ~f:assert_state;
     assert_equal

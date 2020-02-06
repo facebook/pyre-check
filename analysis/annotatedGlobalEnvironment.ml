@@ -9,7 +9,7 @@ open Pyre
 open Statement
 module PreviousEnvironment = AttributeResolution
 
-type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
+type global = Annotation.t [@@deriving eq, show, compare, sexp]
 
 let class_hierarchy_environment class_metadata_environment =
   ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
@@ -23,7 +23,7 @@ let unannotated_global_environment environment =
   alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-module GlobalValue = struct
+module GlobalValueValue = struct
   type t = global option
 
   let prefix = Prefix.make ()
@@ -35,17 +35,25 @@ module GlobalValue = struct
   let compare = Option.compare compare_global
 end
 
+module GlobalLocationValue = struct
+  type t = Location.t option
+
+  let prefix = Prefix.make ()
+
+  let description = "Global Locations"
+
+  let unmarshall value = Marshal.from_string value 0
+
+  let compare = Option.compare Location.compare
+end
+
 let produce_global_annotation attribute_resolution name ~track_dependencies =
   let class_metadata_environment =
     AttributeResolution.ReadOnly.class_metadata_environment attribute_resolution
   in
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
-  let produce_class_meta_annotation { Node.location; _ } =
-    let primitive = Type.Primitive (Reference.show name) in
-    Annotation.create_immutable (Type.meta primitive) |> Node.create ~location
-  in
   let process_unannotated_global global =
-    let produce_assignment_global ~target_location ~is_explicit annotation =
+    let produce_assignment_global ~is_explicit annotation =
       let original =
         if is_explicit then
           None
@@ -57,10 +65,10 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         else
           None
       in
-      Annotation.create_immutable ~original annotation |> Node.create ~location:target_location
+      Annotation.create_immutable ~original annotation
     in
     match global with
-    | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
+    | UnannotatedGlobalEnvironment.Define defines ->
         let create_overload
             { Node.value = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
           =
@@ -87,7 +95,6 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         |> Type.Callable.from_overloads
         >>| (fun callable -> Type.Callable callable)
         >>| Annotation.create_immutable
-        >>| Node.create ~location:(Node.location head)
     | SimpleAssign
         {
           explicit_annotation = None;
@@ -122,9 +129,8 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
              attribute_resolution
         |> Type.meta
         |> Annotation.create_immutable
-        |> Node.create ~location
         |> Option.some
-    | SimpleAssign { explicit_annotation; value; target_location } ->
+    | SimpleAssign { explicit_annotation; value; _ } ->
         let explicit_annotation =
           explicit_annotation
           >>| AttributeResolution.ReadOnly.parse_annotation ?dependency attribute_resolution
@@ -136,12 +142,9 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
           | None ->
               AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
         in
-        produce_assignment_global
-          ~target_location
-          ~is_explicit:(Option.is_some explicit_annotation)
-          annotation
+        produce_assignment_global ~is_explicit:(Option.is_some explicit_annotation) annotation
         |> Option.some
-    | TupleAssign { value; target_location; index; total_length } ->
+    | TupleAssign { value; index; total_length; _ } ->
         let extracted =
           match
             AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
@@ -154,40 +157,60 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
           | Type.Tuple (Type.Unbounded parameter) -> parameter
           | _ -> Type.Top
         in
-        produce_assignment_global ~target_location ~is_explicit:false extracted |> Option.some
+        produce_assignment_global ~is_explicit:false extracted |> Option.some
     | _ -> None
   in
   let class_lookup =
     Reference.show name
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+    |> UnannotatedGlobalEnvironment.ReadOnly.class_exists
          (unannotated_global_environment class_metadata_environment)
          ?dependency
   in
-  match class_lookup with
-  | Some retrieved_class -> produce_class_meta_annotation retrieved_class |> Option.some
-  | None ->
-      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-        (unannotated_global_environment class_metadata_environment)
-        ?dependency
-        name
-      >>= fun global ->
-      let timer = Timer.start () in
-      let result = process_unannotated_global global in
-      Statistics.performance
-        ~flush:false
-        ~randomly_log_every:500
-        ~section:`Check
-        ~name:"SingleGlobalTypeCheck"
-        ~timer
-        ~normals:["name", Reference.show name; "request kind", "SingleGlobalTypeCheck"]
-        ();
-      result
+  if class_lookup then
+    let primitive = Type.Primitive (Reference.show name) in
+    Annotation.create_immutable (Type.meta primitive) |> Option.some
+  else
+    UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+      (unannotated_global_environment class_metadata_environment)
+      ?dependency
+      name
+    >>= fun global ->
+    let timer = Timer.start () in
+    let result = process_unannotated_global global in
+    Statistics.performance
+      ~flush:false
+      ~randomly_log_every:500
+      ~section:`Check
+      ~name:"SingleGlobalTypeCheck"
+      ~timer
+      ~normals:["name", Reference.show name; "request kind", "SingleGlobalTypeCheck"]
+      ();
+    result
 
 
-module GlobalTable = Environment.EnvironmentTable.WithCache (struct
+module Common = struct
+  let legacy_invalidated_keys upstream =
+    let previous_classes =
+      UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
+      |> Type.Primitive.Set.to_list
+      |> List.map ~f:Reference.create
+    in
+    let previous_unannotated_globals =
+      UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream
+    in
+    List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
+
+
+  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+
+  let show_key = Reference.show
+end
+
+module GlobalValueTable = Environment.EnvironmentTable.WithCache (struct
+  include Common
   module PreviousEnvironment = PreviousEnvironment
   module Key = SharedMemoryKeys.ReferenceKey
-  module Value = GlobalValue
+  module Value = GlobalValueValue
 
   type trigger = Reference.t
 
@@ -206,39 +229,90 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let legacy_invalidated_keys upstream =
-    let previous_classes =
-      UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
-      |> Type.Primitive.Set.to_list
-      |> List.map ~f:Reference.create
-    in
-    let previous_unannotated_globals =
-      UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream
-    in
-    List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
-
-
-  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-
   let serialize_value = function
-    | Some annotation -> Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
+    | Some annotation -> Annotation.sexp_of_t annotation |> Sexp.to_string
     | None -> "None"
 
 
-  let show_key = Reference.show
-
-  let equal_value =
-    Option.equal (fun first second -> Annotation.equal (Node.value first) (Node.value second))
+  let equal_value = Option.equal Annotation.equal
 end)
 
-include GlobalTable
+let produce_global_location global_value_table name ~track_dependencies =
+  let class_metadata_environment =
+    GlobalValueTable.ReadOnly.upstream_environment global_value_table
+    |> AttributeResolution.ReadOnly.class_metadata_environment
+  in
+  let dependency =
+    Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobalLocation name)
+  in
+  let class_location =
+    Reference.show name
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+         (unannotated_global_environment class_metadata_environment)
+         ?dependency
+    >>| Node.location
+  in
+  match class_location with
+  | Some location -> Some location
+  | None ->
+      let extract_location = function
+        | UnannotatedGlobalEnvironment.Define (head :: _) -> Some (Node.location head)
+        | SimpleAssign { target_location; _ } -> Some target_location
+        | TupleAssign { target_location; _ } -> Some target_location
+        | _ -> None
+      in
+      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+        (unannotated_global_environment class_metadata_environment)
+        ?dependency
+        name
+      >>= extract_location
+
+
+module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
+  include Common
+  module PreviousEnvironment = GlobalValueTable
+  module Key = SharedMemoryKeys.ReferenceKey
+  module Value = GlobalLocationValue
+
+  type trigger = Reference.t
+
+  let convert_trigger = Fn.id
+
+  let key_to_trigger = Fn.id
+
+  module TriggerSet = Reference.Set
+
+  let lazy_incremental = false
+
+  let produce_value = produce_global_location
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.AnnotateGlobalLocation name -> Some name
+    | _ -> None
+
+
+  let serialize_value = function
+    | Some location -> Location.sexp_of_t location |> Sexp.to_string
+    | None -> "None"
+
+
+  let equal_value = Option.equal Location.equal
+end)
+
+include GlobalLocationTable
 
 module ReadOnly = struct
-  include GlobalTable.ReadOnly
+  include GlobalLocationTable.ReadOnly
 
-  let get_global = get
+  let get_global read_only ?dependency name =
+    GlobalValueTable.ReadOnly.get (upstream_environment read_only) ?dependency name
 
-  let attribute_resolution = upstream_environment
+
+  let get_global_location = get
+
+  let attribute_resolution read_only =
+    upstream_environment read_only |> GlobalValueTable.ReadOnly.upstream_environment
+
 
   let class_metadata_environment read_only =
     attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment
@@ -252,5 +326,5 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 end
 
-module UpdateResult = GlobalTable.UpdateResult
+module UpdateResult = GlobalLocationTable.UpdateResult
 module AnnotatedReadOnly = ReadOnly

@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Pyre
 open Ast
 
 type t = {
@@ -129,7 +128,7 @@ let get_local
       RefinementUnit.base result
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.delocalize reference |> global >>| Node.value
+      Reference.delocalize reference |> global
   | _ -> None
 
 
@@ -144,7 +143,7 @@ let get_local_with_attributes
       RefinementUnit.annotation result ~reference:attribute_path
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.(combine object_reference attribute_path |> delocalize) |> global >>| Node.value
+      Reference.(combine object_reference attribute_path |> delocalize) |> global
   | _ -> None
 
 
