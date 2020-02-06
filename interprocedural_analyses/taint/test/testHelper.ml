@@ -385,7 +385,13 @@ type test_environment = {
   environment: TypeEnvironment.ReadOnly.t;
 }
 
-let initialize ?(handle = "test.py") ?models ~context source_content =
+let initialize
+    ?(handle = "test.py")
+    ?models
+    ?(taint_configuration = TaintConfiguration.default)
+    ~context
+    source_content
+  =
   let configuration, ast_environment, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     let { Test.ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, errors =
@@ -449,6 +455,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
   let stubs = List.map ~f:fst stubs in
   let all_callables = List.rev_append stubs callables in
   (* Initialize models *)
+  let () = TaintConfiguration.register taint_configuration in
   let () =
     let keys = Fixpoint.KeySet.of_list all_callables in
     Fixpoint.remove_new keys;
@@ -461,7 +468,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
           Model.parse
             ~resolution:(TypeCheck.resolution global_resolution ())
             ~source:(Test.trim_extra_indentation source)
-            ~configuration:TaintConfiguration.default
+            ~configuration:taint_configuration
             inferred_models
     in
     initial_models

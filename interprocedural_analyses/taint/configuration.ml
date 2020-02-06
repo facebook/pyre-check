@@ -94,7 +94,13 @@ let parse source =
   { sources; sinks; features; rules }
 
 
-let register configuration = SharedConfig.add key configuration
+let register configuration =
+  let () =
+    if SharedConfig.mem key then
+      SharedConfig.remove_batch (SharedConfig.KeySet.singleton key)
+  in
+  SharedConfig.add key configuration
+
 
 let default =
   {
@@ -182,7 +188,8 @@ let create ~rule_filter ~paths =
   let file_paths = Path.get_matching_files_recursively ~suffix:".config" ~paths in
   let parse_configuration config_file =
     if not (Path.file_exists config_file) then
-      None
+      raise
+        (MalformedConfiguration { path = Path.absolute config_file; parse_error = "File not found" })
     else
       try
         config_file

@@ -89,6 +89,16 @@ let test_integration context =
         with
         | Unix.Unix_error _ -> None
       in
+      let taint_configuration =
+        try
+          let path = Path.with_suffix path ~suffix:".config" in
+          File.create path
+          |> File.content
+          |> Option.map ~f:Taint.TaintConfiguration.parse
+          |> Option.value ~default:Taint.TaintConfiguration.default
+        with
+        | Unix.Unix_error _ -> Taint.TaintConfiguration.default
+      in
       let handle = Path.show path |> String.split ~on:'/' |> List.last_exn in
       let create_call_graph_files call_graph =
         let dependencies = DependencyGraph.from_callgraph call_graph in
@@ -104,7 +114,7 @@ let test_integration context =
         create_expected_and_actual_files ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
-        initialize ~handle ?models:model_source ~context source
+        initialize ~handle ?models:model_source ~taint_configuration ~context source
       in
       let dependencies =
         DependencyGraph.from_callgraph callgraph

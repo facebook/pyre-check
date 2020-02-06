@@ -1,0 +1,86 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "rule.alarm",
+    "callable_line": 9,
+    "code": 5999,
+    "line": 11,
+    "start": 9,
+    "end": 10,
+    "filename": "rule.py",
+    "message": "My test rule [MyTestSource] may reach [MyTestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "rule.py",
+              "line": 10,
+              "start": 8,
+              "end": 16
+            },
+            "leaves": [
+              {
+                "kind": "MyTestSource",
+                "name": "rule.source",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "rule.py",
+              "line": 11,
+              "start": 9,
+              "end": 10
+            },
+            "leaves": [
+              {
+                "kind": "MyTestSink",
+                "name": "rule.sink",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule.sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "MyTestSink" } ] } ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule.source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "MyTestSource" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
