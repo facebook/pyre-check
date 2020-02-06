@@ -27,6 +27,7 @@ val resolve_property_targets
   :  resolution:Resolution.t ->
   base:Expression.t ->
   attribute:string ->
+  setter:bool ->
   target list option
 
 (* Returns all call targets from Call expressions in the given access *)

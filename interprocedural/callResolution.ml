@@ -207,18 +207,34 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
   | _ -> indirect_targets, Some { Call.Argument.name = None; value = receiver }
 
 
-let resolve_property_targets ~resolution ~base ~attribute =
+let resolve_property_targets ~resolution ~base ~attribute ~setter =
   match get_property_defining_parent ~resolution ~base ~attribute with
   | None -> None
   | Some defining_parent ->
-      let receiver_type = Resolution.resolve resolution base in
-      if Type.is_meta receiver_type then
-        Some [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
+      let targets =
+        let receiver_type = Resolution.resolve resolution base in
+        if Type.is_meta receiver_type then
+          [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
+        else
+          let callee = Reference.create ~prefix:defining_parent attribute in
+          compute_indirect_targets ~resolution ~receiver_type callee
+          |> List.map ~f:(fun target -> target, None)
+      in
+      if setter then
+        let to_setter (target, implicit) =
+          let target =
+            match target with
+            | `OverrideTarget { Callable.class_name; method_name } ->
+                `OverrideTarget { Callable.class_name; method_name = method_name ^ "$setter" }
+            | `Method { Callable.class_name; method_name } ->
+                `Method { Callable.class_name; method_name = method_name ^ "$setter" }
+            | _ -> target
+          in
+          target, implicit
+        in
+        List.map targets ~f:to_setter |> Option.some
       else
-        let callee = Reference.create ~prefix:defining_parent attribute in
-        compute_indirect_targets ~resolution ~receiver_type callee
-        |> List.map ~f:(fun target -> target, None)
-        |> Option.some
+        Some targets
 
 
 let resolve_call_targets ~resolution call =

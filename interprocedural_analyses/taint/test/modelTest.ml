@@ -121,7 +121,7 @@ let test_source_models context =
       @foo.setter
       def test.C.foo(self, value) -> TaintSource[Test]: ...
     |}
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "test.C.foo"]
+    ~expect:[outcome ~kind:`PropertySetter ~returns:[Sources.Test] "test.C.foo"]
     ();
   assert_model
     ~source:"def f(x: int): ..."

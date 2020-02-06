@@ -1580,6 +1580,15 @@ type method_call = {
   is_optional_class_attribute: bool;
 }
 
+type property_setter_call = {
+  direct_target: string;
+  class_name: string;
+}
+
+let function_caller name = Callgraph.FunctionCaller !&name
+
+let property_setter_caller name = Callgraph.PropertySetterCaller !&name
+
 let test_calls context =
   let assert_calls source calls =
     let project = ScratchProject.setup ~context ["qualifier.py", source] in
@@ -1598,12 +1607,18 @@ let test_calls context =
                   is_optional_class_attribute;
                 }
           | `Function name -> Callgraph.Function (Reference.create name)
+          | `PropertySetter { direct_target; class_name } ->
+              Callgraph.PropertySetter
+                {
+                  direct_target = Reference.create direct_target;
+                  class_name = Type.Primitive class_name;
+                }
         in
         List.map callees ~f:callee |> List.map ~f:Callgraph.show_callee |> String.Set.of_list
       in
       let actual_callees =
         let show { Callgraph.callee; _ } = Callgraph.show_callee callee in
-        Callgraph.get ~caller:(Reference.create caller) |> List.map ~f:show |> String.Set.of_list
+        Callgraph.get ~caller |> List.map ~f:show |> String.Set.of_list
       in
       assert_equal
         ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
@@ -1620,7 +1635,10 @@ let test_calls context =
      def calls_foo():
        foo()
    |}
-    ["qualifier.foo", []; "qualifier.calls_foo", [`Function "qualifier.foo"]];
+    [
+      function_caller "qualifier.foo", [];
+      function_caller "qualifier.calls_foo", [`Function "qualifier.foo"];
+    ];
   assert_calls
     {|
      def foo(): ...
@@ -1628,7 +1646,10 @@ let test_calls context =
      def calls_on_same_line():
        foo(); bar()
    |}
-    ["qualifier.calls_on_same_line", [`Function "qualifier.foo"; `Function "qualifier.bar"]];
+    [
+      ( function_caller "qualifier.calls_on_same_line",
+        [`Function "qualifier.foo"; `Function "qualifier.bar"] );
+    ];
 
   (* Methods. *)
   assert_calls
@@ -1639,7 +1660,7 @@ let test_calls context =
        c.method()
    |}
     [
-      ( "qualifier.calls_method",
+      ( function_caller "qualifier.calls_method",
         [
           `Method
             {
@@ -1666,7 +1687,7 @@ let test_calls context =
        ClassWithInit.__init__(object)
    |}
     [
-      ( "qualifier.ClassWithInit.__init__",
+      ( function_caller "qualifier.ClassWithInit.__init__",
         [
           `Method
             {
@@ -1676,7 +1697,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_Class",
+      ( function_caller "qualifier.calls_Class",
         [
           `Method
             {
@@ -1686,7 +1707,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_ClassWithInit",
+      ( function_caller "qualifier.calls_ClassWithInit",
         [
           `Method
             {
@@ -1696,7 +1717,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_ClassWithInit__init__",
+      ( function_caller "qualifier.calls_ClassWithInit__init__",
         [
           `Method
             {
@@ -1716,7 +1737,7 @@ let test_calls context =
        Class.classmethod()
    |}
     [
-      ( "qualifier.calls_class_method",
+      ( function_caller "qualifier.calls_class_method",
         [
           `Method
             {
@@ -1749,7 +1770,7 @@ let test_calls context =
         o.method()
     |}
     [
-      ( "qualifier.calls_Class_method",
+      ( function_caller "qualifier.calls_Class_method",
         [
           `Method
             {
@@ -1759,7 +1780,7 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-      ( "qualifier.calls_Indirect_method",
+      ( function_caller "qualifier.calls_Indirect_method",
         [
           `Method
             {
@@ -1769,7 +1790,7 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-      ( "qualifier.calls_Subclass_method",
+      ( function_caller "qualifier.calls_Subclass_method",
         [
           `Method
             {
@@ -1779,7 +1800,7 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-      ( "qualifier.calls_OverridingSubclass_method",
+      ( function_caller "qualifier.calls_OverridingSubclass_method",
         [
           `Method
             {
@@ -1816,7 +1837,7 @@ let test_calls context =
         c.class_method()
     |}
     [
-      ( "qualifier.calls_Class_class_method",
+      ( function_caller "qualifier.calls_Class_class_method",
         [
           `Method
             {
@@ -1826,7 +1847,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_Indirect_class_method",
+      ( function_caller "qualifier.calls_Indirect_class_method",
         [
           `Method
             {
@@ -1836,7 +1857,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_Subclass_class_method",
+      ( function_caller "qualifier.calls_Subclass_class_method",
         [
           `Method
             {
@@ -1846,7 +1867,7 @@ let test_calls context =
               dispatch = Static;
             };
         ] );
-      ( "qualifier.calls_Type_Class_class_method",
+      ( function_caller "qualifier.calls_Type_Class_class_method",
         [
           `Method
             {
@@ -1856,7 +1877,7 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-      ( "qualifier.calls_Type_Indirect_class_method",
+      ( function_caller "qualifier.calls_Type_Indirect_class_method",
         [
           `Method
             {
@@ -1866,7 +1887,7 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-      ( "qualifier.calls_Type_Subclass_class_method",
+      ( function_caller "qualifier.calls_Type_Subclass_class_method",
         [
           `Method
             {
@@ -1889,7 +1910,7 @@ let test_calls context =
        union.method()
    |}
     [
-      ( "qualifier.calls_method_on_union",
+      ( function_caller "qualifier.calls_method_on_union",
         [
           `Method
             {
@@ -1919,7 +1940,7 @@ let test_calls context =
       bar.method()
   |}
     [
-      ( "qualifier.call_twice",
+      ( function_caller "qualifier.call_twice",
         [
           `Method
             {
@@ -1941,7 +1962,7 @@ let test_calls context =
         x = foo.method
     |}
     [
-      ( "qualifier.call_property",
+      ( function_caller "qualifier.call_property",
         [
           `Method
             {
@@ -1963,7 +1984,7 @@ let test_calls context =
         x = bar.method
     |}
     [
-      ( "qualifier.call_property",
+      ( function_caller "qualifier.call_property",
         [
           `Method
             {
@@ -1985,16 +2006,8 @@ let test_calls context =
         foo.x = 1
     |}
     [
-      ( "qualifier.call_property_setter",
-        [
-          `Method
-            {
-              direct_target = "qualifier.Foo.x";
-              class_name = "qualifier.Foo";
-              is_optional_class_attribute = false;
-              dispatch = Dynamic;
-            };
-        ] );
+      ( function_caller "qualifier.call_property_setter",
+        [`PropertySetter { direct_target = "qualifier.Foo.x"; class_name = "qualifier.Foo" }] );
     ];
 
   (* Don't attempt to register calls for non-property attribute accesses. *)
@@ -2007,7 +2020,7 @@ let test_calls context =
       def call_property(bar: Bar):
         x = bar.method
     |}
-    ["qualifier.call_property", []];
+    [function_caller "qualifier.call_property", []];
   assert_calls
     {|
       class Foo:
@@ -2020,7 +2033,7 @@ let test_calls context =
         x = parameter.method
     |}
     [
-      ( "qualifier.call_property",
+      ( function_caller "qualifier.call_property",
         [
           `Method
             {
@@ -2050,7 +2063,7 @@ let test_calls context =
         x = Foo.method
     |}
     [
-      ( "qualifier.call_property",
+      ( function_caller "qualifier.call_property",
         [
           `Method
             {
@@ -2072,7 +2085,7 @@ let test_calls context =
         foo.method()
     |}
     [
-      ( "qualifier.calls_optional",
+      ( function_caller "qualifier.calls_optional",
         [
           `Method
             {
@@ -2094,7 +2107,7 @@ let test_calls context =
         bar.method()
     |}
     [
-      ( "qualifier.calls_optional",
+      ( function_caller "qualifier.calls_optional",
         [
           `Method
             {
@@ -2115,7 +2128,7 @@ let test_calls context =
         y = foo.x
     |}
     [
-      ( "qualifier.optional_property",
+      ( function_caller "qualifier.optional_property",
         [
           `Method
             {
@@ -2134,7 +2147,7 @@ let test_calls context =
           return 0
         return 1
     |}
-    ["qualifier.calls_isinstance", [`Function "isinstance"]];
+    [function_caller "qualifier.calls_isinstance", [`Function "isinstance"]];
   assert_calls
     {|
       from typing import Generic, TypeVar
@@ -2147,7 +2160,7 @@ let test_calls context =
         c.method()
     |}
     [
-      ( "qualifier.calls_C_str",
+      ( function_caller "qualifier.calls_C_str",
         [
           `Method
             {
@@ -2157,6 +2170,23 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
+    ];
+  assert_calls
+    {|
+    def foo(): ...
+    def bar(): ...
+    class C:
+      @property
+      def p(self) -> int:
+        foo()
+        return 0
+      @p.setter
+      def p(self, value: int) -> None:
+        bar()
+  |}
+    [
+      function_caller "qualifier.C.p", [`Function "qualifier.foo"];
+      property_setter_caller "qualifier.C.p", [`Function "qualifier.bar"];
     ]
 
 

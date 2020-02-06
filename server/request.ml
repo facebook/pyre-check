@@ -270,9 +270,11 @@ let process_type_query_request
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | TypeQuery.Callees caller ->
+        (* We don't yet support a syntax for fetching property setters. *)
         TypeQuery.Response
           (TypeQuery.Callees
-             (Callgraph.get ~caller |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
+             ( Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
+             |> List.map ~f:(fun { Callgraph.callee; _ } -> callee) ))
     | TypeQuery.CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
@@ -282,7 +284,8 @@ let process_type_query_request
                  (AstEnvironment.read_only state.ast_environment))
         in
         let callees =
-          Callgraph.get ~caller
+          (* We don't yet support a syntax for fetching property setters. *)
+          Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
           |> List.map ~f:(fun { Callgraph.callee; locations } ->
                  { TypeQuery.callee; locations = List.map locations ~f:instantiate })
         in
@@ -354,9 +357,10 @@ let process_type_query_request
                   (Callgraph.show_callee callee)
                   (List.map locations ~f:Location.WithModule.show |> String.concat ~sep:", ")
               in
+              let show_caller caller = Callgraph.sexp_of_caller caller |> Sexp.to_string_hum in
               Some
                 ( Callgraph.CalleeValue.description,
-                  Reference.show key,
+                  show_caller key,
                   value >>| List.map ~f:show >>| String.concat ~sep:"," )
           | _ ->
               List.find_map
@@ -503,7 +507,7 @@ let process_type_query_request
                      ~configuration
                      (AstEnvironment.read_only state.ast_environment))
             in
-            Callgraph.get ~caller
+            Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->
                    { TypeQuery.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Protocol.TypeQuery.caller; callees }

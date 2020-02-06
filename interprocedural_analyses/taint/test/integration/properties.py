@@ -49,7 +49,10 @@ class TaintedGetterAndSetter:
     # This will be the model.
     @property
     def my_property(self) -> str:
-        pass
+        # Ensure that setter taint doesn't pollute the getter, there shouldn't
+        # be an issue here.
+        __test_sink(self)
+        return ""
 
     @my_property.setter
     def my_property(self, value) -> None:
@@ -61,3 +64,27 @@ class TaintedGetterAndSetter:
     # TODO(T52657355): Handle the property write here.
     def writes_to_property(self):
         self.my_property = __test_source()
+
+
+class DerivedTaintedSetter(TaintedGetterAndSetter):
+    @property
+    def my_property(self) -> str:
+        return ""
+
+    @my_property.setter
+    def my_property(self, value) -> None:
+        __test_sink(value)
+
+
+class GrandDerived(DerivedTaintedSetter):
+    @property
+    def my_property(self) -> str:
+        return ""
+
+    @my_property.setter
+    def my_property(self, value) -> None:
+        return None
+
+
+def sets_tainted_value(t: TaintedGetterAndSetter) -> None:
+    t.my_property = __test_source()

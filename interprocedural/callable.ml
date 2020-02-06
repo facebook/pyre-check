@@ -53,26 +53,33 @@ type target_with_result = real_target
 
 let create_function reference = `Function (Reference.show reference)
 
-let create_method reference =
-  `Method
-    {
-      class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
-      method_name = Reference.last reference;
-    }
+let create_method_name ?(suffix = "") reference =
+  {
+    class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
+    method_name = Reference.last reference ^ suffix;
+  }
 
 
-let create_override reference =
-  `OverrideTarget
-    {
-      class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
-      method_name = Reference.last reference;
-    }
+let create_method reference = `Method (create_method_name reference)
+
+let create_property_setter reference = `Method (create_method_name ~suffix:"$setter" reference)
+
+let create_override reference = `OverrideTarget (create_method_name reference)
+
+let create_property_setter_override reference =
+  `OverrideTarget (create_method_name ~suffix:"$setter" reference)
 
 
 let create { Node.value = define; _ } =
-  match define.Define.signature.parent with
-  | Some _ -> create_method (Node.value define.signature.name)
-  | None -> create_function (Node.value define.signature.name)
+  let open Define in
+  let name = Node.value define.signature.name in
+  match define.signature.parent with
+  | Some _ ->
+      if Define.is_property_setter define then
+        create_property_setter name
+      else
+        create_method name
+  | None -> create_function name
 
 
 let create_derived_override override ~at_type =
@@ -130,7 +137,22 @@ end
 module Set = Caml.Set.Make (Key)
 module OverrideSet = Caml.Set.Make (OverrideKey)
 
-let get_module_and_definition ~resolution = function
+let get_module_and_definition ~resolution callable =
+  let get_bodies { class_name; method_name } =
+    let method_name, is_setter =
+      if String.is_suffix method_name ~suffix:"$setter" then
+        String.drop_suffix method_name (String.length "$setter"), true
+      else
+        method_name, false
+    in
+    let define_name =
+      Reference.combine (Reference.create class_name) (Reference.create method_name)
+    in
+    GlobalResolution.function_definition resolution define_name
+    >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
+    FunctionDefinition.all_bodies definitions |> fun bodies -> qualifier, bodies, is_setter
+  in
+  match callable with
   | `Function name ->
       Reference.create name
       |> GlobalResolution.function_definition resolution
@@ -138,13 +160,17 @@ let get_module_and_definition ~resolution = function
       FunctionDefinition.all_bodies definitions
       |> List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value))
       >>= fun body -> Some (qualifier, body)
-  | `Method { class_name; method_name } ->
-      let define_name =
-        Reference.combine (Reference.create class_name) (Reference.create method_name)
-      in
-      GlobalResolution.function_definition resolution define_name
-      >>= fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
-      FunctionDefinition.all_bodies definitions |> List.hd >>= fun body -> Some (qualifier, body)
+  | `Method method_name -> (
+      match get_bodies method_name with
+      | Some (qualifier, bodies, is_setter) ->
+          if is_setter then
+            let is_setter { Node.value = { Define.signature; _ }; _ } =
+              Define.Signature.is_property_setter signature
+            in
+            List.find bodies ~f:is_setter >>| fun body -> qualifier, body
+          else
+            List.hd bodies >>| fun body -> qualifier, body
+      | None -> None )
 
 
 let resolve_method ~resolution ~class_type ~method_name =

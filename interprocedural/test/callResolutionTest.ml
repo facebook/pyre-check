@@ -10,7 +10,7 @@ open Test
 open Pyre
 
 let test_get_property_callable context =
-  let assert_callable ~source ~property:(base, attribute) ~expected =
+  let assert_callable ~setter ~source ~property:(base, attribute) ~expected =
     let resolution =
       ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
     in
@@ -18,6 +18,7 @@ let test_get_property_callable context =
       ~resolution
       ~base:(Test.parse_single_expression base)
       ~attribute
+      ~setter
     >>| (function
           | [(target, _)] -> Callable.show target
           | _ -> "bad")
@@ -34,6 +35,7 @@ let test_get_property_callable context =
           ...
     |}
     ~property:("x.C", "foo")
+    ~setter:false
     ~expected:(Some "x.C::foo (method)");
   assert_callable
     ~source:
@@ -45,6 +47,7 @@ let test_get_property_callable context =
       c: C = C()
     |}
     ~property:("x.c", "foo")
+    ~setter:false
     ~expected:(Some "x.C::foo (method)");
 
   (* Subclasses evaluate to the right callable. *)
@@ -59,6 +62,7 @@ let test_get_property_callable context =
         pass
     |}
     ~property:("x.D", "foo")
+    ~setter:false
     ~expected:(Some "x.C::foo (method)");
   assert_callable
     ~source:
@@ -72,6 +76,7 @@ let test_get_property_callable context =
       d: D = D()
     |}
     ~property:("x.d", "foo")
+    ~setter:false
     ~expected:(Some "x.C::foo (method)");
 
   (* Don't attempt to find callables for regular functions. *)
@@ -82,6 +87,7 @@ let test_get_property_callable context =
           ...
     |}
     ~property:("x.C", "foo")
+    ~setter:false
     ~expected:None;
   assert_callable
     ~source:{|
@@ -89,7 +95,38 @@ let test_get_property_callable context =
         foo: int = 1
     |}
     ~property:("x.C", "foo")
-    ~expected:None
+    ~setter:false
+    ~expected:None;
+
+  (* Setters. *)
+  assert_callable
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int:
+          ...
+        @foo.setter
+        def foo(self, value: int) -> None: ...
+    |}
+    ~property:("x.C", "foo")
+    ~setter:true
+    ~expected:(Some "x.C::foo$setter (method)");
+  assert_callable
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int:
+          ...
+        @foo.setter
+        def foo(self, value: int) -> None: ...
+      class D(C):
+        pass
+    |}
+    ~property:("x.D", "foo")
+    ~setter:true
+    ~expected:(Some "x.C::foo$setter (method)")
 
 
 let () = "callResolution" >::: ["get_property_callable" >:: test_get_property_callable] |> Test.run

@@ -8,7 +8,12 @@ open Analysis
 open Ast
 module DefaultBuilder = Callgraph.DefaultBuilder
 
-let initialize () = DefaultBuilder.initialize ()
+let property_setter_table = Location.WithModule.Table.create ()
+
+let initialize () =
+  DefaultBuilder.initialize ();
+  Hashtbl.clear property_setter_table
+
 
 let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualifier ~callee =
   let callables =
@@ -73,6 +78,10 @@ let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~qu
     ~name
     ~qualifier
     ~location
+
+
+let add_property_setter_callees ~attribute ~instantiated_parent ~name ~location =
+  DefaultBuilder.add_property_setter_callees ~attribute ~instantiated_parent ~name ~location
 
 
 let get_all_callees () = DefaultBuilder.get_all_callees ()

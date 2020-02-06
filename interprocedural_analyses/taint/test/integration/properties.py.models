@@ -148,6 +148,108 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{properties.DerivedTaintedSetter::my_property$setter}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{properties.TaintedGetterAndSetter::my_property$setter}",
+    "sources": [
+      {
+        "port": "formal(self)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "ParameterUpdate0" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{properties.TaintedGetterAndSetter::my_property}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.Class.my_property",
     "sources": [],
     "sinks": [],
@@ -379,6 +481,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.DerivedTaintedSetter.my_property$setter",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 76,
+              "start": 20,
+              "end": 25
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.OtherDerived.my_property",
     "sources": [
       {
@@ -453,28 +582,35 @@
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
-    "sinks": [],
-    "tito": [
+    "sinks": [
       {
-        "port": "formal(value)",
+        "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "ParameterUpdate0" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "root": {
+              "filename": "properties.py",
+              "line": 54,
+              "start": 20,
+              "end": 24
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
-    ]
+    ],
+    "tito": []
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "properties.TaintedGetterAndSetter.my_property",
+    "callable": "properties.TaintedGetterAndSetter.my_property$setter",
     "sources": [
       {
-        "port": "result",
+        "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
       }
     ],
@@ -504,14 +640,14 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 59,
+              "line": 62,
               "start": 15,
               "end": 31
             },
             "leaves": [
               {
                 "kind": "Test",
-                "name": "properties.TaintedGetterAndSetter.my_property",
+                "name": "Ovr{properties.TaintedGetterAndSetter::my_property}",
                 "on_all_flows": true
               }
             ]
@@ -519,7 +655,32 @@
         ]
       }
     ],
-    "sinks": [],
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "properties.py",
+                "line": 62,
+                "start": 15,
+                "end": 19
+              },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
     "tito": []
   }
 }

@@ -530,6 +530,8 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           in
           let call_target =
             match class_candidate with
+            | Some _ when Define.Signature.is_property_setter signature ->
+                Callable.create_property_setter name
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in

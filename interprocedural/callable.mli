@@ -59,7 +59,11 @@ val create_function : Reference.t -> [> function_target ]
 
 val create_method : Reference.t -> [> method_target ]
 
+val create_property_setter : Reference.t -> [> method_target ]
+
 val create_override : Reference.t -> [> override_target ]
+
+val create_property_setter_override : Reference.t -> [> override_target ]
 
 val create_object : Reference.t -> [> object_target ]
 

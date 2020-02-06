@@ -60,6 +60,8 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
         in
         if is_test_function then
           None
+        else if Define.is_property_setter (Node.value definition) then
+          Some (Callable.create_property_setter name, definition)
         else
           Some (Callable.create_method name, definition)
   in

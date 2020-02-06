@@ -18,6 +18,10 @@ and callee =
       dispatch: dispatch;
       is_optional_class_attribute: bool;
     }
+  | PropertySetter of {
+      class_name: Type.t;
+      direct_target: Reference.t;
+    }
 [@@deriving compare, eq, show]
 
 type callee_with_locations = {
@@ -27,19 +31,26 @@ type callee_with_locations = {
 
 val callee_to_yojson : ?locations:Location.WithPath.t list -> callee -> Yojson.Safe.t
 
+type caller =
+  | FunctionCaller of Reference.t
+  | PropertySetterCaller of Reference.t
+[@@deriving compare, sexp]
+
 module CalleeValue : Memory.ValueType with type t = callee_with_locations list
+
+module CallerKey : Memory.KeyType with type t = caller and type out = caller
 
 module SharedMemory :
   Memory.WithCache.S
     with type t = CalleeValue.t
-     and type key = SharedMemoryKeys.ReferenceKey.t
-     and type key_out = SharedMemoryKeys.ReferenceKey.out
-     and module KeySet = Caml.Set.Make(SharedMemoryKeys.ReferenceKey)
-     and module KeyMap = MyMap.Make(SharedMemoryKeys.ReferenceKey)
+     and type key = caller
+     and type key_out = caller
+     and module KeySet = Caml.Set.Make(CallerKey)
+     and module KeyMap = MyMap.Make(CallerKey)
 
-val set : caller:Reference.t -> callees:callee_with_locations list -> unit
+val set : caller:caller -> callees:callee_with_locations list -> unit
 
-val get : caller:Reference.t -> callee_with_locations list
+val get : caller:caller -> callee_with_locations list
 
 module type Builder = sig
   val initialize : unit -> unit
@@ -61,6 +72,13 @@ module type Builder = sig
     name:string ->
     qualifier:Reference.t ->
     location:Ast.Location.t ->
+    unit
+
+  val add_property_setter_callees
+    :  attribute:AnnotatedAttribute.instantiated ->
+    instantiated_parent:Type.t ->
+    name:string ->
+    location:Location.WithModule.t ->
     unit
 
   val get_all_callees : unit -> callee_with_locations list

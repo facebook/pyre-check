@@ -20,7 +20,16 @@ and callee =
       dispatch: dispatch;
       is_optional_class_attribute: bool;
     }
+  | PropertySetter of {
+      class_name: Type.t;
+      direct_target: Reference.t;
+    }
 [@@deriving compare, hash, sexp, eq, show, to_yojson]
+
+type caller =
+  | FunctionCaller of Reference.t
+  | PropertySetterCaller of Reference.t
+[@@deriving compare, sexp]
 
 type callee_with_locations = {
   callee: callee;
@@ -54,6 +63,15 @@ let callee_to_yojson ?locations callee =
                  | Dynamic -> "dynamic"
                  | Static -> "static" ) );
            ])
+  | PropertySetter { direct_target; class_name } ->
+      `Assoc
+        (List.rev_append
+           locations
+           [
+             "kind", `String "property setter";
+             "direct_target", `String (Reference.show direct_target);
+             "class_name", `String (Type.class_name class_name |> Reference.show);
+           ])
 
 
 module CalleeValue = struct
@@ -66,7 +84,19 @@ module CalleeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module SharedMemory = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (CalleeValue)
+module CallerKey = struct
+  type t = caller
+
+  let to_string caller = sexp_of_caller caller |> Sexp.to_string
+
+  let compare = compare_caller
+
+  type out = caller
+
+  let from_string caller = Sexp.of_string caller |> caller_of_sexp
+end
+
+module SharedMemory = Memory.WithCache.Make (CallerKey) (CalleeValue)
 
 let set ~caller ~callees = SharedMemory.add caller callees
 
@@ -92,6 +122,13 @@ module type Builder = sig
     name:string ->
     qualifier:Reference.t ->
     location:Location.t ->
+    unit
+
+  val add_property_setter_callees
+    :  attribute:AnnotatedAttribute.instantiated ->
+    instantiated_parent:Type.t ->
+    name:string ->
+    location:Location.WithModule.t ->
     unit
 
   val get_all_callees : unit -> callee_with_locations list
@@ -154,13 +191,15 @@ module DefaultBuilder : Builder = struct
     Hashtbl.set table ~key ~data:callees
 
 
+  let attribute_target attribute name =
+    Annotated.Attribute.parent attribute
+    |> fun parent -> Reference.create ~prefix:(Reference.create parent) name
+
+
   let add_property_callees ~global_resolution ~resolved_base ~attributes ~name ~qualifier ~location =
     let property_callables = ref [] in
     let register_attribute_callable ?(is_optional_class_attribute = false) class_name attribute =
-      let direct_target =
-        Annotated.Attribute.parent attribute
-        |> fun parent -> Reference.create ~prefix:(Reference.create parent) name
-      in
+      let direct_target = attribute_target attribute name in
       property_callables :=
         Method { direct_target; class_name; dispatch = Dynamic; is_optional_class_attribute }
         :: !property_callables
@@ -205,6 +244,17 @@ module DefaultBuilder : Builder = struct
       Hashtbl.set table ~key ~data:!property_callables
 
 
+  let add_property_setter_callees ~attribute ~instantiated_parent ~name ~location =
+    Hashtbl.set
+      table
+      ~key:location
+      ~data:
+        [
+          PropertySetter
+            { direct_target = attribute_target attribute name; class_name = instantiated_parent };
+        ]
+
+
   module CalleesTable = Hashtbl.Make (struct
     type t = callee [@@deriving compare, hash, sexp]
   end)
@@ -234,6 +284,8 @@ module NullBuilder : Builder = struct
     =
     ()
 
+
+  let add_property_setter_callees ~attribute:_ ~instantiated_parent:_ ~name:_ ~location:_ = ()
 
   let add_property_callees
       ~global_resolution:_

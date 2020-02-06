@@ -1,6 +1,7 @@
 (tests
  (names
- callResolutionTest
+  callableTest
+  callResolutionTest
   registrationTest
   DependencyGraphTest
   interproceduralAnalysisTest)

@@ -7,6 +7,10 @@ open Core
 open OUnit2
 open Test
 
+let function_caller name =
+  Ast.Reference.create name |> fun reference -> Analysis.Callgraph.FunctionCaller reference
+
+
 let assert_call_graph ~context source expected =
   let _ =
     ScratchProject.setup ~context ["test.py", source]
@@ -39,7 +43,7 @@ let test_partial context =
         return partial(foo, a)
     |}
     [
-      ( !&"test.bar",
+      ( function_caller "test.bar",
         [
           Analysis.Callgraph.Function !&"test.foo";
           Analysis.Callgraph.Method
@@ -62,7 +66,7 @@ let test_partial context =
         partial(c.foo, x)
     |}
     [
-      ( !&"test.bar",
+      ( function_caller "test.bar",
         [
           Analysis.Callgraph.Method
             {
@@ -87,7 +91,7 @@ let test_multiprocessing_process context =
          multiprocessing.Process(target=foo, args=(1,))
     |}
     [
-      ( !&"test.bar",
+      ( function_caller "test.bar",
         [
           Analysis.Callgraph.Method
             {

@@ -3235,6 +3235,7 @@ module State (Context : Context) = struct
                 match name with
                 | Name.Identifier identifier -> Some (Reference.create identifier), None, None
                 | Name.Attribute { base; attribute; _ } ->
+                    let name = attribute in
                     let resolved = Resolution.resolve resolution base in
                     let parent, class_attributes =
                       if Type.is_meta resolved then
@@ -3262,6 +3263,19 @@ module State (Context : Context) = struct
                             ~class_attributes
                       >>| fun annotated -> annotated, attribute
                     in
+                    begin
+                      match attribute with
+                      | Some (attribute, _)
+                        when AnnotatedAttribute.property attribute
+                             && AnnotatedAttribute.visibility attribute
+                                = AnnotatedAttribute.ReadWrite ->
+                          Context.Builder.add_property_setter_callees
+                            ~attribute
+                            ~instantiated_parent:parent
+                            ~name
+                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                      | _ -> ()
+                    end;
                     reference, attribute, Some resolved
               in
               let target_annotation = Resolution.resolve_to_annotation resolution target in
@@ -5234,7 +5248,13 @@ let check_define
       in
       exit_state ~resolution (module Context)
     in
-    Option.iter callees ~f:(fun callees -> Callgraph.set ~caller:name ~callees);
+    let caller =
+      if Define.is_property_setter define then
+        Callgraph.PropertySetterCaller name
+      else
+        Callgraph.FunctionCaller name
+    in
+    Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees);
     { CheckResult.errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->

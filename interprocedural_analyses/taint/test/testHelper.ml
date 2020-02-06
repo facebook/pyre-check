@@ -29,7 +29,7 @@ type error_expectation = {
 }
 
 type expectation = {
-  kind: [ `Function | `Method | `Override | `Object ];
+  kind: [ `Function | `Method | `Override | `Object | `PropertySetter ];
   define_name: string;
   source_parameters: parameter_source_taint list;
   sink_parameters: parameter_taint list;
@@ -98,6 +98,7 @@ let create_callable kind define_name =
   match kind with
   | `Method -> Callable.create_method name
   | `Function -> Callable.create_function name
+  | `PropertySetter -> Callable.create_property_setter name
   | `Override -> Callable.create_override name
   | `Object -> Callable.create_object name
 
