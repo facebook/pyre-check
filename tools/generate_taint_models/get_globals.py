@@ -249,9 +249,7 @@ class GlobalModelGenerator(ModelGenerator):
         stub_root = self.stub_root
         if stub_root is not None:
             stub_root = os.path.abspath(stub_root)
-            paths = [
-                path for path in glob.glob(stub_root + "/**/*.pyi", recursive=True)
-            ]
+            paths = glob.glob(stub_root + "/**/*.pyi", recursive=True)
             for path in paths:
                 sinks = sinks.union(self._globals(stub_root, path))
         return sinks
