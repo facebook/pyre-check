@@ -10,8 +10,7 @@
     "start": 4,
     "end": 39,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -68,8 +67,7 @@
     "start": 8,
     "end": 44,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -125,8 +123,7 @@
     "start": 4,
     "end": 29,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -182,8 +179,7 @@
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -239,8 +235,7 @@
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -296,8 +291,7 @@
     "start": 4,
     "end": 40,
     "filename": "class_flows.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

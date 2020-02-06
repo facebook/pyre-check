@@ -170,7 +170,7 @@
     "end": 48,
     "filename": "select.py",
     "message":
-      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -263,7 +263,7 @@
     "end": 24,
     "filename": "select.py",
     "message":
-      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -349,7 +349,7 @@
     "end": 46,
     "filename": "select.py",
     "message":
-      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -448,7 +448,7 @@
     "end": 31,
     "filename": "select.py",
     "message":
-      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",

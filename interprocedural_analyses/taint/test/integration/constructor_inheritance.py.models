@@ -9,8 +9,7 @@
     "start": 29,
     "end": 44,
     "filename": "constructor_inheritance.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

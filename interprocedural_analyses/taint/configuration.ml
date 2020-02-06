@@ -123,7 +123,8 @@ let default =
           sinks = [Sinks.RemoteCodeExecution];
           code = 5001;
           name = "Possible shell injection.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          message_format =
+            "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.Test; Sources.UserControlled];
@@ -158,7 +159,7 @@ let default =
           sinks = [Sinks.XSS];
           code = 5008;
           name = "XSS";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.Demo];

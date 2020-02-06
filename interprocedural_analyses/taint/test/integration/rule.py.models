@@ -9,7 +9,7 @@
     "start": 9,
     "end": 10,
     "filename": "rule.py",
-    "message": "My test rule [MyTestSource] may reach [MyTestSink]",
+    "message": "[MyTestSource] may reach [MyTestSink]",
     "traces": [
       {
         "name": "forward",

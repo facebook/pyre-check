@@ -9,8 +9,7 @@
     "start": 26,
     "end": 41,
     "filename": "dataclass_taint.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -305,8 +304,7 @@
     "start": 16,
     "end": 23,
     "filename": "dataclass_taint.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

@@ -186,8 +186,8 @@ let generate_error ({ code; issue_location; define; _ } as issue) =
 
 let to_json ~filename_lookup callable issue =
   let callable_name = Interprocedural.Callable.external_target_name callable in
-  let name, detail = get_name_and_detailed_message issue in
-  let message = Format.sprintf "%s %s" name detail in
+  let _, detail = get_name_and_detailed_message issue in
+  let message = detail in
   let source_traces =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
   in

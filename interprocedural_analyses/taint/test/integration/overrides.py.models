@@ -9,8 +9,7 @@
     "start": 20,
     "end": 21,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -73,8 +72,7 @@
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -137,8 +135,7 @@
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -201,8 +198,7 @@
     "start": 20,
     "end": 21,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -265,8 +261,7 @@
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -350,8 +345,7 @@
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -414,8 +408,7 @@
     "start": 18,
     "end": 19,
     "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

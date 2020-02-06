@@ -164,7 +164,7 @@ let test_fixpoint context =
                   {
                     code = 5001;
                     pattern =
-                      ".*Possible shell injection.*Data from \
+                      ".*Possible shell injection.*Possible remote code execution due to \
                        \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
                   };
                 ]

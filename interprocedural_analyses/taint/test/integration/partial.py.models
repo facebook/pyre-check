@@ -9,8 +9,7 @@
     "start": 58,
     "end": 73,
     "filename": "partial.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -68,8 +67,7 @@
     "start": 31,
     "end": 32,
     "filename": "partial.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -127,8 +125,7 @@
     "start": 29,
     "end": 30,
     "filename": "partial.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

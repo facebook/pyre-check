@@ -9,8 +9,7 @@
     "start": 9,
     "end": 24,
     "filename": "static_methods.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",

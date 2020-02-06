@@ -10,7 +10,7 @@
     "end": 10,
     "filename": "remote_code_execution.py",
     "message":
-      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",

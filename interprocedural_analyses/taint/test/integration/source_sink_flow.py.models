@@ -9,8 +9,7 @@
     "start": 11,
     "end": 12,
     "filename": "source_sink_flow.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
