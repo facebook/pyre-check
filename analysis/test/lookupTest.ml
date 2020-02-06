@@ -209,35 +209,27 @@ let test_lookup_definitions_instances context =
     [
       "11:4-11:8 -> 11:0-19:15";
       "12:8-12:9 -> 2:0-4:12";
-      "13:4-13:9 -> 3:4-4:12";
-      "14:4-14:11 -> 3:4-4:12";
       "14:4-14:5 -> 2:0-4:12";
       "15:8-15:9 -> 6:0-9:18";
-      "16:4-16:15 -> 3:4-4:12";
-      "16:4-16:9 -> 8:4-9:18";
-      "17:4-17:11 -> 8:4-9:18";
-      "17:4-17:17 -> 3:4-4:12";
       "17:4-17:5 -> 6:0-9:18";
-      "18:4-18:11 -> 3:4-4:12";
-      "19:4-19:13 -> 3:4-4:12";
       "19:4-19:5 -> 6:0-9:18";
       "2:6-2:7 -> 2:0-4:12";
-      "3:8-3:11 -> 3:4-4:12";
+      "3:8-3:11 -> 2:0-4:12";
       "6:6-6:7 -> 6:0-9:18";
       "7:11-7:12 -> 2:0-4:12";
       "7:4-7:5 -> 6:0-9:18";
       "8:21-8:22 -> 2:0-4:12";
-      "8:8-8:11 -> 8:4-9:18";
+      "8:8-8:11 -> 6:0-9:18";
       "9:15-9:16 -> 2:0-4:12";
     ];
-  assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:(Some "8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:(Some "8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:(Some "8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:(Some "8:4-9:18");
-  assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:(Some "3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:(Some "3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:(Some "3:4-4:12");
-  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:(Some "3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:None;
+  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:None;
   assert_definition ~position:{ Location.line = 16; column = 15 } ~definition:None
 
 
