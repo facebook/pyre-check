@@ -3791,11 +3791,10 @@ module State (Context : Context) = struct
                   let resolution =
                     match name with
                     | Identifier identifier ->
-                        let reference = Reference.create identifier in
-                        resolution
-                        (* first, invalidate previously held refinements *)
-                        |> Resolution.unset_local ~reference
-                        |> Resolution.set_local ~reference ~annotation
+                        Resolution.set_local
+                          resolution
+                          ~reference:(Reference.create identifier)
+                          ~annotation
                     | Attribute _ as name when is_simple_name name -> (
                         match resolved_base, attribute with
                         | Some parent, Some (attribute, _)
@@ -4131,22 +4130,23 @@ module State (Context : Context) = struct
                           { statement; expression = value; annotation = resolved })
                      ~define:Context.define)
             in
-            let resolve ~reference =
-              match Resolution.get_local resolution ~reference with
+            let resolve ~name =
+              match Resolution.get_local_with_attributes resolution ~name with
               | Some { annotation = previous_annotation; _ } ->
                   let { not_consistent_with_boundary; _ } =
                     partition previous_annotation ~boundary:expected
                   in
                   not_consistent_with_boundary
                   >>| Annotation.create
-                  >>| (fun annotation -> Resolution.set_local resolution ~reference ~annotation)
+                  >>| (fun annotation ->
+                        Resolution.set_local_with_attributes resolution ~name ~annotation)
                   |> Option.value ~default:resolution
               | _ -> resolution
             in
             match contradiction_error, value with
             | Some error, _ -> emit_raw_error ~state:{ state with bottom = true } error
             | _, { Node.value = Name name; _ } when is_simple_name name ->
-                { state with resolution = resolve ~reference:(name_to_reference_exn name) }
+                { state with resolution = resolve ~name }
             | _ -> state )
         | UnaryOperator
             {

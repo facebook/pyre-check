@@ -94,10 +94,7 @@ let set_local ({ annotation_store; _ } as resolution) ~reference ~annotation =
       Map.set
         annotation_store
         ~key:reference
-        ~data:
-          ( Map.find annotation_store reference
-          |> Option.value ~default:(RefinementUnit.create ())
-          |> RefinementUnit.set_base ~base:annotation );
+        ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation);
   }
 
 
