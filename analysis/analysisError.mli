@@ -134,7 +134,7 @@ and incompatible_overload_kind =
     }
   | Unmatchable of {
       name: Reference.t;
-      matched_location: Location.t;
+      matching_overload: Type.t Type.Callable.overload;
       unmatched_location: Location.t;
     }
   | Parameters of {

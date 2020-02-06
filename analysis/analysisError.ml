@@ -143,7 +143,7 @@ and incompatible_overload_kind =
     }
   | Unmatchable of {
       name: Reference.t;
-      matched_location: Location.t;
+      matching_overload: Type.t Type.Callable.overload;
       unmatched_location: Location.t;
     }
   | Parameters of {
@@ -605,15 +605,22 @@ let messages ~concise ~signature location kind =
               pp_reference
               name;
           ]
-      | Unmatchable { name; matched_location; unmatched_location } ->
+      | Unmatchable { name; matching_overload; unmatched_location } ->
           [
             Format.asprintf
-              "The overloaded function `%a` on line %d will never be matched. The signature of \
-               overload on line %d is the same or broader."
+              "The overloaded function `%a` on line %d will never be matched. The signature `%s` \
+               is the same or broader."
               pp_reference
               name
               (Location.line unmatched_location)
-              (Location.line matched_location);
+              (Type.show_concise
+                 (Type.Callable
+                    {
+                      implementation = matching_overload;
+                      kind = Anonymous;
+                      overloads = [];
+                      implicit = None;
+                    }));
           ]
       | Parameters { name; location } ->
           [
@@ -2953,8 +2960,8 @@ let dequalify
             name = dequalify_reference name;
             overload_annotation = dequalify overload_annotation;
           }
-    | Unmatchable { name; matched_location; unmatched_location } ->
-        Unmatchable { name = dequalify_reference name; matched_location; unmatched_location }
+    | Unmatchable { name; matching_overload; unmatched_location } ->
+        Unmatchable { name = dequalify_reference name; matching_overload; unmatched_location }
     | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
   in
   let dequalify_invalid_type_parameters { AttributeResolution.name; kind } =
