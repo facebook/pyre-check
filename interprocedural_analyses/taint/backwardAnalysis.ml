@@ -840,13 +840,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
-let extract_tito_and_sink_models define ~resolution ~existing_backward entry_taint =
+let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_backward entry_taint =
   let { Define.signature = { parameters; _ }; _ } = define in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
     let annotation = Option.map ~f:(GlobalResolution.parse_annotation resolution) annotation in
-    let essential = BackwardState.Tree.essential tree in
+
+    let essential =
+      if is_constructor then
+        BackwardState.Tree.essential_for_constructor tree
+      else
+        BackwardState.Tree.essential tree
+    in
     BackwardState.Tree.shape tree ~mold:essential
     |> BackwardState.Tree.transform
          BackwardTaint.simple_feature_set
@@ -938,6 +944,11 @@ let run ~environment ~qualifier ~define ~existing_model =
     |> Annotated.Define.decorate ~resolution
     |> Annotated.Define.define
   in
+  let is_constructor () =
+    match Reference.last name with
+    | "__init__" -> true
+    | _ -> false
+  in
   let module AnalysisInstance = AnalysisInstance (struct
     let qualifier = qualifier
 
@@ -951,11 +962,7 @@ let run ~environment ~qualifier ~define ~existing_model =
         (Node.value define |> Define.name |> Node.value)
 
 
-    let is_constructor () =
-      match Reference.last name with
-      | "__init__" -> true
-      | _ -> false
-
+    let is_constructor = is_constructor
 
     let first_parameter () =
       match define.value.Define.signature.parameters with
@@ -980,6 +987,7 @@ let run ~environment ~qualifier ~define ~existing_model =
   let extract_model FixpointState.{ taint; _ } =
     let model =
       extract_tito_and_sink_models
+        ~is_constructor:(is_constructor ())
         define.value
         ~resolution
         ~existing_backward:existing_model.TaintResult.backward

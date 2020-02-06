@@ -488,20 +488,37 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let is_empty = is_bottom
 
-  (* Keep only non-essential structure. *)
-  let essential tree =
+  let compute_essential_features ~essential_complex_features tree =
     let essential_trace_info = function
       | TraceInfo.CallSite callsite -> TraceInfo.CallSite { callsite with trace_length = 100 }
       | default -> default
     in
+    transform Taint.trace_info ~f:essential_trace_info tree
+    |> transform Taint.complex_feature_set ~f:essential_complex_features
+
+
+  (* Keep only non-essential structure. *)
+  let essential tree =
     let essential_complex_features set =
       let simplify_feature = function
         | Features.Complex.ReturnAccessPath _ -> None
       in
       List.filter_map ~f:simplify_feature set
     in
-    transform Taint.trace_info ~f:essential_trace_info tree
-    |> transform Taint.complex_feature_set ~f:essential_complex_features
+    compute_essential_features ~essential_complex_features tree
+
+
+  let essential_for_constructor tree =
+    let essential_complex_features set =
+      let simplify_feature = function
+        (* We special case access paths of length 1 to support some precision without blowing the
+           analysis up. *)
+        | Features.Complex.ReturnAccessPath [_] as access_path -> Some access_path
+        | Features.Complex.ReturnAccessPath _ -> None
+      in
+      List.filter_map ~f:simplify_feature set
+    in
+    compute_essential_features ~essential_complex_features tree
 
 
   let filter_by_leaf ~leaf taint_tree =
