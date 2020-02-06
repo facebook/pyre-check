@@ -3313,12 +3313,10 @@ module State (Context : Context) = struct
                       let read_only_non_property_attribute =
                         let open AnnotatedAttribute in
                         let relevant_properties attribute =
-                          visibility attribute, property attribute, value attribute
+                          visibility attribute, property attribute, has_ellipsis_value attribute
                         in
                         match attribute >>| fst >>| relevant_properties with
-                        | Some (ReadOnly _, false, { Node.value = Expression.Ellipsis; _ })
-                          when Define.is_constructor define ->
-                            false
+                        | Some (ReadOnly _, false, true) when Define.is_constructor define -> false
                         | Some (ReadOnly _, false, _) -> true
                         | _ -> false
                       in

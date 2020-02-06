@@ -1710,19 +1710,12 @@ let assert_equivalent_attributes ~context source expected =
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in
-    let ignore_value_location attribute =
-      let value = Annotated.Attribute.value attribute in
-      Annotated.Attribute.with_value
-        attribute
-        ~value:(Node.create_with_default_location value.value)
-    in
     Type.split class_type
     |> fst
     |> Type.primitive_name
     >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
     |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
-    |> List.map ~f:ignore_value_location
     |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution:global_resolution)
     |> List.map ~f:Annotated.Attribute.ignore_callable_define_locations
   in

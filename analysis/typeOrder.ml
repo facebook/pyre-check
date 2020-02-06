@@ -1359,8 +1359,7 @@ module OrderImplementation = struct
                           ~static:false
                           ~visibility:ReadWrite
                           ~property:false
-                          ~value:
-                            (Ast.Node.create_with_default_location Expression.Expression.Ellipsis);
+                          ~has_ellipsis_value:true;
                       ]
                       |> Option.some
                     in

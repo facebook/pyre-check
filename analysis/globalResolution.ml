@@ -335,7 +335,7 @@ let attribute_from_class_name
             ?dependency
             class_name
         with
-        | Some { Node.location; _ } ->
+        | Some _ ->
             AnnotatedAttribute.create
               ~annotation:Type.Top
               ~original_annotation:Type.Top
@@ -349,7 +349,7 @@ let attribute_from_class_name
               ~visibility:ReadWrite
               ~property:false
               ~static:false
-              ~value:(Node.create Expression.Expression.Ellipsis ~location)
+              ~has_ellipsis_value:true
             |> Option.some
         | None -> None )
   in

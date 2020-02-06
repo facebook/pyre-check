@@ -575,8 +575,8 @@ module Implementation = struct
               let methods =
                 if init && not (already_in_table "__init__") then
                   let parameters =
-                    let extract_dataclass_field_arguments attribute =
-                      match AnnotatedAttribute.value attribute with
+                    let extract_dataclass_field_arguments (_, value) =
+                      match value with
                       | {
                        Node.value =
                          Expression.Call
@@ -618,9 +618,8 @@ module Implementation = struct
                       | Some arguments -> not (List.exists arguments ~f:is_disable_init)
                       | _ -> true
                     in
-                    let extract_init_value attribute =
+                    let extract_init_value (attribute, value) =
                       let initialized = AnnotatedAttribute.initialized attribute in
-                      let value = AnnotatedAttribute.value attribute in
                       let get_default_value { Call.Argument.name; value } =
                         match name with
                         | Some { Node.value = parameter_name; _ } ->
@@ -643,11 +642,11 @@ module Implementation = struct
                       match initialized with
                       | false -> None
                       | true -> (
-                          match extract_dataclass_field_arguments attribute with
+                          match extract_dataclass_field_arguments (attribute, value) with
                           | Some arguments -> List.find_map arguments ~f:get_default_value
                           | _ -> Some value )
                     in
-                    let collect_parameters parameters attribute =
+                    let collect_parameters parameters (attribute, value) =
                       (* Parameters must be annotated attributes *)
                       let annotation =
                         instantiate_attribute attribute
@@ -663,7 +662,7 @@ module Implementation = struct
                       match AnnotatedAttribute.name attribute with
                       | name when not (Type.is_unknown annotation) ->
                           let name = "$parameter$" ^ name in
-                          let value = extract_init_value attribute in
+                          let value = extract_init_value (attribute, value) in
                           let rec override_existing_parameters unchecked_parameters =
                             match unchecked_parameters with
                             | [] ->
@@ -687,15 +686,26 @@ module Implementation = struct
                     let get_table
                         ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
                       =
-                      let create =
-                        create_attribute
-                          ~class_metadata_environment
-                          ?dependency
-                          ~parent
-                          ?defined:None
-                          ?inherited:None
-                          ?default_class_attribute:None
-                          ~accessed_via_metaclass:false
+                      let create attribute : uninstantiated_attribute * Expression.t =
+                        let value =
+                          match attribute with
+                          | {
+                           Node.value = { Attribute.kind = Simple { value = Some value; _ }; _ };
+                           _;
+                          } ->
+                              value
+                          | { Node.location; _ } -> Node.create Expression.Ellipsis ~location
+                        in
+                        ( create_attribute
+                            ~class_metadata_environment
+                            ?dependency
+                            ~parent
+                            ?defined:None
+                            ?inherited:None
+                            ?default_class_attribute:None
+                            ~accessed_via_metaclass:false
+                            attribute,
+                          value )
                       in
                       let compare_by_location left right =
                         Ast.Location.compare (Node.location left) (Node.location right)
@@ -780,7 +790,7 @@ module Implementation = struct
                 ~visibility:ReadWrite
                 ~static:false
                 ~property:false
-                ~value:(Node.create_with_default_location Expression.Ellipsis)
+                ~has_ellipsis_value:true
             in
             List.map generated_methods ~f:make_attribute
       in
@@ -1176,7 +1186,7 @@ module Implementation = struct
                  ~visibility:ReadWrite
                  ~static:true
                  ~property:false
-                 ~value:(Node.create_with_default_location Expression.Expression.Ellipsis))
+                 ~has_ellipsis_value:true)
           else
             ()
         in
@@ -1767,7 +1777,12 @@ module Implementation = struct
         ( match kind with
         | Property _ -> true
         | _ -> false )
-      ~value:(Option.value value ~default:(Node.create Expression.Expression.Ellipsis ~location))
+      ~has_ellipsis_value:
+        ( match value >>| Node.value with
+        | None
+        | Some Expression.Expression.Ellipsis ->
+            true
+        | Some _ -> false )
 
 
   let metaclass

@@ -198,27 +198,20 @@ let infer_class_models ~environment =
     then
       None
     else
-      let is_fields attribute = Annotated.Attribute.name attribute |> String.equal "_fields" in
-      match List.find attributes ~f:is_fields >>| Annotated.Attribute.value with
-      | Some { Node.value = Tuple names; _ } ->
-          let to_string_literal { Node.value = name; _ } =
-            match name with
-            | Expression.String { StringLiteral.value; _ } -> Some value
-            | _ -> None
-          in
-          let attributes = List.filter_map names ~f:to_string_literal in
-          Some
-            {
-              TaintResult.forward = Forward.empty;
-              backward =
-                {
-                  TaintResult.Backward.taint_in_taint_out =
-                    List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
-                  sink_taint = BackwardState.empty;
-                };
-              mode = Normal;
-            }
-      | _ -> None
+      GlobalResolution.class_definition global_resolution (Primitive class_summary)
+      >>| Node.value
+      >>= ClassSummary.fields_tuple_value
+      >>| fun attributes ->
+      {
+        TaintResult.forward = Forward.empty;
+        backward =
+          {
+            TaintResult.Backward.taint_in_taint_out =
+              List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+            sink_taint = BackwardState.empty;
+          };
+        mode = Normal;
+      }
   in
   let compute_models class_name class_summary =
     let is_dataclass =

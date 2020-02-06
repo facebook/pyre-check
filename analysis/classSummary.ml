@@ -90,3 +90,26 @@ let is_abstract { bases; _ } =
     | _ -> false
   in
   List.exists bases ~f:abstract_metaclass
+
+
+let fields_tuple_value { attribute_components; _ } =
+  let attributes =
+    Ast.Statement.Class.attributes
+      ~include_generated_attributes:false
+      ~in_test:false
+      attribute_components
+  in
+  match Identifier.SerializableMap.find_opt "_fields" attributes with
+  | Some
+      { Node.value = { kind = Simple { value = Some { Node.value = Tuple fields; _ }; _ }; _ }; _ }
+    ->
+      let name = function
+        | {
+            Node.value = Ast.Expression.Expression.String { Ast.Expression.StringLiteral.value; _ };
+            _;
+          } ->
+            Some value
+        | _ -> None
+      in
+      Some (List.filter_map fields ~f:name)
+  | _ -> None

@@ -34,7 +34,7 @@ val create
   visibility:visibility ->
   property:bool ->
   static:bool ->
-  value:Expression.t ->
+  has_ellipsis_value:bool ->
   instantiated
 
 val create_uninstantiated
@@ -49,7 +49,7 @@ val create_uninstantiated
   visibility:visibility ->
   property:bool ->
   static:bool ->
-  value:Expression.t ->
+  has_ellipsis_value:bool ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -64,8 +64,6 @@ val async : 'a t -> bool
 
 val parent : 'a t -> Type.Primitive.t
 
-val value : 'a t -> Expression.t
-
 val initialized : 'a t -> bool
 
 val defined : 'a t -> bool
@@ -78,7 +76,7 @@ val property : 'a t -> bool
 
 val visibility : 'a t -> visibility
 
-val with_value : 'a t -> value:Expression.t -> 'a t
+val has_ellipsis_value : 'a t -> bool
 
 val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated
 

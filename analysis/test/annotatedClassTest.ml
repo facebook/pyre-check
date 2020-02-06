@@ -406,7 +406,7 @@ let test_class_attributes context =
       ~visibility:ReadWrite
       ~property:false
       ~static:false
-      ~value:(Option.value value ~default:(Node.create_with_default_location Expression.Ellipsis))
+      ~has_ellipsis_value:true
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -477,14 +477,7 @@ let test_class_attributes context =
         ~instantiated
     in
     let cmp =
-      let equal left right =
-        let without_locations attribute =
-          Attribute.with_value attribute ~value:(Node.create_with_default_location Expression.True)
-        in
-        Attribute.equal_instantiated (without_locations left) (without_locations right)
-        && Expression.location_insensitive_compare (Attribute.value left) (Attribute.value right)
-           = 0
-      in
+      let equal = Attribute.equal_instantiated in
       Option.equal equal
     in
     let printer = Option.value_map ~default:"None" ~f:Attribute.show_instantiated in
@@ -514,7 +507,7 @@ let test_class_attributes context =
          ~property
          ~visibility
          ~static:false
-         ~value:(Node.create_with_default_location Expression.Ellipsis))
+         ~has_ellipsis_value:true)
   in
   assert_attribute
     ~parent

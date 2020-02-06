@@ -133,7 +133,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                      ~visibility:ReadWrite
                      ~property:false
                      ~static:false
-                     ~value:(Node.create Ast.Expression.Expression.Ellipsis ~location:Location.any))
+                     ~has_ellipsis_value:true)
             | _ -> None )
         | _ -> None
       in
