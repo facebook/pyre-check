@@ -258,7 +258,7 @@ let meet
                 {
                   scope = Local;
                   original = GlobalResolution.meet global_resolution left.original right.original;
-                  final = left_final || right_final;
+                  final = left_final && right_final;
                 }
           | (Immutable { scope = Local; _ } as immutable), _
           | _, (Immutable { scope = Local; _ } as immutable) ->
@@ -269,7 +269,7 @@ let meet
                 {
                   scope = Global;
                   original = GlobalResolution.meet global_resolution left.original right.original;
-                  final = left_final || right_final;
+                  final = left_final && right_final;
                 }
         in
         let left, right = left.annotation, right.annotation in
