@@ -35,6 +35,13 @@ let get_mercurial_diff () =
   { RageResponse.RageResult.title = Some "Mercurial diff"; data }
 
 
+let get_mercurial_reflog () =
+  let channel = Unix.open_process_in "hg reflog --limit 100" in
+  let data = In_channel.input_all channel in
+  In_channel.close channel;
+  { RageResponse.RageResult.title = Some "Mercurial Reflog"; data }
+
+
 let display_log { RageResponse.RageResult.title; data } =
   let name = Option.value_exn title in
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
@@ -62,6 +69,7 @@ let run_rage log_directory local_root () =
     get_mercurial_base ()
     :: get_mercurial_status ()
     :: get_mercurial_diff ()
+    :: get_mercurial_reflog ()
     :: get_watchman_watched_directories ()
     :: get_pyre_locks ()
     @ Service.Rage.get_logs configuration
