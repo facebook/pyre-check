@@ -1854,7 +1854,11 @@ let inference_information
             |> Option.value ~default:`Null
       in
       let value =
-        value >>| Expression.show >>| (fun string -> `String string) |> Option.value ~default:`Null
+        value
+        >>| Ast.Expression.sanitized
+        >>| Expression.show
+        >>| (fun string -> `String string)
+        |> Option.value ~default:`Null
       in
       `Assoc ["name", `String (Identifier.sanitized name); "type", annotation; "value", value]
     in

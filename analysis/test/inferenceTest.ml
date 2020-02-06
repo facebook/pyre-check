@@ -377,6 +377,15 @@ let test_infer context =
           return 5
     |}
     [{|true|}];
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+    NOW = int(time.time())
+
+    def run(x: int = NOW):
+        return 1
+    |}
+    [{|[{"name":"x","type":"int","value":"NOW"}]|}];
 
   (* Don't infer Undeclared *)
   assert_infer
