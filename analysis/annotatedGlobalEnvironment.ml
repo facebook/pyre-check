@@ -42,7 +42,7 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let produce_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
-    Annotation.create_immutable ~global:true (Type.meta primitive) |> Node.create ~location
+    Annotation.create_immutable (Type.meta primitive) |> Node.create ~location
   in
   let process_unannotated_global global =
     let produce_assignment_global ~target_location ~is_explicit annotation =
@@ -57,8 +57,7 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         else
           None
       in
-      Annotation.create_immutable ~global:true ~original annotation
-      |> Node.create ~location:target_location
+      Annotation.create_immutable ~original annotation |> Node.create ~location:target_location
     in
     match global with
     | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
@@ -94,7 +93,7 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         List.map defines ~f:create_overload
         |> Type.Callable.from_overloads
         >>| (fun callable -> Type.Callable callable)
-        >>| Annotation.create_immutable ~global:true
+        >>| Annotation.create_immutable
         >>| Node.create ~location:(Node.location head)
     | SimpleAssign
         {
@@ -129,7 +128,7 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
              ?dependency
              attribute_resolution
         |> Type.meta
-        |> Annotation.create_immutable ~global:true
+        |> Annotation.create_immutable
         |> Node.create ~location
         |> Option.some
     | SimpleAssign { explicit_annotation; value; target_location } ->

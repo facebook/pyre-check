@@ -579,13 +579,13 @@ let test_join context =
     (error (revealed_type "a" (Annotation.create Type.float)))
     (error (revealed_type "a" (Annotation.create Type.float)));
   assert_join
-    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
-    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.float)))
+    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable Type.float)))
     (error Error.Top);
   assert_join
-    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
-    (error (revealed_type "a" (Annotation.create_immutable ~global:false Type.integer)))
-    (error Error.Top);
+    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable Type.integer)));
   assert_join
     (error (revealed_type "a" (Annotation.create Type.integer)))
     (error (revealed_type "b" (Annotation.create Type.float)))
@@ -651,13 +651,13 @@ let test_less_or_equal context =
   assert_true
     (Error.less_or_equal
        ~resolution
-       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
-       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer))));
+       (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+       (error (revealed_type "a" (Annotation.create_immutable Type.integer))));
   assert_false
     (Error.less_or_equal
        ~resolution
-       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
-       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.float))))
+       (error (revealed_type "a" (Annotation.create_immutable Type.integer)))
+       (error (revealed_type "a" (Annotation.create_immutable Type.float))))
 
 
 let test_filter context =

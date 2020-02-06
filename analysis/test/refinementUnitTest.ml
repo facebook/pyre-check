@@ -61,17 +61,17 @@ let resolution context = ScratchProject.setup ~context [] |> ScratchProject.buil
 let test_refine context =
   let global_resolution = resolution context in
   assert_equal
-    (refine ~global_resolution (Annotation.create_immutable ~global:false Type.float) Type.integer)
-    (Annotation.create_immutable ~global:false ~original:(Some Type.float) Type.integer);
+    (refine ~global_resolution (Annotation.create_immutable Type.float) Type.integer)
+    (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
   assert_equal
-    (refine ~global_resolution (Annotation.create_immutable ~global:false Type.integer) Type.float)
-    (Annotation.create_immutable ~global:false Type.integer);
+    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.float)
+    (Annotation.create_immutable Type.integer);
   assert_equal
-    (refine ~global_resolution (Annotation.create_immutable ~global:false Type.integer) Type.Bottom)
-    (Annotation.create_immutable ~global:false Type.integer);
+    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Bottom)
+    (Annotation.create_immutable Type.integer);
   assert_equal
-    (refine ~global_resolution (Annotation.create_immutable ~global:false Type.integer) Type.Top)
-    (Annotation.create_immutable ~global:false ~original:(Some Type.integer) Type.Top)
+    (refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Top)
+    (Annotation.create_immutable ~original:(Some Type.integer) Type.Top)
 
 
 let test_less_or_equal context =
@@ -126,32 +126,23 @@ let test_less_or_equal context =
             ~base:(Annotation.create Type.object_primitive)
        |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer) ));
 
-  (* Mutable <= Local <= Global. *)
+  (* Mutable <= Immutable. *)
   assert_true
     (less_or_equal
        ~global_resolution
        (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()));
+       (create ~base:(Annotation.create_immutable Type.integer) ()));
   assert_true
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()));
-  assert_true
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:true Type.integer) ()));
+       (create ~base:(Annotation.create_immutable Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()));
   assert_false
     (less_or_equal
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ())
        (create ~base:(Annotation.create Type.integer) ()));
-  assert_false
-    (less_or_equal
-       ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
+  ()
 
 
 let test_join context =
@@ -208,38 +199,38 @@ let test_join context =
     (join
        ~global_resolution
        (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ())
        (create ~base:(Annotation.create Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+       (create ~base:(Annotation.create_immutable Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:true Type.float) ());
+       (create ~base:(Annotation.create_immutable Type.float) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.float) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:true Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:true Type.float) ());
+       (create ~base:(Annotation.create_immutable Type.float) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.float) ());
   assert_equal
     (join
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true ~final:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:true Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:true ~final:true Type.float) ());
+       (create ~base:(Annotation.create_immutable ~final:true Type.float) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable ~final:true Type.float) ());
   ()
 
 
@@ -303,38 +294,38 @@ let test_meet context =
     (meet
        ~global_resolution
        (create ~base:(Annotation.create Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
     (create ~base:(Annotation.create Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ())
        (create ~base:(Annotation.create Type.integer) ()))
     (create ~base:(Annotation.create Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+       (create ~base:(Annotation.create_immutable Type.integer) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+       (create ~base:(Annotation.create_immutable Type.float) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true ~final:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:false Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false Type.integer) ());
+       (create ~base:(Annotation.create_immutable ~final:true Type.float) ())
+       (create ~base:(Annotation.create_immutable Type.integer) ()))
+    (create ~base:(Annotation.create_immutable Type.integer) ());
   assert_equal
     (meet
        ~global_resolution
-       (create ~base:(Annotation.create_immutable ~global:true ~final:true Type.float) ())
-       (create ~base:(Annotation.create_immutable ~global:false ~final:true Type.integer) ()))
-    (create ~base:(Annotation.create_immutable ~global:false ~final:true Type.integer) ());
+       (create ~base:(Annotation.create_immutable ~final:true Type.float) ())
+       (create ~base:(Annotation.create_immutable ~final:true Type.integer) ()))
+    (create ~base:(Annotation.create_immutable ~final:true Type.integer) ());
   ()
 
 

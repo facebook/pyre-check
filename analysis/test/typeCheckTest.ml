@@ -31,9 +31,9 @@ module Create (Context : TypeCheck.Context) = struct
           let annotation =
             let create annotation =
               match Map.find immutables name with
-              | Some (global, original) ->
+              | Some original ->
                   RefinementUnit.create
-                    ~base:(Annotation.create_immutable ~original:(Some original) ~global annotation)
+                    ~base:(Annotation.create_immutable ~original:(Some original) annotation)
                     ()
               | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
             in
@@ -130,7 +130,7 @@ let test_initial context =
   in
   assert_initial
     "def foo(x: int) -> None: ..."
-    ~immutables:["x", (false, Type.integer)]
+    ~immutables:["x", Type.integer]
     ~annotations:["x", Type.integer];
   assert_initial
     "def foo(x: int = 1.0) -> None: ..."
@@ -139,7 +139,7 @@ let test_initial context =
         "Incompatible variable type [9]: x is declared to have type `int` but is used as type "
         ^ "`float`.";
       ]
-    ~immutables:["x", (false, Type.integer)]
+    ~immutables:["x", Type.integer]
     ~annotations:["x", Type.integer];
   assert_initial
     ~errors:
@@ -148,11 +148,11 @@ let test_initial context =
     "def foo(x = 1.0) -> None: ...";
   assert_initial
     "def foo(x: int) -> int: ..."
-    ~immutables:["x", (false, Type.integer)]
+    ~immutables:["x", Type.integer]
     ~annotations:["x", Type.integer];
   assert_initial
     "def foo(x: float, y: str) -> None: ..."
-    ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
+    ~immutables:["x", Type.float; "y", Type.string]
     ~annotations:["x", Type.float; "y", Type.string];
   assert_initial
     "def foo(x) -> None: ..."
@@ -161,14 +161,14 @@ let test_initial context =
   assert_initial
     "def foo(x: typing.Any) -> None: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
-    ~immutables:["x", (false, Type.Any)]
+    ~immutables:["x", Type.Any]
     ~annotations:["x", Type.Any];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
     "def __eq__(self, other: object) -> None: ..."
     ~errors:[]
-    ~immutables:["other", (false, Type.object_primitive)]
+    ~immutables:["other", Type.object_primitive]
     ~annotations:["self", Type.Primitive "Foo"; "other", Type.object_primitive];
   assert_initial
     ~parent:"Foo"
@@ -184,7 +184,7 @@ let test_initial context =
   assert_initial
     ~environment:"T = typing.TypeVar('T')"
     "def foo(x: test.T) -> None: ..."
-    ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "test.T"))]
+    ~immutables:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "test.T")]
     ~annotations:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "test.T")]
 
 
@@ -981,16 +981,12 @@ let test_forward_expression context =
       resolved_annotation
   in
   assert_annotation "1" None;
-  assert_annotation
-    ~environment:"x = 1"
-    "test.x"
-    (Some (Annotation.create_immutable ~global:true Type.integer));
+  assert_annotation ~environment:"x = 1" "test.x" (Some (Annotation.create_immutable Type.integer));
   assert_annotation
     ~environment:"x: typing.Union[int, str] = 1"
     "test.x"
     (Some
        (Annotation.create_immutable
-          ~global:true
           ~original:(Some (Type.union [Type.string; Type.integer]))
           (Type.union [Type.string; Type.integer])));
   assert_annotation
@@ -1001,7 +997,7 @@ let test_forward_expression context =
             self.attribute: int = 1
       |}
     "test.Foo().attribute"
-    (Some (Annotation.create_immutable ~global:true Type.integer))
+    (Some (Annotation.create_immutable Type.integer))
 
 
 let test_forward_statement context =
@@ -1134,7 +1130,7 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."])
-    ~postcondition_immutables:["x", (false, Type.Any)]
+    ~postcondition_immutables:["x", Type.Any]
     []
     "x: Derp"
     ["x", Type.Any];
@@ -1145,12 +1141,12 @@ let test_forward_statement context =
           "Incompatible variable type [9]: x is declared to have type `str` "
           ^ "but is used as type `int`.";
         ])
-    ~postcondition_immutables:["x", (false, Type.string)]
+    ~postcondition_immutables:["x", Type.string]
     []
     "x: str = 1"
     ["x", Type.string];
   assert_forward
-    ~postcondition_immutables:["x", (false, Type.union [Type.string; Type.integer])]
+    ~postcondition_immutables:["x", Type.union [Type.string; Type.integer]]
     []
     "x: typing.Union[int, str] = 1"
     ["x", Type.union [Type.integer; Type.string]];
@@ -1175,7 +1171,7 @@ let test_forward_statement context =
     "x = y, z"
     ["x", Type.tuple [Type.integer; Type.Top]; "y", Type.integer; "z", Type.Top];
   assert_forward
-    ~postcondition_immutables:["x", (false, Type.tuple [Type.Any; Type.Any])]
+    ~postcondition_immutables:["x", Type.tuple [Type.Any; Type.Any]]
     ~errors:
       (`Specific
         [
@@ -1278,11 +1274,7 @@ let test_forward_statement context =
     ];
 
   (* Assignments with immutables. *)
-  assert_forward
-    ~postcondition_immutables:["y", (false, Type.integer)]
-    []
-    "y: int"
-    ["y", Type.integer];
+  assert_forward ~postcondition_immutables:["y", Type.integer] [] "y: int" ["y", Type.integer];
   assert_forward
     ~errors:
       (`Specific
@@ -1292,19 +1284,19 @@ let test_forward_statement context =
           "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
            flow path that doesn't define `x`.";
         ])
-    ~postcondition_immutables:["y", (false, Type.integer)]
+    ~postcondition_immutables:["y", Type.integer]
     []
     "y: int = x"
     ["y", Type.integer];
   assert_forward
-    ~precondition_immutables:["y", (false, Type.Top)]
-    ~postcondition_immutables:["y", (false, Type.Top)]
+    ~precondition_immutables:["y", Type.Top]
+    ~postcondition_immutables:["y", Type.Top]
     ["x", Type.Top; "y", Type.Top]
     "y = x"
     ["x", Type.Top; "y", Type.Top];
   assert_forward
-    ~precondition_immutables:["y", (false, Type.string)]
-    ~postcondition_immutables:["y", (false, Type.integer)]
+    ~precondition_immutables:["y", Type.string]
+    ~postcondition_immutables:["y", Type.integer]
     ["y", Type.string]
     "y: int"
     ["y", Type.integer];
@@ -1379,8 +1371,8 @@ let test_forward_statement context =
   assert_forward [] "assert None in [1]" [];
   assert_forward ["x", Type.list Type.Top] "assert None in x" ["x", Type.list Type.Top];
   assert_forward
-    ~precondition_immutables:["x", (false, Type.float)]
-    ~postcondition_immutables:["x", (false, Type.float)]
+    ~precondition_immutables:["x", Type.float]
+    ~postcondition_immutables:["x", Type.float]
     ["x", Type.float]
     "assert x in [1]"
     ["x", Type.integer];

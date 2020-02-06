@@ -115,12 +115,11 @@ let less_or_equal
     | Some left, Some right ->
         let mutability_less_or_equal =
           match left.mutability, right.mutability with
-          | _, Immutable { scope = Global; _ } -> true
-          | Immutable { scope = Local; _ }, Immutable { scope = Local; _ }
-          | Mutable, Immutable { scope = Local; _ } ->
+          | Immutable _, Immutable _ -> true
+          | Immutable _, Mutable -> false
+          | Mutable, Immutable _
+          | Mutable, Mutable ->
               true
-          | Mutable, Mutable -> true
-          | _ -> false
         in
         mutability_less_or_equal
         && GlobalResolution.less_or_equal
@@ -165,27 +164,15 @@ let join
     | Some left, Some right ->
         let mutability =
           match left.mutability, right.mutability with
-          | ( Immutable ({ scope = Global; final = left_final; _ } as left),
-              Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
+          | ( Immutable ({ final = left_final; _ } as left),
+              Immutable ({ final = right_final; _ } as right) ) ->
               Immutable
                 {
-                  scope = Global;
                   original = GlobalResolution.join global_resolution left.original right.original;
                   final = left_final || right_final;
                 }
-          | (Immutable { scope = Global; _ } as immutable), _
-          | _, (Immutable { scope = Global; _ } as immutable) ->
-              immutable
-          | ( Immutable ({ scope = Local; final = left_final; _ } as left),
-              Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
-              Immutable
-                {
-                  scope = Local;
-                  original = GlobalResolution.join global_resolution left.original right.original;
-                  final = left_final || right_final;
-                }
-          | (Immutable { scope = Local; _ } as immutable), _
-          | _, (Immutable { scope = Local; _ } as immutable) ->
+          | (Immutable _ as immutable), _
+          | _, (Immutable _ as immutable) ->
               immutable
           | _ -> Mutable
         in
@@ -252,22 +239,10 @@ let meet
           | Mutable, _
           | _, Mutable ->
               Mutable
-          | ( Immutable ({ scope = Local; final = left_final; _ } as left),
-              Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
+          | ( Immutable ({ final = left_final; _ } as left),
+              Immutable ({ final = right_final; _ } as right) ) ->
               Immutable
                 {
-                  scope = Local;
-                  original = GlobalResolution.meet global_resolution left.original right.original;
-                  final = left_final && right_final;
-                }
-          | (Immutable { scope = Local; _ } as immutable), _
-          | _, (Immutable { scope = Local; _ } as immutable) ->
-              immutable
-          | ( Immutable ({ scope = Global; final = left_final; _ } as left),
-              Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
-              Immutable
-                {
-                  scope = Global;
                   original = GlobalResolution.meet global_resolution left.original right.original;
                   final = left_final && right_final;
                 }

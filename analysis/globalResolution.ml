@@ -300,13 +300,13 @@ let global ({ dependency; _ } as resolution) reference =
   | "__file__"
   | "__name__" ->
       let annotation =
-        Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
+        Annotation.create_immutable Type.string |> Node.create_with_default_location
       in
       Some annotation
   | "__dict__" ->
       let annotation =
         Type.dictionary ~key:Type.string ~value:Type.Any
-        |> Annotation.create_immutable ~global:true
+        |> Annotation.create_immutable
         |> Node.create_with_default_location
       in
       Some annotation

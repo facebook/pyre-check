@@ -115,7 +115,7 @@ let annotation { payload = { annotation; original_annotation }; async; defined; 
         | ReadOnly _ -> true
         | ReadWrite -> false
       in
-      Annotation.Immutable { scope = Global; original; final }
+      Annotation.Immutable { original; final }
     else
       (* We need to distinguish between unannotated attributes and non-existent ones - ensure that
          the annotation is viewed as mutable to distinguish from user-defined globals. *)

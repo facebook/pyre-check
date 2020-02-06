@@ -714,7 +714,7 @@ module State (Context : Context) = struct
           | Define.Capture.Kind.ClassSelf parent ->
               state, type_of_parent ~global_resolution parent |> Type.meta
         in
-        let annotation = Annotation.create_immutable ~global:false annotation in
+        let annotation = Annotation.create_immutable annotation in
         let resolution =
           let { resolution; _ } = state in
           let reference = Reference.create name in
@@ -899,31 +899,24 @@ module State (Context : Context) = struct
                   match parsed_annotation, value_annotation with
                   | Some annotation, Some value_annotation when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
-                        Annotation.create_immutable
-                          ~global:false
-                          ~original:(Some annotation)
-                          value_annotation )
+                        Annotation.create_immutable ~original:(Some annotation) value_annotation )
                   | Some annotation, Some value_annotation when contains_prohibited_any annotation
                     ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:(Some annotation)
                           (Some value_annotation),
-                        Annotation.create_immutable
-                          ~global:false
-                          ~original:(Some annotation)
-                          value_annotation )
+                        Annotation.create_immutable ~original:(Some annotation) value_annotation )
                   | Some annotation, _ when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
-                        Annotation.create_immutable ~global:false annotation )
+                        Annotation.create_immutable annotation )
                   | Some annotation, None when contains_prohibited_any annotation ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:(Some annotation)
                           None,
-                        Annotation.create_immutable ~global:false annotation )
-                  | Some annotation, _ ->
-                      state, Annotation.create_immutable ~global:false annotation
+                        Annotation.create_immutable annotation )
+                  | Some annotation, _ -> state, Annotation.create_immutable annotation
                   | None, Some value_annotation ->
                       ( add_missing_parameter_annotation_error
                           ~state
@@ -947,11 +940,11 @@ module State (Context : Context) = struct
             in
             let mutability =
               match mutability with
-              | Annotation.Immutable { Annotation.original; scope; final } ->
+              | Annotation.Immutable { Annotation.original; final } ->
                   let original =
                     Type.Variable.mark_all_variables_as_bound original |> apply_starred_annotations
                   in
-                  Annotation.Immutable { Annotation.original; scope; final }
+                  Annotation.Immutable { Annotation.original; final }
               | _ -> mutability
             in
             state, { Annotation.annotation; mutability }
@@ -1550,7 +1543,6 @@ module State (Context : Context) = struct
             in
             let create_annotation signature =
               Annotation.create_immutable
-                ~global:true
                 ~original:(Some Type.Top)
                 (Type.Callable.Overload.return_annotation signature)
             in
@@ -3768,9 +3760,7 @@ module State (Context : Context) = struct
                   in
                   let annotation =
                     if explicit && is_valid_annotation then
-                      let annotation =
-                        Annotation.create_immutable ~global:is_global ~final:is_final guide
-                      in
+                      let annotation = Annotation.create_immutable ~final:is_final guide in
                       if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
                         refine_annotation annotation resolved
                       else
@@ -3998,8 +3988,7 @@ module State (Context : Context) = struct
                   attribute >>| AnnotatedAttribute.defined,
                   attribute >>| AnnotatedAttribute.annotation )
               with
-              | Some (ReadOnly (Refinable _)), Some true, Some annotation ->
-                  Some (Annotation.make_local annotation)
+              | Some (ReadOnly (Refinable _)), Some true, Some annotation -> Some annotation
               | _ -> None )
           | _ -> None
         in
@@ -4345,7 +4334,6 @@ module State (Context : Context) = struct
                       let refined =
                         if Annotation.is_immutable previous then
                           Annotation.create_immutable
-                            ~global:false
                             ~original:(Some (Annotation.original previous))
                             element_type
                         else

@@ -57,7 +57,7 @@ let test_simple_registration context =
     assert_equal
       ~cmp:location_insensitive_compare
       ~printer
-      (expected >>| Annotation.create_immutable ~global:true ?original)
+      (expected >>| Annotation.create_immutable ?original)
       ( AnnotatedGlobalEnvironment.ReadOnly.get_global read_only (Reference.create name)
       >>| Node.value
       >>| ignore_define_location )
@@ -147,9 +147,7 @@ let test_updates context =
             >>| Sexp.to_string_hum
             |> Option.value ~default:"None"
           in
-          let expectation =
-            expectation >>| Node.map ~f:(Annotation.create_immutable ~global:true)
-          in
+          let expectation = expectation >>| Node.map ~f:Annotation.create_immutable in
           AnnotatedGlobalEnvironment.ReadOnly.get_global
             read_only
             (Reference.create global_name)

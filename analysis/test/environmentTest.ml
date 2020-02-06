@@ -675,19 +675,11 @@ let test_populate context =
     |> assert_global_with_environment
   in
   let assert_global actual expected = assert_global actual (Some expected) in
-  assert_global
-    "test.A"
-    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
-  assert_global "test.B" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global
-    "test.C"
-    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
-  assert_global
-    "test.G"
-    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.Foo"));
-  assert_global
-    "test.H"
-    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.Foo"));
+  assert_global "test.A" (Annotation.create_immutable (parse_annotation environment !"test.int"));
+  assert_global "test.B" (Annotation.create_immutable Type.integer);
+  assert_global "test.C" (Annotation.create_immutable (parse_annotation environment !"test.int"));
+  assert_global "test.G" (Annotation.create_immutable (parse_annotation environment !"test.Foo"));
+  assert_global "test.H" (Annotation.create_immutable (parse_annotation environment !"test.Foo"));
   let assert_global =
     populate
       ~context
@@ -711,14 +703,13 @@ let test_populate context =
   in
   let assert_no_global actual = assert_global actual None in
   let assert_global actual expected = assert_global actual (Some expected) in
-  assert_global "test.global_value_set" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "test.global_annotated" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "test.global_both" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "test.global_unknown" (Annotation.create_immutable ~global:true Type.Top);
+  assert_global "test.global_value_set" (Annotation.create_immutable Type.integer);
+  assert_global "test.global_annotated" (Annotation.create_immutable Type.integer);
+  assert_global "test.global_both" (Annotation.create_immutable Type.integer);
+  assert_global "test.global_unknown" (Annotation.create_immutable Type.Top);
   assert_global
     "test.function"
     (Annotation.create_immutable
-       ~global:true
        (Type.Callable.create
           ~name:!&"test.function"
           ~parameters:(Type.Callable.Defined [])
@@ -726,10 +717,8 @@ let test_populate context =
           ()));
   assert_global
     "test.global_function"
-    (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.Top);
-  assert_global
-    "test.Class"
-    (Annotation.create_immutable ~global:true (Type.meta (Type.Primitive "test.Class")));
+    (Annotation.create_immutable ~original:(Some Type.Top) Type.Top);
+  assert_global "test.Class" (Annotation.create_immutable (Type.meta (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 
   (* Properties. *)
@@ -771,7 +760,7 @@ let test_populate context =
   in
   assert_global
     "test.A"
-    (Some (Type.Primitive "test.A" |> Type.meta |> Annotation.create_immutable ~global:true));
+    (Some (Type.Primitive "test.A" |> Type.meta |> Annotation.create_immutable));
 
   (* Callable classes. *)
   let environment =

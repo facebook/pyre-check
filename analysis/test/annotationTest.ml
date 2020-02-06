@@ -10,31 +10,17 @@ open Annotation
 
 let test_instantiate _ =
   assert_equal
-    (instantiate (create_immutable ~final:true ~global:true Type.integer) ~constraints:(fun _ ->
-         None))
-    (create_immutable ~final:true ~global:true Type.integer);
+    (instantiate (create_immutable ~final:true Type.integer) ~constraints:(fun _ -> None))
+    (create_immutable ~final:true Type.integer);
   ()
 
 
 let test_dequalify _ =
   assert_equal
-    (dequalify Ast.Reference.Map.empty (create_immutable ~final:true ~global:true Type.integer))
-    (create_immutable ~final:true ~global:true Type.integer);
-  ()
-
-
-let test_make_local _ =
-  assert_equal
-    (make_local (create_immutable ~final:true ~global:true Type.integer))
-    (create_immutable ~final:true ~global:false Type.integer);
+    (dequalify Ast.Reference.Map.empty (create_immutable ~final:true Type.integer))
+    (create_immutable ~final:true Type.integer);
   ()
 
 
 let () =
-  "annotation"
-  >::: [
-         "instantiate" >:: test_instantiate;
-         "dequalify" >:: test_dequalify;
-         "make_local" >:: test_make_local;
-       ]
-  |> Test.run
+  "annotation" >::: ["instantiate" >:: test_instantiate; "dequalify" >:: test_dequalify] |> Test.run

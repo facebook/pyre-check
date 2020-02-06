@@ -5,12 +5,7 @@
 
 open Core
 
-type scope =
-  | Local
-  | Global
-
-and immutable = {
-  scope: scope;
+type immutable = {
   original: Type.t;
   final: bool;
 }
@@ -29,18 +24,13 @@ let pp format { annotation; mutability } =
   let mutability =
     match mutability with
     | Mutable -> "m"
-    | Immutable { scope; original; final } ->
-        let scope =
-          match scope with
-          | Local -> "l"
-          | Global -> "g"
-        in
+    | Immutable { original; final } ->
         let final =
           match final with
           | true -> " (final)"
           | _ -> ""
         in
-        Format.asprintf "%s (%a)%s" scope Type.pp original final
+        Format.asprintf " (%a)%s" Type.pp original final
   in
   Format.fprintf format "(%a: %s)" Type.pp annotation mutability
 
@@ -51,32 +41,19 @@ let show = Format.asprintf "%a" pp
 
 let create ?(mutability = Mutable) annotation = { annotation; mutability }
 
-let create_immutable ~global ?(original = None) ?(final = false) annotation =
-  let scope = if global then Global else Local in
+let create_immutable ?(original = None) ?(final = false) annotation =
   let original = Option.value ~default:annotation original in
-  { annotation; mutability = Immutable { scope; original; final } }
+  { annotation; mutability = Immutable { original; final } }
 
 
 let annotation { annotation; _ } = annotation
 
 let mutability { mutability; _ } = mutability
 
-let scope { mutability; _ } =
-  match mutability with
-  | Immutable { scope; _ } -> Some scope
-  | _ -> None
-
-
 let original { annotation; mutability } =
   match mutability with
   | Immutable { original; _ } -> original
   | Mutable -> annotation
-
-
-let is_global annotation =
-  match scope annotation with
-  | Some Global -> true
-  | _ -> false
 
 
 let is_immutable { mutability; _ } = not (equal_mutability mutability Mutable)
@@ -92,8 +69,7 @@ let instantiate { annotation; mutability } ~constraints =
   let mutability =
     match mutability with
     | Mutable -> Mutable
-    | Immutable { scope; original; final } ->
-        Immutable { scope; original = instantiate original; final }
+    | Immutable { original; final } -> Immutable { original = instantiate original; final }
   in
   { annotation = instantiate annotation; mutability }
 
@@ -102,13 +78,7 @@ let dequalify dequalify_map { annotation; mutability } =
   let mutability =
     match mutability with
     | Mutable -> Mutable
-    | Immutable { scope; original; final } ->
-        Immutable { scope; original = Type.dequalify dequalify_map original; final }
+    | Immutable { original; final } ->
+        Immutable { original = Type.dequalify dequalify_map original; final }
   in
   { annotation = Type.dequalify dequalify_map annotation; mutability }
-
-
-let make_local = function
-  | { mutability = Immutable immutable; annotation } ->
-      { annotation; mutability = Immutable { immutable with scope = Local } }
-  | annotation -> annotation
