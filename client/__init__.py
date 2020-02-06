@@ -180,7 +180,7 @@ def log_statistics(
     arguments: Optional[Namespace] = None,
     configuration: Optional["Configuration"] = None,
     integers: Optional[Dict[str, int]] = None,
-    normals: Optional[Dict[str, str]] = None,
+    normals: Optional[Dict[str, Optional[str]]] = None,
     logger: Optional[str] = None,
 ) -> None:
     integers = integers or {}

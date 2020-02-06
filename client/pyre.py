@@ -130,6 +130,7 @@ def main() -> int:
                         "runtime": int((time.time() - start) * 1000),
                     },
                     normals={
+                        "root": configuration.local_configuration_root,
                         "cwd": os.getcwd(),
                         "client_version": __version__,
                         "command": command.NAME,
