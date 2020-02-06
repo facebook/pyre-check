@@ -288,9 +288,7 @@ let test_create _ =
   assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
 
   (* Callables. *)
-  let default_overload =
-    { Type.Callable.annotation = Type.Top; parameters = Undefined; define_location = None }
-  in
+  let default_overload = { Type.Callable.annotation = Type.Top; parameters = Undefined } in
   let open Type.Callable in
   assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
@@ -302,16 +300,8 @@ let test_create _ =
     (Type.Callable.create
        ~overloads:
          [
-           {
-             Type.Callable.annotation = Type.string;
-             parameters = Type.Callable.Undefined;
-             define_location = None;
-           };
-           {
-             Type.Callable.annotation = Type.integer;
-             parameters = Type.Callable.Undefined;
-             define_location = None;
-           };
+           { Type.Callable.annotation = Type.string; parameters = Type.Callable.Undefined };
+           { Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined };
          ]
        ~annotation:Type.integer
        ());
@@ -354,7 +344,6 @@ let test_create _ =
                    Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Anonymous { index = 1; annotation = Type.string; default = false };
                  ];
-             define_location = None;
            };
          overloads = [];
          implicit = None;
@@ -375,7 +364,6 @@ let test_create _ =
                    Parameter.Variable (Concrete Type.Top);
                    Parameter.Keywords Type.Top;
                  ];
-             define_location = None;
            };
          overloads = [];
          implicit = None;
@@ -395,7 +383,6 @@ let test_create _ =
                    Parameter.Variable (Concrete Type.integer);
                    Parameter.Keywords Type.string;
                  ];
-             define_location = None;
            };
          overloads = [];
          implicit = None;
@@ -410,7 +397,6 @@ let test_create _ =
              annotation = Type.integer;
              parameters =
                Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }];
-             define_location = None;
            };
          overloads = [];
          implicit = None;
@@ -571,16 +557,8 @@ let test_expression _ =
     (Type.Callable.create
        ~overloads:
          [
-           {
-             Type.Callable.annotation = Type.string;
-             parameters = Type.Callable.Undefined;
-             define_location = None;
-           };
-           {
-             Type.Callable.annotation = Type.integer;
-             parameters = Type.Callable.Undefined;
-             define_location = None;
-           };
+           { Type.Callable.annotation = Type.string; parameters = Type.Callable.Undefined };
+           { Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined };
          ]
        ~annotation:Type.integer
        ())

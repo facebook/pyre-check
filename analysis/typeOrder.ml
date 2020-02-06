@@ -853,11 +853,7 @@ module OrderImplementation = struct
       in
       parameters
       >>| fun parameters ->
-      {
-        annotation = return_join order left.annotation right.annotation;
-        parameters;
-        define_location = None;
-      }
+      { annotation = return_join order left.annotation right.annotation; parameters }
 
 
     and join

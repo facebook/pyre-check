@@ -76,7 +76,6 @@ let test_create_overload context =
       ( source
       |> Test.parse_single_define
       |> (fun { Define.signature; _ } -> signature)
-      |> Node.create_with_default_location
       |> Callable.create_overload_without_applying_decorators ~parser )
   in
   assert_overload
@@ -89,7 +88,6 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
-      define_location = None;
     }
 
 

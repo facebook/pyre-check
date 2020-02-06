@@ -150,28 +150,3 @@ let has_ellipsis_value { has_ellipsis_value; _ } = has_ellipsis_value
 
 let instantiate attribute ~annotation ~original_annotation =
   { attribute with payload = { annotation; original_annotation } }
-
-
-let ignore_callable_define_locations ({ payload = { annotation; original_annotation }; _ } as value)
-  =
-  let remove =
-    let constraints = function
-      | Type.Callable ({ implementation; overloads; _ } as callable) ->
-          let callable =
-            let remove callable = { callable with Type.Callable.define_location = None } in
-            {
-              callable with
-              implementation = remove implementation;
-              overloads = List.map overloads ~f:remove;
-            }
-          in
-          Some (Type.Callable callable)
-      | _ -> None
-    in
-    Type.instantiate ~constraints
-  in
-
-  let payload =
-    { annotation = remove annotation; original_annotation = remove original_annotation }
-  in
-  { value with payload }

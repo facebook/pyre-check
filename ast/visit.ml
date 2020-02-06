@@ -153,7 +153,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
             match kind with
             | Define.Capture.Kind.Annotation annotation ->
                 Option.iter annotation ~f:visit_expression
-            | Define.Capture.Kind.DefineSignature { Node.value; _ } -> iter_signature value
+            | Define.Capture.Kind.DefineSignature value -> iter_signature value
             | Define.Capture.Kind.(Self _ | ClassSelf _) -> ()
           in
           iter_signature signature;

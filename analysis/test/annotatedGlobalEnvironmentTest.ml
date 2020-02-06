@@ -10,30 +10,6 @@ open Analysis
 open Pyre
 open Test
 
-let ignore_define_location { Annotation.annotation; mutability } =
-  let ignore annotation =
-    match annotation with
-    | Type.Callable ({ implementation; overloads; _ } as callable) ->
-        let callable =
-          let remove callable = { callable with Type.Callable.define_location = None } in
-          {
-            callable with
-            implementation = remove implementation;
-            overloads = List.map overloads ~f:remove;
-          }
-        in
-        Type.Callable callable
-    | _ -> annotation
-  in
-  let annotation = ignore annotation in
-  let mutability =
-    match mutability with
-    | Mutable -> Annotation.Mutable
-    | Immutable immutable -> Immutable { immutable with original = ignore immutable.original }
-  in
-  { Annotation.annotation; mutability }
-
-
 let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
@@ -59,8 +35,7 @@ let test_simple_registration context =
       ~printer
       (expected >>| Annotation.create_immutable ?original)
       ( AnnotatedGlobalEnvironment.ReadOnly.get_global read_only (Reference.create name)
-      >>| Node.value
-      >>| ignore_define_location )
+      >>| Node.value )
   in
   assert_registers "x = 1" "test.x" (Some Type.integer);
   assert_registers "x, y, z  = 'A', True, 1.8" "test.x" (Some Type.string);
@@ -152,7 +127,6 @@ let test_updates context =
             read_only
             (Reference.create global_name)
             ~dependency
-          >>| Node.map ~f:ignore_define_location
           |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;

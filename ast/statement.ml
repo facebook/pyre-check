@@ -1033,7 +1033,7 @@ and Define : sig
         | Annotation of Expression.t option
         | Self of Reference.t
         | ClassSelf of Reference.t
-        | DefineSignature of Define.Signature.t Node.t
+        | DefineSignature of Define.Signature.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
     end
 
@@ -1294,7 +1294,7 @@ end = struct
         | Annotation of Expression.t option
         | Self of Reference.t
         | ClassSelf of Reference.t
-        | DefineSignature of Define.Signature.t Node.t
+        | DefineSignature of Define.Signature.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
       let location_insensitive_compare left right =
@@ -1304,10 +1304,7 @@ end = struct
         | Self left, Self right -> Reference.compare left right
         | ClassSelf left, ClassSelf right -> Reference.compare left right
         | DefineSignature left, DefineSignature right ->
-            Node.location_insensitive_compare
-              Define.Signature.location_insensitive_compare
-              left
-              right
+            Define.Signature.location_insensitive_compare left right
         | Annotation _, _ -> -1
         | Self _, _ -> -1
         | ClassSelf _, _ -> -1

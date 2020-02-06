@@ -644,11 +644,12 @@ let process_type_query_request
               unannotated_global_environment
               function_name
           with
-          | Some { Node.location; value = { Statement.Define.signature; _ } } -> (
+          | Some { value = { Statement.Define.signature; _ }; _ } -> (
               let parser = GlobalResolution.annotation_parser global_resolution in
               let { Type.Callable.annotation; parameters; _ } =
-                Node.create signature ~location
-                |> Analysis.Annotated.Callable.create_overload_without_applying_decorators ~parser
+                Analysis.Annotated.Callable.create_overload_without_applying_decorators
+                  ~parser
+                  signature
               in
               match parameters with
               | Type.Callable.Defined parameters ->

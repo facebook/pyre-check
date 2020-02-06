@@ -62,22 +62,15 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
     match global with
     | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
         let create_overload
-            {
-              Node.location;
-              Node.value = { Define.Signature.name = { Node.value = name; _ }; _ } as signature;
-            }
+            { Node.value = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
           =
           let overload =
-            AttributeResolution.ReadOnly.create_overload
-              attribute_resolution
-              ?dependency
-              (Node.create signature ~location)
+            AttributeResolution.ReadOnly.create_overload attribute_resolution ?dependency signature
           in
           if Define.Signature.is_overloaded_function signature then
             {
               Type.Callable.kind = Named name;
-              implementation =
-                { annotation = Type.Top; parameters = Undefined; define_location = None };
+              implementation = { annotation = Type.Top; parameters = Undefined };
               overloads = [overload];
               implicit = None;
             }

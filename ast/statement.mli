@@ -237,7 +237,7 @@ and Define : sig
         | Annotation of Expression.t option
         | Self of Reference.t
         | ClassSelf of Reference.t
-        | DefineSignature of Define.Signature.t Node.t
+        | DefineSignature of Define.Signature.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
     end
 

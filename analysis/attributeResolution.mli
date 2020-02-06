@@ -216,7 +216,7 @@ module AttributeReadOnly : sig
   val create_overload
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->
-    Define.Signature.t Node.t ->
+    Define.Signature.t ->
     Type.t Type.Callable.overload
 
   val signature_select

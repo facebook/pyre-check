@@ -38,7 +38,7 @@ let produce_undecorated_function class_hierarchy_environment name ~track_depende
   in
   let handle = function
     | UnannotatedGlobalEnvironment.Define signatures ->
-        let handle { Node.value = signature; location } =
+        let handle { Node.value = signature; _ } =
           let dependency =
             Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
           in
@@ -62,8 +62,7 @@ let produce_undecorated_function class_hierarchy_environment name ~track_depende
               parse_as_parameter_specification_instance_annotation;
             }
           in
-          Node.create signature ~location
-          |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
+          AnnotatedCallable.create_overload_without_applying_decorators ~parser signature
         in
         List.find signatures ~f:(fun signature ->
             not (Define.Signature.is_overloaded_function (Node.value signature)))

@@ -260,9 +260,9 @@ module Make (Transformer : Transformer) = struct
                 | Define.Capture.Kind.Annotation annotation ->
                     let annotation = Option.map annotation ~f:transform_expression in
                     Define.Capture.Kind.Annotation annotation
-                | Define.Capture.Kind.DefineSignature { Node.value; location } ->
+                | Define.Capture.Kind.DefineSignature value ->
                     let value = transform_signature value in
-                    Define.Capture.Kind.DefineSignature { Node.value; location }
+                    Define.Capture.Kind.DefineSignature value
                 | Define.Capture.Kind.(Self _ | ClassSelf _) as kind -> kind
               in
               { Define.Capture.name; kind = transform_kind kind }

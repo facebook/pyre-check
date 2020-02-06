@@ -45,7 +45,7 @@ let create_overload_without_applying_decorators
           parse_as_parameter_specification_instance_annotation;
           _;
         } as parser )
-    { Node.value = { Define.Signature.parameters; _ } as signature; location }
+    ({ Define.Signature.parameters; _ } as signature)
   =
   let open Type.Callable in
   let parameters =
@@ -89,8 +89,4 @@ let create_overload_without_applying_decorators
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
-  {
-    annotation = return_annotation_without_applying_decorators ~signature ~parser;
-    parameters;
-    define_location = Some location;
-  }
+  { annotation = return_annotation_without_applying_decorators ~signature ~parser; parameters }

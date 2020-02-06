@@ -462,10 +462,9 @@ module State (Context : Context) = struct
   }
   [@@deriving show]
 
-  let type_of_signature ~resolution ~location signature =
+  let type_of_signature ~resolution signature =
     let global_resolution = Resolution.global_resolution resolution in
-    Node.create signature ~location
-    |> GlobalResolution.create_overload ~resolution:global_resolution
+    GlobalResolution.create_overload ~resolution:global_resolution signature
     |> Type.Callable.create_from_implementation
 
 
@@ -530,8 +529,7 @@ module State (Context : Context) = struct
           GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
         in
         let define_variables =
-          Node.create signature ~location
-          |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
+          AnnotatedCallable.create_overload_without_applying_decorators ~parser signature
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
           |> Type.Variable.all_free_variables
           |> List.dedup_and_sort ~compare:Type.Variable.compare
@@ -691,7 +689,7 @@ module State (Context : Context) = struct
     let add_capture_annotations state =
       let process_signature ({ Define.Signature.name = { Node.value = name; _ }; _ } as signature) =
         if Reference.is_local name then
-          type_of_signature ~resolution ~location signature
+          type_of_signature ~resolution signature
           |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables
           |> Annotation.create
           |> (fun annotation -> Resolution.set_local resolution ~reference:name ~annotation)
@@ -706,9 +704,9 @@ module State (Context : Context) = struct
               emit_error ~state ~location ~kind:(Error.MissingCaptureAnnotation name), Type.Any
           | Define.Capture.Kind.Annotation (Some annotation_expression) ->
               parse_and_check_annotation ~state annotation_expression
-          | Define.Capture.Kind.DefineSignature { Node.value = signature; location } ->
+          | Define.Capture.Kind.DefineSignature signature ->
               ( state,
-                type_of_signature ~resolution ~location signature
+                type_of_signature ~resolution signature
                 |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables )
           | Define.Capture.Kind.Self parent -> state, type_of_parent ~global_resolution parent
           | Define.Capture.Kind.ClassSelf parent ->
@@ -4514,7 +4512,7 @@ module State (Context : Context) = struct
     | Define { signature = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
       ->
         if Reference.is_local name then
-          type_of_signature ~resolution ~location signature
+          type_of_signature ~resolution signature
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
           |> Annotation.create
@@ -4938,9 +4936,7 @@ module State (Context : Context) = struct
         |> fun expression -> forward_expression ~state ~expression
       in
       let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
-        GlobalResolution.create_overload
-          ~resolution:global_resolution
-          (Node.create_with_default_location signature)
+        GlobalResolution.create_overload ~resolution:global_resolution signature
       in
       let overload_to_callable overload =
         Type.Callable

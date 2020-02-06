@@ -25,5 +25,5 @@ val return_annotation_without_applying_decorators
 
 val create_overload_without_applying_decorators
   :  parser:annotation_parser ->
-  Define.Signature.t Node.t ->
+  Define.Signature.t ->
   Type.t Type.Callable.overload

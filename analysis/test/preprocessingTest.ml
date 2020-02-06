@@ -3280,27 +3280,25 @@ let test_populate_captures _ =
           [
             ( "bar",
               DefineSignature
-                (Node.create
-                   {
-                     Define.Signature.name = Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
-                     parameters =
-                       [
-                         Node.create
-                           {
-                             Parameter.name = "y";
-                             value = None;
-                             annotation = Some (int_annotation (3, 13) (3, 16));
-                           }
-                           ~location:(location (3, 10) (3, 11));
-                       ];
-                     decorators = [];
-                     return_annotation = Some (int_annotation (3, 21) (3, 24));
-                     async = false;
-                     generator = false;
-                     parent = None;
-                     nesting_define = None;
-                   }
-                   ~location:(location (3, 2) (4, 12))) );
+                {
+                  Define.Signature.name = Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
+                  parameters =
+                    [
+                      Node.create
+                        {
+                          Parameter.name = "y";
+                          value = None;
+                          annotation = Some (int_annotation (3, 13) (3, 16));
+                        }
+                        ~location:(location (3, 10) (3, 11));
+                    ];
+                  decorators = [];
+                  return_annotation = Some (int_annotation (3, 21) (3, 24));
+                  async = false;
+                  generator = false;
+                  parent = None;
+                  nesting_define = None;
+                } );
           ] );
       ];
   assert_captures
@@ -3848,24 +3846,22 @@ let test_populate_captures _ =
           [
             ( "decorator",
               DefineSignature
-                (Node.create
-                   {
-                     Define.Signature.name =
-                       Node.create ~location:(location (3, 6) (3, 15)) !&"decorator";
-                     parameters =
-                       [
-                         Node.create
-                           { Parameter.name = "func"; value = None; annotation = None }
-                           ~location:(location (3, 16) (3, 20));
-                       ];
-                     decorators = [];
-                     return_annotation = None;
-                     async = false;
-                     generator = false;
-                     parent = None;
-                     nesting_define = None;
-                   }
-                   ~location:(location (3, 2) (3, 26))) );
+                {
+                  Define.Signature.name =
+                    Node.create ~location:(location (3, 6) (3, 15)) !&"decorator";
+                  parameters =
+                    [
+                      Node.create
+                        { Parameter.name = "func"; value = None; annotation = None }
+                        ~location:(location (3, 16) (3, 20));
+                    ];
+                  decorators = [];
+                  return_annotation = None;
+                  async = false;
+                  generator = false;
+                  parent = None;
+                  nesting_define = None;
+                } );
           ] );
       ];
 

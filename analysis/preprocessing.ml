@@ -2598,11 +2598,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                     | ParameterName { star = None; annotation; _ } )) ->
                     Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.DefineName signature ->
-                    Some
-                      {
-                        Define.Capture.name;
-                        kind = DefineSignature { Node.value = signature; location };
-                      }
+                    Some { Define.Capture.name; kind = DefineSignature signature }
                 | Binding.Kind.(ComprehensionTarget | ForTarget | WithTarget) ->
                     Some { Define.Capture.name; kind = Annotation None } ) ) )
   in

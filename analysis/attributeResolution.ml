@@ -704,7 +704,7 @@ module Implementation = struct
                             ?inherited:None
                             ?default_class_attribute:None
                             ~accessed_via_metaclass:false
-                            attribute,
+                            (Node.value attribute),
                           value )
                       in
                       let compare_by_location left right =
@@ -848,7 +848,7 @@ module Implementation = struct
       ?inherited:bool ->
       ?default_class_attribute:bool ->
       accessed_via_metaclass:bool ->
-      Attribute.attribute Node.t ->
+      Attribute.attribute ->
       UninstantiatedAnnotation.t AnnotatedAttribute.t;
     metaclass:
       assumptions:Assumptions.t ->
@@ -875,7 +875,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
       ?dependency:SharedMemoryKeys.dependency ->
-      Define.Signature.t Node.t ->
+      Define.Signature.t ->
       Type.t Type.Callable.overload;
     signature_select:
       assumptions:Assumptions.t ->
@@ -1149,7 +1149,7 @@ module Implementation = struct
       let add_actual () =
         let collect_attributes attribute =
           create_attribute
-            attribute
+            (Node.value attribute)
             ?dependency
             ~class_metadata_environment
             ~assumptions
@@ -1322,13 +1322,13 @@ module Implementation = struct
                     { callable with implicit = Some implicit }
                 | _ -> callable
               in
-              let drop_self { Type.Callable.annotation; parameters; define_location } =
+              let drop_self { Type.Callable.annotation; parameters } =
                 let parameters =
                   match parameters with
                   | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
                   | _ -> parameters
                 in
-                { Type.Callable.annotation; parameters; define_location }
+                { Type.Callable.annotation; parameters }
               in
               {
                 Type.Callable.kind;
@@ -1340,7 +1340,7 @@ module Implementation = struct
             if String.equal attribute_name "__new__" then
               (* Special case __new__ because it is the only static method with one of its
                  parameters implicitly annotated. *)
-              let add_class_annotation { Type.Callable.annotation; parameters; define_location } =
+              let add_class_annotation { Type.Callable.annotation; parameters } =
                 let parameters =
                   match parameters with
                   | Defined
@@ -1350,7 +1350,7 @@ module Implementation = struct
                         (Named { name; annotation = Type.meta instantiated; default } :: parameters)
                   | _ -> parameters
                 in
-                { Type.Callable.annotation; parameters; define_location }
+                { Type.Callable.annotation; parameters }
               in
               {
                 callable with
@@ -1375,8 +1375,7 @@ module Implementation = struct
                 >>| (fun overloads ->
                       {
                         callable with
-                        implementation =
-                          { annotation = Type.Top; parameters = Undefined; define_location = None };
+                        implementation = { annotation = Type.Top; parameters = Undefined };
                         overloads;
                       })
                 |> Option.value ~default:callable
@@ -1391,7 +1390,6 @@ module Implementation = struct
                           Named
                             { name = "x"; annotation = Type.literal_integer index; default = false };
                         ];
-                    define_location = None;
                   }
                 in
                 let overloads = List.mapi ~f:overload members @ overloads in
@@ -1423,17 +1421,11 @@ module Implementation = struct
                   (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
                      don't yet support Union[Ts] *)
                   | "typing.Union" ->
-                      ( {
-                          Type.Callable.annotation = Type.meta Type.Any;
-                          parameters = Undefined;
-                          define_location = None;
-                        },
-                        [] )
+                      { Type.Callable.annotation = Type.meta Type.Any; parameters = Undefined }, []
                   | "typing.Optional" ->
                       ( {
                           Type.Callable.annotation = Type.meta (Type.Optional synthetic);
                           parameters = Defined [create_parameter (Type.meta synthetic)];
-                          define_location = None;
                         },
                         [] )
                   | "typing.Callable" ->
@@ -1446,7 +1438,6 @@ module Implementation = struct
                                 create_parameter
                                   (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
                               ];
-                          define_location = None;
                         },
                         [] )
                   | _ -> (
@@ -1456,7 +1447,6 @@ module Implementation = struct
                           Type.Callable.annotation =
                             Type.meta (Type.Parametric { name; parameters = generics });
                           parameters = Defined [parameter];
-                          define_location = None;
                         }
                       in
                       match generics with
@@ -1499,7 +1489,6 @@ module Implementation = struct
                                 Type.meta (Type.Parametric { name; parameters = return_parameters });
                               parameters =
                                 Defined [create_parameter (Type.tuple parameter_parameters)];
-                              define_location = None;
                             },
                             [] ) )
                 in
@@ -1576,7 +1565,7 @@ module Implementation = struct
       ?(inherited = false)
       ?(default_class_attribute = false)
       ~accessed_via_metaclass
-      { Node.location; value = { Attribute.name = attribute_name; kind } }
+      { Attribute.name = attribute_name; kind }
     =
     let class_annotation = class_annotation parent in
     let annotation, value, class_attribute, visibility =
@@ -1683,11 +1672,7 @@ module Implementation = struct
                 let overloads =
                   let create_overload define =
                     ( Define.Signature.is_overloaded_function define,
-                      create_overload
-                        ~class_metadata_environment
-                        ~assumptions
-                        ?dependency
-                        (Node.create define ~location) )
+                      create_overload ~class_metadata_environment ~assumptions ?dependency define )
                   in
                   List.map defines ~f:create_overload
                 in
@@ -1699,13 +1684,7 @@ module Implementation = struct
                       signature, overloads
                   in
                   List.fold
-                    ~init:
-                      ( {
-                          annotation = Type.Top;
-                          parameters = Type.Callable.Undefined;
-                          define_location = None;
-                        },
-                        [] )
+                    ~init:({ annotation = Type.Top; parameters = Type.Callable.Undefined }, [])
                     ~f:to_signature
                     overloads
                 in
@@ -2062,7 +2041,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ?dependency
-      { Node.value = { Define.Signature.decorators; _ } as signature; location }
+      ({ Define.Signature.decorators; _ } as signature)
     =
     let apply_decorator
         ({ Type.Callable.annotation; parameters; _ } as overload)
@@ -2200,14 +2179,12 @@ module Implementation = struct
                           {
                             Type.Callable.parameters = decorated_parameters;
                             annotation = decorated_annotation;
-                            define_location;
                           };
                         _;
                       } ->
                       {
                         Type.Callable.annotation = decorated_annotation;
                         parameters = decorated_parameters;
-                        define_location;
                       }
                   | _ -> overload )
               | _ -> overload )
@@ -2238,10 +2215,7 @@ module Implementation = struct
             ?dependency;
       }
     in
-    let init =
-      Node.create signature ~location
-      |> AnnotatedCallable.create_overload_without_applying_decorators ~parser
-    in
+    let init = AnnotatedCallable.create_overload_without_applying_decorators ~parser signature in
     decorators |> List.rev |> List.fold ~init ~f:apply_decorator
 
 
@@ -2971,13 +2945,13 @@ module Implementation = struct
       let new_signature, new_index = signature_and_index ~name:"__new__" in
       let drop_class_parameter = function
         | Type.Callable { Type.Callable.kind; implementation; overloads; implicit } ->
-            let drop_parameter { Type.Callable.annotation; parameters; define_location } =
+            let drop_parameter { Type.Callable.annotation; parameters } =
               let parameters =
                 match parameters with
                 | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
                 | _ -> parameters
               in
-              { Type.Callable.annotation; parameters; define_location }
+              { Type.Callable.annotation; parameters }
             in
             Type.Callable
               {

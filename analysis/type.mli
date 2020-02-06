@@ -128,8 +128,8 @@ module Record : sig
     and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters;
-      define_location: Location.t option;
     }
+    [@@deriving compare, eq, sexp, show, hash]
 
     and 'annotation record = {
       kind: kind;

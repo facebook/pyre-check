@@ -602,7 +602,6 @@ let test_query context =
                                    Named { name = "x"; annotation = Type.integer; default = true };
                                    Named { name = "y"; annotation = Type.string; default = true };
                                  ];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -652,7 +651,6 @@ let test_query context =
                                    Named { name = "x"; annotation = Type.integer; default = false };
                                    Named { name = "y"; annotation = Type.string; default = false };
                                  ];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -719,7 +717,6 @@ let test_query context =
                            {
                              Type.Callable.annotation = Type.Top;
                              parameters = Type.Callable.Defined [];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -757,7 +754,6 @@ let test_query context =
                            {
                              Type.Callable.annotation = Type.Top;
                              parameters = Type.Callable.Defined [];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -801,7 +797,6 @@ let test_query context =
                            {
                              Type.Callable.annotation = Type.none;
                              parameters = Type.Callable.Defined [];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -886,7 +881,6 @@ let test_query context =
                              parameters =
                                Type.Callable.Defined
                                  [Named { name = "x"; annotation = Type.integer; default = false }];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -937,7 +931,6 @@ let test_query context =
                                        default = false;
                                      };
                                  ];
-                             define_location = None;
                            };
                          overloads = [];
                          implicit = None;
@@ -1001,7 +994,6 @@ let test_query context =
                       {
                         Type.Callable.annotation = Type.integer;
                         parameters = Type.Callable.Defined [];
-                        define_location = None;
                       };
                     overloads = [];
                     implicit = Some { implicit_annotation = Type.Primitive "C"; name = "self" };

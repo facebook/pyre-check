@@ -14,18 +14,17 @@ open Test
 let test_apply_decorators context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   let create_define ~decorators ~parameters ~return_annotation =
-    (let decorators = List.map ~f:parse_single_expression decorators in
-     {
-       Define.Signature.name = + !&"define";
-       parameters;
-       decorators;
-       return_annotation;
-       async = false;
-       generator = false;
-       parent = None;
-       nesting_define = None;
-     })
-    |> Node.create_with_default_location
+    let decorators = List.map ~f:parse_single_expression decorators in
+    {
+      Define.Signature.name = + !&"define";
+      parameters;
+      decorators;
+      return_annotation;
+      async = false;
+      generator = false;
+      parent = None;
+      nesting_define = None;
+    }
   in
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =

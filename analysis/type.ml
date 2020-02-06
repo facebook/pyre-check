@@ -341,7 +341,6 @@ module Record = struct
     and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters;
-      define_location: Location.t option;
     }
 
     and 'annotation record = {
@@ -1502,13 +1501,7 @@ module Callable = struct
 
   let create ?name ?(overloads = []) ?(parameters = Undefined) ?implicit ~annotation () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-    Callable
-      {
-        kind;
-        implementation = { annotation; parameters; define_location = None };
-        overloads;
-        implicit;
-      }
+    Callable { kind; implementation = { annotation; parameters }; overloads; implicit }
 
 
   let create_from_implementation implementation =
@@ -1524,8 +1517,7 @@ let lambda ~parameters ~return_annotation =
   Callable
     {
       kind = Anonymous;
-      implementation =
-        { annotation = return_annotation; parameters = Defined parameters; define_location = None };
+      implementation = { annotation = return_annotation; parameters = Defined parameters };
       overloads = [];
       implicit = None;
     }
@@ -1768,7 +1760,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
             Named (Reference.create value)
         | _ -> Anonymous
       in
-      let undefined = { annotation = Top; parameters = Undefined; define_location = None } in
+      let undefined = { annotation = Top; parameters = Undefined } in
       let get_signature = function
         | Expression.Tuple [parameters; annotation] ->
             let parameters =
@@ -1852,7 +1844,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                       | Some variadic -> Defined [CallableParameter.Variable variadic]
                       | None -> Undefined ) )
             in
-            { annotation = create_logic annotation; parameters; define_location = None }
+            { annotation = create_logic annotation; parameters }
         | _ -> undefined
       in
       let implementation =
@@ -3533,14 +3525,10 @@ module TypedDictionary = struct
     let annotation = TypedDictionary { name; fields; total } in
     {
       Callable.kind = Named (Reference.create "__init__");
-      implementation = { annotation = Top; parameters = Undefined; define_location = None };
+      implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [
-          {
-            annotation;
-            parameters = field_named_parameters ~default:(not total) fields;
-            define_location = None;
-          };
+          { annotation; parameters = field_named_parameters ~default:(not total) fields };
           {
             annotation;
             parameters =
@@ -3549,7 +3537,6 @@ module TypedDictionary = struct
                   Record.Callable.RecordParameter.Anonymous
                     { index = 0; annotation; default = false };
                 ];
-            define_location = None;
           };
         ];
       implicit = None;
@@ -3569,7 +3556,7 @@ module TypedDictionary = struct
   let common_special_methods =
     let getitem_overloads =
       let overload { name; annotation } =
-        { annotation; parameters = Defined [key_parameter name]; define_location = None }
+        { annotation; parameters = Defined [key_parameter name] }
       in
       List.map ~f:overload
     in
@@ -3579,7 +3566,6 @@ module TypedDictionary = struct
           annotation = none;
           parameters =
             Defined [key_parameter name; Named { name = "v"; annotation; default = false }];
-          define_location = None;
         }
       in
       List.map ~f:overload
@@ -3587,11 +3573,7 @@ module TypedDictionary = struct
     let get_overloads =
       let overloads { name; annotation } =
         [
-          {
-            annotation = Optional annotation;
-            parameters = Defined [key_parameter name];
-            define_location = None;
-          };
+          { annotation = Optional annotation; parameters = Defined [key_parameter name] };
           {
             annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
@@ -3605,7 +3587,6 @@ module TypedDictionary = struct
                       default = false;
                     };
                 ];
-            define_location = None;
           };
         ]
       in
@@ -3617,19 +3598,12 @@ module TypedDictionary = struct
           annotation;
           parameters =
             Defined [key_parameter name; Named { name = "default"; annotation; default = false }];
-          define_location = None;
         }
       in
       List.map ~f:overload
     in
     let update_overloads fields =
-      [
-        {
-          annotation = none;
-          parameters = field_named_parameters fields ~default:true;
-          define_location = None;
-        };
-      ]
+      [{ annotation = none; parameters = field_named_parameters fields ~default:true }]
     in
     [
       { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
@@ -3644,7 +3618,7 @@ module TypedDictionary = struct
     let pop_overloads =
       let overloads { name; annotation } =
         [
-          { annotation; parameters = Defined [key_parameter name]; define_location = None };
+          { annotation; parameters = Defined [key_parameter name] };
           {
             annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
@@ -3658,7 +3632,6 @@ module TypedDictionary = struct
                       default = false;
                     };
                 ];
-            define_location = None;
           };
         ]
       in
@@ -3666,7 +3639,7 @@ module TypedDictionary = struct
     in
     let delitem_overloads fields =
       let overload { name; annotation = _ } =
-        { annotation = none; parameters = Defined [key_parameter name]; define_location = None }
+        { annotation = none; parameters = Defined [key_parameter name] }
       in
       List.map ~f:overload fields
     in

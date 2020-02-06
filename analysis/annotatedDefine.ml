@@ -55,7 +55,7 @@ let decorate
   | [] -> define_node
   | _ ->
       let { Type.Callable.parameters; annotation; _ } =
-        Node.create signature ~location |> GlobalResolution.create_overload ~resolution
+        GlobalResolution.create_overload ~resolution signature
       in
       let parameters =
         match parameters with

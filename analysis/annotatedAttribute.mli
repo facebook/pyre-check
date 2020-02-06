@@ -79,6 +79,3 @@ val visibility : 'a t -> visibility
 val has_ellipsis_value : 'a t -> bool
 
 val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated
-
-(* For testing *)
-val ignore_callable_define_locations : instantiated -> instantiated

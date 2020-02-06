@@ -799,7 +799,6 @@ let test_populate context =
                Type.Callable.Parameter.Named
                  { annotation = Type.integer; name = "x"; default = false };
              ];
-         define_location = None;
        });
   ()
 
