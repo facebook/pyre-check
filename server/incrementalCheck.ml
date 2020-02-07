@@ -202,6 +202,7 @@ let recheck
   List.iter ~f:(Hashtbl.remove errors) recheck_modules;
 
   (* Associate the new errors with new files *)
+  Log.info "Number of new errors = %d" (List.length new_errors);
   List.iter new_errors ~f:(fun error ->
       let key = AnalysisError.path error in
       Hashtbl.add_multi errors ~key ~data:error);
