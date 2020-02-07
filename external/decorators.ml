@@ -5,7 +5,7 @@
 
 open Core
 
-let apply ~overload:{ Type.Callable.annotation; parameters; define_location } ~resolution:_ ~name =
+let apply ~overload:{ Type.Callable.annotation; parameters } ~resolution:_ ~name =
   match name with
   | "$strip_first_parameter" ->
       let parameters =
@@ -16,8 +16,8 @@ let apply ~overload:{ Type.Callable.annotation; parameters; define_location } ~r
             |> fun parameters -> Type.Callable.Defined parameters
         | _ -> parameters
       in
-      { Type.Callable.annotation; parameters; define_location }
-  | _ -> { Type.Callable.annotation; parameters; define_location }
+      { Type.Callable.annotation; parameters }
+  | _ -> { Type.Callable.annotation; parameters }
 
 
 let special_decorators = String.Set.singleton "$strip_first_parameter"
