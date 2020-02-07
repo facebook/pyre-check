@@ -1796,6 +1796,8 @@ module MockClassHierarchyHandler = struct
     ( module struct
       let edges = Hashtbl.find order.edges
 
+      let extends_placeholder_stub _ = false
+
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
     end : ClassHierarchy.Handler )
 

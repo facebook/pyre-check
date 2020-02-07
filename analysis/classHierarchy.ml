@@ -88,6 +88,8 @@ let generic_primitive = "typing.Generic"
 module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
+  val extends_placeholder_stub : IndexTracker.t -> bool
+
   val contains : Type.Primitive.t -> bool
 end
 
@@ -321,7 +323,10 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
         match Hash_set.strict_add visited current with
         | Error _ -> iterate worklist
         | Ok () ->
-            if IndexTracker.equal current (index_of target) then
+            if
+              IndexTracker.equal current (index_of target)
+              || Handler.extends_placeholder_stub current
+            then
               true
             else (
               Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);

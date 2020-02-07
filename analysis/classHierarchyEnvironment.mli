@@ -13,6 +13,8 @@ module HierarchyReadOnly : sig
     IndexTracker.t ->
     ClassHierarchy.Target.t list option
 
+  val extends_placeholder_stub : t -> ?dependency:dependency -> IndexTracker.t -> bool
+
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
 
   val class_hierarchy : ?dependency:dependency -> t -> (module ClassHierarchy.Handler)

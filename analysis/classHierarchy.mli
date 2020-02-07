@@ -56,6 +56,8 @@ end
 module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
+  val extends_placeholder_stub : IndexTracker.t -> bool
+
   val contains : Type.Primitive.t -> bool
 end
 

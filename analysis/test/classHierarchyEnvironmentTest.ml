@@ -11,21 +11,24 @@ open Pyre
 open Test
 
 let test_simple_registration context =
-  let assert_registers source name expected =
-    let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
+  let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
+    let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let configuration = ScratchProject.configuration_of project in
     let update_result =
+      let scheduler = Test.mock_scheduler () in
+      let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
       let ast_environment = AstEnvironment.read_only ast_environment in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
         ast_environment
-        ~scheduler:(mock_scheduler ())
-        ~configuration:(Configuration.Analysis.create ())
+        ~scheduler
+        ~configuration
         ~ast_environment_update_result
-        (Reference.Set.singleton (Reference.create "test"))
+        (Reference.Set.of_list qualifiers)
     in
     let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
-    let expected =
-      expected
+    let expected_edges =
+      expected_edges
       >>| List.map ~f:(fun name ->
               { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
     in
@@ -41,22 +44,83 @@ let test_simple_registration context =
     in
     assert_equal
       ~printer
-      expected
-      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name))
+      expected_edges
+      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name));
+    assert_equal
+      ~printer:string_of_bool
+      expected_extends_placeholder_stub
+      (ClassHierarchyEnvironment.ReadOnly.extends_placeholder_stub
+         read_only
+         (IndexTracker.index name))
   in
-  assert_registers {|
+  assert_registers
+    ["test.py", {|
     class C:
       pass
-  |} "test.C" (Some ["object"]);
+  |}]
+    "test.C"
+    ~expected_edges:(Some ["object"])
+    ~expected_extends_placeholder_stub:false;
   assert_registers
-    {|
+    ["test.py", {|
     class D:
      pass
     class C(D):
       pass
-  |}
+  |}]
     "test.C"
-    (Some ["test.D"]);
+    ~expected_edges:(Some ["test.D"])
+    ~expected_extends_placeholder_stub:false;
+  assert_registers
+    [
+      "test.py", {|
+    from placeholder import MadeUpClass
+    class C(MadeUpClass):
+     pass
+  |};
+      "placeholder.pyi", {|
+      # pyre-placeholder-stub
+  |};
+    ]
+    "test.C"
+    ~expected_edges:(Some ["object"])
+    ~expected_extends_placeholder_stub:true;
+  assert_registers
+    [
+      ( "test.py",
+        {|
+    from placeholder import MadeUpClass
+    class D(MadeUpClass):
+     pass
+    class C(D):
+      pass
+  |}
+      );
+      "placeholder.pyi", {|
+      # pyre-placeholder-stub
+  |};
+    ]
+    "test.C"
+    ~expected_edges:(Some ["test.D"])
+    ~expected_extends_placeholder_stub:false;
+  assert_registers
+    [
+      ( "test.py",
+        {|
+    from placeholder import MadeUpClass
+    class D:
+     pass
+    class C(D, MadeUpClass):
+      pass
+  |}
+      );
+      "placeholder.pyi", {|
+      # pyre-placeholder-stub
+  |};
+    ]
+    "test.C"
+    ~expected_edges:(Some ["test.D"])
+    ~expected_extends_placeholder_stub:true;
   ()
 
 

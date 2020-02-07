@@ -13,14 +13,26 @@ let unannotated_global_environment alias_environment =
   AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
 
 
-module EdgeValue = struct
-  type t = ClassHierarchy.Target.t list option [@@deriving compare]
+let empty_stub_environment alias_environment =
+  AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
+
+
+type edges = {
+  parents: ClassHierarchy.Target.t list;
+  has_placeholder_stub_parent: bool;
+}
+[@@deriving eq, compare]
+
+module EdgesValue = struct
+  type t = edges option
 
   let prefix = Prefix.make ()
 
   let description = "Edges"
 
   let unmarshall value = Marshal.from_string value 0
+
+  let compare = Option.compare compare_edges
 end
 
 let get_parents alias_environment name ~track_dependencies =
@@ -95,25 +107,41 @@ let get_parents alias_environment name ~track_dependencies =
     | [] -> targets
     | filtered -> filtered
   in
-  UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-    ?dependency
-    (unannotated_global_environment alias_environment)
-    name
-  >>| bases
-  (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-  >>| List.filter ~f:(fun { Call.Argument.name; _ } -> Option.is_none name)
-  >>| List.filter_map ~f:extract_supertype
-  >>| add_special_parents
-  >>| List.filter ~f:is_not_primitive_cycle
-  >>| convert_to_targets
-  >>| deduplicate
-  >>| remove_extra_edges_to_object
+  match
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      ?dependency
+      (unannotated_global_environment alias_environment)
+      name
+  with
+  | None -> None
+  | Some class_summary ->
+      let parents =
+        class_summary
+        |> bases
+        (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+        |> List.filter ~f:(fun { Call.Argument.name; _ } -> Option.is_none name)
+        |> List.filter_map ~f:extract_supertype
+        |> add_special_parents
+        |> List.filter ~f:is_not_primitive_cycle
+        |> convert_to_targets
+        |> deduplicate
+        |> remove_extra_edges_to_object
+      in
+      let has_placeholder_stub_parent =
+        AnnotatedBases.extends_placeholder_stub_class
+          class_summary
+          ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment)
+          ~from_empty_stub:
+            (EmptyStubEnvironment.ReadOnly.from_empty_stub
+               (empty_stub_environment alias_environment))
+      in
+      Some { parents; has_placeholder_stub_parent }
 
 
 module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module Key = IndexTracker.IndexKey
-  module Value = EdgeValue
+  module Value = EdgesValue
 
   type trigger = string
 
@@ -148,13 +176,19 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
 
   let serialize_value = function
-    | Some targets -> List.to_string targets ~f:decode_target
+    | Some { parents; has_placeholder_stub_parent } ->
+        `Assoc
+          [
+            "parents", `String (List.to_string parents ~f:decode_target);
+            "has_placeholder_stub_parent", `Bool has_placeholder_stub_parent;
+          ]
+        |> Yojson.to_string
     | None -> "None"
 
 
   let show_key = IndexTracker.annotation
 
-  let equal_value = Option.equal (List.equal ClassHierarchy.Target.equal)
+  let equal_value = Option.equal equal_edges
 end)
 
 module ReadOnly = struct
@@ -162,7 +196,15 @@ module ReadOnly = struct
 
   let alias_environment = upstream_environment
 
-  let get_edges = get
+  let get_edges read_only ?dependency key =
+    get read_only ?dependency key >>| fun { parents; _ } -> parents
+
+
+  let extends_placeholder_stub read_only ?dependency key =
+    get read_only ?dependency key
+    >>| (fun { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent)
+    |> Option.value ~default:false
+
 
   let check_integrity read_only =
     let unannotated_global_environment =
@@ -175,6 +217,8 @@ module ReadOnly = struct
       ( module struct
         let edges = get_edges read_only ?dependency:None
 
+        let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency:None
+
         let contains key =
           UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
             unannotated_global_environment
@@ -186,13 +230,14 @@ module ReadOnly = struct
 
 
   let class_hierarchy ?dependency read_only =
-    let edges = get_edges ?dependency read_only in
+    let alias_environment = alias_environment read_only in
     let unannotated_global_environment =
-      AliasEnvironment.ReadOnly.unannotated_global_environment (alias_environment read_only)
+      AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
     in
-
     ( module struct
-      let edges = edges
+      let edges = get_edges read_only ?dependency
+
+      let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency
 
       let contains key =
         UnannotatedGlobalEnvironment.ReadOnly.class_exists

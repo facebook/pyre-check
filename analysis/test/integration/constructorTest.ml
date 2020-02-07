@@ -751,6 +751,26 @@ let test_check_constructors context =
         Foo(7)
     |}
     [];
+  assert_type_errors
+    {|
+      from placeholder_stub import MadeUpClass
+      class Foo(MadeUpClass):
+        pass
+      def foo() -> int:
+        return Foo()
+    |}
+    [];
+  assert_type_errors
+    {|
+      from placeholder_stub import MadeUpClass
+      class Foo(MadeUpClass):
+        pass
+      class Bar(Foo):
+        pass
+      def bar() -> int:
+        return Bar()
+    |}
+    [];
 
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating to
      the subclass, regardless of order. *)
