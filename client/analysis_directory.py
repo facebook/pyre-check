@@ -37,7 +37,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 # If there are a lot of tracked files that are updated at the same time, it is
 # probably a rebase. So, rebuild just to be safe.
-REBUILD_THRESHOLD_FOR_UPDATED_PATHS: int = 4
+REBUILD_THRESHOLD_FOR_UPDATED_PATHS: int = 50
 
 
 # If there are a lot of new or deleted files, it is probably a rebase.
@@ -45,7 +45,7 @@ REBUILD_THRESHOLD_FOR_UPDATED_PATHS: int = 4
 # we don't know for sure if these new files should actually be tracked. So, we
 # might want a higher threshold in order to avoid rebuilding for spurious new
 # files.
-REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 5
+REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 50
 
 
 DONT_CARE_PROGRESS_VALUE = 1

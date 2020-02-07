@@ -13,6 +13,8 @@ from unittest.mock import MagicMock, call, patch
 
 from .. import analysis_directory, buck, filesystem
 from ..analysis_directory import (
+    REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS,
+    REBUILD_THRESHOLD_FOR_UPDATED_PATHS,
     AnalysisDirectory,
     SharedAnalysisDirectory,
     UpdatedPaths,
@@ -122,7 +124,10 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     def test_should_rebuild(self) -> None:
         self.assertTrue(
             SharedAnalysisDirectory.should_rebuild(
-                updated_tracked_paths=["a.py", "b.py", "c.py", "d.py"],
+                updated_tracked_paths=[
+                    f"a{index}.py"
+                    for index in range(REBUILD_THRESHOLD_FOR_UPDATED_PATHS)
+                ],
                 new_paths=[],
                 deleted_paths=[],
             )
@@ -130,8 +135,17 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertTrue(
             SharedAnalysisDirectory.should_rebuild(
                 updated_tracked_paths=[],
-                new_paths=["a.py", "b.py"],
-                deleted_paths=["c.py", "d.py", "e.py"],
+                new_paths=[
+                    f"a{index}.py"
+                    for index in range(REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS // 2)
+                ],
+                deleted_paths=[
+                    f"b{index}.py"
+                    for index in range(
+                        REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS
+                        - REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS // 2
+                    )
+                ],
             )
         )
         self.assertFalse(
