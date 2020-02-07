@@ -13,6 +13,7 @@ import re
 import resource
 import signal
 import subprocess
+import sys
 import threading
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Optional
@@ -683,6 +684,11 @@ class Command(CommandParser, ABC):
             with SocketConnection(self._log_directory) as socket_connection:
                 socket_connection.perform_handshake(version_hash)
                 socket_connection.send(request)
+                stderr_reader = threading.Thread(
+                    target=self._read_stderr, args=(sys.stderr,)
+                )
+                stderr_reader.daemon = True
+                stderr_reader.start()
                 response = socket_connection.read()
                 result = _convert_json_response_to_result(response)
                 result.check()
