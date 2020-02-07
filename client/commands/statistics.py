@@ -8,9 +8,7 @@ import argparse
 import enum
 import json
 import os
-from collections import defaultdict
 from pathlib import Path
-from re import compile
 from typing import Any, Dict, List, Optional, Set
 
 import libcst as cst
@@ -129,7 +127,7 @@ class Statistics(Command):
         statistics.add_argument(
             "--collect",
             type=QualityType,
-            choices=list(QualityType),
+            choices=[quality_type.value for quality_type in QualityType],
             default=None,
             help="Which code quality issue you want to generate.",
         )
