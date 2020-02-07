@@ -103,10 +103,10 @@ class TestCommand(unittest.TestCase, ABC):
                 contents = {"version": "$BINARY_OVERRIDE"}
             else:
                 # Default to published binary version.
-                output = subprocess.run(
-                    ["pyre", "--version"], capture_output=True
-                ).stdout.decode()
-                output_match = re.match(BINARY_VERSION_PATTERN, output)
+                output = subprocess.run(["pyre", "--version"], capture_output=True)
+                if output.returncode != 0:
+                    LOG.error(output.stderr.decode())
+                output_match = re.match(BINARY_VERSION_PATTERN, output.stdout.decode())
                 version = output_match.group(1) if output_match else None
                 if version and version != "No":
                     contents = {"version": version, "use_buck_builder": True}
@@ -265,14 +265,25 @@ class TestCommand(unittest.TestCase, ABC):
                     for command in self.command_history
                 ]
             )
+
         test_id = self.id()
-        instructions += "\n\n- Re-run only this failing test:\n\t"
-        instructions += "[tools/pyre] python3 {} {}".format(
-            "scripts/run_client_integration_test.py", test_id
+        test_name = test_id.split(".")[-1]
+        test_qualifier = r"\.".join(test_id.split(".")[:-1])
+        test_target = "//tools/pyre/scripts:pyre_client_integration_test_runner"
+
+        instructions += "\n\n- Re-run only this failing test:"
+        instructions += "\n\t(with buck)\n\t"
+        instructions += r"[tools/pyre] buck test {} -- '{} \({}\)' {}".format(
+            test_target, test_name, test_qualifier, "--run-slow-tests"
         )
+        instructions += "\n\t(with client override set)\n\t"
+        instructions += "[tools/pyre] python3 {} {}".format(
+            "scripts/run_client_integration_test.py", ".".join(test_id.split(".")[-2:])
+        )
+
         instructions += "\n\n- Flaky? Stress test this failing test:\n\t"
         test_target = "//tools/pyre/scripts:pyre_client_integration_test_runner"
-        buck_arguments = "--jobs 18 --stress-runs 20 --record-results"
+        buck_arguments = "--run-slow-tests --jobs 18 --stress-runs 20 --record-results"
         test_name = test_id.split(".")[-1]
         test_qualifier = r"\.".join(test_id.split(".")[:-1])
         instructions += r"[tools/pyre] buck test {} -- '{} \({}\)' {}".format(
