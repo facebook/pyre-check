@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     try:
         exit_code = SUCCESS
-        root = find_root(os.getcwd(), CONFIGURATION_FILE) or os.getcwd()
+        root: str = find_root(os.getcwd(), CONFIGURATION_FILE) or os.getcwd()
         os.chdir(root)
         configuration = Configuration(local_root=arguments.local_root)
         _compare_parallel_check(arguments, configuration, root)

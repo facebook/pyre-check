@@ -175,7 +175,7 @@ class Configuration:
             return []
 
 
-def errors_from_run(_arguments) -> List[Dict[str, Any]]:
+def errors_from_run(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
     configuration_path = Configuration.find_project_configuration()
     if not configuration_path:
         LOG.warning("Could not find pyre configuration.")
