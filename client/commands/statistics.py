@@ -96,6 +96,12 @@ class QualityType(enum.Enum):
     STRICT = "unstrict_files"
     MISSING_ANNOTATIONS = "missing_annotations"
 
+    def __str__(self) -> str:
+        return self.name.lower()
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class Statistics(Command):
     NAME = "statistics"
@@ -127,7 +133,7 @@ class Statistics(Command):
         statistics.add_argument(
             "--collect",
             type=QualityType,
-            choices=[quality_type.value for quality_type in QualityType],
+            choices=list(QualityType),
             default=None,
             help="Which code quality issue you want to generate.",
         )
