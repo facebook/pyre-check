@@ -305,7 +305,12 @@ let test_resolve_mutable_literals context =
     assert_equal
       ~printer:Type.show
       (parse_annotation expected_output)
-      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
+      (GlobalResolution.resolve_mutable_literals
+         (Resolution.global_resolution resolution)
+         ~resolve:(Resolution.resolve resolution)
+         ~expression
+         ~resolved
+         ~expected)
   in
   assert_resolve_mutable_literals
     ~source:"[test.D()]"
@@ -452,7 +457,12 @@ let test_resolve_mutable_literal_to_complex_type context =
     assert_equal
       ~printer:Type.show
       (parse_annotation expected_output)
-      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
+      (GlobalResolution.resolve_mutable_literals
+         (Resolution.global_resolution resolution)
+         ~resolve:(Resolution.resolve resolution)
+         ~expression
+         ~resolved
+         ~expected)
   in
   (* Optionals. *)
   assert_resolve_mutable_literals
@@ -517,7 +527,12 @@ let test_resolve_mutable_literals_typed_dictionary context =
     assert_equal
       ~printer:Type.show
       expected_output_type
-      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected:against_type)
+      (GlobalResolution.resolve_mutable_literals
+         (Resolution.global_resolution resolution)
+         ~resolve:(Resolution.resolve resolution)
+         ~expression
+         ~resolved
+         ~expected:against_type)
   in
   let movie_type =
     Type.TypedDictionary

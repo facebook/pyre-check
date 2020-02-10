@@ -62,10 +62,6 @@ let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
   resolve_assignment ~resolution assignment
 
 
-let resolve_mutable_literals ({ global_resolution; _ } as resolution) =
-  GlobalResolution.resolve_mutable_literals global_resolution ~resolve:(resolve resolution)
-
-
 let partition_name resolution ~name =
   let identifiers = Reference.as_list (Expression.name_to_reference_exn name) in
   match identifiers with

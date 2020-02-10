@@ -1175,7 +1175,7 @@ module State (Context : Context) = struct
                   | Type.Callable { Type.Callable.implementation; _ }
                     when not (StatementDefine.is_static_method define) ->
                       let original_implementation =
-                        Resolution.resolve_reference resolution (Node.value name)
+                        resolve_reference_type ~state:{ state with resolution } (Node.value name)
                         |> function
                         | Type.Callable
                             { Type.Callable.implementation = original_implementation; _ } ->
@@ -1680,9 +1680,9 @@ module State (Context : Context) = struct
                     let inverted_arguments = [{ Call.Argument.value = base; name = None }] in
                     inverse_operator attribute
                     >>= (fun name ->
-                          find_method ~parent:(Resolution.resolve resolution value) ~name)
+                          find_method ~parent:(resolve_expression_type ~state value) ~name)
                     >>= (fun found_callable ->
-                          let resolved_base = Resolution.resolve resolution base in
+                          let resolved_base = resolve_expression_type ~state base in
                           if Type.is_any resolved_base || Type.is_unbound resolved_base then
                             callable resolved >>| fun callable -> [callable], arguments, false
                           else
@@ -1708,8 +1708,8 @@ module State (Context : Context) = struct
           let signature =
             GlobalResolution.signature_select
               ~arguments
-              ~global_resolution:(Resolution.global_resolution resolution)
-              ~resolve:(Resolution.resolve resolution)
+              ~global_resolution
+              ~resolve:(resolve_expression_type ~state)
               ~callable
           in
           match signature with
@@ -1721,12 +1721,12 @@ module State (Context : Context) = struct
                 when not was_operator_inverted ->
                   let arguments = [{ Call.Argument.value = base; name = None }] in
                   inverse_operator (Reference.last name)
-                  >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
+                  >>= (fun name -> find_method ~parent:(resolve_expression_type ~state value) ~name)
                   >>| (fun callable ->
                         GlobalResolution.signature_select
                           ~arguments
                           ~global_resolution:(Resolution.global_resolution resolution)
-                          ~resolve:(Resolution.resolve resolution)
+                          ~resolve:(resolve_expression_type ~state)
                           ~callable)
                   |> Option.value ~default:signature
               | _ -> signature )
@@ -2035,7 +2035,7 @@ module State (Context : Context) = struct
           arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Resolve `type()` calls. *)
-        let resolved = Resolution.resolve resolution value |> Type.meta in
+        let resolved = resolve_expression_type ~state value |> Type.meta in
         { state; resolved; resolved_annotation = None; base = None }
     | Call
         {
@@ -2051,7 +2051,7 @@ module State (Context : Context) = struct
           | _ -> false
         in
         let annotation =
-          let annotation = Resolution.resolve_to_annotation resolution value in
+          let annotation = resolve_expression ~state value in
           if
             (not (Annotation.is_immutable annotation))
             && Type.is_untyped (Annotation.annotation annotation)
@@ -3007,8 +3007,9 @@ module State (Context : Context) = struct
       in
       let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
       let actual =
-        Resolution.resolve_mutable_literals
-          resolution
+        GlobalResolution.resolve_mutable_literals
+          global_resolution
+          ~resolve:(resolve_expression_type ~state)
           ~expression
           ~resolved:actual
           ~expected:return_annotation
@@ -3221,12 +3222,13 @@ module State (Context : Context) = struct
           in
           match target_value with
           | Expression.Name name ->
+              let target_annotation = resolve_expression ~state target in
               let reference, attribute, resolved_base =
                 match name with
                 | Name.Identifier identifier -> Some (Reference.create identifier), None, None
                 | Name.Attribute { base; attribute; _ } ->
                     let name = attribute in
-                    let resolved = Resolution.resolve resolution base in
+                    let resolved = resolve_expression_type ~state base in
                     let parent, class_attributes =
                       if Type.is_meta resolved then
                         Type.single_parameter resolved, true
@@ -3268,7 +3270,6 @@ module State (Context : Context) = struct
                     end;
                     reference, attribute, Some resolved
               in
-              let target_annotation = Resolution.resolve_to_annotation resolution target in
               let is_undefined_attribute parent =
                 (* Check if __setattr__ method is defined to accept value of type `Any` *)
                 let is_setattr_any_defined =
@@ -3420,7 +3421,12 @@ module State (Context : Context) = struct
                 | _ -> Type.Top, false
               in
               let resolved =
-                Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
+                GlobalResolution.resolve_mutable_literals
+                  global_resolution
+                  ~resolve:(resolve_expression_type ~state)
+                  ~expression
+                  ~resolved
+                  ~expected
               in
               let is_typed_dictionary_initialization =
                 (* Special-casing to avoid throwing errors *)
@@ -3564,7 +3570,7 @@ module State (Context : Context) = struct
                 let parent_class =
                   match name with
                   | Name.Attribute { base; _ } ->
-                      Resolution.resolve resolution base |> Type.resolve_class
+                      resolve_expression_type ~state base |> Type.resolve_class
                   | _ -> None
                 in
                 match name, parent_class with
@@ -3926,7 +3932,7 @@ module State (Context : Context) = struct
             match parse_and_check_annotation ~state annotation |> snd with
             | Type.Top -> (
                 (* Try to resolve meta-types given as expressions. *)
-                match Resolution.resolve resolution annotation with
+                match resolve_expression_type ~state annotation with
                 | annotation when Type.is_meta annotation -> Type.single_parameter annotation
                 | Type.Tuple (Bounded (Concrete elements))
                   when List.for_all ~f:Type.is_meta elements ->
@@ -4427,7 +4433,7 @@ module State (Context : Context) = struct
                 match GlobalResolution.module_exists global_resolution reference with
                 | true -> check_lead lead rest
                 | false -> (
-                    match Resolution.resolve_reference resolution reference with
+                    match resolve_reference_type ~state reference with
                     | Type.Any ->
                         (* Import from Any is ok *)
                         None
@@ -4576,6 +4582,20 @@ module State (Context : Context) = struct
     | Nonlocal _
     | Pass ->
         state
+
+
+  and resolve_expression ~state expression =
+    forward_expression ~state ~expression
+    |> fun { resolved; resolved_annotation; _ } ->
+    resolved_annotation |> Option.value ~default:(Annotation.create resolved)
+
+
+  and resolve_expression_type ~state expression =
+    resolve_expression ~state expression |> Annotation.annotation
+
+
+  and resolve_reference_type ~state reference =
+    from_reference ~location:Location.any reference |> resolve_expression_type ~state
 
 
   let errors ({ resolution; errors; _ } as state) =
