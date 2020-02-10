@@ -4596,7 +4596,7 @@ module State (Context : Context) = struct
     from_reference ~location:Location.any reference |> resolve_expression_type ~state
 
 
-  let errors ({ resolution; errors; _ } as state) =
+  let errors { resolution; errors; _ } =
     let global_resolution = Resolution.global_resolution resolution in
     let ( {
             Node.value =
@@ -4948,10 +4948,7 @@ module State (Context : Context) = struct
         errors
     in
     let overload_errors errors =
-      let { resolved_annotation = annotation; _ } =
-        from_reference ~location:Location.any name
-        |> fun expression -> forward_expression ~state ~expression
-      in
+      let annotation = Resolution.resolve_reference resolution name in
       let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
         GlobalResolution.create_overload ~resolution:global_resolution signature
       in
@@ -4966,7 +4963,7 @@ module State (Context : Context) = struct
       in
       let check_implementation_exists errors =
         match annotation with
-        | Some { annotation = Type.Callable { implementation; _ }; _ }
+        | Type.Callable { implementation; _ }
           when Define.is_overloaded_function define
                && Type.Callable.Overload.is_undefined implementation ->
             let error =
@@ -4980,16 +4977,8 @@ module State (Context : Context) = struct
       in
       let check_compatible_return_types errors =
         match annotation with
-        | Some
-            {
-              annotation =
-                Type.Callable
-                  {
-                    implementation = { annotation = implementation_annotation; _ } as implementation;
-                    _;
-                  };
-              _;
-            }
+        | Type.Callable
+            { implementation = { annotation = implementation_annotation; _ } as implementation; _ }
           when Define.is_overloaded_function define ->
             let errors_sofar =
               if
@@ -5036,8 +5025,7 @@ module State (Context : Context) = struct
       in
       let check_unmatched_overloads errors =
         match annotation with
-        | Some { annotation = Type.Callable { overloads; _ }; _ }
-          when Define.is_overloaded_function define ->
+        | Type.Callable { overloads; _ } when Define.is_overloaded_function define ->
             let preceding, following_and_including =
               List.split_while overloads ~f:(fun other ->
                   not (Type.Callable.equal_overload Type.equal other current_overload))
