@@ -88,8 +88,6 @@ class TypeCollector(cst.CSTVisitor):
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         self.qualifier.append(node.name.value)
         if node.returns is not None:
-            # pyre-fixme[6]: Expected `CSTNode` for 1st param but got
-            #  `Optional[Annotation]`.
             return_annotation = self._create_import_from_annotation(node.returns)
             parameter_annotations = self._import_parameter_annotations(node.params)
             self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(

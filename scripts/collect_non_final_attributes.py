@@ -22,7 +22,6 @@ class NonFinalAttributeCollector(cst.CSTVisitor):
         if (
             isinstance(attribute, cst.Attribute)
             and isinstance(attribute.value, cst.Name)
-            # pyre-ignore[16]: `cst._nodes.expression.BaseExpression` has no
             # attribute `value`.
             and attribute.value.value == "self"
         ):
