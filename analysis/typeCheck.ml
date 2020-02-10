@@ -61,8 +61,6 @@ module type Signature = sig
 
   val error_map : t -> ErrorMap.t
 
-  val errors : t -> Error.t list
-
   val initial : resolution:Resolution.t -> t
 
   type base =

@@ -48,13 +48,6 @@ module Create (Context : TypeCheck.Context) = struct
     State.create ~bottom ~resolution ()
 end
 
-let list_orderless_equal left right =
-  List.equal
-    String.equal
-    (List.dedup_and_sort ~compare:String.compare left)
-    (List.dedup_and_sort ~compare:String.compare right)
-
-
 let description ~resolution error =
   let ast_environment =
     Resolution.global_resolution resolution |> GlobalResolution.ast_environment
@@ -64,14 +57,7 @@ let description ~resolution error =
 
 
 let test_initial context =
-  let assert_initial
-      ?parent
-      ?(errors = [])
-      ?(environment = "")
-      ?(immutables = [])
-      ~annotations
-      define
-    =
+  let assert_initial ?parent ?(environment = "") ?(immutables = []) ~annotations define =
     let define =
       match parse_single_statement define with
       | { Node.value = Define ({ signature; _ } as define); _ } ->
@@ -121,12 +107,7 @@ let test_initial context =
       let resolution = List.fold variables ~init:resolution ~f:add_variable in
       State.initial ~resolution
     in
-    assert_state_equal state initial;
-    assert_equal
-      ~cmp:(List.equal String.equal)
-      ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
-      errors
-      (List.map (State.errors initial) ~f:(description ~resolution))
+    assert_state_equal state initial
   in
   assert_initial
     "def foo(x: int) -> None: ..."
@@ -134,18 +115,9 @@ let test_initial context =
     ~annotations:["x", Type.integer];
   assert_initial
     "def foo(x: int = 1.0) -> None: ..."
-    ~errors:
-      [
-        "Incompatible variable type [9]: x is declared to have type `int` but is used as type "
-        ^ "`float`.";
-      ]
     ~immutables:["x", Type.integer]
     ~annotations:["x", Type.integer];
-  assert_initial
-    ~errors:
-      ["Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified."]
-    ~annotations:["x", Type.float]
-    "def foo(x = 1.0) -> None: ...";
+  assert_initial ~annotations:["x", Type.float] "def foo(x = 1.0) -> None: ...";
   assert_initial
     "def foo(x: int) -> int: ..."
     ~immutables:["x", Type.integer]
@@ -154,20 +126,15 @@ let test_initial context =
     "def foo(x: float, y: str) -> None: ..."
     ~immutables:["x", Type.float; "y", Type.string]
     ~annotations:["x", Type.float; "y", Type.string];
-  assert_initial
-    "def foo(x) -> None: ..."
-    ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
-    ~annotations:["x", Type.Any];
+  assert_initial "def foo(x) -> None: ..." ~annotations:["x", Type.Any];
   assert_initial
     "def foo(x: typing.Any) -> None: ..."
-    ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     ~immutables:["x", Type.Any]
     ~annotations:["x", Type.Any];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
     "def __eq__(self, other: object) -> None: ..."
-    ~errors:[]
     ~immutables:["other", Type.object_primitive]
     ~annotations:["self", Type.Primitive "Foo"; "other", Type.object_primitive];
   assert_initial
@@ -179,7 +146,6 @@ let test_initial context =
     ~parent:"Foo"
     ~environment:"class Foo: ..."
     "@staticmethod\ndef foo(a) -> None: ..."
-    ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     ~annotations:["a", Type.Any];
   assert_initial
     ~environment:"T = typing.TypeVar('T')"
@@ -288,7 +254,13 @@ let test_check_annotation context =
     in
     let module State = State (DefaultContext) in
     let state = create [] in
-    let errors = State.parse_and_check_annotation ~state !expression |> fst |> State.errors in
+    let errors =
+      State.parse_and_check_annotation ~state !expression
+      |> fst
+      |> State.error_map
+      |> Map.data
+      |> AnalysisError.deduplicate
+    in
     let errors = List.map ~f:(description ~resolution) errors in
     assert_equal
       ~cmp:(List.equal String.equal)
@@ -494,7 +466,6 @@ let test_forward_expression context =
   let assert_forward
       ?(precondition = [])
       ?(postcondition = [])
-      ?(errors = `Undefined 0)
       ?(environment = "")
       expression
       annotation
@@ -519,48 +490,19 @@ let test_forward_expression context =
         ~printer:(Format.asprintf "%a" State.pp)
         ~pp_diff:(diff ~print:State.pp)
     in
-    let errors =
-      match errors with
-      | `Specific errors -> errors
-      | `Undefined count ->
-          let rec errors sofar count =
-            let error =
-              "Undefined name [18]: Global name `undefined` is not defined, or there is at least \
-               one control flow path that doesn't define `undefined`."
-            in
-            match count with
-            | 0 -> sofar
-            | count -> errors (error :: sofar) (count - 1)
-          in
-          errors [] count
-    in
     assert_state_equal (create ~resolution postcondition) forwarded;
-    assert_equal
-      ~cmp:list_orderless_equal
-      ~printer:(String.concat ~sep:"\n")
-      errors
-      (State.errors forwarded |> List.map ~f:(description ~resolution));
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved
   in
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-          "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
-           control flow path that doesn't define `undefined`.";
-        ])
-    "await undefined"
-    Type.Top;
+  assert_forward "await undefined" Type.Top;
 
   (* Boolean operator. *)
   assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);
   assert_forward "1 and 'string'" (Type.union [Type.integer; Type.string]);
-  assert_forward ~errors:(`Undefined 1) "undefined or 1" Type.Top;
-  assert_forward ~errors:(`Undefined 1) "1 or undefined" Type.Top;
-  assert_forward ~errors:(`Undefined 2) "undefined and undefined" Type.Top;
+  assert_forward "undefined or 1" Type.Top;
+  assert_forward "1 or undefined" Type.Top;
+  assert_forward "undefined and undefined" Type.Top;
   let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
     assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
   in
@@ -575,12 +517,6 @@ let test_forward_expression context =
   assert_forward
     ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
-    ~errors:
-      (`Specific
-        [
-          "Incompatible parameter type [6]: "
-          ^ "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
-        ])
     "x.add_key('string')"
     Type.none;
   assert_forward
@@ -593,24 +529,11 @@ let test_forward_expression context =
             self.attribute: int = 1
         def foo(x: int) -> typing.Optional[Foo]: ...
       |}
-    ~errors:
-      (`Specific
-        [
-          "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-           `test.foo` but got `unknown`.";
-          "Undefined attribute [16]: Optional type has no attribute `attribute`.";
-        ])
     "test.foo(unknown).attribute"
     Type.Top;
   assert_forward
     ~precondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
     ~postcondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `undefined` is not defined, or there is at least one "
-          ^ "control flow path that doesn't define `undefined`.";
-        ])
     "undefined()"
     Type.Top;
   assert_forward
@@ -623,7 +546,6 @@ let test_forward_expression context =
             self.attribute: int = 1
         def foo(x: typing.Any) -> Foo: ...
       |}
-    ~errors:(`Specific ["Undefined attribute [16]: `Foo` has no attribute `unknown`."])
     "test.foo(foo_instance.unknown).attribute"
     Type.integer;
   assert_forward
@@ -636,12 +558,6 @@ let test_forward_expression context =
             self.attribute: int = 1
         def foo(x: typing.Any) -> Foo: ...
       |}
-    ~errors:
-      (`Specific
-        [
-          "Undefined attribute [16]: `test.Foo` has no attribute `unknown`.";
-          "Undefined attribute [16]: `test.Foo` has no attribute `another_unknown`.";
-        ])
     "test.foo(foo_instance.unknown).another_unknown"
     Type.Top;
 
@@ -690,8 +606,8 @@ let test_forward_expression context =
     ~postcondition:["Container", dictionary_set_union]
     "1 in Container"
     Type.bool;
-  assert_forward ~errors:(`Undefined 1) "undefined < 1" Type.Top;
-  assert_forward ~errors:(`Undefined 2) "undefined == undefined" Type.Top;
+  assert_forward "undefined < 1" Type.Top;
+  assert_forward "undefined == undefined" Type.Top;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
@@ -711,20 +627,10 @@ let test_forward_expression context =
     (Type.dictionary ~key:Type.integer ~value:(Type.union [Type.integer; Type.string]));
   assert_forward "{**{1: 1}}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
   assert_forward "{**{1: 1}, **{'a': 'b'}}" (Type.dictionary ~key:Type.Any ~value:Type.Any);
+  assert_forward "{1: 'string', **{undefined: 1}}" (Type.dictionary ~key:Type.Top ~value:Type.Any);
+  assert_forward "{undefined: 1}" (Type.dictionary ~key:Type.Top ~value:Type.integer);
+  assert_forward "{1: undefined}" (Type.dictionary ~key:Type.integer ~value:Type.Top);
   assert_forward
-    ~errors:(`Undefined 1)
-    "{1: 'string', **{undefined: 1}}"
-    (Type.dictionary ~key:Type.Top ~value:Type.Any);
-  assert_forward
-    ~errors:(`Undefined 1)
-    "{undefined: 1}"
-    (Type.dictionary ~key:Type.Top ~value:Type.integer);
-  assert_forward
-    ~errors:(`Undefined 1)
-    "{1: undefined}"
-    (Type.dictionary ~key:Type.integer ~value:Type.Top);
-  assert_forward
-    ~errors:(`Undefined 3)
     "{1: undefined, undefined: undefined}"
     (Type.dictionary ~key:Type.Top ~value:Type.Top);
   assert_forward
@@ -742,25 +648,13 @@ let test_forward_expression context =
 
   (* Generators. *)
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is "
-          ^ "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into "
-          ^ "an assignment and give it an explicit annotation.";
-        ])
-    "(element for element in [])"
-    (Type.generator Type.Any);
+  assert_forward "(element for element in [])" (Type.generator Type.Any);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
     (Type.generator (Type.tuple [Type.integer; Type.string]));
   assert_forward "(nested for element in [[1]] for nested in element)" (Type.generator Type.integer);
-  assert_forward ~errors:(`Undefined 1) "(undefined for element in [1])" (Type.generator Type.Top);
-  assert_forward
-    ~errors:(`Undefined 1)
-    "(element for element in undefined)"
-    (Type.generator Type.Top);
+  assert_forward "(undefined for element in [1])" (Type.generator Type.Top);
+  assert_forward "(element for element in undefined)" (Type.generator Type.Top);
 
   (* Lambda. *)
   let callable ~parameters ~annotation =
@@ -789,10 +683,7 @@ let test_forward_expression context =
   assert_forward
     "lambda **parameter: 42"
     (callable ~parameters:["parameter", KeywordParameter, false] ~annotation:Type.integer);
-  assert_forward
-    ~errors:(`Undefined 1)
-    "lambda: undefined"
-    (callable ~parameters:[] ~annotation:Type.Top);
+  assert_forward "lambda: undefined" (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
   Type.Variable.Namespace.reset ();
@@ -803,8 +694,8 @@ let test_forward_expression context =
   assert_forward "[]" empty_list;
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
-  assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
-  assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
+  assert_forward "[undefined]" (Type.list Type.Top);
+  assert_forward "[undefined, undefined]" (Type.list Type.Top);
   assert_forward "[element for element in [1]]" (Type.list Type.integer);
   assert_forward "[1 for _ in [1]]" (Type.list Type.integer);
   assert_forward
@@ -825,12 +716,6 @@ let test_forward_expression context =
   assert_forward
     ~precondition:["x", Type.undeclared]
     ~postcondition:["x", Type.undeclared]
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-           flow path that doesn't define `x`.";
-        ])
     "[x]"
     (Type.list Type.undeclared);
 
@@ -844,8 +729,8 @@ let test_forward_expression context =
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
   assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
-  assert_forward ~errors:(`Undefined 1) "{undefined}" (Type.set Type.Top);
-  assert_forward ~errors:(`Undefined 2) "{undefined, undefined}" (Type.set Type.Top);
+  assert_forward "{undefined}" (Type.set Type.Top);
+  assert_forward "{undefined, undefined}" (Type.set Type.Top);
   assert_forward "{element for element in [1]}" (Type.set Type.integer);
   assert_forward
     ~precondition:["x", Type.list Type.integer]
@@ -866,22 +751,22 @@ let test_forward_expression context =
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
   assert_forward "**1" Type.Top;
-  assert_forward ~errors:(`Undefined 1) "*undefined" Type.Top;
+  assert_forward "*undefined" Type.Top;
 
   (* String literals. *)
   assert_forward "'string'" (Type.literal_string "string");
   assert_forward "f'string'" Type.string;
   assert_forward "f'string{1}'" Type.string;
-  assert_forward ~errors:(`Undefined 1) "f'string{undefined}'" Type.string;
+  assert_forward "f'string{undefined}'" Type.string;
 
   (* Ternaries. *)
   assert_forward "3 if True else 1" Type.integer;
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
-  assert_forward ~errors:(`Undefined 1) "undefined if True else 1" Type.Top;
-  assert_forward ~errors:(`Undefined 1) "1 if undefined else 1" (Type.literal_integer 1);
-  assert_forward ~errors:(`Undefined 1) "1 if True else undefined" Type.Top;
-  assert_forward ~errors:(`Undefined 3) "undefined if undefined else undefined" Type.Top;
+  assert_forward "undefined if True else 1" Type.Top;
+  assert_forward "1 if undefined else 1" (Type.literal_integer 1);
+  assert_forward "1 if True else undefined" Type.Top;
+  assert_forward "undefined if undefined else undefined" Type.Top;
   assert_forward
     ~precondition:["x", Type.integer]
     ~postcondition:["x", Type.integer]
@@ -894,23 +779,23 @@ let test_forward_expression context =
   (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.literal_integer 1]);
   assert_forward "1, 'string'" (Type.tuple [Type.literal_integer 1; Type.literal_string "string"]);
-  assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
-  assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
+  assert_forward "undefined," (Type.tuple [Type.Top]);
+  assert_forward "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 
   (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
-  assert_forward ~errors:(`Undefined 1) "not undefined" Type.bool;
+  assert_forward "not undefined" Type.bool;
   assert_forward "-1" (Type.Literal (Integer (-1)));
   assert_forward "+1" Type.integer;
   assert_forward "~1" Type.integer;
-  assert_forward ~errors:(`Undefined 1) "-undefined" Type.Top;
+  assert_forward "-undefined" Type.Top;
 
   (* Walrus operator. *)
   assert_forward "x := True" (Type.Literal (Boolean true));
 
   (* Yield. *)
   assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
-  assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
+  assert_forward "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none);
 
   (* Meta-types *)
@@ -1005,7 +890,6 @@ let test_forward_statement context =
   let assert_forward
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
-      ?(errors = `Undefined 0)
       ?(bottom = false)
       ?expected_return
       precondition
@@ -1052,29 +936,9 @@ let test_forward_statement context =
         ~init:(Create.create ~immutables:precondition_immutables ~resolution precondition)
         parsed
     in
-    let errors =
-      match errors with
-      | `Specific errors -> errors
-      | `Undefined count ->
-          let rec errors sofar count =
-            let error =
-              "Undefined name [18]: Global name `undefined` is not defined, or there is at least \
-               one control flow path that doesn't define `undefined`."
-            in
-            match count with
-            | 0 -> sofar
-            | count -> errors (error :: sofar) (count - 1)
-          in
-          errors [] count
-    in
     assert_state_equal
       (Create.create ~bottom ~immutables:postcondition_immutables ~resolution postcondition)
-      forwarded;
-    assert_equal
-      ~cmp:list_orderless_equal
-      ~printer:(String.concat ~sep:"\n")
-      errors
-      (State.errors forwarded |> List.map ~f:(description ~resolution))
+      forwarded
   in
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
@@ -1087,64 +951,18 @@ let test_forward_statement context =
     ["z", Type.integer]
     "x = y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.integer];
+  assert_forward ["y", Type.undeclared] "x = y" ["x", Type.Any; "y", Type.undeclared];
   assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`.";
-        ])
-    ["y", Type.undeclared]
-    "x = y"
-    ["x", Type.Any; "y", Type.undeclared];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`.";
-        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = y"
     ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
+  assert_forward ["y", Type.undeclared] "x = [y]" ["x", Type.list Type.Any; "y", Type.undeclared];
   assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`.";
-        ])
-    ["y", Type.undeclared]
-    "x = [y]"
-    ["x", Type.list Type.Any; "y", Type.undeclared];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`.";
-        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
-  assert_forward
-    ~errors:
-      (`Specific ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."])
-    ~postcondition_immutables:["x", Type.Any]
-    []
-    "x: Derp"
-    ["x", Type.Any];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Incompatible variable type [9]: x is declared to have type `str` "
-          ^ "but is used as type `int`.";
-        ])
-    ~postcondition_immutables:["x", Type.string]
-    []
-    "x: str = 1"
-    ["x", Type.string];
+  assert_forward ~postcondition_immutables:["x", Type.Any] [] "x: Derp" ["x", Type.Any];
+  assert_forward ~postcondition_immutables:["x", Type.string] [] "x: str = 1" ["x", Type.string];
   assert_forward
     ~postcondition_immutables:["x", Type.union [Type.string; Type.integer]]
     []
@@ -1156,13 +974,8 @@ let test_forward_statement context =
     ["c", Type.integer; "d", Type.Top]
     "a, b = c, d"
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
+  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
   assert_forward
-    ~errors:(`Specific ["Unable to unpack [23]: Unable to unpack `int` into 2 values."])
-    ["z", Type.integer]
-    "x, y = z"
-    ["x", Type.Top; "y", Type.Top; "z", Type.integer];
-  assert_forward
-    ~errors:(`Specific ["Unable to unpack [23]: Unable to unpack 3 values, 2 were expected."])
     ["z", Type.tuple [Type.integer; Type.string; Type.string]]
     "x, y = z"
     ["x", Type.Top; "y", Type.Top; "z", Type.tuple [Type.integer; Type.string; Type.string]];
@@ -1172,12 +985,6 @@ let test_forward_statement context =
     ["x", Type.tuple [Type.integer; Type.Top]; "y", Type.integer; "z", Type.Top];
   assert_forward
     ~postcondition_immutables:["x", Type.tuple [Type.Any; Type.Any]]
-    ~errors:
-      (`Specific
-        [
-          "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; "
-          ^ "given explicit type cannot contain `Any`.";
-        ])
     []
     "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
     ["x", Type.tuple [Type.literal_integer 1; Type.literal_integer 2]];
@@ -1189,11 +996,7 @@ let test_forward_statement context =
     ["z", Type.Tuple (Type.Unbounded Type.integer)]
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
-  assert_forward
-    ~errors:(`Specific ["Unable to unpack [23]: Unable to unpack `int` into 2 values."])
-    []
-    "(x, y), z = 1"
-    ["x", Type.Top; "y", Type.Top; "z", Type.Top];
+  assert_forward [] "(x, y), z = 1" ["x", Type.Top; "y", Type.Top; "z", Type.Top];
   assert_forward
     ["z", Type.list Type.integer]
     "x, y = z"
@@ -1275,19 +1078,7 @@ let test_forward_statement context =
 
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["y", Type.integer] [] "y: int" ["y", Type.integer];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Incompatible variable type [9]: y is declared to have type `int` "
-          ^ "but is used as type `unknown`.";
-          "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-           flow path that doesn't define `x`.";
-        ])
-    ~postcondition_immutables:["y", Type.integer]
-    []
-    "y: int = x"
-    ["y", Type.integer];
+  assert_forward ~postcondition_immutables:["y", Type.integer] [] "y: int = x" ["y", Type.integer];
   assert_forward
     ~precondition_immutables:["y", Type.Top]
     ~postcondition_immutables:["y", Type.Top]
@@ -1303,12 +1094,6 @@ let test_forward_statement context =
 
   (* Delete. *)
   assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter to call \
-           `dict.__getitem__` but got `int`.";
-        ])
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer]
     "del d[0]"
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer];
@@ -1376,22 +1161,8 @@ let test_forward_statement context =
     ["x", Type.float]
     "assert x in [1]"
     ["x", Type.integer];
-  assert_forward
-    ~errors:
-      (`Specific
-        ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."])
-    ~bottom:true
-    ["x", Type.none]
-    "assert x"
-    ["x", Type.none];
-  assert_forward
-    ~errors:
-      (`Specific
-        ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."])
-    ~bottom:true
-    ["x", Type.none]
-    "assert x is not None"
-    ["x", Type.none];
+  assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
+  assert_forward ~bottom:true ["x", Type.none] "assert x is not None" ["x", Type.none];
 
   (* Isinstance. *)
   assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
@@ -1407,37 +1178,13 @@ let test_forward_statement context =
   assert_forward ~bottom:false ["x", Type.integer] "assert isinstance(x, str)" ["x", Type.string];
   assert_forward ~bottom:false ["x", Type.Bottom] "assert isinstance(x, str)" ["x", Type.string];
   assert_forward ~bottom:false ["x", Type.float] "assert isinstance(x, int)" ["x", Type.integer];
+  assert_forward ~bottom:false ["x", Type.integer] "assert isinstance(x, 1)" ["x", Type.integer];
   assert_forward
-    ~bottom:false
-    ~errors:
-      (`Specific
-        [
-          "Incompatible parameter type [6]: "
-          ^ "Expected `typing.Union[typing.Type[typing.Any], typing.Tuple[typing.Type[typing.Any], \
-             ...]]` for 2nd anonymous parameter to call `isinstance` "
-          ^ "but got `int`.";
-        ])
-    ["x", Type.integer]
-    "assert isinstance(x, 1)"
-    ["x", Type.integer];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x, int)` will \
-           always fail.";
-        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, int)"
     ["x", Type.integer];
   assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x, float)` \
-           will always fail.";
-        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, float)"
@@ -1465,12 +1212,6 @@ let test_forward_statement context =
 
   (* Works for general expressions. *)
   assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Impossible assertion [25]: `x.__add__(1)` has type `int`, assertion `not \
-           isinstance(x.__add__(1), int)` will always fail.";
-        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x + 1, int)"
@@ -1480,47 +1221,16 @@ let test_forward_statement context =
   assert_forward ~bottom:false [] "assert (not True)" [];
 
   (* Raise. *)
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but must \
-           extend BaseException.";
-        ])
-    []
-    "raise 1"
-    [];
+  assert_forward [] "raise 1" [];
   assert_forward [] "raise Exception" [];
   assert_forward [] "raise Exception()" [];
-  assert_forward
-    ~errors:
-      (`Specific
-        [
-          "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
-           control flow path that doesn't define `undefined`.";
-          "Invalid Exception [48]: Expression `undefined` has type `unknown` but must extend \
-           BaseException.";
-        ])
-    []
-    "raise undefined"
-    [];
+  assert_forward [] "raise undefined" [];
   assert_forward [] "raise" [];
 
   (* Return. *)
-  assert_forward
-    ~errors:
-      (`Specific
-        ["Missing return annotation [3]: Returning `int` but no return type is specified."])
-    []
-    "return 1"
-    [];
+  assert_forward [] "return 1" [];
   assert_forward ~expected_return:Type.integer [] "return 1" [];
-  assert_forward
-    ~expected_return:Type.string
-    ~errors:(`Specific ["Incompatible return type [7]: Expected `str` but got `int`."])
-    []
-    "return 1"
-    [];
+  assert_forward ~expected_return:Type.string [] "return 1" [];
 
   (* Pass. *)
   assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
