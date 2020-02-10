@@ -121,8 +121,15 @@ module State (Context : Context) = struct
     { resolution; errors = TypeCheck.ErrorMap.Map.empty; bottom }
 
 
-  let errors { resolution; errors; bottom } =
-    TypeCheckState.errors (TypeCheckState.create ~bottom ~errors ~resolution ())
+  let errors { resolution; errors; _ } =
+    let global_resolution = Resolution.global_resolution resolution in
+    Map.data errors
+    |> Error.deduplicate
+    |> fun errors ->
+    if Context.configuration.debug then
+      errors
+    else
+      Error.filter ~resolution:global_resolution errors
 
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
