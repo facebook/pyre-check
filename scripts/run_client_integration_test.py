@@ -45,17 +45,24 @@ class PyreResult(NamedTuple):
 
 @contextmanager
 def _watch_directory(source_directory: str) -> Generator[None, None, None]:
-    subprocess.check_call(
-        ["watchman", "watch", source_directory],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        result = json.loads(subprocess.check_output(["watchman", "watch-list"]))
+        watched = os.path.abspath(source_directory) in result["roots"]
+    except KeyError:
+        watched = False
+
+    def call_watchman(command: str) -> None:
+        watchman_process = subprocess.run(
+            ["watchman", command, source_directory], capture_output=True
+        )
+        if watchman_process.returncode != 0:
+            LOG.error(watchman_process.stderr.decode())
+
+    if not watched:
+        call_watchman("watch")
     yield
-    subprocess.check_call(
-        ["watchman", "watch-del", source_directory],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if not watched:
+        call_watchman("watch-del")
 
 
 class TestCommand(unittest.TestCase, ABC):
@@ -591,16 +598,53 @@ class StartTest(TestCommand):
 
     def initial_filesystem(self) -> None:
         self.create_project_configuration()
-        self.create_directory("local_project")
-        self.create_local_configuration("local_project", {"source_directories": ["."]})
-        self.create_file_with_error("local_project/test.py")
+        self.create_file(".watchmanconfig", "{}")
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_file("local_one/test.py", contents="x = 1")
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.create_file("local_two/test.py", contents="x = 1")
+
+    def test_server_start_without_sources(self) -> None:
+        # TODO(T61745598): Add testing for proper prompting when implemented.
+        result = self.run_pyre("start")
+        self.assert_failed(result)
 
     def test_server_start(self) -> None:
         with _watch_directory(self.directory):
-            result = self.run_pyre("-l", "local_project", "start")
+            result = self.run_pyre("-l", "local_one", "start")
+            self.assert_no_errors(result)
+            self.assert_server_exists("local_one")
+            result = self.run_pyre("-l", "local_two", "start")
+            self.assert_no_errors(result)
+            self.assert_server_exists("local_one")
+            self.assert_server_exists("local_two")
+
+            # Start already existing server
+            result = self.run_pyre("-l", "local_two", "start")
+            self.assert_no_errors(result)
+            self.assert_server_exists("local_two")
+
+            # Assert servers are picking up on changes
+            result = self.run_pyre("-l", "local_one")
+            self.assert_no_errors(result)
+            self.create_file_with_error("local_one/test.py")
+            result = self.run_pyre("-l", "local_one")
+            self.assert_has_errors(result)
+
+            result = self.run_pyre("-l", "local_two")
+            self.create_file_with_error("local_two/test_two.py")
+            result = self.run_pyre("-l", "local_two")
+            self.assert_has_errors(result)
+
+    def test_server_no_watchman(self) -> None:
+        with _watch_directory(self.directory):
+            result = self.run_pyre("-l", "local_one", "start", "--no-watchman")
             self.assert_no_errors(result)
 
-        # TODO(T57341910): Test concurrent pyre server processes.
+            # Assert server is not picking up on changes
+            self.create_file_with_error("local_one/test.py")
+            result = self.run_pyre("-l", "local_one")
+            self.assert_no_errors(result)
 
 
 class StatisticsTest(TestCommand):
