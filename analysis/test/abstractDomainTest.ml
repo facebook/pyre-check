@@ -1376,8 +1376,8 @@ module TreeOfStringSets = struct
       let expected =
         create
           [
-            Part (Path, (parse_path "a", StringSet.of_list ["x"; "y"; "z"]));
-            Part (Path, (parse_path "c", StringSet.of_list ["p"; "z"]));
+            Part (Path, (parse_path "a", StringSet.of_list ["x"; "y"]));
+            Part (Path, (parse_path "c", StringSet.of_list ["z"]));
             Part (Path, ([], StringSet.of_list ["q"]));
           ]
       in

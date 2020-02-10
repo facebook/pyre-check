@@ -786,15 +786,13 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     |> check_join_property previous next
 
 
-  (* Shape tree ~mold performs a join of the two trees but makes sure the result has only branches
-     present in mold. *)
+  (* Shape tree ~mold transforms the left tree so it only contains branches present in mold. *)
   let rec shape_tree
       ~ancestors
       { element = left_element; children = left_children }
-      ~mold:{ element = mold_element; children = mold_children }
+      ~mold:{ element = _; children = mold_children }
     =
     let widen_depth = None in
-    let joined_element = element_join ~widen_depth left_element mold_element in
     let joined_element, left_children =
       let lift_dead_branches ~key ~data (lifted, result) =
         match data with
@@ -805,7 +803,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       LabelMap.fold2
         left_children
         mold_children
-        ~init:(joined_element, LabelMap.empty)
+        ~init:(left_element, LabelMap.empty)
         ~f:lift_dead_branches
     in
     let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
@@ -821,7 +819,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
           match shape_tree ~ancestors left_tree ~mold with
           | Some merged -> LabelMap.set result ~key ~data:merged
           | None -> result )
-      | `Right mold -> LabelMap.set result ~key ~data:mold
+      | `Right _mold -> failwith "Invariant broken. Mold should not have more branches"
       | `Left _ -> failwith "Invariant broken. Left branch should have been lifted"
     in
     LabelMap.fold2 left_children mold ~init:LabelMap.empty ~f:mold_branch
@@ -829,9 +827,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
 
   let shape tree ~mold =
     let message () = Format.sprintf "shape tree\n%s\nmold:\n%s\n" (show tree) (show mold) in
-    shape_tree ~ancestors:Element.bottom tree ~mold
-    |> option_node_tree ~message
-    |> check_join_property tree mold
+    shape_tree ~ancestors:Element.bottom tree ~mold |> option_node_tree ~message
 
 
   (** Fold over tree, where each non-bottom element node is visited. The function ~f is passed the
