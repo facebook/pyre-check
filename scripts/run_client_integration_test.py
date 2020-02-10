@@ -560,13 +560,37 @@ class QueryTest(TestCommand):
 
 
 class RageTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
 
+    def test_rage_no_servers(self) -> None:
+        result = self.run_pyre("rage")
+        self.assert_failed(result)
 
-class ReportingTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    pass
+        # TODO(T61745598): Add testing for proper prompting when implemented.
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        result = self.run_pyre("rage")
+        self.assert_failed(result)
+
+        # TODO(T62047832): Better defined behavior for rage after a killed or stopped
+        # server, vs. non-existent server or logs
+        result = self.run_pyre("-l", "local_one", "rage")
+        self.assert_succeeded(result)
+
+    def test_rage(self) -> None:
+        self.create_local_configuration("local_one", {"source_directories": ["."]})
+        self.create_local_configuration("local_two", {"source_directories": ["."]})
+        self.run_pyre("-l", "local_one", "start")
+        self.run_pyre("-l", "local_two", "start")
+        result = self.run_pyre("-l", "local_one", "rage")
+        self.assert_succeeded(result)
+
+        # Invoking rage still prints logs of a stopped server
+        self.run_pyre("-l", "local_one", "stop")
+        result = self.run_pyre("-l", "local_one", "rage")
+        self.assert_succeeded(result)
+        result = self.run_pyre("-l", "local_two", "rage")
+        self.assert_succeeded(result)
 
 
 class RestartTest(TestCommand):
