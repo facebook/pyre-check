@@ -160,17 +160,18 @@ let test_integration context =
       |> List.filter_opt
     in
     List.iter divergent_files ~f:error_on_actual_files;
-    if not (List.is_empty divergent_files) then
-      let message =
-        List.map divergent_files ~f:(fun { path; suffix; _ } ->
-            Format.asprintf "%a%s" Path.pp path suffix)
-        |> String.concat ~sep:", "
-        |> Format.sprintf "Found differences in %s."
-      in
-      assert_bool message false
+    divergent_files
   in
   assert_bool "No test paths to check." (not (List.is_empty test_paths));
-  List.iter test_paths ~f:run_test
+  let divergent_files = List.concat_map test_paths ~f:run_test in
+  if not (List.is_empty divergent_files) then
+    let message =
+      List.map divergent_files ~f:(fun { path; suffix; _ } ->
+          Format.asprintf "%a%s" Path.pp path suffix)
+      |> String.concat ~sep:", "
+      |> Format.sprintf "Found differences in %s."
+    in
+    assert_bool message false
 
 
 let () = TestHelper.run_with_taint_models ["integration", test_integration] ~name:"taint"
