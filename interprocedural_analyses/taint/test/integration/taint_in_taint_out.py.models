@@ -260,26 +260,16 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 38, "start": 29, "end": 30 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "default" }
-            ]
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x)[foo]",
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 38, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "object" }
-            ]
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }

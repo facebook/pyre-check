@@ -42,6 +42,141 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attributes.test_getattr_backwards",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(t)[token]",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 46,
+              "start": 16,
+              "end": 41
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_backwards_default",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(t)[token]",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 50,
+              "start": 16,
+              "end": 42
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_default",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 42,
+              "start": 35,
+              "end": 50
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(t)[unrelated]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_forward",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 38,
+              "start": 11,
+              "end": 18
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{attributes.Token.token}",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(t)[token]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attributes.test_via_non_optional",
     "sources": [
       {

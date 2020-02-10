@@ -569,6 +569,31 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~fields:[AccessPath.get_index attribute]
             ~value
             state
+      (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "getattr"); location };
+            arguments =
+              [
+                { Call.Argument.value = base; _ };
+                {
+                  Call.Argument.value =
+                    { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+                  _;
+                };
+                { Call.Argument.value = default; _ };
+              ];
+          } ->
+          let attribute_expression =
+            {
+              Node.location;
+              value = Expression.Name (Name.Attribute { base; attribute; special = false });
+            }
+          in
+          let state =
+            analyze_expression ~resolution ~state ~expression:attribute_expression ~taint
+          in
+          analyze_expression ~resolution ~state ~expression:default ~taint
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state
