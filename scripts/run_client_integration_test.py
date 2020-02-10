@@ -223,12 +223,18 @@ class TestCommand(unittest.TestCase, ABC):
 
         # Pyre Output
         if result:
+            output = result.output or ""
+            error_output = result.error_output or ""
+            if output:
+                output = "Stdout:\n" + output
+            if error_output:
+                error_output = "Stderr:\n" + error_output
             if result.output or result.error_output:
                 context += format_section(
                     "Pyre Output",
                     "Command: `" + result.command + "`",
-                    result.output or "",
-                    result.error_output or "",
+                    output,
+                    error_output,
                 )
 
         # Filesystem Structure
@@ -598,8 +604,42 @@ class StartTest(TestCommand):
 
 
 class StatisticsTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_directory("local_project")
+        self.create_local_configuration("local_project", {"source_directories": ["."]})
+        self.create_file(
+            "local_project/test.py",
+            contents="""
+                def fully_annotated(x: int) -> str:
+                    return str(x)
+
+                def return_annotated(x) -> str:
+                    return ""
+        """,
+        )
+
+    def test_statistics_without_sources(self) -> None:
+        result = self.run_pyre("statistics")
+        self.assert_failed(result)
+
+    def test_statistics(self) -> None:
+        result = self.run_pyre("-l", "local_project", "statistics")
+        self.assert_output_matches(
+            result,
+            re.compile(r"\{\"annotations\":.*\"fixmes\":.*\"ignores\".*\"strict\".*\}"),
+        )
+
+    def test_collect(self) -> None:
+        result = self.run_pyre(
+            "-l", "local_project", "statistics", "--collect", "unstrict_files"
+        )
+        self.assert_output_matches(result, re.compile(r"\[(\{.*\})*\]"))
+
+        result = self.run_pyre(
+            "-l", "local_project", "statistics", "--collect", "missing_annotations"
+        )
+        self.assert_output_matches(result, re.compile(r"\[(\{.*\})*\]"))
 
 
 class StopTest(TestCommand):
@@ -611,6 +651,8 @@ class StopTest(TestCommand):
         self.create_file_with_error("local_two/has_type_error.py")
 
     def test_stop_without_server(self) -> None:
+        # TODO(T61745598): Add testing for selecting the correct server or prompting
+        # user when no server is given.
         self.assert_no_servers_exist()
         result = self.run_pyre("stop")
         self.assert_succeeded(result)
