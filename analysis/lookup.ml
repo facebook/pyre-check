@@ -234,7 +234,7 @@ module Visit = struct
     !state
 end
 
-let create_of_source type_environment source =
+let create_of_module type_environment qualifier =
   let annotations_lookup = Location.Table.create () in
   let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
@@ -263,14 +263,6 @@ let create_of_source type_environment source =
       let post_resolution =
         TypeCheck.resolution global_resolution ~annotation_store:post_annotations ()
       in
-      let statement =
-        match Node.value statement with
-        | Statement.Class class_statement ->
-            { statement with Node.value = Statement.Class { class_statement with Class.body = [] } }
-        | Define define_statement ->
-            { statement with Node.value = Define { define_statement with Define.body = [] } }
-        | _ -> statement
-      in
       Visit.visit
         {
           NodeVisitor.pre_resolution;
@@ -295,8 +287,17 @@ let create_of_source type_environment source =
     in
     walk_statement Cfg.entry_index 0 define_signature
   in
-  Preprocessing.defines ~include_nested:true ~include_toplevels:true source
-  |> List.iter ~f:walk_define;
+  let all_defines =
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment global_resolution
+    in
+    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+      unannotated_global_environment
+      qualifier
+    |> List.filter_map
+         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
+  in
+  List.iter all_defines ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 
 

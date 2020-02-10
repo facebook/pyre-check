@@ -40,15 +40,9 @@ let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ 
   in
   let generate_lookups paths =
     let generate_lookup (path, ({ SourcePath.qualifier; _ } as source_path)) =
-      let lookup =
-        let ast_environment = TypeEnvironment.ast_environment environment in
-        AstEnvironment.ReadOnly.get_source ast_environment qualifier
-        >>| Lookup.create_of_source (TypeEnvironment.read_only environment)
-      in
-      lookup
-      >>| (fun lookup -> String.Table.set lookups ~key:(Reference.show qualifier) ~data:lookup)
-      |> ignore;
-      { path; source_path = Some source_path; lookup }
+      let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
+      String.Table.set lookups ~key:(Reference.show qualifier) ~data:lookup;
+      { path; source_path = Some source_path; lookup = Some lookup }
     in
     List.map ~f:generate_lookup paths
   in

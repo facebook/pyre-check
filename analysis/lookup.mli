@@ -7,7 +7,7 @@ open Ast
 
 type t
 
-val create_of_source : TypeEnvironment.ReadOnly.t -> Source.t -> t
+val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> t
 
 val get_annotation : t -> position:Location.position -> (Location.t * Type.t) option
 

@@ -1423,10 +1423,7 @@ let test_incremental_lookups context =
     Request.process ~state ~configuration:server_configuration ~request
   in
   let annotations =
-    let ast_environment = TypeEnvironment.ast_environment environment in
-    AstEnvironment.ReadOnly.get_source ast_environment qualifier
-    |> (fun value -> Option.value_exn value)
-    |> Lookup.create_of_source (TypeEnvironment.read_only environment)
+    Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%a/%a" Location.pp key Type.pp data)
     |> List.sort ~compare:String.compare

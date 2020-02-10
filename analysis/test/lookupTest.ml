@@ -15,19 +15,13 @@ let show_location { Location.start; stop } =
 
 
 let generate_lookup ~context source =
-  let source, environment =
-    let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ } =
+  let environment =
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-      |> fun option -> Option.value_exn option
-    in
-    source, TypeEnvironment.read_only type_environment
+    TypeEnvironment.read_only type_environment
   in
-  let lookup = Lookup.create_of_source environment source in
+  let lookup = Lookup.create_of_module environment !&"test" in
   Memory.reset_shared_memory ();
   lookup
 
@@ -218,6 +212,7 @@ let test_lookup_definitions_instances context =
       "6:6-6:7 -> 6:0-9:18";
       "7:11-7:12 -> 2:0-4:12";
       "7:4-7:5 -> 6:0-9:18";
+      "7:7-7:8 -> 2:0-4:12";
       "8:21-8:22 -> 2:0-4:12";
       "8:8-8:11 -> 6:0-9:18";
       "9:15-9:16 -> 2:0-4:12";
