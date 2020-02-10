@@ -335,6 +335,18 @@ class TestCommand(unittest.TestCase, ABC):
                 json.loads(file_contents), json_contents, self.get_context()
             )
 
+    def assert_directory_exists(
+        self,
+        relative_path: str,
+        exists: bool = True,
+        result: Optional[PyreResult] = None,
+    ) -> None:
+        path = self.directory / relative_path
+        if exists:
+            self.assertTrue(path.is_dir(), self.get_context(result))
+        else:
+            self.assertFalse(path.is_dir(), self.get_context(result))
+
     def assert_server_exists(
         self, server_name: str, result: Optional[PyreResult] = None
     ) -> None:
@@ -383,6 +395,7 @@ class CheckTest(TestCommand):
         self.create_local_configuration("local_project", {"source_directories": ["."]})
         result = self.run_pyre("-l", "local_project", "check")
         self.assert_has_errors(result)
+        self.assert_no_servers_exist(result)
 
 
 class ColorTest(TestCommand):
@@ -413,6 +426,10 @@ class IncrementalTest(TestCommand):
             "-l", "local_project", "incremental", "--incremental-style=fine_grained"
         )
         self.assert_has_errors(result)
+
+    def test_command_line_sources(self) -> None:
+        # TODO(T60110667): Test that command line sources do not start a server.
+        pass
 
 
 class InferTest(TestCommand):
@@ -517,6 +534,14 @@ class KillTest(TestCommand):
         self.run_pyre("kill")
         self.assert_no_servers_exist()
 
+    def test_kill_resources(self) -> None:
+        self.run_pyre("-l", "local_one")
+        self.assert_directory_exists(".pyre/resource_cache")
+        result = self.run_pyre("kill")
+        self.assert_directory_exists(
+            ".pyre/resource_cache", exists=False, result=result
+        )
+
 
 class PersistentTest(TestCommand):
     # TODO(T57341910): Fill in test cases.
@@ -552,10 +577,14 @@ class RestartTest(TestCommand):
         self.create_local_configuration("local_two", {"source_directories": ["."]})
         self.create_file_with_error("local_two/has_type_error.py")
 
-    def test_restart(self) -> None:
-        # TODO(T57341910): Test blank restart
+    def test_server_restart_without_sources(self) -> None:
+        # TODO(T61745598): Add testing for proper prompting when implemented.
         self.assert_no_servers_exist()
+        result = self.run_pyre("restart")
+        self.assert_failed(result)
 
+    def test_restart(self) -> None:
+        self.assert_no_servers_exist()
         result = self.run_pyre("-l", "local_one", "restart")
         self.assert_has_errors(result)
         self.assert_server_exists("local_one")
@@ -590,6 +619,12 @@ class ServersTest(TestCommand):
                 + r"{\"pid\": .*, \"name\": \"(local_one|local_two)\"\}\]"
             ),
         )
+
+        # Test stop servers
+        result = self.run_pyre("servers", "stop")
+        self.assert_succeeded(result)
+        result = self.run_pyre("--output=json", "servers", "list")
+        self.assert_output_matches(result, re.compile(r"\[\]"))
 
 
 class StartTest(TestCommand):
