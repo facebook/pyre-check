@@ -690,45 +690,9 @@ let process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
-    | TypeQuery.Type expression -> (
-        let define =
-          Statement.Define.create_toplevel ~qualifier:None ~statements:[]
-          |> Node.create_with_default_location
-        in
-        let module State = TypeCheck.State (struct
-          let qualifier = Reference.empty
-
-          let debug = false
-
-          let define = define
-
-          module Builder = Callgraph.NullBuilder
-        end)
-        in
-        let state = State.create ~resolution () in
-        let { State.state; resolved = annotation; _ } =
-          State.forward_expression ~state ~expression
-        in
-        match State.errors state with
-        | [] -> TypeQuery.Response (TypeQuery.Type annotation)
-        | errors ->
-            let descriptions =
-              let lookup reference =
-                let ast_environment =
-                  TypeEnvironment.global_environment environment
-                  |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
-                in
-                AstEnvironment.ReadOnly.get_real_path_relative
-                  ~configuration
-                  ast_environment
-                  reference
-              in
-              errors
-              |> List.map ~f:(AnalysisError.instantiate ~lookup)
-              |> List.map ~f:(AnalysisError.Instantiated.description ~show_error_traces:false)
-              |> String.concat ~sep:", "
-            in
-            TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions) )
+    | TypeQuery.Type expression ->
+        let annotation = Resolution.resolve resolution expression in
+        TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.TypeAtPosition { path; position } ->
         let default =
           TypeQuery.Error

@@ -1222,6 +1222,7 @@ let test_query context =
     |}
     ~query:"type(test.foo(test.bar))"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
+  (* TODO: Return some sort of error *)
   assert_type_query_response
     ~source:{|
       def foo(a: str) -> str:
@@ -1229,9 +1230,7 @@ let test_query context =
       bar: int = 7
     |}
     ~query:"type(test.foo(test.bar))"
-    (Protocol.TypeQuery.Error
-       ( "Expression had errors: Incompatible parameter type [6]: "
-       ^ "Expected `str` for 1st anonymous parameter to call `test.foo` but got `int`." ));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
 
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
