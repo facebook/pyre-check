@@ -115,4 +115,5 @@ class Analyze(Check):
         self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
-        log.stdout.write(result.output)
+        if self._save_results_to is None:
+            log.stdout.write(result.output)
