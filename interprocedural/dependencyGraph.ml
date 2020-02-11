@@ -242,10 +242,10 @@ let create_overrides ~environment ~source =
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty
   else
-    let class_method_overrides ({ Node.value = { Class.body; _ }; _ } as class_node) =
+    let class_method_overrides { Node.value = { Class.body; name; _ }; _ } =
       let get_method_overrides class_ child_method =
         let method_name = Define.unqualified_name child_method in
-        Annotated.Class.overrides class_ ~name:method_name ~resolution
+        Annotated.Class.overrides (Reference.show class_) ~name:method_name ~resolution
         >>| fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
@@ -257,15 +257,15 @@ let create_overrides ~environment ~source =
           else
             method_name
         in
-        Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
+        Reference.create ~prefix:ancestor_parent method_name, class_
       in
       let extract_define = function
         | { Node.value = Statement.Define define; _ } -> Some define
         | _ -> None
       in
       let methods = List.filter_map ~f:extract_define body in
-      let annotated_class = Node.map class_node ~f:ClassSummary.create |> Annotated.Class.create in
-      List.filter_map methods ~f:(get_method_overrides annotated_class)
+      let class_name = Node.value name in
+      List.filter_map methods ~f:(get_method_overrides class_name)
     in
     let record_overrides map (ancestor_method, overriding_type) =
       let update_types = function

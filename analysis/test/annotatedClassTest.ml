@@ -1087,14 +1087,8 @@ let test_overrides context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let definition =
-    let definition =
-      GlobalResolution.class_definition resolution (Type.Primitive "test.Baz") >>| Class.create
-    in
-    Option.value_exn ~message:"Missing definition." definition
-  in
-  assert_is_none (Class.overrides definition ~resolution ~name:"baz");
-  let overrides = Class.overrides definition ~resolution ~name:"foo" in
+  assert_is_none (Class.overrides "test.Baz" ~resolution ~name:"baz");
+  let overrides = Class.overrides "test.Baz" ~resolution ~name:"foo" in
   assert_is_some overrides;
   assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
   assert_equal (Option.value_exn overrides |> Attribute.parent) "test.Foo"

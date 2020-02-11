@@ -1122,12 +1122,11 @@ module State (Context : Context) = struct
             errors
           else
             let open Annotated in
-            Node.create define ~location
-            |> Define.create
-            |> Define.parent_definition ~resolution:global_resolution
-            >>= (fun definition ->
+            begin
+              match define with
+              | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
                   Class.overrides
-                    definition
+                    (Reference.show parent)
                     ~resolution:global_resolution
                     ~name:(StatementDefine.unqualified_name define)
                   >>| fun overridden_attribute ->
@@ -1363,7 +1362,9 @@ module State (Context : Context) = struct
                       Type.Callable.Overload.parameters implementation
                       |> Option.value ~default:[]
                       |> List.fold ~init:errors ~f:check_parameter
-                  | _ -> errors)
+                  | _ -> errors )
+              | _ -> None
+            end
             |> Option.value ~default:errors
         with
         | ClassHierarchy.Untracked _ -> errors
@@ -4912,7 +4913,8 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
           errors
       in
       let check_overrides
-          ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as definition)
+          ( { Node.value = { ClassSummary.attribute_components; name = class_name; _ }; _ } as
+          definition )
           errors
         =
         let components =
@@ -4986,7 +4988,7 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
                            ~kind
                            ~define:Context.define)
                   in
-                  Class.overrides ~resolution:global_resolution ~name definition
+                  Class.overrides ~resolution:global_resolution ~name (Reference.show class_name)
                   >>| check_override
                   |> Option.value ~default:None)
           |> Option.value ~default:[]

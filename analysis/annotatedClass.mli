@@ -43,7 +43,7 @@ val fallback_attribute
 val has_explicit_constructor : Type.Primitive.t -> resolution:GlobalResolution.t -> bool
 
 val overrides
-  :  t ->
+  :  Type.Primitive.t ->
   resolution:GlobalResolution.t ->
   name:Identifier.t ->
   Attribute.instantiated option
