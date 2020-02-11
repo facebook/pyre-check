@@ -554,9 +554,34 @@ class ProfileTest(TestCommand):
 
 
 class QueryTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    # TODO(T57341910): Test pyre query help.
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local", {"source_directories": ["."]})
+        self.create_file_with_error("local/has_type_error.py")
+
+    def test_query_help(self) -> None:
+        # TODO(T62048210): Change this when help works without server
+        result = self.run_pyre("query", "help")
+        self.assert_failed(result)
+        result = self.run_pyre("-l", "local", "query", "help")
+        self.assert_failed(result)
+        self.run_pyre("-l", "local", "start")
+        result = self.run_pyre("-l", "local", "query", "help")
+        self.assert_succeeded(result)
+
+    def test_query(self) -> None:
+        self.run_pyre("-l", "local", "start")
+        result = self.run_pyre("-l", "local", "query", "join(A, B)")
+        self.assert_output_matches(result, re.compile(r"\{.*\}"))
+        result = self.run_pyre("-l", "local", "query", "type(A)")
+        self.assert_output_matches(result, re.compile(r"\{.*\}"))
+
+        # Invalid query behavior
+        result = self.run_pyre("-l", "local", "query", "undefined(A)")
+        self.assert_failed(result)
+        # TODO(T62066748): Do not stop server when invalid query comes in.
+        result = self.run_pyre("-l", "local", "query", "type(A)")
+        self.assert_failed(result)
 
 
 class RageTest(TestCommand):
