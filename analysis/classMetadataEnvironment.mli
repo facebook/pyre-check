@@ -21,7 +21,7 @@ module MetadataReadOnly : sig
 
   val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
 
-  val successors : t -> ?dependency:dependency -> ClassSummary.t Ast.Node.t -> string list
+  val successors : t -> ?dependency:dependency -> Type.Primitive.t -> string list
 
   val superclasses
     :  t ->

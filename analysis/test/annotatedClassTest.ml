@@ -65,8 +65,8 @@ let test_superclasses context =
       expected
       actual
   in
-  assert_successors !"test.Foo" ["object"];
-  assert_successors !"test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
+  assert_successors "test.Foo" ["object"];
+  assert_successors "test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
   assert_superclasses !"test.Foo" [!"object"];
   assert_superclasses !"test.SubFoo" [!"test.Foo"; !"object"];
   assert_superclasses !"test.SubFooBar" [!"test.Foo"; !"test.Bar"; !"object"];

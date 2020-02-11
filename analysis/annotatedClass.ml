@@ -172,7 +172,11 @@ let has_explicit_constructor class_name ~resolution =
   | _ -> false
 
 
-let overrides definition ~resolution ~name =
+let overrides
+    ({ Node.value = { ClassSummary.name = class_name; _ }; _ } as definition)
+    ~resolution
+    ~name
+  =
   let find_override parent =
     GlobalResolution.attribute_from_class_name
       ~transitive:false
@@ -183,7 +187,8 @@ let overrides definition ~resolution ~name =
       ~instantiated:(annotation definition)
     >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   in
-  GlobalResolution.successors definition ~resolution |> List.find_map ~f:find_override
+  GlobalResolution.successors (Reference.show class_name) ~resolution
+  |> List.find_map ~f:find_override
 
 
 let has_abstract_base { Node.value = summary; _ } = ClassSummary.is_abstract summary

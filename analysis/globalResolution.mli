@@ -201,7 +201,7 @@ val attribute_from_class_name
 
 val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
 
-val successors : resolution:t -> ClassSummary.t Node.t -> string list
+val successors : resolution:t -> Type.Primitive.t -> string list
 
 val constraints
   :  resolution:t ->
