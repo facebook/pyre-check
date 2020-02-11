@@ -169,18 +169,6 @@
   },
   {
     "code": 5001,
-    "column": 16,
-    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "define": "integration_test.igtask.whoops",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "inference": null,
-    "line": 17,
-    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "name": "Possible shell injection",
-    "path": "igtask.py"
-  },
-  {
-    "code": 5001,
     "column": 20,
     "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "define": "integration_test.list_comprehension.take_input",
