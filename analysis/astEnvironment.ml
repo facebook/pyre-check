@@ -23,7 +23,7 @@ module RawSourceValue = struct
 end
 
 module RawSources =
-  Memory.DependencyTrackedTableNoCache
+  DependencyTrackedMemory.DependencyTrackedTableNoCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.ReferenceDependencyKey)
     (RawSourceValue)
@@ -41,7 +41,7 @@ module RawWildcardExportsValue = struct
 end
 
 module RawWildcardExports =
-  Memory.DependencyTrackedTableWithCache
+  DependencyTrackedMemory.DependencyTrackedTableWithCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.ReferenceDependencyKey)
     (RawWildcardExportsValue)
@@ -59,7 +59,7 @@ module SourceValue = struct
 end
 
 module Sources =
-  Memory.DependencyTrackedTableNoCache
+  DependencyTrackedMemory.DependencyTrackedTableNoCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.DependencyKey)
     (SourceValue)
@@ -77,7 +77,7 @@ module WildcardExportsValue = struct
 end
 
 module WildcardExports =
-  Memory.DependencyTrackedTableWithCache
+  DependencyTrackedMemory.DependencyTrackedTableWithCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.DependencyKey)
     (WildcardExportsValue)
@@ -95,7 +95,7 @@ module ModuleMetadataValue = struct
 end
 
 module ModuleMetadata =
-  Memory.DependencyTrackedTableWithCache
+  DependencyTrackedMemory.DependencyTrackedTableWithCache
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.DependencyKey)
     (ModuleMetadataValue)

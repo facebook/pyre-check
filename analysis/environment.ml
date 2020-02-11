@@ -157,7 +157,7 @@ module EnvironmentTable = struct
     val mem : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> bool
 
     val add_dependency
-      :  kind:Memory.DependencyKind.t ->
+      :  kind:DependencyTrackedMemory.DependencyKind.t ->
       key ->
       SharedMemoryKeys.DependencyKey.t ->
       unit
@@ -371,9 +371,15 @@ module EnvironmentTable = struct
   module WithCache (In : In) =
     Make
       (In)
-      (Memory.DependencyTrackedTableWithCache (In.Key) (SharedMemoryKeys.DependencyKey) (In.Value))
+      (DependencyTrackedMemory.DependencyTrackedTableWithCache
+         (In.Key)
+         (SharedMemoryKeys.DependencyKey)
+         (In.Value))
   module NoCache (In : In) =
     Make
       (In)
-      (Memory.DependencyTrackedTableNoCache (In.Key) (SharedMemoryKeys.DependencyKey) (In.Value))
+      (DependencyTrackedMemory.DependencyTrackedTableNoCache
+         (In.Key)
+         (SharedMemoryKeys.DependencyKey)
+         (In.Value))
 end

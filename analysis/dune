@@ -94,6 +94,7 @@
   ppx_deriving
   pyrelib.ast
   pyrelib.memory
+  pyrelib.dependencyTrackedMemory
   pyrelib.scheduler
   pyrelib.pyreParser
   pyrelib.recognized

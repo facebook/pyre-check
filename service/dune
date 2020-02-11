@@ -1,7 +1,7 @@
 (library
  (name service)
  (public_name pyrelib.service)
- (modules :standard \ scheduler memory)
+ (modules :standard \ scheduler memory dependencyTrackedMemory)
  (preprocess
   (pps
    ppx_deriving.eq
@@ -25,6 +25,28 @@
   pyrelib.scheduler
   pyrelib.languageServer
   pyrelib.memory))
+
+(library
+ (name dependencyTrackedMemory)
+ (public_name pyrelib.dependencyTrackedMemory)
+ (modules dependencyTrackedMemory)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_deriving_yojson))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  pyrelib.configuration
+  pyrelib.memory
+  pyrelib.scheduler
+  pyrelib.statistics
+  hack_parallel))
 
 
 (library

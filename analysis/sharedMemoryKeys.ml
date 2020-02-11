@@ -42,7 +42,7 @@ module ReferenceKey = struct
   let from_string name = Reference.create name
 end
 
-module ReferenceDependencyKey = Memory.DependencyKey.Make (ReferenceKey)
+module ReferenceDependencyKey = DependencyTrackedMemory.DependencyKey.Make (ReferenceKey)
 
 module AttributeTableKey = struct
   module T = struct
@@ -104,7 +104,7 @@ type dependency =
   | ParseAnnotation of ParseAnnotationKey.t
 [@@deriving show, compare, sexp]
 
-module DependencyKey = Memory.DependencyKey.Make (struct
+module DependencyKey = DependencyTrackedMemory.DependencyKey.Make (struct
   type nonrec t = dependency
 
   let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach

@@ -12,4 +12,5 @@
   pyrelib.analysis
   pyrelib.test
   pyrelib.service
+  pyrelib.dependencyTrackedMemory
   pyrelib.memory))
