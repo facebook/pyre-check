@@ -2220,6 +2220,16 @@ let test_infer_transform _ =
     ~expected:(Type.Optional (Type.Primitive "string"))
 
 
+let test_is_unit_test _ =
+  let assert_is_unit_test name expected =
+    Type.Primitive.is_unit_test name |> assert_equal expected
+  in
+  assert_is_unit_test "unittest.TestCase" true;
+  assert_is_unit_test "unittest.case.TestCase" true;
+  assert_is_unit_test "a.TestCase" false;
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -2269,6 +2279,7 @@ let () =
          "infer_transform" >:: test_infer_transform;
        ]
   |> Test.run;
+  "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;
   "callable"
   >::: [
          "from_overloads" >:: test_from_overloads;

@@ -390,6 +390,9 @@ module Primitive = struct
   module Set = Set.Make (struct
     type t = Identifier.t [@@deriving compare, sexp]
   end)
+
+  let is_unit_test name =
+    equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
 end
 
 module T = struct

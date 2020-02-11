@@ -153,6 +153,8 @@ module Primitive : sig
   include Hashable with type t := t
 
   module Set : Set.S with type Elt.t = t
+
+  val is_unit_test : t -> bool
 end
 
 type literal =

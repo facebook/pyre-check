@@ -22,8 +22,6 @@ val bases : t -> Expression.Call.Argument.t list
 
 val annotation : t -> Type.t
 
-val is_unit_test : t -> bool
-
 val has_abstract_base : t -> bool
 
 val get_abstract_attributes

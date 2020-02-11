@@ -61,18 +61,7 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
     let is_final =
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
-    let in_test =
-      let is_unit_test { Node.value = definition; _ } = ClassSummary.is_unit_test definition in
-      let successor_classes =
-        List.filter_map
-          ~f:
-            (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-               ?dependency:unannotated_global_environment_dependency
-               unannotated_global_environment)
-          successors
-      in
-      List.exists ~f:is_unit_test successor_classes
-    in
+    let in_test = List.exists ~f:Type.Primitive.is_unit_test successors in
     let extends_placeholder_stub_class =
       let dependency =
         Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)

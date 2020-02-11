@@ -16,8 +16,6 @@ type t = {
 
 val create : Class.t -> t
 
-val is_unit_test : t -> bool
-
 val is_protocol : t -> bool
 
 val has_decorator : t -> string -> bool

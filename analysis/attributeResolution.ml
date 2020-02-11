@@ -1272,8 +1272,10 @@ module Implementation = struct
     in
     let superclass_definitions = superclasses definition in
     let in_test =
-      List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
-          ClassSummary.is_unit_test value)
+      List.exists
+        (definition :: superclass_definitions)
+        ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
+          Reference.show name |> Type.Primitive.is_unit_test)
     in
     let table = UninstantiatedAttributeTable.create () in
     (* Pass over normal class hierarchy. *)

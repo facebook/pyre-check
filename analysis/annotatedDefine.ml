@@ -118,12 +118,15 @@ let decorate
       |> Node.create ~location
 
 
-let is_constructor definition ~resolution =
-  match parent_definition definition ~resolution with
+let is_constructor
+    ({ Node.value = { Define.signature = { parent; _ }; _ }; _ } as definition)
+    ~resolution
+  =
+  match parent >>| Reference.show with
   | Some parent_class ->
       let in_test =
-        let superclasses = GlobalResolution.superclasses ~resolution parent_class in
-        List.exists ~f:Class.is_unit_test (parent_class :: superclasses)
+        let superclasses = GlobalResolution.successors ~resolution parent_class in
+        List.exists ~f:Type.Primitive.is_unit_test (parent_class :: superclasses)
       in
       Define.is_constructor ~in_test (Node.value definition)
   | None -> false

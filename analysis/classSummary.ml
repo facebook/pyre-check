@@ -21,11 +21,6 @@ let create
   { name; bases; decorators; attribute_components = Class.AttributeComponents.create definition }
 
 
-let is_unit_test { name; _ } =
-  let name = Reference.show name in
-  String.equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
-
-
 let is_protocol { bases; _ } =
   let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
     let open Expression in

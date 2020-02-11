@@ -30,8 +30,6 @@ let bases { Node.value = { ClassSummary.bases; _ }; _ } = bases
 
 let annotation { Node.value = { ClassSummary.name; _ }; _ } = Type.Primitive (Reference.show name)
 
-let is_unit_test { Node.value; _ } = ClassSummary.is_unit_test value
-
 let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ }; _ } =
   Class.implicit_attributes attribute_components
 
@@ -144,7 +142,6 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
 
 
 let has_explicit_constructor class_name ~resolution =
-  let summary = GlobalResolution.class_definition resolution (Primitive class_name) in
   let names =
     GlobalResolution.attribute_names
       ~resolution
@@ -154,11 +151,11 @@ let has_explicit_constructor class_name ~resolution =
       class_name
     >>| Identifier.Set.of_list
   in
-  match summary, names with
-  | Some summary, Some names ->
+  match names with
+  | Some names ->
       let in_test =
-        let superclasses = GlobalResolution.superclasses ~resolution summary in
-        List.exists ~f:is_unit_test (summary :: superclasses)
+        let successors = GlobalResolution.successors ~resolution class_name in
+        List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors)
       in
       let mem = Identifier.Set.mem names in
       mem "__init__"
