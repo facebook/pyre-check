@@ -159,14 +159,15 @@ class TimedStreamHandler(logging.StreamHandler):
             time.sleep(0.1)
 
     def terminate(self) -> None:
-        last_record = self._last_record
-        if last_record and last_record.levelname not in self.LINE_BREAKING_LEVELS:
-            sys.stderr.write("\n")
+        self._terminate = True
+
+        if self._active_lines > 0:
+            sys.stderr.write(self.clear_lines())
+            self._active_lines = 0
 
         # Reset terminal.
         sys.stderr.write(Format.WRAP_OVERFLOW + Format.SHOW_CURSOR)
         sys.stderr.flush()
-        self._terminate = True
 
 
 def initialize(
