@@ -228,10 +228,15 @@ module FlowDetails = struct
 
   include AbstractProductDomain.Make (Slots)
 
-  let initial =
+  let initial ~location =
+    let trace =
+      match location with
+      | None -> TraceInfo.Declaration
+      | Some location -> TraceInfo.Origin location
+    in
     product
       [
-        Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration);
+        Element (Slots.TraceInfo, TraceInfoSet.singleton trace);
         Element (Slots.SimpleFeature, Features.SimpleSet.empty);
       ]
 
@@ -295,9 +300,9 @@ module MakeTaint (Leaf : SET_ARG) : sig
 
   val leaves : t -> leaf list
 
-  val singleton : leaf -> t
+  val singleton : ?location:Location.WithModule.t -> leaf -> t
 
-  val of_list : leaf list -> t
+  val of_list : ?location:Location.WithModule.t -> leaf list -> t
 end = struct
   module Key = struct
     include Leaf
@@ -312,11 +317,11 @@ end = struct
 
   let equal_leaf = Leaf.equal
 
-  let add map leaf = Map.set map ~key:leaf ~data:FlowDetails.initial
+  let add ?location map leaf = Map.set map ~key:leaf ~data:(FlowDetails.initial ~location)
 
-  let singleton leaf = add Map.bottom leaf
+  let singleton ?location leaf = add ?location Map.bottom leaf
 
-  let of_list leaves = List.fold leaves ~init:Map.bottom ~f:add
+  let of_list ?location leaves = List.fold leaves ~init:Map.bottom ~f:(add ?location)
 
   let leaf = Map.Key
 

@@ -158,6 +158,20 @@ discussed further in the Stubs section.
 class BaseException(TaintSink[Logging]): ...
 ```
 
+## Implicit Sinks
+
+Implicit sinks are program expressions that we want to act as sinks, but that
+cannot be specified via taint signatures in `.pysa` files.  Currently, only
+conditional tests are supported as implicit sinks. This allows writing rules
+that track whether a particular source is used in a conditional test
+expression.
+
+```python
+implicit_sinks: {
+  conditional_test: [ <your kind> ]
+}
+```
+
 ## Rules
 
 Rules declare which flows from source to sink we are concerned about. They are

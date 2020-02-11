@@ -16,12 +16,21 @@ type rule = {
   message_format: string; (* format *)
 }
 
+type implicit_sinks = { conditional_test: Sinks.t list }
+
+let empty_implicit_sinks = { conditional_test = [] }
+
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
   rules: rule list;
+  implicit_sinks: implicit_sinks;
 }
+
+let empty =
+  { sources = []; sinks = []; features = []; rules = []; implicit_sinks = empty_implicit_sinks }
+
 
 (* There's only a single taint configuration *)
 let key = "root"
@@ -52,17 +61,26 @@ exception
   }
 
 let parse source =
+  let member name json =
+    try Json.Util.member name json with
+    | Not_found -> `Null
+  in
+  let array_member name json =
+    match member name json with
+    | `Null -> []
+    | json -> Json.Util.to_list json
+  in
   let parse_sources json =
     let parse_source json = Json.Util.member "name" json |> Json.Util.to_string in
-    Json.Util.to_list json |> List.map ~f:parse_source
+    array_member "sources" json |> List.map ~f:parse_source
   in
   let parse_sinks json =
     let parse_sink json = Json.Util.member "name" json |> Json.Util.to_string in
-    Json.Util.to_list json |> List.map ~f:parse_sink
+    array_member "sinks" json |> List.map ~f:parse_sink
   in
   let parse_features json =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
-    Json.Util.to_list json |> List.map ~f:parse_feature
+    array_member "features" json |> List.map ~f:parse_feature
   in
   let parse_rules ~allowed_sources ~allowed_sinks json =
     let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
@@ -82,16 +100,26 @@ let parse source =
       let code = Json.Util.member "code" json |> Json.Util.to_int in
       { sources; sinks; name; code; message_format }
     in
-    Json.Util.to_list json |> List.map ~f:parse_rule
+    array_member "rules" json |> List.map ~f:parse_rule
+  in
+  let parse_implicit_sinks ~allowed_sinks json =
+    match member "implicit_sinks" json with
+    | `Null -> empty_implicit_sinks
+    | implicit_sinks ->
+        let conditional_test =
+          array_member "conditional_test" implicit_sinks
+          |> List.map ~f:(fun json ->
+                 Json.Util.to_string json |> Sinks.parse ~allowed:allowed_sinks)
+        in
+        { conditional_test }
   in
   let json = Json.from_string source in
-  let sources = parse_sources (Json.Util.member "sources" json) in
-  let sinks = parse_sinks (Json.Util.member "sinks" json) in
-  let features = parse_features (Json.Util.member "features" json) in
-  let rules =
-    parse_rules ~allowed_sources:sources ~allowed_sinks:sinks (Json.Util.member "rules" json)
-  in
-  { sources; sinks; features; rules }
+  let sources = parse_sources json in
+  let sinks = parse_sinks json in
+  let features = parse_features json in
+  let rules = parse_rules ~allowed_sources:sources ~allowed_sinks:sinks json in
+  let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
+  { sources; sinks; features; rules; implicit_sinks }
 
 
 let register configuration =
@@ -176,6 +204,7 @@ let default =
           message_format = "Attacker may control at least one argument to getattr(,).";
         };
       ];
+    implicit_sinks = empty_implicit_sinks;
   }
 
 
@@ -203,26 +232,30 @@ let create ~rule_filter ~paths =
       | Yojson.Json_error parse_error ->
           raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
   in
-  let merge_rules left right =
+  let merge_implicit_sinks left right =
+    { conditional_test = left.conditional_test @ right.conditional_test }
+  in
+  let merge left right =
     {
       sources = left.sources @ right.sources;
       sinks = left.sinks @ right.sinks;
       features = left.features @ right.features;
       rules = left.rules @ right.rules;
+      implicit_sinks = merge_implicit_sinks left.implicit_sinks right.implicit_sinks;
     }
   in
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then
     raise (Invalid_argument "No `.config` was found in the taint directories.");
-  let ({ rules; _ } as configuration) =
-    List.fold_left
-      configurations
-      ~f:merge_rules
-      ~init:{ sources = []; sinks = []; features = []; rules = [] }
-  in
+  let ({ rules; _ } as configuration) = List.fold_left configurations ~f:merge ~init:empty in
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->
       let codes_to_keep = Int.Set.of_list rule_filter in
       let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
       { configuration with rules }
+
+
+let conditional_test_sinks () =
+  match get () with
+  | { implicit_sinks = { conditional_test }; _ } -> conditional_test

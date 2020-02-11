@@ -803,7 +803,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:Domains.add_format_string_feature
       | String _ -> ForwardState.Tree.empty, state
       | Ternary { target; test; alternative } ->
-          let _, state = analyze_expression ~resolution ~state ~expression:test in
+          let state = analyze_condition ~resolution test state in
           let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in
           let taint_else, state_else =
             analyze_expression ~resolution ~state ~expression:alternative
@@ -881,6 +881,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           store_taint_option access_path taint state
 
 
+    and analyze_condition ~resolution expression state =
+      let { Node.location; _ } = expression in
+      let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+      let taint, state = analyze_expression ~resolution ~state ~expression in
+      (* There maybe configured sinks for conditionals, so test them here. *)
+      let sink_taint =
+        Configuration.conditional_test_sinks () |> BackwardTaint.of_list ~location
+      in
+      let sink_tree = BackwardState.Tree.create_leaf sink_taint in
+      FunctionContext.check_flow ~location ~source_tree:taint ~sink_tree;
+      state
+
+
     let analyze_definition ~define:_ state = state
 
     let analyze_statement ~resolution { Node.value = statement; location } state =
@@ -912,7 +925,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ ->
               let taint, state = analyze_expression ~resolution ~state ~expression:value in
               analyze_assignment ~resolution target taint taint state )
-      | Assert _
+      | Assert { test; _ } -> analyze_condition ~resolution test state
       | Break
       | Class _
       | Continue ->

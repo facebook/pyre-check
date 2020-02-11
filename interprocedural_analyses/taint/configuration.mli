@@ -13,12 +13,17 @@ type rule = {
   message_format: string; (* format *)
 }
 
+type implicit_sinks = { conditional_test: Sinks.t list }
+
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
   rules: rule list;
+  implicit_sinks: implicit_sinks;
 }
+
+val empty : t
 
 val get : unit -> t
 
@@ -35,3 +40,5 @@ val register : t -> unit
 val default : t
 
 val create : rule_filter:int list option -> paths:Path.t list -> t
+
+val conditional_test_sinks : unit -> Sinks.t list

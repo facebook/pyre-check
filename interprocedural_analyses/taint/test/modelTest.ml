@@ -26,7 +26,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
       | None -> []
     in
     Taint.TaintConfiguration.
-      { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules }
+      { empty with sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules }
   in
   let models =
     let source = Test.trim_extra_indentation model_source in
@@ -505,6 +505,7 @@ let test_invalid_models context =
     let configuration =
       TaintConfiguration.
         {
+          empty with
           sources = ["A"; "B"];
           sinks = ["X"; "Y"];
           features = ["featureA"; "featureB"];
