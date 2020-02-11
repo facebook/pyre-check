@@ -147,6 +147,19 @@ let test_check_method_returns context =
         }
     |}
     [];
+  assert_type_errors
+    ~context
+    {|
+      class C: ...
+      class D(C): ...
+      def foo() -> typing.Mapping[C, C]:
+        return { D(): D() }
+
+      def bar(x: typing.Mapping[typing.Union[str, int], str]) -> None: ...
+
+      bar({'foo': 'foo'})
+    |}
+    [];
   ()
 
 

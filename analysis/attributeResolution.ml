@@ -372,6 +372,37 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
                expected
              else
                typed_dictionary)
+  | ( Some { Node.value = Expression.Dictionary _; _ },
+      _,
+      Type.Parametric { name = "typing.Mapping" as generic_name; parameters } )
+  | ( Some { Node.value = Expression.List _; _ },
+      _,
+      Type.Parametric { name = ("typing.Sequence" | "typing.Iterable") as generic_name; parameters }
+    )
+  | ( Some { Node.value = Expression.Set _; _ },
+      _,
+      Type.Parametric { name = "typing.AbstractSet" as generic_name; parameters } ) -> (
+      let mutable_generic_name =
+        match generic_name with
+        | "typing.Mapping" -> "dict"
+        | "typing.Sequence"
+        | "typing.Iterable" ->
+            "list"
+        | "typing.AbstractSet" -> "set"
+        | _ -> failwith "Unexpected generic name"
+      in
+      let weakened_fallback_type =
+        weaken_mutable_literals
+          resolve
+          ~resolved
+          ~expected:(Type.parametric mutable_generic_name parameters)
+          ~comparator
+          ~expression
+      in
+      match weakened_fallback_type with
+      | Type.Parametric { name; parameters } when Identifier.equal name mutable_generic_name ->
+          Type.parametric generic_name parameters
+      | _ -> resolved )
   | Some { Node.value = Expression.Dictionary { entries; _ }; _ }, _, _ ->
       weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },

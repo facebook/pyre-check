@@ -403,22 +403,22 @@ let test_resolve_mutable_literals context =
     "typing.Dict[str, typing.Dict[str, test.D]]";
 
   assert_resolve_mutable_literals
-    ~source:"[[D()]]"
-    ~against:"typing.List[typing.List[C]]"
-    "typing.List[typing.List[C]]";
+    ~source:"[[test.D()]]"
+    ~against:"typing.List[typing.List[test.C]]"
+    "typing.List[typing.List[test.C]]";
   assert_resolve_mutable_literals
-    ~source:"[[D()]]"
-    ~against:"typing.List[typing.List[Q]]"
-    "typing.List[typing.List[D]]";
+    ~source:"[[test.D()]]"
+    ~against:"typing.List[typing.List[test.Q]]"
+    "typing.List[typing.List[test.D]]";
 
   assert_resolve_mutable_literals
-    ~source:"{{D()}}"
-    ~against:"typing.Set[typing.Set[C]]"
-    "typing.Set[typing.Set[C]]";
+    ~source:"{{test.D()}}"
+    ~against:"typing.Set[typing.Set[test.C]]"
+    "typing.Set[typing.Set[test.C]]";
   assert_resolve_mutable_literals
-    ~source:"{{D()}}"
-    ~against:"typing.Set[typing.Set[Q]]"
-    "typing.Set[typing.Set[D]]";
+    ~source:"{{test.D()}}"
+    ~against:"typing.Set[typing.Set[test.Q]]"
+    "typing.Set[typing.Set[test.D]]";
 
   assert_resolve_mutable_literals
     ~source:"{'foo': 3}"
@@ -432,6 +432,40 @@ let test_resolve_mutable_literals context =
     ~source:"{**{1: True}, **{2: False}}"
     ~against:"typing.Dict[str, typing.Optional[bool]]"
     "typing.Dict[str, typing.Optional[bool]]";
+
+  (* Handle variance for `Mapping`, etc. *)
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): test.D()}"
+    ~against:"typing.Mapping[test.C, test.C]"
+    "typing.Mapping[test.C, test.C]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): test.Q()}"
+    ~against:"typing.Mapping[test.C, test.C]"
+    "typing.Mapping[test.D, test.Q]";
+  assert_resolve_mutable_literals
+    ~source:"[test.D()]"
+    ~against:"typing.Sequence[test.C]"
+    "typing.Sequence[test.C]";
+  assert_resolve_mutable_literals
+    ~source:"[test.Q()]"
+    ~against:"typing.Sequence[test.C]"
+    "typing.Sequence[test.Q]";
+  assert_resolve_mutable_literals
+    ~source:"[test.D()]"
+    ~against:"typing.Iterable[test.C]"
+    "typing.Iterable[test.C]";
+  assert_resolve_mutable_literals
+    ~source:"[test.Q()]"
+    ~against:"typing.Iterable[test.C]"
+    "typing.Iterable[test.Q]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D()}"
+    ~against:"typing.AbstractSet[test.C]"
+    "typing.AbstractSet[test.C]";
+  assert_resolve_mutable_literals
+    ~source:"{test.Q()}"
+    ~against:"typing.AbstractSet[test.C]"
+    "typing.AbstractSet[test.Q]";
   ()
 
 
@@ -489,6 +523,10 @@ let test_resolve_mutable_literal_to_complex_type context =
     ~source:"{test.D(): 2}"
     ~against:"typing.Optional[typing.Dict[test.C, int]]"
     "typing.Optional[typing.Dict[test.C, int]]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): 2}"
+    ~against:"typing.Optional[typing.Mapping[test.C, int]]"
+    "typing.Optional[typing.Mapping[test.C, int]]";
 
   (* Unions. *)
   assert_resolve_mutable_literals
@@ -511,6 +549,10 @@ let test_resolve_mutable_literal_to_complex_type context =
     ~source:"{1: test.D()}"
     ~against:"typing.Union[typing.Dict[int, test.C], int, str]"
     "typing.Union[typing.Dict[int, test.C], int, str]";
+  assert_resolve_mutable_literals
+    ~source:"{1: test.D()}"
+    ~against:"typing.Union[typing.Mapping[int, test.C], int, str]"
+    "typing.Union[typing.Mapping[int, test.C], int, str]";
   ()
 
 
