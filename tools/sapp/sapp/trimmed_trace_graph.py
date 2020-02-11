@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from collections import Counter
-from typing import Any, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from .models import SharedTextKind, TraceFrame, TraceFrameAnnotation, TraceKind
 from .trace_graph import TraceGraph
@@ -283,46 +283,51 @@ class TrimmedTraceGraph(TraceGraph):
         add_traces: Function that takes a list of initial conditions and
         adds all conditions reachable from these to the graph.
         """
-        visited: Set[int] = set()
-        que = list(zip(initial_conditions, initial_conditions))
+        visited: Dict[int, Set[str]] = {}
+        que = [
+            (cond, get_condition_leaves(cond.id.local_id))
+            for cond in initial_conditions
+        ]
 
+        # Note that parent conditions may not transitively lead to the leaves
+        # that its descendents lead to due to special-cased leaf filtering at
+        # analysis time. When visiting each condition, we need to track the
+        # leaves that we are visiting it from and only visit parent traces that
+        # share common leaves along the path.
         while len(que) > 0:
-            condition, initial_condition = que.pop()
+            condition, leaves = que.pop()
             cond_id = condition.id.local_id
-            if cond_id in visited:
-                continue
-            visited.add(cond_id)
 
-            initial_leaves = set(get_condition_leaves(initial_condition.id.local_id))
+            if cond_id in visited:
+                leaves = leaves - visited[cond_id]
+                if len(leaves) == 0:
+                    continue
+                else:
+                    visited[cond_id].update(leaves)
+            else:
+                visited[cond_id] = leaves
 
             # Found instance(s) related to the current condition. Yay.
             # This instance may have been found before, but process it again
             # anyway because we need to add the assoc with this condition.
             for instance_id in get_issue_instances_from_condition_id(cond_id):
                 # Check if the leaves (sources/sinks) of the issue reach
-                # the same leaves as the initial conditions. The issue is
-                # relevant only if the conditions intersect.
+                # the same leaves as the ones relevant to this condition.
                 instance = graph._issue_instances[instance_id]
                 issue_leaves = set(get_instance_leaves(instance.id.local_id))
-                leaves = issue_leaves.intersection(initial_leaves)
-                if len(leaves) > 0:
+                common_leaves = issue_leaves.intersection(leaves)
+                if len(common_leaves) > 0:
                     if instance_id not in self._issue_instances:
                         self._populate_issue(graph, instance_id)
                     add_instance_condition_assoc(instance, condition)
 
             # Conditions that call this may have originated from other issues,
             # keep searching for parent conditions leading to this one.
-            # Note: Parent conditions may not lead to the leaves that the
-            # initial condition leads to due to special-cased leaf filtering at
-            # analysis time. Only visit the parent if it shares leaves with
-            # the initial_conditions.
             for next_cond in get_condition_parent(condition):
-                if next_cond.id.local_id in visited:
-                    continue
                 next_leaves = get_condition_leaves(next_cond.id.local_id)
-                leaves = initial_leaves.intersection(next_leaves)
+                common_leaves = leaves.intersection(next_leaves)
                 if len(leaves) > 0:
-                    que.append((next_cond, initial_condition))
+                    que.append((next_cond, common_leaves))
 
         # Add traces leading out from initial_conditions, and all visited
         # conditions leading back towards the issues.
