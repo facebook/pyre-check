@@ -415,10 +415,6 @@ let successors ~resolution:({ dependency; _ } as resolution) =
   ClassMetadataEnvironment.ReadOnly.successors ?dependency (class_metadata_environment resolution)
 
 
-let superclasses ~resolution:({ dependency; _ } as resolution) =
-  ClassMetadataEnvironment.ReadOnly.superclasses ?dependency (class_metadata_environment resolution)
-
-
 let attributes
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)

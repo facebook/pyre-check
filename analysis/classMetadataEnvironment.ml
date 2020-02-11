@@ -146,21 +146,6 @@ module ReadOnly = struct
     get_class_metadata read_only ?dependency class_name
     >>| (fun { successors; _ } -> successors)
     |> Option.value ~default:[]
-
-
-  let superclasses read_only ?dependency { Node.value = { ClassSummary.name; _ }; _ } =
-    let class_definition =
-      let unannotated_global_environment =
-        undecorated_function_environment read_only
-        |> UndecoratedFunctionEnvironment.ReadOnly.class_hierarchy_environment
-        |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-        |> AliasEnvironment.ReadOnly.unannotated_global_environment
-      in
-      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-        unannotated_global_environment
-        ?dependency
-    in
-    successors read_only (Reference.show name) |> List.filter_map ~f:class_definition
 end
 
 module MetadataReadOnly = ReadOnly

@@ -681,10 +681,11 @@ let process_type_query_request
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
-        |> GlobalResolution.class_definition global_resolution
-        >>| Annotated.Class.create
-        >>| GlobalResolution.superclasses ~resolution:global_resolution
-        >>| List.map ~f:Annotated.Class.annotation
+        |> Type.split
+        |> fst
+        |> Type.primitive_name
+        >>| GlobalResolution.successors ~resolution:global_resolution
+        >>| List.map ~f:(fun name -> Type.Primitive name)
         >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
         |> Option.value
              ~default:

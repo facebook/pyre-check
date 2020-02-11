@@ -42,12 +42,6 @@ let test_superclasses context =
       ]
     |> ScratchProject.build_global_resolution
   in
-  let ( ! ) name =
-    { StatementClass.name = + !&name; bases = []; body = [+Statement.Pass]; decorators = [] }
-    |> Node.create_with_default_location
-    |> Node.map ~f:ClassSummary.create
-    |> Class.create
-  in
   let assert_successors target expected =
     let actual = GlobalResolution.successors ~resolution target in
     assert_equal
@@ -56,22 +50,12 @@ let test_superclasses context =
       expected
       actual
   in
-  let assert_superclasses target expected =
-    let actual = GlobalResolution.superclasses ~resolution target in
-    let equal left right = Reference.equal (Class.name left) (Class.name right) in
-    assert_equal
-      ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes : Class.t list)])
-      ~cmp:(List.equal equal)
-      expected
-      actual
-  in
   assert_successors "test.Foo" ["object"];
   assert_successors "test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
-  assert_superclasses !"test.Foo" [!"object"];
-  assert_superclasses !"test.SubFoo" [!"test.Foo"; !"object"];
-  assert_superclasses !"test.SubFooBar" [!"test.Foo"; !"test.Bar"; !"object"];
-  assert_superclasses !"test.SubRecurse" [!"test.SubFooBar"; !"test.Foo"; !"test.Bar"; !"object"];
-  assert_superclasses !"test.SubRedundant" [!"test.SubFooBar"; !"test.Foo"; !"test.Bar"; !"object"]
+  assert_successors "test.SubFoo" ["test.Foo"; "object"];
+  assert_successors "test.SubFooBar" ["test.Foo"; "test.Bar"; "object"];
+  assert_successors "test.SubRecurse" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
+  ()
 
 
 let test_get_decorator context =

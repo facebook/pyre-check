@@ -4802,11 +4802,14 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
               []
             else
               let abstract_superclasses, concrete_superclasses =
-                List.partition_tf
-                  ~f:(fun superclass ->
-                    ClassSummary.is_protocol (Node.value superclass)
-                    || AnnotatedClass.has_abstract_base superclass)
-                  (GlobalResolution.superclasses definition ~resolution:global_resolution)
+                let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+                let class_name = Reference.show name in
+                GlobalResolution.successors class_name ~resolution:global_resolution
+                |> List.map ~f:(fun successor -> Type.Primitive successor)
+                |> List.filter_map ~f:(GlobalResolution.class_definition global_resolution)
+                |> List.partition_tf ~f:(fun superclass ->
+                       ClassSummary.is_protocol (Node.value superclass)
+                       || AnnotatedClass.has_abstract_base superclass)
               in
               List.cons definition abstract_superclasses
               |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized

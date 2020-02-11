@@ -199,8 +199,6 @@ val attribute_from_class_name
   instantiated:Type.t ->
   AnnotatedAttribute.instantiated option
 
-val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
-
 val successors : resolution:t -> Type.Primitive.t -> string list
 
 val constraints
