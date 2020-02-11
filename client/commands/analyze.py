@@ -20,6 +20,7 @@ def writable_directory(path: str) -> str:
         os.makedirs(path)
     except FileExistsError:
         pass
+    path = os.path.abspath(path)
     assert_writable_directory(path)
     return path
 
