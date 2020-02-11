@@ -545,3 +545,9 @@ let global_location ({ dependency; _ } as resolution) =
   AnnotatedGlobalEnvironment.ReadOnly.get_global_location
     (annotated_global_environment resolution)
     ?dependency
+
+
+let class_exists ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.class_exists
+    (unannotated_global_environment resolution)
+    ?dependency

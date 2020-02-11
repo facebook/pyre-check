@@ -230,3 +230,5 @@ val attribute_names
   string list option
 
 val global_location : t -> Reference.t -> Location.t option
+
+val class_exists : t -> Type.Primitive.t -> bool

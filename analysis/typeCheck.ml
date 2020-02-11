@@ -2019,10 +2019,7 @@ module State (Context : Context) = struct
           if extends_placeholder_stub_class then
             None
           else
-            List.filter successors ~f:(fun name ->
-                Option.is_some
-                  (GlobalResolution.class_definition global_resolution (Type.Primitive name)))
-            |> List.hd
+            List.find successors ~f:(GlobalResolution.class_exists global_resolution)
         in
         match metadata >>= superclass with
         | Some superclass ->
