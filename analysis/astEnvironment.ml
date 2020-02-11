@@ -108,10 +108,10 @@ module Raw = struct
     RawWildcardExports.write_through qualifier (Source.wildcard_exports_of source)
 
 
-  let update_and_compute_dependencies _ ~update qualifiers =
+  let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
     let update_result, dependency_set =
-      SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
+      SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty ~scheduler ~configuration
       |> RawSources.add_to_transaction ~keys
       |> RawWildcardExports.add_to_transaction ~keys
       |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
@@ -142,10 +142,10 @@ let remove_sources _ qualifiers =
   ModuleMetadata.remove_batch keys
 
 
-let update_and_compute_dependencies _ ~update qualifiers =
+let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
   let keys = Sources.KeySet.of_list qualifiers in
   let (), dependency_set =
-    SharedMemoryKeys.DependencyKey.Transaction.empty
+    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
     |> Sources.add_to_transaction ~keys
     |> WildcardExports.add_to_transaction ~keys
     |> ModuleMetadata.add_to_transaction ~keys
@@ -489,7 +489,9 @@ let update
                 Raw.update_and_compute_dependencies
                   ast_environment
                   changed_modules
-                  ~update:update_raw_sources)
+                  ~update:update_raw_sources
+                  ~scheduler
+                  ~configuration)
           in
           let update_processed_sources () =
             process_sources
@@ -507,7 +509,9 @@ let update
                 update_and_compute_dependencies
                   ast_environment
                   raw_dependencies
-                  ~update:update_processed_sources)
+                  ~update:update_processed_sources
+                  ~scheduler
+                  ~configuration)
           in
           {
             UpdateResult.triggered_dependencies;

@@ -720,7 +720,7 @@ let update_this_and_all_preceding_environments
           "TableUpdate(Unannotated globals)"
           ~f:(fun _ ->
             let (), mutation_triggers =
-              DependencyKey.Transaction.empty
+              DependencyKey.Transaction.empty ~scheduler ~configuration
               |> WriteOnly.add_to_transaction
                    ~previous_classes_list
                    ~previous_unannotated_globals_list

@@ -24,12 +24,16 @@ module DependencyKey : sig
     module Transaction : sig
       type t
 
-      val empty : t
+      val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
 
       (* Cannot be called from outside this module *)
       val add : t -> KeySet.t transaction_element -> t
 
       val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+
+      val scheduler : t -> Scheduler.t
+
+      val configuration : t -> Configuration.Analysis.t
     end
   end
 

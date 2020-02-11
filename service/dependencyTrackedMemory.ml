@@ -74,11 +74,15 @@ module DependencyKey = struct
     module Transaction : sig
       type t
 
-      val empty : t
+      val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
 
       val add : t -> KeySet.t transaction_element -> t
 
       val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+
+      val scheduler : t -> Scheduler.t
+
+      val configuration : t -> Configuration.Analysis.t
     end
   end
 
@@ -146,17 +150,28 @@ module DependencyKey = struct
     let decode encoded = DecodeTable.get encoded
 
     module Transaction = struct
-      type t = KeySet.t transaction_element list
+      type t = {
+        elements: KeySet.t transaction_element list;
+        scheduler: Scheduler.t;
+        configuration: Configuration.Analysis.t;
+      }
 
-      let empty = []
+      let empty ~scheduler ~configuration = { elements = []; scheduler; configuration }
 
-      let add existing element = element :: existing
+      let add ({ elements = existing; _ } as transaction) element =
+        { transaction with elements = element :: existing }
 
-      let execute (elements : t) ~update =
+
+      let execute { elements; _ } ~update =
         List.iter elements ~f:(fun { before; _ } -> before ());
         let update_result = update () in
         let f sofar { after; _ } = KeySet.union sofar (after ()) in
         update_result, List.fold elements ~init:KeySet.empty ~f
+
+
+      let scheduler { scheduler; _ } = scheduler
+
+      let configuration { configuration; _ } = configuration
     end
   end
 end
@@ -209,41 +224,59 @@ module DependencyTracking = struct
 
     let deprecate_keys = Table.oldify_batch
 
-    let dependencies_since_last_deprecate keys =
-      let old_key_map = Table.get_old_batch keys in
-      let new_key_map = Table.get_batch keys in
-      Table.remove_old_batch keys;
-
-      let add_dependency key sofar =
-        let value_has_changed, presence_has_changed =
-          match Table.KeyMap.find key old_key_map, Table.KeyMap.find key new_key_map with
-          | None, None -> false, false
-          | Some old_value, Some new_value ->
-              not (Int.equal 0 (Table.Value.compare old_value new_value)), false
-          | None, Some _
-          | Some _, None ->
-              true, true
-        in
-        let sofar =
-          if value_has_changed then
-            get_dependents ~kind:Get key |> DependencyKey.KeySet.union sofar
+    let dependencies_since_last_deprecate keys ~scheduler ~configuration =
+      let add_dependencies init keys =
+        let add_dependency sofar key =
+          let value_has_changed, presence_has_changed =
+            match Table.get_old key, Table.get key with
+            | None, None -> false, false
+            | Some old_value, Some new_value ->
+                not (Int.equal 0 (Table.Value.compare old_value new_value)), false
+            | None, Some _
+            | Some _, None ->
+                true, true
+          in
+          let sofar =
+            if value_has_changed then
+              get_dependents ~kind:Get key |> DependencyKey.KeySet.union sofar
+            else
+              sofar
+          in
+          if presence_has_changed then
+            get_dependents ~kind:Mem key |> DependencyKey.KeySet.union sofar
           else
             sofar
         in
-        if presence_has_changed then
-          get_dependents ~kind:Mem key |> DependencyKey.KeySet.union sofar
-        else
-          sofar
+        List.fold ~f:add_dependency keys ~init
       in
-      Table.KeySet.fold add_dependency keys DependencyKey.KeySet.empty
+      let dependencies =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunk_size:5
+               ~minimum_chunks_per_worker:1
+               ~preferred_chunks_per_worker:1
+               ())
+          ~configuration
+          ~initial:DependencyKey.KeySet.empty
+          ~map:add_dependencies
+          ~reduce:DependencyKey.KeySet.union
+          ~inputs:(Table.KeySet.elements keys)
+          ()
+      in
+      Table.remove_old_batch keys;
+      dependencies
 
 
-    let add_to_transaction (transaction : DependencyKey.Transaction.t) ~keys =
+    let add_to_transaction transaction ~keys =
+      let scheduler = DependencyKey.Transaction.scheduler transaction in
+      let configuration = DependencyKey.Transaction.configuration transaction in
       DependencyKey.Transaction.add
         transaction
         {
           before = (fun () -> deprecate_keys keys);
-          after = (fun () -> dependencies_since_last_deprecate keys);
+          after = (fun () -> dependencies_since_last_deprecate keys ~scheduler ~configuration);
         }
 
 
