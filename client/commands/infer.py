@@ -489,7 +489,7 @@ class Infer(Reporting):
             result = self._errors_from_stdin()
             errors = self._get_errors(result, bypass_filtering=True)
         else:
-            result = self._call_client(command=Check.NAME)
+            result = self._call_client(command=Infer.NAME)
             errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
             self._print(errors)

@@ -617,7 +617,7 @@ class InferTest(unittest.TestCase):
                 ],
             )
             command.run()
-            call_client.assert_called_once_with(command=commands.Check.NAME)
+            call_client.assert_called_once_with(command=commands.Infer.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
 
@@ -640,7 +640,7 @@ class InferTest(unittest.TestCase):
                 ],
             )
             command.run()
-            call_client.assert_called_once_with(command=commands.Check.NAME)
+            call_client.assert_called_once_with(command=commands.Infer.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.json = True
