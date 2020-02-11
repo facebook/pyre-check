@@ -60,7 +60,22 @@ module UninstantiatedAttributeTable = struct
 
   let names { names; _ } = !names
 
-  let compare left right = List.compare compare_element (to_list left) (to_list right)
+  let compare ({ names = left_names; _ } as left) ({ names = right_names; _ } as right) =
+    let left_names = !left_names in
+    let right_names = !right_names in
+    match List.compare String.compare left_names right_names with
+    | 0 ->
+        let rec compare_elements = function
+          | [] -> 0
+          | name :: names -> (
+              match
+                Option.compare compare_element (lookup_name left name) (lookup_name right name)
+              with
+              | 0 -> compare_elements names
+              | nonzero -> nonzero )
+        in
+        compare_elements left_names
+    | nonzero -> nonzero
 end
 
 (* These modules get included at the bottom of this file, they're just here for aesthetic purposes *)
