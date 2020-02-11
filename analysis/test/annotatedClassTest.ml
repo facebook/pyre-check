@@ -216,7 +216,7 @@ let test_constructors context =
       |> GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
     match last_statement_exn source with
-    | { Node.value = Statement.Class definition; _ } ->
+    | { Node.value = Statement.Class { name; _ }; _ } ->
         let callable =
           constructors
           >>| (fun constructors ->
@@ -224,10 +224,10 @@ let test_constructors context =
           |> Option.value ~default:Type.Top
         in
         let actual =
-          Node.create_with_default_location definition
-          |> Node.map ~f:ClassSummary.create
-          |> Class.create
+          Node.value name
+          |> Reference.show
           |> GlobalResolution.constructor ~resolution ~instantiated
+          |> fun option -> Option.value_exn option
         in
         assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
     | _ -> assert_unreached ()

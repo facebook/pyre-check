@@ -1658,8 +1658,11 @@ module State (Context : Context) = struct
                       | Variable { constraints = Type.Variable.Bound parent; _ } -> parent
                       | _ -> meta_parameter
                     in
-                    GlobalResolution.class_definition global_resolution parent
-                    >>| GlobalResolution.constructor
+                    parent
+                    |> Type.split
+                    |> fst
+                    |> Type.primitive_name
+                    >>= GlobalResolution.constructor
                           ~instantiated:meta_parameter
                           ~resolution:global_resolution
                     >>= function
