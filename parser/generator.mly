@@ -261,6 +261,7 @@ let is_generator body =
 %token <Lexing.position> NEWLINE
 %token <Lexing.position> NOT
 %token <Lexing.position> PLUS
+%token <Lexing.position> SLASH
 (* the RIGHT* lexemes only contain the end position. *)
 %token <Lexing.position> RIGHTBRACKET
 %token <Lexing.position> RIGHTCURLY
@@ -304,7 +305,6 @@ let is_generator body =
 %token RIGHTANGLERIGHTANGLE
 %token RIGHTANGLERIGHTANGLEEQUALS
 %token SEMICOLON
-%token SLASH
 %token SLASHEQUALS
 %token SLASHSLASHEQUALS
 
@@ -1017,6 +1017,16 @@ define_parameters:
         };
       }
     }
+  | slash = SLASH {
+    {
+      Node.location = Location.create ~start:slash ~stop:slash;
+      value = {
+          Parameter.name = "/";
+          value = None;
+          annotation = None;
+      };
+    }
+  }
   | name = name; annotation = annotation? {
       {
         Node.location = fst name;

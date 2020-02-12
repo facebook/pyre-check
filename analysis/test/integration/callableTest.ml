@@ -131,11 +131,56 @@ let test_callable_attribute_access context =
     []
 
 
+let test_position_only_parameters context =
+  let assert_type_errors = assert_type_errors ~context in
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int, /) -> None:
+        pass
+      foo(1, 2)
+    |}
+    [];
+  assert_type_errors
+    {|
+    def foo(a: int, b: int, /) -> None:
+        pass
+    
+    foo(a=1, 2)
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
+  assert_type_errors
+    {|
+    def foo(a: int, b: int, /, c: str) -> None:
+        pass
+    
+    foo(1, 2, c="a")
+    |}
+    [];
+  assert_type_errors
+    {|
+    def foo(a: int, b: int, /, c: str, *, d: int) -> None:
+        pass
+    
+    foo(1, 2, "a", 1)
+    |}
+    ["Too many arguments [19]: Call `foo` expects 3 positional arguments, 4 were provided."];
+  assert_type_errors
+    {|
+    def foo(a: int, b: int, /, c: str, *, d: int) -> None:
+        pass
+    
+    foo(1, 2, "a", d=1)
+    |}
+    []
+
+
 let () =
   "callable"
   >::: [
          "higher_order_callables" >:: test_higher_order_callables;
          "union_of_callables" >:: test_union_of_callables;
          "callable_attribute_access" >:: test_callable_attribute_access;
+         "position_only_parameters" >:: test_position_only_parameters;
        ]
   |> Test.run

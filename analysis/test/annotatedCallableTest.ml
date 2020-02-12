@@ -88,6 +88,21 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
+    };
+  assert_overload
+    {|
+      def foo(x: int, /, y: str) -> None:
+        pass
+    |}
+    {
+      Type.Callable.annotation = Type.none;
+      parameters =
+        Type.Callable.Defined
+          [
+            Type.Callable.Parameter.Anonymous
+              { index = 0; default = false; annotation = Type.integer };
+            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+          ];
     }
 
 

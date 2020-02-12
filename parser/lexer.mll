@@ -350,7 +350,7 @@ and read_without_indent state = parse
   | '-' { MINUS lexbuf.lex_start_p }
   | "//=" { SLASHSLASHEQUALS }
   | "/=" { SLASHEQUALS }
-  | '/' { SLASH }
+  | '/' { SLASH (lexbuf.lex_start_p) }
   | ':' { COLON lexbuf.lex_start_p }
   | "^=" { HATEQUALS }
   | '^' { HAT }

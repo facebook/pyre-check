@@ -1417,7 +1417,18 @@ module Callable = struct
           in
           keyword_only, new_parameter :: sofar
       in
-      List.foldi parameters ~f:parameter ~init:(false, []) |> snd |> List.rev
+      let add_positional_only index (positional_only, sofar) parameter =
+        match parameter with
+        | Named { name; _ } when String.equal (Identifier.sanitized name) "/" -> true, sofar
+        | Named { annotation; default; _ } when positional_only ->
+            let index = List.length parameters - 1 - index in
+            positional_only, Anonymous { index; annotation; default } :: sofar
+        | _ -> positional_only, parameter :: sofar
+      in
+      List.foldi parameters ~f:parameter ~init:(false, [])
+      |> snd
+      |> List.foldi ~f:add_positional_only ~init:(false, [])
+      |> snd
 
 
     let show_concise = show_concise ~pp_type

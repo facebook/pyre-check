@@ -781,6 +781,7 @@ module State (Context : Context) = struct
               || Option.is_some given_annotation
                  && (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
               || is_dunder_new_method_for_named_tuple
+              || String.equal name "/"
             then
               state
             else

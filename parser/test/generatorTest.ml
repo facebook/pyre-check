@@ -593,6 +593,31 @@ let test_define _ =
          };
     ];
   assert_parsed_equal
+    "def foo(a, /, b):\n  1"
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = + !&"foo";
+               parameters =
+                 [
+                   +{ Parameter.name = "a"; value = None; annotation = None };
+                   +{ Parameter.name = "/"; value = None; annotation = None };
+                   +{ Parameter.name = "b"; value = None; annotation = None };
+                 ];
+               decorators = [];
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           body = [+Statement.Expression (+Expression.Integer 1)];
+         };
+    ];
+  assert_parsed_equal
     "def foo(**a):\n  1"
     [
       +Statement.Define
