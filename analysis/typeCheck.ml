@@ -4413,41 +4413,6 @@ module State (Context : Context) = struct
           { state with bottom = true }
         else
           state
-    | Import { Import.from; imports } ->
-        let check_import import =
-          let rec check_lead lead = function
-            | [] -> None
-            | name :: rest -> (
-                let lead = lead @ [name] in
-                let reference = Reference.create_from_list lead in
-                match GlobalResolution.module_exists global_resolution reference with
-                | true -> check_lead lead rest
-                | false -> (
-                    match resolve_reference_type ~state reference with
-                    | Type.Any ->
-                        (* Import from Any is ok *)
-                        None
-                    | _ -> Some reference ) )
-          in
-          match GlobalResolution.is_suppressed_module global_resolution import with
-          | true -> None
-          | false -> check_lead [] (Reference.as_list import)
-        in
-        let undefined_imports =
-          match from with
-          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
-          | None ->
-              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
-                  check_import name)
-        in
-        let add_import_error state reference =
-          Error.create
-            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-            ~kind:(Error.UndefinedImport reference)
-            ~define:Context.define
-          |> emit_raw_error ~state
-        in
-        List.fold undefined_imports ~init:state ~f:add_import_error
     | Raise { Raise.expression = Some expression; _ } ->
         let { state; resolved; _ } = forward_expression ~state ~expression in
         let expected = Type.Primitive "BaseException" in
@@ -4524,6 +4489,9 @@ module State (Context : Context) = struct
     | With _
     | While _ ->
         (* Check happens implicitly in the resulting control flow. *)
+        state
+    | Import _ ->
+        (* Check happens after typing is done. *)
         state
     | Break
     | Continue
@@ -5151,12 +5119,43 @@ let emit_errors_in_body
   in
   (* TODO (T59974010): Migrate error emission logic from `State.forward` to this function *)
   let emit_errors_in_statement
-      ~pre_resolution:_
+      ~pre_resolution
       ~post_resolution:_
       ~errors_sofar
       { Node.value = statement; location }
     =
     match statement with
+    | Statement.Import { Import.from; imports } ->
+        let check_import import =
+          let rec check_lead lead = function
+            | [] -> None
+            | name :: rest -> (
+                let lead = lead @ [name] in
+                let reference = Reference.create_from_list lead in
+                match GlobalResolution.module_exists global_resolution reference with
+                | true -> check_lead lead rest
+                | false -> (
+                    match Resolution.resolve_reference pre_resolution reference with
+                    | Type.Any ->
+                        (* Import from Any is ok *)
+                        None
+                    | _ -> Some reference ) )
+          in
+          match GlobalResolution.is_suppressed_module global_resolution import with
+          | true -> None
+          | false -> check_lead [] (Reference.as_list import)
+        in
+        let undefined_imports =
+          match from with
+          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
+          | None ->
+              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+                  check_import name)
+        in
+        let add_import_error errors_sofar reference =
+          emit_error ~errors_sofar ~kind:(Error.UndefinedImport reference) ~location
+        in
+        List.fold undefined_imports ~init:errors_sofar ~f:add_import_error
     | Statement.Class { Class.bases; _ } when bases <> [] ->
         (* Check that variance isn't widened on inheritence *)
         let check_base errors_sofar { Call.Argument.value = base; _ } =
