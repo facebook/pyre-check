@@ -519,14 +519,14 @@ let test_lookup_comprehensions context =
     [
       "2:13-2:17/None";
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "3:13-3:14/typing.Optional[float]";
+      "3:13-3:14/float";
       "3:18-3:29/typing.List[typing.Optional[float]]";
       "3:19-3:23/None";
       "3:2-3:3/typing.List[float]";
       "3:25-3:28/float";
       "3:33-3:34/typing.Optional[float]";
       "3:6-3:35/typing.List[float]";
-      "3:7-3:8/typing.Optional[float]";
+      "3:7-3:8/float";
     ];
   let source =
     {|

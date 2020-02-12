@@ -4656,6 +4656,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
         ~annotation_store:Reference.Map.empty
         ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ~resolve_assignment:(fun ~resolution _ -> resolution)
+        ~resolve_assertion:(fun ~resolution ~asserted_expression:_ -> resolution)
         ()
     in
     {
@@ -4679,7 +4680,27 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
       ~statement:(Ast.Node.create_with_default_location (Statement.Assign assign))
     |> State.resolution
   in
-  Resolution.create ~global_resolution ~annotation_store ~resolve ~resolve_assignment ()
+  let resolve_assertion ~resolution ~asserted_expression =
+    let state = { state_without_resolution with State.resolution } in
+    let assertion =
+      {
+        Ast.Statement.Assert.test = asserted_expression;
+        message = None;
+        origin = Ast.Statement.Assert.Origin.Assertion;
+      }
+    in
+    State.forward_statement
+      ~state
+      ~statement:(Ast.Node.create_with_default_location (Statement.Assert assertion))
+    |> State.resolution
+  in
+  Resolution.create
+    ~global_resolution
+    ~annotation_store
+    ~resolve
+    ~resolve_assignment
+    ~resolve_assertion
+    ()
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =

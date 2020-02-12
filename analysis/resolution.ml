@@ -12,16 +12,26 @@ type t = {
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
   resolve_assignment: resolution:t -> Statement.Assign.t -> t;
+  resolve_assertion: resolution:t -> asserted_expression:Expression.t -> t;
   parent: Reference.t option;
 }
 
-let create ~global_resolution ~annotation_store ~resolve ~resolve_assignment ?parent () =
+let create
+    ~global_resolution
+    ~annotation_store
+    ~resolve
+    ~resolve_assignment
+    ~resolve_assertion
+    ?parent
+    ()
+  =
   {
     global_resolution;
     annotation_store;
     type_variables = Type.Variable.Set.empty;
     resolve;
     resolve_assignment;
+    resolve_assertion;
     parent;
   }
 
@@ -60,6 +70,10 @@ let resolve_reference ({ resolve; _ } as resolution) reference =
 
 let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
   resolve_assignment ~resolution assignment
+
+
+let resolve_assertion ({ resolve_assertion; _ } as resolution) ~asserted_expression =
+  resolve_assertion ~resolution ~asserted_expression
 
 
 let partition_name resolution ~name =

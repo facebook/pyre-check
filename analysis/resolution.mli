@@ -12,6 +12,7 @@ val create
   annotation_store:RefinementUnit.t Reference.Map.t ->
   resolve:(resolution:t -> Expression.t -> Annotation.t) ->
   resolve_assignment:(resolution:t -> Statement.Assign.t -> t) ->
+  resolve_assertion:(resolution:t -> asserted_expression:Expression.t -> t) ->
   ?parent:Reference.t ->
   unit ->
   t
@@ -23,6 +24,8 @@ val resolve_to_annotation : t -> Expression.t -> Annotation.t
 val resolve_reference : t -> Reference.t -> Type.t
 
 val resolve_assignment : t -> Statement.Assign.t -> t
+
+val resolve_assertion : t -> asserted_expression:Expression.t -> t
 
 val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
 
