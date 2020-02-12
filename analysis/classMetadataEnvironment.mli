@@ -9,6 +9,8 @@ type class_metadata = {
   is_test: bool;
   is_final: bool;
   extends_placeholder_stub_class: bool;
+  is_abstract: bool;
+  is_protocol: bool;
 }
 [@@deriving eq, compare, show]
 

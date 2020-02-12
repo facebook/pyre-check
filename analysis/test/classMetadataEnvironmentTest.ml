@@ -44,6 +44,8 @@ let test_simple_registration context =
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
+         is_protocol = false;
+         is_abstract = false;
        });
   assert_registers
     {|
@@ -59,6 +61,38 @@ let test_simple_registration context =
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
+         is_protocol = false;
+         is_abstract = false;
+       });
+  assert_registers
+    {|
+    class C(metaclass=abc.ABCMeta):
+      pass
+  |}
+    "test.C"
+    (Some
+       {
+         successors = ["object"];
+         is_test = false;
+         is_final = false;
+         extends_placeholder_stub_class = false;
+         is_protocol = false;
+         is_abstract = true;
+       });
+  assert_registers
+    {|
+      class C(typing.Protocol):
+        pass
+    |}
+    "test.C"
+    (Some
+       {
+         successors = ["object"];
+         is_test = false;
+         is_final = false;
+         extends_placeholder_stub_class = false;
+         is_protocol = true;
+         is_abstract = false;
        });
   ()
 
@@ -163,6 +197,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ~expected_triggers:[]
@@ -176,6 +212,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ();
@@ -200,6 +238,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ~expected_triggers:[dependency]
@@ -213,6 +253,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ();
@@ -250,6 +292,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = true;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ~expected_triggers:[dependency]
@@ -263,6 +307,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ();
@@ -300,6 +346,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
         ( "test.D",
           dependency,
@@ -309,6 +357,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
         ( "test.B",
           dependency,
@@ -318,6 +368,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
         ( "test.E",
           dependency,
@@ -327,6 +379,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
         ( "test.F",
           dependency,
@@ -336,6 +390,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = true;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ~expected_triggers:[]
@@ -361,6 +417,8 @@ let test_updates context =
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
+              is_protocol = false;
+              is_abstract = false;
             } );
       ]
     ();

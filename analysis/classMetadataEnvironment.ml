@@ -13,6 +13,8 @@ type class_metadata = {
   is_test: bool;
   is_final: bool;
   extends_placeholder_stub_class: bool;
+  is_abstract: bool;
+  is_protocol: bool;
 }
 [@@deriving eq, compare, show]
 
@@ -75,7 +77,16 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
            ~from_empty_stub:
              (EmptyStubEnvironment.ReadOnly.from_empty_stub empty_stub_environment ?dependency)
     in
-    { is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+    let is_protocol = ClassSummary.is_protocol (Node.value definition) in
+    let is_abstract = ClassSummary.is_abstract (Node.value definition) in
+    {
+      is_test = in_test;
+      successors;
+      is_final;
+      extends_placeholder_stub_class;
+      is_protocol;
+      is_abstract;
+    }
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
     unannotated_global_environment
@@ -111,13 +122,17 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_classes
 
   let serialize_value = function
-    | Some { successors; is_test; is_final; extends_placeholder_stub_class } ->
+    | Some
+        { successors; is_test; is_final; extends_placeholder_stub_class; is_protocol; is_abstract }
+      ->
         `Assoc
           [
             "successors", `String (List.to_string ~f:Type.Primitive.show successors);
             "is_test", `Bool is_test;
             "is_final", `Bool is_final;
             "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
+            "is_abstract", `Bool is_abstract;
+            "is_protocol", `Bool is_protocol;
           ]
         |> Yojson.to_string
     | None -> "None"
