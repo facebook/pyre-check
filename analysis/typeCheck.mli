@@ -91,6 +91,13 @@ val resolution_with_key
   key:int option ->
   Resolution.t
 
+val emit_errors_in_expression
+  :  (module Context) ->
+  errors_sofar:Error.t list ->
+  resolution:Resolution.t ->
+  Expression.t ->
+  Error.t list
+
 val name : string
 
 val run_on_defines

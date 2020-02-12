@@ -5102,6 +5102,82 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
   class_initialization_errors errors_sofar |> overload_errors
 
 
+let emit_error (module Context : Context) ~errors_sofar ~kind ~location =
+  Error.create
+    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+    ~kind
+    ~define:Context.define
+  :: errors_sofar
+
+
+(* TODO (T59974010): Migrate error emission logic from `State.forward_expression` to this function *)
+let emit_errors_in_expression (module Context : Context) ~errors_sofar ~resolution expression =
+  let rec emit_errors_in_expression ~errors_sofar ~resolution { Node.value = expression; _ } =
+    match expression with
+    | Expression.Await await -> emit_errors_in_expression ~resolution ~errors_sofar await
+    | BooleanOperator { BooleanOperator.left; right; _ } ->
+        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar left in
+        emit_errors_in_expression ~resolution ~errors_sofar right
+    | Call { Call.callee; arguments } ->
+        let errors_sofar =
+          List.fold arguments ~init:errors_sofar ~f:(fun errors_sofar { Call.Argument.value; _ } ->
+              emit_errors_in_expression ~resolution ~errors_sofar value)
+        in
+        emit_errors_in_expression ~resolution ~errors_sofar callee
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar left in
+        emit_errors_in_expression ~resolution ~errors_sofar right
+    | Dictionary { Dictionary.entries; keywords } ->
+        let errors_sofar =
+          List.fold entries ~init:errors_sofar ~f:(fun errors_sofar entry ->
+              emit_errors_in_dictionary_entry ~resolution ~errors_sofar entry)
+        in
+        List.fold keywords ~init:errors_sofar ~f:(fun errors_sofar keyword ->
+            emit_errors_in_expression ~resolution ~errors_sofar keyword)
+    | List expressions
+    | Set expressions
+    | Tuple expressions ->
+        List.fold expressions ~init:errors_sofar ~f:(fun errors_sofar expression ->
+            emit_errors_in_expression ~resolution ~errors_sofar expression)
+    | Starred (Once expression | Twice expression) ->
+        emit_errors_in_expression ~resolution ~errors_sofar expression
+    | String { kind = Format expressions; _ } ->
+        List.fold expressions ~init:errors_sofar ~f:(fun errors_sofar expression ->
+            emit_errors_in_expression ~resolution ~errors_sofar expression)
+    | Ternary { target; test; alternative } ->
+        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar test in
+        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar target in
+        emit_errors_in_expression ~resolution ~errors_sofar alternative
+    | UnaryOperator { operand; _ } -> emit_errors_in_expression ~resolution ~errors_sofar operand
+    | WalrusOperator { target; value } ->
+        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar target in
+        emit_errors_in_expression ~resolution ~errors_sofar value
+    | Yield (Some expression) -> emit_errors_in_expression ~resolution ~errors_sofar expression
+    | Name _
+    | Lambda _
+    | Generator _
+    | ListComprehension _
+    | SetComprehension _
+    | DictionaryComprehension _ ->
+        (* TODO: Process these expressions *)
+        errors_sofar
+    | Complex _
+    | Ellipsis
+    | False
+    | Float _
+    | Integer _
+    | String _
+    | True
+    | Yield None ->
+        (* Not possible to error *)
+        errors_sofar
+  and emit_errors_in_dictionary_entry ~resolution ~errors_sofar { Dictionary.Entry.key; value } =
+    let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar key in
+    emit_errors_in_expression ~resolution ~errors_sofar value
+  in
+  emit_errors_in_expression ~errors_sofar ~resolution expression
+
+
 let emit_errors_in_body
     (module Context : Context)
     ~global_resolution
@@ -5110,14 +5186,7 @@ let emit_errors_in_body
     ~local_annotations
     ()
   =
-  let emit_error ~errors_sofar ~kind ~location =
-    Error.create
-      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-      ~kind
-      ~define:Context.define
-    :: errors_sofar
-  in
-  (* TODO (T59974010): Migrate error emission logic from `State.forward` to this function *)
+  (* TODO (T59974010): Migrate error emission logic from `State.forward_statement` to this function *)
   let emit_errors_in_statement
       ~pre_resolution
       ~post_resolution:_
@@ -5153,7 +5222,11 @@ let emit_errors_in_body
                   check_import name)
         in
         let add_import_error errors_sofar reference =
-          emit_error ~errors_sofar ~kind:(Error.UndefinedImport reference) ~location
+          emit_error
+            (module Context)
+            ~errors_sofar
+            ~kind:(Error.UndefinedImport reference)
+            ~location
         in
         List.fold undefined_imports ~init:errors_sofar ~f:add_import_error
     | Statement.Class { Class.bases; _ } when bases <> [] ->
@@ -5169,6 +5242,7 @@ let emit_errors_in_body
                 | Type.Variable.Covariant, Type.Variable.Contravariant
                 | Type.Variable.Contravariant, Type.Variable.Covariant ->
                     emit_error
+                      (module Context)
                       ~errors_sofar
                       ~location
                       ~kind:
