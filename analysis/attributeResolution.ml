@@ -747,7 +747,6 @@ module Implementation = struct
                             ?dependency
                             ~parent
                             ?defined:None
-                            ?inherited:None
                             ?default_class_attribute:None
                             ~accessed_via_metaclass:false
                             (Node.value attribute),
@@ -891,7 +890,6 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       parent:ClassSummary.t Node.t ->
       ?defined:bool ->
-      ?inherited:bool ->
       ?default_class_attribute:bool ->
       accessed_via_metaclass:bool ->
       Attribute.attribute ->
@@ -1202,8 +1200,7 @@ module Implementation = struct
           ~class_attributes
           ~table
           ~accessed_via_metaclass
-          ( { Node.value = { ClassSummary.name = parent_name; attribute_components; _ }; _ } as
-          parent )
+          ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
         =
         let add_actual () =
           let collect_attributes attribute =
@@ -1213,7 +1210,6 @@ module Implementation = struct
               ~class_metadata_environment
               ~assumptions
               ~parent
-              ~inherited:(not (Reference.equal name parent_name))
               ~default_class_attribute:class_attributes
               ~accessed_via_metaclass
             |> UninstantiatedAttributeTable.add table
@@ -1657,7 +1653,6 @@ module Implementation = struct
       ?dependency
       ~parent
       ?(defined = true)
-      ?(inherited = false)
       ?(default_class_attribute = false)
       ~accessed_via_metaclass
       { Attribute.name = attribute_name; kind }
@@ -1701,7 +1696,6 @@ module Implementation = struct
             if
               (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
               && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
-              && (not inherited)
               && primitive
               && defined
               && not implicit
