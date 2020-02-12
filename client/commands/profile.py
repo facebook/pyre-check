@@ -184,6 +184,7 @@ def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
 
 class Profile(Command):
     NAME = "profile"
+    HIDDEN = True
 
     def __init__(
         self,

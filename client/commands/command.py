@@ -135,6 +135,7 @@ def executable_file(file_path: str) -> str:
 
 class CommandParser(ABC):
     NAME = ""
+    HIDDEN = False
     _exit_code: ExitCode = ExitCode.SUCCESS
 
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:

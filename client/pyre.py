@@ -41,7 +41,9 @@ def main() -> int:
     commands.Command.add_arguments(parser)
 
     # Subcommands.
-    subcommand_names = ", ".join([command.NAME for command in commands.COMMANDS])
+    subcommand_names = ", ".join(
+        [command.NAME for command in commands.COMMANDS if not command.HIDDEN]
+    )
     parsed_commands = parser.add_subparsers(
         metavar="{}".format(subcommand_names),
         help="""
