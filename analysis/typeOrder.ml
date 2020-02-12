@@ -1382,7 +1382,7 @@ module OrderImplementation = struct
                           ~async:false
                           ~class_attribute:false
                           ~defined:true
-                          ~initialized:true
+                          ~initialized:Implicitly
                           ~name:"__call__"
                           ~parent:"typing.Callable"
                           ~static:false

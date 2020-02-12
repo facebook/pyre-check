@@ -86,13 +86,25 @@ and Attribute : sig
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type origin =
+    | Explicit
+    | Implicit
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type value_and_origin = {
+    value: Expression.t;
+    origin: origin;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type simple = {
     annotation: Expression.t option;
-    value: Expression.t option;
+    values: value_and_origin list;
     primitive: bool;
     frozen: bool;
     toplevel: bool;
     implicit: bool;
+    nested_class: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

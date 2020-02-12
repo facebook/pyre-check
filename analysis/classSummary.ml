@@ -96,8 +96,16 @@ let fields_tuple_value { attribute_components; _ } =
   in
   match Identifier.SerializableMap.find_opt "_fields" attributes with
   | Some
-      { Node.value = { kind = Simple { value = Some { Node.value = Tuple fields; _ }; _ }; _ }; _ }
-    ->
+      {
+        Node.value =
+          {
+            kind =
+              Simple
+                { values = [{ origin = Explicit; value = { Node.value = Tuple fields; _ } }]; _ };
+            _;
+          };
+        _;
+      } ->
       let name = function
         | {
             Node.value = Ast.Expression.Expression.String { Ast.Expression.StringLiteral.value; _ };

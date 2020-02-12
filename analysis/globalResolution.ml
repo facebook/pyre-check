@@ -339,7 +339,7 @@ let attribute_from_class_name
               ~async:false
               ~class_attribute:class_attributes
               ~defined:false
-              ~initialized:false
+              ~initialized:NotInitialized
               ~name
               ~parent:class_name
               ~visibility:ReadWrite

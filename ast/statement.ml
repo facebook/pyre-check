@@ -164,13 +164,25 @@ and Attribute : sig
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type origin =
+    | Explicit
+    | Implicit
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type value_and_origin = {
+    value: Expression.t;
+    origin: origin;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type simple = {
     annotation: Expression.t option;
-    value: Expression.t option;
+    values: value_and_origin list;
     primitive: bool;
     frozen: bool;
     toplevel: bool;
     implicit: bool;
+    nested_class: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -205,11 +217,12 @@ and Attribute : sig
   val create_simple
     :  location:Location.t ->
     ?annotation:Expression.t ->
-    ?value:Expression.t ->
+    ?value_and_origin:value_and_origin ->
     ?primitive:bool ->
     ?frozen:bool ->
     ?toplevel:bool ->
     ?implicit:bool ->
+    ?nested_class:bool ->
     name:string ->
     unit ->
     t
@@ -228,13 +241,25 @@ end = struct
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type origin =
+    | Explicit
+    | Implicit
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type value_and_origin = {
+    value: Expression.t;
+    origin: origin;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type simple = {
     annotation: Expression.t option;
-    value: Expression.t option;
+    values: value_and_origin list;
     primitive: bool;
     frozen: bool;
     toplevel: bool;
     implicit: bool;
+    nested_class: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -297,8 +322,8 @@ end = struct
   let location_insensitive_compare_simple left right =
     match
       compare_simple
-        { left with annotation = None; value = None }
-        { right with annotation = None; value = None }
+        { left with annotation = None; values = [] }
+        { right with annotation = None; values = [] }
     with
     | x when not (Int.equal x 0) -> x
     | _ -> (
@@ -306,7 +331,16 @@ end = struct
           Option.compare Expression.location_insensitive_compare left.annotation right.annotation
         with
         | x when not (Int.equal x 0) -> x
-        | _ -> Option.compare Expression.location_insensitive_compare left.value right.value )
+        | _ ->
+            let compare_expression_and_origin
+                { value = left_expression; origin = left_origin }
+                { value = right_expression; origin = right_origin }
+              =
+              match compare_origin left_origin right_origin with
+              | 0 -> Expression.location_insensitive_compare left_expression right_expression
+              | nonzero -> nonzero
+            in
+            List.compare compare_expression_and_origin left.values right.values )
 
 
   let location_insensitive_compare_kind left right =
@@ -330,15 +364,20 @@ end = struct
   let create_simple
       ~location
       ?annotation
-      ?value
+      ?value_and_origin
       ?(primitive = false)
       ?(frozen = false)
       ?(toplevel = true)
       ?(implicit = false)
+      ?(nested_class = false)
       ~name
       ()
     =
-    { name; kind = Simple { annotation; value; primitive; frozen; toplevel; implicit } }
+    let values = Option.to_list value_and_origin in
+    {
+      name;
+      kind = Simple { annotation; values; primitive; frozen; toplevel; implicit; nested_class };
+    }
     |> Node.create ~location
 
 
@@ -508,7 +547,14 @@ end = struct
             Attribute.name ~parent:name target
             |> function
             | Some name ->
-                let attribute = Attribute.create_simple ~location ~name ~value ~primitive:true () in
+                let attribute =
+                  Attribute.create_simple
+                    ~location
+                    ~name
+                    ~value_and_origin:{ value; origin = Explicit }
+                    ~primitive:true
+                    ()
+                in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ -> map
           in
@@ -550,7 +596,13 @@ end = struct
                   | _ -> None
                 in
                 value
-                >>| (fun value -> Attribute.create_simple ~location ~name ~value ~primitive:true ())
+                >>| (fun value ->
+                      Attribute.create_simple
+                        ~location
+                        ~name
+                        ~value_and_origin:{ value; origin = Explicit }
+                        ~primitive:true
+                        ())
                 >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
                 |> Option.value ~default:map
             | _ -> map
@@ -565,7 +617,7 @@ end = struct
                 Attribute.create_simple
                   ~location
                   ~name
-                  ~value
+                  ~value_and_origin:{ value; origin = Explicit }
                   ?annotation
                   ~primitive:true
                   ~frozen
@@ -632,6 +684,28 @@ end = struct
       Attribute.name ~parent (Expression.from_reference ~location name) >>= inspect_decorators
   end
 
+  (* Bias towards the right (previously occuring map in the `|> merge other_map` flow), but
+     accumulate values *)
+  let merge_attribute_maps _ left right =
+    match left, right with
+    | Some _, None -> left
+    | None, Some _ -> right
+    | ( Some { Node.value = { Attribute.kind = Simple { values = left_values; _ }; _ }; _ },
+        Some
+          {
+            Node.value =
+              { Attribute.kind = Simple ({ values = right_values; _ } as simple); _ } as right;
+            location;
+          } ) ->
+        Some
+          {
+            Node.value =
+              { right with kind = Simple { simple with values = right_values @ left_values } };
+            location;
+          }
+    | _ -> right
+
+
   module AttributeComponents = struct
     type attribute_map = Attribute.attribute Node.t Identifier.SerializableMap.t
     [@@deriving compare, eq, sexp, show, hash]
@@ -645,16 +719,11 @@ end = struct
     [@@deriving compare, eq, sexp, show, hash]
 
     let create ({ name = { Node.value = name; _ }; body; _ } as definition) =
-      let merge _ left right =
-        match right with
-        | None -> left
-        | Some _ -> right
-      in
       let get_implicits defines =
         List.map defines ~f:(Define.implicit_attributes ~definition)
         |> List.fold
              ~init:Identifier.SerializableMap.empty
-             ~f:(Identifier.SerializableMap.merge merge)
+             ~f:(Identifier.SerializableMap.merge merge_attribute_maps)
       in
       let constructor_attributes = constructors ~in_test:false definition |> get_implicits in
       let test_setup_attributes = test_setups definition |> get_implicits in
@@ -864,7 +933,13 @@ end = struct
                 Identifier.SerializableMap.set
                   map
                   ~key:attribute_name
-                  ~data:(Attribute.create_simple ~location ~name:attribute_name ~annotation ())
+                  ~data:
+                    (Attribute.create_simple
+                       ~location
+                       ~name:attribute_name
+                       ~annotation
+                       ~nested_class:true
+                       ())
             | _ -> map
           in
           List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
@@ -899,15 +974,10 @@ end = struct
           in
           List.fold ~init:Identifier.SerializableMap.empty ~f:slots_attributes body
         in
-        let merge _ left right =
-          match right with
-          | None -> left
-          | Some _ -> right
-        in
         property_attributes
-        |> Identifier.SerializableMap.merge merge callable_attributes
-        |> Identifier.SerializableMap.merge merge class_attributes
-        |> Identifier.SerializableMap.merge merge slots_attributes
+        |> Identifier.SerializableMap.merge merge_attribute_maps callable_attributes
+        |> Identifier.SerializableMap.merge merge_attribute_maps class_attributes
+        |> Identifier.SerializableMap.merge merge_attribute_maps slots_attributes
       in
       {
         explicitly_assigned_attributes = explicitly_assigned_attributes definition;
@@ -935,20 +1005,18 @@ end = struct
         _;
       }
     =
-    (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
-    let merge _ left right =
-      match right with
-      | None -> left
-      | Some _ -> right
-    in
     let implicitly_assigned_attributes =
       if in_test then
-        Identifier.SerializableMap.merge merge test_setup_attributes constructor_attributes
+        Identifier.SerializableMap.merge
+          merge_attribute_maps
+          test_setup_attributes
+          constructor_attributes
       else
         constructor_attributes
     in
     (* Merge with decreasing priority. *)
-    implicitly_assigned_attributes |> Identifier.SerializableMap.merge merge additional_attributes
+    implicitly_assigned_attributes
+    |> Identifier.SerializableMap.merge merge_attribute_maps additional_attributes
 
 
   let attributes
@@ -960,13 +1028,10 @@ end = struct
     if not include_generated_attributes then
       explicit_attributes
     else
-      let merge _ left right =
-        match right with
-        | None -> left
-        | Some _ -> right
-      in
       explicit_attributes
-      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test components)
+      |> Identifier.SerializableMap.merge
+           merge_attribute_maps
+           (implicit_attributes ~in_test components)
 end
 
 and Define : sig
@@ -1461,11 +1526,12 @@ end = struct
                 let simple =
                   {
                     Attribute.annotation;
-                    value = Some value;
+                    values = [{ value; origin = Implicit }];
                     primitive = true;
                     frozen = false;
                     toplevel;
                     implicit = true;
+                    nested_class = false;
                   }
                   |> Node.create ~location
                 in

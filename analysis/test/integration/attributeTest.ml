@@ -765,14 +765,16 @@ let test_check_attribute_initialization context =
        `typing.Optional[int]` but is never initialized.";
     ];
 
-  (* Note: We do not currently error on ininitialize attributes that are declared in init. *)
   assert_type_errors
     {|
         class Foo:
           def __init__(self) -> None:
             self.a: int
     |}
-    [];
+    [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type `int` \
+       but is never initialized.";
+    ];
 
   (* Test abstract base classes. *)
   assert_type_errors {|
@@ -1026,6 +1028,8 @@ let test_check_missing_attribute context =
         return Foo().a
     |}
     [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
     ];

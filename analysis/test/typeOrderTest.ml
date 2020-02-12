@@ -44,7 +44,7 @@ let parse_attributes ~parse_annotation ~class_name =
       ~async:false
       ~class_attribute:false
       ~defined:true
-      ~initialized:true
+      ~initialized:Explicitly
       ~parent:class_name
       ~property:false
       ~static:false

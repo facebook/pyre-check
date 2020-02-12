@@ -685,8 +685,8 @@ module Implementation = struct
                         | _ -> None
                       in
                       match initialized with
-                      | false -> None
-                      | true -> (
+                      | NotInitialized -> None
+                      | _ -> (
                           match extract_dataclass_field_arguments (attribute, value) with
                           | Some arguments -> List.find_map arguments ~f:get_default_value
                           | _ -> Some value )
@@ -735,7 +735,8 @@ module Implementation = struct
                         let value =
                           match attribute with
                           | {
-                           Node.value = { Attribute.kind = Simple { value = Some value; _ }; _ };
+                           Node.value =
+                             { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
                            _;
                           } ->
                               value
@@ -829,7 +830,7 @@ module Implementation = struct
                 ~async:false
                 ~class_attribute:false
                 ~defined:true
-                ~initialized:true
+                ~initialized:Implicitly
                 ~name:attribute_name
                 ~parent:(Reference.show name)
                 ~visibility:ReadWrite
@@ -1238,7 +1239,7 @@ module Implementation = struct
                    ~async:false
                    ~class_attribute:false
                    ~defined:true
-                   ~initialized:true
+                   ~initialized:Implicitly
                    ~name:attribute_name
                    ~parent:(Reference.show name)
                    ~visibility:ReadWrite
@@ -1666,7 +1667,8 @@ module Implementation = struct
     let class_annotation = Type.Primitive parent_name in
     let annotation, value, class_attribute, visibility =
       match kind with
-      | Simple { annotation; value; frozen; toplevel; implicit; primitive } ->
+      | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
+          let value = List.hd values >>| fun { value; _ } -> value in
           let parsed_annotation =
             annotation >>| parse_annotation ?dependency ~assumptions ~class_metadata_environment
           in
@@ -1818,6 +1820,23 @@ module Implementation = struct
             class_property,
             visibility )
     in
+    let initialized =
+      match kind with
+      | Simple { nested_class = true; _ } -> AnnotatedAttribute.Implicitly
+      | Simple { values; _ } ->
+          let is_not_ellipsis = function
+            | { Attribute.value = { Node.value = Ellipsis; _ }; _ } -> false
+            | _ -> true
+          in
+          List.find values ~f:is_not_ellipsis
+          >>| (function
+                | { Attribute.origin = Explicit; _ } -> AnnotatedAttribute.Explicitly
+                | { origin = Implicit; _ } -> Implicitly)
+          |> Option.value ~default:AnnotatedAttribute.NotInitialized
+      | Method _
+      | Property _ ->
+          Implicitly
+    in
     AnnotatedAttribute.create_uninstantiated
       ~uninstantiated_annotation:
         { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
@@ -1832,15 +1851,7 @@ module Implementation = struct
         | _ -> false )
       ~class_attribute
       ~defined
-      ~initialized:
-        ( match kind with
-        | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
-        | Simple { value = None; _ } ->
-            false
-        | Simple { value = Some _; _ }
-        | Method _
-        | Property _ ->
-            true )
+      ~initialized
       ~name:attribute_name
       ~parent:parent_name
       ~static:

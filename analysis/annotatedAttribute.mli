@@ -15,6 +15,12 @@ type visibility =
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
+type initialized =
+  | Explicitly
+  | Implicitly
+  | NotInitialized
+[@@deriving eq, show, compare, sexp]
+
 type 'a t [@@deriving eq, show, compare, sexp]
 
 type instantiated_annotation
@@ -28,7 +34,7 @@ val create
   async:bool ->
   class_attribute:bool ->
   defined:bool ->
-  initialized:bool ->
+  initialized:initialized ->
   name:Identifier.t ->
   parent:Type.Primitive.t ->
   visibility:visibility ->
@@ -43,7 +49,7 @@ val create_uninstantiated
   async:bool ->
   class_attribute:bool ->
   defined:bool ->
-  initialized:bool ->
+  initialized:initialized ->
   name:Identifier.t ->
   parent:Type.Primitive.t ->
   visibility:visibility ->
@@ -64,7 +70,7 @@ val async : 'a t -> bool
 
 val parent : 'a t -> Type.Primitive.t
 
-val initialized : 'a t -> bool
+val initialized : 'a t -> initialized
 
 val defined : 'a t -> bool
 

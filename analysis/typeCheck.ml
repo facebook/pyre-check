@@ -3308,10 +3308,11 @@ module State (Context : Context) = struct
                       let read_only_non_property_attribute =
                         let open AnnotatedAttribute in
                         let relevant_properties attribute =
-                          visibility attribute, property attribute, has_ellipsis_value attribute
+                          visibility attribute, property attribute, initialized attribute
                         in
                         match attribute >>| fst >>| relevant_properties with
-                        | Some (ReadOnly _, false, true) when Define.is_constructor define -> false
+                        | Some (ReadOnly _, false, Implicitly) when Define.is_constructor define ->
+                            false
                         | Some (ReadOnly _, false, _) -> true
                         | _ -> false
                       in
@@ -4752,7 +4753,6 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
         let unimplemented_errors =
           let uninitialized_attributes =
             let add_uninitialized definition attribute_map =
-              let implicit_attributes = AnnotatedClass.implicit_attributes definition in
               let attributes =
                 GlobalResolution.attributes
                   ~include_generated_attributes:true
@@ -4761,14 +4761,9 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
                 |> Option.value ~default:[]
               in
               let is_uninitialized attribute =
-                let name = Annotated.Attribute.name attribute in
-                let initialized = Annotated.Attribute.initialized attribute in
-                let implicitly_initialized name =
-                  Identifier.SerializableMap.mem name implicit_attributes
-                in
-                (not initialized)
-                && (not (implicitly_initialized name))
-                && not (is_dynamically_initialized attribute)
+                match Annotated.Attribute.initialized attribute with
+                | NotInitialized -> not (is_dynamically_initialized attribute)
+                | _ -> false
               in
               let add_to_map sofar attribute =
                 let annotation =
@@ -4800,8 +4795,11 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
                 (* TODO(T54083014): Don't error on properties overriding attributes, even if they
                    are read-only and therefore not marked as initialized on the attribute object. We
                    should error in the future that this is an inconsistent override. *)
-                Annotated.Attribute.initialized attribute || Annotated.Attribute.property attribute
+                match Annotated.Attribute.initialized attribute with
+                | NotInitialized -> Annotated.Attribute.property attribute
+                | _ -> true
               in
+
               List.filter attributes ~f:is_initialized
               |> List.map ~f:AnnotatedAttribute.name
               |> List.fold ~init:attribute_map ~f:Map.remove

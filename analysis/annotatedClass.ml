@@ -125,7 +125,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                      ~async:false
                      ~class_attribute:false
                      ~defined:true
-                     ~initialized:false
+                     ~initialized:NotInitialized
                      ~name
                      ~parent:(Reference.show class_name_reference)
                      ~visibility:ReadWrite

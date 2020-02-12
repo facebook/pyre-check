@@ -262,9 +262,15 @@ let test_attributes _ =
       ?(primitive = false)
       ?(toplevel = true)
       ~value
+      ~origin
       ()
     =
-    { Attribute.kind = Simple { annotation; frozen; implicit; primitive; toplevel; value }; name }
+    let values = value >>| (fun value -> { Attribute.value; origin }) |> Option.to_list in
+    {
+      Attribute.kind =
+        Simple { annotation; frozen; implicit; primitive; toplevel; values; nested_class = false };
+      name;
+    }
     |> Node.create ~location
   in
   (* Test define field assigns. *)
@@ -277,6 +283,7 @@ let test_attributes _ =
           ~value:(value >>| parse_single_expression)
           ~toplevel
           ~primitive:true
+          ~origin:Implicit
           ()
       in
       List.map expected ~f:attribute
@@ -386,7 +393,15 @@ let test_attributes _ =
   let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected =
     let expected =
       let attribute
-          (name, location, annotation, value, setter, number_of_defines, property, class_property)
+          ( name,
+            location,
+            annotation,
+            values,
+            setter,
+            number_of_defines,
+            property,
+            class_property,
+            nested_class )
         =
         let location =
           match location with
@@ -419,7 +434,7 @@ let test_attributes _ =
               if setter then
                 Attribute.ReadWrite
                   {
-                    getter_annotation = value >>| parse_single_expression;
+                    getter_annotation = List.hd values >>| fst >>| parse_single_expression;
                     setter_annotation = annotation >>| Type.expression;
                   }
               else
@@ -431,10 +446,13 @@ let test_attributes _ =
               {
                 annotation = annotation >>| Type.expression;
                 primitive = true;
-                value = value >>| parse_single_expression;
+                values =
+                  List.map values ~f:(fun (value, origin) ->
+                      { Attribute.value = parse_single_expression value; origin });
                 frozen = false;
                 toplevel = true;
                 implicit = false;
+                nested_class;
               }
         in
         { Attribute.kind; name }
@@ -454,8 +472,12 @@ let test_attributes _ =
             let expression_equal left right =
               Expression.location_insensitive_compare left right = 0
             in
+            let origin_and_value_equal left right =
+              equal_origin left.origin right.origin && expression_equal left.value right.value
+            in
             Option.equal expression_equal left.annotation right.annotation
-            && Option.equal expression_equal left.value right.value
+            && List.equal origin_and_value_equal left.values right.values
+            && Bool.equal left.nested_class right.nested_class
         | Method left, Method right ->
             Int.equal (left.signatures |> List.length) (right.signatures |> List.length)
         | _ -> Attribute.location_insensitive_compare_kind left right = 0
@@ -478,21 +500,44 @@ let test_attributes _ =
       ~name
       ?location
       ?annotation
-      ?value
+      ?(values = [])
       ?(number_of_defines = 0)
       ?(property = false)
       ?(setter = false)
       ?(class_property = false)
+      ?(nested_class = false)
       ()
     =
-    name, location, annotation, value, setter, number_of_defines, property, class_property
+    ( name,
+      location,
+      annotation,
+      values,
+      setter,
+      number_of_defines,
+      property,
+      class_property,
+      nested_class )
   in
+  assert_attributes
+    {|
+      class Foo:
+        Foo.attribute: int
+        def __init__(self) -> None:
+          self.attribute = value
+    |}
+    [
+      attribute
+        ~name:"attribute"
+        ~annotation:Type.integer
+        ~values:["...", Attribute.Explicit; "value", Attribute.Implicit]
+        ();
+    ];
   assert_attributes
     {|
       class Foo:
         Foo.attribute: int = value
     |}
-    [attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ()];
+    [attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Explicit] ()];
   assert_attributes
     {|
       class Foo:
@@ -506,9 +551,9 @@ let test_attributes _ =
     |}
     [
       attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
-      attribute ~name:"ignored" ~value:"ignored" ();
-      attribute ~name:"implicit" ~value:"implicit" ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Explicit] ();
+      attribute ~name:"ignored" ~values:["ignored", Attribute.Implicit] ();
+      attribute ~name:"implicit" ~values:["implicit", Attribute.Implicit] ();
     ];
   assert_attributes
     {|
@@ -527,7 +572,11 @@ let test_attributes _ =
     |}
     [
       attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute
+        ~name:"attribute"
+        ~annotation:Type.integer
+        ~values:["value", Attribute.Explicit; "value", Implicit]
+        ();
     ];
   assert_attributes
     {|
@@ -541,7 +590,7 @@ let test_attributes _ =
     |}
     [
       attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~values:["value", Attribute.Implicit] ();
       attribute ~name:"init" ~number_of_defines:1 ();
       attribute ~name:"not_inlined" ~number_of_defines:1 ();
     ];
@@ -570,6 +619,7 @@ let test_attributes _ =
       attribute
         ~name:"Bar"
         ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
+        ~nested_class:true
         ();
     ];
   assert_attributes
@@ -580,7 +630,15 @@ let test_attributes _ =
         @x.setter
         def Foo.x(self, value:str) -> None: ...
     |}
-    [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~property:true ~setter:true ()];
+    [
+      attribute
+        ~name:"x"
+        ~annotation:Type.string
+        ~values:["int", Attribute.Implicit]
+        ~property:true
+        ~setter:true
+        ();
+    ];
 
   assert_attributes
     {|
@@ -597,8 +655,8 @@ let test_attributes _ =
         Foo.a, Foo.b = 1, 2
      |}
     [
-      "a", None, None, Some "1", false, 0, false, false;
-      "b", None, None, Some "2", false, 0, false, false;
+      "a", None, None, ["1", Attribute.Explicit], false, 0, false, false, false;
+      "b", None, None, ["2", Attribute.Explicit], false, 0, false, false, false;
     ];
   assert_attributes
     {|
@@ -606,8 +664,8 @@ let test_attributes _ =
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, None, Some "list(range(2))[0]", false, 0, false, false;
-      "b", None, None, Some "list(range(2))[1]", false, 0, false, false;
+      "a", None, None, ["list(range(2))[0]", Attribute.Explicit], false, 0, false, false, false;
+      "b", None, None, ["list(range(2))[1]", Attribute.Explicit], false, 0, false, false, false;
     ];
 
   (* Implicit attributes in tests. *)
@@ -618,7 +676,10 @@ let test_attributes _ =
         def Test.setUp(self):
           self.attribute = value
     |}
-    [attribute ~name:"attribute" ~value:"value" (); attribute ~name:"setUp" ~number_of_defines:1 ()];
+    [
+      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+      attribute ~name:"setUp" ~number_of_defines:1 ();
+    ];
   assert_attributes
     ~in_test:true
     {|
@@ -629,8 +690,8 @@ let test_attributes _ =
           self.context = value
     |}
     [
-      attribute ~name:"attribute" ~value:"value" ();
-      attribute ~name:"context" ~value:"value" ();
+      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+      attribute ~name:"context" ~values:["value", Attribute.Implicit] ();
       attribute ~name:"setUp" ~number_of_defines:1 ();
       attribute ~name:"with_context" ~number_of_defines:1 ();
     ];
@@ -654,8 +715,8 @@ let test_attributes _ =
         Foo.x, Foo.y = 1, 2
     |}
     [
-      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
-      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" ();
+      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~values:["1", Attribute.Explicit] ();
+      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~values:["2", Attribute.Explicit] ();
     ]
 
 

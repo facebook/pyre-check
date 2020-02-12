@@ -16,13 +16,19 @@ type visibility =
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
+type initialized =
+  | Explicitly
+  | Implicitly
+  | NotInitialized
+[@@deriving eq, show, compare, sexp]
+
 type 'a t = {
   payload: 'a;
   abstract: bool;
   async: bool;
   class_attribute: bool;
   defined: bool;
-  initialized: bool;
+  initialized: initialized;
   name: Identifier.t;
   parent: Type.Primitive.t;
   visibility: visibility;
