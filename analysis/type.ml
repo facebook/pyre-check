@@ -333,10 +333,15 @@ module Record = struct
       name: Identifier.t;
     }
 
+    and 'annotation parameter_variadic_type_variable = {
+      head: 'annotation list;
+      variable: 'annotation Variable.RecordVariadic.RecordParameters.record;
+    }
+
     and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
-      | ParameterVariadicTypeVariable of 'annotation Variable.RecordVariadic.RecordParameters.record
+      | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
 
     and 'annotation overload = {
       annotation: 'annotation;
@@ -608,9 +613,21 @@ let reverse_substitute name =
   | _ -> name
 
 
+let parameter_variable_type_representation = function
+  | { head = []; variable = { name; _ } } -> Primitive name
+  | { head; variable = { name; _ } } ->
+      let concretes = head @ [Primitive name] in
+      Parametric
+        {
+          name = Record.OrderedTypes.RecordConcatenate.public_name;
+          parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
+        }
+
+
 let show_callable_parameters ~pp_type = function
   | Record.Callable.Undefined -> "..."
-  | ParameterVariadicTypeVariable { name; _ } -> name
+  | ParameterVariadicTypeVariable variable ->
+      parameter_variable_type_representation variable |> Format.asprintf "%a" pp_type
   | Defined parameters ->
       List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
       |> String.concat ~sep:", "
@@ -728,7 +745,8 @@ let rec pp_concise format annotation =
         let parameters =
           match parameters with
           | Undefined -> "..."
-          | ParameterVariadicTypeVariable { name; _ } -> name
+          | ParameterVariadicTypeVariable variable ->
+              parameter_variable_type_representation variable |> Format.asprintf "%a" pp_concise
           | Defined parameters ->
               let parameter = function
                 | CallableParameter.Anonymous { annotation; default; _ } ->
@@ -1006,7 +1024,8 @@ let rec expression annotation =
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
     | Undefined -> Node.create ~location Expression.Ellipsis
-    | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
+    | ParameterVariadicTypeVariable variable ->
+        parameter_variable_type_representation variable |> expression
   in
   let convert_annotation annotation =
     match annotation with
@@ -1262,6 +1281,9 @@ module Transform = struct
           in
           match parameter with
           | Defined defined -> Defined (List.map defined ~f:visit_defined)
+          | ParameterVariadicTypeVariable { head; variable } ->
+              ParameterVariadicTypeVariable
+                { head = List.map head ~f:(visit_annotation ~state); variable }
           | parameter -> parameter
         in
         match annotation with
@@ -1510,6 +1532,18 @@ module Callable = struct
 
   let create_from_implementation implementation =
     create ~parameters:implementation.parameters ~annotation:implementation.annotation ()
+
+
+  let prepend_anonymous_parameters ~head ~tail =
+    let make_anonymous annotation =
+      Parameter.Anonymous { index = 0; annotation; default = false }
+    in
+    let correct_indices index = function
+      | Parameter.Anonymous anonymous -> Parameter.Anonymous { anonymous with index }
+      | parameter -> parameter
+    in
+    let head = List.map head ~f:make_anonymous in
+    List.mapi ~f:correct_indices (head @ tail)
 end
 
 let lambda ~parameters ~return_annotation =
@@ -1843,7 +1877,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
               | _ -> (
                   match variable_aliases (Expression.show parameters) with
                   | Some (Record.Variable.ParameterVariadic variable) ->
-                      ParameterVariadicTypeVariable variable
+                      ParameterVariadicTypeVariable { head = []; variable }
                   | _ -> (
                       match parse_as_variadic (create_logic parameters) with
                       | Some variadic -> Defined [CallableParameter.Variable variadic]
@@ -2029,7 +2063,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                   | None -> (
                       match variable_aliases (Expression.show element) with
                       | Some (ParameterVariadic variable) ->
-                          CallableParameters (ParameterVariadicTypeVariable variable)
+                          CallableParameters (ParameterVariadicTypeVariable { head = []; variable })
                       | _ -> Record.Parameter.Single parsed ) )
             in
             match argument with
@@ -2885,7 +2919,7 @@ end = struct
 
       let any = Callable.Undefined
 
-      let self_reference variable = Callable.ParameterVariadicTypeVariable variable
+      let self_reference variable = Callable.ParameterVariadicTypeVariable { head = []; variable }
 
       let pair variable value = ParameterVariadicPair (variable, value)
 
@@ -2905,8 +2939,16 @@ end = struct
 
       let local_replace replacement annotation =
         let map = function
-          | ParameterVariadicTypeVariable variable ->
-              replacement variable |> Option.value ~default:(ParameterVariadicTypeVariable variable)
+          | ParameterVariadicTypeVariable { head; variable } ->
+              let apply_head ~head = function
+                | ParameterVariadicTypeVariable { head = inner_head; variable } ->
+                    ParameterVariadicTypeVariable { head = head @ inner_head; variable }
+                | Undefined -> Undefined
+                | Defined tail -> Defined (Callable.prepend_anonymous_parameters ~head ~tail)
+              in
+              replacement variable
+              >>| apply_head ~head
+              |> Option.value ~default:(ParameterVariadicTypeVariable { head; variable })
           | parameters -> parameters
         in
         match annotation with
@@ -2932,13 +2974,13 @@ end = struct
       let local_collect = function
         | Callable { implementation; overloads; _ } ->
             let extract = function
-              | { parameters = ParameterVariadicTypeVariable variable; _ } -> Some variable
+              | { parameters = ParameterVariadicTypeVariable { variable; _ }; _ } -> Some variable
               | _ -> None
             in
             List.filter_map (implementation :: overloads) ~f:extract
         | Parametric { parameters; _ } ->
             let extract = function
-              | Parameter.CallableParameters (ParameterVariadicTypeVariable variable) ->
+              | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; _ }) ->
                   Some variable
               | _ -> None
             in

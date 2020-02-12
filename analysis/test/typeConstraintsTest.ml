@@ -11,6 +11,8 @@ open TypeConstraints
 open Test
 open Type.Variable
 
+let empty_head variable = { Type.Callable.head = []; variable }
+
 let child = Type.Primitive "Child"
 
 let left_parent = Type.Primitive "left_parent"
@@ -333,7 +335,7 @@ let test_multiple_variable_solution _ =
       [
         `Lower
           (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
         `Lower (ParameterVariadicPair (parameters_b, empty_parameters));
       ]
     (Some
@@ -349,10 +351,10 @@ let test_multiple_variable_solution _ =
       [
         `Lower
           (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
         `Lower
           (ParameterVariadicPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable parameters_a));
+             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
       ]
     None;
   let parameters_with_unconstrained_a =
@@ -386,7 +388,7 @@ let test_multiple_variable_solution _ =
           (UnaryPair
              ( unconstrained_a,
                Type.Callable.create
-                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameters_a)
+                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a))
                  ~annotation:Type.integer
                  () ));
       ]
@@ -523,15 +525,15 @@ let test_partial_solution _ =
       [
         `Lower
           (ParameterVariadicPair
-             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b)));
         `Lower
           (ParameterVariadicPair
-             (parameters_b, Type.Callable.ParameterVariadicTypeVariable parameters_a));
+             (parameters_b, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_a)));
       ]
     (Some
        [
          ParameterVariadicPair
-           (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b);
+           (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b));
        ])
     (Some []);
   let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
@@ -574,7 +576,7 @@ let test_exists _ =
   let constraints_with_parameters_b =
     let pair =
       Type.Variable.ParameterVariadicPair
-        (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b)
+        (parameters_a, Type.Callable.ParameterVariadicTypeVariable (empty_head parameters_b))
     in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
     |> fun constraints_option -> Option.value_exn constraints_option

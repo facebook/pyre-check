@@ -172,7 +172,7 @@ let clean not_clean =
           unwrap_if_only_middle concatenation
           >>= Middle.unwrap_if_bare
           >>| fun variable -> Type.Variable.ListVariadic variable
-      | CallableParameters (ParameterVariadicTypeVariable variable) ->
+      | CallableParameters (ParameterVariadicTypeVariable { head = []; variable }) ->
           Some (ParameterVariadic variable)
       | _ -> None)
   |> Option.all

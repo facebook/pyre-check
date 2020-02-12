@@ -73,18 +73,31 @@ let create_overload_without_applying_decorators
             | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) )
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
-      match parameters with
-      | [
-       Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
-       Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation);
-      ] -> (
+      match List.rev parameters with
+      | Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation)
+        :: Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation))
+           :: reversed_head -> (
+          let default () = Defined (List.map parameters ~f:parse) in
           match
             parse_as_parameter_specification_instance_annotation
               ~variable_parameter_annotation
               ~keywords_parameter_annotation
           with
-          | Some variable -> ParameterVariadicTypeVariable variable
-          | None -> Defined (List.map parameters ~f:parse) )
+          | Some variable -> (
+              let parsed_head =
+                let extract_anonymous = function
+                  | Type.Callable.Parameter.Anonymous { annotation; _ } -> Some annotation
+                  | _ -> None
+                in
+                List.rev reversed_head
+                |> List.map ~f:parse
+                |> List.map ~f:extract_anonymous
+                |> Option.all
+              in
+              match parsed_head with
+              | Some head -> ParameterVariadicTypeVariable { head; variable }
+              | None -> default () )
+          | None -> default () )
       | _ -> Defined (List.map parameters ~f:parse)
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters

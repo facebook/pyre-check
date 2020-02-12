@@ -120,10 +120,15 @@ module Record : sig
       name: Identifier.t;
     }
 
+    and 'annotation parameter_variadic_type_variable = {
+      head: 'annotation list;
+      variable: 'annotation Variable.RecordVariadic.RecordParameters.record;
+    }
+
     and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
-      | ParameterVariadicTypeVariable of 'annotation Variable.RecordVariadic.RecordParameters.record
+      | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
 
     and 'annotation overload = {
       annotation: 'annotation;
@@ -391,6 +396,11 @@ module Callable : sig
     type_t
 
   val create_from_implementation : type_t overload -> type_t
+
+  val prepend_anonymous_parameters
+    :  head:type_t list ->
+    tail:type_t Parameter.t list ->
+    type_t Parameter.t list
 end
 
 type alias =

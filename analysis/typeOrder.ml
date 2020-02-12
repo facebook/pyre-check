@@ -237,12 +237,36 @@ module OrderImplementation = struct
              in the Python type system at the moment. *)
           | Defined _, Undefined -> [initial_constraints]
           | Undefined, Defined _ -> [initial_constraints]
-          | bound, ParameterVariadicTypeVariable variable
+          | bound, ParameterVariadicTypeVariable { head = []; variable }
             when Type.Variable.Variadic.Parameters.is_free variable ->
               let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
               OrderedConstraints.add_upper_bound initial_constraints ~order ~pair |> Option.to_list
+          | bound, ParameterVariadicTypeVariable { head; variable }
+            when Type.Variable.Variadic.Parameters.is_free variable ->
+              let constraints, remainder =
+                match bound with
+                | Undefined -> [initial_constraints], Undefined
+                | ParameterVariadicTypeVariable { head = left_head; variable = left_variable } ->
+                    let paired, remainder = List.split_n left_head (List.length head) in
+                    ( solve_ordered_types_less_or_equal
+                        order
+                        ~left:(Concrete paired)
+                        ~right:(Concrete head)
+                        ~constraints:initial_constraints,
+                      ParameterVariadicTypeVariable { head = remainder; variable = left_variable } )
+                | Defined defined ->
+                    let paired, remainder = List.split_n defined (List.length head) in
+                    ( solve_parameters
+                        ~left_parameters:paired
+                        ~right_parameters:
+                          (Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+                        initial_constraints,
+                      Defined remainder )
+              in
+              let pair = Type.Variable.ParameterVariadicPair (variable, remainder) in
+              List.filter_map constraints ~f:(OrderedConstraints.add_upper_bound ~order ~pair)
           | ParameterVariadicTypeVariable left, ParameterVariadicTypeVariable right
-            when Type.Variable.Variadic.Parameters.equal left right ->
+            when Type.Callable.equal_parameter_variadic_type_variable Type.equal left right ->
               [initial_constraints]
           | _, _ -> []
         with
@@ -1325,7 +1349,8 @@ module OrderImplementation = struct
                                    ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
                                    |> Type.OrderedTypes.Concatenation.create ))
                           | ParameterVariadic variable ->
-                              CallableParameters (ParameterVariadicTypeVariable variable))
+                              CallableParameters
+                                (ParameterVariadicTypeVariable { head = []; variable }))
                   |> Option.value ~default:[]
                 in
                 ProtocolAssumptions.add
@@ -1484,7 +1509,9 @@ module OrderImplementation = struct
                             solution
                             variable
                           |> Option.value
-                               ~default:(Type.Callable.ParameterVariadicTypeVariable variable)
+                               ~default:
+                                 (Type.Callable.ParameterVariadicTypeVariable
+                                    { head = []; variable })
                           |> fun instantiated -> Type.Parameter.CallableParameters instantiated
                     in
                     protocol_generics

@@ -519,7 +519,8 @@ module OrderedConstraints (Order : OrderType) = struct
 
     let is_trivial interval ~variable =
       match interval with
-      | Singleton (Type.Callable.ParameterVariadicTypeVariable target_variable) ->
+      | Singleton
+          (Type.Callable.ParameterVariadicTypeVariable { head = []; variable = target_variable }) ->
           ParameterVariable.equal variable target_variable
       | _ -> false
 

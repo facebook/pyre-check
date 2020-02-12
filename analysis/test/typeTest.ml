@@ -10,6 +10,8 @@ open Analysis
 open Pyre
 open Test
 
+let empty_head variable = { Type.Callable.head = []; variable }
+
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
 let create_concatenation ?head ?tail ?mappers variable
@@ -988,14 +990,14 @@ let test_is_resolved _ =
   assert_false
     (Type.Variable.all_variables_are_resolved
        (Type.Callable.create
-          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
           ~annotation:Type.integer
           ()));
   let parameter_variadic = parameter_variadic |> Type.Variable.Variadic.Parameters.mark_as_bound in
   assert_true
     (Type.Variable.all_variables_are_resolved
        (Type.Callable.create
-          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
           ~annotation:Type.integer
           ()));
   let list_variadic = Type.Variable.Variadic.List.create "Ts" in
@@ -1218,7 +1220,7 @@ let test_variables _ =
     [Type.Variable.Unary unary; Type.Variable.ParameterVariadic parameter_variadic]
     (Type.Variable.all_free_variables
        (Type.Callable.create
-          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
           ~annotation:(Type.Variable unary)
           ()));
   ()
@@ -1413,7 +1415,7 @@ let test_mark_all_variables_as_bound _ =
   let callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1465,7 +1467,7 @@ let test_namespace_all_free_variables _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1475,7 +1477,7 @@ let test_namespace_all_free_variables _ =
       |> Type.Variable.Variadic.Parameters.mark_as_bound
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1487,7 +1489,7 @@ let test_namespace_all_free_variables _ =
       |> Type.Variable.Variadic.Parameters.namespace ~namespace
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1588,7 +1590,7 @@ let test_mark_all_free_variables_as_escaped _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1598,7 +1600,7 @@ let test_mark_all_free_variables_as_escaped _ =
       |> Type.Variable.Variadic.Parameters.mark_as_bound
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1612,7 +1614,7 @@ let test_mark_all_free_variables_as_escaped _ =
       |> Type.Variable.Variadic.Parameters.namespace ~namespace
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1711,7 +1713,7 @@ let test_contains_escaped_free_variable _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1722,7 +1724,7 @@ let test_contains_escaped_free_variable _ =
       |> Type.Variable.Variadic.Parameters.mark_as_escaped
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1785,7 +1787,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1797,7 +1799,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       |> Type.Variable.Variadic.Parameters.namespace ~namespace
     in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1883,7 +1885,7 @@ let test_replace_all _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in
@@ -1989,7 +1991,7 @@ let test_collect_all _ =
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
-      ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+      ~parameters:(Type.Callable.ParameterVariadicTypeVariable (empty_head parameter_variadic))
       ~annotation:Type.integer
       ()
   in

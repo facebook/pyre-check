@@ -2571,7 +2571,7 @@ let test_solve_less_or_equal context =
         else
           Some
             (Type.Callable.ParameterVariadicTypeVariable
-               (Type.Variable.Variadic.Parameters.mark_as_bound variable))
+               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
       in
       let mark_list_variadic variable =
         if

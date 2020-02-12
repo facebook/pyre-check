@@ -976,7 +976,7 @@ module State (Context : Context) = struct
               ~data:(RefinementUnit.create ~base:{ Annotation.annotation; mutability } ()) )
         in
         let number_of_stars name = Identifier.split_star name |> fst |> String.length in
-        match parameters, parent with
+        match List.rev parameters, parent with
         | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define) ->
             let state =
               let name =
@@ -991,17 +991,16 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
             state, Resolution.annotation_store resolution
-        | ( [
-              {
-                Node.value = { name = first_name; value = None; annotation = Some first_annotation };
-                _;
-              };
-              {
-                Node.value =
-                  { name = second_name; value = None; annotation = Some second_annotation };
-                _;
-              };
-            ],
+        | ( {
+              Node.value = { name = second_name; value = None; annotation = Some second_annotation };
+              _;
+            }
+            :: {
+                 Node.value =
+                   { name = first_name; value = None; annotation = Some first_annotation };
+                 _;
+               }
+               :: reversed_head,
             _ )
           when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
             match
@@ -1033,7 +1032,7 @@ module State (Context : Context) = struct
                     |> Type.Variable.Variadic.Parameters.decompose
                     |> add_annotations
                   in
-                  state, annotations
+                  List.rev reversed_head |> List.foldi ~init:(state, annotations) ~f:check_parameter
                 else
                   let state =
                     let origin =

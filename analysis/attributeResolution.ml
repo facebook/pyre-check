@@ -1413,6 +1413,8 @@ module Implementation = struct
                 let parameters =
                   match parameters with
                   | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
+                  | ParameterVariadicTypeVariable { head = _ :: head; variable } ->
+                      ParameterVariadicTypeVariable { head; variable }
                   | _ -> parameters
                 in
                 { Type.Callable.annotation; parameters }
@@ -2506,20 +2508,22 @@ module Implementation = struct
       | Defined parameters ->
           consume base_signature_match ~arguments:(ordered_arguments ()) ~parameters
       | Undefined -> base_signature_match
-      | ParameterVariadicTypeVariable variable -> (
+      | ParameterVariadicTypeVariable { head; variable } -> (
           let combines_into_variable ~positional_component ~keyword_component =
             Type.Variable.Variadic.Parameters.Components.combine
               { positional_component; keyword_component }
             >>| Type.Variable.Variadic.Parameters.equal variable
             |> Option.value ~default:false
           in
-          match ordered_arguments () with
-          | [
-           { kind = SingleStar; resolved = positional_component; _ };
-           { kind = DoubleStar; resolved = keyword_component; _ };
-          ]
+          match List.rev (ordered_arguments ()) with
+          | { kind = DoubleStar; resolved = keyword_component; _ }
+            :: { kind = SingleStar; resolved = positional_component; _ } :: reversed_arguments_head
             when combines_into_variable ~positional_component ~keyword_component ->
-              base_signature_match
+              let arguments = List.rev reversed_arguments_head in
+              consume
+                base_signature_match
+                ~arguments
+                ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
           | _ ->
               {
                 base_signature_match with
