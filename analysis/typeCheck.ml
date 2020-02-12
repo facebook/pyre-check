@@ -4522,47 +4522,6 @@ module State (Context : Context) = struct
           |> fun resolution -> { state with resolution }
         else
           state
-    | Class { Class.bases; _ } when bases <> [] ->
-        (* Check that variance isn't widened on inheritence *)
-        let check_base state { Call.Argument.value = base; _ } =
-          let check_pair state extended actual =
-            match extended, actual with
-            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
-                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
-                match left, right with
-                | Type.Variable.Covariant, Type.Variable.Invariant
-                | Type.Variable.Contravariant, Type.Variable.Invariant
-                | Type.Variable.Covariant, Type.Variable.Contravariant
-                | Type.Variable.Contravariant, Type.Variable.Covariant ->
-                    emit_error
-                      ~state
-                      ~location
-                      ~kind:
-                        (Error.InvalidTypeVariance
-                           { annotation = extended; origin = Error.Inheritance actual })
-                | _ -> state )
-            | _, _ -> state
-          in
-          match GlobalResolution.parse_annotation global_resolution base with
-          | Type.Parametric { name; parameters = extended_parameters }
-            when not (String.equal name "typing.Generic") ->
-              Type.Parameter.all_singles extended_parameters
-              >>| (fun extended_parameters ->
-                    let actual_parameters =
-                      GlobalResolution.variables global_resolution name
-                      >>= Type.Variable.all_unary
-                      >>| List.map ~f:(fun unary -> Type.Variable unary)
-                      |> Option.value ~default:[]
-                    in
-                    match
-                      List.fold2 extended_parameters actual_parameters ~init:state ~f:check_pair
-                    with
-                    | Ok state -> state
-                    | Unequal_lengths -> state)
-              |> Option.value ~default:state
-          | _ -> state
-        in
-        List.fold bases ~f:check_base ~init:state
     | Class _ ->
         (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
         state
@@ -5191,9 +5150,67 @@ let emit_errors_in_body
     ~local_annotations
     ()
   =
+  let emit_error ~errors_sofar ~kind ~location =
+    Error.create
+      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~kind
+      ~define:Context.define
+    :: errors_sofar
+  in
   (* TODO (T59974010): Migrate error emission logic from `State.forward` to this function *)
-  let emit_errors_in_statement ~pre_resolution:_ ~post_resolution:_ ~errors_sofar _ =
-    errors_sofar
+  let emit_errors_in_statement
+      ~pre_resolution:_
+      ~post_resolution:_
+      ~errors_sofar
+      { Node.value = statement; location }
+    =
+    match statement with
+    | Statement.Class { Class.bases; _ } when bases <> [] ->
+        (* Check that variance isn't widened on inheritence *)
+        let check_base errors_sofar { Call.Argument.value = base; _ } =
+          let check_pair errors_sofar extended actual =
+            match extended, actual with
+            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
+                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
+                match left, right with
+                | Type.Variable.Covariant, Type.Variable.Invariant
+                | Type.Variable.Contravariant, Type.Variable.Invariant
+                | Type.Variable.Covariant, Type.Variable.Contravariant
+                | Type.Variable.Contravariant, Type.Variable.Covariant ->
+                    emit_error
+                      ~errors_sofar
+                      ~location
+                      ~kind:
+                        (Error.InvalidTypeVariance
+                           { annotation = extended; origin = Error.Inheritance actual })
+                | _ -> errors_sofar )
+            | _, _ -> errors_sofar
+          in
+          match GlobalResolution.parse_annotation global_resolution base with
+          | Type.Parametric { name; parameters = extended_parameters }
+            when not (String.equal name "typing.Generic") ->
+              Type.Parameter.all_singles extended_parameters
+              >>| (fun extended_parameters ->
+                    let actual_parameters =
+                      GlobalResolution.variables global_resolution name
+                      >>= Type.Variable.all_unary
+                      >>| List.map ~f:(fun unary -> Type.Variable unary)
+                      |> Option.value ~default:[]
+                    in
+                    match
+                      List.fold2
+                        extended_parameters
+                        actual_parameters
+                        ~init:errors_sofar
+                        ~f:check_pair
+                    with
+                    | Ok errors -> errors
+                    | Unequal_lengths -> errors_sofar)
+              |> Option.value ~default:errors_sofar
+          | _ -> errors_sofar
+        in
+        List.fold bases ~f:check_base ~init:errors_sofar
+    | _ -> errors_sofar
   in
   let walk_statement node_id statement_index errors_sofar statement =
     let pre_annotations, post_annotations =
