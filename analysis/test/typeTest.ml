@@ -628,7 +628,20 @@ let test_expression _ =
            ];
          total = false;
        })
-    "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]"
+    "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]";
+  assert_expression
+    (Type.Parametric
+       {
+         name = "G";
+         parameters =
+           [
+             CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference
+                  (Type.Variable.Variadic.Parameters.create "TParams"));
+           ];
+       })
+    "G[TParams]";
+  ()
 
 
 let test_concise _ =
@@ -1940,6 +1953,30 @@ let test_replace_all _ =
           "Baz"
           [Group (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")))]))
     (Type.parametric "Baz" [Group (Concrete [Type.integer; Type.string])]);
+  assert_equal
+    (Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
+       (fun _ ->
+         Some
+           (Type.Callable.Defined [Named { name = "p"; annotation = Type.integer; default = false }]))
+       (Type.Parametric
+          {
+            name = "G";
+            parameters =
+              [
+                CallableParameters
+                  (Type.Variable.Variadic.Parameters.self_reference
+                     (Type.Variable.Variadic.Parameters.create "TParams"));
+              ];
+          }))
+    (Type.Parametric
+       {
+         name = "G";
+         parameters =
+           [
+             CallableParameters
+               (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
+           ];
+       });
   ()
 
 
@@ -1990,6 +2027,19 @@ let test_collect_all _ =
           "Huh"
           [Group (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic))]))
     [Type.Variable.Variadic.List.create "Ts"];
+  assert_equal
+    (Type.Variable.GlobalTransforms.ParameterVariadic.collect_all
+       (Type.Parametric
+          {
+            name = "G";
+            parameters =
+              [
+                CallableParameters
+                  (Type.Variable.Variadic.Parameters.self_reference
+                     (Type.Variable.Variadic.Parameters.create "TParams"));
+              ];
+          }))
+    [Type.Variable.Variadic.Parameters.create "TParams"];
   ()
 
 

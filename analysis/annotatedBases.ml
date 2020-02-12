@@ -11,17 +11,9 @@ let find_propagated_type_variables bases ~parse_annotation =
   let find_type_variables { Expression.Call.Argument.value; _ } =
     parse_annotation value |> Type.Variable.all_free_variables
   in
-  let handle_deduplicated = function
-    | Type.Variable.Unary variable -> Some (Type.Parameter.Single (Type.Variable variable))
-    | ListVariadic variable ->
-        Some (Type.Parameter.Group (Type.Variable.Variadic.List.self_reference variable))
-    | ParameterVariadic _ -> None
-  in
   List.concat_map ~f:find_type_variables bases
   |> List.dedup ~compare:Type.Variable.compare
-  |> List.map ~f:handle_deduplicated
-  |> Option.all
-  |> Option.value ~default:[]
+  |> List.map ~f:Type.Variable.to_parameter
 
 
 let inferred_generic_base { Node.value = { ClassSummary.bases; _ }; _ } ~parse_annotation =

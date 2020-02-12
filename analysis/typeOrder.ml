@@ -462,7 +462,7 @@ module OrderImplementation = struct
               | Single Top, _, _ -> []
               | ( Single left,
                   Single right,
-                  ClassHierarchy.Variable.Unary { Type.Variable.Unary.variance = Covariant; _ } ) ->
+                  Type.Variable.Unary { Type.Variable.Unary.variance = Covariant; _ } ) ->
                   constraints
                   |> List.concat_map ~f:(fun constraints ->
                          solve_less_or_equal order ~constraints ~left ~right)
@@ -492,12 +492,15 @@ module OrderImplementation = struct
                            ~constraints
                            ~left:right_parameters
                            ~right:left_parameters)
+              | CallableParameters left, CallableParameters right, ParameterVariadic _ ->
+                  let left = Type.Callable.create ~parameters:left ~annotation:Type.Any () in
+                  let right = Type.Callable.create ~parameters:right ~annotation:Type.Any () in
+                  List.concat_map constraints ~f:(fun constraints ->
+                      solve_less_or_equal order ~constraints ~left ~right)
               | _ -> []
             in
             ClassHierarchy.variables handler right_name
-            >>= ClassHierarchy.Variable.zip_on_two_parameter_lists
-                  ~left_parameters
-                  ~right_parameters
+            >>= Type.Variable.zip_on_two_parameter_lists ~left_parameters ~right_parameters
             >>| List.fold ~f:handle_variables ~init:[constraints]
           in
           let parameters =
@@ -955,7 +958,10 @@ module OrderImplementation = struct
                       match left, right, variable with
                       | Type.Parameter.Group _, _, _
                       | _, Type.Parameter.Group _, _
-                      | _, _, ClassHierarchy.Variable.ListVariadic _ ->
+                      | _, _, Type.Variable.ListVariadic _
+                      | CallableParameters _, _, _
+                      | _, CallableParameters _, _
+                      | _, _, ParameterVariadic _ ->
                           (* TODO(T47348395): Implement joining for variadics *)
                           None
                       | Single Type.Bottom, Single other, _
@@ -987,7 +993,7 @@ module OrderImplementation = struct
                           in
                           Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
                         in
-                        ClassHierarchy.Variable.zip_on_two_parameter_lists
+                        Type.Variable.zip_on_two_parameter_lists
                           ~left_parameters
                           ~right_parameters
                           variables
@@ -1311,13 +1317,15 @@ module OrderImplementation = struct
                 let protocol_parameters =
                   protocol_generics
                   >>| List.map ~f:(function
-                          | ClassHierarchy.Variable.Unary variable ->
+                          | Type.Variable.Unary variable ->
                               Type.Parameter.Single (Type.Variable variable)
                           | ListVariadic variable ->
                               Group
                                 (Concatenation
                                    ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
-                                   |> Type.OrderedTypes.Concatenation.create )))
+                                   |> Type.OrderedTypes.Concatenation.create ))
+                          | ParameterVariadic variable ->
+                              CallableParameters (ParameterVariadicTypeVariable variable))
                   |> Option.value ~default:[]
                 in
                 ProtocolAssumptions.add
@@ -1447,11 +1455,16 @@ module OrderImplementation = struct
                               (TypeConstraints.Solution.instantiate_ordered_types
                                  desanitization_solution
                                  group)
+                        | CallableParameters parameters ->
+                            CallableParameters
+                              (TypeConstraints.Solution.instantiate_callable_parameters
+                                 desanitization_solution
+                                 parameters)
                       in
                       List.map ~f:instantiate
                     in
                     let instantiate = function
-                      | ClassHierarchy.Variable.Unary variable ->
+                      | Type.Variable.Unary variable ->
                           TypeConstraints.Solution.instantiate_single_variable solution variable
                           |> Option.value ~default:(Type.Variable variable)
                           |> fun instantiated -> Type.Parameter.Single instantiated
@@ -1466,6 +1479,13 @@ module OrderImplementation = struct
                             variable
                           |> Option.value ~default
                           |> fun instantiated -> Type.Parameter.Group instantiated
+                      | ParameterVariadic variable ->
+                          TypeConstraints.Solution.instantiate_single_parameter_variadic
+                            solution
+                            variable
+                          |> Option.value
+                               ~default:(Type.Callable.ParameterVariadicTypeVariable variable)
+                          |> fun instantiated -> Type.Parameter.CallableParameters instantiated
                     in
                     protocol_generics
                     >>| List.map ~f:instantiate

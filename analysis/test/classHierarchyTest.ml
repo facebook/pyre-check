@@ -3,8 +3,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
-
 open Core
 open Pyre
 open OUnit2
@@ -429,6 +427,44 @@ let variadic_order =
              (Type.OrderedTypes.Concatenation.create
                 (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)));
       ];
+  insert order "ClassParametricOnParamSpec";
+  connect
+    order
+    ~predecessor:"ClassParametricOnParamSpec"
+    ~successor:"typing.Generic"
+    ~parameters:
+      [
+        CallableParameters
+          (Type.Variable.Variadic.Parameters.self_reference
+             (Type.Variable.Variadic.Parameters.create "TParams"));
+      ];
+  insert order "ChildClassParametricOnParamSpec";
+  connect
+    order
+    ~predecessor:"ChildClassParametricOnParamSpec"
+    ~successor:"ClassParametricOnParamSpec"
+    ~parameters:
+      [
+        CallableParameters
+          (Type.Variable.Variadic.Parameters.self_reference
+             (Type.Variable.Variadic.Parameters.create "TParams"));
+      ];
+  connect
+    order
+    ~predecessor:"ChildClassParametricOnParamSpec"
+    ~successor:"typing.Generic"
+    ~parameters:
+      [
+        CallableParameters
+          (Type.Variable.Variadic.Parameters.self_reference
+             (Type.Variable.Variadic.Parameters.create "TParams"));
+      ];
+  insert order "InvalidChildClassParametricOnParamSpec";
+  connect
+    order
+    ~predecessor:"InvalidChildClassParametricOnParamSpec"
+    ~successor:"ClassParametricOnParamSpec"
+    ~parameters:[Single Type.integer];
   handler order
 
 
@@ -558,6 +594,33 @@ let test_instantiate_successors_parameters _ =
                  ~tail:[Type.literal_integer 2]
                  (Type.OrderedTypes.Concatenation.Middle.create_bare list_variadic)));
        ]);
+  assert_equal
+    ~printer
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:
+         (Type.Parametric
+            {
+              name = "ChildClassParametricOnParamSpec";
+              parameters =
+                [
+                  CallableParameters
+                    (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
+                ];
+            })
+       ~target:"ClassParametricOnParamSpec")
+    (Some
+       [
+         CallableParameters
+           (Defined [Named { name = "p"; annotation = Type.integer; default = false }]);
+       ]);
+  assert_equal
+    ~printer
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Primitive "InvalidChildClassParametricOnParamSpec")
+       ~target:"ClassParametricOnParamSpec")
+    (Some [CallableParameters Undefined]);
   ()
 
 

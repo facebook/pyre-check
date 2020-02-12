@@ -78,33 +78,11 @@ val method_resolution_order_linearize
 
 val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
-module Variable : sig
-  type t =
-    | Unary of Type.Variable.Unary.t
-    | ListVariadic of Type.Variable.Variadic.List.t
-  [@@deriving compare, eq, sexp, show]
-
-  val zip_on_parameters
-    :  parameters:Type.Parameter.t sexp_list ->
-    t sexp_list ->
-    (Type.Parameter.t * t) sexp_list sexp_option
-
-  val zip_on_two_parameter_lists
-    :  left_parameters:Type.Parameter.t sexp_list ->
-    right_parameters:Type.Parameter.t sexp_list ->
-    t sexp_list ->
-    (Type.Parameter.t * Type.Parameter.t * t) sexp_list sexp_option
-
-  val all_unary : t list -> Type.Variable.Unary.t list option
-
-  val to_parameter : t -> Type.Parameter.t
-end
-
 val variables
-  :  ?default:Variable.t list option ->
+  :  ?default:Type.Variable.t list option ->
   (module Handler) ->
   Type.Primitive.t ->
-  Variable.t list option
+  Type.Variable.t list option
 
 val least_upper_bound
   :  (module Handler) ->

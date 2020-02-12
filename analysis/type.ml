@@ -369,11 +369,14 @@ module Record = struct
     type 'annotation record =
       | Single of 'annotation
       | Group of 'annotation OrderedTypes.record
+      | CallableParameters of 'annotation Callable.record_parameters
     [@@deriving compare, eq, sexp, show, hash]
 
     let is_single = function
       | Single single -> Some single
-      | Group _ -> None
+      | CallableParameters _
+      | Group _ ->
+          None
   end
 end
 
@@ -467,11 +470,7 @@ module Parameter = struct
 
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
-  let all_singles parameters =
-    List.map parameters ~f:(function
-        | Single single -> Some single
-        | Group _ -> None)
-    |> Option.all
+  let all_singles parameters = List.map parameters ~f:is_single |> Option.all
 end
 
 let is_any = function
@@ -609,6 +608,15 @@ let reverse_substitute name =
   | _ -> name
 
 
+let show_callable_parameters ~pp_type = function
+  | Record.Callable.Undefined -> "..."
+  | ParameterVariadicTypeVariable { name; _ } -> name
+  | Defined parameters ->
+      List.map parameters ~f:(CallableParameter.show_concise ~pp_type)
+      |> String.concat ~sep:", "
+      |> fun parameters -> Format.asprintf "[%s]" parameters
+
+
 let pp_parameters ~pp_type format = function
   | [Record.Parameter.Group ordered] ->
       Format.fprintf format "%a" (Record.OrderedTypes.pp_concise ~pp_type) ordered
@@ -621,7 +629,9 @@ let pp_parameters ~pp_type format = function
       let s format = function
         | Record.Parameter.Single parameter -> Format.fprintf format "%a" pp_type parameter
         | Group ordered_types ->
-            Format.fprintf format "[%a]" (Record.OrderedTypes.pp_concise ~pp_type:pp) ordered_types
+            Format.fprintf format "[%a]" (Record.OrderedTypes.pp_concise ~pp_type) ordered_types
+        | CallableParameters parameters ->
+            Format.fprintf format "%s" (show_callable_parameters parameters ~pp_type)
       in
       Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") s format parameters
 
@@ -637,16 +647,7 @@ let rec pp format annotation =
         | Named name -> Format.asprintf "(%a)" Reference.pp name
       in
       let signature_to_string { annotation; parameters; _ } =
-        let parameters =
-          match parameters with
-          | Undefined -> "..."
-          | ParameterVariadicTypeVariable { name; _ } -> name
-          | Defined parameters ->
-              List.map parameters ~f:(CallableParameter.show_concise ~pp_type:pp)
-              |> String.concat ~sep:", "
-              |> fun parameters -> Format.asprintf "[%s]" parameters
-        in
-        Format.asprintf "%s, %a" parameters pp annotation
+        Format.asprintf "%s, %a" (show_callable_parameters parameters ~pp_type:pp) pp annotation
       in
       let implementation = signature_to_string implementation in
       let overloads =
@@ -957,69 +958,68 @@ let rec expression annotation =
   let location = Location.any in
   let create_name name = Expression.Name (create_name ~location name) in
   let get_item_call = get_item_call ~location in
+  let callable_parameters_expression = function
+    | Defined parameters ->
+        let convert_parameter parameter =
+          let call ?(default = false) ?name kind annotation =
+            let arguments =
+              let annotation = [{ Call.Argument.name = None; value = annotation }] in
+              let default =
+                if default then
+                  [
+                    {
+                      Call.Argument.name = None;
+                      value = Node.create ~location (create_name "default");
+                    };
+                  ]
+                else
+                  []
+              in
+              let name =
+                name
+                >>| (fun name ->
+                      [
+                        {
+                          Call.Argument.name = None;
+                          value = Node.create ~location (create_name name);
+                        };
+                      ])
+                |> Option.value ~default:[]
+              in
+              name @ annotation @ default
+            in
+            Expression.Call
+              { callee = Node.create ~location (Expression.Name (Name.Identifier kind)); arguments }
+            |> Node.create ~location
+          in
+          match parameter with
+          | CallableParameter.Anonymous { annotation; default; _ } ->
+              call ~default "Anonymous" (expression annotation)
+          | Keywords annotation -> call "Keywords" (expression annotation)
+          | Named { name; annotation; default } ->
+              call ~default ~name "Named" (expression annotation)
+          | KeywordOnly { name; annotation; default } ->
+              call ~default ~name "KeywordOnly" (expression annotation)
+          | Variable (Concrete annotation) -> call "Variable" (expression annotation)
+          | Variable (Concatenation concatenation) ->
+              call "Variable" (concatenation_expression concatenation)
+        in
+        Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
+    | Undefined -> Node.create ~location Expression.Ellipsis
+    | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
+  in
   let convert_annotation annotation =
     match annotation with
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
         let convert_signature { annotation; parameters; _ } =
-          let parameters =
-            match parameters with
-            | Defined parameters ->
-                let convert_parameter parameter =
-                  let call ?(default = false) ?name kind annotation =
-                    let arguments =
-                      let annotation = [{ Call.Argument.name = None; value = annotation }] in
-                      let default =
-                        if default then
-                          [
-                            {
-                              Call.Argument.name = None;
-                              value = Node.create ~location (create_name "default");
-                            };
-                          ]
-                        else
-                          []
-                      in
-                      let name =
-                        name
-                        >>| (fun name ->
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value = Node.create ~location (create_name name);
-                                };
-                              ])
-                        |> Option.value ~default:[]
-                      in
-                      name @ annotation @ default
-                    in
-                    Expression.Call
-                      {
-                        callee = Node.create ~location (Expression.Name (Name.Identifier kind));
-                        arguments;
-                      }
-                    |> Node.create ~location
-                  in
-                  match parameter with
-                  | CallableParameter.Anonymous { annotation; default; _ } ->
-                      call ~default "Anonymous" (expression annotation)
-                  | Keywords annotation -> call "Keywords" (expression annotation)
-                  | Named { name; annotation; default } ->
-                      call ~default ~name "Named" (expression annotation)
-                  | KeywordOnly { name; annotation; default } ->
-                      call ~default ~name "KeywordOnly" (expression annotation)
-                  | Variable (Concrete annotation) -> call "Variable" (expression annotation)
-                  | Variable (Concatenation concatenation) ->
-                      call "Variable" (concatenation_expression concatenation)
-                in
-                Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
-            | Undefined -> Node.create ~location Expression.Ellipsis
-            | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
-          in
           {
             Call.Argument.name = None;
-            value = Node.create ~location (Expression.Tuple [parameters; expression annotation]);
+            value =
+              Node.create
+                ~location
+                (Expression.Tuple [callable_parameters_expression parameters; expression annotation]);
           }
         in
         let base_callable =
@@ -1112,6 +1112,7 @@ let rec expression annotation =
             | Record.Parameter.Group ordered ->
                 Node.create ~location (Expression.List (expression_of_ordered ordered))
             | Single single -> expression single
+            | CallableParameters parameters -> callable_parameters_expression parameters
           in
           match parameters with
           | [Group ordered] -> expression_of_ordered ordered
@@ -1242,33 +1243,32 @@ module Transform = struct
           | Concrete concretes -> Concrete (visit_all concretes)
           | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
         in
+        let visit_parameters parameter =
+          let visit_defined = function
+            | RecordParameter.Named ({ annotation; _ } as named) ->
+                RecordParameter.Named { named with annotation = visit_annotation annotation ~state }
+            | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
+                RecordParameter.KeywordOnly
+                  { named with annotation = visit_annotation annotation ~state }
+            | RecordParameter.Variable (Concrete annotation) ->
+                RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
+            | RecordParameter.Variable (Concatenation concatenation) ->
+                Variable (Concatenation (visit_concatenation concatenation))
+            | RecordParameter.Keywords annotation ->
+                RecordParameter.Keywords (visit_annotation annotation ~state)
+            | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
+                RecordParameter.Anonymous
+                  { anonymous with annotation = visit_annotation annotation ~state }
+          in
+          match parameter with
+          | Defined defined -> Defined (List.map defined ~f:visit_defined)
+          | parameter -> parameter
+        in
         match annotation with
         | Annotated annotation -> Annotated (visit_annotation annotation ~state)
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
             let visit_overload ({ annotation; parameters; _ } as overload) =
-              let visit_parameters parameter =
-                let visit_defined = function
-                  | RecordParameter.Named ({ annotation; _ } as named) ->
-                      RecordParameter.Named
-                        { named with annotation = visit_annotation annotation ~state }
-                  | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
-                      RecordParameter.KeywordOnly
-                        { named with annotation = visit_annotation annotation ~state }
-                  | RecordParameter.Variable (Concrete annotation) ->
-                      RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
-                  | RecordParameter.Variable (Concatenation concatenation) ->
-                      Variable (Concatenation (visit_concatenation concatenation))
-                  | RecordParameter.Keywords annotation ->
-                      RecordParameter.Keywords (visit_annotation annotation ~state)
-                  | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
-                      RecordParameter.Anonymous
-                        { anonymous with annotation = visit_annotation annotation ~state }
-                in
-                match parameter with
-                | Defined defined -> Defined (List.map defined ~f:visit_defined)
-                | parameter -> parameter
-              in
               {
                 overload with
                 annotation = visit_annotation annotation ~state;
@@ -1287,6 +1287,7 @@ module Transform = struct
               | Record.Parameter.Group ordered ->
                   Record.Parameter.Group (visit_ordered_types ordered)
               | Single single -> Single (visit_annotation single ~state)
+              | CallableParameters parameters -> CallableParameters (visit_parameters parameters)
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
         | Tuple (Bounded ordered) -> Tuple (Bounded (visit_ordered_types ordered))
@@ -1581,6 +1582,7 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
             | Record.Parameter.Group (Concatenation potential_middle) ->
                 let open Record.OrderedTypes.RecordConcatenate in
                 unwrap_if_only_middle potential_middle
+            | CallableParameters _
             | Group (Concrete _)
             | Group Any ->
                 None
@@ -2020,11 +2022,15 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
               | { Node.value = Expression.List elements; _ } ->
                   let concrete = List.map elements ~f:create_logic in
                   Record.Parameter.Group (Concrete concrete)
-              | element ->
+              | element -> (
                   let parsed = create_logic element in
-                  substitute_ordered_types parsed
-                  >>| (fun ordered -> Record.Parameter.Group ordered)
-                  |> Option.value ~default:(Record.Parameter.Single parsed)
+                  match substitute_ordered_types parsed with
+                  | Some ordered -> Record.Parameter.Group ordered
+                  | None -> (
+                      match variable_aliases (Expression.show element) with
+                      | Some (ParameterVariadic variable) ->
+                          CallableParameters (ParameterVariadicTypeVariable variable)
+                      | _ -> Record.Parameter.Single parsed ) )
             in
             match argument with
             | { Node.value = Expression.Tuple elements; _ } -> List.map elements ~f:parse_parameter
@@ -2715,6 +2721,21 @@ module Variable : sig
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
 
   val converge_all_variable_namespaces : type_t -> type_t
+
+  val zip_on_parameters
+    :  parameters:Parameter.t sexp_list ->
+    t sexp_list ->
+    (Parameter.t * t) sexp_list sexp_option
+
+  val zip_on_two_parameter_lists
+    :  left_parameters:Parameter.t sexp_list ->
+    right_parameters:Parameter.t sexp_list ->
+    t sexp_list ->
+    (Parameter.t * Parameter.t * t) sexp_list sexp_option
+
+  val all_unary : t list -> Unary.t list option
+
+  val to_parameter : t -> Parameter.t
 end = struct
   module Namespace = struct
     include Record.Variable.RecordNamespace
@@ -2882,17 +2903,27 @@ end = struct
 
       let namespace variable ~namespace = { variable with namespace }
 
-      let local_replace replacement = function
+      let local_replace replacement annotation =
+        let map = function
+          | ParameterVariadicTypeVariable variable ->
+              replacement variable |> Option.value ~default:(ParameterVariadicTypeVariable variable)
+          | parameters -> parameters
+        in
+        match annotation with
         | Callable callable ->
-            let map = function
-              | ParameterVariadicTypeVariable variable ->
-                  replacement variable
-                  |> Option.value ~default:(ParameterVariadicTypeVariable variable)
-              | parameters -> parameters
-            in
             Callable.map_parameters callable ~f:map
             |> (fun callable -> Callable callable)
             |> Option.some
+        | Parametric { name; parameters } ->
+            let parameters =
+              let map_parameter = function
+                | Parameter.CallableParameters parameters ->
+                    Parameter.CallableParameters (map parameters)
+                | parameter -> parameter
+              in
+              List.map parameters ~f:map_parameter
+            in
+            Some (Parametric { name; parameters })
         | _ -> None
 
 
@@ -2905,6 +2936,13 @@ end = struct
               | _ -> None
             in
             List.filter_map (implementation :: overloads) ~f:extract
+        | Parametric { parameters; _ } ->
+            let extract = function
+              | Parameter.CallableParameters (ParameterVariadicTypeVariable variable) ->
+                  Some variable
+              | _ -> None
+            in
+            List.filter_map parameters ~f:extract
         | _ -> []
 
 
@@ -3061,7 +3099,9 @@ end = struct
               | Record.Parameter.Group ordered ->
                   OrderedTypes.local_replace_variable ordered ~replacement
                   >>| fun group -> Record.Parameter.Group group
-              | Single _ -> None
+              | CallableParameters _
+              | Single _ ->
+                  None
             in
             let replaced = List.map parameters ~f:(fun parameter -> replace parameter, parameter) in
             if List.exists replaced ~f:(fun (replaced, _) -> Option.is_some replaced) then
@@ -3127,7 +3167,9 @@ end = struct
         | Parametric { parameters; _ } ->
             let collect = function
               | Record.Parameter.Group ordered -> OrderedTypes.variable ordered |> Option.to_list
-              | Single _ -> []
+              | CallableParameters _
+              | Single _ ->
+                  []
             in
             List.concat_map parameters ~f:collect
         | _ -> []
@@ -3424,6 +3466,56 @@ end = struct
     GlobalTransforms.Unary.converge_all_variable_namespaces annotation
     |> GlobalTransforms.ParameterVariadic.converge_all_variable_namespaces
     |> GlobalTransforms.ListVariadic.converge_all_variable_namespaces
+
+
+  let coalesce_if_all_single parameters =
+    Parameter.all_singles parameters
+    >>| (fun coalesced -> [Parameter.Group (Concrete coalesced)])
+    |> Option.value ~default:parameters
+
+
+  let zip_on_parameters ~parameters variables =
+    let parameters =
+      match variables with
+      | [ListVariadic _] -> coalesce_if_all_single parameters
+      | _ -> parameters
+    in
+    match List.zip parameters variables with
+    | Ok zipped -> Some zipped
+    | Unequal_lengths -> None
+
+
+  let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
+    let left_parameters, right_parameters =
+      match variables with
+      | [ListVariadic _] ->
+          coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
+      | _ -> left_parameters, right_parameters
+    in
+    match List.zip left_parameters right_parameters with
+    | Ok zipped -> (
+        match List.zip zipped variables with
+        | Ok zipped ->
+            List.map zipped ~f:(fun ((left, right), variable) -> left, right, variable)
+            |> Option.some
+        | _ -> None )
+    | Unequal_lengths -> None
+
+
+  let all_unary variables =
+    List.map variables ~f:(function
+        | Unary unary -> Some unary
+        | ListVariadic _
+        | ParameterVariadic _ ->
+            None)
+    |> Option.all
+
+
+  let to_parameter = function
+    | Unary variable -> Parameter.Single (Unary.self_reference variable)
+    | ListVariadic variable -> Parameter.Group (Variadic.List.self_reference variable)
+    | ParameterVariadic variable ->
+        Parameter.CallableParameters (Variadic.Parameters.self_reference variable)
 end
 
 let namespace_insensitive_compare left right =

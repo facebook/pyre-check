@@ -144,6 +144,7 @@ module Record : sig
     type 'annotation record =
       | Single of 'annotation
       | Group of 'annotation OrderedTypes.record
+      | CallableParameters of 'annotation Callable.record_parameters
   end
 end
 
@@ -777,6 +778,21 @@ module Variable : sig
   val contains_escaped_free_variable : type_t -> bool
 
   val convert_all_escaped_free_variables_to_anys : type_t -> type_t
+
+  val zip_on_parameters
+    :  parameters:Parameter.t sexp_list ->
+    t sexp_list ->
+    (Parameter.t * t) sexp_list sexp_option
+
+  val zip_on_two_parameter_lists
+    :  left_parameters:Parameter.t sexp_list ->
+    right_parameters:Parameter.t sexp_list ->
+    t sexp_list ->
+    (Parameter.t * Parameter.t * t) sexp_list sexp_option
+
+  val all_unary : t list -> Unary.t list option
+
+  val to_parameter : t -> Parameter.t
 end
 
 val namespace_insensitive_compare : t -> t -> int

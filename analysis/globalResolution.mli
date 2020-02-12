@@ -57,10 +57,10 @@ val solve_less_or_equal
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val variables
-  :  ?default:ClassHierarchy.Variable.t list option ->
+  :  ?default:Type.Variable.t list option ->
   t ->
   Type.Primitive.t ->
-  ClassHierarchy.Variable.t list option
+  Type.Variable.t list option
 
 val check_invalid_type_parameters
   :  t ->

@@ -194,7 +194,7 @@ let process_type_query_request
             | Some generics
               when (not (List.is_empty generics))
                    && List.for_all generics ~f:(function
-                          | ClassHierarchy.Variable.Unary _ -> true
+                          | Type.Variable.Unary _ -> true
                           | _ -> false) ->
                 Type.Parametric
                   {

@@ -977,33 +977,41 @@ let messages ~concise ~signature location kind =
           (Type.Variable expected)
           name;
       ]
-  | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedGroup { expected; actual } }
+  | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedKind { expected; actual } }
     ->
-      [
-        Format.asprintf
-          "Single type parameter `%a` expected, but a type parameter group `[%a]` was given for \
-           generic type %s."
-          Type.pp
-          (Type.Variable expected)
-          Type.OrderedTypes.pp_concise
-          actual
-          name;
-      ]
-  | InvalidTypeParameters { name; kind = AttributeResolution.UnexpectedSingle { expected; actual } }
-    ->
-      [
-        Format.asprintf
-          "Type parameter group expected for variadic parameter `%s`, but a single type `%a` was \
-           given for generic type %s."
-          (Type.Variable.Variadic.List.name expected)
-          Type.pp
-          actual
-          name;
-        Format.asprintf
-          "If you want to bind a one element list to that variadic, try [%a] instead"
-          Type.pp
-          actual;
-      ]
+      let details =
+        match expected, actual with
+        | ListVariadic _, Single actual ->
+            [
+              Format.asprintf
+                "If you want to bind a one element list to that variadic, try [%a] instead"
+                Type.pp
+                actual;
+            ]
+        | _ -> []
+      in
+      let expected =
+        match expected with
+        | Unary expected ->
+            Format.asprintf "Single type parameter `%a` expected" Type.pp (Type.Variable expected)
+        | ListVariadic expected ->
+            Format.asprintf
+              "Type parameter group expected for variadic parameter `%s`"
+              (Type.Variable.Variadic.List.name expected)
+        | ParameterVariadic expected ->
+            Format.asprintf
+              "Callable parameters expected for parameter specification `%s`"
+              (Type.Variable.Variadic.Parameters.name expected)
+      in
+      let actual =
+        match actual with
+        | Group actual ->
+            Format.asprintf "type parameter group `[%a]`" Type.OrderedTypes.pp_concise actual
+        | Single actual -> Format.asprintf "single type `%a`" Type.pp actual
+        | CallableParameters actual ->
+            Format.asprintf "callable parameters `%a`" Type.Callable.pp_parameters actual
+      in
+      Format.asprintf "%s, but a %s was given for generic type %s." expected actual name :: details
   | InvalidTypeVariable { annotation; origin } when concise -> (
       let format : ('b, Format.formatter, unit, string) format4 =
         match origin with
@@ -1016,13 +1024,7 @@ let messages ~concise ~signature location kind =
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.Parameters.name variable in
-          if equal_type_variable_origin origin ClassToplevel then
-            [
-              "Classes parameterized by callable parameter variadics are not supported at "
-              ^ "this time.";
-            ]
-          else
-            [Format.asprintf format name]
+          [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
           [Format.asprintf format name] )
@@ -1040,15 +1042,7 @@ let messages ~concise ~signature location kind =
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.Parameters.name variable in
-          if equal_type_variable_origin origin ClassToplevel then
-            [
-              Format.asprintf
-                "Cannot propagate callable parameter variadic `%s`.  Classes parameterized by \
-                 callable parameter variadics are not supported at this time."
-                name;
-            ]
-          else
-            [Format.asprintf format name]
+          [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
           [Format.asprintf format name] )
@@ -2972,12 +2966,9 @@ let dequalify
               actual = dequalify actual;
               expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
             }
-      | AttributeResolution.UnexpectedGroup { actual; expected } ->
-          AttributeResolution.UnexpectedGroup
-            { actual; expected = Type.Variable.Unary.dequalify ~dequalify_map expected }
-      | AttributeResolution.UnexpectedSingle { actual; expected } ->
-          AttributeResolution.UnexpectedSingle
-            { actual; expected = Type.Variable.Variadic.List.dequalify ~dequalify_map expected }
+      | AttributeResolution.UnexpectedKind { actual; expected } ->
+          AttributeResolution.UnexpectedKind
+            { actual; expected = Type.Variable.dequalify dequalify_map expected }
       | AttributeResolution.IncorrectNumberOfParameters _ as problem -> problem
     in
     {

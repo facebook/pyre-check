@@ -24,7 +24,14 @@ module Solution : sig
     Type.Variable.Variadic.List.t ->
     Type.OrderedTypes.t option
 
+  val instantiate_single_parameter_variadic
+    :  t ->
+    Type.Variable.Variadic.Parameters.t ->
+    Type.Callable.parameters option
+
   val instantiate_ordered_types : t -> Type.OrderedTypes.t -> Type.OrderedTypes.t
+
+  val instantiate_callable_parameters : t -> Type.Callable.parameters -> Type.Callable.parameters
 
   (* For testing *)
   val create : Type.Variable.pair list -> t

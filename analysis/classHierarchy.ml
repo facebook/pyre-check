@@ -164,69 +164,16 @@ let successors (module Handler : Handler) annotation =
   | [] -> []
 
 
-module Variable = struct
-  (* TODO(T60216374): Once we enable classes generic with regards to a ParameterSpecification, this
-     can be replaced with Type.Variable.t, and we can move all of this into Type.Variable *)
-  type t =
-    | Unary of Type.Variable.Unary.t
-    | ListVariadic of Type.Variable.Variadic.List.t
-  [@@deriving compare, eq, sexp, show]
-
-  let coalesce_if_all_single parameters =
-    Type.Parameter.all_singles parameters
-    >>| (fun coalesced -> [Type.Parameter.Group (Concrete coalesced)])
-    |> Option.value ~default:parameters
-
-
-  let zip_on_parameters ~parameters variables =
-    let parameters =
-      match variables with
-      | [ListVariadic _] -> coalesce_if_all_single parameters
-      | _ -> parameters
-    in
-    match List.zip parameters variables with
-    | Ok zipped -> Some zipped
-    | Unequal_lengths -> None
-
-
-  let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
-    let left_parameters, right_parameters =
-      match variables with
-      | [ListVariadic _] ->
-          coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
-      | _ -> left_parameters, right_parameters
-    in
-    match List.zip left_parameters right_parameters with
-    | Ok zipped -> (
-        match List.zip zipped variables with
-        | Ok zipped ->
-            List.map zipped ~f:(fun ((left, right), variable) -> left, right, variable)
-            |> Option.some
-        | _ -> None )
-    | Unequal_lengths -> None
-
-
-  let all_unary variables =
-    List.map variables ~f:(function
-        | Unary unary -> Some unary
-        | ListVariadic _ -> None)
-    |> Option.all
-
-
-  let to_parameter = function
-    | Unary variable -> Type.Parameter.Single (Type.Variable variable)
-    | ListVariadic variable ->
-        Type.Parameter.Group (Type.Variable.Variadic.List.self_reference variable)
-end
-
 let clean not_clean =
   let open Type.OrderedTypes.Concatenation in
   List.map not_clean ~f:(function
-      | Type.Parameter.Single (Type.Variable variable) -> Some (Variable.Unary variable)
+      | Type.Parameter.Single (Type.Variable variable) -> Some (Type.Variable.Unary variable)
       | Group (Type.OrderedTypes.Concatenation concatenation) ->
           unwrap_if_only_middle concatenation
           >>= Middle.unwrap_if_bare
-          >>| fun variable -> Variable.ListVariadic variable
+          >>| fun variable -> Type.Variable.ListVariadic variable
+      | CallableParameters (ParameterVariadicTypeVariable variable) ->
+          Some (ParameterVariadic variable)
       | _ -> None)
   |> Option.all
 
@@ -235,7 +182,7 @@ let variables ?(default = None) (module Handler : Handler) = function
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some [Variable.Unary (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
+      Some [Type.Variable.Unary (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
   | "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
@@ -341,8 +288,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   match source with
   | Type.Bottom ->
       let to_any = function
-        | Variable.Unary _ -> Type.Parameter.Single Type.Any
+        | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
         | ListVariadic _ -> Group Any
+        | ParameterVariadic _ -> CallableParameters Undefined
       in
       index_of target
       |> Handler.edges
@@ -353,13 +301,15 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (contains handler primitive) -> None
-        | Primitive "tuple", [parameter] ->
-            let union =
-              match parameter with
-              | Type.Parameter.Group parameters -> Type.OrderedTypes.union_upper_bound parameters
-              | Single parameter -> parameter
-            in
-            Some ("tuple", [Type.Parameter.Single (Type.weaken_literals union)])
+        | Primitive "tuple", [Type.Parameter.Group parameters] ->
+            Some
+              ( "tuple",
+                [
+                  Type.Parameter.Single
+                    (Type.weaken_literals (Type.OrderedTypes.union_upper_bound parameters));
+                ] )
+        | Primitive "tuple", [Type.Parameter.Single parameter] ->
+            Some ("tuple", [Type.Parameter.Single (Type.weaken_literals parameter)])
         | Primitive primitive, parameters -> Some (primitive, parameters)
         | _ ->
             (* We can only propagate from those that actually split off a primitive *)
@@ -384,22 +334,32 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                     |> Option.value ~default:[]
                   in
                   let replacement = function
-                    | Type.Parameter.Single parameter, Variable.Unary variable ->
+                    | Type.Parameter.Single parameter, Type.Variable.Unary variable ->
                         Type.Variable.UnaryPair (variable, parameter)
-                    | Group _, Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
+                    | CallableParameters _, Unary variable
+                    | Group _, Unary variable ->
+                        Type.Variable.UnaryPair (variable, Type.Any)
                     | Group parameter, ListVariadic variable ->
                         Type.Variable.ListVariadicPair (variable, parameter)
+                    | CallableParameters _, ListVariadic variable
                     | Single _, ListVariadic variable ->
                         Type.Variable.ListVariadicPair (variable, Any)
+                    | CallableParameters parameters, ParameterVariadic variable ->
+                        Type.Variable.ParameterVariadicPair (variable, parameters)
+                    | Single _, ParameterVariadic variable
+                    | Group _, ParameterVariadic variable ->
+                        Type.Variable.ParameterVariadicPair (variable, Undefined)
                   in
                   let replacement =
                     let to_any = function
-                      | Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
+                      | Type.Variable.Unary variable -> Type.Variable.UnaryPair (variable, Type.Any)
                       | ListVariadic variable ->
                           Type.Variable.ListVariadicPair (variable, Type.OrderedTypes.Any)
+                      | ParameterVariadic variable ->
+                          Type.Variable.ParameterVariadicPair (variable, Undefined)
                     in
 
-                    Variable.zip_on_parameters ~parameters variables
+                    Type.Variable.zip_on_parameters ~parameters variables
                     >>| List.map ~f:replacement
                     |> (function
                          | Some pairs -> pairs
@@ -414,6 +374,11 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                       | Group group ->
                           Group
                             (TypeConstraints.Solution.instantiate_ordered_types replacement group)
+                      | CallableParameters parameters ->
+                          CallableParameters
+                            (TypeConstraints.Solution.instantiate_callable_parameters
+                               replacement
+                               parameters)
                     in
                     { Target.target; parameters = List.map parameters ~f:instantiate }
                   in

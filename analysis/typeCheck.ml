@@ -478,7 +478,9 @@ module State (Context : Context) = struct
         let variables =
           List.map variables ~f:(function
               | Unary variable -> Type.Parameter.Single (Type.Variable variable)
-              | ListVariadic variadic -> Group (Type.Variable.Variadic.List.self_reference variadic))
+              | ListVariadic variadic -> Group (Type.Variable.Variadic.List.self_reference variadic)
+              | ParameterVariadic parameters ->
+                  CallableParameters (Type.Variable.Variadic.Parameters.self_reference parameters))
         in
         Type.Parametric { name = parent_name; parameters = variables }
     | exception _ -> parent_type
@@ -514,8 +516,9 @@ module State (Context : Context) = struct
           fix_invalid_parameters_in_bounds unary |> fun unary -> Type.Variable.Unary unary
         in
         let extract = function
-          | ClassHierarchy.Variable.Unary unary -> unarize unary
+          | Type.Variable.Unary unary -> unarize unary
           | ListVariadic variadic -> Type.Variable.ListVariadic variadic
+          | ParameterVariadic variable -> ParameterVariadic variable
         in
         Reference.show class_name
         |> GlobalResolution.variables global_resolution
@@ -4552,7 +4555,7 @@ module State (Context : Context) = struct
               >>| (fun extended_parameters ->
                     let actual_parameters =
                       GlobalResolution.variables global_resolution name
-                      >>= ClassHierarchy.Variable.all_unary
+                      >>= Type.Variable.all_unary
                       >>| List.map ~f:(fun unary -> Type.Variable unary)
                       |> Option.value ~default:[]
                     in

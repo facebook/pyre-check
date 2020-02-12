@@ -89,13 +89,9 @@ module TypeParameterValidationTypes = struct
         actual: Type.t;
         expected: Type.Variable.Unary.t;
       }
-    | UnexpectedGroup of {
-        actual: Type.OrderedTypes.t;
-        expected: Type.Variable.Unary.t;
-      }
-    | UnexpectedSingle of {
-        actual: Type.t;
-        expected: Type.Variable.Variadic.List.t;
+    | UnexpectedKind of {
+        actual: Type.Parameter.t;
+        expected: Type.Variable.t;
       }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -1053,7 +1049,7 @@ module Implementation = struct
             | "typing.Final"
             | "typing_extensions.Final"
             | "typing.Optional" ->
-                [ClassHierarchy.Variable.Unary (Type.Variable.Unary.create "T")]
+                [Type.Variable.Unary (Type.Variable.Unary.create "T")]
             | _ ->
                 ClassHierarchyEnvironment.ReadOnly.variables
                   (class_hierarchy_environment class_metadata_environment)
@@ -1063,12 +1059,12 @@ module Implementation = struct
           in
           let invalid_type_parameters ~name ~given =
             let generics = generics_for_name name in
-            match ClassHierarchy.Variable.zip_on_parameters ~parameters:given generics with
+            match Type.Variable.zip_on_parameters ~parameters:given generics with
             | Some [] -> Type.Primitive name, sofar
             | Some paired ->
                 let check_parameter (given, generic) =
                   match generic, given with
-                  | ClassHierarchy.Variable.Unary generic, Type.Parameter.Single given ->
+                  | Type.Variable.Unary generic, Type.Parameter.Single given ->
                       let invalid =
                         let order =
                           full_order ?dependency class_metadata_environment ~assumptions
@@ -1090,10 +1086,22 @@ module Implementation = struct
                             } )
                       else
                         Type.Parameter.Single given, None
-                  | Unary expected, Type.Parameter.Group actual ->
-                      Single Any, Some { name; kind = UnexpectedGroup { expected; actual } }
-                  | ListVariadic expected, Single actual ->
-                      Group Any, Some { name; kind = UnexpectedSingle { expected; actual } }
+                  | Unary _, CallableParameters _
+                  | Unary _, Type.Parameter.Group _ ->
+                      ( Single Any,
+                        Some { name; kind = UnexpectedKind { expected = generic; actual = given } }
+                      )
+                  | ListVariadic _, CallableParameters _
+                  | ListVariadic _, Single _ ->
+                      ( Group Any,
+                        Some { name; kind = UnexpectedKind { expected = generic; actual = given } }
+                      )
+                  | ParameterVariadic _, Single _
+                  | ParameterVariadic _, Group _ ->
+                      ( CallableParameters Undefined,
+                        Some { name; kind = UnexpectedKind { expected = generic; actual = given } }
+                      )
+                  | ParameterVariadic _, CallableParameters _
                   | ListVariadic _, Group _ ->
                       (* TODO(T47346673): accept w/ new kind of validation *)
                       given, None
@@ -1114,8 +1122,9 @@ module Implementation = struct
                 ( Type.parametric
                     name
                     (List.map generics ~f:(function
-                        | ClassHierarchy.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                        | ListVariadic _ -> Group Any)),
+                        | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
+                        | ListVariadic _ -> Group Any
+                        | ParameterVariadic _ -> CallableParameters Undefined)),
                   mismatch :: sofar )
           in
           match annotation with
@@ -1520,7 +1529,7 @@ module Implementation = struct
                         [] )
                   | _ -> (
                       let overload parameter =
-                        let generics = List.map generics ~f:ClassHierarchy.Variable.to_parameter in
+                        let generics = List.map generics ~f:Type.Variable.to_parameter in
                         {
                           Type.Callable.annotation =
                             Type.meta (Type.Parametric { name; parameters = generics });
@@ -1550,7 +1559,7 @@ module Implementation = struct
                           overload (create_parameter (Type.meta (Variable generic))), []
                       | _ ->
                           let handle_variadics = function
-                            | ClassHierarchy.Variable.Unary single ->
+                            | Type.Variable.Unary single ->
                                 ( Type.Parameter.Single (Type.Variable single),
                                   Type.meta (Variable single) )
                             | ListVariadic _ ->
@@ -1558,6 +1567,11 @@ module Implementation = struct
                                    without that we can't actually return the correct metatype, which
                                    is a bummer *)
                                 Type.Parameter.Group Any, Type.Any
+                            | ParameterVariadic _ ->
+                                (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
+                                   without that we can't actually return the correct metatype, which
+                                   is a bummer *)
+                                Type.Parameter.CallableParameters Undefined, Type.Any
                           in
                           let return_parameters, parameter_parameters =
                             List.map generics ~f:handle_variadics |> List.unzip
@@ -1592,7 +1606,7 @@ module Implementation = struct
                    class_metadata_environment)
                 ?dependency
                 class_annotation
-              >>= ClassHierarchy.Variable.all_unary
+              >>= Type.Variable.all_unary
               >>| List.map ~f:Type.Variable.Unary.self_reference
               >>| Type.Set.of_list
               (* TODO(T44676629): This case should be handled when we re-do this handling *)
@@ -1930,7 +1944,7 @@ module Implementation = struct
                class_metadata_environment)
             ?dependency
             target
-          >>| List.map ~f:ClassHierarchy.Variable.to_parameter
+          >>| List.map ~f:Type.Variable.to_parameter
           |> Option.value ~default:[]
       | Some parameters -> parameters
     in
@@ -2954,7 +2968,7 @@ module Implementation = struct
                class_metadata_environment)
             ?dependency
             class_name
-          >>| List.map ~f:ClassHierarchy.Variable.to_parameter
+          >>| List.map ~f:Type.Variable.to_parameter
           |> Option.value ~default:[]
         in
         (* Tuples are special. *)

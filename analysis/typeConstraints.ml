@@ -226,6 +226,10 @@ module Solution = struct
     ListVariadic.Map.find list_variadics
 
 
+  let instantiate_single_parameter_variadic { callable_parameters; _ } =
+    ParameterVariable.Map.find callable_parameters
+
+
   let instantiate_ordered_types solution = function
     | Type.OrderedTypes.Concrete concretes ->
         List.map concretes ~f:(instantiate solution)
@@ -238,6 +242,12 @@ module Solution = struct
         let replacement = instantiate_single_list_variadic_variable solution in
         Type.OrderedTypes.Concatenation.replace_variable mapped ~replacement
         |> Option.value ~default:(Type.OrderedTypes.Concatenation mapped)
+
+
+  let instantiate_callable_parameters solution parameters =
+    match instantiate solution (Type.Callable.create ~parameters ~annotation:Type.Any ()) with
+    | Type.Callable { implementation = { parameters; _ }; _ } -> parameters
+    | _ -> failwith "instantiate is not preserving callables"
 
 
   let set ({ unaries; callable_parameters; list_variadics } as solution) = function

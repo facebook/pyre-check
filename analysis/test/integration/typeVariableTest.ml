@@ -1085,10 +1085,7 @@ let test_callable_parameter_variadics context =
       class Propagating(typing.List[typing.Callable[V, int]]):
          def foo(self) -> int: ...
     |}
-    [
-      "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
-      ^ "Classes parameterized by callable parameter variadics are not supported at this time.";
-    ];
+    [];
   assert_type_errors
     ~handle:"qualifier.py"
     {|
@@ -1832,6 +1829,51 @@ let test_concatenation_operator context =
   ()
 
 
+let test_user_defined_parameter_specification_classes context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import TypeVar, Generic, Callable
+
+      TParams = ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def function(param: str) -> str:
+        ...
+      class MyClass(Generic[TParams, TReturn]):
+        call: Callable[TParams, TReturn]
+        def __init__(self, f: Callable[TParams, TReturn]) -> None:
+          self.call = f
+
+      def client(f: Callable[TParams, TReturn]) -> MyClass[TParams, TReturn]:
+        return MyClass(f)
+      def foo() -> None:
+        x = client(function).call(param="")
+        reveal_type(x)
+        client(function).call(parm="")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Unexpected keyword [28]: Unexpected keyword argument `parm` to anonymous call.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import TypeVar, Generic, Callable
+
+      Ts = pyre_extensions.ListVariadic("Ts")
+      TParams = ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      class MyClass(Generic[Ts, TReturn]):
+        pass
+
+      def bad(x: MyClass[[TParams, int], str]) -> None:
+        pass
+    |}
+    ["Undefined or invalid type [11]: Annotation `TParams` is not defined as a type."];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -1847,5 +1889,6 @@ let () =
          "map" >:: test_map;
          "user_defined_variadics" >:: test_user_defined_variadics;
          "concatenation" >:: test_concatenation_operator;
+         "user_defined_parameter_variadics" >:: test_user_defined_parameter_specification_classes;
        ]
   |> Test.run
