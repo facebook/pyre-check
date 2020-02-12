@@ -380,6 +380,7 @@ let test_check_variable_bindings context =
     [
       "Invalid type variable [34]: The type variable `Variable[T (bound to int)]` isn't present in \
        the function's parameters.";
+      "Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`.";
     ];
   assert_type_errors
     {|

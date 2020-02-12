@@ -100,7 +100,6 @@ module State (Context : Context) = struct
   and t = {
     resolution: Resolution.t;
     errors: ErrorMap.t;
-    check_return: bool;
     bottom: bool;
     resolution_fixpoint: LocalAnnotationMap.t;
   }
@@ -166,7 +165,7 @@ module State (Context : Context) = struct
       ?(resolution_fixpoint = LocalAnnotationMap.empty)
       ()
     =
-    { resolution; errors; check_return = true; bottom; resolution_fixpoint }
+    { resolution; errors; bottom; resolution_fixpoint }
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
@@ -680,17 +679,11 @@ module State (Context : Context) = struct
         in
         state, annotation
       in
-      let update_define (state, annotation) =
-        if Type.is_unknown annotation then
-          { state with check_return = false }
-        else
-          state
-      in
       let state = add_missing_return_error ~state return_annotation in
       return_annotation
       >>| parse_and_check_annotation ~state
       >>| add_variance_error
-      >>| update_define
+      >>| fst
       |> Option.value ~default:state
     in
     let add_capture_annotations state =
@@ -2958,7 +2951,7 @@ module State (Context : Context) = struct
 
 
   and forward_statement
-      ~state:({ resolution; check_return; _ } as state)
+      ~state:({ resolution; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
     let global_resolution = Resolution.global_resolution resolution in
@@ -3012,7 +3005,7 @@ module State (Context : Context) = struct
       in
       let check_incompatible_return state =
         if
-          check_return
+          Define.has_return_annotation define
           && (not
                 (GlobalResolution.constraints_solution_exists
                    global_resolution
@@ -4616,7 +4609,6 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
     in
     {
       State.errors = ErrorMap.Map.empty;
-      check_return = true;
       bottom = false;
       resolution_fixpoint = LocalAnnotationMap.empty;
       resolution = empty_resolution;
