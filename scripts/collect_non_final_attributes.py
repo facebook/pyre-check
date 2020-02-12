@@ -17,15 +17,14 @@ class NonFinalAttributeCollector(cst.CSTVisitor):
         # store each class mapped to its non-final attributes
         self.attributes: Dict[str, List[str]] = defaultdict(list)
 
-    def _add_target_to_attributes(self, target: cst.AssignTarget) -> None:
-        attribute = target.target
-        if (
-            isinstance(attribute, cst.Attribute)
-            and isinstance(attribute.value, cst.Name)
-            # attribute `value`.
-            and attribute.value.value == "self"
+    def _add_target_to_attributes(self, attribute: cst.BaseExpression) -> None:
+        if isinstance(attribute, cst.Attribute) and isinstance(
+            attribute.value, cst.Name
         ):
-            self.attributes[self.qualifier[0]].append(attribute.attr.value)
+            # pyre-ignore[16]: `cst._nodes.expression.BaseExpression` has no
+            # attribute `value`.
+            if attribute.value.value == "self":
+                self.attributes[self.qualifier[0]].append(attribute.attr.value)
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
@@ -43,7 +42,11 @@ class NonFinalAttributeCollector(cst.CSTVisitor):
         # check assigned targets only after initialization
         if self.qualifier[-1] != "__init__":
             for target in node.targets:
-                self._add_target_to_attributes(target)
+                self._add_target_to_attributes(target.target)
+
+    def visit_AugAssign(self, node: cst.AugAssign) -> None:
+        if self.qualifier[-1] != "__init__":
+            self._add_target_to_attributes(node.target)
 
 
 def _parse(file: IO[Any]) -> cst.Module:  # pyre-fixme[2]

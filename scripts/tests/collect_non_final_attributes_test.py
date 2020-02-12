@@ -62,3 +62,52 @@ class CollectNonFinalAttributesTest(unittest.TestCase):
             """,
             expected={},
         )
+
+        self.assert_attributes(
+            source="""
+            class TestA:
+                def __init__(self, x, y):
+                    self.x: int = x
+                    self.y: int = y
+
+                def modify_attr(self, y) -> None:
+                    self.y = y
+
+            class TestB:
+                def __init__(self, a, b):
+                    self.a = a
+                    self.b = b
+
+                def modify_attr(self, a, b) -> None:
+                    self.a = a
+                    self.b = b
+            """,
+            expected={"TestA": ["y"], "TestB": ["a", "b"]},
+        )
+
+        self.assert_attributes(
+            source="""
+            class Test:
+                def __init__(self, a, b):
+                    self.a: int = x
+                    self.b: int = y
+
+                def modify_attr(self) -> None:
+                    self.a += 2
+            """,
+            expected={"Test": ["a"]},
+        )
+
+        self.assert_attributes(
+            source="""
+            class Test:
+                def __init__(self, a, b):
+                    self.a: int = x
+                    self.b: int = y
+
+                def modify_attr(self) -> None:
+                    self.a += 2
+                    self.b -= 2
+            """,
+            expected={"Test": ["a", "b"]},
+        )
