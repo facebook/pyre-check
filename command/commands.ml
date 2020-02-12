@@ -8,7 +8,6 @@ module Check = CheckCommand
 module Infer = InferCommand
 module Lint = LintCommand
 module Persistent = PersistentCommand
-module Query = QueryCommand
 module Rage = RageCommand
 module Start = StartCommand
 module Stop = StopCommand
