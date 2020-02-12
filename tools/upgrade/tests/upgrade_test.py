@@ -1133,7 +1133,7 @@ class FixmeTargetsTest(unittest.TestCase):
         > 	a/b/x.py:278:28 Undefined attribute [16]: `Optional` has no attribute `derp`.
         > 	a/b/x.py:325:41 Undefined attribute [16]: `Optional` has no attribute `herp`.
         > 	a/b/y.py:86:26 Incompatible parameter type [6]: Expected `str` for 1st \
-anonymous parameter to call `merp` but got `Optional[str]`.
+positional only parameter to call `merp` but got `Optional[str]`.
                a/b:c-typecheck - main 0.000 (passed)
         Finished test run: https://url
         Summary (total time 58.75s):
@@ -1173,9 +1173,9 @@ anonymous parameter to call `merp` but got `Optional[str]`.
                 "path": Path("a/b/y.py"),
                 "code": "6",
                 "description": "Incompatible parameter type [6]: Expected `str` "
-                + "for 1st anonymous parameter to call `merp` but got `Optional[str]`.",
+                + "for 1st positional only parameter to call `merp` but got `Optional[str]`.",
                 "concise_description": "Incompatible parameter type [6]: Expected "
-                + "`str` for 1st anonymous parameter to call `merp` but got "
+                + "`str` for 1st positional only parameter to call `merp` but got "
                 + "`Optional[str]`.",
             },
         ]

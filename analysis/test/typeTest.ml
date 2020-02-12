@@ -343,8 +343,8 @@ let test_create _ =
              parameters =
                Defined
                  [
-                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Anonymous { index = 1; annotation = Type.string; default = false };
+                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
+                   Parameter.PositionalOnly { index = 1; annotation = Type.string; default = false };
                  ];
            };
          overloads = [];
@@ -361,7 +361,7 @@ let test_create _ =
              parameters =
                Defined
                  [
-                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
+                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
                    Parameter.Named { name = "a"; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.Top);
                    Parameter.Keywords Type.Top;
@@ -381,7 +381,7 @@ let test_create _ =
              parameters =
                Defined
                  [
-                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
+                   Parameter.PositionalOnly { index = 0; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.integer);
                    Parameter.Keywords Type.string;
                  ];
@@ -463,7 +463,7 @@ let test_create _ =
        ~parameters:
          (Defined
             [
-              Anonymous { index = 0; annotation = Type.integer; default = false };
+              PositionalOnly { index = 0; annotation = Type.integer; default = false };
               Variable
                 (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")));
             ])
@@ -677,7 +677,10 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true }])
+            [
+              Type.Callable.Parameter.PositionalOnly
+                { index = 0; annotation = Type.Any; default = true };
+            ])
        ())
     "(Any=...) -> int";
   assert_concise
@@ -1180,7 +1183,7 @@ let test_overload_parameters _ =
       |> Type.Callable.Overload.parameters
       |> Option.value ~default:[]
       |> List.map ~f:(function
-             | Type.Callable.Parameter.Anonymous { annotation; _ } -> annotation
+             | Type.Callable.Parameter.PositionalOnly { annotation; _ } -> annotation
              | _ -> failwith "impossible")
       |> List.map ~f:Type.show
     in
@@ -1435,7 +1438,7 @@ let test_mark_all_variables_as_bound _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1523,7 +1526,7 @@ let test_namespace_all_free_variables _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1537,7 +1540,7 @@ let test_namespace_all_free_variables _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1555,7 +1558,7 @@ let test_namespace_all_free_variables _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1653,7 +1656,7 @@ let test_mark_all_free_variables_as_escaped _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1667,7 +1670,7 @@ let test_mark_all_free_variables_as_escaped _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1688,7 +1691,7 @@ let test_mark_all_free_variables_as_escaped _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1747,7 +1750,7 @@ let test_contains_escaped_free_variable _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1762,7 +1765,7 @@ let test_contains_escaped_free_variable _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1833,7 +1836,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1850,7 +1853,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concatenation (create_concatenation list_variadic));
            ])
       ~annotation:Type.integer
@@ -1861,7 +1864,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       ~parameters:
         (Defined
            [
-             Anonymous { index = 0; annotation = Type.bool; default = false };
+             PositionalOnly { index = 0; annotation = Type.bool; default = false };
              Variable (Concrete Type.Any);
            ])
       ~annotation:Type.integer
@@ -1923,7 +1926,7 @@ let test_replace_all _ =
           ~parameters:
             (Defined
                [
-                 Anonymous { index = 0; annotation = Type.bool; default = false };
+                 PositionalOnly { index = 0; annotation = Type.bool; default = false };
                  Variable (Concatenation (create_concatenation list_variadic));
                ])
           ~annotation:Type.integer
@@ -2013,7 +2016,7 @@ let test_collect_all _ =
           ~parameters:
             (Defined
                [
-                 Anonymous { index = 0; annotation = Type.bool; default = false };
+                 PositionalOnly { index = 0; annotation = Type.bool; default = false };
                  Variable (Concatenation (create_concatenation list_variadic));
                ])
           ~annotation:Type.integer

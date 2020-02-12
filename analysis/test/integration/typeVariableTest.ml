@@ -25,7 +25,7 @@ let test_check_bounded_variables context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to anonymous call but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to anonymous call but got `str`.";
     ];
   assert_type_errors
     {|
@@ -124,7 +124,8 @@ let test_check_unbounded_variables context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`.";
+      ^ "Expected `str` for 1st positional only parameter to call `expects_string` but got \
+         `Variable[T]`.";
     ];
   assert_type_errors
     {|
@@ -174,7 +175,8 @@ let test_check_unbounded_variables context =
       "Revealed type [-1]: Revealed type for `test.Foo[float]` is `typing.Type[Foo[float]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[float]()` is `Foo[float]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[str]()` is `Foo[str]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st anonymous "
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st positional \
+       only "
       ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
     ];
   assert_type_errors
@@ -189,7 +191,7 @@ let test_check_unbounded_variables context =
         return Foo[int](1.2)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call "
       ^ "`Foo.__init__` but got `float`.";
     ];
   assert_type_errors
@@ -226,7 +228,7 @@ let test_check_unbounded_variables context =
        is `typing.Tuple[float, bool]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [\"1\"], [7])` is \
        `typing.Tuple[str, int]`.";
-      "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd anonymous "
+      "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd positional only "
       ^ "parameter to call `generic` but got `List[int]`.";
     ];
   assert_type_errors
@@ -368,7 +370,7 @@ let test_check_variable_bindings context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `str_to_int` but got "
+      ^ "Expected `str` for 1st positional only parameter to call `str_to_int` but got "
       ^ "`Variable[T (bound to int)]`.";
     ];
   assert_type_errors
@@ -391,7 +393,8 @@ let test_check_variable_bindings context =
         foo(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st anonymous "
+      "Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st positional \
+       only "
       ^ "parameter to call `foo` but got `str`.";
     ];
   assert_type_errors
@@ -418,8 +421,8 @@ let test_check_variable_bindings context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got `int`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call `f` but \
-       got `None`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
+       `f` but got `None`.";
     ];
   assert_type_errors
     {|
@@ -518,7 +521,7 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]()` is `Foo[C]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.D]()` is `Foo[D]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
-      ^ "1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got \
+      ^ "1st positional only parameter to call `typing.GenericMeta.__getitem__` but got \
          `typing.Type[int]`.";
     ];
   assert_type_errors
@@ -542,7 +545,7 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.Mineral]()` is `Foo[Mineral]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Fish]()` is `Foo[Animal]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
-      ^ "for 1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got "
+      ^ "for 1st positional only parameter to call `typing.GenericMeta.__getitem__` but got "
       ^ "`typing.Type[int]`.";
     ];
   assert_type_errors
@@ -836,7 +839,8 @@ let test_unbound_variables context =
           foo([])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `foo` "
       ^ "but got `typing.List[Variable[_T]]`.";
     ];
   assert_type_errors
@@ -900,7 +904,8 @@ let test_distinguish context =
         return f(1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[_T1]` for 1st anonymous parameter to "
+      "Incompatible parameter type [6]: Expected `Variable[_T1]` for 1st positional only parameter \
+       to "
       ^ "anonymous call but got `int`.";
     ];
   assert_type_errors
@@ -1035,7 +1040,7 @@ let test_integer_variables context =
         baz(y)
     |}
     [
-      "Incompatible parameter type [6]: Expected `IntegerVariable[X]` for 1st anonymous "
+      "Incompatible parameter type [6]: Expected `IntegerVariable[X]` for 1st positional only "
       ^ "parameter to call `baz` but got `int`.";
     ];
   ()
@@ -1279,7 +1284,7 @@ let test_list_variadics context =
        is `str`.";
       "Revealed type [-1]: Revealed type for `test.call_with_tuple(test.bar, (True, 19, 37))` is \
        `int`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[test.Ts]` for 2nd anonymous \
+      "Incompatible parameter type [6]: Expected `typing.Tuple[test.Ts]` for 2nd positional only \
        parameter to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`.";
     ];
   assert_type_errors
@@ -1724,8 +1729,8 @@ let test_concatenation_operator context =
       "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Concatenate[List[int], Map[list, \
        test.Ts], List[bool]]]`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[Map[list, test.Ts]]` for 1st \
-       anonymous parameter to call `unmap_tuple` but got `typing.Tuple[Concatenate[List[int], \
-       Map[list, test.Ts], List[bool]]]`.";
+       positional only parameter to call `unmap_tuple` but got \
+       `typing.Tuple[Concatenate[List[int], Map[list, test.Ts], List[bool]]]`.";
     ];
   assert_type_errors
     {|

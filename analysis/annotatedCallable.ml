@@ -58,8 +58,8 @@ let create_overload_without_applying_decorators
     in
     let parse_parameters parameters =
       let parse = function
-        | Type.Callable.Parameter.Anonymous ({ annotation; _ } as anonymous) ->
-            Type.Callable.Parameter.Anonymous
+        | Type.Callable.Parameter.PositionalOnly ({ annotation; _ } as anonymous) ->
+            Type.Callable.Parameter.PositionalOnly
               { anonymous with annotation = parse_as_annotation annotation }
         | Named ({ annotation; _ } as named) ->
             Named { named with annotation = parse_as_annotation annotation }
@@ -85,13 +85,13 @@ let create_overload_without_applying_decorators
           with
           | Some variable -> (
               let parsed_head =
-                let extract_anonymous = function
-                  | Type.Callable.Parameter.Anonymous { annotation; _ } -> Some annotation
+                let extract_positional_only = function
+                  | Type.Callable.Parameter.PositionalOnly { annotation; _ } -> Some annotation
                   | _ -> None
                 in
                 List.rev reversed_head
                 |> List.map ~f:parse
-                |> List.map ~f:extract_anonymous
+                |> List.map ~f:extract_positional_only
                 |> Option.all
               in
               match parsed_head with

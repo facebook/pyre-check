@@ -70,7 +70,7 @@ let decorate
               in
               let new_parameter =
                 match parameter with
-                | Type.Callable.Parameter.Anonymous { annotation; _ } ->
+                | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
                     (* This means it will be read back in as an anonymous *)
                     Expression.Parameter.create
                       ~location

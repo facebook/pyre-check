@@ -181,7 +181,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             original_directory = self._original_directory
             if original_directory is not None:
                 new_source_directories = translate_paths(
-                    # pyre-fixme[6]: Expected `Set[str]` for 1st anonymous parameter
+                    # pyre-fixme[6]: Expected `Set[str]` for 1st positional only parameter
                     # to call `translate_paths` but got `typing.Iterable[str]`.
                     new_source_directories,
                     original_directory,

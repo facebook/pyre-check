@@ -75,7 +75,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -88,7 +88,7 @@ let test_check_typed_dictionaries context =
         a = foo(movie['yar'])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
       ^ "to call `foo` but got `str`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`.";
     ];
@@ -115,7 +115,7 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
       ^ "to call `foo` but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
@@ -131,7 +131,7 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
       ^ "to call `foo` but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
@@ -147,7 +147,7 @@ let test_check_typed_dictionaries context =
         a = foo(movie[key])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
       ^ "to call `foo` but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
       ^ "Expected one of ('name', 'year').";
@@ -177,7 +177,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with "
-      ^ "fields (name: str, year: int)` for 1st anonymous parameter to call `foo` "
+      ^ "fields (name: str, year: int)` for 1st positional only parameter to call `foo` "
       ^ "but got `TypedDict `Actor` with fields (name: str, birthyear: int)`.";
     ];
   assert_test_typed_dictionary
@@ -241,7 +241,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `Mapping[str, A]` for 1st anonymous parameter to call `foo` but got "
+      ^ "Expected `Mapping[str, A]` for 1st positional only parameter to call `foo` but got "
       ^ "`TypedDict `Baz` with fields (foo: A, bar: B)`.";
     ];
   assert_test_typed_dictionary
@@ -327,8 +327,8 @@ let test_check_typed_dictionaries context =
         foo(kwargs)
     |}
     [
-      "Incompatible parameter type [6]: Expected `TypedDict `Baz`` for 1st anonymous parameter to \
-       call `foo` but got `typing.Dict[str, int]`.";
+      "Incompatible parameter type [6]: Expected `TypedDict `Baz`` for 1st positional only \
+       parameter to call `foo` but got `typing.Dict[str, int]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -379,7 +379,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
-       int)` for 1st anonymous parameter to call `__init__` but got `str`.";
+       int)` for 1st positional only parameter to call `__init__` but got `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -400,8 +400,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
-       int)` for 1st anonymous parameter to call `__init__` but got `TypedDict with fields (name: \
-       int, year: str)`.";
+       int)` for 1st positional only parameter to call `__init__` but got `TypedDict with fields \
+       (name: int, year: str)`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -449,7 +449,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got "
+      ^ "Expected `str` for 2nd positional only parameter to call `TypedDictionary.__setitem__` \
+         but got "
       ^ "`int`.";
     ];
   assert_test_typed_dictionary
@@ -487,8 +488,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `B` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got \
-         `A`.";
+      ^ "Expected `B` for 2nd positional only parameter to call `TypedDictionary.__setitem__` but \
+         got `A`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -594,7 +595,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter to "
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to "
       ^ "call `TypedDictionary.setdefault` but got `int`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`.";
     ];
@@ -708,8 +709,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
       ^ "to call `TypedDictionary.__setitem__` but got `int`.";
     ];
   assert_test_typed_dictionary
@@ -724,9 +725,9 @@ let test_check_typed_dictionaries context =
         reversedMovie['name'] = 7
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
       ^ "to call `TypedDictionary.__setitem__` but got `int`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
       ^ "to call `TypedDictionary.__setitem__` but got `int`.";
     ];
   assert_test_typed_dictionary
@@ -778,7 +779,8 @@ let test_check_typed_dictionaries context =
       ^ "has no type specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
       "Undefined or invalid type [11]: Annotation `NamelessTypedDict` is not defined as a type.";
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `foo` "
       ^ "but got `unknown`.";
     ];
   assert_test_typed_dictionary
@@ -812,7 +814,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
-      ^ "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got "
+      ^ "(name: str, year: int)` for 1st positional only parameter to call `foo` but got "
       ^ "`TypedDict with fields (name: str, year: str)`.";
     ];
   assert_test_typed_dictionary
@@ -826,7 +828,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
-      ^ "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got "
+      ^ "(name: str, year: int)` for 1st positional only parameter to call `foo` but got "
       ^ "`typing.Dict[str, typing.Union[int, str]]`.";
     ];
   assert_test_typed_dictionary
@@ -1092,8 +1094,8 @@ let test_check_typed_dictionary_inference context =
         expects_poppable(n)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Poppable` for 1st anonymous parameter to call \
-       `expects_poppable` but got `TypedDict `Total` with fields (foo: int, bar: str)`.";
+      "Incompatible parameter type [6]: Expected `Poppable` for 1st positional only parameter to \
+       call `expects_poppable` but got `TypedDict `Total` with fields (foo: int, bar: str)`.";
     ];
   assert_test_typed_dictionary
     {|

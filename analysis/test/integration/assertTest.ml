@@ -16,7 +16,7 @@ let test_check_assert context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Sized` for 1st anonymous parameter to call `len` but got "
+      ^ "Expected `typing.Sized` for 1st positional only parameter to call `len` but got "
       ^ "`typing.Optional[str]`.";
     ];
   assert_type_errors
@@ -63,7 +63,7 @@ let test_check_assert context =
         return int_to_int(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
       ^ "to call `int_to_int` but got `typing.Union[int, typing.Undeclared]`.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
@@ -234,7 +234,7 @@ let test_check_all context =
           return ','.join(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[str]` for 1st anonymous \
+      "Incompatible parameter type [6]: Expected `typing.Iterable[str]` for 1st positional only \
        parameter to call `str.join` but got `typing.Iterable[typing.Optional[str]]`.";
     ];
   assert_type_errors

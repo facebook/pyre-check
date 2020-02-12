@@ -18,7 +18,7 @@ let test_check_data_class context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
     ];
   assert_type_errors
     {|

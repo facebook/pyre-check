@@ -107,7 +107,7 @@ module OrderImplementation = struct
               List.split_while concretes ~f:is_not_keyword_only
             in
             let extract_component = function
-              | Type.Callable.Parameter.Anonymous { annotation; _ } ->
+              | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
                   Some (Type.OrderedTypes.Concrete [annotation])
               | Named { annotation; _ } when not is_lower_bound ->
                   (* Named arguments can be called positionally, but positionals can't be called
@@ -147,11 +147,12 @@ module OrderImplementation = struct
             |> Option.value ~default:[]
           and solve_parameters ~left_parameters ~right_parameters constraints =
             match left_parameters, right_parameters with
-            | Parameter.Anonymous _ :: _, Parameter.Named _ :: _ -> []
-            | ( Parameter.Anonymous { annotation = left_annotation; _ } :: left_parameters,
-                Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters )
+            | Parameter.PositionalOnly _ :: _, Parameter.Named _ :: _ -> []
+            | ( Parameter.PositionalOnly { annotation = left_annotation; _ } :: left_parameters,
+                Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters )
             | ( Parameter.Named { annotation = left_annotation; _ } :: left_parameters,
-                Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
+                Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters )
+              ->
                 solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.Variable (Concrete left_annotation) :: left_parameters,
@@ -177,7 +178,8 @@ module OrderImplementation = struct
                 else
                   []
             | ( Parameter.Variable (Concrete left_annotation) :: _,
-                Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
+                Parameter.PositionalOnly { annotation = right_annotation; _ } :: right_parameters )
+              ->
                 solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.Variable (Concatenation left_variable) :: left_parameters,
@@ -830,20 +832,20 @@ module OrderImplementation = struct
                     let joined =
                       if Type.Callable.Parameter.names_compatible left right then
                         match left, right with
-                        | Parameter.Anonymous left, Parameter.Anonymous right
+                        | Parameter.PositionalOnly left, Parameter.PositionalOnly right
                           when Bool.equal left.default right.default ->
                             Some
-                              (Parameter.Anonymous
+                              (Parameter.PositionalOnly
                                  {
                                    left with
                                    annotation =
                                      parameter_join order left.annotation right.annotation;
                                  })
-                        | Parameter.Anonymous anonymous, Parameter.Named named
-                        | Parameter.Named named, Parameter.Anonymous anonymous
+                        | Parameter.PositionalOnly anonymous, Parameter.Named named
+                        | Parameter.Named named, Parameter.PositionalOnly anonymous
                           when Bool.equal named.default anonymous.default ->
                             Some
-                              (Parameter.Anonymous
+                              (Parameter.PositionalOnly
                                  {
                                    anonymous with
                                    annotation =

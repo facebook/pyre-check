@@ -261,7 +261,7 @@ let test_check_init context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -335,7 +335,7 @@ let test_check_init context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__new__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.__new__` but got `str`.";
     ];
 
   (* Prefer init over new if both exist. *)
@@ -360,7 +360,7 @@ let test_check_init context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__new__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Super.__new__` but got `str`.";
     ];
 
   (* We look at both __init__ and __new__ in the inheritance structure. *)
@@ -375,7 +375,7 @@ let test_check_init context =
       c: C = C("")
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `Super.__new__` but got `str`.";
     ];
   assert_type_errors
@@ -390,7 +390,7 @@ let test_check_init context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Super.__init__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -500,7 +500,7 @@ let test_check_constructors context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -513,9 +513,9 @@ let test_check_constructors context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[str]` for 2nd anonymous parameter to call `Foo.__init__` "
+      ^ "Expected `typing.Optional[str]` for 2nd positional only parameter to call `Foo.__init__` "
       ^ "but got `int`.";
     ];
 
@@ -703,7 +703,7 @@ let test_check_constructors context =
           Foo.__init__(self, 'asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
        `Foo.__init__` but got `str`.";
     ];
 
@@ -719,7 +719,7 @@ let test_check_constructors context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.foo` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Super.foo` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -732,7 +732,7 @@ let test_check_constructors context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Super.__init__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -840,8 +840,8 @@ let test_check_constructors context =
       foo(Class)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
-       parameter to call `foo` but got `typing.Type[Class]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st \
+       positional only parameter to call `foo` but got `typing.Type[Class]`.";
     ];
   assert_type_errors
     {|

@@ -283,7 +283,7 @@ let test_check_missing_return context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__add__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -304,7 +304,7 @@ let test_check_missing_return context =
       "Missing return annotation [3]: Returning `typing.Union[bool, int]` "
       ^ "but type `Any` is specified.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_bool` but got "
+      ^ "Expected `int` for 1st positional only parameter to call `int_to_bool` but got "
       ^ "`typing.Optional[int]`.";
     ];
   assert_type_errors

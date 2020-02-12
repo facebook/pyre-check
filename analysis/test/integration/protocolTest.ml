@@ -90,7 +90,7 @@ let test_check_protocol context =
         takesFooBarProtocol(FooBarClass())
     |}
     [
-      "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st positional only parameter "
       ^ "to call `takesFooBarProtocol` but got `FooClass`.";
     ];
   assert_type_errors
@@ -253,7 +253,8 @@ let test_check_protocol context =
 
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` "
+      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
+       `foo` "
       ^ "but got `Alpha`.";
     ];
   assert_type_errors
@@ -295,7 +296,8 @@ let test_check_protocol context =
 
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` "
+      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
+       `foo` "
       ^ "but got `Alpha`.";
     ];
   assert_type_errors
@@ -361,8 +363,8 @@ let test_check_protocol context =
         foo(Alpha)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` but \
-       got `Alpha`.";
+      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
+       `foo` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -463,7 +465,7 @@ let test_check_generic_protocols context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `P[str]` for 1st anonymous parameter to call `foo` but got `Alpha`.";
+      ^ "Expected `P[str]` for 1st positional only parameter to call `foo` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -506,7 +508,7 @@ let test_check_generic_protocols context =
     |}
     [
       "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st "
-      ^ "anonymous parameter to call `foo` but got `Alpha`.";
+      ^ "positional only parameter to call `foo` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -612,7 +614,7 @@ let test_check_generic_implementors context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `P[bool]` for 1st anonymous parameter to call `foo` but got `Alpha[int]`.";
+      ^ "Expected `P[bool]` for 1st positional only parameter to call `foo` but got `Alpha[int]`.";
     ];
   assert_type_errors
     {|
@@ -678,7 +680,7 @@ let test_callback_protocols context =
         takesP(doesNotMatch)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call "
+      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call "
       ^ "`takesP` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
     ];
   assert_type_errors
@@ -710,7 +712,7 @@ let test_callback_protocols context =
         takesPInt(doesNotMatch)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P[int]` for 1st anonymous parameter to call "
+      "Incompatible parameter type [6]: Expected `P[int]` for 1st positional only parameter to call "
       ^ "`takesPInt` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
     ];
   assert_type_errors
@@ -737,7 +739,8 @@ let test_callback_protocols context =
     [
       "Revealed type [-1]: Revealed type for `v` is `int`.";
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st positional only \
+       parameter "
       ^ "to call `takesPGeneric` but got "
       ^ "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
     ];

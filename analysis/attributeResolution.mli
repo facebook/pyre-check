@@ -44,7 +44,7 @@ type invalid_argument = {
 
 type missing_argument =
   | Named of Identifier.t
-  | Anonymous of int
+  | PositionalOnly of int
 [@@deriving eq, show, compare, sexp, hash]
 
 type mismatch_with_list_variadic_type_variable =

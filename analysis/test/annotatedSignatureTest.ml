@@ -151,13 +151,16 @@ let test_select context =
       | `NotFoundMissingArgument name ->
           NotFound { callable; reason = Some (MissingArgument (Named name)) }
       | `NotFoundMissingAnonymousArgument index ->
-          NotFound { callable; reason = Some (MissingArgument (Anonymous index)) }
+          NotFound { callable; reason = Some (MissingArgument (PositionalOnly index)) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
           NotFound
             { callable = parse_callable closest; reason = Some (MissingArgument (Named name)) }
       | `NotFoundMissingAnonymousArgumentWithClosest (closest, index) ->
           NotFound
-            { callable = parse_callable closest; reason = Some (MissingArgument (Anonymous index)) }
+            {
+              callable = parse_callable closest;
+              reason = Some (MissingArgument (PositionalOnly index));
+            }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound { callable; reason = Some (TooManyArguments { expected; provided }) }
       | `NotFoundTooManyArgumentsWithClosest (closest, expected, provided) ->
@@ -402,7 +405,7 @@ let test_select context =
           ~parameters:
             (Type.Callable.Defined
                [
-                 Type.Callable.Parameter.Anonymous
+                 Type.Callable.Parameter.PositionalOnly
                    { index = 0; annotation = Type.Any; default = false };
                ])
           ~annotation:Type.integer

@@ -25,7 +25,7 @@ let test_boolean_literal context =
     |}
     [
       "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       anonymous parameter to call `foo` but got `typing_extensions.Literal[False]`.";
+       positional only parameter to call `foo` but got `typing_extensions.Literal[False]`.";
     ];
   assert_type_errors
     {|
@@ -36,7 +36,7 @@ let test_boolean_literal context =
     |}
     [
       "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       anonymous parameter to call `foo` but got `bool`.";
+       positional only parameter to call `foo` but got `bool`.";
     ]
 
 

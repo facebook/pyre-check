@@ -643,7 +643,7 @@ let messages ~concise ~signature location kind =
         let parameter =
           match name with
           | Some name -> Format.asprintf "parameter `%a`" pp_identifier name
-          | _ -> "anonymous parameter"
+          | _ -> "positional only parameter"
         in
         let callee =
           match callee with
@@ -1164,17 +1164,17 @@ let messages ~concise ~signature location kind =
           ] )
   | MissingArgument { parameter = AttributeResolution.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
-  | MissingArgument { parameter = AttributeResolution.Anonymous index; _ } when concise ->
+  | MissingArgument { parameter = AttributeResolution.PositionalOnly index; _ } when concise ->
       [Format.asprintf "Argument `%d` expected." index]
   | MissingArgument { callee; parameter } ->
       let callee =
         match callee with
         | Some name -> Format.asprintf "Call `%a`" pp_reference name
-        | _ -> "Anonymous call"
+        | _ -> "PositionalOnly call"
       in
       let parameter =
         match parameter with
-        | Anonymous index -> Printf.sprintf "in position %d" index
+        | PositionalOnly index -> Printf.sprintf "in position %d" index
         | Named name -> Format.asprintf "`%a`" pp_identifier name
       in
       [Format.asprintf "%s expects argument %s." callee parameter]
@@ -1605,7 +1605,7 @@ let messages ~concise ~signature location kind =
       let callee =
         match callee with
         | Some name -> Format.asprintf "Call `%a`" pp_reference name
-        | _ -> "Anonymous call"
+        | _ -> "PositionalOnly call"
       in
       [
         Format.asprintf
@@ -2143,8 +2143,8 @@ let less_or_equal ~resolution left right =
       MissingArgument { callee = right_callee; parameter = Named right_name } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee
       && Identifier.equal_sanitized left_name right_name
-  | ( MissingArgument { callee = left_callee; parameter = Anonymous left_index },
-      MissingArgument { callee = right_callee; parameter = Anonymous right_index } ) ->
+  | ( MissingArgument { callee = left_callee; parameter = PositionalOnly left_index },
+      MissingArgument { callee = right_callee; parameter = PositionalOnly right_index } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
   | MissingCaptureAnnotation left_name, MissingCaptureAnnotation right_name ->
       Identifier.equal_sanitized left_name right_name
@@ -2333,8 +2333,8 @@ let join ~resolution left right =
       when Option.equal Reference.equal_sanitized left_callee right_callee
            && Identifier.equal_sanitized left_name right_name ->
         left.kind
-    | ( MissingArgument { callee = left_callee; parameter = Anonymous left_index },
-        MissingArgument { callee = right_callee; parameter = Anonymous right_index } )
+    | ( MissingArgument { callee = left_callee; parameter = PositionalOnly left_index },
+        MissingArgument { callee = right_callee; parameter = PositionalOnly right_index } )
       when Option.equal Reference.equal_sanitized left_callee right_callee
            && left_index = right_index ->
         left.kind

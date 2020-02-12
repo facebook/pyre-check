@@ -97,7 +97,7 @@ module Record : sig
             OrderedTypes.RecordConcatenate.t
 
       and 'annotation t =
-        | Anonymous of {
+        | PositionalOnly of {
             index: int;
             annotation: 'annotation;
             default: bool;

@@ -13,7 +13,7 @@ let test_scheduling context =
     "'string' + 1"
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
 
   (* Functions are scheduled. *)
@@ -25,7 +25,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -35,7 +35,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
 
   (* Class bodies are scheduled. *)
@@ -46,7 +46,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
 
   (* Methods are scheduled. *)
@@ -58,7 +58,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
 
   (* Property getters and setters are both scheduled *)
@@ -101,7 +101,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`.";
+      ^ "Expected `str` for 1st positional only parameter to call `expect_string` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -117,7 +117,7 @@ let test_scheduling context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`.";
+      ^ "Expected `str` for 1st positional only parameter to call `expect_string` but got `int`.";
     ]
 
 
@@ -156,7 +156,8 @@ let test_check_excepts context =
             use("error")
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `use` "
       ^ "but got `str`.";
     ]
 
@@ -337,9 +338,9 @@ let test_check_nested context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `float`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -372,7 +373,7 @@ let test_check_nested context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `shadowing` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `shadowing` but got `str`.";
     ];
 
   assert_type_errors

@@ -368,7 +368,7 @@ let test_check_generators context =
           yield takes_int(item)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `takes_int` but got `str`.";
     ]
 

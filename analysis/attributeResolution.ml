@@ -119,7 +119,7 @@ module SignatureSelectionTypes = struct
 
   type missing_argument =
     | Named of Identifier.t
-    | Anonymous of int
+    | PositionalOnly of int
   [@@deriving eq, show, compare, sexp, hash]
 
   type mismatch_with_list_variadic_type_variable =
@@ -1494,7 +1494,8 @@ module Implementation = struct
                     |> Option.value ~default:[]
                   in
                   let create_parameter annotation =
-                    Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+                    Type.Callable.Parameter.PositionalOnly
+                      { index = 0; annotation; default = false }
                   in
                   let synthetic =
                     Type.Variable
@@ -2240,7 +2241,10 @@ module Implementation = struct
                     Type.Callable.annotation = return_annotation;
                     parameters =
                       Type.Callable.Defined
-                        [Type.Callable.Parameter.Anonymous { annotation = parameter_annotation; _ }];
+                        [
+                          Type.Callable.Parameter.PositionalOnly
+                            { annotation = parameter_annotation; _ };
+                        ];
                     _;
                   }
               | Some
@@ -2392,7 +2396,7 @@ module Implementation = struct
             (* Positional argument; parameters empty *)
             { signature_match with reasons = arity_mismatch ~arguments reasons }
         | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
-        | [], (Parameter.Anonymous { default = true; _ } as parameter) :: parameters_tail
+        | [], (Parameter.PositionalOnly { default = true; _ } as parameter) :: parameters_tail
         | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
             (* Arguments empty, default parameter *)
             let argument_mapping = update_mapping parameter Default in
@@ -2618,11 +2622,13 @@ module Implementation = struct
             (* Parameter was not matched *)
             let reasons = { reasons with arity = MissingArgument (Named name) :: arity } in
             { signature_match with reasons }
-        | Parameter.Anonymous { index; _ }, [] ->
+        | Parameter.PositionalOnly { index; _ }, [] ->
             (* Parameter was not matched *)
-            let reasons = { reasons with arity = MissingArgument (Anonymous index) :: arity } in
+            let reasons =
+              { reasons with arity = MissingArgument (PositionalOnly index) :: arity }
+            in
             { signature_match with reasons }
-        | Anonymous { annotation = parameter_annotation; _ }, arguments
+        | PositionalOnly { annotation = parameter_annotation; _ }, arguments
         | KeywordOnly { annotation = parameter_annotation; _ }, arguments
         | Named { annotation = parameter_annotation; _ }, arguments
         | Variable (Concrete parameter_annotation), arguments

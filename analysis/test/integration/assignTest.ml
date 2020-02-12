@@ -45,7 +45,7 @@ let test_check_assign context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__add__` but got `str`.";
     ];
 
   (* Prune `undeclared` from assignments. *)
@@ -214,8 +214,8 @@ let test_check_assign context =
       "Incomplete type [37]: Type `typing.Type[typing.List[Variable[_T]]]` inferred for `x` is \
        incomplete, add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` for 1st anonymous \
-       parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` for 1st positional \
+       only parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[typing.Any]]`.";
     ];
   assert_type_errors

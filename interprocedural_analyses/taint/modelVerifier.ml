@@ -24,7 +24,7 @@ let create_parameters_requirements ~type_parameters =
   let get_parameters_requirements requirements type_parameter =
     let open Type.Callable.RecordParameter in
     match type_parameter with
-    | Anonymous { default; _ } ->
+    | PositionalOnly { default; _ } ->
         if default then
           {
             requirements with
@@ -107,7 +107,7 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
     | PositionalParameter { name; _ }
     | NamedParameter { name } ->
         let name = Identifier.sanitized name in
-        if String.is_prefix name ~prefix:"__" then (* It is an anonymous parameter. *)
+        if String.is_prefix name ~prefix:"__" then (* It is an positional only parameter. *)
           let {
             required_anonymous_parameters_count;
             optional_anonymous_parameters_count;
@@ -130,10 +130,10 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
                 optional_anonymous_parameters_count = optional_anonymous_parameters_count - 1;
               } )
           else if has_star_parameter then
-            (* If all anonymous parameter quota is used, it might be covered by a `*args` *)
+            (* If all positional only parameter quota is used, it might be covered by a `*args` *)
             errors, requirements
           else
-            Format.sprintf "unexpected anonymous parameter: `%s`" name :: errors, requirements
+            Format.sprintf "unexpected positional only parameter: `%s`" name :: errors, requirements
         else
           let {
             required_parameter_set;
@@ -177,7 +177,8 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   let { required_anonymous_parameters_count; required_parameter_set; _ } = left_over in
   let errors =
     if required_anonymous_parameters_count > 0 then
-      Format.sprintf "missing %d anonymous parameters" required_anonymous_parameters_count :: errors
+      Format.sprintf "missing %d positional only parameters" required_anonymous_parameters_count
+      :: errors
     else
       errors
   in

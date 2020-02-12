@@ -101,7 +101,7 @@ let test_check_coverage context =
   assert_covered
     ~additional_errors:
       [
-        "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+        "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
          `int.__mod__` but got `unknown`.";
       ]
     "1 % ERROR";

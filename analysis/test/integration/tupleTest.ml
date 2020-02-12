@@ -29,7 +29,8 @@ let test_check_tuple context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `tuple.tuple_method` but got `float`.";
+      ^ "Expected `int` for 1st positional only parameter to call `tuple.tuple_method` but got \
+         `float`.";
     ];
   assert_type_errors
     {|

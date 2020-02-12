@@ -243,7 +243,7 @@ let test_check_inverse_operator context =
     |}
     (* Make sure that if the operands don't typecheck, we raise an error for the left operand. *)
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `C.__rrshift__` but got `str`.";
     ];
   assert_type_errors
@@ -373,7 +373,7 @@ let test_check_method_parameters context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -384,7 +384,7 @@ let test_check_method_parameters context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `foo` but got `int`.";
+      ^ "Expected `str` for 1st positional only parameter to call `foo` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -393,7 +393,7 @@ let test_check_method_parameters context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -402,9 +402,9 @@ let test_check_method_parameters context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -413,7 +413,7 @@ let test_check_method_parameters context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -429,7 +429,7 @@ let test_check_method_parameters context =
       foo(b, a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter "
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter "
       ^ "to call `foo` but got `int`.";
     ];
 
@@ -461,7 +461,7 @@ let test_check_method_parameters context =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[typing.Type[Variable[typing._KT]], \
-       typing.Type[Variable[typing._VT_co](covariant)]]` for 1st anonymous parameter to call \
+       typing.Type[Variable[typing._VT_co](covariant)]]` for 1st positional only parameter to call \
        `typing.GenericMeta.__getitem__` but got `typing.Type[int]`.";
     ];
   assert_strict_type_errors
@@ -1470,7 +1470,7 @@ let test_check_callable_protocols context =
         return call("")
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `Call.__call__` but got `str`.";
     ];
 
@@ -1483,7 +1483,8 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible parameter type [6]: Expected `typing.List[Variable[_T_co](covariant)]` for 1st \
-       anonymous parameter to call `tuple.__init__` but got `typing.Generator[int, None, None]`.";
+       positional only parameter to call `tuple.__init__` but got `typing.Generator[int, None, \
+       None]`.";
     ];
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
@@ -1496,7 +1497,7 @@ let test_check_callable_protocols context =
     [
       "Incompatible parameter type [6]: Expected "
       ^ "`typing.List[Variable[_T_co](covariant)]` for 1st "
-      ^ "anonymous parameter to call `tuple.__init__` but got "
+      ^ "positional only parameter to call `tuple.__init__` but got "
       ^ "`typing.Generator[int, None, None]`.";
     ];
   assert_type_errors
@@ -1794,7 +1795,7 @@ let test_check_static context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.foo` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.foo` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1809,7 +1810,7 @@ let test_check_static context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.foo` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.foo` but got `str`.";
     ];
 
   (* Class method calls are properly resolved. *)
@@ -1824,7 +1825,7 @@ let test_check_static context =
         Foo.foo('asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `Foo.foo` but got `str`.";
     ];
   assert_type_errors
@@ -1845,7 +1846,7 @@ let test_check_static context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.classmethod` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.classmethod` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1859,7 +1860,7 @@ let test_check_static context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.staticmethod` but got `str`.";
+      ^ "Expected `int` for 1st positional only parameter to call `Foo.staticmethod` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1871,7 +1872,7 @@ let test_check_static context =
           cls.instancemethod(Foo(), '1234')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
        `Foo.instancemethod` but got `str`.";
     ];
 
@@ -1911,7 +1912,7 @@ let test_check_setitem context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`.";
+      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1924,7 +1925,7 @@ let test_check_setitem context =
     [
       "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`.";
+      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1934,7 +1935,7 @@ let test_check_setitem context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`.";
+      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1944,7 +1945,7 @@ let test_check_setitem context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`.";
+      ^ "Expected `str` for 1st positional only parameter to call `dict.__setitem__` but got `int`.";
     ]
 
 
@@ -2093,7 +2094,7 @@ let test_check_enter context =
     |}
     [
       "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`.";
+      ^ "Expected `str` for 1st positional only parameter to call `expect_string` but got `int`.";
     ]
 
 

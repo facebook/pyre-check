@@ -632,7 +632,7 @@ let test_invalid_models context =
       "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
-       `parameter`; unexpected anonymous parameter: `__parameter`."
+       `parameter`; unexpected positional only parameter: `__parameter`."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."

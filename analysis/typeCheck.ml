@@ -1317,10 +1317,10 @@ module State (Context : Context) = struct
                                 ErrorMap.add ~errors error
                         in
                         match overridden_parameter with
-                        | Type.Callable.Parameter.Anonymous { index; annotation; _ } ->
+                        | Type.Callable.Parameter.PositionalOnly { index; annotation; _ } ->
                             List.nth overriding_parameters index
                             >>= (function
-                                  | Anonymous { annotation; _ }
+                                  | PositionalOnly { annotation; _ }
                                   | Named { annotation; _ } ->
                                       Some annotation
                                   | _ -> None)

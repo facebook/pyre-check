@@ -99,7 +99,7 @@ let test_create_overload context =
       parameters =
         Type.Callable.Defined
           [
-            Type.Callable.Parameter.Anonymous
+            Type.Callable.Parameter.PositionalOnly
               { index = 0; default = false; annotation = Type.integer };
             Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
           ];

@@ -399,7 +399,7 @@ let test_decorators context =
     |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous "
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only "
       ^ "parameter to call `int.__add__` but got `str`.";
     ];
 
