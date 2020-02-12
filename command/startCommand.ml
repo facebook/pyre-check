@@ -89,7 +89,7 @@ let computation_thread
     let rec handle_request ?(retries = 2) state ~origin ~request =
       try
         let process_request ~state ~request =
-          Log.info "Processing request %a" Protocol.Request.pp request;
+          Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
           Request.process ~state ~configuration ~request
         in
         match origin with
