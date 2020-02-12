@@ -12,6 +12,12 @@ module StatementDefine = Define
 module ExpressionCall = Call
 module Error = AnalysisError
 
+type class_name_and_is_abstract_and_is_protocol = {
+  class_name: string;
+  is_abstract: bool;
+  is_protocol: bool;
+}
+
 module ErrorMap = struct
   type key = {
     location: Location.t;
@@ -4752,12 +4758,12 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
       then
         let unimplemented_errors =
           let uninitialized_attributes =
-            let add_uninitialized definition attribute_map =
+            let add_uninitialized ({ class_name; _ } as name_and_metadata) attribute_map =
               let attributes =
                 GlobalResolution.attributes
                   ~include_generated_attributes:true
                   ~resolution:global_resolution
-                  (Reference.show (AnnotatedClass.name definition))
+                  class_name
                 |> Option.value ~default:[]
               in
               let is_uninitialized attribute =
@@ -4775,20 +4781,20 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
                   |> Annotation.annotation
                 in
                 let name = Annotated.Attribute.name attribute in
-                match String.Map.add sofar ~key:name ~data:(annotation, definition) with
+                match String.Map.add sofar ~key:name ~data:(annotation, name_and_metadata) with
                 | `Ok map -> map
                 | `Duplicate -> sofar
               in
               List.filter attributes ~f:is_uninitialized
               |> List.fold ~init:attribute_map ~f:add_to_map
             in
-            let remove_initialized definition attribute_map =
+            let remove_initialized { class_name; _ } attribute_map =
               let attributes =
                 GlobalResolution.attributes
                   ~transitive:true
                   ~include_generated_attributes:true
                   ~resolution:global_resolution
-                  (Reference.show (AnnotatedClass.name definition))
+                  class_name
                 |> Option.value ~default:[]
               in
               let is_initialized attribute =
@@ -4807,36 +4813,54 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
             if AnnotatedClass.has_abstract_base definition then
               []
             else
-              let abstract_superclasses, concrete_superclasses =
+              let abstract_superclasses, concrete_superclasses, _superclasses_missing_metadata =
                 let { Node.value = { ClassSummary.name; _ }; _ } = definition in
                 let class_name = Reference.show name in
+                let is_protocol_or_abstract class_name =
+                  match
+                    GlobalResolution.class_metadata global_resolution (Primitive class_name)
+                  with
+                  | Some { is_protocol; is_abstract; _ } when is_protocol || is_abstract ->
+                      `Fst { class_name; is_abstract; is_protocol }
+                  | Some { is_protocol; is_abstract; _ } ->
+                      `Snd { class_name; is_abstract; is_protocol }
+                  | None -> `Trd ()
+                in
                 GlobalResolution.successors class_name ~resolution:global_resolution
-                |> List.map ~f:(fun successor -> Type.Primitive successor)
-                |> List.filter_map ~f:(GlobalResolution.class_definition global_resolution)
-                |> List.partition_tf ~f:(fun superclass ->
-                       ClassSummary.is_protocol (Node.value superclass)
-                       || AnnotatedClass.has_abstract_base superclass)
+                |> List.partition3_map ~f:is_protocol_or_abstract
               in
-              List.cons definition abstract_superclasses
+              let name_and_metadata =
+                let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+                {
+                  class_name = Reference.show name;
+                  is_abstract = ClassSummary.is_abstract (Node.value definition);
+                  is_protocol = ClassSummary.is_protocol (Node.value definition);
+                }
+              in
+              List.cons name_and_metadata abstract_superclasses
               |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized
               |> (fun attribute_map ->
                    List.fold_right
                      ~init:attribute_map
                      ~f:remove_initialized
-                     (List.cons definition concrete_superclasses))
+                     (List.cons name_and_metadata concrete_superclasses))
               |> String.Map.to_alist
           in
           uninitialized_attributes
-          |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
+          |> List.filter_map
+               ~f:(fun ( name,
+                         (annotation, { class_name = original_class_name; is_protocol; is_abstract })
+                       )
+                       ->
                  let expected = annotation in
                  if Type.is_top expected then
                    None
                  else
                    let error_kind =
-                     if ClassSummary.is_protocol (Node.value original_definition) then
-                       Error.Protocol (AnnotatedClass.name original_definition)
-                     else if AnnotatedClass.has_abstract_base original_definition then
-                       Error.Abstract (AnnotatedClass.name original_definition)
+                     if is_protocol then
+                       Error.Protocol (Reference.create original_class_name)
+                     else if is_abstract then
+                       Error.Abstract (Reference.create original_class_name)
                      else
                        Error.Class
                    in
