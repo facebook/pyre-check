@@ -4709,9 +4709,7 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
   resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
 
 
-(* TODO (T59974010): Take errors out of state and get rid of the `errors_in_state` parameter *)
-let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~local_annotations ()
-  =
+let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () =
   let ( {
           Node.value =
             { Define.signature = { name = { Node.value = name; _ }; _ } as signature; _ } as define;
@@ -4720,10 +4718,7 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
     =
     Context.define
   in
-  let exit_annotation_store =
-    LocalAnnotationMap.get_postcondition local_annotations Cfg.exit_index
-    |> Option.value ~default:Reference.Map.empty
-  in
+  let global_resolution = Resolution.global_resolution resolution in
   let class_initialization_errors errors =
     let check_protocol_properties definition errors =
       if Node.value definition |> ClassSummary.is_protocol then
@@ -4895,7 +4890,7 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
                 Reference.create_from_list
                   [StatementDefine.self_identifier define; Attribute.name attribute]
               in
-              Map.mem exit_annotation_store reference
+              Map.mem (Resolution.annotation_store resolution) reference
             in
             check_attribute_initialization ~is_dynamically_initialized definition errors
         | None -> errors
@@ -5078,7 +5073,6 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
       errors
   in
   let overload_errors errors =
-    let resolution = resolution global_resolution ~annotation_store:exit_annotation_store () in
     let annotation = Resolution.resolve_reference resolution name in
     let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
       GlobalResolution.create_overload ~resolution:global_resolution signature
@@ -5186,9 +5180,71 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
     |> check_compatible_return_types
     |> check_unmatched_overloads
   in
-  class_initialization_errors errors_in_state
-  |> overload_errors
-  |> fun errors ->
+  class_initialization_errors errors_sofar |> overload_errors
+
+
+let emit_errors_in_body
+    (module Context : Context)
+    ~global_resolution
+    ~errors_sofar
+    ~cfg
+    ~local_annotations
+    ()
+  =
+  (* TODO (T59974010): Migrate error emission logic from `State.forward` to this function *)
+  let emit_errors_in_statement ~pre_resolution:_ ~post_resolution:_ ~errors_sofar _ =
+    errors_sofar
+  in
+  let walk_statement node_id statement_index errors_sofar statement =
+    let pre_annotations, post_annotations =
+      let key = [%hash: int * int] (node_id, statement_index) in
+      ( LocalAnnotationMap.get_precondition local_annotations key
+        |> Option.value ~default:Reference.Map.empty,
+        LocalAnnotationMap.get_postcondition local_annotations key
+        |> Option.value ~default:Reference.Map.empty )
+    in
+    let pre_resolution, post_resolution =
+      ( resolution global_resolution ~annotation_store:pre_annotations (),
+        resolution global_resolution ~annotation_store:post_annotations () )
+    in
+    emit_errors_in_statement ~pre_resolution ~post_resolution ~errors_sofar statement
+  in
+  let walk_cfg_node ~key:node_id ~data:cfg_node errors_sofar =
+    let statements = Cfg.Node.statements cfg_node in
+    List.foldi statements ~init:errors_sofar ~f:(walk_statement node_id)
+  in
+  Hashtbl.fold cfg ~init:errors_sofar ~f:walk_cfg_node
+
+
+(* TODO (T59974010): Take errors out of state and get rid of the `errors_in_state` parameter *)
+let emit_errors
+    (module Context : Context)
+    ~global_resolution
+    ~errors_in_state
+    ~cfg
+    ~local_annotations
+    ()
+  =
+  let errors_in_body =
+    emit_errors_in_body
+      (module Context)
+      ~global_resolution
+      ~errors_sofar:errors_in_state
+      ~cfg
+      ~local_annotations
+      ()
+  in
+  let exit_resolution =
+    let annotation_store =
+      LocalAnnotationMap.get_postcondition local_annotations Cfg.exit_index
+      |> Option.value ~default:Reference.Map.empty
+    in
+    resolution global_resolution ~annotation_store ()
+  in
+  emit_errors_on_exit (module Context) ~errors_sofar:errors_in_body ~resolution:exit_resolution ()
+
+
+let filter_errors (module Context : Context) ~global_resolution errors =
   if Context.debug then
     errors
   else
@@ -5212,14 +5268,9 @@ let exit_state ~resolution (module Context : Context) =
   let global_resolution = Resolution.global_resolution resolution in
   if Define.is_stub define then
     let { State.resolution; errors; _ } = initial in
-    let errors_in_state = Map.data errors |> Error.deduplicate in
-    let local_annotations =
-      LocalAnnotationMap.empty
-      |> LocalAnnotationMap.set
-           ~postcondition:(Resolution.annotation_store resolution)
-           ~key:Cfg.exit_index
-    in
-    ( emit_errors (module Context) ~global_resolution ~errors_in_state ~local_annotations (),
+    let errors_sofar = Map.data errors |> Error.deduplicate in
+    ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
+      |> filter_errors (module Context) ~global_resolution,
       None,
       None )
   else (
@@ -5231,8 +5282,8 @@ let exit_state ~resolution (module Context : Context) =
       Log.dump "AST:\n%a" Define.pp define );
     if Define.dump_locations define then
       Log.dump "AST with Locations:\n%s" (Define.show_json define);
+    let cfg = Cfg.create define in
     let exit =
-      let cfg = Cfg.create define in
       let fixpoint = Fixpoint.forward ~cfg ~initial in
       Fixpoint.exit fixpoint
     in
@@ -5248,8 +5299,10 @@ let exit_state ~resolution (module Context : Context) =
               (module Context)
               ~global_resolution
               ~errors_in_state
+              ~cfg
               ~local_annotations:resolution_fixpoint
-              (),
+              ()
+            |> filter_errors (module Context) ~global_resolution,
             Some resolution_fixpoint )
     in
     errors, local_annotations, Some callees )
