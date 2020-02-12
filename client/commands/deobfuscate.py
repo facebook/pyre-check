@@ -11,6 +11,7 @@ from . import Check
 
 class Deobfuscate(Check):
     NAME = "deobfuscate"
+    HIDDEN = True
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
