@@ -35,15 +35,11 @@ end
 
 (* Maps a key, unique to each statement for a function CFG, to type annotations. The statement key
    is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
-type t = {
-  statements: Annotations.t Int.Map.Tree.t;
-  expressions: Annotations.t Location.Map.Tree.t;
-}
-[@@deriving eq]
+type t = Annotations.t Int.Map.Tree.t [@@deriving eq]
 
-let empty = { statements = Int.Map.Tree.empty; expressions = Location.Map.Tree.empty }
+let empty = Int.Map.Tree.empty
 
-let pp formatter { statements; expressions } =
+let pp formatter statements =
   let pp_annotations formatter iterator pp_key map =
     Format.fprintf formatter "{ ";
     let pp_annotation_map ~key ~data =
@@ -52,83 +48,42 @@ let pp formatter { statements; expressions } =
     iterator map ~f:pp_annotation_map;
     Format.fprintf formatter " }"
   in
-  Format.fprintf formatter "Statements:\n";
-  pp_annotations formatter Int.Map.Tree.iteri Int.pp statements;
-  Format.fprintf formatter "Expressions:\n";
-  pp_annotations formatter Location.Map.Tree.iteri Location.pp expressions
+  pp_annotations formatter Int.Map.Tree.iteri Int.pp statements
 
 
 let show map = Format.asprintf "%a" pp map
 
-let merge
-    { statements = left_statements; expressions = left_expressions }
-    { statements = right_statements; expressions = right_expressions }
-  =
+let merge left right =
   let join ~key:_ = function
     | `Left next_resolution
     | `Right next_resolution
     | `Both (_, next_resolution) ->
         Some next_resolution
   in
-  {
-    statements = Int.Map.Tree.merge ~f:join left_statements right_statements;
-    expressions = Location.Map.Tree.merge ~f:join left_expressions right_expressions;
-  }
+  Int.Map.Tree.merge ~f:join left right
 
 
-let set_statement
+let set
     ?(precondition = Reference.Map.empty)
     ?(postcondition = Reference.Map.empty)
     ~key
-    { statements; expressions }
+    local_annotations
   =
-  let statements =
-    Int.Map.Tree.set
-      statements
-      ~key
-      ~data:
-        {
-          Annotations.precondition = Reference.Map.to_tree precondition;
-          postcondition = Reference.Map.to_tree postcondition;
-        }
-  in
-  { statements; expressions }
-
-
-let set_expression
-    ?(precondition = Reference.Map.empty)
-    ?(postcondition = Reference.Map.empty)
+  Int.Map.Tree.set
+    local_annotations
     ~key
-    { statements; expressions }
-  =
-  let expressions =
-    Location.Map.Tree.set
-      expressions
-      ~key
-      ~data:
-        {
-          Annotations.precondition = Reference.Map.to_tree precondition;
-          postcondition = Reference.Map.to_tree postcondition;
-        }
-  in
-  { statements; expressions }
+    ~data:
+      {
+        Annotations.precondition = Reference.Map.to_tree precondition;
+        postcondition = Reference.Map.to_tree postcondition;
+      }
 
 
-let get_statement_precondition { statements; _ } key =
-  Int.Map.Tree.find statements key
+let get_precondition local_annotations key =
+  Int.Map.Tree.find local_annotations key
   >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
 
 
-let get_statement_postcondition { statements; _ } key =
-  Int.Map.Tree.find statements key
-  >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition
-
-
-let get_expression_precondition { expressions; _ } key =
-  Location.Map.Tree.find expressions key
-  >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
-
-
-let get_expression_postcondition { expressions; _ } key =
-  Location.Map.Tree.find expressions key
+let get_postcondition local_annotations key =
+  Int.Map.Tree.find local_annotations key
   >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition

@@ -264,9 +264,9 @@ let create_of_module type_environment qualifier =
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.get_statement_precondition annotation_lookup key
+        ( LocalAnnotationMap.get_precondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty,
-          LocalAnnotationMap.get_statement_postcondition annotation_lookup key
+          LocalAnnotationMap.get_postcondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty )
       in
       let pre_resolution =

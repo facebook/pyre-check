@@ -17,24 +17,13 @@ val show : t -> string
 
 val merge : t -> t -> t
 
-val set_statement
+val set
   :  ?precondition:RefinementUnit.t Reference.Map.t ->
   ?postcondition:RefinementUnit.t Reference.Map.t ->
   key:int ->
   t ->
   t
 
-val set_expression
-  :  ?precondition:RefinementUnit.t Reference.Map.t ->
-  ?postcondition:RefinementUnit.t Reference.Map.t ->
-  key:Location.t ->
-  t ->
-  t
+val get_precondition : t -> int -> RefinementUnit.t Reference.Map.t option
 
-val get_statement_precondition : t -> int -> RefinementUnit.t Reference.Map.t option
-
-val get_statement_postcondition : t -> int -> RefinementUnit.t Reference.Map.t option
-
-val get_expression_precondition : t -> Location.t -> RefinementUnit.t Reference.Map.t option
-
-val get_expression_postcondition : t -> Location.t -> RefinementUnit.t Reference.Map.t option
+val get_postcondition : t -> int -> RefinementUnit.t Reference.Map.t option

@@ -1066,7 +1066,7 @@ module State (Context : Context) = struct
       let resolution_fixpoint =
         let postcondition = Resolution.annotation_store resolution in
         let key = [%hash: int * int] (Cfg.entry_index, 0) in
-        LocalAnnotationMap.set_statement resolution_fixpoint ~key ~postcondition
+        LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
       in
       { state with resolution; resolution_fixpoint }
     in
@@ -1413,9 +1413,7 @@ module State (Context : Context) = struct
       let { state; resolved = value_resolved; _ } = forward_expression ~state ~expression:value in
       Type.weaken_literals key_resolved, Type.weaken_literals value_resolved, state
     in
-    let forward_generator
-        ~state
-        ~generator:({ Comprehension.Generator.conditions; target; _ } as generator)
+    let forward_generator ~state ~generator:({ Comprehension.Generator.conditions; _ } as generator)
       =
       (* Propagate the target type information. *)
       let iterator =
@@ -1423,18 +1421,9 @@ module State (Context : Context) = struct
         |> Node.create ~location
       in
       let state =
-        let { errors; resolution; resolution_fixpoint; _ } = state in
-        let ({ errors = iterator_errors; resolution = iterator_resolution; _ } as state) =
+        let { errors; resolution_fixpoint; _ } = state in
+        let ({ errors = iterator_errors; _ } as state) =
           forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
-        in
-        let precondition = Resolution.annotation_store resolution in
-        let postcondition = Resolution.annotation_store iterator_resolution in
-        let resolution_fixpoint =
-          LocalAnnotationMap.set_expression
-            ~key:target.Node.location
-            ~precondition
-            ~postcondition
-            resolution_fixpoint
         in
         (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
            temporarily minting a variable in a new scope and old annotations should be ignored. *)
@@ -4612,7 +4601,7 @@ module State (Context : Context) = struct
         | Some key, { resolution = post_resolution; _ } ->
             let precondition = Resolution.annotation_store resolution in
             let postcondition = Resolution.annotation_store post_resolution in
-            LocalAnnotationMap.set_statement resolution_fixpoint ~key ~precondition ~postcondition
+            LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
         | None, _ -> resolution_fixpoint
       in
       { state with resolution_fixpoint }
@@ -4707,8 +4696,7 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
   let annotation_store =
     match key, local_annotations with
     | Some key, Some map ->
-        LocalAnnotationMap.get_statement_precondition map key
-        |> Option.value ~default:Reference.Map.empty
+        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
   resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
@@ -4726,7 +4714,7 @@ let emit_errors (module Context : Context) ~errors_in_state ~global_resolution ~
     Context.define
   in
   let exit_annotation_store =
-    LocalAnnotationMap.get_statement_postcondition local_annotations Cfg.exit_index
+    LocalAnnotationMap.get_postcondition local_annotations Cfg.exit_index
     |> Option.value ~default:Reference.Map.empty
   in
   let class_initialization_errors errors =
@@ -5205,7 +5193,7 @@ let exit_state ~resolution (module Context : Context) =
     let errors_in_state = Map.data errors |> Error.deduplicate in
     let local_annotations =
       LocalAnnotationMap.empty
-      |> LocalAnnotationMap.set_statement
+      |> LocalAnnotationMap.set
            ~postcondition:(Resolution.annotation_store resolution)
            ~key:Cfg.exit_index
     in
