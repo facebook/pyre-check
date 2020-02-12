@@ -11,8 +11,10 @@ open Pyre
 open Test
 
 let test_simple_registration context =
-  let assert_registers source name expected =
-    let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
+  let assert_registers ?(source_name = "test") source name expected =
+    let project =
+      ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
+    in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
@@ -21,7 +23,7 @@ let test_simple_registration context =
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
-        (Reference.Set.singleton (Reference.create "test"))
+        (Reference.Set.singleton (Reference.create source_name))
     in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let printer v =
@@ -92,6 +94,22 @@ let test_simple_registration context =
          is_final = false;
          extends_placeholder_stub_class = false;
          is_protocol = true;
+         is_abstract = false;
+       });
+  assert_registers
+    ~source_name:"unittest"
+    {|
+      class TestCase:
+        pass
+    |}
+    "unittest.TestCase"
+    (Some
+       {
+         successors = ["object"];
+         is_test = true;
+         is_final = false;
+         extends_placeholder_stub_class = false;
+         is_protocol = false;
          is_abstract = false;
        });
   ()

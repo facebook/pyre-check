@@ -63,7 +63,7 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
     let is_final =
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
-    let in_test = List.exists ~f:Type.Primitive.is_unit_test successors in
+    let in_test = List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors) in
     let extends_placeholder_stub_class =
       let dependency =
         Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
