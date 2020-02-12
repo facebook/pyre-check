@@ -68,7 +68,6 @@ def mock_arguments(
     arguments.taint_models_path = []
     arguments.targets = targets
     arguments.terminal = terminal
-    arguments.use_json_sockets = False
     arguments.verbose = False
     arguments.repository_root = None
     arguments.rule = None
@@ -89,7 +88,6 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.local_configuration_root = None
     configuration.autocomplete = False
     configuration.log_directory = ".pyre"
-    configuration._use_json_sockets = False
     configuration.disabled = False
     return configuration
 

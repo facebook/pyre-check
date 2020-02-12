@@ -187,7 +187,6 @@ class Configuration:
         self._typeshed: Optional[str] = None
         self.strict: bool = False
         self._use_buck_builder: Optional[bool] = None
-        self._use_json_sockets: Optional[bool] = None
         self.ignore_infer: List[str] = []
 
         # Handle search path from multiple sources
@@ -576,10 +575,6 @@ class Configuration:
                 use_buck_builder = configuration.consume("use_buck_builder")
                 if self._use_buck_builder is None:
                     self._use_buck_builder = use_buck_builder
-
-                use_json_sockets = configuration.consume("use_json_sockets")
-                if self._use_json_sockets is None:
-                    self._use_json_sockets = use_json_sockets
 
                 self.autocomplete = configuration.consume("autocomplete", default=False)
 
