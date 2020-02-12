@@ -33,10 +33,12 @@ class ClassSourceGenerator(ModelGenerator):
         classes_to_taint: List[str],
         whitelisted_classes: Optional[List[str]] = None,
         whitelisted_views: Optional[List[str]] = None,
+        taint_annotation: str = "TaintSource[UserControlled]",
     ) -> None:
         self.classes_to_taint: List[str] = classes_to_taint
         self.whitelisted_classes: List[str] = whitelisted_classes or []
         self.whitelisted_views: List[str] = whitelisted_views or []
+        self.taint_annotation: str = taint_annotation
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return gather_all_constructors_in_hierarchy(self.classes_to_taint)
@@ -46,6 +48,7 @@ class ClassSourceGenerator(ModelGenerator):
     ) -> Iterable[Model]:
         return taint_functions(
             functions_to_model,
+            taint_annotation=self.taint_annotation,
             whitelisted_views=self.whitelisted_views,
             whitelisted_classes=self.whitelisted_classes,
         )
