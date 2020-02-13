@@ -137,6 +137,7 @@ class _ConfigurationFile:
         """
         return self._configuration.keys() - {
             "buck_builder_binary",
+            "buck_mode",
             "continuous",
             "coverage",
             "differential",
