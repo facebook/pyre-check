@@ -30,6 +30,7 @@ public final class BuildTargetsCollector {
   private final String outputDirectory;
   private final PlatformSelector selector;
   private final CommandRewriter rewriter;
+  private final @Nullable String mode;
   private final Set<String> requiredRemoteFiles = new HashSet<>();
 
   /** key: output path, value: source path */
@@ -47,11 +48,13 @@ public final class BuildTargetsCollector {
       String buckRoot,
       String outputDirectory,
       PlatformSelector selector,
-      CommandRewriter rewriter) {
+      CommandRewriter rewriter,
+      @Nullable String mode) {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.selector = selector;
     this.rewriter = rewriter;
+    this.mode = mode;
   }
 
   @VisibleForTesting
@@ -91,7 +94,7 @@ public final class BuildTargetsCollector {
   /** @return a builder that contains all the target information necessary for building. */
   public BuildTargetsBuilder getBuilder(long startTime, ImmutableList<String> targets)
       throws BuilderException, IOException {
-    collectBuildTargets(BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets));
+    collectBuildTargets(BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets, this.mode));
     // Filter thrift libraries
     this.thriftLibraryTargets.removeIf(
         target -> {

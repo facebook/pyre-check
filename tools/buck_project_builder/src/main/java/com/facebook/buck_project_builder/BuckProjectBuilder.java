@@ -35,13 +35,14 @@ public final class BuckProjectBuilder {
     String buckRoot = command.getBuckRoot();
     String outputDirectory = command.getOutputDirectory();
     ImmutableList<String> targets = command.getTargets();
+    String mode = command.getMode();
 
     try {
       CacheLock.synchronize(
           () -> {
             DebugOutput debugOutput =
                 new BuildTargetsCollector(
-                        buckRoot, outputDirectory, platformSelector, commandRewriter)
+                        buckRoot, outputDirectory, platformSelector, commandRewriter, mode)
                     .getBuilder(start, targets)
                     .buildTargets(buckRoot);
             if (command.isDebug()) {

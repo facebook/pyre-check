@@ -16,18 +16,23 @@ public class BuilderCommandTest {
   public void goodArgumentsDoParse() throws BuilderException {
     // All optional arguments do appear. Multiple build targets.
     assertParsedTo(
-        new BuilderCommand(false, "ROOT", "OUT", ImmutableList.of("foo", "bar")),
+        new BuilderCommand(false, "ROOT", "OUT", ImmutableList.of("foo", "bar"), null),
         "--buck_root ROOT --output_directory OUT foo bar");
 
     // Empty targets are allowed.
     assertParsedTo(
-        new BuilderCommand(false, "ROOT", "OUT", ImmutableList.of()),
+        new BuilderCommand(false, "ROOT", "OUT", ImmutableList.of(), null),
         "--buck_root ROOT --output_directory OUT");
 
     // Debug argument parsing.
     assertParsedTo(
-        new BuilderCommand(true, "ROOT", "OUT", ImmutableList.of()),
+        new BuilderCommand(true, "ROOT", "OUT", ImmutableList.of(), null),
         "--debug --buck_root ROOT --output_directory OUT");
+
+    // Buck mode
+    assertParsedTo(
+        new BuilderCommand(true, "ROOT", "OUT", ImmutableList.of(), "@mode/dev"),
+        "--debug --buck_root ROOT --output_directory OUT --mode @mode/dev");
   }
 
   @Test(expected = BuilderException.class)

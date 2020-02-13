@@ -18,13 +18,15 @@ final class BuilderCommand {
   private final String buckRoot;
   private final String outputDirectory;
   private final ImmutableList<String> targets;
+  private final @Nullable String mode;
 
   BuilderCommand(
-      boolean debug, String buckRoot, String outputDirectory, ImmutableList<String> targets) {
+      boolean debug, String buckRoot, String outputDirectory, ImmutableList<String> targets, @Nullable String mode) {
     this.debug = debug;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.targets = targets;
+    this.mode = mode;
   }
 
   static BuilderCommand fromCommandLineArguments(String[] arguments) throws BuilderException {
@@ -33,6 +35,7 @@ final class BuilderCommand {
     parsingOptions.addOption(Option.builder().longOpt("debug").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("buck_root").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("output_directory").build());
+    parsingOptions.addOption(Option.builder().hasArg().longOpt("mode").build());
     try {
       CommandLine parsedArguments = parser.parse(parsingOptions, arguments);
       String buckRoot = parsedArguments.getOptionValue("buck_root");
@@ -43,12 +46,14 @@ final class BuilderCommand {
       if (outputDirectory == null) {
         throw new BuilderException("`output_directory` is a required command line argument.");
       }
+      @Nullable String mode = parsedArguments.getOptionValue("mode");
       List<String> targets = parsedArguments.getArgList();
       return new BuilderCommand(
           parsedArguments.hasOption("debug"),
           buckRoot,
           outputDirectory,
-          ImmutableList.copyOf(targets));
+          ImmutableList.copyOf(targets),
+          mode);
     } catch (ParseException exception) {
       throw new BuilderException(
           "Unexpected command line arguments. Detail: " + exception.getMessage());
@@ -69,6 +74,10 @@ final class BuilderCommand {
 
   public ImmutableList<String> getTargets() {
     return targets;
+  }
+
+  public String getMode() {
+    return mode;
   }
 
   @Override

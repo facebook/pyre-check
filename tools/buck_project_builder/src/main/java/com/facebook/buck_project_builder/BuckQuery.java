@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,14 +16,14 @@ public final class BuckQuery {
 
   private BuckQuery() {}
 
-  public static JsonObject getBuildTargetJson(ImmutableList<String> targets)
+  public static JsonObject getBuildTargetJson(ImmutableList<String> targets, @Nullable String mode)
       throws BuilderException {
     if (targets.isEmpty()) {
       throw new BuilderException("Targets should not be empty.");
     }
     SimpleLogger.info("Querying targets' information...");
     long start = System.currentTimeMillis();
-    ImmutableList<String> buildCommand = getBuildCommand(targets);
+    ImmutableList<String> buildCommand = getBuildCommand(targets, mode);
     try (InputStream commandLineOutput = CommandLine.getCommandLineOutput(buildCommand)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
       long buckQueryTime = System.currentTimeMillis() - start;
@@ -45,7 +46,8 @@ public final class BuckQuery {
     }
   }
 
-  private static ImmutableList<String> getBuildCommand(ImmutableList<String> targets) {
+  private static ImmutableList<String> getBuildCommand(
+      ImmutableList<String> targets, @Nullable String mode) {
     /*
      * The command that we will run has the form:
      *
@@ -60,9 +62,12 @@ public final class BuckQuery {
      *
      * See: https://buck.build/command/query.html for more detail.
      */
-    return ImmutableList.<String>builder()
-        .add("buck")
-        .add("query")
+    ImmutableList.Builder<String> builder =
+        ImmutableList.<String>builder().add("buck").add("query");
+    if (mode != null) {
+      builder.add(mode);
+    }
+    return builder
         .add(
             "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
         .addAll(targets.stream().map(BuckQuery::normalizeTarget).collect(Collectors.toList()))
