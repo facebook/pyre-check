@@ -1313,15 +1313,17 @@ end = struct
       && Set.exists Recognized.classproperty_decorators ~f:(has_decorator signature)
 
 
+    let test_initializers =
+      String.Set.of_list
+        ["asyncSetUp"; "async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
+
+
     let is_test_setup ({ parent; _ } as signature) =
       let name = unqualified_name signature in
       if Option.is_none parent then
         false
       else
-        List.mem
-          ~equal:String.equal
-          ["async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
-          name
+        Set.mem test_initializers name
 
 
     let is_constructor ?(in_test = false) ({ parent; _ } as signature) =
