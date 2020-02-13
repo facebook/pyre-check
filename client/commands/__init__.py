@@ -7,7 +7,6 @@ from typing import List, Type
 
 from .analyze import Analyze as Analyze
 from .check import Check as Check
-from .color import Color as Color
 from .deobfuscate import Deobfuscate as Deobfuscate
 from .incremental import Incremental as Incremental
 from .infer import Infer as Infer
@@ -38,7 +37,6 @@ from .command import (  # noqa; noqa; noqa
 COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
-    Color,
     Deobfuscate,
     Incremental,
     Infer,
