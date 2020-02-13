@@ -25,6 +25,7 @@ let recheck
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
+  SharedMem.collect `aggressive;
   Log.info "Parsing %d updated modules..." (List.length module_updates);
   StatusUpdate.write
     ~message:"Reparsing updated modules..."

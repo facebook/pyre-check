@@ -834,9 +834,7 @@ let rec process
   let result =
     try
       match request with
-      | TypeCheckRequest paths ->
-          SharedMem.collect `aggressive;
-          process_type_check_request ~state ~configuration paths
+      | TypeCheckRequest paths -> process_type_check_request ~state ~configuration paths
       | StopRequest ->
           Mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
