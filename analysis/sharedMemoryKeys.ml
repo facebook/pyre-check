@@ -47,10 +47,10 @@ module ReferenceDependencyKey = DependencyTrackedMemory.DependencyKey.Make (Refe
 module AttributeTableKey = struct
   module T = struct
     type t = {
-      transitive: bool;
       class_attributes: bool;
       include_generated_attributes: bool;
-      special_method: bool;
+      in_test: bool;
+      accessed_via_metaclass: bool;
       name: Type.Primitive.t;
       assumptions: Assumptions.t;
     }

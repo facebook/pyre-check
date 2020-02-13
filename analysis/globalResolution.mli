@@ -218,7 +218,7 @@ val signature_select
 
 val create_overload : resolution:t -> Define.Signature.t -> Type.t Type.Callable.overload
 
-val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Type.t option
+val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Type.t
 
 val attribute_names
   :  resolution:t ->

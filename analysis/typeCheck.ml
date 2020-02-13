@@ -1653,7 +1653,7 @@ module State (Context : Context) = struct
                     |> Type.split
                     |> fst
                     |> Type.primitive_name
-                    >>= GlobalResolution.constructor
+                    >>| GlobalResolution.constructor
                           ~instantiated:meta_parameter
                           ~resolution:global_resolution
                     >>= function

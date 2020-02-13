@@ -211,7 +211,6 @@ let test_constructors context =
           Node.value name
           |> Reference.show
           |> GlobalResolution.constructor ~resolution ~instantiated
-          |> fun option -> Option.value_exn option
         in
         assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
     | _ -> assert_unreached ()

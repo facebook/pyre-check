@@ -244,7 +244,7 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     Type.Primitive.t ->
     instantiated:Type.t ->
-    Type.t option
+    Type.t
 
   val instantiate_attribute
     :  t ->

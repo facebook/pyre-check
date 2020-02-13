@@ -2527,7 +2527,7 @@ let test_solve_less_or_equal context =
         |> Type.split
         |> fst
         |> Type.primitive_name
-        >>= GlobalResolution.constructor ~instantiated ~resolution
+        >>| GlobalResolution.constructor ~instantiated ~resolution
       in
       let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
