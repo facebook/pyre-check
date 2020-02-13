@@ -37,6 +37,7 @@ class FastBuckBuilder(BuckBuilder):
         buck_builder_binary: Optional[str] = None,
         buck_builder_target: Optional[str] = None,
         debug_mode: bool = False,
+        buck_mode: Optional[str] = None,
     ) -> None:
         self._buck_root = buck_root
         self._output_directory: str = output_directory or tempfile.mkdtemp(
@@ -45,6 +46,7 @@ class FastBuckBuilder(BuckBuilder):
         self._buck_builder_binary = buck_builder_binary
         self._buck_builder_target = buck_builder_target
         self._debug_mode = debug_mode
+        self._buck_mode = buck_mode
         self.conflicting_files: List[str] = []
         self.unsupported_files: List[str] = []
 
@@ -91,6 +93,9 @@ class FastBuckBuilder(BuckBuilder):
         ] + list(targets)
         if self._debug_mode:
             command.append("--debug")
+        buck_mode = self._buck_mode
+        if buck_mode:
+            command.extend(["--mode", buck_mode])
         LOG.info("Buck builder command: `{}`".format(" ".join(command)))
         with subprocess.Popen(
             command,

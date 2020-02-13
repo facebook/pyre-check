@@ -287,6 +287,9 @@ class CommandParser(ABC):
         buck_arguments.add_argument(
             "--buck-builder-debug", action="store_true", help=argparse.SUPPRESS
         )
+        buck_arguments.add_argument(
+            "--buck-mode", type=str, help="Mode to pass to `buck query`"
+        )
 
         source_directories = parser.add_argument_group("source-directories")
         source_directories.add_argument(

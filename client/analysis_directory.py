@@ -588,6 +588,7 @@ def resolve_analysis_directory(
                 buck_builder_binary=arguments.buck_builder_binary,
                 buck_builder_target=arguments.buck_builder_target,
                 debug_mode=arguments.buck_builder_debug,
+                buck_mode=arguments.buck_mode,
             )
         else:
             buck_builder = buck.SimpleBuckBuilder(build=build)
