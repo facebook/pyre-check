@@ -8,17 +8,19 @@ import textwrap
 import unittest
 from pathlib import Path
 from typing import Dict
+from unittest.mock import MagicMock, patch
 
 from libcst import Module, parse_module
 
+from ...analysis_directory import AnalysisDirectory
 from ...statistics_collectors import (
     AnnotationCountCollector,
     FixmeCountCollector,
     IgnoreCountCollector,
     StrictCountCollector,
 )
-from ..statistics import _find_paths
-from .command_test import mock_arguments
+from ..statistics import Statistics, _find_paths
+from .command_test import mock_arguments, mock_configuration
 
 
 class StatisticsTest(unittest.TestCase):
@@ -42,6 +44,29 @@ class StatisticsTest(unittest.TestCase):
             _find_paths(arguments.local_configuration, arguments.filter_paths),
             [Path("example/path/client/a.py"), Path("example/path/client/b.py")],
         )
+
+    @patch.object(Statistics, "_find_paths", return_value=[])
+    @patch.object(Statistics, "_log_to_scuba")
+    def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:
+        arguments = mock_arguments()
+        arguments.filter_paths = ["a.py", "b.py"]
+        arguments.local_configuration = "example/path/client"
+        arguments.collect = None
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+        original_directory = "/original/directory"
+
+        arguments.log_results = False
+        Statistics(
+            arguments, original_directory, configuration, analysis_directory
+        )._run()
+        log.assert_not_called()
+
+        arguments.log_results = True
+        Statistics(
+            arguments, original_directory, configuration, analysis_directory
+        )._run()
+        log.assert_called()
 
 
 class AnnotationCountCollectorTest(unittest.TestCase):

@@ -119,6 +119,7 @@ class Statistics(Command):
         self._filter_paths: Set[str] = set(arguments.filter_paths)
         self._strict: bool = self._configuration.strict
         self._collect: QualityType = arguments.collect
+        self._log_results: bool = arguments.log_results
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -137,11 +138,17 @@ class Statistics(Command):
             default=None,
             help="Which code quality issue you want to generate.",
         )
+        statistics.add_argument(
+            "--log-results",
+            type=bool,
+            default=False,
+            help="Log the statistics results to external tables.",
+        )
 
     def _run(self) -> None:
         if self._collect is None:
             self._analysis_directory.prepare()
-            paths = _find_paths(self._local_configuration, self._filter_paths)
+            paths = self._find_paths()
             modules = [parse_path_to_module(path) for path in _parse_paths(paths)]
             annotations = _count(modules, AnnotationCountCollector())
             fixmes = _count(modules, FixmeCountCollector())
@@ -154,7 +161,8 @@ class Statistics(Command):
                 "strict": strict_files.build_json(),
             }
             log.stdout.write(json.dumps(data))
-            self._log_to_scuba(data)
+            if self._log_results:
+                self._log_to_scuba(data)
         elif self._collect == QualityType.MISSING_ANNOTATIONS:
             self._get_missing_annotation_issues()
         elif self._collect == QualityType.STRICT:
@@ -217,3 +225,6 @@ class Statistics(Command):
                 integers={"count": count},
                 normals={"root": root, "code": error_code, "type": fixme_type},
             )
+
+    def _find_paths(self) -> List[Path]:
+        return _find_paths(self._local_configuration, self._filter_paths)
