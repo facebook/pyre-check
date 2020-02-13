@@ -110,7 +110,7 @@ module ConstantPropagationState (Context : Context) = struct
 
   let update_transformations _ = ()
 
-  let forward ?key:_ ({ constants; nested_defines; _ } as state) ~statement =
+  let forward ~key:_ ({ constants; nested_defines; _ } as state) ~statement =
     (* Update transformations. *)
     let transformed =
       let transform_statement statement =
@@ -223,7 +223,7 @@ module ConstantPropagationState (Context : Context) = struct
     { state with nested_defines }
 
 
-  let backward ?key:_ state ~statement:_ = state
+  let backward ~key:_ state ~statement:_ = state
 end
 
 module UnusedStoreState (Context : Context) = struct

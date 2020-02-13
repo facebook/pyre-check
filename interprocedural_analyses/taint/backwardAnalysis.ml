@@ -843,7 +843,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint:return_taint ~state ~expression
 
 
-    let backward ?key state ~statement:{ Node.value = statement; _ } =
+    let backward ~key state ~statement:{ Node.value = statement; _ } =
       let resolution =
         let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
           FunctionContext.definition
@@ -857,7 +857,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_statement ~resolution state statement
 
 
-    let forward ?key:_ _ ~statement:_ = failwith "Don't call me"
+    let forward ~key:_ _ ~statement:_ = failwith "Don't call me"
   end
 
   and Analyzer : (Fixpoint.Fixpoint with type state = FixpointState.t) =

@@ -886,9 +886,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
       let taint, state = analyze_expression ~resolution ~state ~expression in
       (* There maybe configured sinks for conditionals, so test them here. *)
-      let sink_taint =
-        Configuration.conditional_test_sinks () |> BackwardTaint.of_list ~location
-      in
+      let sink_taint = Configuration.conditional_test_sinks () |> BackwardTaint.of_list ~location in
       let sink_tree = BackwardState.Tree.create_leaf sink_taint in
       FunctionContext.check_flow ~location ~source_tree:taint ~sink_tree;
       state
@@ -994,7 +992,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       List.fold parameters ~init:{ taint = ForwardState.empty } ~f:prime_parameter
 
 
-    let forward ?key state ~statement =
+    let forward ~key state ~statement =
       log "State: %a\nAnalyzing statement: %a" pp state Statement.pp statement;
       let resolution =
         let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
@@ -1009,7 +1007,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_statement ~resolution statement state
 
 
-    let backward ?key:_ _ ~statement:_ = failwith "Don't call me"
+    let backward ~key:_ _ ~statement:_ = failwith "Don't call me"
   end
 
   and Analyzer : (Fixpoint.Fixpoint with type state = FixpointState.t) =

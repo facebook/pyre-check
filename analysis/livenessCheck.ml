@@ -114,10 +114,10 @@ module State (Context : Context) = struct
     ErrorMap.Table.data Context.errors |> List.sort ~compare:Error.compare
 
 
-  let forward ?key:_ state ~statement:_ = state
+  let forward ~key:_ state ~statement:_ = state
 
   let backward
-      ?key
+      ~key
       ({ used; define; local_annotations; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =

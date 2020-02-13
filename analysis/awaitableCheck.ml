@@ -538,7 +538,7 @@ module State (Context : Context) = struct
     | _ -> state
 
 
-  let forward ?key state ~statement:{ Node.value; _ } =
+  let forward ~key state ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
@@ -603,7 +603,7 @@ module State (Context : Context) = struct
         state
 
 
-  let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
+  let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
 let name = "Awaitable"

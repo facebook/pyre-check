@@ -19,13 +19,13 @@ end = struct
 
   let less_or_equal ~left ~right = left <= right
 
-  let forward ?key:_ state ~statement =
+  let forward ~key:_ state ~statement =
     match statement with
     | { Node.value = Statement.Pass; _ } -> state + 1
     | _ -> state
 
 
-  let backward ?key:_ state ~statement =
+  let backward ~key:_ state ~statement =
     match statement with
     | { Node.value = Statement.Pass; _ } -> state + 1
     | _ -> state

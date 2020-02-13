@@ -4516,7 +4516,7 @@ module State (Context : Context) = struct
     from_reference ~location:Location.any reference |> resolve_expression_type ~state
 
 
-  let forward ?key ({ bottom; resolution; _ } as state) ~statement =
+  let forward ~key ({ bottom; resolution; _ } as state) ~statement =
     let ({ resolution_fixpoint; _ } as state) =
       if bottom then
         state
@@ -4525,19 +4525,17 @@ module State (Context : Context) = struct
     in
     let state =
       let resolution_fixpoint =
-        match key, state with
-        | Some key, { resolution = post_resolution; _ } ->
-            let precondition = Resolution.annotation_store resolution in
-            let postcondition = Resolution.annotation_store post_resolution in
-            LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
-        | None, _ -> resolution_fixpoint
+        let { resolution = post_resolution; _ } = state in
+        let precondition = Resolution.annotation_store resolution in
+        let postcondition = Resolution.annotation_store post_resolution in
+        LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
       in
       { state with resolution_fixpoint }
     in
     state
 
 
-  let backward ?key:_ state ~statement:_ = state
+  let backward ~key:_ state ~statement:_ = state
 end
 
 module CheckResult = struct
@@ -4621,10 +4619,11 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
   let annotation_store =
-    match key, local_annotations with
-    | Some key, Some map ->
-        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
-    | _ -> Reference.Map.empty
+    Option.value_map
+      local_annotations
+      ~f:(fun map ->
+        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty)
+      ~default:Reference.Map.empty
   in
   resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
 

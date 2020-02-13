@@ -51,7 +51,7 @@ let assert_backward ~resolution precondition statement postcondition =
   assert_state_equal
     (create postcondition)
     (List.fold_right
-       ~f:(fun statement state -> State.backward state ~statement)
+       ~f:(fun statement state -> State.backward ~key:Cfg.exit_index state ~statement)
        ~init:(create precondition)
        parsed)
 

@@ -257,7 +257,7 @@ module State (Context : Context) = struct
 
 
   let forward
-      ?key:_
+      ~key:_
       ({ resolution; bottom; errors; _ } as state)
       ~statement:({ Node.value; _ } as statement)
     =
@@ -508,7 +508,7 @@ module State (Context : Context) = struct
     { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors }
 
 
-  let backward ?key:_ ({ resolution; _ } as state) ~statement =
+  let backward ~key:_ ({ resolution; _ } as state) ~statement =
     Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
