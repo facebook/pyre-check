@@ -28,14 +28,6 @@ val performance
   unit ->
   unit
 
-val coverage
-  :  ?flush:bool ->
-  ?randomly_log_every:int ->
-  path:string ->
-  coverage:(string * int) list ->
-  unit ->
-  unit
-
 val event
   :  ?flush:bool ->
   ?randomly_log_every:int ->

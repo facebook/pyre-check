@@ -96,30 +96,5 @@ let check
   in
   Profiling.track_shared_memory_usage ();
 
-  (* Log coverage results *)
-  let path_to_files =
-    Path.get_relative_to_root ~root:project_root ~path:local_root
-    |> Option.value ~default:(Path.absolute local_root)
-  in
-  let open Analysis in
-  let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    Coverage.coverage
-      ~configuration
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
-      qualifiers
-  in
-  Statistics.coverage
-    ~randomly_log_every:20
-    ~path:path_to_files
-    ~coverage:
-      [
-        "declare_coverage", declare_coverage;
-        "default_coverage", default_coverage;
-        "source_files", source_files;
-        "strict_coverage", strict_coverage;
-        "total_errors", List.length errors;
-      ]
-    ();
-
   (* Only destroy the scheduler if the check command created it. *)
   { module_tracker; ast_environment; environment; errors }
