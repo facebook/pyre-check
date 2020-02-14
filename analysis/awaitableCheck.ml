@@ -16,7 +16,7 @@ module type Context = sig
 
   val global_resolution : GlobalResolution.t
 
-  val local_annotations : LocalAnnotationMap.t option
+  val local_annotations : LocalAnnotationMap.ReadOnly.t option
 end
 
 module State (Context : Context) = struct

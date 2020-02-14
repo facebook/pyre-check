@@ -258,15 +258,17 @@ let create_of_module type_environment qualifier =
     =
     let annotation_lookup =
       TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name
-      |> Option.value ~default:LocalAnnotationMap.empty
+      |> function
+      | Some annotation_lookup -> annotation_lookup
+      | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.get_precondition annotation_lookup key
+        ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty,
-          LocalAnnotationMap.get_postcondition annotation_lookup key
+          LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty )
       in
       let pre_resolution =

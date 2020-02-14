@@ -31,7 +31,7 @@ module type FUNCTION_CONTEXT = sig
 
   val global_resolution : GlobalResolution.t
 
-  val local_annotations : LocalAnnotationMap.t option
+  val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
   val debug : bool
 end

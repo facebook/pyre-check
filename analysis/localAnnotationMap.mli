@@ -7,7 +7,7 @@ open Ast
 
 type t
 
-val empty : t
+val empty : unit -> t
 
 val equal : t -> t -> bool
 
@@ -15,15 +15,19 @@ val pp : Format.formatter -> t -> unit
 
 val show : t -> string
 
-val merge : t -> t -> t
-
 val set
   :  ?precondition:RefinementUnit.t Reference.Map.t ->
   ?postcondition:RefinementUnit.t Reference.Map.t ->
   key:int ->
   t ->
-  t
+  unit
 
-val get_precondition : t -> int -> RefinementUnit.t Reference.Map.t option
+module ReadOnly : sig
+  type t
 
-val get_postcondition : t -> int -> RefinementUnit.t Reference.Map.t option
+  val get_precondition : t -> int -> RefinementUnit.t Reference.Map.t option
+
+  val get_postcondition : t -> int -> RefinementUnit.t Reference.Map.t option
+end
+
+val read_only : t -> ReadOnly.t

@@ -10,7 +10,7 @@ module ReadOnly : sig
 
   val create
     :  ?get_errors:(Reference.t -> Error.t list) ->
-    ?get_local_annotations:(Reference.t -> LocalAnnotationMap.t option) ->
+    ?get_local_annotations:(Reference.t -> LocalAnnotationMap.ReadOnly.t option) ->
     AnnotatedGlobalEnvironment.ReadOnly.t ->
     t
 
@@ -22,7 +22,7 @@ module ReadOnly : sig
 
   val get_errors : t -> Reference.t -> Error.t list
 
-  val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.t option
+  val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 end
 
 type t
@@ -37,11 +37,11 @@ val ast_environment : t -> AstEnvironment.ReadOnly.t
 
 val get_errors : t -> Reference.t -> Error.t list
 
-val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.t option
+val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 
 val set_errors : t -> Reference.t -> Error.t list -> unit
 
-val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.t -> unit
+val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t -> unit
 
 val invalidate : t -> Reference.t list -> unit
 

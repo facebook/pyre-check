@@ -69,7 +69,7 @@ module State (Context : Context) = struct
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
-    local_annotations: LocalAnnotationMap.t option;
+    local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
 
   let show { used; _ } = Set.to_list used |> String.concat ~sep:", "

@@ -158,13 +158,12 @@ module State (Context : Context) = struct
     && Bool.equal left.bottom right.bottom
 
 
-  let create
-      ?(bottom = false)
-      ?(errors = ErrorMap.Map.empty)
-      ~resolution
-      ?(resolution_fixpoint = LocalAnnotationMap.empty)
-      ()
-    =
+  let create ?(bottom = false) ?(errors = ErrorMap.Map.empty) ~resolution ?resolution_fixpoint () =
+    let resolution_fixpoint =
+      match resolution_fixpoint with
+      | Some resolution_fixpoint -> resolution_fixpoint
+      | None -> LocalAnnotationMap.empty ()
+    in
     { resolution; errors; bottom; resolution_fixpoint }
 
 
@@ -413,9 +412,6 @@ module State (Context : Context) = struct
           (Resolution.annotation_store previous.resolution)
           (Resolution.annotation_store next.resolution)
       in
-      let resolution_fixpoint =
-        LocalAnnotationMap.merge previous.resolution_fixpoint next.resolution_fixpoint
-      in
       let combine_errors ~key:_ left_error right_error =
         if iteration > widening_threshold then
           { left_error with Error.kind = Error.Top }
@@ -426,7 +422,7 @@ module State (Context : Context) = struct
         previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
         resolution = Resolution.with_annotation_store resolution ~annotation_store;
-        resolution_fixpoint;
+        resolution_fixpoint = next.resolution_fixpoint;
       }
 
 
@@ -1063,12 +1059,12 @@ module State (Context : Context) = struct
               parameters
       in
       let resolution = Resolution.with_annotation_store resolution ~annotation_store in
-      let resolution_fixpoint =
+      let () =
         let postcondition = Resolution.annotation_store resolution in
         let key = [%hash: int * int] (Cfg.entry_index, 0) in
         LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
       in
-      { state with resolution; resolution_fixpoint }
+      { state with resolution }
     in
     let check_base_annotations state =
       if Define.is_class_toplevel define then
@@ -1421,7 +1417,7 @@ module State (Context : Context) = struct
         |> Node.create ~location
       in
       let state =
-        let { errors; resolution_fixpoint; _ } = state in
+        let { errors; _ } = state in
         let ({ errors = iterator_errors; _ } as state) =
           forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
         in
@@ -1439,7 +1435,7 @@ module State (Context : Context) = struct
             iterator_errors
             errors
         in
-        { state with errors; resolution_fixpoint }
+        { state with errors }
       in
       List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
@@ -4517,20 +4513,17 @@ module State (Context : Context) = struct
 
 
   let forward ~key ({ bottom; resolution; _ } as state) ~statement =
-    let ({ resolution_fixpoint; _ } as state) =
+    let state =
       if bottom then
         state
       else
         forward_statement ~state ~statement
     in
-    let state =
-      let resolution_fixpoint =
-        let { resolution = post_resolution; _ } = state in
-        let precondition = Resolution.annotation_store resolution in
-        let postcondition = Resolution.annotation_store post_resolution in
-        LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
-      in
-      { state with resolution_fixpoint }
+    let () =
+      let { resolution = post_resolution; _ } = state in
+      let precondition = Resolution.annotation_store resolution in
+      let postcondition = Resolution.annotation_store post_resolution in
+      LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition
     in
     state
 
@@ -4577,7 +4570,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
     {
       State.errors = ErrorMap.Map.empty;
       bottom = false;
-      resolution_fixpoint = LocalAnnotationMap.empty;
+      resolution_fixpoint = LocalAnnotationMap.empty ();
       resolution = empty_resolution;
     }
   in
@@ -4622,7 +4615,8 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
     Option.value_map
       local_annotations
       ~f:(fun map ->
-        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty)
+        LocalAnnotationMap.ReadOnly.get_precondition map key
+        |> Option.value ~default:Reference.Map.empty)
       ~default:Reference.Map.empty
   in
   resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
@@ -5280,9 +5274,9 @@ let emit_errors_in_body
   let walk_statement node_id statement_index errors_sofar statement =
     let pre_annotations, post_annotations =
       let key = [%hash: int * int] (node_id, statement_index) in
-      ( LocalAnnotationMap.get_precondition local_annotations key
+      ( LocalAnnotationMap.ReadOnly.get_precondition local_annotations key
         |> Option.value ~default:Reference.Map.empty,
-        LocalAnnotationMap.get_postcondition local_annotations key
+        LocalAnnotationMap.ReadOnly.get_postcondition local_annotations key
         |> Option.value ~default:Reference.Map.empty )
     in
     let pre_resolution, post_resolution =
@@ -5318,7 +5312,7 @@ let emit_errors
   in
   let exit_resolution =
     let annotation_store =
-      LocalAnnotationMap.get_postcondition local_annotations Cfg.exit_index
+      LocalAnnotationMap.ReadOnly.get_postcondition local_annotations Cfg.exit_index
       |> Option.value ~default:Reference.Map.empty
     in
     resolution global_resolution ~annotation_store ()
@@ -5382,7 +5376,7 @@ let exit_state ~resolution (module Context : Context) =
               ~global_resolution
               ~errors_in_state
               ~cfg
-              ~local_annotations:resolution_fixpoint
+              ~local_annotations:(LocalAnnotationMap.read_only resolution_fixpoint)
               ()
             |> filter_errors (module Context) ~global_resolution,
             Some resolution_fixpoint )
@@ -5471,7 +5465,7 @@ let get_or_recompute_local_annotations ~environment name =
             in
             exit_state ~resolution (module Context)
           in
-          local_annotations )
+          local_annotations >>| LocalAnnotationMap.read_only )
 
 
 let check_function_definition
@@ -5542,9 +5536,14 @@ let run_on_define ~configuration ~environment ?call_graph_builder name =
         if configuration.store_type_check_resolution then
           (* Write fixpoint type resolutions to shared memory *)
           let local_annotations =
-            Option.value local_annotations ~default:LocalAnnotationMap.empty
+            match local_annotations with
+            | Some local_annotations -> local_annotations
+            | None -> LocalAnnotationMap.empty ()
           in
-          TypeEnvironment.set_local_annotations environment name local_annotations
+          TypeEnvironment.set_local_annotations
+            environment
+            name
+            (LocalAnnotationMap.read_only local_annotations)
       in
       TypeEnvironment.set_errors environment name errors
 

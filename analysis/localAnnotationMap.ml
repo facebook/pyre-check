@@ -35,9 +35,11 @@ end
 
 (* Maps a key, unique to each statement for a function CFG, to type annotations. The statement key
    is computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
-type t = Annotations.t Int.Map.Tree.t [@@deriving eq]
+type t = Annotations.t Int.Table.t
 
-let empty = Int.Map.Tree.empty
+let equal left right = Hashtbl.equal left right Annotations.equal
+
+let empty () = Int.Table.create ()
 
 let pp formatter statements =
   let pp_annotations formatter iterator pp_key map =
@@ -48,20 +50,10 @@ let pp formatter statements =
     iterator map ~f:pp_annotation_map;
     Format.fprintf formatter " }"
   in
-  pp_annotations formatter Int.Map.Tree.iteri Int.pp statements
+  pp_annotations formatter Int.Table.iteri Int.pp statements
 
 
 let show map = Format.asprintf "%a" pp map
-
-let merge left right =
-  let join ~key:_ = function
-    | `Left next_resolution
-    | `Right next_resolution
-    | `Both (_, next_resolution) ->
-        Some next_resolution
-  in
-  Int.Map.Tree.merge ~f:join left right
-
 
 let set
     ?(precondition = Reference.Map.empty)
@@ -69,7 +61,7 @@ let set
     ~key
     local_annotations
   =
-  Int.Map.Tree.set
+  Hashtbl.set
     local_annotations
     ~key
     ~data:
@@ -79,11 +71,17 @@ let set
       }
 
 
-let get_precondition local_annotations key =
-  Int.Map.Tree.find local_annotations key
-  >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
+module ReadOnly = struct
+  type t = Annotations.t Int.Map.Tree.t
+
+  let get_precondition local_annotations key =
+    Int.Map.Tree.find local_annotations key
+    >>| fun { Annotations.precondition; _ } -> Reference.Map.of_tree precondition
 
 
-let get_postcondition local_annotations key =
-  Int.Map.Tree.find local_annotations key
-  >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition
+  let get_postcondition local_annotations key =
+    Int.Map.Tree.find local_annotations key
+    >>| fun { Annotations.postcondition; _ } -> Reference.Map.of_tree postcondition
+end
+
+let read_only local_annotations = Hashtbl.to_alist local_annotations |> Int.Map.Tree.of_alist_exn

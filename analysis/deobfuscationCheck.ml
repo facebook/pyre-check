@@ -43,7 +43,7 @@ module ConstantPropagationState (Context : Context) = struct
   type t = {
     constants: constant Reference.Map.t;
     define: Define.t;
-    local_annotations: LocalAnnotationMap.t option;
+    local_annotations: LocalAnnotationMap.ReadOnly.t option;
     nested_defines: t NestedDefines.t;
   }
 

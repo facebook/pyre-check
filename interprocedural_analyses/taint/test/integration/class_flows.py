@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Tuple, Type
 
 
 class C:
@@ -48,3 +48,25 @@ def tainted_class_attribute_through_optional_class_issue(
 
 def global_class_attribute_issue() -> None:
     C.tainted_class_attribute = __test_source()
+
+
+class HasClassmethods:
+    @classmethod
+    def _async_results_for_non_empty_query_from_db(cls, locale: str):
+        if not locale:
+            emojis = cls._get_single_word_results(locale)
+        else:
+            emojis = cls._get_multi_word_results(locale)
+
+    @classmethod
+    def _get_multi_word_results(cls, locale: str):
+        __test_sink(locale)
+        return ""
+
+    @classmethod
+    def _get_single_word_results(cls, locale: str):
+        return ""
+
+
+def test():
+    HasClassmethods._async_results_for_non_empty_query_from_db(__test_source())

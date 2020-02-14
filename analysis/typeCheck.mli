@@ -82,11 +82,11 @@ val resolution
 val get_or_recompute_local_annotations
   :  environment:TypeEnvironment.ReadOnly.t ->
   Reference.t ->
-  LocalAnnotationMap.t option
+  LocalAnnotationMap.ReadOnly.t option
 
 val resolution_with_key
   :  global_resolution:GlobalResolution.t ->
-  local_annotations:LocalAnnotationMap.t option ->
+  local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   parent:Reference.t option ->
   key:int ->
   Resolution.t

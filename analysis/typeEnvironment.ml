@@ -10,10 +10,10 @@ module Error = AnalysisError
 type t = {
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
   set_errors: Reference.t -> Error.t list -> unit;
-  set_local_annotations: Reference.t -> LocalAnnotationMap.t -> unit;
+  set_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t -> unit;
   invalidate: Reference.t list -> unit;
   get_errors: Reference.t -> Error.t list;
-  get_local_annotations: Reference.t -> LocalAnnotationMap.t option;
+  get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
 }
 
 let global_environment { global_environment; _ } = global_environment
@@ -45,7 +45,7 @@ module AnalysisErrorValue = struct
 end
 
 module LocalAnnotationsValue = struct
-  type t = LocalAnnotationMap.t
+  type t = LocalAnnotationMap.ReadOnly.t
 
   let prefix = Prefix.make ()
 
@@ -81,7 +81,7 @@ module ReadOnly = struct
   type t = {
     global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
     get_errors: Reference.t -> Error.t list;
-    get_local_annotations: Reference.t -> LocalAnnotationMap.t option;
+    get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
   }
 
   let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
