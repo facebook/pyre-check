@@ -9,6 +9,7 @@ open IntegrationTest
 let test_check_return context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors "def foo() -> None: pass" [];
   assert_type_errors "def foo() -> None: return" [];
   assert_type_errors "def foo() -> float: return 1.0" [];
@@ -220,6 +221,17 @@ let test_check_return context =
     [
       "Incompatible return type [7]: Expected `int` but got \
        `typing.Optional[typing.Union[typing.Any, int]]`.";
+    ];
+  assert_strict_type_errors
+    {|
+       def derp(flag: bool) -> int:
+         if flag:
+           x = 42
+         return x
+    |}
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
     ];
   ()
 

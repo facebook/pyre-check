@@ -1977,7 +1977,10 @@ let due_to_analysis_limitations { kind; _ } =
   | RedundantCast actual
   | UninitializedAttribute { mismatch = { actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.is_unknown actual || Type.is_unbound actual || Type.is_type_alias actual
+      Type.is_unknown actual
+      || Type.is_unbound actual
+      || Type.is_type_alias actual
+      || Type.is_undeclared actual
   | Top -> true
   | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.is_unknown annotation
   | AnalysisFailure _
