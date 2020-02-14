@@ -109,12 +109,6 @@ let test_parse_query context =
   assert_fails_to_parse "types(a.py:1:2)";
   assert_fails_to_parse "types(a.py)";
   assert_fails_to_parse "types('a.py', 1, 2)";
-  assert_parses
-    "coverage_in_file('a.py')"
-    (CoverageInFile (Path.create_relative ~root:local_root ~relative:"a.py"));
-  assert_fails_to_parse "coverage_in_file(a.py:1:2)";
-  assert_fails_to_parse "coverage_in_file(a.py)";
-  assert_fails_to_parse "coverage_in_file('a.py', 1, 2)";
   assert_parses "attributes(C)" (Attributes !&"C");
   assert_fails_to_parse "attributes(C, D)";
   assert_parses "signature(a.b)" (Signature [!&"a.b"]);

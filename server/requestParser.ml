@@ -204,20 +204,6 @@ let parse_and_translate
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
             None )
-    | "textDocument/typeCoverage" -> (
-        match TypeCoverage.of_yojson request with
-        | Ok
-            {
-              TypeCoverage.parameters =
-                Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
-              id;
-              _;
-            } ->
-            uri_to_path ~uri >>| fun path -> TypeCoverageRequest { path; id }
-        | Ok _ -> None
-        | Error yojson_error ->
-            Log.log ~section:`Server "Error: %s" yojson_error;
-            None )
     | "workspace/executeCommand" -> (
         match ExecuteCommandRequest.of_yojson request with
         | Ok

@@ -275,13 +275,6 @@ module CodeActionResponse = struct
   let create_empty ~id = create ~id ~code_actions:[]
 end
 
-module TypeCoverageResponse = struct
-  include Types.TypeCoverageResponse
-
-  let create ~id ~covered_percent =
-    { jsonrpc = "2.0"; id; result = Some { coveredPercent = covered_percent }; error = None }
-end
-
 module RageResponse = struct
   include Types.RageResponse
 

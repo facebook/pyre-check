@@ -53,7 +53,6 @@ module TypeQuery = struct
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
-    | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | Defines of Reference.t list
     | DumpCallGraph
@@ -400,10 +399,6 @@ module Request = struct
     | ShowStatusRequest of LanguageServer.Types.ShowStatusParameters.t
     | StopRequest
     | TypeCheckRequest of Path.t list
-    | TypeCoverageRequest of {
-        path: Path.t;
-        id: LanguageServer.Types.RequestId.t;
-      }
     | TypeQueryRequest of TypeQuery.request
   [@@deriving eq, show]
 
@@ -441,7 +436,6 @@ module Request = struct
     | SaveDocument _ -> "SaveDocument"
     | CodeActionRequest _ -> "CodeAction"
     | ExecuteCommandRequest _ -> "ExecuteCommandRequest"
-    | TypeCoverageRequest _ -> "TypeCoverageRequest"
     | GetServerUuid -> "GetServerUuid"
 end
 

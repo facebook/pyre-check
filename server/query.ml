@@ -33,8 +33,6 @@ let help () =
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None
-    | CoverageInFile _ ->
-        Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
     | DecodeOcamlValues _ -> None
     | DumpClassHierarchy ->
         Some
@@ -78,7 +76,6 @@ let help () =
       Callees (Reference.create "");
       CalleesWithLocation (Reference.create "");
       ComputeHashesToKeys;
-      CoverageInFile path;
       DecodeOcamlValues [];
       Defines [Reference.create ""];
       DumpCallGraph;
@@ -145,9 +142,6 @@ let parse_query
       | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
-      | "coverage_in_file", [path] ->
-          let path = Path.create_relative ~root ~relative:(string path) in
-          Request.TypeQueryRequest (CoverageInFile path)
       | "decode_ocaml_values", values ->
           let parse_values_to_decode = function
             | {

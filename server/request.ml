@@ -319,25 +319,6 @@ let process_type_query_request
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
-    | TypeQuery.CoverageInFile path ->
-        let default =
-          TypeQuery.Error (Format.asprintf "Not able to get lookups in `%a`" Path.pp path)
-        in
-        let map_to_coverage (location, annotation) =
-          let coverage =
-            if Type.is_partially_typed annotation then
-              TypeQuery.Partial
-            else if Type.is_untyped annotation then
-              TypeQuery.Untyped
-            else
-              TypeQuery.Typed
-          in
-          { location; TypeQuery.coverage }
-        in
-        LookupCache.find_all_annotations ~state ~configuration ~path
-        >>| List.map ~f:map_to_coverage
-        >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
-        |> Option.value ~default
     | TypeQuery.DecodeOcamlValues values ->
         let decode key value =
           let key, value = Base64.decode key, Base64.decode value in
@@ -1074,25 +1055,6 @@ let rec process
           update_function ~message ~state ~short_message:shortMessage;
 
           { state; response = None }
-      | TypeCoverageRequest { path; id } ->
-          let response =
-            LookupCache.find_all_annotations ~state ~configuration ~path
-            >>| fun location_types ->
-            let types = List.map location_types ~f:snd in
-            let { Coverage.full; partial; untyped; _ } = Coverage.aggregate_over_types types in
-            let total = Float.of_int (full + partial + untyped) in
-            let covered_percent =
-              if total > 0.0 then
-                Int.of_float (Float.of_int full /. total *. 100.0)
-              else
-                0
-            in
-            LanguageServer.Protocol.TypeCoverageResponse.create ~id ~covered_percent
-            |> LanguageServer.Protocol.TypeCoverageResponse.to_yojson
-            |> Yojson.Safe.to_string
-            |> fun response -> LanguageServerProtocolResponse response
-          in
-          { state; response }
       | GetServerUuid ->
           let { Configuration.Server.server_uuid; _ } = server_configuration in
           { state; response = Some (ServerUuidResponse server_uuid) }
