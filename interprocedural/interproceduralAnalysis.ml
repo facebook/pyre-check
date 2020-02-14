@@ -778,7 +778,8 @@ let save_results ~configuration ~filename_lookup ~analyses all_callables =
         close_out out_channel
       in
       List.iter analyses ~f:save_models;
-      List.iter analyses ~f:save_metadata
+      List.iter analyses ~f:save_metadata;
+      Log.info "Analysis results were written to `%s`." (Path.absolute directory)
 
 
 let record_initial_models ~functions ~stubs models =
