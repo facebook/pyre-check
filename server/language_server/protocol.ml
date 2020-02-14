@@ -288,7 +288,10 @@ let to_message json =
 
 
 let write_message channel json =
-  Log.info "LSP message sent:@.%s@." (Yojson.Safe.prettify (Yojson.Safe.to_string json));
+  Log.log
+    ~section:`Server
+    "LSP message sent:@.%s@."
+    (Yojson.Safe.prettify (Yojson.Safe.to_string json));
   Out_channel.output_string channel (to_message json);
   Out_channel.flush channel
 
@@ -326,5 +329,5 @@ let read_message channel =
       read_content content_length
       |> check_end_of_file
       >>| fun json_string ->
-      Log.info "LSP message received:@.%s@." (Yojson.Safe.prettify json_string);
+      Log.log ~section:`Server "LSP message received:@.%s@." (Yojson.Safe.prettify json_string);
       Yojson.Safe.from_string json_string
