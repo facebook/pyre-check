@@ -580,6 +580,7 @@ let is_top = function
 
 let is_tuple = function
   | Tuple _ -> true
+  | Parametric { name = "typing.Tuple" | "Tuple"; _ } -> true
   | _ -> false
 
 
@@ -3631,6 +3632,13 @@ let dequalify map annotation =
                 parameters =
                   List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
               }
+        | Tuple (Bounded (Concrete parameters)) ->
+            Parametric
+              {
+                name = dequalify_string "typing.Tuple";
+                parameters =
+                  List.map parameters ~f:(fun parameter -> Record.Parameter.Single parameter);
+              }
         | Primitive name -> Primitive (dequalify_identifier map name)
         | Variable ({ variable = name; _ } as annotation) ->
             Variable { annotation with variable = dequalify_identifier map name }
@@ -3915,20 +3923,26 @@ let infer_transform annotation =
 
     let visit _ annotation =
       let transformed_annotation =
+        let shorten_tuple_type types =
+          let parameter = List.hd types |> Option.value ~default:Bottom in
+          let should_be_unbound =
+            List.fold types ~init:true ~f:(fun all_match next_parameter ->
+                if equal parameter next_parameter then
+                  all_match
+                else
+                  false)
+          in
+          if should_be_unbound then Some (Tuple (Unbounded parameter)) else None
+        in
         match annotation with
         | Tuple (Bounded (Concrete types)) when List.length types > 2 ->
-            let parameter = List.hd types |> Option.value ~default:Bottom in
-            let should_be_unbound =
-              List.fold types ~init:true ~f:(fun all_match next_parameter ->
-                  if equal parameter next_parameter then
-                    all_match
-                  else
-                    false)
-            in
-            if should_be_unbound then
-              Tuple (Unbounded parameter)
-            else
+            shorten_tuple_type types |> Option.value ~default:annotation
+        | Parametric { name = "typing.Tuple"; parameters } when List.length parameters > 2 ->
+            let types = List.filter_map parameters ~f:Parameter.is_single in
+            if List.length types < List.length parameters then
               annotation
+            else
+              shorten_tuple_type types |> Option.value ~default:annotation
         | Callable
             ( { implementation = { parameters = Defined parameters; _ } as implementation; _ } as
             callable ) ->

@@ -204,7 +204,7 @@ let test_check_union context =
       f(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[int, str, typing.Tuple[int, int]]` \
+      "Incompatible parameter type [6]: Expected `typing.Union[typing.Tuple[int, int], int, str]` \
        for 1st positional only parameter to call `f` but got `typing.Optional[typing.Union[int, \
        str]]`.";
     ];

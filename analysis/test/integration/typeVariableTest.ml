@@ -221,13 +221,13 @@ let test_check_unbounded_variables context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [1], [\"1\"])` is \
-       `typing.Tuple[int, str]`.";
+       `Tuple[int, str]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [True], [1.000000])` \
-       is `typing.Tuple[bool, float]`.";
+       is `Tuple[bool, float]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [1.000000], [False])` \
-       is `typing.Tuple[float, bool]`.";
+       is `Tuple[float, bool]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [\"1\"], [7])` is \
-       `typing.Tuple[str, int]`.";
+       `Tuple[str, int]`.";
       "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd positional only "
       ^ "parameter to call `generic` but got `List[int]`.";
     ];
@@ -275,10 +275,7 @@ let test_check_unbounded_variables context =
       reveal_type(i)
       return i
     |}
-    [
-      "Revealed type [-1]: Revealed type for `i` is `Union[typing.Tuple[int, bool], \
-       typing.Tuple[str, None]]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `i` is `Union[Tuple[int, bool], Tuple[str, None]]`."];
   assert_type_errors
     {|
     from typing import Callable, TypeVar
@@ -1130,8 +1127,8 @@ let test_list_variadics context =
       reveal_type(duple((x, y)))
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.duple((x, y))` is \
-       `typing.Tuple[typing.Tuple[int, str], typing.Tuple[int, str]]`.";
+      "Revealed type [-1]: Revealed type for `test.duple((x, y))` is `Tuple[Tuple[int, str], \
+       Tuple[int, str]]`.";
     ];
   assert_type_errors
     {|
@@ -1158,7 +1155,7 @@ let test_list_variadics context =
       reveal_type(x)
       return x
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import List
@@ -1249,7 +1246,7 @@ let test_list_variadics context =
       reveal_type(t)
       return t
     |}
-    ["Revealed type [-1]: Revealed type for `t` is `typing.Tuple[int, str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `t` is `Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
@@ -1264,7 +1261,7 @@ let test_list_variadics context =
       reveal_type(t)
       return t
     |}
-    ["Revealed type [-1]: Revealed type for `t` is `typing.Tuple[int, str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `t` is `Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
@@ -1285,7 +1282,7 @@ let test_list_variadics context =
       "Revealed type [-1]: Revealed type for `test.call_with_tuple(test.bar, (True, 19, 37))` is \
        `int`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[test.Ts]` for 2nd positional only \
-       parameter to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`.";
+       parameter to call `call_with_tuple` but got `Tuple[bool, float, int]`.";
     ];
   assert_type_errors
     {|
@@ -1321,9 +1318,7 @@ let test_list_variadics context =
     def foo(x: int, y: str, z: bool) -> None:
       reveal_type(loop(x, y, z))
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.loop(x, y, z)` is `typing.Tuple[int, str, bool]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.loop(x, y, z)` is `Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
@@ -1466,9 +1461,8 @@ let test_map context =
       reveal_type(unwrap((lx, ly)))
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.wrap((x, y))` is `typing.Tuple[List[int], \
-       List[str]]`.";
-      "Revealed type [-1]: Revealed type for `test.unwrap((lx, ly))` is `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `test.wrap((x, y))` is `Tuple[List[int], List[str]]`.";
+      "Revealed type [-1]: Revealed type for `test.unwrap((lx, ly))` is `Tuple[int, str]`.";
     ];
   assert_type_errors
     ~handle:"qualifier.py"
@@ -1481,9 +1475,7 @@ let test_map context =
     def foo(lx: List[int], ly: List[str]) -> None:
       reveal_type(unwrap(lx, ly))
     |}
-    [
-      "Revealed type [-1]: Revealed type for `qualifier.unwrap(lx, ly)` is `typing.Tuple[int, str]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `qualifier.unwrap(lx, ly)` is `Tuple[int, str]`."];
   assert_type_errors
     {|
     from typing import Tuple, List, Generic, TypeVar, Callable, TypeVar
@@ -1541,11 +1533,10 @@ let test_map context =
       reveal_type(await better_gather( *many))
     |}
     [
-      "Revealed type [-1]: Revealed type for `await test.better_gather(i)` is `typing.Tuple[int]`.";
-      "Revealed type [-1]: Revealed type for `await test.better_gather(i, s)` is \
-       `typing.Tuple[int, str]`.";
-      "Revealed type [-1]: Revealed type for `await test.better_gather(*many)` is \
-       `typing.Tuple[int, str, int, str, int, str, int, str, int]`.";
+      "Revealed type [-1]: Revealed type for `await test.better_gather(i)` is `Tuple[int]`.";
+      "Revealed type [-1]: Revealed type for `await test.better_gather(i, s)` is `Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `await test.better_gather(*many)` is `Tuple[int, str, \
+       int, str, int, str, int, str, int]`.";
     ];
   assert_type_errors
     {|
@@ -1591,14 +1582,12 @@ let test_user_defined_variadics context =
       reveal_type(f.meth)
     |}
     [
-      "Revealed type [-1]: Revealed type for `f.x` is `typing.Tuple[int, str, bool]`.";
-      "Revealed type [-1]: Revealed type for `f.y` is `typing.Tuple[List[int], List[str], \
-       List[bool]]`.";
+      "Revealed type [-1]: Revealed type for `f.x` is `Tuple[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `f.y` is `Tuple[List[int], List[str], List[bool]]`.";
       "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
        int), int, str, bool], bool]`.";
-      "Revealed type [-1]: Revealed type for `f.x` is `typing.Tuple[bool, int, float]`.";
-      "Revealed type [-1]: Revealed type for `f.y` is `typing.Tuple[List[bool], List[int], \
-       List[float]]`.";
+      "Revealed type [-1]: Revealed type for `f.x` is `Tuple[bool, int, float]`.";
+      "Revealed type [-1]: Revealed type for `f.y` is `Tuple[List[bool], List[int], List[float]]`.";
       "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
        int), bool, int, float], bool]`.";
     ];
@@ -1618,7 +1607,7 @@ let test_user_defined_variadics context =
     def gun(x: I) -> None:
       reveal_type(fun(x))
     |}
-    ["Revealed type [-1]: Revealed type for `test.fun(x)` is `typing.Tuple[int, str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `test.fun(x)` is `Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import Generic, Tuple, List, Protocol
@@ -1636,7 +1625,7 @@ let test_user_defined_variadics context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, str, bool]`.";
     ];
   assert_type_errors
     {|
@@ -1656,7 +1645,7 @@ let test_user_defined_variadics context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int, str, bool]`.";
     ];
   (* Distinguishing between these two cases is the main reason we introduce the intermediate type
      Type.Single *)
@@ -1707,8 +1696,8 @@ let test_concatenation_operator context =
       reveal_type(removed)
     |}
     [
-      "Revealed type [-1]: Revealed type for `added` is `typing.Tuple[int, int, str, bool, float]`.";
-      "Revealed type [-1]: Revealed type for `removed` is `typing.Tuple[str]`.";
+      "Revealed type [-1]: Revealed type for `added` is `Tuple[int, int, str, bool, float]`.";
+      "Revealed type [-1]: Revealed type for `removed` is `Tuple[str]`.";
     ];
   assert_type_errors
     {|
@@ -1753,7 +1742,7 @@ let test_concatenation_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `el` is `int`.";
-      "Revealed type [-1]: Revealed type for `dims` is `typing.Tuple[typing_extensions.Literal[1], \
+      "Revealed type [-1]: Revealed type for `dims` is `Tuple[typing_extensions.Literal[1], \
        typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
     ];
   assert_type_errors
@@ -1829,8 +1818,8 @@ let test_concatenation_operator context =
         reveal_type(m.second())
     |}
     [
-      "Revealed type [-1]: Revealed type for `m.first()` is `typing.Tuple[int, str]`.";
-      "Revealed type [-1]: Revealed type for `m.second()` is `typing.Tuple[bool, int, bool]`.";
+      "Revealed type [-1]: Revealed type for `m.first()` is `Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `m.second()` is `Tuple[bool, int, bool]`.";
     ];
   ()
 
