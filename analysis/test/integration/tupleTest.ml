@@ -325,6 +325,15 @@ let test_check_tuple context =
       "Missing parameter annotation [2]: Parameter `foo` must have a type that does not contain \
        `Any`.";
     ];
+  assert_type_errors
+    {|
+      X = typing.NamedTuple(
+        "x",
+        dates=str
+      ) 
+      X(dates="foo")
+    |}
+    [];
   ()
 
 

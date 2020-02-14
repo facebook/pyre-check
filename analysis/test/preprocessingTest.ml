@@ -2521,6 +2521,18 @@ let test_transform_ast _ =
         two: typing.Any
         def __new__(cls, one) -> typing.NamedTuple:
           return super(Foo, cls).__new__(cls, one, two=0)
+    |};
+  assert_expand
+    {|
+      T = typing.NamedTuple('T', one=int, two=str)
+    |}
+    {|
+      class T(typing.NamedTuple):
+        def __new__(cls, one: int, two: str) -> typing.NamedTuple: ...
+        def __init__(self, one: int, two: str) -> None: ...
+        _fields: typing.Tuple[str, str] = ('one', 'two')
+        one: int
+        two: str
     |}
 
 

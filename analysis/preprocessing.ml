@@ -1860,6 +1860,12 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   | _ -> Expression.show expression, any_annotation, None
                 in
                 List.map arguments ~f:get_name
+            | _ :: arguments ->
+                List.filter_map arguments ~f:(fun argument ->
+                    match argument with
+                    | { Call.Argument.name = Some { Node.value = name; _ }; value } ->
+                        Some (Identifier.sanitized name, value, None)
+                    | _ -> None)
             | _ -> []
           in
           Some attributes
