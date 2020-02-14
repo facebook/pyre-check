@@ -58,6 +58,20 @@ class QueryAPITest(unittest.TestCase):
         pyre_connection.query_server.return_value = {"error": "Found an issue"}
         self.assertEqual(query_api.get_class_hierarchy(pyre_connection), None)
 
+    def test_get_superclasses(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": {"superclasses": ["Bike", "Vehicle", "object"]}
+        }
+        self.assertEqual(
+            query_api.get_superclasses(pyre_connection, "Scooter"),
+            ["Bike", "Vehicle", "object"],
+        )
+        pyre_connection.query_server.return_value = {
+            "error": "Type `Foo` was not found in the type order."
+        }
+        self.assertEqual(query_api.get_superclasses(pyre_connection, "Foo"), [])
+
     def test_get_call_graph(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {

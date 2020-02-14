@@ -66,6 +66,14 @@ def get_class_hierarchy(
     return hierarchy
 
 
+def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[str]:
+    query = f"superclasses({class_name})"
+    result = pyre_connection.query_server(query)
+    if result is None or "response" not in result:
+        return []
+    return result["response"]["superclasses"]
+
+
 def get_call_graph(
     pyre_connection: PyreConnection
 ) -> Optional[Dict[str, List[CallGraphTarget]]]:
