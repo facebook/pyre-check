@@ -74,6 +74,14 @@ def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[s
     return result["response"]["superclasses"]
 
 
+def get_attributes(pyre_connection: PyreConnection, class_name: str) -> List[str]:
+    query = f"attributes({class_name})"
+    result = pyre_connection.query_server(query)
+    if result is None or "response" not in result:
+        return []
+    return [attribute["name"] for attribute in result["response"]["attributes"]]
+
+
 def get_call_graph(
     pyre_connection: PyreConnection
 ) -> Optional[Dict[str, List[CallGraphTarget]]]:

@@ -72,6 +72,22 @@ class QueryAPITest(unittest.TestCase):
         }
         self.assertEqual(query_api.get_superclasses(pyre_connection, "Foo"), [])
 
+    def test_get_attributes(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": {
+                "attributes": [
+                    {"annotation": "int", "name": "a"},
+                    {"annotation": "typing.Callable(a.C.foo)[[], str]", "name": "foo"},
+                ]
+            }
+        }
+        self.assertEqual(query_api.get_attributes(pyre_connection, "a.C"), ["a", "foo"])
+        pyre_connection.query_server.return_value = {
+            "error": "Type `Foo` was not found in the type order."
+        }
+        self.assertEqual(query_api.get_superclasses(pyre_connection, "Foo"), [])
+
     def test_get_call_graph(self) -> None:
         pyre_connection = MagicMock()
         pyre_connection.query_server.return_value = {
