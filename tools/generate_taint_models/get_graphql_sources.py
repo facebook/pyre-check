@@ -52,8 +52,15 @@ class GraphQLSourceGenerator(ModelGenerator):
                     if not isinstance(element, self.graphql_object_type):
                         continue
 
-                    for field in element.fields:
-                        resolver = element.fields[field].resolver
+                    try:
+                        fields = element.fields
+                    except AssertionError:
+                        # GraphQL throws an exception when a GraphQL object is created
+                        # with 0 fields. Since we don't control the library, we need to
+                        # program defensively here :(
+                        fields = []
+                    for field in fields:
+                        resolver = fields[field].resolver
                         if resolver is not None and resolver.__name__ != "<lambda>":
                             views.append(resolver)
 

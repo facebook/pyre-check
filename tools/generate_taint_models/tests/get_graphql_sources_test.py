@@ -91,6 +91,10 @@ DirectObjectType = GraphQLObjectType(
     },
 )
 
+BrokenObjectType = GraphQLObjectType(
+    name="BrokenObjectType", description="Look ma, no fields", fields={}
+)
+
 
 def add_field(type: GraphQLType, name: str, resolver: Callable) -> None:
     # pyre-ignore[16]: Undefined attribute
