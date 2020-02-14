@@ -24,7 +24,7 @@ let return_annotation_without_applying_decorators
     ~signature:({ Define.Signature.return_annotation; async; generator; _ } as signature)
     ~parser:{ parse_annotation; _ }
   =
-  let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Top in
+  let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Any in
   if async && not generator then
     Type.coroutine [Single Type.Any; Single Type.Any; Single annotation]
   else if Define.Signature.is_coroutine signature then

@@ -711,7 +711,7 @@ let test_populate context =
        (Type.Callable.create
           ~name:!&"test.function"
           ~parameters:(Type.Callable.Defined [])
-          ~annotation:Type.Top
+          ~annotation:Type.Any
           ()));
   assert_global
     "test.global_function"

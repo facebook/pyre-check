@@ -737,19 +737,6 @@ let test_check_behavioral_subtyping context =
     |}
     [];
 
-  (* Missing annotations. *)
-  assert_default_type_errors
-    {|
-      class Foo():
-        def foo(self) -> int: ...
-      class Bar(Foo):
-        def foo(self): pass
-    |}
-    [
-      "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
-      ^ "The overriding method is not annotated but should return a subtype of `int`.";
-    ];
-
   (* Starred arguments. *)
   assert_type_errors
     {|

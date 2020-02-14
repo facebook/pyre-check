@@ -542,11 +542,7 @@ let test_check_attributes context =
           self.attribute = not_annotated()
           a = self.attribute.something
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
-      ^ "`int` but is used as type `unknown`.";
-      "Undefined attribute [16]: `int` has no attribute `something`.";
-    ];
+    ["Undefined attribute [16]: `int` has no attribute `something`."];
 
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors

@@ -758,13 +758,7 @@ let messages ~concise ~signature location kind =
       let detail =
         match override with
         | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
-            if Type.is_top actual then
-              Format.asprintf
-                "The overriding %s is not annotated but should return a subtype of `%a`."
-                kind
-                pp_type
-                expected
-            else if due_to_invariance then
+            if due_to_invariance then
               invariance_message
             else if equal_override_kind override_kind Attribute then
               Format.asprintf

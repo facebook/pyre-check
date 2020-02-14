@@ -1079,18 +1079,7 @@ let test_check_refinement context =
           return input
     |}
     [];
-  assert_type_errors
-    {|
-      def bar(input: typing.Optional[int]) -> int:
-          if not input:
-            input = not_annotated()
-          return input
-    |}
-    [
-      "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` "
-      ^ "but is used as type `unknown`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ]
+  ()
 
 
 let test_check_invalid_type_variables context =

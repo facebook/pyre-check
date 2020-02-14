@@ -715,7 +715,7 @@ let test_query context =
                          Type.Callable.kind = Type.Callable.Named !&"test.foo";
                          implementation =
                            {
-                             Type.Callable.annotation = Type.Top;
+                             Type.Callable.annotation = Type.Any;
                              parameters = Type.Callable.Defined [];
                            };
                          overloads = [];
@@ -752,7 +752,7 @@ let test_query context =
                          Type.Callable.kind = Type.Callable.Named !&"test.foo";
                          implementation =
                            {
-                             Type.Callable.annotation = Type.Top;
+                             Type.Callable.annotation = Type.Any;
                              parameters = Type.Callable.Defined [];
                            };
                          overloads = [];
@@ -1431,13 +1431,14 @@ let test_incremental_lookups context =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
-      "2:4-2:7/typing.Callable(test_incremental_lookups.foo)[[Named(x, unknown)], unknown]";
+      "2:4-2:7/typing.Callable(test_incremental_lookups.foo)[[Named(x, unknown)], typing.Any]";
       "2:8-2:9/typing.Any";
       "3:11-3:12/typing_extensions.Literal[1]";
-      "4:4-4:7/typing.Callable(test_incremental_lookups.boo)[[Named(x, unknown)], unknown]";
+      "4:4-4:7/typing.Callable(test_incremental_lookups.boo)[[Named(x, unknown)], typing.Any]";
       "4:8-4:9/typing.Any";
+      "5:4-5:10/typing.Any";
       Format.sprintf
-        "5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
+        "5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], typing.Any]"
         (Reference.show qualifier);
       "5:8-5:9/typing.Any";
       "6:11-6:12/typing_extensions.Literal[2]";

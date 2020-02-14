@@ -822,7 +822,7 @@ let test_check_function_overloads context =
     [
       "Missing return annotation [3]: Return type is not specified.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
-      ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`.";
+      ^ "`typing.Callable(derp)[[Named(x, object)], typing.Any][[[Named(x, int)], int]]`.";
     ]
 
 

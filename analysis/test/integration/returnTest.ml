@@ -106,9 +106,7 @@ let test_check_return context =
     "class A: pass\ndef foo() -> A: return 1"
     ["Incompatible return type [7]: Expected `A` but got `int`."];
   assert_type_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()" [];
-  assert_type_errors
-    "def foo() -> str: return not_annotated()"
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+  assert_type_errors "def foo() -> str: return not_annotated()" [];
   assert_type_errors
     {|
       def x()->int:
@@ -471,7 +469,7 @@ let test_check_return_control_flow context =
           result = not_annotated()
         return result
     |}
-    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
+    [];
   assert_type_errors
     {|
       def derp(x) -> None:
