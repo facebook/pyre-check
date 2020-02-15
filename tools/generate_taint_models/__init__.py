@@ -111,11 +111,16 @@ def run_generators(
 
         generated_models[mode] = set(generator_options[mode].generate_models())
 
+        elapsed_time_seconds = time.time() - start
+        LOG.info(
+            f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
+        )
+
         if logger_executable is not None:
-            elapsed_time = int((time.time() - start) * 1000)
+            elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
             log_statistics(
                 "perfpipe_pyre_performance",
-                integers={"time": elapsed_time},
+                integers={"time": elapsed_time_milliseconds},
                 normals={"name": "model generation", "model kind": mode},
                 logger=logger_executable,
             )
