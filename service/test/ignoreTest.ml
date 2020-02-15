@@ -97,13 +97,19 @@ let ignore_lines_test context =
         def foo(a: int) -> int:
           return a  # pyre-ignore
       |}
-    ["Unused ignore [0]: Pyre ignore is extraneous."];
+    [
+      "Unused ignore [0]: The `pyre-ignore` or `pyre-fixme` comment is not suppressing type \
+       errors, please remove it.";
+    ];
   assert_errors
     {|
         def foo(a: int) -> int:
           return a  # pyre-fixme
       |}
-    ["Unused ignore [0]: Pyre ignore is extraneous."];
+    [
+      "Unused ignore [0]: The `pyre-ignore` or `pyre-fixme` comment is not suppressing type \
+       errors, please remove it.";
+    ];
   assert_errors {|
         def foo(a: int) -> int:
           return a  # type: ignore
@@ -115,20 +121,27 @@ let ignore_lines_test context =
       |}
     [
       "Incompatible return type [7]: Expected `str` but got `float`.";
-      "Unused ignore [0]: Pyre ignore [5] is extraneous.";
+      "Unused ignore [0]: The `pyre-ignore[5]` or `pyre-fixme[5]` comment is not suppressing type \
+       errors, please remove it.";
     ];
   assert_errors
     {|
         def foo(a: int) -> int:
           return a  # pyre-ignore[7, 5]
       |}
-    ["Unused ignore [0]: Pyre ignores [7, 5] are extraneous."];
+    [
+      "Unused ignore [0]: The `pyre-ignore[7, 5]` or `pyre-fixme[7, 5]` comment is not suppressing \
+       type errors, please remove it.";
+    ];
   assert_errors
     {|
         def foo(a: int) -> str:
           return a  # pyre-ignore[7, 5]
       |}
-    ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
+    [
+      "Unused ignore [0]: The `pyre-ignore[5]` or `pyre-fixme[5]` comment is not suppressing type \
+       errors, please remove it.";
+    ];
   assert_errors
     {|
         def bar(x: int) -> int:
@@ -144,7 +157,10 @@ let ignore_lines_test context =
         def foo(a: int) -> str:
           return bar(a.undefined)  # pyre-ignore[7, 5, 16]
       |}
-    ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
+    [
+      "Unused ignore [0]: The `pyre-ignore[5]` or `pyre-fixme[5]` comment is not suppressing type \
+       errors, please remove it.";
+    ];
   assert_errors
     {|
         # pyre-strict

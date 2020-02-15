@@ -77,7 +77,11 @@ let test_incremental_check context =
       |}
         );
       ]
-    ~expected:["Unused ignore [0]: Pyre ignore is extraneous."];
+    ~expected:
+      [
+        "Unused ignore [0]: The `pyre-ignore` or `pyre-fixme` comment is not suppressing type \
+         errors, please remove it.";
+      ];
 
   (* If an external source is updated, it is filtered properly. *)
   assert_incremental_check_errors

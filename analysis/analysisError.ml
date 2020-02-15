@@ -1767,19 +1767,18 @@ let messages ~concise ~signature location kind =
       in
       [message]
   | UnusedIgnore codes ->
-      let string_from_codes codes =
-        if List.length codes > 0 then
-          List.map codes ~f:Int.to_string |> String.concat ~sep:", " |> Format.asprintf "[%s] "
-        else
-          ""
+      let codes =
+        match codes with
+        | [] -> ""
+        | codes ->
+            Format.asprintf "[%s]" (List.map codes ~f:Int.to_string |> String.concat ~sep:", ")
       in
-      let plural = List.length codes > 1 in
       [
-        Format.asprintf
-          "Pyre ignore%s %s%s extraneous."
-          (if plural then "s" else "")
-          (string_from_codes codes)
-          (if plural then "are" else "is");
+        Format.sprintf
+          "The `pyre-ignore%s` or `pyre-fixme%s` comment is not suppressing type errors, please \
+           remove it."
+          codes
+          codes;
       ]
   | UnusedLocalMode { unused_mode; actual_mode } ->
       let mode_string = function
