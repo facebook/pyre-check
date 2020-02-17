@@ -27,7 +27,7 @@ let run_analysis
     debug
     strict
     show_error_traces
-    infer
+    _infer
     sequential
     filter_directories
     ignore_all_errors
@@ -70,7 +70,7 @@ let run_analysis
       ?logger
       ?profiling_output
       ?memory_profiling_output
-      ~infer
+      ~infer:false
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories

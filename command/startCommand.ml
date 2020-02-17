@@ -500,7 +500,7 @@ let run_start_command
     debug
     strict
     show_error_traces
-    infer
+    _infer
     sequential
     filter_directories
     ignore_all_errors
@@ -542,7 +542,7 @@ let run_start_command
       ?expected_version
       ~sections
       ~debug
-      ~infer
+      ~infer:false
       ?configuration_file_hash
       ~strict
       ~show_error_traces

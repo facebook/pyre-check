@@ -10,14 +10,13 @@ open Service
 
 (* run_command prints out the errors, for a Check run *)
 let run_check
-    ignore_infer
     verbose
     expected_version
     sections
     debug
     strict
     show_error_traces
-    infer
+    _infer
     sequential
     filter_directories
     ignore_all_errors
@@ -41,7 +40,6 @@ let run_check
     >>| List.map ~f:String.strip
     >>| List.map ~f:Path.create_absolute
   in
-  let ignore_infer = argument_to_paths ignore_infer in
   let filter_directories = argument_to_paths filter_directories in
   let ignore_all_errors = argument_to_paths ignore_all_errors in
   let configuration =
@@ -56,7 +54,7 @@ let run_check
       ?logger
       ?profiling_output
       ?memory_profiling_output
-      ~infer
+      ~infer:false
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories
@@ -66,37 +64,32 @@ let run_check
       ~excludes
       ~extensions
       ?log_directory
-      ?ignore_infer
       ~local_root:(Path.create_absolute local_root)
       ()
   in
   (fun () ->
     let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
-      if infer then
-        let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
-        errors, ast_environment
-      else
-        let timer = Timer.start () in
-        let { Check.errors; ast_environment; _ } =
-          Check.check
-            ~scheduler
-            ~configuration
-            ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
-        in
-        let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-        Statistics.performance
-          ~name:"check"
-          ~timer
-          ~integers:
-            [
-              "gc_minor_collections", minor_collections;
-              "gc_major_collections", major_collections;
-              "gc_compactions", compactions;
-            ]
-          ~normals:["request kind", "FullCheck"]
-          ();
-        errors, ast_environment
+      let timer = Timer.start () in
+      let { Check.errors; ast_environment; _ } =
+        Check.check
+          ~scheduler
+          ~configuration
+          ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+      in
+      let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+      Statistics.performance
+        ~name:"check"
+        ~timer
+        ~integers:
+          [
+            "gc_minor_collections", minor_collections;
+            "gc_major_collections", major_collections;
+            "gc_compactions", compactions;
+          ]
+        ~normals:["request kind", "FullCheck"]
+        ();
+      errors, ast_environment
     in
     if debug then
       Memory.report_statistics ();
@@ -126,8 +119,5 @@ let run_check
 let check_command =
   Command.basic_spec
     ~summary:"Runs a full check without a server (default)"
-    Command.Spec.(
-      empty
-      +> flag "-ignore-infer" (optional string) ~doc:"Will not infer the listed files."
-      ++ Specification.base_command_line_arguments)
+    Command.Spec.(empty ++ Specification.base_command_line_arguments)
     run_check
