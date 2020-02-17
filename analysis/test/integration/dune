@@ -56,7 +56,8 @@
   typeVariableTest
   typedDictionaryTest
   unionTest
-  varianceTest)
+  varianceTest
+  walrusOperatorTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps

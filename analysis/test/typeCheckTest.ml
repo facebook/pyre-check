@@ -791,8 +791,10 @@ let test_forward_expression context =
   assert_forward "-undefined" Type.Top;
 
   (* Walrus operator. *)
-  assert_forward "x := True" (Type.Literal (Boolean true));
-
+  assert_forward
+    "x := True"
+    (Type.Literal (Boolean true))
+    ~postcondition:["x", Type.Literal (Boolean true)];
   (* Yield. *)
   assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
   assert_forward "yield undefined" (Type.generator Type.Top);
