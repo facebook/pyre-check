@@ -527,16 +527,60 @@ class IncrementalTest(TestCommand):
 
     def initial_filesystem(self) -> None:
         self.create_project_configuration()
+        self.create_file(".watchmanconfig", "{}")
         self.create_directory("local_project")
         self.create_local_configuration("local_project", {"source_directories": ["."]})
-        self.create_file_with_error("local_project/has_type_error.py")
         self.create_file(".watchmanconfig", "{}")
 
-    def test_no_existing_server(self) -> None:
-        result = self.run_pyre(
-            "-l", "local_project", "incremental", "--incremental-style=fine_grained"
-        )
+    def test_incremental(self) -> None:
+        self.create_file_with_error("local_project/has_type_error.py")
+
+        result = self.run_pyre("-l", "local_project")
         self.assert_has_errors(result)
+        result = self.run_pyre("-l", "local_project")
+        self.assert_has_errors(result)
+
+        self.run_pyre("-l", "local_project", "stop")
+        result = self.run_pyre("-l", "local_project")
+        self.assert_has_errors(result)
+
+        self.run_pyre("kill")
+        result = self.run_pyre("-l", "local_project")
+        self.assert_has_errors(result)
+
+        self.run_pyre("kill")
+        self.run_pyre("-l", "local_project", "start")
+        result = self.run_pyre("-l", "local_project")
+        self.assert_has_errors(result)
+
+        self.run_pyre("-l", "local_project", "restart")
+        result = self.run_pyre("-l", "local_project")
+        self.assert_has_errors(result)
+
+    def test_incremental_with_changes(self) -> None:
+        with _watch_directory(self.directory):
+            self.create_file("local_project/test.py", contents="def foo(): ...")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_no_errors(result)
+
+            self.create_file_with_error("local_project/test.py")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_has_errors(result)
+
+            self.delete_file("local_project/test.py")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_no_errors(result)
+
+            self.create_file_with_error("local_project/has_type_error.py")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_has_errors(result)
+
+            self.run_pyre("-l", "local_project", "restart")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_has_errors(result)
+            self.delete_file("local_project/has_type_error.py")
+            result = self.run_pyre("-l", "local_project")
+            self.assert_no_errors(result)
 
     def test_command_line_sources(self) -> None:
         # TODO(T60110667): Test that command line sources do not start a server.
