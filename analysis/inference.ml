@@ -31,8 +31,6 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  val initial_forward : resolution:Resolution.t -> t
-
   val initial_backward : forward:t -> t
 
   include Fixpoint.State with type t := t
@@ -366,37 +364,6 @@ module State (Context : Context) = struct
 
 
   let return_reference = Reference.create "$return"
-
-  let initial_forward ~resolution =
-    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
-      Context.define
-    in
-    let state = initial ~resolution in
-    let annotation_store =
-      let reset_parameter
-          index
-          annotation_store
-          { Node.value = { Parameter.name; value; annotation }; _ }
-        =
-        match index, parent with
-        | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
-            annotation_store
-        | _ -> (
-            match annotation, value with
-            | None, None ->
-                let reference =
-                  name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
-                in
-                Map.set
-                  annotation_store
-                  ~key:reference
-                  ~data:(RefinementUnit.create ~base:(Annotation.create Type.Bottom) ())
-            | _ -> annotation_store )
-      in
-      List.foldi ~init:(Resolution.annotation_store resolution) ~f:reset_parameter parameters
-    in
-    { state with resolution = Resolution.with_annotation_store resolution ~annotation_store }
-
 
   let initial_backward ~forward:{ resolution; errors; _ } =
     let expected_return =
@@ -739,7 +706,7 @@ let run
       in
       let exit =
         backward_fixpoint
-          ~initial_forward:(State.initial_forward ~resolution)
+          ~initial_forward:(State.initial ~resolution)
           ~initialize_backward:State.initial_backward
         |> Fixpoint.entry
         >>| print_state "Entry"

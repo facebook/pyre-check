@@ -21,8 +21,6 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  val initial_forward : resolution:Resolution.t -> t
-
   val initial_backward : forward:t -> t
 
   include Fixpoint.State with type t := t
