@@ -75,7 +75,17 @@ let test_check_walrus_operator context =
         pass
       reveal_type(b)
     |}
-    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."]
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."];
+  assert_type_errors
+    {|
+    from typing import Optional
+    def foo() -> Optional[int]:
+      ...
+
+    if (a := foo()) is not None:
+      reveal_type(a)
+    |}
+    ["Revealed type [-1]: Revealed type for `a` is `int`."]
 
 
 let () = "variance" >::: ["check_walrus_operator" >:: test_check_walrus_operator] |> Test.run

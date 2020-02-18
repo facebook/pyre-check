@@ -4403,6 +4403,8 @@ module State (Context : Context) = struct
                     { state with resolution }
                 | _ -> state )
             | _ -> state )
+        | WalrusOperator { target; _ } ->
+            forward_statement ~state ~statement:(Statement.assume target)
         | _ -> state )
     | Delete expression ->
         let resolution =
