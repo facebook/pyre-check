@@ -268,18 +268,27 @@ type tar_structure = {
   dependencies_path: Pyre.Path.t;
 }
 
-let with_temporary_directory f =
+let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
   let open Pyre in
-  let root = Filename.temp_dir "pyre" "saved_state" |> Path.create_absolute in
+  let root = Path.create_relative ~root:log_directory ~relative:"saved_state" in
   let table_path = Path.create_relative ~root ~relative:"table" in
   let dependencies_path = Path.create_relative ~root ~relative:"deps" in
-  let finally () =
-    Core.Unix.remove (Path.absolute table_path);
-    Core.Unix.remove (Path.absolute dependencies_path);
-    Core.Unix.remove (Path.absolute root)
+  let () =
+    try Core.Unix.mkdir (Path.absolute root) with
+    (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
+    | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
+        let remove_if_exists path =
+          match Sys.file_exists path with
+          | `Yes -> Core.Unix.remove path
+          | `No
+          | `Unknown ->
+              ()
+        in
+        remove_if_exists (Path.absolute table_path);
+        remove_if_exists (Path.absolute dependencies_path)
+    | e -> raise e
   in
-  Core.Exn.protect ~f:(fun () -> f { directory = root; table_path; dependencies_path }) ~finally;
-  ()
+  { directory = root; table_path; dependencies_path }
 
 
 let run_tar arguments =
@@ -291,30 +300,26 @@ let run_tar arguments =
     ()
 
 
-let save_shared_memory ~path =
+let save_shared_memory ~path ~configuration =
   let open Pyre in
   SharedMemory.collect `aggressive;
-  let save { directory; table_path; dependencies_path } =
-    SharedMem.save_table (Path.absolute table_path);
-    let _edges_count : bytes =
-      SharedMem.save_dep_table_sqlite (Path.absolute dependencies_path) "0.0.0"
-    in
-    run_tar ["cf"; path; "-C"; Path.absolute directory; "."]
+  let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
+  SharedMem.save_table (Path.absolute table_path);
+  let _edges_count : bytes =
+    SharedMem.save_dep_table_sqlite (Path.absolute dependencies_path) "0.0.0"
   in
-  with_temporary_directory save
+  run_tar ["cf"; path; "-C"; Path.absolute directory; "."]
 
 
-let load_shared_memory ~path =
+let load_shared_memory ~path ~configuration =
   let open Pyre in
-  let load { directory; table_path; dependencies_path } =
-    run_tar ["xf"; path; "-C"; Path.absolute directory];
-    SharedMem.load_table (Path.absolute table_path);
-    let _edges_count : bytes =
-      SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
-    in
-    ()
+  let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
+  run_tar ["xf"; path; "-C"; Path.absolute directory];
+  SharedMem.load_table (Path.absolute table_path);
+  let _edges_count : bytes =
+    SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
   in
-  with_temporary_directory load
+  ()
 
 
 external pyre_reset : unit -> unit = "pyre_reset"

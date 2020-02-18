@@ -206,7 +206,7 @@ let load
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in
   let scheduler = Scheduler.create ~configuration () in
-  Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
+  Memory.load_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let ast_environment = AstEnvironment.load module_tracker in
   let old_configuration = StoredConfiguration.load () in
@@ -268,4 +268,4 @@ let save
   AstEnvironment.store ast_environment;
   StoredConfiguration.store configuration;
   ServerErrors.store errors;
-  Memory.save_shared_memory ~path:saved_state_path
+  Memory.save_shared_memory ~path:saved_state_path ~configuration

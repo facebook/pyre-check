@@ -99,9 +99,9 @@ val worker_garbage_control : Caml.Gc.control
 
 val report_statistics : unit -> unit
 
-val save_shared_memory : path:string -> unit
+val save_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit
 
-val load_shared_memory : path:string -> unit
+val load_shared_memory : path:string -> configuration:Configuration.Analysis.t -> unit
 
 val reset_shared_memory : unit -> unit
 

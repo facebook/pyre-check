@@ -611,7 +611,7 @@ let process_type_query_request
     | TypeQuery.SaveServerState path ->
         let path = Path.absolute path in
         Log.info "Saving server state into `%s`" path;
-        Memory.save_shared_memory ~path;
+        Memory.save_shared_memory ~path ~configuration;
         TypeQuery.Response (TypeQuery.Success (Format.sprintf "Saved state."))
     | TypeQuery.Signature function_names -> (
         let get_signatures function_name =
