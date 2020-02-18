@@ -11,6 +11,7 @@ from . import Check
 
 class Deobfuscate(Check):
     NAME = "deobfuscate"
+    # TODO(T62143503): Re-enable deobfuscate via command-line checks.
     HIDDEN = True
 
     @classmethod

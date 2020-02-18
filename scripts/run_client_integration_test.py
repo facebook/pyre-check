@@ -384,9 +384,59 @@ class BaseCommandTest(TestCommand):
 
 
 class AnalyzeTest(TestCommand):
-    # TODO(T57341910): Fill in test cases
-    # Currently fails with invalid model error.
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local_project", {"source_directories": ["."]})
+
+    def test_analyze(self) -> None:
+        result = self.run_pyre("analyze")
+        self.assert_failed(result)
+
+        result = self.run_pyre("-l", "local_project", "analyze")
+        self.assert_output_matches(result, re.compile(r"\[\]"))
+
+    def test_analyze_flags(self) -> None:
+        result = self.run_pyre("-l", "local_project", "analyze", "--dump-call-graph")
+        self.assert_output_matches(result, re.compile(r"\[\]"))
+
+        self.create_directory("output")
+        result = self.run_pyre(
+            "-l", "local_project", "analyze", "--save-results-to", "output"
+        )
+        self.assert_file_exists("output/taint-metadata.json", result=result)
+        self.assert_file_exists("output/taint-output.json", result=result)
+
+        self.create_directory("taint_models_path")
+        self.create_file(
+            "taint_models_path/taint.config",
+            contents="{sources: [], sinks: [], features: [], rules: []}",
+        )
+        result = self.run_pyre(
+            "-l", "local_project", "analyze", "--taint-models-path", "taint_models_path"
+        )
+        self.assert_succeeded(result)
+        self.create_file("taint_models_path/sinks.pysa", contents="def invalid(): ...")
+        result = self.run_pyre(
+            "-l", "local_project", "analyze", "--taint-models-path", "taint_models_path"
+        )
+        self.assert_failed(result)
+        result = self.run_pyre(
+            "-l",
+            "local_project",
+            "analyze",
+            "--taint-models-path",
+            "taint_models_path",
+            "--no-verify",
+        )
+        self.assert_succeeded(result)
+
+        self.create_directory("temp")
+        result = self.run_pyre(
+            "-l", "local_project", "analyze", "--repository-root", "temp"
+        )
+        self.assert_succeeded(result)
+        result = self.run_pyre("-l", "local_project", "analyze", "--rule", "1")
+        self.assert_succeeded(result)
 
 
 class CheckTest(TestCommand):
@@ -412,14 +462,12 @@ class CheckTest(TestCommand):
 
 
 class ColorTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    # pyre -l project path current fails with server connection failure.
+    # TODO(T62183021): Add testing when color is fixed.
     pass
 
 
 class DeobfuscateTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    # Currently fails with error parsing command line, no help.
+    # TODO(T62143503): Add testing when deobfuscate is re-introduced.
     pass
 
 
