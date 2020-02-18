@@ -5,7 +5,7 @@
 
 
 import sys
-from typing import Any
+from typing import Any, Dict
 
 from . import is_capable_terminal
 from .log import Color, Format
@@ -17,10 +17,9 @@ class Error:
 
     def __init__(
         self,
+        error: Dict[str, Any],
         ignore_error: bool = False,
         external_to_global_root: bool = False,
-        **error: Any
-        # note: adding a comma after `Any` above creates a SyntaxError
     ) -> None:
         self.line: int = error["line"]
         self.column: int = error["column"]
@@ -31,7 +30,7 @@ class Error:
         self.long_description: str = error.get("long_description", "")
         self.concise_description: str = error.get("concise_description", "")
         self.inference: str = error["inference"]
-        self.ignore_error: bool = ignore_error
+        self.ignore_error: bool = ignore_error or error.get("ignore_error", False)
         self.external_to_global_root: bool = external_to_global_root
 
     def __repr__(self) -> str:

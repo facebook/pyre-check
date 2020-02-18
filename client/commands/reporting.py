@@ -89,7 +89,7 @@ class Reporting(Command):
                 if fnmatch.fnmatch(full_path, (absolute_ignore_path + "*")):
                     ignore_error = True
                     break
-            errors.append(Error(ignore_error, external_to_global_root, **error))
+            errors.append(Error(error, ignore_error, external_to_global_root))
 
         if bypass_filtering:
             return errors

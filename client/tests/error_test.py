@@ -25,7 +25,7 @@ class ErrorTest(unittest.TestCase):
     }
 
     def test_repr(self) -> None:
-        error = Error(**self.fake_error)
+        error = Error(self.fake_error)
 
         with patch("{}.error.is_capable_terminal".format(client), return_value=True):
             self.assertEqual(
@@ -37,7 +37,7 @@ class ErrorTest(unittest.TestCase):
             self.assertEqual(repr(error), "c.py:4:11 Fake error")
 
     def test_key_with_color(self) -> None:
-        error = Error(**self.fake_error)
+        error = Error(self.fake_error)
 
         self.assertEqual(
             error._key_with_color(),
@@ -45,14 +45,14 @@ class ErrorTest(unittest.TestCase):
         )
 
     def test_long_description(self) -> None:
-        error = Error(**self.fake_error)
+        error = Error(self.fake_error)
         self.assertEqual(error.long_description, "")
 
         error_with_long_description = self.fake_error
         error_with_long_description[
             "long_description"
         ] = "Fake error.\nAnd this is why this is an error."
-        error = Error(**error_with_long_description)
+        error = Error(error_with_long_description)
         self.assertEqual(
             error.long_description, "Fake error.\nAnd this is why this is an error."
         )

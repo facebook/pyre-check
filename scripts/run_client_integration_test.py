@@ -735,10 +735,9 @@ class InferTest(TestCommand):
         json_stub = result.output
         self.assertTrue(json_stub is not None)
         result = self.run_pyre(
-            "-l", "local_project", "infer", "--json", prompts=[json_stub]
+            "-l", "local_project", "infer", "--in-place", "--json", prompts=[json_stub]
         )
-        # Client bug.
-        self.assert_failed(result)
+        self.assert_succeeded(result)
 
     def test_infer_recursive(self) -> None:
         result = self.run_pyre("-l", "local_project", "infer", "--recursive")
