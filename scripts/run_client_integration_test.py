@@ -16,7 +16,7 @@ from abc import ABC
 from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Generator, List, NamedTuple, Optional, Pattern
+from typing import Any, Dict, Generator, List, NamedTuple, Optional, Pattern, overload
 
 from pyre_paths import pyre_buck_builder, pyre_client
 
@@ -27,6 +27,10 @@ LOCAL_CONFIGURATION = ".pyre_configuration.local"
 
 BINARY_OVERRIDE = "PYRE_BINARY"
 BINARY_VERSION_PATTERN: Pattern[str] = re.compile(r"Binary version: (\w*).*")
+
+VALID_DICT: Pattern[str] = re.compile(r"\{.*\}")
+VALID_JSON_LIST: Pattern[str] = re.compile(r"\[(\{.*\})*\]")
+VALID_LIST: Pattern[str] = re.compile(r"\[\]")
 
 
 class FilesystemError(IOError):
@@ -334,19 +338,47 @@ class TestCommand(unittest.TestCase, ABC):
     def assert_no_errors(self, result: PyreResult) -> None:
         self.assertEqual(result.return_code, 0, self.get_context(result))
 
-    def assert_file_exists(
+    @overload
+    def assert_file_exists(  # pyre-ignore: T62276784
+        self, relative_path: str, result: Optional[PyreResult]
+    ) -> None:
+        ...
+
+    @overload  # noqa
+    def assert_file_exists(  # pyre-ignore: T62276784
+        self, relative_path: str, *, contents: str, result: Optional[PyreResult] = None
+    ) -> None:
+        ...
+
+    @overload  # noqa
+    def assert_file_exists(  # pyre-ignore: T62276784
+        self,
+        relative_path: str,
+        *,
+        json_contents: Dict[str, Any],
+        result: Optional[PyreResult] = None,
+    ) -> None:
+        ...
+
+    def assert_file_exists(  # noqa
         self,
         relative_path: str,
         json_contents: Optional[Dict[str, Any]] = None,
+        contents: Optional[str] = None,
         result: Optional[PyreResult] = None,
     ) -> None:
         file_path = self.directory / relative_path
         self.assertTrue(file_path.exists(), self.get_context(result))
-        if json_contents:
+        if json_contents or contents:
             file_contents = file_path.read_text()
-            self.assertEqual(
-                json.loads(file_contents), json_contents, self.get_context(result)
-            )
+            if json_contents:
+                self.assertEqual(
+                    json.loads(file_contents), json_contents, self.get_context(result)
+                )
+            if contents:
+                self.assertEqual(
+                    file_contents, textwrap.dedent(contents), self.get_context(result)
+                )
 
     def assert_directory_exists(
         self,
@@ -408,11 +440,11 @@ class AnalyzeTest(TestCommand):
         self.assert_failed(result)
 
         result = self.run_pyre("-l", "local_project", "analyze")
-        self.assert_output_matches(result, re.compile(r"\[\]"))
+        self.assert_output_matches(result, VALID_LIST)
 
     def test_analyze_flags(self) -> None:
         result = self.run_pyre("-l", "local_project", "analyze", "--dump-call-graph")
-        self.assert_output_matches(result, re.compile(r"\[\]"))
+        self.assert_output_matches(result, VALID_LIST)
 
         self.create_directory("output")
         result = self.run_pyre(
@@ -588,40 +620,182 @@ class IncrementalTest(TestCommand):
 
 
 class InferTest(TestCommand):
+    contents = """
+        def foo():
+            return 1
+    """
+    typed_contents = """
+        def foo() -> int:
+            return 1
+    """
+
     def initial_filesystem(self) -> None:
         self.create_project_configuration()
         self.create_local_configuration("local_project", {"source_directories": ["."]})
-        contents = """
-            def foo():
-                return 1
-        """
-        self.create_file("local_project/missing_annotation.py", contents)
+
+        self.create_file("local_project/missing_annotation.py", self.contents)
+        self.create_file("local_project/missing_annotation_two.py", self.contents)
 
     def test_infer_stubs(self) -> None:
-        self.run_pyre("-l", "local_project", "infer")
+        result = self.run_pyre("-l", "local_project", "infer")
         self.assert_file_exists(
-            ".pyre/local_project/types/local_project/missing_annotation.pyi"
+            ".pyre/local_project/types/local_project/missing_annotation.pyi",
+            result=result,
+        )
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation_two.pyi",
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py", contents=self.contents, result=result
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.contents,
+            result=result,
+        )
+
+        # Infer from existing stubs
+        result = self.run_pyre(
+            "-l", "local_project", "infer", "--annotate-from-existing-stubs"
+        )
+        # Failing because --in-place flag is required.
+        self.assert_failed(result)
+
+        result = self.run_pyre(
+            "-l",
+            "local_project",
+            "infer",
+            "--annotate-from-existing-stubs",
+            "--in-place",
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.typed_contents,
+            result=result,
         )
 
     def test_infer_in_place(self) -> None:
-        pass
+        result = self.run_pyre("-l", "local_project", "infer", "--in-place")
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation.pyi",
+            result=result,
+        )
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation_two.pyi",
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.typed_contents,
+            result=result,
+        )
 
-    def test_infer_from_existing_stubs(self) -> None:
-        pass
+    def test_infer_specific_in_place(self) -> None:
+        result = self.run_pyre(
+            "-l",
+            "local_project",
+            "infer",
+            "--in-place",
+            "local_project/missing_annotation.py",
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.contents,
+            result=result,
+        )
 
     def test_infer_from_json(self) -> None:
-        pass
+        result = self.run_pyre("-l", "local_project", "infer", "--print-only")
+        self.assert_output_matches(result, VALID_JSON_LIST)
+        self.assert_file_exists(
+            "local_project/missing_annotation.py", contents=self.contents, result=result
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.contents,
+            result=result,
+        )
 
-    def test_infer_options(self) -> None:
-        # print-only, full-only, recursive
-        pass
+        json_stub = result.output
+        self.assertTrue(json_stub is not None)
+        result = self.run_pyre(
+            "-l", "local_project", "infer", "--json", prompts=[json_stub]
+        )
+        # Client bug.
+        self.assert_failed(result)
+
+    def test_infer_recursive(self) -> None:
+        result = self.run_pyre("-l", "local_project", "infer", "--recursive")
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation.pyi",
+            result=result,
+        )
+        self.assert_file_exists(
+            ".pyre/local_project/types/local_project/missing_annotation_two.pyi",
+            result=result,
+        )
+
+        result = self.run_pyre(
+            "-l", "local_project", "infer", "--recursive", "--in-place"
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+
+    def test_infer_full_only(self) -> None:
+        partial_contents = """
+            def foo(x):
+                return 1
+        """
+        self.create_file("local_project/missing_annotation_three.py", partial_contents)
+        result = self.run_pyre(
+            "-l", "local_project", "infer", "--full-only", "--in-place"
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_three.py",
+            contents=partial_contents,
+            result=result,
+        )
 
 
 class InitializeTest(TestCommand):
     def initial_filesystem(self) -> None:
         self.create_file("fake_pyre.bin")
 
-    # TODO(T57341910): Make prompting explicit, test conditions that skip prompts.
+    # TODO(T61790851): Make prompting explicit, test conditions that skip prompts.
     def test_initialize_project_configuration(self) -> None:
         with _watch_directory(self.directory):
             result = self.run_pyre(
@@ -731,9 +905,9 @@ class QueryTest(TestCommand):
     def test_query(self) -> None:
         self.run_pyre("-l", "local", "start")
         result = self.run_pyre("-l", "local", "query", "join(A, B)")
-        self.assert_output_matches(result, re.compile(r"\{.*\}"))
+        self.assert_output_matches(result, VALID_DICT)
         result = self.run_pyre("-l", "local", "query", "type(A)")
-        self.assert_output_matches(result, re.compile(r"\{.*\}"))
+        self.assert_output_matches(result, VALID_DICT)
 
         # Invalid query behavior
         result = self.run_pyre("-l", "local", "query", "undefined(A)")
@@ -812,7 +986,7 @@ class ServersTest(TestCommand):
 
     def test_list_servers(self) -> None:
         result = self.run_pyre("--output=json", "servers", "list")
-        self.assert_output_matches(result, re.compile(r"\[\]"))
+        self.assert_output_matches(result, VALID_LIST)
         self.run_pyre("-l", "local_one")
         result = self.run_pyre("servers", "list")
         self.assert_output_matches(
@@ -832,7 +1006,7 @@ class ServersTest(TestCommand):
         result = self.run_pyre("servers", "stop")
         self.assert_succeeded(result)
         result = self.run_pyre("--output=json", "servers", "list")
-        self.assert_output_matches(result, re.compile(r"\[\]"))
+        self.assert_output_matches(result, VALID_LIST)
 
 
 class StartTest(TestCommand):
@@ -921,12 +1095,12 @@ class StatisticsTest(TestCommand):
         result = self.run_pyre(
             "-l", "local_project", "statistics", "--collect", "unstrict_files"
         )
-        self.assert_output_matches(result, re.compile(r"\[(\{.*\})*\]"))
+        self.assert_output_matches(result, VALID_JSON_LIST)
 
         result = self.run_pyre(
             "-l", "local_project", "statistics", "--collect", "missing_annotations"
         )
-        self.assert_output_matches(result, re.compile(r"\[(\{.*\})*\]"))
+        self.assert_output_matches(result, VALID_JSON_LIST)
 
 
 class StopTest(TestCommand):
