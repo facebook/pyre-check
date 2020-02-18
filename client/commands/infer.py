@@ -385,7 +385,7 @@ def annotate_from_existing_stubs(
             ):
                 stub_files.append(os.path.join(path, file))
     for stub_path in stub_files:
-        file_path = str(stub_path).replace("/.pyre/types", "").rstrip("i")
+        file_path = re.sub(r".pyre/.*/types/", "", str(stub_path)).rstrip("i")
         annotate_path(arguments, stub_path, file_path)
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -477,7 +477,8 @@ class Infer(Reporting):
         if self._annotate_from_existing_stubs:
             if self._arguments.in_place is None:
                 raise argparse.ArgumentTypeError(
-                    "--no-recheck cannot be used without the --in-place argument"
+                    "--annotate-from-existing-stubs cannot be used without the \
+                    --in-place argument"
                 )
 
             type_directory = Path(os.path.join(self._log_directory, "types"))
