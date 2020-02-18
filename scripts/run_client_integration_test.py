@@ -18,7 +18,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Generator, List, NamedTuple, Optional, Pattern
 
-from pyre_paths import pyre_client
+from pyre_paths import pyre_buck_builder, pyre_client
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -379,8 +379,23 @@ class TestCommand(unittest.TestCase, ABC):
 
 
 class BaseCommandTest(TestCommand):
-    # TODO(T57341910): Test command-agnostic behavior like `pyre --version`
-    pass
+    def test_pyre_version(self) -> None:
+        result = self.run_pyre("--version")
+        self.assert_output_matches(
+            result, re.compile(r"Binary version: No version set\nClient version:.*")
+        )
+
+        self.create_project_configuration(contents={"version": "abc"})
+        result = self.run_pyre("--version")
+        self.assert_output_matches(
+            result, re.compile(r"Binary version: abc\nClient version:.*")
+        )
+
+        self.create_local_configuration("local", contents={"version": "def"})
+        result = self.run_pyre("-l", "local", "--version")
+        self.assert_output_matches(
+            result, re.compile(r"Binary version: def\nClient version:.*")
+        )
 
 
 class AnalyzeTest(TestCommand):
@@ -444,18 +459,53 @@ class CheckTest(TestCommand):
         self.create_project_configuration()
         self.create_file_with_error("local_project/has_type_error.py")
 
+        self.create_file_with_error("buck_project/test.py")
+        self.create_file(".buckversion", contents="last")
+        self.create_file(
+            "buck_project/BUCK",
+            contents="""
+                python_library(
+                    name = "example_library",
+                    srcs = ["test.py"],
+                )
+                python_binary(
+                    name = "example",
+                    main_module = "test",
+                    deps = [
+                        ":example_library",
+                    ],
+                )
+                """,
+        )
+
     def test_command_line_source_directory_check(self) -> None:
         result = self.run_pyre("--source-directory", "local_project", "check")
         self.assert_has_errors(result)
+        self.assert_no_servers_exist(result)
 
         result = self.run_pyre("-l", "local_project", "check")
         self.assert_failed(result)
 
     def test_command_line_targets_check(self) -> None:
-        pass
+        result = self.run_pyre(
+            "--target",
+            "//buck_project:example",
+            "--buck-builder-binary",
+            pyre_buck_builder,
+            "check",
+        )
+        self.assert_has_errors(result)
+        self.assert_no_servers_exist(result)
 
     def test_local_configuration_check(self) -> None:
         self.create_local_configuration("local_project", {"source_directories": ["."]})
+        result = self.run_pyre("-l", "local_project", "check")
+        self.assert_has_errors(result)
+        self.assert_no_servers_exist(result)
+
+        self.create_local_configuration(
+            "local_project_two", {"targets": ["//buck_project:example"]}
+        )
         result = self.run_pyre("-l", "local_project", "check")
         self.assert_has_errors(result)
         self.assert_no_servers_exist(result)

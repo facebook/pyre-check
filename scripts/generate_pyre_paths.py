@@ -10,6 +10,8 @@ parser = ArgumentParser()
 parser.add_argument("--install_dir")
 parser.add_argument("--fbcode_dir")
 parser.add_argument("--pyre_client")
+parser.add_argument("--pyre_buck_builder")
 args: Namespace = parser.parse_args()
 with open(os.path.join(args.install_dir, "pyre_paths.py"), "w") as f:
     f.write('pyre_client = "%s"\n' % args.pyre_client)
+    f.write('pyre_buck_builder = "%s"\n' % args.pyre_buck_builder)
