@@ -19,7 +19,7 @@ type t = {
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
-[@@deriving show, sexp]
+[@@deriving show]
 
 let get_callsite_model ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
@@ -32,22 +32,31 @@ let get_callsite_model ~call_target ~arguments =
         let expand features =
           let transform feature =
             let open Features in
-            match feature.SimpleSet.element with
+            match feature.Abstract.OverUnderSetDomain.element with
             | Simple.ViaValueOf { position } ->
                 List.nth arguments position
-                >>= fun argument -> Simple.via_value_of_breadcrumb ~argument >>| SimpleSet.element
+                >>= fun argument -> Simple.via_value_of_breadcrumb ~argument >>| SimpleSet.inject
             | _ -> Some feature
           in
           List.filter_map features ~f:transform
         in
         let source_taint =
-          ForwardState.transform ForwardTaint.simple_feature_set ~f:expand source_taint
+          ForwardState.transform
+            ForwardTaint.simple_feature_set
+            Abstract.Domain.(Map expand)
+            source_taint
         in
         let sink_taint =
-          BackwardState.transform BackwardTaint.simple_feature_set ~f:expand sink_taint
+          BackwardState.transform
+            BackwardTaint.simple_feature_set
+            Abstract.Domain.(Map expand)
+            sink_taint
         in
         let taint_in_taint_out =
-          BackwardState.transform BackwardTaint.simple_feature_set ~f:expand taint_in_taint_out
+          BackwardState.transform
+            BackwardTaint.simple_feature_set
+            Abstract.Domain.(Map expand)
+            taint_in_taint_out
         in
         { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
       in
@@ -147,11 +156,14 @@ let infer_class_models ~environment =
   let fold_taint position existing_state attribute =
     let leaf =
       BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
-      |> BackwardState.Tree.transform BackwardTaint.complex_feature_set ~f:(fun _ ->
-             [
-               Features.Complex.ReturnAccessPath
-                 [AbstractTreeDomain.Label.create_name_field attribute];
-             ])
+      |> BackwardState.Tree.transform
+           BackwardTaint.complex_feature_set
+           (Abstract.Domain.Map
+              (fun _ ->
+                [
+                  Features.Complex.ReturnAccessPath
+                    [Abstract.TreeDomain.Label.create_name_field attribute];
+                ]))
     in
     BackwardState.assign
       ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })

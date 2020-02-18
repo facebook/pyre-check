@@ -11,21 +11,19 @@ type flow = {
   source_taint: ForwardTaint.t;
   sink_taint: BackwardTaint.t;
 }
-[@@deriving sexp]
+[@@deriving show]
 
-type flows = flow list [@@deriving sexp]
+type flows = flow list [@@deriving show]
 
 type candidate = {
   flows: flows;
   location: Location.WithModule.t;
 }
-[@@deriving sexp]
 
 type flow_state = {
   matched: flows;
   rest: flows;
 }
-[@@deriving sexp]
 
 type issue = {
   code: int;
@@ -34,7 +32,6 @@ type issue = {
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;
 }
-[@@deriving sexp]
 
 val partition_flows
   :  ?sources:(Sources.t -> bool) ->

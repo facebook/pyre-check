@@ -10,13 +10,13 @@ module Backward : sig
     taint_in_taint_out: BackwardState.t;
     sink_taint: BackwardState.t;
   }
-  [@@deriving show, sexp]
+  [@@deriving show]
 
   val empty : model
 end
 
 module Forward : sig
-  type model = { source_taint: ForwardState.t } [@@deriving show, sexp]
+  type model = { source_taint: ForwardState.t } [@@deriving show]
 
   val empty : model
 end
@@ -25,14 +25,13 @@ type mode =
   | SkipAnalysis (* Don't analyze at all *)
   | Sanitize (* Analyze, but throw away inferred model *)
   | Normal
-[@@deriving sexp, show]
+[@@deriving show]
 
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
   mode: mode;
 }
-[@@deriving sexp]
 
 val empty_skip_model : call_model (* Skips analysis *)
 

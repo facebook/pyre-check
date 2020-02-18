@@ -17,7 +17,7 @@ open Model
 
 let raise_invalid_model message = raise (Model.InvalidModel message)
 
-type breadcrumbs = Features.Simple.t list [@@deriving show, sexp]
+type breadcrumbs = Features.Simple.t list [@@deriving show]
 
 let _ = show_breadcrumbs (* unused but derived *)
 
@@ -31,25 +31,26 @@ type taint_annotation =
   | Sink of {
       sink: Sinks.t;
       breadcrumbs: breadcrumbs;
-      path: AbstractTreeDomain.Label.path;
+      path: Abstract.TreeDomain.Label.path;
     }
   | Source of {
       source: Sources.t;
       breadcrumbs: breadcrumbs;
-      path: AbstractTreeDomain.Label.path;
+      path: Abstract.TreeDomain.Label.path;
     }
   | Tito of {
       tito: Sinks.t;
       breadcrumbs: breadcrumbs;
-      path: AbstractTreeDomain.Label.path;
+      path: Abstract.TreeDomain.Label.path;
     }
   | AddFeatureToArgument of {
       breadcrumbs: breadcrumbs;
-      path: AbstractTreeDomain.Label.path;
+      path: Abstract.TreeDomain.Label.path;
     }
   | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
-  | Sanitize (* Don't propagate inferred model of methods with Sanitize *)
-[@@deriving sexp]
+  | Sanitize
+
+(* Don't propagate inferred model of methods with Sanitize *)
 
 let is_property define =
   String.Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
@@ -201,9 +202,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
             let extend_path annotation =
               let field =
                 match index with
-                | Expression.Integer index -> AbstractTreeDomain.Label.create_int_field index
+                | Expression.Integer index -> Abstract.TreeDomain.Label.create_int_field index
                 | Expression.String { StringLiteral.value = index; _ } ->
-                    AbstractTreeDomain.Label.create_name_field index
+                    Abstract.TreeDomain.Label.create_name_field index
                 | _ ->
                     raise_invalid_model
                       "Expected either integer or string as index in AppliesTo annotation."
@@ -298,7 +299,7 @@ let introduce_sink_taint
             BackwardTaint.singleton taint_sink_kind
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
-                 ~f:(add_breadcrumbs breadcrumbs)
+                 Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
             |> BackwardState.Tree.create_leaf
           in
           let sink_taint = assign_backward_taint sink_taint leaf_taint in
@@ -326,7 +327,7 @@ let introduce_taint_in_taint_out
           Domains.local_return_taint
           |> BackwardTaint.transform
                BackwardTaint.simple_feature_set
-               ~f:(add_breadcrumbs breadcrumbs)
+               Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
@@ -339,7 +340,7 @@ let introduce_taint_in_taint_out
           BackwardTaint.singleton taint_sink_kind
           |> BackwardTaint.transform
                BackwardTaint.simple_feature_set
-               ~f:(add_breadcrumbs breadcrumbs)
+               Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
@@ -370,7 +371,9 @@ let introduce_source_taint
     let source_taint =
       let leaf_taint =
         ForwardTaint.singleton taint_source_kind
-        |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:(add_breadcrumbs breadcrumbs)
+        |> ForwardTaint.transform
+             ForwardTaint.simple_feature_set
+             Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
         |> ForwardState.Tree.create_leaf
       in
       ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
@@ -435,16 +438,16 @@ let taint_parameter
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
     | Source { source; breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_source_taint ~root ~path ~sources_to_keep model source
     | Tito { tito; breadcrumbs; path } ->
         (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> add_signature_based_breadcrumbs
              ~resolution
@@ -452,7 +455,7 @@ let taint_parameter
              ~callable_annotation
         |> introduce_taint_in_taint_out ~root ~path model tito
     | AddFeatureToArgument { breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_sink_taint ~root ~path ~sinks_to_keep model Sinks.AddFeatureToArgument
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
@@ -476,11 +479,11 @@ let taint_return
     let root = AccessPath.Root.LocalResult in
     match annotation with
     | Sink { sink; breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
     | Source { source; breadcrumbs; path } ->
-        List.map ~f:Features.SimpleSet.element breadcrumbs
+        List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_source_taint ~root ~path ~sources_to_keep model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"

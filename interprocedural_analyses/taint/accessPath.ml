@@ -21,7 +21,7 @@ module Root = struct
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, sexp, show { with_path = false }, hash]
+  [@@deriving compare, eq, show { with_path = false }, hash]
 
   let chop_parameter_prefix name =
     match String.chop_prefix ~prefix:"$parameter$" name with
@@ -75,10 +75,10 @@ end
 
 type argument_match = {
   root: Root.t;
-  actual_path: AbstractTreeDomain.Label.path;
-  formal_path: AbstractTreeDomain.Label.path;
+  actual_path: Abstract.TreeDomain.Label.path;
+  formal_path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving show { with_path = false }, compare]
+[@@deriving compare, show { with_path = false }]
 
 type argument_position =
   [ `Precise of int
@@ -107,13 +107,13 @@ let match_actuals_to_formals arguments roots =
           {
             root = formal;
             actual_path = [];
-            formal_path = [AbstractTreeDomain.Label.create_name_field field_name];
+            formal_path = [Abstract.TreeDomain.Label.create_name_field field_name];
           }
     | `StarStar, NamedParameter { name }
     | `StarStar, PositionalParameter { name; _ }
       when not (Set.mem matched_names name) ->
         Some
-          { root = formal; actual_path = [AbstractTreeDomain.Label.Field name]; formal_path = [] }
+          { root = formal; actual_path = [Abstract.TreeDomain.Label.Field name]; formal_path = [] }
     | `StarStar, StarStarParameter _ ->
         (* assume entire structure is passed. We can't just pick all but X fields. *)
         Some { root = formal; actual_path = []; formal_path = [] }
@@ -133,18 +133,18 @@ let match_actuals_to_formals arguments roots =
         Some
           {
             root = formal;
-            actual_path = [AbstractTreeDomain.Label.create_int_field (position - actual_position)];
+            actual_path = [Abstract.TreeDomain.Label.create_int_field (position - actual_position)];
             formal_path = [];
           }
     | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
       when minimal_position <= position ->
-        Some { root = formal; actual_path = [AbstractTreeDomain.Label.Any]; formal_path = [] }
+        Some { root = formal; actual_path = [Abstract.TreeDomain.Label.Any]; formal_path = [] }
     | `Precise actual_position, StarParameter { position } when actual_position >= position ->
         Some
           {
             root = formal;
             actual_path = [];
-            formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)];
+            formal_path = [Abstract.TreeDomain.Label.create_int_field (actual_position - position)];
           }
     | `Approximate _, StarParameter _ ->
         (* Approximate: We can't filter by minimal position in either direction here. Think about
@@ -155,7 +155,7 @@ let match_actuals_to_formals arguments roots =
 
            2. ```def f( *z): ... f( *[], 1, approx) ``` In this case, we'll have approx, which has a
            minimal position > the starred parameter, flow to z. *)
-        Some { root = formal; actual_path = []; formal_path = [AbstractTreeDomain.Label.Any] }
+        Some { root = formal; actual_path = []; formal_path = [Abstract.TreeDomain.Label.Any] }
     | `Star _, StarParameter _ ->
         (* Approximate: can't match up ranges, so pass entire structure *)
         Some { root = formal; actual_path = []; formal_path = [] }
@@ -214,7 +214,7 @@ let match_actuals_to_formals arguments roots =
 
 type t = {
   root: Root.t;
-  path: AbstractTreeDomain.Label.path;
+  path: Abstract.TreeDomain.Label.path;
 }
 [@@deriving show { with_path = false }, eq]
 
@@ -224,8 +224,8 @@ let extend { root; path = original_path } ~path = { root; path = original_path @
 
 let get_index expression =
   match Interprocedural.CallResolution.extract_constant_name expression with
-  | Some name -> AbstractTreeDomain.Label.Field name
-  | None -> AbstractTreeDomain.Label.Any
+  | Some name -> Abstract.TreeDomain.Label.Field name
+  | None -> Abstract.TreeDomain.Label.Any
 
 
 let to_json { root; path } =
@@ -238,7 +238,7 @@ let to_json { root; path } =
     | StarStarParameter _ -> "formal(**kw)"
     | Variable name -> Format.sprintf "local(%s)" name
   in
-  `String (root_name root ^ AbstractTreeDomain.Label.show_path path)
+  `String (root_name root ^ Abstract.TreeDomain.Label.show_path path)
 
 
 let get_global ~resolution name =
@@ -280,7 +280,7 @@ let of_expression ~resolution = function
         | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
             Some { root = Root.Variable identifier; path }
         | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-            let path = AbstractTreeDomain.Label.Field attribute :: path in
+            let path = Abstract.TreeDomain.Label.Field attribute :: path in
             of_expression path base
         | _ -> None
       in

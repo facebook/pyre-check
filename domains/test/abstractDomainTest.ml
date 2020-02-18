@@ -1,11 +1,45 @@
-(* Copyright (c) 2016-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree. *)
+(** Copyright (c) 2016-present, Facebook, Inc.
 
-open Core
+    This source code is licensed under the MIT license found in the LICENSE file in the root
+    directory of this source tree. *)
+
+open Core_kernel
 open OUnit2
-open Analysis
+open AbstractDomain
+
+let string_list_printer elements = String.concat ~sep:"," elements
+
+let int_list_printer elements = ListLabels.map ~f:Int.to_string elements |> String.concat ~sep:","
+
+let string_pair_list_printer elements =
+  List.map elements ~f:(fun (s1, s2) -> Format.sprintf "(%s,%s)" s1 s2) |> String.concat ~sep:", "
+
+
+let int_string_list_list_printer elements =
+  List.map elements ~f:(fun (key, elements) ->
+      Format.sprintf "%d:[%s]" key (String.concat ~sep:"," elements))
+  |> String.concat ~sep:"\n"
+
+
+let string_int_list_list_printer elements =
+  List.map elements ~f:(fun (key, elements) ->
+      Format.sprintf "%s:[%s]" key (List.map ~f:Int.to_string elements |> String.concat ~sep:","))
+  |> String.concat ~sep:"\n"
+
+
+(* List.equal is incompatible in different core_kernel versions *)
+let rec list_equal a b ~equal =
+  match a, b with
+  | [], [] -> true
+  | ahead :: arest, bhead :: brest ->
+      if equal ahead bhead then
+        list_equal arest brest ~equal
+      else
+        false
+  | _ -> false
+
+
+module MapPoly = Map.Poly
 
 module type AbstractDomainUnderTest = sig
   include AbstractDomain.S
@@ -77,7 +111,7 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
   let test_widen_conformance ~iteration v1 v2 =
     let join = Domain.join v1 v2 in
     let join_s = Domain.show join in
-    let widen = Domain.widen ~iteration ~previous:v1 ~next:v2 in
+    let widen = Domain.widen ~iteration ~prev:v1 ~next:v2 in
     let widen_s = Domain.show widen in
     let message = Format.sprintf "iteration=%d:" iteration in
     assert_bool
@@ -104,13 +138,12 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
   let test_subtract_conformance v1 v2 =
     let check_difference ~title value ~from ~removed =
       let reconstituted = Domain.join value removed in
-      if not (Domain.less_or_equal ~left:value ~right:from) then
+      assert_bool
+        (Format.sprintf "%s: difference is less or equal to original" title)
+        (Domain.less_or_equal ~left:value ~right:from);
+      if not (Domain.is_bottom value) then
         assert_bool
-          (Format.asprintf "%s: difference %a is less or equal to original" title Domain.pp value)
-          (Domain.less_or_equal ~left:value ~right:from);
-      if not (Domain.less_or_equal ~left:from ~right:reconstituted) then
-        assert_bool
-          (Format.asprintf "%s: original is less or equal to reconstitued %a" title Domain.pp value)
+          (Format.sprintf "%s: original is less or equal to reconstitued" title)
           (Domain.less_or_equal ~left:from ~right:reconstituted)
     in
     let v1_minus_v2 = Domain.subtract v2 ~from:v1 in
@@ -124,13 +157,34 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     check_difference ~title:"joined_minus_v2" joined_minus_v2 ~from:joined ~removed:v2
 
 
+  let test_self v _ =
+    let transform x =
+      assert_bool "argument not itself" (phys_equal x v);
+      x
+    in
+    let assert_equivalent _what a b =
+      if not (Domain.less_or_equal ~left:a ~right:b && Domain.less_or_equal ~left:b ~right:a) then
+        assert_equal a b ~printer:Domain.show
+    in
+    let ident = Domain.transform Domain.Self (Map transform) v in
+    let added = Domain.transform Domain.Self (Add v) Domain.bottom in
+    let filtered = Domain.transform Domain.Self (Filter (fun _ -> false)) v in
+    let kept = Domain.transform Domain.Self (Filter (fun _ -> true)) v in
+    assert_bool "v <> ident" (phys_equal v ident);
+    assert_equivalent "v <> bottom |> add v" v added;
+    assert_equivalent "bottom <> filtered v" Domain.bottom filtered;
+    assert_equivalent "v <> kept v" v kept
+
+
   (* The test suite created by this functor. *)
   let suite () =
     let create_test value ~f = Domain.show value >:: f value in
     let test_basic_values = List.map values ~f:(create_test ~f:test_basic) in
+    let test_self_values = List.map values ~f:(create_test ~f:test_self) in
     let test_joins = test_cartesian ~title:"join" ~f:test_join_conformance values in
     let test_subtract = test_cartesian ~title:"subtract" ~f:test_subtract_conformance values in
     test_basic_values
+    |> List.rev_append test_self_values
     |> List.rev_append ["test_bottom_top" >:: test_bottom_top]
     |> List.rev_append test_diff_unrelated
     |> List.rev_append test_joins
@@ -149,6 +203,23 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
 end
 
 (* Build up abstract domains to test. *)
+
+module String = struct
+  include String
+
+  let name = "strings"
+
+  let show x = x
+end
+
+module Int = struct
+  include Int
+
+  let name = "ints"
+
+  let show = to_string
+end
+
 module StringSet = struct
   include AbstractSetDomain.Make (String)
 
@@ -168,11 +239,9 @@ module StringSet = struct
     let test expected =
       let element_set = of_list expected in
       let actual =
-        fold Element ~init:[] ~f:(Fn.flip List.cons) element_set
-        |> List.sort ~compare:String.compare
+        fold Element ~init:[] ~f:List.cons element_set |> List.sort ~compare:String.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     test ["a"];
     test ["a"; "b"];
@@ -183,12 +252,11 @@ module StringSet = struct
     let test ~initial ~by ~f ~expected =
       let element_set = of_list initial in
       let actual =
-        transform by ~f element_set
-        |> fold Element ~init:[] ~f:(Fn.flip List.cons)
+        transform by (Map f) element_set
+        |> fold Element ~init:[] ~f:List.cons
         |> List.sort ~compare:String.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     test ~initial:["a"; "b"] ~by:Element ~f:(fun x -> "t." ^ x) ~expected:["t.a"; "t.b"];
     test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"]
@@ -199,20 +267,18 @@ module StringSet = struct
       let element_set = of_list initial in
       let actual =
         partition Element ~f element_set
-        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements =
-                 fold Element ~init:[] ~f:(Fn.flip List.cons) data
-                 |> List.sort ~compare:String.compare
+                 fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
                in
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+      assert_equal expected actual ~printer:int_string_list_list_printer
     in
     test
       ~initial:["abc"; "bef"; "g"]
-      ~f:(fun x -> String.length x)
+      ~f:(fun x -> Some (String.length x))
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
 
 
@@ -224,10 +290,206 @@ module StringSet = struct
       ~printer:show
 
 
-  let test_additional _ = ()
+  let test_additional _ =
+    let () =
+      assert_equal "Set(strings)" (introspect Structure |> String.concat ~sep:"\n") ~printer:Fn.id
+    in
+    ()
 end
 
 module TestStringSet = TestAbstractDomain (StringSet)
+
+module InvertedStringSet = struct
+  include AbstractInvertedSetDomain.Make (String)
+
+  let singletons = ["a"; "b"; "c"]
+
+  let unrelated = List.map singletons ~f:singleton
+
+  let values =
+    List.cartesian_product singletons singletons
+    |> List.map ~f:(fun (a, b) -> singleton a |> add b)
+    |> List.dedup_and_sort ~compare
+
+
+  let () = assert_equal 9 (List.length values)
+
+  let of_elements elements = of_elements { is_universe = false; elements }
+
+  let test_fold _ =
+    let test expected =
+      let element_set = of_elements expected in
+      let actual =
+        fold Element ~init:[] ~f:List.cons element_set |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ["a"];
+    test ["a"; "b"];
+    test ["a"; "b"; "c"]
+
+
+  let test_transform _ =
+    let test ~initial ~by ~f ~expected =
+      let element_set = of_elements initial in
+      let actual =
+        transform by (Map f) element_set
+        |> fold Element ~init:[] ~f:List.cons
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ~initial:["a"; "b"] ~by:Element ~f:(fun x -> "t." ^ x) ~expected:["t.a"; "t.b"];
+    test
+      ~initial:["a"; "b"]
+      ~by:Set
+      ~f:(fun set -> { set with elements = "c" :: set.elements })
+      ~expected:["a"; "b"; "c"]
+
+
+  let test_partition _ =
+    let test ~initial ~f ~expected =
+      let element_set = of_elements initial in
+      let actual =
+        partition Element ~f element_set
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
+               let elements =
+                 fold Element ~init:[] ~f:List.cons data |> List.sort ~compare:String.compare
+               in
+               (key, elements) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal expected actual ~printer:int_string_list_list_printer
+    in
+    test
+      ~initial:["abc"; "bef"; "g"]
+      ~f:(fun x -> Some (String.length x))
+      ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
+
+
+  let test_create _ =
+    assert_equal
+      (of_elements ["a"; "b"; "c"])
+      (create [Part (Set, { is_universe = false; elements = ["a"; "b"; "c"] })])
+      ~printer:show;
+    assert_equal
+      (of_elements ["a"; "b"; "c"])
+      (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
+      ~printer:show
+
+
+  let assert_equivalent a b =
+    if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
+      assert_equal a b ~printer:show
+
+
+  let test_additional _ =
+    let () =
+      assert_equal
+        "InvertedSet(strings)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    let a = of_elements ["a"; "b"; "c"] in
+    let b = of_elements ["b"; "c"; "d"] in
+    let ajoinb = join a b in
+    assert_equivalent (of_elements ["b"; "c"]) ajoinb
+end
+
+module TestInvertedStringSet = TestAbstractDomain (InvertedStringSet)
+
+module ToppedStringSet = struct
+  module Config = struct
+    include String
+
+    let max_count () = 2
+  end
+
+  include AbstractToppedSetDomain.Make (Config)
+
+  let singletons = ["a"; "b"; "c"]
+
+  let unrelated = List.map singletons ~f:singleton
+
+  let values =
+    List.cartesian_product unrelated unrelated
+    |> List.map ~f:(Tuple2.uncurry join)
+    |> List.dedup_and_sort ~compare
+
+
+  let () = assert_equal 9 (List.length values)
+
+  let test_fold _ =
+    let test ?(top = false) expected =
+      let element_set = of_list expected in
+      let actual =
+        fold Element ~init:[] ~f:List.cons element_set |> List.sort ~compare:String.compare
+      in
+      if top then
+        assert_equal [] actual ~printer:string_list_printer
+      else
+        assert_equal expected actual ~printer:string_list_printer
+    in
+    test ["a"];
+    test ["a"; "b"];
+    test ["a"; "b"; "c"] ~top:true
+
+
+  let test_transform _ =
+    let test ~initial ~by ~f ~expected =
+      let element_set = of_list initial in
+      let actual =
+        transform by (Map f) element_set
+        |> fold Element ~init:[] ~f:List.cons
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ~initial:["a"; "b"] ~by:Element ~f:(fun x -> "t." ^ x) ~expected:["t.a"; "t.b"];
+    test
+      ~initial:["a"]
+      ~by:Set
+      ~f:(function
+        | Top -> Top
+        | ASet set -> ASet ("b" :: set))
+      ~expected:["a"; "b"];
+    test
+      ~initial:["a"; "b"]
+      ~by:Set
+      ~f:(function
+        | Top -> Top
+        | ASet set -> ASet ("c" :: set))
+      ~expected:[]
+
+
+  (* top *)
+
+  let test_partition _ = ()
+
+  let test_create _ =
+    assert_equal (of_list ["a"; "b"; "c"]) (create [Part (Set, ASet ["a"; "b"; "c"])]) ~printer:show;
+    assert_equal
+      (of_list ["a"; "b"; "c"])
+      (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
+      ~printer:show;
+    assert_equal (of_list ["a"; "b"]) (create [Part (Set, ASet ["a"; "b"])]) ~printer:show;
+    assert_equal
+      (of_list ["a"; "b"])
+      (create [Part (Element, "a"); Part (Element, "b")])
+      ~printer:show
+
+
+  let test_additional _ =
+    let () =
+      assert_equal
+        "ToppedSet(strings)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    ()
+end
+
+module TestToppedStringSet = TestAbstractDomain (ToppedStringSet)
 
 module IntToStringSet = struct
   module Map =
@@ -291,9 +553,8 @@ module IntToStringSet = struct
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = build_map initial in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
@@ -316,11 +577,10 @@ module IntToStringSet = struct
     let test ~initial ~by:part ~f ~expected ~to_result =
       let map = build_map initial in
       let result =
-        transform part map ~f
-        |> fold part ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold part ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
@@ -337,15 +597,21 @@ module IntToStringSet = struct
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.KeyValue
-      ~f:(fun (key, set) -> key + 1, StringSet.add set "new")
+      ~f:(fun (key, set) -> key + 1, StringSet.add "new" set)
       ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
-      ~expected:["3: (set(c d new))"; "2: (set(b c new))"; "1: (set(a b new))"];
+      ~expected:["3: [c, d, new]"; "2: [b, c, new]"; "1: [a, b, new]"];
+    test
+      ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
+      ~by:Map.KeyValue
+      ~f:(fun (_key, set) -> 1, set)
+      ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
+      ~expected:["1: [a, b, c, d]"];
     test
       ~initial:[0, ["a"]; 1, ["b"]; 2, ["c"]; 3, ["d"]]
       ~by:Map.KeyValue
       ~f:(fun (_key, set) -> 1, set)
       ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
-      ~expected:["1: (set(a b c d))"]
+      ~expected:["1: [a, b, c, d]"]
 
 
   let test_partition _ =
@@ -353,33 +619,30 @@ module IntToStringSet = struct
       let map = build_map initial in
       let partition =
         let extract_keys ~key ~data result =
-          let elements =
-            fold Key ~init:[] ~f:(Fn.flip List.cons) data |> List.sort ~compare:Int.compare
-          in
+          let elements = fold Key ~init:[] ~f:List.cons data |> List.sort ~compare:Int.compare in
           (key, elements) :: result
         in
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:extract_keys
+        |> MapPoly.fold ~init:[] ~f:extract_keys
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected_keys partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * int list) list)])
+      assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:StringSet.Element
-      ~f:Fn.id
+      ~f:(fun x -> Some x)
       ~expected_keys:["a", [0]; "b", [0; 1]; "c", [1; 2]; "d", [2]];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
-      ~f:(fun key -> Bool.to_string (key <= 1))
+      ~f:(fun key -> Bool.to_string (key <= 1) |> Option.some)
       ~expected_keys:["false", [2]; "true", [0; 1]];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"; "d"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.KeyValue
       ~f:(fun (key, set) ->
-        Format.sprintf "%b:%d" (key <= 1) (StringSet.elements set |> List.length))
+        Format.sprintf "%b:%d" (key <= 1) (StringSet.elements set |> List.length) |> Option.some)
       ~expected_keys:["false:2", [2]; "true:2", [0]; "true:3", [1]]
 
 
@@ -400,7 +663,48 @@ module IntToStringSet = struct
       ~printer:show
 
 
-  let test_additional _ = ()
+  let assert_equivalent a b =
+    if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
+      assert_equal a b ~printer:show
+
+
+  let test_additional _ =
+    let () =
+      assert_equal
+        "ints -> (strict)\n  Set(strings)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
+    let v1 = transform Key (Filter (fun i -> i <> 1)) v in
+    let v2 = transform KeyValue (Add (0, StringSet.of_list ["x"; "y"])) v1 in
+    let () =
+      assert_equivalent
+        v1
+        (create
+           [
+             Part (Key, 0);
+             Part (StringSet.Set, ["a"; "b"]);
+             Part (Key, 2);
+             Part (StringSet.Set, ["c"; "d"]);
+             Part (Key, 3);
+             Part (StringSet.Set, []);
+           ])
+    in
+    let () =
+      assert_equivalent
+        v2
+        (create
+           [
+             Part (Key, 0);
+             Part (StringSet.Set, ["a"; "b"; "x"; "y"]);
+             Part (Key, 2);
+             Part (StringSet.Set, ["c"; "d"]);
+             Part (Key, 3);
+             Part (StringSet.Set, []);
+           ])
+    in
+    ()
 end
 
 module TestIntToStringSet = TestAbstractDomain (IntToStringSet)
@@ -442,9 +746,8 @@ module StrictIntToStringSet = struct
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = build_map initial in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
@@ -462,11 +765,10 @@ module StrictIntToStringSet = struct
     let test ~initial ~by:part ~f ~expected ~to_result =
       let map = build_map initial in
       let result =
-        transform part map ~f
-        |> fold part ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold part ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
@@ -487,25 +789,24 @@ module StrictIntToStringSet = struct
       let map = build_map initial in
       let partition =
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements =
-                 fold Key ~init:[] ~f:(Fn.flip List.cons) data |> List.sort ~compare:Int.compare
+                 fold Key ~init:[] ~f:List.cons data |> List.sort ~compare:Int.compare
                in
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected_keys partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * int list) list)])
+      assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:StringSet.Element
-      ~f:Fn.id
+      ~f:(fun x -> Some x)
       ~expected_keys:["a", [0]; "b", [0; 1]; "c", [1; 2]; "d", [2]];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
-      ~f:(fun key -> Bool.to_string (key <= 1))
+      ~f:(fun key -> Bool.to_string (key <= 1) |> Option.some)
       ~expected_keys:["false", [2; 3]; "true", [0; 1]]
 
 
@@ -526,7 +827,14 @@ module StrictIntToStringSet = struct
       ~printer:show
 
 
-  let test_additional _ = ()
+  let test_additional _ =
+    let () =
+      assert_equal
+        "ints -> \n  Set(strings)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    ()
 end
 
 module TestStrictIntToStringSet = TestAbstractDomain (StrictIntToStringSet)
@@ -539,6 +847,8 @@ module PairStringMapIntToString = struct
       | Left : LeftStringSet.t slot
       | Right : IntToStringSet.t slot
 
+    let slots = 2
+
     let slot_name (type a) (slot : a slot) =
       match slot with
       | Left -> "left"
@@ -549,21 +859,24 @@ module PairStringMapIntToString = struct
       match slot with
       | Left -> (module LeftStringSet : AbstractDomain.S with type t = a)
       | Right -> (module IntToStringSet : AbstractDomain.S with type t = a)
+
+
+    let strict (type a) (_slot : a slot) = false
   end
 
   include AbstractProductDomain.Make (Slots)
 
-  let build left right = product [Element (Slots.Left, left); Element (Slots.Right, right)]
+  let build left right = bottom |> update Slots.Left left |> update Slots.Right right
 
-  let left_element = ProductSlot (Slots.Left, LeftStringSet.Element)
+  let left_element = LeftStringSet.Element
 
-  let left_set = ProductSlot (Slots.Left, LeftStringSet.Set)
+  let left_set = LeftStringSet.Set
 
-  let right_key = ProductSlot (Slots.Right, IntToStringSet.Key)
+  let right_key = IntToStringSet.Key
 
-  let right_element = ProductSlot (Slots.Right, StringSet.Element)
+  let right_element = StringSet.Element
 
-  let right_set = ProductSlot (Slots.Right, StringSet.Set)
+  let right_set = StringSet.Set
 
   let unrelated =
     let fold_sets accumulator v1 =
@@ -594,9 +907,8 @@ module PairStringMapIntToString = struct
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = build initial in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
@@ -619,11 +931,10 @@ module PairStringMapIntToString = struct
     let test ~initial ~by:part ~f ~expected ~to_result =
       let map = build initial in
       let result =
-        transform part map ~f
-        |> fold part ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold part ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
@@ -650,34 +961,34 @@ module PairStringMapIntToString = struct
       let map = build initial in
       let partition =
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements =
-                 fold right_key ~init:[] ~f:(Fn.flip List.cons) data
-                 |> List.sort ~compare:Int.compare
+                 fold right_key ~init:[] ~f:List.cons data |> List.sort ~compare:Int.compare
                in
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected_keys partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * int list) list)])
+      assert_equal expected_keys partition ~printer:string_int_list_list_printer
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
       ~by:left_element
-      ~f:Fn.id (* Pair right side distributed over left partition *)
+      ~f:(fun x -> Some x) (* Pair right side distributed over left partition *)
       ~expected_keys:
         ["left.a", [0; 1; 2]; "left.b", [0; 1; 2]; "left.c", [0; 1; 2]; "left.d", [0; 1; 2]];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
       ~by:right_element
-      ~f:Fn.id
+      ~f:(fun x -> Some x)
       ~expected_keys:["a", [0]; "b", [0; 1]; "c", [1; 2]; "d", [2]];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
       ~by:right_key
-      ~f:(fun key -> Bool.to_string (key <= 1))
+      ~f:(fun key -> Bool.to_string (key <= 1) |> Option.some)
       ~expected_keys:["false", [2]; "true", [0; 1]]
 
+
+  let cmp a b = less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a
 
   let test_create _ =
     assert_equal
@@ -692,21 +1003,51 @@ module PairStringMapIntToString = struct
            Part (right_key, 2);
            Part (right_set, ["c"; "d"]);
          ])
+      ~cmp
       ~printer:show
 
 
-  let test_additional _ = ()
+  let test_additional _ =
+    let () =
+      assert_equal
+        "Product [\n\
+        \  left\n\
+        \    Set(strings)\n\
+        \  right\n\
+        \    ints -> (strict)\n\
+        \      Set(strings)\n\
+         ]"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    let () =
+      let parts : string list ref = ref [] in
+      let gather (type a) (part : a part) = parts := AbstractDomain.part_name part :: !parts in
+      introspect
+        (GetParts
+           (object
+              method report : 'a. 'a part -> unit = gather
+           end));
+      assert_equal 10 (List.length !parts) ~printer:Int.to_string
+    in
+    ()
 end
 
 module TestPair = TestAbstractDomain (PairStringMapIntToString)
 
 module AbstractElement = struct
+  let name = "A or B or C or CSuper"
+
   type t =
     | A
     | B
     | C of string * int
     | CSuper (* Above all Cs *)
-  [@@deriving eq, compare, show, sexp]
+  [@@deriving show]
+
+  let equal = ( = )
+
+  let compare = Pervasives.compare
 
   let less_or_equal ~left ~right =
     left = right
@@ -726,7 +1067,7 @@ module AbstractElement = struct
 
   let widen set =
     if List.length set > 5 then
-      List.filter set ~f:(function
+      ListLabels.filter set ~f:(function
           | A
           | B ->
               true
@@ -737,19 +1078,16 @@ module AbstractElement = struct
 end
 
 module AbstractElementSet = struct
+  open AbstractElement
   include AbstractElementSetDomain.Make (AbstractElement)
 
-  let unrelated =
-    let open AbstractElement in
-    [singleton A; singleton B; singleton (C ("x", 5)); singleton (C ("y", 5))]
-
+  let unrelated = [singleton A; singleton B; singleton (C ("x", 5)); singleton (C ("y", 5))]
 
   let values =
-    let open AbstractElement in
     [singleton (C ("x", 0)); singleton (C ("x", 6)); singleton (C ("y", 0)); singleton (C ("y", 6))]
 
 
-  let accumulate_elements_as_strings list element = AbstractElement.show_short element :: list
+  let accumulate_elements_as_strings element list = AbstractElement.show_short element :: list
 
   let test_fold _ =
     let test ~initial ~expected =
@@ -758,8 +1096,7 @@ module AbstractElementSet = struct
         fold Element ~init:[] ~f:accumulate_elements_as_strings element_set
         |> List.sort ~compare:String.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     test ~initial:[A; B; C ("x", 5); C ("y", 5)] ~expected:["A"; "B"; "C(x,5)"; "C(y,5)"]
 
@@ -768,12 +1105,11 @@ module AbstractElementSet = struct
     let test ~initial ~over ~f ~expected =
       let element_set = of_list initial in
       let actual =
-        transform over ~f element_set
+        transform over (Map f) element_set
         |> fold Element ~init:[] ~f:accumulate_elements_as_strings
         |> List.sort ~compare:String.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     test
       ~initial:[A; C ("x", 5); C ("y", 5)]
@@ -804,7 +1140,7 @@ module AbstractElementSet = struct
       let element_set = of_list initial in
       let actual =
         partition Element ~f element_set
-        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements =
                  fold Element ~init:[] ~f:accumulate_elements_as_strings data
                  |> List.sort ~compare:String.compare
@@ -812,14 +1148,13 @@ module AbstractElementSet = struct
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+      assert_equal expected actual ~printer:int_string_list_list_printer
     in
     test
       ~initial:[A; B; C ("x", 5); C ("y", 5)]
       ~f:(function
-        | C (_, i) -> i
-        | _ -> -1)
+        | C (_, i) -> Some i
+        | _ -> Some (-1))
       ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
 
 
@@ -845,27 +1180,33 @@ module AbstractElementSet = struct
 
 
   let test_additional _ =
-    let cmp a b = List.equal AbstractElement.equal (elements a) (elements b) in
+    let () =
+      assert_equal
+        "AbstractElementSet(A or B or C or CSuper)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    let cmp a b = list_equal (elements a) (elements b) ~equal:AbstractElement.equal in
     let set = of_list [B; C ("x", 5); C ("y", 5)] in
-    assert_equal set (add set (C ("x", 4))) ~msg:"add subsumed" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp ~printer:show;
     assert_equal
       (of_list [B; C ("x", 6); C ("y", 5)])
-      (add set (C ("x", 6)))
+      (add (C ("x", 6)) set)
       ~msg:"add subsuming"
       ~cmp
       ~printer:show;
-    assert_equal set (add set (C ("x", 5))) ~msg:"add existing" ~cmp ~printer:show;
+    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp ~printer:show;
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
-      (add set A)
+      (add A set)
       ~msg:"add A"
       ~cmp
       ~printer:show;
-    assert_equal (of_list [B; CSuper]) (add set CSuper) ~msg:"add CSuper" ~cmp ~printer:show;
+    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp ~printer:show;
     let big_set = of_list [A; B; C ("x", 5); C ("y", 5); C ("z", 5); C ("q", 5)] in
     assert_equal
       (of_list [A; B; CSuper])
-      (widen ~iteration:0 ~previous:big_set ~next:bottom)
+      (widen ~iteration:0 ~prev:big_set ~next:bottom)
       ~msg:"widen"
       ~cmp
       ~printer:show
@@ -873,11 +1214,177 @@ end
 
 module TestAbstractElement = TestAbstractDomain (AbstractElementSet)
 
+module AbstractBucketedElement = struct
+  include AbstractElement
+
+  type bucket =
+    | CBucket
+    | Rest
+
+  let bucket = function
+    | C _
+    | CSuper ->
+        CBucket
+    | _ -> Rest
+
+
+  let show_bucket = function
+    | CBucket -> "CBucket"
+    | Rest -> "Rest"
+
+
+  let compare_bucket = Pervasives.compare
+end
+
+module AbstractBucketedElementSet = struct
+  open AbstractBucketedElement
+  include AbstractBucketedElementSetDomain.Make (AbstractBucketedElement)
+
+  let unrelated = [singleton A; singleton B; singleton (C ("x", 5)); singleton (C ("y", 5))]
+
+  let values =
+    [singleton (C ("x", 0)); singleton (C ("x", 6)); singleton (C ("y", 0)); singleton (C ("y", 6))]
+
+
+  let accumulate_elements_as_strings element list =
+    AbstractBucketedElement.show_short element :: list
+
+
+  let test_fold _ =
+    let test ~initial ~expected =
+      let element_set = of_list initial in
+      let actual =
+        fold Element ~init:[] ~f:accumulate_elements_as_strings element_set
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test ~initial:[A; B; C ("x", 5); C ("y", 5)] ~expected:["A"; "B"; "C(x,5)"; "C(y,5)"]
+
+
+  let test_transform _ =
+    let test ~initial ~over ~f ~expected =
+      let element_set = of_list initial in
+      let actual =
+        transform over (Map f) element_set
+        |> fold Element ~init:[] ~f:accumulate_elements_as_strings
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal expected actual ~printer:string_list_printer
+    in
+    test
+      ~initial:[A; C ("x", 5); C ("y", 5)]
+      ~over:Element
+      ~f:(function
+        | A -> B
+        | B -> A
+        | C (s, n) -> C (s, n + 1)
+        | CSuper -> CSuper)
+      ~expected:["B"; "C(x,6)"; "C(y,6)"];
+    test
+      ~initial:[A; C ("x", 5); C ("y", 5)]
+      ~over:Element
+      ~f:(function
+        | A -> B
+        | _ -> CSuper)
+      ~expected:["B"; "CSuper"];
+    test
+      ~initial:[A; C ("x", 5); C ("y", 5)]
+      ~over:Set
+      ~f:(function
+        | existing -> CSuper :: existing)
+      ~expected:["A"; "CSuper"]
+
+
+  let test_partition _ =
+    let test ~initial ~f ~expected =
+      let element_set = of_list initial in
+      let actual =
+        partition Element ~f element_set
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
+               let elements =
+                 fold Element ~init:[] ~f:accumulate_elements_as_strings data
+                 |> List.sort ~compare:String.compare
+               in
+               (key, elements) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal expected actual ~printer:int_string_list_list_printer
+    in
+    test
+      ~initial:[A; B; C ("x", 5); C ("y", 5)]
+      ~f:(function
+        | C (_, i) -> Some i
+        | _ -> Some (-1))
+      ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
+
+
+  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal
+      (of_list [A; B; C ("x", 5); C ("y", 5)])
+      (create [Part (Set, [A; B; C ("x", 5); C ("y", 5)])])
+      ~printer:show
+      ~cmp:compare;
+    assert_equal
+      (of_list [A; B; C ("x", 5); C ("y", 5)])
+      (create
+         [
+           Part (Element, A);
+           Part (Element, B);
+           Part (Element, C ("x", 5));
+           Part (Element, C ("y", 5));
+         ])
+      ~printer:show
+      ~cmp:compare
+
+
+  let test_additional _ =
+    let () =
+      assert_equal
+        "bucket -> (strict)\n  AbstractElementSet(A or B or C or CSuper)"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
+    in
+    let cmp a b = list_equal (elements a) (elements b) ~equal:AbstractBucketedElement.equal in
+    let set = of_list [B; C ("x", 5); C ("y", 5)] in
+    assert_equal set (add (C ("x", 4)) set) ~msg:"add subsumed" ~cmp ~printer:show;
+    assert_equal
+      (of_list [B; C ("x", 6); C ("y", 5)])
+      (add (C ("x", 6)) set)
+      ~msg:"add subsuming"
+      ~cmp
+      ~printer:show;
+    assert_equal set (add (C ("x", 5)) set) ~msg:"add existing" ~cmp ~printer:show;
+    assert_equal
+      (of_list [A; B; C ("x", 5); C ("y", 5)])
+      (add A set)
+      ~msg:"add A"
+      ~cmp
+      ~printer:show;
+    assert_equal (of_list [B; CSuper]) (add CSuper set) ~msg:"add CSuper" ~cmp ~printer:show;
+    let big_set = of_list [A; B; C ("x", 5); C ("y", 5); C ("z", 5); C ("q", 5)] in
+    assert_equal
+      (of_list [A; B; CSuper])
+      (widen ~iteration:0 ~prev:big_set ~next:bottom)
+      ~msg:"widen"
+      ~cmp
+      ~printer:show
+end
+
+module TestAbstractBucketedElement = TestAbstractDomain (AbstractBucketedElementSet)
+
 module PairStringString = struct
+  module LeftStringSet = AbstractSetDomain.Make (String)
+  module RightStringSet = AbstractSetDomain.Make (String)
+
   module Slots = struct
     type 'a slot =
-      | Left : StringSet.t slot
-      | Right : StringSet.t slot
+      | Left : LeftStringSet.t slot
+      | Right : RightStringSet.t slot
+
+    let slots = 2
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -887,59 +1394,58 @@ module PairStringString = struct
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
-      | Left -> (module StringSet : AbstractDomain.S with type t = a)
-      | Right -> (module StringSet : AbstractDomain.S with type t = a)
+      | Left -> (module LeftStringSet : AbstractDomain.S with type t = a)
+      | Right -> (module RightStringSet : AbstractDomain.S with type t = a)
+
+
+    let strict (type a) (slot : a slot) =
+      match slot with
+      | Left -> true
+      | Right -> true
   end
 
   include AbstractProductDomain.Make (Slots)
 
   let build left right =
-    product
-      [Element (Slots.Left, StringSet.of_list left); Element (Slots.Right, StringSet.of_list right)]
+    create
+      [
+        Part (LeftStringSet.Self, LeftStringSet.of_list left);
+        Part (RightStringSet.Self, RightStringSet.of_list right);
+      ]
 
 
-  let unrelated = [build ["a"; "b"] ["c"; "d"]; build ["c"; "d"] []; build [] ["e"]]
+  let unrelated = [build ["a"; "b"] ["c"; "d"]; build ["c"; "d"] ["e"]; build ["a"] ["e"]]
 
   let values = [build [] []]
 
   let test_fold _ =
     let test ~initial:(left, right) ~by:part ~f ~expected =
       let map = build left right in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
-    test
-      ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Left, StringSet.Element))
-      ~f:Fn.id
-      ~expected:["b"; "a"];
-    test
-      ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Right, StringSet.Element))
-      ~f:Fn.id
-      ~expected:["c"; "b"]
+    test ~initial:(["a"; "b"], ["b"; "c"]) ~by:LeftStringSet.Element ~f:Fn.id ~expected:["b"; "a"];
+    test ~initial:(["a"; "b"], ["b"; "c"]) ~by:RightStringSet.Element ~f:Fn.id ~expected:["c"; "b"]
 
 
   let test_transform _ =
     let test ~initial:(left, right) ~by:part ~f ~expected ~to_result =
       let map = build left right in
       let result =
-        transform part map ~f
-        |> fold part ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold part ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Left, StringSet.Element))
+      ~by:LeftStringSet.Element
       ~f:(fun x -> "left." ^ x)
       ~to_result:Fn.id
       ~expected:["left.b"; "left.a"];
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Right, StringSet.Element))
+      ~by:RightStringSet.Element
       ~f:(fun x -> "right." ^ x)
       ~to_result:Fn.id
       ~expected:["right.c"; "right.b"]
@@ -950,22 +1456,21 @@ module PairStringString = struct
       let map = build left right in
       let partition =
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * string) list)])
+      assert_equal expected partition ~printer:string_pair_list_printer
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Left, StringSet.Element))
-      ~f:Fn.id
-      ~expected:["a", "left: (set(a)), right: (set(b c))"; "b", "left: (set(b)), right: (set(b c))"];
+      ~by:LeftStringSet.Element
+      ~f:(fun x -> Some x)
+      ~expected:["a", "left: [a], right: [b, c]"; "b", "left: [b], right: [b, c]"];
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(ProductSlot (Right, StringSet.Element))
-      ~f:Fn.id
-      ~expected:["b", "left: (set(a b)), right: (set(b))"; "c", "left: (set(a b)), right: (set(c))"]
+      ~by:RightStringSet.Element
+      ~f:(fun x -> Some x)
+      ~expected:["b", "left: [a, b], right: [b]"; "c", "left: [a, b], right: [c]"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -973,11 +1478,23 @@ module PairStringString = struct
   let test_create _ =
     assert_equal
       (build ["a"; "b"] ["a"; "b"])
-      (create
-         [
-           Part (ProductSlot (Slots.Left, StringSet.Set), ["a"; "b"]);
-           Part (ProductSlot (Slots.Right, StringSet.Set), ["a"; "b"]);
-         ])
+      (create [Part (LeftStringSet.Set, ["a"; "b"]); Part (RightStringSet.Set, ["a"; "b"])])
+      ~printer:show
+      ~cmp:compare;
+
+    (* Check strictness *)
+    assert_equal bottom (build ["a"; "b"] []) ~printer:show ~cmp:compare;
+    assert_equal bottom (build [] ["a"; "b"]) ~printer:show ~cmp:compare;
+
+    (* Check update strictness *)
+    assert_equal
+      bottom
+      (update Slots.Left (LeftStringSet.singleton "a") bottom)
+      ~printer:show
+      ~cmp:compare;
+    assert_equal
+      bottom
+      (update Slots.Right (RightStringSet.singleton "a") bottom)
       ~printer:show
       ~cmp:compare
 
@@ -1002,6 +1519,8 @@ module ProductDomain = struct
       | Years : YearSet.t slot
       | Rivers : RiverSet.t slot
 
+    let slots = 3
+
     let slot_name (type a) (slot : a slot) =
       match slot with
       | Cities -> "Cities"
@@ -1014,17 +1533,22 @@ module ProductDomain = struct
       | Cities -> (module CitySet : AbstractDomain.S with type t = a)
       | Years -> (module YearSet : AbstractDomain.S with type t = a)
       | Rivers -> (module RiverSet : AbstractDomain.S with type t = a)
+
+
+    let strict (type a) (slot : a slot) =
+      match slot with
+      | Cities -> true
+      | _ -> false
   end
 
+  open Slots
   include AbstractProductDomain.Make (Slots)
 
   let build (cities, years, rivers) =
-    product
-      [
-        Element (Cities, CitySet.of_list cities);
-        Element (Years, YearSet.of_list years);
-        Element (Rivers, RiverSet.of_list rivers);
-      ]
+    bottom
+    |> update Cities (CitySet.of_list cities)
+    |> update Years (YearSet.of_list years)
+    |> update Rivers (RiverSet.of_list rivers)
 
 
   let unrelated =
@@ -1040,23 +1564,22 @@ module ProductDomain = struct
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = build initial in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Cities, CitySet.Element))
+      ~by:CitySet.Element
       ~f:Fn.id
       ~expected:["Lausanne"; "Fribourg"];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Years, YearSet.Element))
+      ~by:YearSet.Element
       ~f:Int.to_string
       ~expected:["1157"; "280"];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Rivers, RiverSet.Element))
+      ~by:RiverSet.Element
       ~f:Fn.id
       ~expected:["Sarine"; "Louve"; "Flon"]
 
@@ -1065,21 +1588,20 @@ module ProductDomain = struct
     let test ~initial ~by:part ~f ~expected ~to_result =
       let map = build initial in
       let result =
-        transform part map ~f
-        |> fold part ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold part ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Cities, CitySet.Element))
+      ~by:CitySet.Element
       ~f:(fun x -> x ^ " in Switzerland")
       ~to_result:Fn.id
       ~expected:["Lausanne in Switzerland"; "Fribourg in Switzerland"];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Years, YearSet.Element))
+      ~by:YearSet.Element
       ~f:(fun x -> x + 1)
       ~to_result:Int.to_string
       ~expected:["1158"; "281"]
@@ -1090,46 +1612,38 @@ module ProductDomain = struct
       let map = build initial in
       let partition =
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * string) list)])
+      assert_equal expected partition ~printer:string_pair_list_printer
     in
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Cities, CitySet.Element))
-      ~f:Fn.id
+      ~by:CitySet.Element
+      ~f:(fun x -> Some x)
       ~expected:
         [
-          ( "Fribourg",
-            "Cities: (set(Fribourg)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))" );
-          ( "Lausanne",
-            "Cities: (set(Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))" );
+          "Fribourg", "Cities: [Fribourg], Years: [280, 1157], Rivers: [Flon, Louve, Sarine]";
+          "Lausanne", "Cities: [Lausanne], Years: [280, 1157], Rivers: [Flon, Louve, Sarine]";
         ];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Years, YearSet.Element))
-      ~f:Int.to_string
+      ~by:YearSet.Element
+      ~f:(fun x -> Int.to_string x |> Option.some)
       ~expected:
         [
-          ( "1157",
-            "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(1157))"
-          );
-          ( "280",
-            "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280))"
-          );
+          "1157", "Cities: [Fribourg, Lausanne], Years: [1157], Rivers: [Flon, Louve, Sarine]";
+          "280", "Cities: [Fribourg, Lausanne], Years: [280], Rivers: [Flon, Louve, Sarine]";
         ];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
-      ~by:(ProductSlot (Rivers, RiverSet.Element))
-      ~f:Fn.id
+      ~by:RiverSet.Element
+      ~f:(fun x -> Some x)
       ~expected:
         [
-          "Flon", "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon)), Years: (set(280 1157))";
-          "Louve", "Cities: (set(Fribourg Lausanne)), Rivers: (set(Louve)), Years: (set(280 1157))";
-          ( "Sarine",
-            "Cities: (set(Fribourg Lausanne)), Rivers: (set(Sarine)), Years: (set(280 1157))" );
+          "Flon", "Cities: [Fribourg, Lausanne], Years: [280, 1157], Rivers: [Flon]";
+          "Louve", "Cities: [Fribourg, Lausanne], Years: [280, 1157], Rivers: [Louve]";
+          "Sarine", "Cities: [Fribourg, Lausanne], Years: [280, 1157], Rivers: [Sarine]";
         ]
 
 
@@ -1140,30 +1654,180 @@ module ProductDomain = struct
       (build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
       (create
          [
-           Part (ProductSlot (Cities, CitySet.Set), ["Lausanne"; "Fribourg"]);
-           Part (ProductSlot (Years, YearSet.Set), [280; 1157]);
-           Part (ProductSlot (Rivers, RiverSet.Set), ["Flon"; "Louve"; "Sarine"]);
+           Part (CitySet.Set, ["Lausanne"; "Fribourg"]);
+           Part (YearSet.Set, [280; 1157]);
+           Part (RiverSet.Set, ["Flon"; "Louve"; "Sarine"]);
          ])
       ~printer:show
       ~cmp:compare
 
 
   let test_additional _ =
-    let materialized_slot =
-      transform
-        (ProductSlot (Years, YearSet.Set))
-        bottom
-        ~f:(function
-          | _ -> [0; 1; 2; 3])
+    let () =
+      assert_equal
+        "Product [\n\
+        \  Cities (strict)\n\
+        \    Set(strings)\n\
+        \  Years\n\
+        \    Set(ints)\n\
+        \  Rivers\n\
+        \    Set(strings)\n\
+         ]"
+        (introspect Structure |> String.concat ~sep:"\n")
+        ~printer:Fn.id
     in
-    let actual =
-      fold (ProductSlot (Years, YearSet.Element)) ~f:(Fn.flip List.cons) ~init:[] materialized_slot
+    let () =
+      let materialized_slot =
+        transform
+          CitySet.Set
+          (Map
+             (function
+             | _ -> ["A"; "B"; "C"]))
+          bottom
+      in
+      let actual = fold CitySet.Element ~f:List.cons ~init:[] materialized_slot in
+      assert_equal ["C"; "B"; "A"] actual ~printer:string_list_printer
     in
-    assert_equal [3; 2; 1; 0] actual ~printer:(fun elements ->
-        Format.asprintf "%a" Sexp.pp [%message (elements : int list)])
+    let () =
+      let unmaterialized_slot =
+        (* due to strictness *)
+        transform
+          YearSet.Set
+          (Map
+             (function
+             | _ -> [0; 1; 2; 3]))
+          bottom
+      in
+      let actual = fold YearSet.Element ~f:List.cons ~init:[] unmaterialized_slot in
+      assert_equal [] actual ~printer:int_list_printer
+    in
+    ()
 end
 
 module TestProductDomain = TestAbstractDomain (ProductDomain)
+
+module PathDomain = struct
+  exception Length of int
+
+  let common_prefix a b =
+    let size = min (String.length a) (String.length b) in
+    try
+      for i = 0 to size - 1 do
+        if a.[i] <> b.[i] then raise (Length i)
+      done;
+      a
+    with
+    | Length n -> String.prefix a n
+
+
+  module Element = struct
+    type t =
+      | Bottom
+      | Path of string
+
+    let name = "path"
+
+    let show = function
+      | Bottom -> "<bottom>"
+      | Path p -> p
+
+
+    let less_or_equal ~(left : t) ~(right : t) =
+      match left, right with
+      | Bottom, _ -> true
+      | _, Bottom -> false
+      | Path left, Path right -> String.is_prefix ~prefix:right left
+
+
+    let join left right =
+      match left, right with
+      | Bottom, _ -> right
+      | _, Bottom -> left
+      | Path p1, Path p2 ->
+          let p = common_prefix p1 p2 in
+          if p = p1 then
+            left
+          else if p = p2 then
+            right
+          else
+            Path p
+
+
+    let bottom = Bottom
+  end
+
+  include AbstractSimpleDomain.Make (Element)
+
+  let build path = create [Part (Self, Element.Path path)]
+
+  let unrelated = [build "abcde"; build "efgh"; build "abcdf"]
+
+  let values = []
+
+  let test_fold _ =
+    let test ~initial ~expected =
+      let product = build initial in
+      let result = fold Self product ~init:"" ~f:(fun value sofar -> Element.show value ^ sofar) in
+      assert_equal expected result ~printer:Fn.id
+    in
+    test ~initial:"abc" ~expected:"abc"
+
+
+  let test_transform _ =
+    let test ~initial ~f ~expected =
+      let product = build initial in
+      let result = transform Self (Map f) product |> Element.show in
+      assert_equal expected result ~printer:Fn.id
+    in
+    test
+      ~initial:"abc"
+      ~f:(function
+        | Element.Bottom -> Element.Path "z"
+        | Element.Path x -> Element.Path (x ^ "z"))
+      ~expected:"abcz"
+
+
+  let test_partition _ =
+    let test ~initial ~f ~expected =
+      let product = build initial in
+      let partition =
+        partition Self product ~f
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal expected partition ~printer:string_pair_list_printer
+    in
+    test
+      ~initial:"abc"
+      ~f:(function
+        | Element.Bottom -> None
+        | Element.Path x -> Some x)
+      ~expected:["abc", "abc"]
+
+
+  let equal left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal (build "foo") (create [Part (Self, Element.Path "foo")]) ~printer:show ~cmp:equal
+
+
+  let test_additional _ =
+    let () =
+      assert_equal "Simple(path)" (introspect Structure |> String.concat ~sep:"\n") ~printer:Fn.id
+    in
+    let test ~initial ~expected =
+      let product = build initial in
+      let result = Element.show product in
+      assert_equal expected result ~printer:Fn.id
+    in
+    let a = build "abcdefg" in
+    let b = build "abxyz" in
+    let c = join a b in
+    assert_equal (build "ab") c ~printer:show ~cmp:equal;
+    test ~initial:"abc" ~expected:"abc"
+end
+
+module TestSimpleDomain = TestAbstractDomain (PathDomain)
 
 module TreeOfStringSets = struct
   include AbstractTreeDomain.Make
@@ -1223,9 +1887,8 @@ module TreeOfStringSets = struct
   let test_fold _ =
     let test ~initial ~by:part ~f ~expected =
       let map = create initial in
-      let result = fold part map ~f:(fun list element -> f element :: list) ~init:[] in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let result = fold part map ~f:(fun element list -> f element :: list) ~init:[] in
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:[Part (Path, (parse_path "a.b", StringSet.of_list ["aa"]))]
@@ -1245,22 +1908,17 @@ module TreeOfStringSets = struct
         ]
       ~by:RawPath
       ~f:show_path_element
-      ~expected:
-        [
-          "path:[a][b]; ancestors:(set(a)); tip:(set(aa bb))";
-          "path:[a]; ancestors:(set()); tip:(set(a))";
-        ]
+      ~expected:["path:[a][b]; ancestors:[a]; tip:[aa, bb]"; "path:[a]; ancestors:[]; tip:[a]"]
 
 
   let test_transform _ =
     let test ~initial ~by:part ~f ~expected ~to_result =
       let map = create initial in
       let result =
-        transform part map ~f
-        |> fold RawPath ~f:(fun list element -> to_result element :: list) ~init:[]
+        transform part (Map f) map
+        |> fold RawPath ~f:(fun element list -> to_result element :: list) ~init:[]
       in
-      assert_equal expected result ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected result ~printer:string_list_printer
     in
     test
       ~initial:
@@ -1272,10 +1930,7 @@ module TreeOfStringSets = struct
       ~f:(fun x -> "t." ^ x)
       ~to_result:show_path_element
       ~expected:
-        [
-          "path:[a][b]; ancestors:(set(t.a)); tip:(set(t.aa t.bb))";
-          "path:[a]; ancestors:(set()); tip:(set(t.a))";
-        ];
+        ["path:[a][b]; ancestors:[t.a]; tip:[t.aa, t.bb]"; "path:[a]; ancestors:[]; tip:[t.a]"];
     test
       ~initial:
         [
@@ -1287,8 +1942,8 @@ module TreeOfStringSets = struct
       ~to_result:show_path_element
       ~expected:
         [
-          "path:[prefix][a][b]; ancestors:(set(a)); tip:(set(aa bb))";
-          "path:[prefix][a]; ancestors:(set()); tip:(set(a))";
+          "path:[prefix][a][b]; ancestors:[a]; tip:[aa, bb]";
+          "path:[prefix][a]; ancestors:[]; tip:[a]";
         ]
 
 
@@ -1297,11 +1952,10 @@ module TreeOfStringSets = struct
       let map = create initial in
       let partition =
         partition part map ~f
-        |> Core.Map.Poly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result -> (key, show data) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected partition ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (string * string) list)])
+      assert_equal expected partition ~printer:string_pair_list_printer
     in
     test
       ~initial:
@@ -1310,12 +1964,12 @@ module TreeOfStringSets = struct
           Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:StringSet.Element
-      ~f:Fn.id
+      ~f:(fun x -> Some x)
       ~expected:
         [
-          "a", "(set())\n  [a] -> (set(a))\n";
-          "aa", "(set())\n  [a] -> (set())\n    [b] -> (set(aa))\n";
-          "bb", "(set())\n  [a] -> (set())\n    [b] -> (set(bb))\n";
+          "a", "[]\n  [a] -> [a]\n";
+          "aa", "[]\n  [a] -> []\n    [b] -> [aa]\n";
+          "bb", "[]\n  [a] -> []\n    [b] -> [bb]\n";
         ];
     test
       ~initial:
@@ -1324,8 +1978,8 @@ module TreeOfStringSets = struct
           Part (Path, (parse_path "a", StringSet.of_list ["a"]));
         ]
       ~by:Path
-      ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
-      ~expected:["[a]", "(set())\n  [a] -> (set(a))\n    [b] -> (set(aa bb))\n"]
+      ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path |> Option.some)
+      ~expected:["[a]", "[]\n  [a] -> [a]\n    [b] -> [aa, bb]\n"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -1341,7 +1995,7 @@ module TreeOfStringSets = struct
   let test_additional _ =
     let deep_element = create [Part (Path, (parse_path "a.b.c.d", StringSet.of_list ["x"; "y"]))] in
     assert_equal
-      (widen ~iteration:0 ~previous:deep_element ~next:deep_element)
+      (widen ~iteration:0 ~prev:deep_element ~next:deep_element)
       (create [Part (Path, (parse_path "a.b.c", StringSet.of_list ["x"; "y"]))])
       ~printer:show
       ~cmp:compare;
@@ -1441,12 +2095,13 @@ module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)
 
 module OverUnderStringSet = struct
   include AbstractOverUnderSetDomain.Make (String)
+  open AbstractOverUnderSetDomain
 
   let unrelated =
     [
-      of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }];
-      of_list [{ element = "a"; in_under = true }; { element = "c"; in_under = true }];
-      of_list [{ element = "b"; in_under = true }; { element = "c"; in_under = true }];
+      of_approximation [{ element = "a"; in_under = true }; { element = "b"; in_under = true }];
+      of_approximation [{ element = "a"; in_under = true }; { element = "c"; in_under = true }];
+      of_approximation [{ element = "b"; in_under = true }; { element = "c"; in_under = true }];
     ]
 
 
@@ -1460,27 +2115,27 @@ module OverUnderStringSet = struct
 
 
   let gather_result_elements set =
-    fold ElementAndUnder ~init:[] ~f:(fun result element -> show_element element :: result) set
+    fold ElementAndUnder ~init:[] ~f:(fun element result -> show_element element :: result) set
     |> List.sort ~compare:String.compare
 
 
   let gather_results set =
-    fold Element ~init:[] ~f:(fun result element -> element :: result) set
+    fold Element ~init:[] ~f:(fun element result -> element :: result) set
     |> List.sort ~compare:String.compare
 
+
+  let add set e = add e set
 
   let test_fold _ =
     let test_elements expected =
       let element_set = List.fold ~init:bottom ~f:add expected in
       let actual = gather_result_elements element_set in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     let test expected =
       let element_set = List.fold ~init:bottom ~f:add expected in
       let actual = gather_results element_set in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      assert_equal expected actual ~printer:string_list_printer
     in
     test ["a"];
     test ["a"; "b"];
@@ -1493,15 +2148,13 @@ module OverUnderStringSet = struct
   let test_transform _ =
     let test_elements ~initial ~by ~f ~expected =
       let element_set = List.fold ~init:bottom ~f:add initial in
-      let actual = transform by ~f element_set |> gather_result_elements in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let actual = transform by (Map f) element_set |> gather_result_elements in
+      assert_equal expected actual ~printer:string_list_printer
     in
     let test ~initial ~by ~f ~expected =
       let element_set = List.fold ~init:bottom ~f:add initial in
-      let actual = transform by ~f element_set |> gather_result_elements in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+      let actual = transform by (Map f) element_set |> gather_result_elements in
+      assert_equal expected actual ~printer:string_list_printer
     in
     test ~initial:["a"; "b"] ~by:Element ~f:(fun element -> "t." ^ element) ~expected:["t.a"; "t.b"];
     test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"];
@@ -1528,33 +2181,31 @@ module OverUnderStringSet = struct
       let element_set = List.fold ~init:bottom ~f:add initial in
       let actual =
         partition ElementAndUnder ~f element_set
-        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements = gather_result_elements data in
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+      assert_equal expected actual ~printer:int_string_list_list_printer
     in
     let test ~initial ~f ~expected =
       let element_set = List.fold ~init:bottom ~f:add initial in
       let actual =
         partition Element ~f element_set
-        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+        |> MapPoly.fold ~init:[] ~f:(fun ~key ~data result ->
                let elements = gather_result_elements data in
                (key, elements) :: result)
         |> List.sort ~compare:Pervasives.compare
       in
-      assert_equal expected actual ~printer:(fun elements ->
-          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+      assert_equal expected actual ~printer:int_string_list_list_printer
     in
     test
       ~initial:["abc"; "bef"; "g"]
-      ~f:(fun element -> String.length element)
+      ~f:(fun element -> Some (String.length element))
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]];
     test_elements
       ~initial:["abc"; "bef"; "g"]
-      ~f:(fun { element; _ } -> String.length element)
+      ~f:(fun { element; _ } -> Some (String.length element))
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
 
 
@@ -1562,7 +2213,7 @@ module OverUnderStringSet = struct
 
   let test_create _ =
     assert_equal
-      (of_list
+      (of_approximation
          [
            { element = "a"; in_under = true };
            { element = "b"; in_under = true };
@@ -1580,7 +2231,7 @@ module OverUnderStringSet = struct
          ])
       ~printer:show;
     assert_equal
-      (of_list
+      (of_approximation
          [
            { element = "a"; in_under = true };
            { element = "b"; in_under = true };
@@ -1604,19 +2255,28 @@ module OverUnderStringSet = struct
 
   let test_additional _ =
     let set_a =
-      of_list
+      of_approximation
         [
           { element = "a"; in_under = true };
           { element = "b"; in_under = true };
           { element = "c"; in_under = true };
         ]
     in
-    let set_b = of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }] in
+    let set_a_over =
+      of_approximation
+        [
+          { element = "a"; in_under = false };
+          { element = "b"; in_under = false };
+          { element = "c"; in_under = false };
+        ]
+    in
+    let set_b =
+      of_approximation [{ element = "a"; in_under = true }; { element = "b"; in_under = true }]
+    in
     let set_c = join set_a set_b in
-    let set_d = join empty set_a in
-    let set_e = join set_a empty in
+    let set_d = of_approximation [{ element = "c"; in_under = true }] in
     assert_equal
-      (of_list
+      (of_approximation
          [
            { element = "a"; in_under = true };
            { element = "b"; in_under = true };
@@ -1625,24 +2285,19 @@ module OverUnderStringSet = struct
       set_c
       ~printer:show
       ~cmp:compare;
+    assert_equal set_a (join set_a bottom) ~printer:show ~cmp:compare;
+    assert_equal set_a (join bottom set_a) ~printer:show ~cmp:compare;
+    assert_equal set_a_over (join set_a empty) ~printer:show ~cmp:compare;
+    assert_equal set_a_over (join empty set_a) ~printer:show ~cmp:compare;
+
+    (* Test that adding does not use join *)
+    assert_equal set_a (transform Element (Add "c") set_c) ~printer:show ~cmp:compare;
+    assert_equal set_a (transform Self (Add set_d) set_c) ~printer:show ~cmp:compare;
+    assert_equal set_c (transform Self (Add set_c) set_c) ~printer:show ~cmp:compare;
+    assert_equal empty (transform Element (Map (fun x -> x)) empty) ~printer:show ~cmp:compare;
     assert_equal
-      (of_list
-         [
-           { element = "a"; in_under = false };
-           { element = "b"; in_under = false };
-           { element = "c"; in_under = false };
-         ])
-      set_d
-      ~printer:show
-      ~cmp:compare;
-    assert_equal
-      (of_list
-         [
-           { element = "a"; in_under = false };
-           { element = "b"; in_under = false };
-           { element = "c"; in_under = false };
-         ])
-      set_e
+      (of_approximation [{ element = "a"; in_under = false }])
+      (transform Element (Map (fun _ -> "a")) set_c)
       ~printer:show
       ~cmp:compare
 end
@@ -1650,16 +2305,20 @@ end
 module TestOverUnderStringSet = TestAbstractDomain (OverUnderStringSet)
 
 let () =
-  "domain"
+  "abstractDomainTest"
   >::: [
          "string_set" >::: TestStringSet.suite ();
+         "topped_string_set" >::: TestToppedStringSet.suite ();
+         "inverted_string_set" >::: TestInvertedStringSet.suite ();
          "map_int_to_string_set" >::: TestIntToStringSet.suite ();
          "strict_int_to_string_set" >::: TestStrictIntToStringSet.suite ();
          "string_x_maps_int_to_string_set" >::: TestPair.suite ();
          "dual_string" >::: TestPairStringString.suite ();
          "abstract_element" >::: TestAbstractElement.suite ();
+         "abstract_bucketed_element" >::: TestAbstractBucketedElement.suite ();
          "product" >::: TestProductDomain.suite ();
+         "simple" >::: TestSimpleDomain.suite ();
          "tree" >::: TestTreeDomain.suite ();
          "string_biset" >::: TestOverUnderStringSet.suite ();
        ]
-  |> Test.run
+  |> run_test_tt_main

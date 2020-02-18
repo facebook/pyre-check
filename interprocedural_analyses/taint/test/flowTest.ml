@@ -5,7 +5,6 @@
 
 open OUnit2
 open Ast
-open Analysis
 open Taint
 open Domains
 open Core
@@ -22,16 +21,8 @@ let test_partition_match_all _ =
   let open Flow in
   let flows = [{ source_taint; sink_taint }] in
   let { matched; rest } = partition_flows flows in
-  assert_equal
-    ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
-    flows
-    matched;
-  assert_equal
-    ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
-    []
-    rest
+  assert_equal ~msg:"Matching" ~printer:Flow.show_flows flows matched;
+  assert_equal ~msg:"Rest" ~printer:Flow.show_flows [] rest
 
 
 let test_partition_match_some_sources _ =
@@ -40,12 +31,12 @@ let test_partition_match_some_sources _ =
   let { matched; rest } = partition_flows ~sources:is_user_controlled flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [{ source_taint = ForwardTaint.singleton Sources.UserControlled; sink_taint }]
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [{ source_taint = ForwardTaint.singleton Sources.Test; sink_taint }]
     rest
 
@@ -56,12 +47,12 @@ let test_partition_match_some_sinks _ =
   let { matched; rest } = partition_flows ~sinks:is_RCE flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution }]
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.Test }]
     rest
 
@@ -72,7 +63,7 @@ let test_partition_match_some_sinks_and_sources _ =
   let { matched; rest } = partition_flows ~sources:is_user_controlled ~sinks:is_RCE flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [
       {
         source_taint = ForwardTaint.singleton Sources.UserControlled;
@@ -82,7 +73,7 @@ let test_partition_match_some_sinks_and_sources _ =
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    ~printer:Flow.show_flows
     [
       {
         source_taint = ForwardTaint.singleton Sources.Test;
@@ -98,22 +89,22 @@ let test_no_errors _ =
   let source_tree_a =
     ForwardTaint.singleton Sources.Demo
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let source_tree_b =
     ForwardTaint.singleton Sources.Test
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let sink_tree_a =
     BackwardTaint.singleton Sinks.Test
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_b =
     BackwardTaint.singleton Sinks.Demo
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let assert_no_errors ~source_tree ~sink_tree =
     let location =
@@ -148,37 +139,37 @@ let test_errors _ =
   let source_tree_a =
     ForwardTaint.singleton Sources.UserControlled
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let source_tree_b =
     ForwardTaint.singleton Sources.Test
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let source_tree_c =
     ForwardTaint.singleton Sources.Demo
     |> ForwardState.Tree.create_leaf
-    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_a =
     BackwardTaint.singleton Sinks.RemoteCodeExecution
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_b =
     BackwardTaint.singleton Sinks.Test
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let sink_tree_c =
     BackwardTaint.singleton Sinks.Demo
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_d =
     BackwardTaint.singleton Sinks.Test
     |> BackwardState.Tree.create_leaf
-    |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+    |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let assert_error ~source_tree ~sink_tree code =
     let location =

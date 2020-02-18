@@ -16,7 +16,7 @@ let json_to_string json =
 
 
 module Forward = struct
-  type model = { source_taint: ForwardState.t } [@@deriving sexp]
+  type model = { source_taint: ForwardState.t }
 
   let pp_model formatter { source_taint } =
     Format.fprintf formatter "    Sources:\n%s" (json_to_string (ForwardState.to_json source_taint))
@@ -34,8 +34,8 @@ module Forward = struct
     { source_taint = ForwardState.join left right }
 
 
-  let widen ~iteration ~previous:{ source_taint = previous } ~next:{ source_taint = next } =
-    { source_taint = ForwardState.widen ~iteration ~previous ~next }
+  let widen ~iteration ~previous:{ source_taint = prev } ~next:{ source_taint = next } =
+    { source_taint = ForwardState.widen ~iteration ~prev ~next }
 
 
   let reached_fixpoint
@@ -55,7 +55,6 @@ module Backward = struct
     taint_in_taint_out: BackwardState.t;
     sink_taint: BackwardState.t;
   }
-  [@@deriving sexp]
 
   let pp_model formatter { taint_in_taint_out; sink_taint } =
     Format.fprintf
@@ -91,11 +90,9 @@ module Backward = struct
       ~next:{ sink_taint = sink_taint_next; taint_in_taint_out = tito_next }
     =
     let sink_taint =
-      BackwardState.widen ~iteration ~previous:sink_taint_previous ~next:sink_taint_next
+      BackwardState.widen ~iteration ~prev:sink_taint_previous ~next:sink_taint_next
     in
-    let taint_in_taint_out =
-      BackwardState.widen ~iteration ~previous:tito_previous ~next:tito_next
-    in
+    let taint_in_taint_out = BackwardState.widen ~iteration ~prev:tito_previous ~next:tito_next in
     { sink_taint; taint_in_taint_out }
 
 
@@ -120,14 +117,13 @@ type mode =
   | SkipAnalysis (* Don't analyze at all *)
   | Sanitize (* Analyze, but throw away inferred model *)
   | Normal
-[@@deriving sexp, show]
+[@@deriving show]
 
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
   mode: mode;
 }
-[@@deriving sexp]
 
 let pp_call_model formatter { forward; backward; mode } =
   Format.fprintf
@@ -243,22 +239,28 @@ module ResultArgument = struct
       source_taint
       |> ForwardState.transform
            ForwardTaint.simple_feature_set
-           ~f:Features.strip_simple_feature_for_callsite
-      |> ForwardState.transform ForwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
+           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+      |> ForwardState.transform
+           ForwardTaint.trace_info
+           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
     in
     let sink_taint =
       sink_taint
       |> BackwardState.transform
            BackwardTaint.simple_feature_set
-           ~f:Features.strip_simple_feature_for_callsite
-      |> BackwardState.transform BackwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
+           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+      |> BackwardState.transform
+           BackwardTaint.trace_info
+           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
     in
     let taint_in_taint_out =
       taint_in_taint_out
       |> BackwardState.transform
            BackwardTaint.simple_feature_set
-           ~f:Features.strip_simple_feature_for_callsite
-      |> BackwardState.transform BackwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
+           (Abstract.Domain.Map Features.strip_simple_feature_for_callsite)
+      |> BackwardState.transform
+           BackwardTaint.trace_info
+           (Abstract.Domain.Map Domains.TraceInfo.strip_for_callsite)
     in
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
 end

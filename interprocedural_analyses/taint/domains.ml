@@ -5,16 +5,15 @@
 
 open Core
 open Ast
-open Analysis
 
 module type TAINT_SET = sig
-  include AbstractDomain.S
+  include Abstract.Domain.S
 
   type element [@@deriving compare]
 
-  val element : element AbstractDomain.part
+  val element : element Abstract.Domain.part
 
-  val add : t -> element -> t
+  val add : element -> t -> t
 
   val of_list : element list -> t
 
@@ -24,7 +23,7 @@ module type TAINT_SET = sig
 end
 
 module type SET_ARG = sig
-  include Set.Elt
+  include Abstract.SetDomain.ELEMENT
 
   val equal : t -> t -> bool
 
@@ -34,7 +33,7 @@ module type SET_ARG = sig
 end
 
 module Set (Element : SET_ARG) : TAINT_SET with type element = Element.t = struct
-  module Set = Analysis.AbstractSetDomain.Make (Element)
+  module Set = Abstract.SetDomain.Make (Element)
   include Set
 
   let element = Set.Element
@@ -76,17 +75,19 @@ let location_to_json
 
 
 module TraceInfo = struct
+  let name = "trace"
+
   type t =
     | Declaration
     | Origin of Location.WithModule.t
     | CallSite of {
         port: AccessPath.Root.t;
-        path: AbstractTreeDomain.Label.path;
+        path: Abstract.TreeDomain.Label.path;
         location: Location.WithModule.t;
         callees: Interprocedural.Callable.t list;
         trace_length: int;
       }
-  [@@deriving compare, sexp, show]
+  [@@deriving compare, show]
 
   let _ = show (* shadowed below *)
 
@@ -107,7 +108,7 @@ module TraceInfo = struct
   let has_significant_summary =
     ref
       (fun (_ : AccessPath.Root.t)
-           (_ : AbstractTreeDomain.Label.path)
+           (_ : Abstract.TreeDomain.Label.path)
            (_ : Interprocedural.Callable.non_override_target)
            -> true)
 
@@ -190,7 +191,7 @@ module TraceInfo = struct
         && Location.WithModule.compare location_left location_right = 0
         && callees_left = callees_right
         && trace_length_right <= trace_length_left
-        && AbstractTreeDomain.Label.is_prefix ~prefix:path_right path_left
+        && Abstract.TreeDomain.Label.is_prefix ~prefix:path_right path_left
     | _ -> left = right
 
 
@@ -203,14 +204,19 @@ module TraceInfo = struct
     | Declaration -> Declaration
 end
 
-module TraceInfoSet = AbstractElementSetDomain.Make (TraceInfo)
+module TraceInfoSet = Abstract.ElementSetDomain.Make (TraceInfo)
 
 module FlowDetails = struct
   module Slots = struct
+    let name = "flow details"
+
     type 'a slot =
       | TraceInfo : TraceInfoSet.t slot
       | SimpleFeature : Features.SimpleSet.t slot
       | ComplexFeature : Features.ComplexSet.t slot
+
+    (* Must be consistent with above variants *)
+    let slots = 3
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -221,12 +227,15 @@ module FlowDetails = struct
 
     let slot_domain (type a) (slot : a slot) =
       match slot with
-      | TraceInfo -> (module TraceInfoSet : AbstractDomain.S with type t = a)
-      | SimpleFeature -> (module Features.SimpleSet : AbstractDomain.S with type t = a)
-      | ComplexFeature -> (module Features.ComplexSet : AbstractDomain.S with type t = a)
+      | TraceInfo -> (module TraceInfoSet : Abstract.Domain.S with type t = a)
+      | SimpleFeature -> (module Features.SimpleSet : Abstract.Domain.S with type t = a)
+      | ComplexFeature -> (module Features.ComplexSet : Abstract.Domain.S with type t = a)
+
+
+    let strict _ = false
   end
 
-  include AbstractProductDomain.Make (Slots)
+  include Abstract.ProductDomain.Make (Slots)
 
   let initial ~location =
     let trace =
@@ -234,59 +243,62 @@ module FlowDetails = struct
       | None -> TraceInfo.Declaration
       | Some location -> TraceInfo.Origin location
     in
-    product
+    create
       [
-        Element (Slots.TraceInfo, TraceInfoSet.singleton trace);
-        Element (Slots.SimpleFeature, Features.SimpleSet.empty);
+        Part (TraceInfoSet.Self, TraceInfoSet.singleton trace);
+        Part (Features.SimpleSet.Self, Features.SimpleSet.empty);
       ]
 
 
-  let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
+  let trace_info = TraceInfoSet.Element
 
-  let simple_feature = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.Element)
+  let simple_feature = Features.SimpleSet.Element
 
-  let simple_feature_element = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.ElementAndUnder)
+  let simple_feature_element = Features.SimpleSet.ElementAndUnder
 
-  let simple_feature_set = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.SetAndUnder)
+  let simple_feature_set = Features.SimpleSet.SetAndUnder
 
-  let gather_leaf_names accumulator element =
-    match element.Features.SimpleSet.element with
+  let gather_leaf_names element accumulator =
+    let open Abstract.OverUnderSetDomain in
+    match element.element with
     | Features.Simple.LeafName _ -> element :: accumulator
     | _ -> accumulator
 
 
-  let complex_feature = ProductSlot (Slots.ComplexFeature, Features.ComplexSet.Element)
+  let complex_feature = Features.ComplexSet.Element
 
-  let complex_feature_set = ProductSlot (Slots.ComplexFeature, Features.ComplexSet.Set)
+  let complex_feature_set = Features.ComplexSet.Set
 end
 
 module type TAINT_DOMAIN = sig
-  include AbstractDomain.S
+  include Abstract.Domain.S
 
   type leaf [@@deriving eq]
 
-  val leaf : leaf AbstractDomain.part
+  val leaf : leaf Abstract.Domain.part
 
   val ignore_leaf_at_call : leaf -> bool
 
-  val trace_info : TraceInfo.t AbstractDomain.part
+  val trace_info : TraceInfo.t Abstract.Domain.part
 
-  val simple_feature : Features.Simple.t AbstractDomain.part
+  val simple_feature : Features.Simple.t Abstract.Domain.part
 
-  val simple_feature_element : Features.SimpleSet.element AbstractDomain.part
+  val simple_feature_element
+    : Features.Simple.t Abstract.OverUnderSetDomain.approximation Abstract.Domain.part
 
-  val simple_feature_set : Features.SimpleSet.element list AbstractDomain.part
+  val simple_feature_set
+    : Features.Simple.t Abstract.OverUnderSetDomain.approximation list Abstract.Domain.part
 
-  val complex_feature : Features.Complex.t AbstractDomain.part
+  val complex_feature : Features.Complex.t Abstract.Domain.part
 
-  val complex_feature_set : Features.Complex.t list AbstractDomain.part
+  val complex_feature_set : Features.Complex.t list Abstract.Domain.part
 
   (* Add trace info at call-site *)
   val apply_call
     :  Location.WithModule.t ->
     callees:Interprocedural.Callable.t list ->
     port:AccessPath.Root.t ->
-    path:AbstractTreeDomain.Label.path ->
+    path:Abstract.TreeDomain.Label.path ->
     element:t ->
     t
 
@@ -310,7 +322,7 @@ end = struct
     let absence_implicitly_maps_to_bottom = true
   end
 
-  module Map = AbstractMapDomain.Make (Key) (FlowDetails)
+  module Map = Abstract.MapDomain.Make (Key) (FlowDetails)
   include Map
 
   type leaf = Leaf.t [@@deriving compare]
@@ -339,7 +351,7 @@ end = struct
 
   let complex_feature_set = FlowDetails.complex_feature_set
 
-  let leaves map = Map.fold leaf ~init:[] ~f:(Fn.flip List.cons) map
+  let leaves map = Map.fold leaf ~init:[] ~f:List.cons map
 
   let create_json ~trace_info_to_json taint =
     let element_to_json (leaf, features) =
@@ -347,14 +359,15 @@ end = struct
         FlowDetails.(
           fold
             trace_info
-            ~f:(fun accumulator trace_info -> TraceInfo.expand_call_site trace_info :: accumulator)
+            ~f:(fun trace_info accumulator -> TraceInfo.expand_call_site trace_info :: accumulator)
             ~init:[]
             features)
         |> List.dedup_and_sort ~compare:TraceInfo.compare
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
       let breadcrumbs, tito_positions, leaf_json =
-        let gather_json (breadcrumbs, tito, leaves) { Features.SimpleSet.element; in_under } =
+        let gather_json { Abstract.OverUnderSetDomain.element; in_under } (breadcrumbs, tito, leaves)
+          =
           match element with
           | Features.Simple.LeafName name ->
               ( breadcrumbs,
@@ -372,9 +385,10 @@ end = struct
               let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
               breadcrumb_json :: breadcrumbs, tito, leaves
         in
-        let gather_return_access_path leaves = function
+        let gather_return_access_path feature leaves =
+          match feature with
           | Features.Complex.ReturnAccessPath path ->
-              let path_name = AbstractTreeDomain.Label.show_path path in
+              let path_name = Abstract.TreeDomain.Label.show_path path in
               `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
         in
         let breadcrumbs, tito_positions, leaves =
@@ -421,7 +435,8 @@ end = struct
   let apply_call location ~callees ~port ~path ~element:taint =
     let open TraceInfo in
     let needs_leaf_name =
-      let is_declaration is_declaration = function
+      let is_declaration trace_info is_declaration =
+        match trace_info with
         | Declaration -> true
         | _ -> is_declaration
       in
@@ -434,30 +449,32 @@ end = struct
           CallSite { location; callees; port; path; trace_length = trace_length + 1 }
       | Declaration -> Origin location
     in
-    let taint = Map.transform FlowDetails.trace_info ~f:translate taint in
+    let taint = Map.transform FlowDetails.trace_info (Abstract.Domain.Map translate) taint in
     let strip_tito_positions features =
       List.filter
-        ~f:(fun { Features.SimpleSet.element; _ } ->
+        ~f:(fun { Abstract.OverUnderSetDomain.element; _ } ->
           match element with
           | Features.Simple.TitoPosition _ -> false
           | _ -> true)
         features
     in
-    let taint = Map.transform FlowDetails.simple_feature_set ~f:strip_tito_positions taint in
+    let taint =
+      Map.transform FlowDetails.simple_feature_set (Abstract.Domain.Map strip_tito_positions) taint
+    in
     if needs_leaf_name then
       let open Features in
       let add_leaf_names info_set =
         let add_leaf_name info_set callee =
-          {
-            SimpleSet.element =
-              Simple.LeafName (Interprocedural.Callable.external_target_name callee);
-            in_under = true;
-          }
+          Abstract.OverUnderSetDomain.
+            {
+              element = Simple.LeafName (Interprocedural.Callable.external_target_name callee);
+              in_under = true;
+            }
           :: info_set
         in
         List.fold callees ~f:add_leaf_name ~init:info_set
       in
-      Map.transform FlowDetails.simple_feature_set ~f:add_leaf_names taint
+      Map.transform FlowDetails.simple_feature_set (Abstract.Domain.Map add_leaf_names) taint
     else
       taint
 end
@@ -466,11 +483,11 @@ module ForwardTaint = MakeTaint (Sources)
 module BackwardTaint = MakeTaint (Sinks)
 
 module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
-  include AbstractTreeDomain.Make
+  include Abstract.TreeDomain.Make
             (struct
               let max_tree_depth_after_widening = 4
 
-              let check_invariants = true
+              let check_invariants = false
             end)
             (Taint)
             ()
@@ -478,7 +495,10 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   let apply_call location ~callees ~port taint_tree =
     let transform_path { path; ancestors = _; tip } =
       let tip =
-        Taint.partition Taint.leaf ~f:Taint.ignore_leaf_at_call tip
+        Taint.partition
+          Taint.leaf
+          ~f:(fun leaf -> if Taint.ignore_leaf_at_call leaf then None else Some false)
+          tip
         |> (fun map -> Map.Poly.find map false)
         |> function
         | None -> Taint.bottom
@@ -486,7 +506,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       in
       { path; ancestors = Taint.bottom; tip }
     in
-    transform RawPath ~f:transform_path taint_tree
+    transform RawPath (Abstract.Domain.Map transform_path) taint_tree
 
 
   let empty = bottom
@@ -498,8 +518,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       | TraceInfo.CallSite callsite -> TraceInfo.CallSite { callsite with trace_length = 100 }
       | default -> default
     in
-    transform Taint.trace_info ~f:essential_trace_info tree
-    |> transform Taint.complex_feature_set ~f:essential_complex_features
+    transform Taint.trace_info (Abstract.Domain.Map essential_trace_info) tree
+    |> transform Taint.complex_feature_set (Abstract.Domain.Map essential_complex_features)
 
 
   (* Keep only non-essential structure. *)
@@ -528,7 +548,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let filter_by_leaf ~leaf taint_tree =
     collapse taint_tree
-    |> Taint.partition Taint.leaf ~f:(Taint.equal_leaf leaf)
+    |> Taint.partition Taint.leaf ~f:(fun candidate ->
+           if Taint.equal_leaf leaf candidate then Some true else None)
     |> (fun map -> Map.Poly.find map true)
     |> Option.value ~default:Taint.bottom
 end
@@ -536,8 +557,10 @@ end
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   module Tree = MakeTaintTree (Taint) ()
 
-  include AbstractMapDomain.Make
+  include Abstract.MapDomain.Make
             (struct
+              let name = "env"
+
               include AccessPath.Root
 
               let absence_implicitly_maps_to_bottom = true
@@ -546,7 +569,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let create_json ~taint_to_json environment =
     let element_to_json json_list (root, tree) =
-      let path_to_json json_list { Tree.path; ancestors; tip } =
+      let path_to_json { Tree.path; ancestors; tip } json_list =
         let tip =
           let ancestor_leaf_names =
             Taint.fold
@@ -556,12 +579,21 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
               ~init:[]
           in
           let join_ancestor_leaf_names leaves = leaves @ ancestor_leaf_names in
-          Taint.transform FlowDetails.simple_feature_set tip ~f:join_ancestor_leaf_names
+          Taint.transform
+            FlowDetails.simple_feature_set
+            (Abstract.Domain.Map join_ancestor_leaf_names)
+            tip
         in
         let port = AccessPath.create root path |> AccessPath.to_json in
-        `Assoc ["port", port; "taint", taint_to_json tip] :: json_list
+        (path, ["port", port; "taint", taint_to_json tip]) :: json_list
       in
-      Tree.fold Tree.RawPath ~f:path_to_json tree ~init:json_list
+      let ports =
+        Tree.fold Tree.RawPath ~f:path_to_json tree ~init:[]
+        |> List.dedup_and_sort ~compare:(fun (p1, _) (p2, _) ->
+               Abstract.TreeDomain.Label.compare_path p1 p2)
+        |> List.rev_map ~f:(fun (_, fields) -> `Assoc fields)
+      in
+      List.rev_append ports json_list
     in
     let paths = to_alist environment |> List.fold ~f:element_to_json ~init:[] in
     `List paths
@@ -582,7 +614,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
 
   let read ?(transform_non_leaves = fun _ e -> e) ~root ~path environment =
-    match find environment root with
+    match get root environment with
     | None -> Tree.bottom
     | Some tree -> Tree.read ~transform_non_leaves path tree
 
@@ -591,7 +623,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let is_empty = is_bottom
 
-  let roots environment = fold Key ~f:(Fn.flip List.cons) ~init:[] environment
+  let roots environment = fold Key ~f:List.cons ~init:[] environment
 end
 
 module ForwardState = MakeTaintEnvironment (ForwardTaint) ()
@@ -608,9 +640,8 @@ let local_return_taint =
       Part (BackwardTaint.leaf, Sinks.LocalReturn);
       Part (BackwardTaint.trace_info, TraceInfo.Declaration);
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
-      Part (BackwardTaint.simple_feature_set, []);
+      Part (Features.SimpleSet.Self, Features.SimpleSet.empty);
     ]
 
 
-let add_format_string_feature set =
-  Features.SimpleSet.element (Features.Simple.Breadcrumb Features.Breadcrumb.FormatString) :: set
+let format_string_feature = Features.Simple.Breadcrumb Features.Breadcrumb.FormatString

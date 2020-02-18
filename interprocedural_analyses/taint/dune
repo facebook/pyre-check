@@ -18,6 +18,7 @@
   ppx_deriving
   pyrelib.ast
   pyrelib.analysis
+  pyrelib.domains
   pyrelib.interprocedural
   pyrelib.pyreParser
   pyrelib.recognized

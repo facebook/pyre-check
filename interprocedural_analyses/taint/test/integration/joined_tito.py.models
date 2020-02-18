@@ -16,20 +16,20 @@
         ]
       },
       {
-        "port": "formal(wrapper)[b]",
-        "taint": [
-          {
-            "decl": "MISSING",
-            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(wrapper)",
         "taint": [
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[x]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(wrapper)[b]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
           }
         ]
       },
@@ -62,20 +62,20 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(wrapper)[b]",
-        "taint": [
-          {
-            "decl": "MISSING",
-            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(wrapper)",
         "taint": [
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[x]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(wrapper)[b]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
           }
         ]
       },

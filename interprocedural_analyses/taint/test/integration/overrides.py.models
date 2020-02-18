@@ -474,7 +474,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [ { "via": "tito" } ]
           }
         ]
       },
@@ -592,7 +592,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
-            "features": [ { "always-via": "tito" } ]
+            "features": [ { "via": "tito" } ]
           }
         ]
       },

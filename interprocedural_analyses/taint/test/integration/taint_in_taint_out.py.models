@@ -164,16 +164,6 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal(x)[parent]",
-        "taint": [
-          {
-            "decl": "MISSING",
-            "tito": [ { "line": 15, "start": 30, "end": 38 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(x)",
         "taint": [
           {
@@ -185,6 +175,16 @@
               { "kind": "LocalReturn", "name": "[id]" }
             ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)[parent]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "tito": [ { "line": 15, "start": 30, "end": 38 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }

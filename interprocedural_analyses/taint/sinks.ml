@@ -79,3 +79,5 @@ let ignore_leaf_at_call = function
 module Set = Set.Make (struct
   include T
 end)
+
+let name = "sink"

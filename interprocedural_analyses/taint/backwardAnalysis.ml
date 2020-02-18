@@ -70,8 +70,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Features.Complex.ReturnAccessPath prefix -> Features.Complex.ReturnAccessPath (prefix @ path)
     in
     match path with
-    | AbstractTreeDomain.Label.Any :: _ -> taint
-    | _ -> BackwardTaint.transform BackwardTaint.complex_feature ~f taint
+    | Abstract.TreeDomain.Label.Any :: _ -> taint
+    | _ -> BackwardTaint.transform BackwardTaint.complex_feature (Abstract.Domain.Map f) taint
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
@@ -96,8 +96,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       { taint }
 
 
-    let widen ~previous:{ taint = previous; _ } ~next:{ taint = next; _ } ~iteration =
-      let taint = BackwardState.widen ~iteration ~previous ~next in
+    let widen ~previous:{ taint = prev; _ } ~next:{ taint = next; _ } ~iteration =
+      let taint = BackwardState.widen ~iteration ~prev ~next in
       { taint }
 
 
@@ -158,20 +158,20 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
         in
         let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
-          let add_tito_location features =
-            Features.SimpleSet.element (Features.Simple.Breadcrumb Features.Breadcrumb.Tito)
-            :: Features.SimpleSet.element (Features.Simple.TitoPosition location)
-            :: features
+          let tito_features =
+            Features.SimpleSet.bottom
+            |> Features.SimpleSet.add (Features.Simple.Breadcrumb Features.Breadcrumb.Tito)
+            |> Features.SimpleSet.add (Features.Simple.TitoPosition location)
           in
           let translate_tito
-              argument_taint
               { BackwardState.Tree.path = tito_path; tip = element; _ }
+              argument_taint
             =
             let compute_parameter_tito ~key:kind ~data:element argument_taint =
               let extra_paths =
                 match kind with
                 | Sinks.LocalReturn ->
-                    let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
+                    let gather_paths (Features.Complex.ReturnAccessPath extra_path) paths =
                       extra_path :: paths
                     in
                     BackwardTaint.fold
@@ -207,13 +207,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(fun taint extra_path ->
                   read_tree extra_path taint_to_propagate
                   |> BackwardState.Tree.collapse
-                  |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_features
+                  |> BackwardTaint.transform
+                       BackwardTaint.simple_feature_set
+                       Abstract.Domain.(Map add_features)
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.prepend tito_path
                   |> BackwardState.Tree.join taint)
                 ~init:argument_taint
             in
-            BackwardTaint.partition BackwardTaint.leaf ~f:Fn.id element
+            BackwardTaint.partition BackwardTaint.leaf ~f:Option.some element
             |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
           in
           BackwardState.read
@@ -225,7 +227,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                BackwardState.Tree.RawPath
                ~f:translate_tito
                ~init:BackwardState.Tree.bottom
-          |> BackwardState.Tree.transform BackwardTaint.simple_feature_set ~f:add_tito_location
+          |> BackwardState.Tree.transform
+               Features.SimpleSet.Self
+               (Abstract.Domain.Add tito_features)
           |> BackwardState.Tree.prepend actual_path
           |> BackwardState.Tree.join taint_tree
         in
@@ -258,7 +262,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       BackwardState.read state.taint ~root ~path
                       |> BackwardState.Tree.transform
                            BackwardTaint.simple_feature_set
-                           ~f:(List.rev_append features)
+                           Abstract.Domain.(Map (List.rev_append features))
                     in
                     { taint = BackwardState.assign ~root ~path taint state.taint }
                 | [] -> state )
@@ -272,13 +276,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Resolution.resolve resolution { Node.value = call_expression; location }
             in
             BackwardState.Tree.collapse call_taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
+            |> BackwardTaint.transform
+                 BackwardTaint.simple_feature
+                 Abstract.Domain.(Add Features.obscure)
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
-                 ~f:
-                   (Features.add_type_breadcrumb
-                      ~resolution:(Resolution.global_resolution resolution)
-                      (Some annotation))
+                 Abstract.Domain.(
+                   Map
+                     (Features.add_type_breadcrumb
+                        ~resolution:(Resolution.global_resolution resolution)
+                        (Some annotation)))
             |> BackwardState.Tree.create_leaf
           else
             BackwardState.Tree.bottom
@@ -290,7 +297,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* If we don't have a call target: propagate argument taint. *)
           let obscure_taint =
             BackwardState.Tree.collapse call_taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
+            |> BackwardTaint.transform
+                 BackwardTaint.simple_feature
+                 Abstract.Domain.(Add Features.obscure)
             |> BackwardState.Tree.create_leaf
           in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
@@ -341,7 +350,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_reverse_list_element ~total ~resolution taint reverse_position state expression =
       let position = total - reverse_position - 1 in
-      let index_name = AbstractTreeDomain.Label.Field (string_of_int position) in
+      let index_name = Abstract.TreeDomain.Label.Field (string_of_int position) in
       let value_taint = read_tree [index_name] taint in
       analyze_expression ~resolution ~taint:value_taint ~state ~expression
 
@@ -373,9 +382,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               | _ -> false
             in
             if iterator_is_dictionary then
-              AbstractTreeDomain.Label.DictionaryKeys
+              Abstract.TreeDomain.Label.DictionaryKeys
             else
-              AbstractTreeDomain.Label.Any
+              Abstract.TreeDomain.Label.Any
           in
           BackwardState.Tree.prepend [label] bound_variable_taint
         in
@@ -386,7 +395,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
       let resolution = generator_resolution ~resolution generators in
-      let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
+      let element_taint = read_tree [Abstract.TreeDomain.Label.Any] taint in
       let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
       analyze_generators ~resolution ~state generators
 
@@ -475,7 +484,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* No targets, treat call as obscure *)
           let obscure_taint =
             BackwardState.Tree.collapse taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
+            |> BackwardTaint.transform
+                 BackwardTaint.simple_feature
+                 Abstract.Domain.(Add Features.obscure)
             |> BackwardState.Tree.create_leaf
           in
           let state =
@@ -535,7 +546,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
             arguments = [];
           } ->
-          let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
+          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
@@ -611,14 +622,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let state =
             analyze_expression
               ~resolution
-              ~taint:(read_tree [AbstractTreeDomain.Label.DictionaryKeys] taint)
+              ~taint:(read_tree [Abstract.TreeDomain.Label.DictionaryKeys] taint)
               ~state
               ~expression:key
           in
           let state =
             analyze_expression
               ~resolution
-              ~taint:(read_tree [AbstractTreeDomain.Label.Any] taint)
+              ~taint:(read_tree [Abstract.TreeDomain.Label.Any] taint)
               ~state
               ~expression:value
           in
@@ -649,7 +660,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~setter:false
           with
           | None ->
-              let field = AbstractTreeDomain.Label.Field attribute in
+              let field = Abstract.TreeDomain.Label.Field attribute in
               let taint =
                 BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
               in
@@ -665,7 +676,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 taint
                 targets )
       | Set set ->
-          let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
+          let element_taint = read_tree [Abstract.TreeDomain.Label.Any] taint in
           List.fold
             set
             ~f:(fun state expression ->
@@ -675,13 +686,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_comprehension ~resolution taint comprehension state
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
+          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression
       | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
           let taint =
             BackwardState.Tree.transform
-              BackwardTaint.simple_feature_set
-              ~f:Domains.add_format_string_feature
+              BackwardTaint.simple_feature
+              Abstract.Domain.(Add Domains.format_string_feature)
               taint
           in
           List.fold
@@ -724,7 +735,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               if collapse then
                 taint
               else
-                let index_name = AbstractTreeDomain.Label.Field (string_of_int position) in
+                let index_name = Abstract.TreeDomain.Label.Field (string_of_int position) in
                 BackwardState.Tree.prepend [index_name] taint
             in
             BackwardState.Tree.join index_taint taint_accumulator
@@ -881,18 +892,19 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     BackwardState.Tree.shape tree ~mold:essential
     |> BackwardState.Tree.transform
          BackwardTaint.simple_feature_set
-         ~f:(Features.add_type_breadcrumb ~resolution annotation)
+         Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution annotation))
   in
   let split_and_simplify model (parameter, name, original) =
     let annotation = original.Node.value.Parameter.annotation in
     let partition =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
-      |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Fn.id
+      |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Option.some
     in
     let compute_features_to_attach taint =
       BackwardState.read ~root:parameter ~path:[] taint
       |> BackwardState.Tree.collapse
-      |> BackwardTaint.partition BackwardTaint.leaf ~f:(Sinks.equal Sinks.Attach)
+      |> BackwardTaint.partition BackwardTaint.leaf ~f:(fun sink ->
+             if Sinks.equal Sinks.Attach sink then Some true else None)
       |> (fun map -> Map.Poly.find map true)
       >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
       |> Option.value ~default:[]
@@ -912,14 +924,14 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         else
           BackwardState.Tree.transform
             BackwardTaint.simple_feature_set
-            ~f:(List.rev_append features_to_attach)
+            Abstract.Domain.(Map (List.rev_append features_to_attach))
             candidate_tree
       in
       let number_of_paths =
         BackwardState.Tree.fold
           BackwardState.Tree.RawPath
           ~init:0
-          ~f:(fun count _ -> count + 1)
+          ~f:(fun _ count -> count + 1)
           candidate_tree
       in
       if number_of_paths > 5 then
@@ -944,7 +956,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       if not (List.is_empty features_to_attach) then
         BackwardState.Tree.transform
           BackwardTaint.simple_feature_set
-          ~f:(List.rev_append features_to_attach)
+          Abstract.Domain.(Map (List.rev_append features_to_attach))
           sink_taint
       else
         sink_taint
@@ -1002,7 +1014,9 @@ let run ~environment ~qualifier ~define ~existing_model =
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
   let () = log "Backward analysis of callable: %a" Reference.pp name in
-  let entry_state = Analyzer.backward ~cfg ~initial |> Analyzer.entry in
+  let entry_state =
+    Metrics.with_alarm name (fun () -> Analyzer.backward ~cfg ~initial |> Analyzer.entry) ()
+  in
   let () =
     match entry_state with
     | Some entry_state -> log "Final state: %a" FixpointState.pp entry_state

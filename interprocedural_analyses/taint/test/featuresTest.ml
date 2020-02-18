@@ -16,8 +16,9 @@ let test_add_type_breadcrumb context =
     in
     let resolution = TypeEnvironment.global_resolution type_environment in
     let actual =
+      let open Abstract.OverUnderSetDomain in
       add_type_breadcrumb ~resolution (Some annotation) []
-      |> List.map ~f:(fun { SimpleSet.element; _ } -> element)
+      |> List.map ~f:(fun { element; _ } -> element)
       |> List.filter_map ~f:(function
              | Simple.Breadcrumb (Breadcrumb.Type type_name) -> Some type_name
              | _ -> None)

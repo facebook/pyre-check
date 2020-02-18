@@ -19,7 +19,7 @@ module Root : sig
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, show]
 
   val normalize_parameters : Parameter.t list -> (t * Identifier.t * Parameter.t) list
 
@@ -28,17 +28,17 @@ end
 
 type t = {
   root: Root.t;
-  path: AbstractTreeDomain.Label.path;
+  path: Abstract.TreeDomain.Label.path;
 }
 [@@deriving show, eq]
 
-val create : Root.t -> AbstractTreeDomain.Label.path -> t
+val create : Root.t -> Abstract.TreeDomain.Label.path -> t
 
-val extend : t -> path:AbstractTreeDomain.Label.path -> t
+val extend : t -> path:Abstract.TreeDomain.Label.path -> t
 
 val of_expression : resolution:Resolution.t -> Expression.t -> t option
 
-val get_index : Expression.t -> AbstractTreeDomain.Label.t
+val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 
 val to_json : t -> Yojson.Safe.json
 
@@ -48,10 +48,10 @@ val is_global : resolution:Resolution.t -> Expression.t -> bool
 
 type argument_match = {
   root: Root.t;
-  actual_path: AbstractTreeDomain.Label.path;
-  formal_path: AbstractTreeDomain.Label.path;
+  actual_path: Abstract.TreeDomain.Label.path;
+  formal_path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving show, compare]
+[@@deriving compare, show]
 
 val match_actuals_to_formals
   :  Call.Argument.t list ->

@@ -61,3 +61,5 @@ let parse ~allowed name =
 module Set = Set.Make (struct
   include T
 end)
+
+let name = "source"

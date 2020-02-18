@@ -457,6 +457,17 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(request)[POST][1]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 26, "start": 41, "end": 50 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(request)[POST][2]",
         "taint": [
           {
@@ -465,17 +476,6 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(request)[POST][1]",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 26, "start": 41, "end": 50 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]

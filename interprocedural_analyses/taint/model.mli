@@ -13,7 +13,7 @@ type t = {
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
-[@@deriving show, sexp]
+[@@deriving show]
 
 exception InvalidModel of string
 

@@ -119,7 +119,7 @@ let check_expectation
   =
   let callable = create_callable kind define_name in
   let open Taint.Result in
-  let extract_sinks_by_parameter_name sink_map (root, sink_tree) =
+  let extract_sinks_by_parameter_name (root, sink_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks = Domains.BackwardState.Tree.collapse sink_tree |> Domains.BackwardTaint.leaves in
@@ -132,7 +132,7 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let extract_sources_by_parameter_name sink_map (root, source_tree) =
+  let extract_sources_by_parameter_name (root, source_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks = Domains.ForwardState.Tree.collapse source_tree |> Domains.ForwardTaint.leaves in
@@ -163,13 +163,9 @@ let check_expectation
       ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
   in
-  let extract_tito_parameter_name positions (root, taint) =
+  let extract_tito_parameter_name (root, taint) positions =
     let leafs =
-      Domains.BackwardState.Tree.fold
-        Domains.BackwardTaint.leaf
-        taint
-        ~f:(Fn.flip List.cons)
-        ~init:[]
+      Domains.BackwardState.Tree.fold Domains.BackwardTaint.leaf taint ~f:List.cons ~init:[]
     in
     let get_tito_name parameter_name = function
       | Sinks.Attach -> parameter_name

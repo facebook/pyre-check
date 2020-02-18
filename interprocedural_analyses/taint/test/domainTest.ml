@@ -5,7 +5,6 @@
 
 open OUnit2
 open Ast
-open Analysis
 open Taint
 open Domains
 open Core
@@ -17,7 +16,7 @@ let test_partition_call_map _ =
       Location.WithModule.any
       ~callees:[]
       ~port:AccessPath.Root.LocalResult
-      ~path:[AbstractTreeDomain.Label.create_name_field "a"]
+      ~path:[Abstract.TreeDomain.Label.create_name_field "a"]
       ~element:taint
   in
   let call_taint2 =
@@ -43,7 +42,11 @@ let test_partition_call_map _ =
       Map.Poly.find partition false |> Option.value ~default:ForwardTaint.bottom )
   in
   let matches, does_not_match =
-    ForwardTaint.partition ForwardTaint.leaf ~f:(( = ) Sources.UserControlled) joined |> split
+    ForwardTaint.partition
+      ForwardTaint.leaf
+      ~f:(fun leaf -> Some (leaf = Sources.UserControlled))
+      joined
+    |> split
   in
   assert_equal
     ~msg:"does_not_match must be equal to bottom"
