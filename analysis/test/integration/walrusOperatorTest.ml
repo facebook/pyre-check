@@ -54,7 +54,28 @@ let test_check_walrus_operator context =
       foo(cat=(category := 'vector'))
       reveal_type(category)
     |}
-    ["Revealed type [-1]: Revealed type for `category` is `typing_extensions.Literal['vector']`."]
+    ["Revealed type [-1]: Revealed type for `category` is `typing_extensions.Literal['vector']`."];
+  assert_type_errors
+    {|
+      a = [1, 2, 3]
+      if (b := len(a)) > 4:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `int`."];
+  assert_type_errors
+    {|
+      a = [1, 2, 3]
+      if (b := 3) in a:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."];
+  assert_type_errors
+    {|
+      if (b := 3) > 4:
+        pass
+      reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."]
 
 
 let () = "variance" >::: ["check_walrus_operator" >:: test_check_walrus_operator] |> Test.run

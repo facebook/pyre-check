@@ -2461,6 +2461,14 @@ module State (Context : Context) = struct
         let resolved = if Type.equal resolved Type.Bottom then Type.Top else resolved in
         { state; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) -> (
+        let state, left =
+          match left with
+          | { Node.value = WalrusOperator { target; _ }; _ } ->
+              let { state; _ } = forward_expression ~state ~expression:left in
+              state, target
+          | _ -> state, left
+        in
+        let operator = { operator with left } in
         match ComparisonOperator.override operator with
         | Some expression -> forward_expression ~state ~expression
         | None ->
