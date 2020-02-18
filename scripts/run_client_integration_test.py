@@ -6,9 +6,11 @@ import logging
 import os
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 import textwrap
+import time
 import unittest
 from abc import ABC
 from contextlib import contextmanager
@@ -164,7 +166,8 @@ class TestCommand(unittest.TestCase, ABC):
         *arguments: str,
         working_directory: Optional[str] = None,
         timeout: int = 30,
-        prompts: Optional[List[str]] = None
+        prompts: Optional[List[str]] = None,
+        interrupt_after_seconds: Optional[int] = None,
     ) -> PyreResult:
         working_directory: Path = (
             self.directory / working_directory if working_directory else self.directory
@@ -182,17 +185,24 @@ class TestCommand(unittest.TestCase, ABC):
         ]
         try:
             self.command_history.append(CommandData(str(working_directory), command))
-            process = subprocess.run(
+            process = subprocess.Popen(
                 command,
                 cwd=working_directory,
-                input=prompt_inputs,
-                timeout=timeout,
-                capture_output=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
+            if prompt_inputs:
+                process.stdin.write(prompt_inputs)
+            if interrupt_after_seconds:
+                time.sleep(interrupt_after_seconds)
+                process.send_signal(signal.SIGINT)
+            output, error_output = process.communicate(timeout=timeout)
+
             return PyreResult(
                 " ".join(command),
-                process.stdout.decode(),
-                process.stderr.decode(),
+                output.decode(),
+                error_output.decode(),
                 process.returncode,
             )
         except subprocess.TimeoutExpired as error:
@@ -325,14 +335,17 @@ class TestCommand(unittest.TestCase, ABC):
         self.assertEqual(result.return_code, 0, self.get_context(result))
 
     def assert_file_exists(
-        self, relative_path: str, json_contents: Optional[Dict[str, Any]] = None
+        self,
+        relative_path: str,
+        json_contents: Optional[Dict[str, Any]] = None,
+        result: Optional[PyreResult] = None,
     ) -> None:
         file_path = self.directory / relative_path
-        self.assertTrue(file_path.exists(), self.get_context())
+        self.assertTrue(file_path.exists(), self.get_context(result))
         if json_contents:
             file_contents = file_path.read_text()
             self.assertEqual(
-                json.loads(file_contents), json_contents, self.get_context()
+                json.loads(file_contents), json_contents, self.get_context(result)
             )
 
     def assert_directory_exists(
@@ -469,7 +482,7 @@ class InitializeTest(TestCommand):
     # TODO(T57341910): Make prompting explicit, test conditions that skip prompts.
     def test_initialize_project_configuration(self) -> None:
         with _watch_directory(self.directory):
-            self.run_pyre(
+            result = self.run_pyre(
                 "init",
                 prompts=["y", "fake_pyre.bin", "fake_typeshed", "//example:target"],
             )
@@ -479,13 +492,13 @@ class InitializeTest(TestCommand):
                 "typeshed": str(self.directory / "fake_typeshed"),
             }
             self.assert_file_exists(
-                ".pyre_configuration", json_contents=expected_contents
+                ".pyre_configuration", json_contents=expected_contents, result=result
             )
 
     def test_initialize_local_configuration(self) -> None:
         self.create_directory("local_project")
         with _watch_directory(self.directory):
-            self.run_pyre(
+            result = self.run_pyre(
                 "init",
                 "--local",
                 working_directory="local_project",
@@ -499,6 +512,7 @@ class InitializeTest(TestCommand):
             self.assert_file_exists(
                 "local_project/.pyre_configuration.local",
                 json_contents=expected_contents,
+                result=result,
             )
 
 
@@ -544,13 +558,16 @@ class KillTest(TestCommand):
 
 
 class PersistentTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    pass
+    def initial_filesystem(self) -> None:
+        self.create_project_configuration()
+        self.create_local_configuration("local", {"source_directories": ["."]})
 
+    def test_persistent(self) -> None:
+        # TODO(T57341910): Fill in test cases
+        self.run_pyre("persistent", interrupt_after_seconds=5)
 
-class ProfileTest(TestCommand):
-    # TODO(T57341910): Fill in test cases.
-    pass
+    def test_local_persistent(self) -> None:
+        self.run_pyre("-l", "local", "persistent", interrupt_after_seconds=5)
 
 
 class QueryTest(TestCommand):
