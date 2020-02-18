@@ -232,8 +232,8 @@ let extract_alias unannotated_global_environment name ~dependency =
             | _ ->
                 if
                   not
-                    ( Type.is_top target_annotation
-                    || Type.is_top value_annotation
+                    ( Type.contains_unknown target_annotation
+                    || Type.contains_unknown value_annotation
                     || Type.equal value_annotation target_annotation )
                 then
                   Some (TypeAlias { target = name; value })

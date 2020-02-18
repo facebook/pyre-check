@@ -81,13 +81,15 @@ let test_harder_registrations context =
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
-    let printer v =
-      v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
+    let printer alias =
+      alias >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
     assert_equal ~printer expected (AliasEnvironment.ReadOnly.get_alias read_only name)
   in
   let parsed_assert_registers =
-    let parser x = parse_single_expression x |> Type.create ~aliases:(fun _ -> None) in
+    let parser expression =
+      parse_single_expression expression |> Type.create ~aliases:(fun _ -> None)
+    in
     assert_registers ~parser
   in
   let unparsed_assert_registers = assert_registers ~parser:Fn.id in
@@ -122,7 +124,11 @@ let test_harder_registrations context =
     (Some
        (Type.TypedDictionary
           { name = "Q"; total = true; fields = [{ name = "a"; annotation = Type.integer }] }));
-  ()
+  ();
+  parsed_assert_registers {|
+    class Foo: ...
+    X = Foo[unknown.get("key")]
+  |} "test.X" None
 
 
 let test_updates context =
