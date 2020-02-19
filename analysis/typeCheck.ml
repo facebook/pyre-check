@@ -4675,7 +4675,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
        access the annotations added to resolution in the constructor. If a constructor does not
        exist, this function is triggered in the toplevel. *)
-    let check_attribute_initialization ~is_dynamically_initialized definition errors =
+    let check_attribute_initialization definition errors =
       if
         (not (ClassSummary.is_protocol (Node.value definition)))
         && not (AnnotatedClass.has_abstract_base definition)
@@ -4692,7 +4692,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               in
               let is_uninitialized attribute =
                 match Annotated.Attribute.initialized attribute with
-                | NotInitialized -> not (is_dynamically_initialized attribute)
+                | NotInitialized -> true
                 | _ -> false
               in
               let add_to_map sofar attribute =
@@ -4813,15 +4813,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           Define.parent_definition ~resolution:global_resolution (Define.create define_node)
         in
         match definition with
-        | Some definition ->
-            let is_dynamically_initialized attribute =
-              let reference =
-                Reference.create_from_list
-                  [StatementDefine.self_identifier define; Attribute.name attribute]
-              in
-              Map.mem (Resolution.annotation_store resolution) reference
-            in
-            check_attribute_initialization ~is_dynamically_initialized definition errors
+        | Some definition -> check_attribute_initialization definition errors
         | None -> errors
       in
       errors |> check_attributes_initialized
@@ -4865,10 +4857,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                (AnnotatedClass.name definition |> Reference.show)
                ~resolution:global_resolution)
         then
-          check_attribute_initialization
-            ~is_dynamically_initialized:(fun _ -> false)
-            definition
-            errors
+          check_attribute_initialization definition errors
         else
           errors
       in
