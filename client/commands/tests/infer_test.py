@@ -7,11 +7,13 @@
 
 import textwrap
 import unittest
+from pathlib import Path
 from typing import Dict, Union
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ...commands import infer
 from ...commands.infer import (
     FieldStub,
     FunctionStub,
@@ -685,3 +687,92 @@ class InferTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_not_called()
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_empty_in_place(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root/my-project")
+        recursive_glob.return_value = [
+            Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
+        ]
+        arguments = Mock(in_place=[])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+        )
+        annotate_path.assert_called_once_with(
+            arguments,
+            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            "/root/my-project/foo/bar/baz.py",
+        )
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_in_place_directory(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root/my-project")
+        recursive_glob.return_value = [
+            Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
+        ]
+        arguments = Mock(in_place=["foo/bar"])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+        )
+        annotate_path.assert_called_once_with(
+            arguments,
+            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            "/root/my-project/foo/bar/baz.py",
+        )
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_no_match(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root/my-project")
+        recursive_glob.return_value = [
+            Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
+        ]
+        arguments = Mock(in_place=["some_other_directory"])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+        )
+        annotate_path.assert_not_called()
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_relative_file_path(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root/my-project")
+        recursive_glob.return_value = [
+            Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
+        ]
+        arguments = Mock(in_place=["foo/bar/baz.py"])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+        )
+        annotate_path.assert_called_once_with(
+            arguments,
+            "/root/.pyre/my-project/types/foo/bar/baz.pyi",
+            "/root/my-project/foo/bar/baz.py",
+        )
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_relative_file_path_not_local_root(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root")
+        recursive_glob.return_value = [Path("/root/.pyre/types/foo/bar/types/baz.pyi")]
+        arguments = Mock(in_place=["foo/bar/types/baz.py"])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/types")
+        )
+        annotate_path.assert_called_once_with(
+            arguments,
+            "/root/.pyre/types/foo/bar/types/baz.pyi",
+            "/root/foo/bar/types/baz.py",
+        )

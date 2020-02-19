@@ -371,22 +371,25 @@ def annotate_paths(
 
 
 def annotate_from_existing_stubs(
-    arguments, formatter: Optional[str], type_directory: Path
+    root: Path,
+    arguments: argparse.Namespace,
+    formatter: Optional[str],
+    type_directory: Path,
 ) -> None:
-    stub_files = []
-    for path, _, files in os.walk(type_directory):
-        for file in files:
-            stub_path = os.path.join(path, file)
-            if arguments.in_place == [] or any(
-                str(stub_path.replace(str(type_directory) + "/", "")).startswith(
-                    str(path)
-                )
-                for path in arguments.in_place
-            ):
-                stub_files.append(os.path.join(path, file))
-    for stub_path in stub_files:
-        file_path = re.sub(r".pyre/.*/types/", "", str(stub_path)).rstrip("i")
-        annotate_path(arguments, stub_path, file_path)
+    in_place_paths = [Path(path) for path in arguments.in_place]
+    for stub_path in type_directory.rglob("*.pyi"):
+        relative_source_path_for_stub = stub_path.relative_to(
+            type_directory
+        ).with_suffix(".py")
+
+        if in_place_paths == [] or any(
+            path
+            in (relative_source_path_for_stub, *relative_source_path_for_stub.parents)
+            for path in in_place_paths
+        ):
+            annotate_path(
+                arguments, str(stub_path), str(root / relative_source_path_for_stub)
+            )
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -483,7 +486,7 @@ class Infer(Reporting):
 
             type_directory = Path(os.path.join(self._log_directory, "types"))
             annotate_from_existing_stubs(
-                self._arguments, self._formatter, type_directory
+                Path(self._local_root), self._arguments, self._formatter, type_directory
             )
             return self
         if self._json:
