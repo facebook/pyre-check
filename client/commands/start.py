@@ -72,7 +72,7 @@ class Start(Reporting):
         )
 
     def _start_configuration_monitor(self) -> None:
-        if not self._arguments.no_watchman:
+        if self._use_watchman:
             configuration_monitor.ConfigurationMonitor(
                 self._arguments,
                 self._configuration,

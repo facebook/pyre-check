@@ -52,6 +52,7 @@ class Incremental(Reporting):
         self._nonblocking: bool = arguments.nonblocking
         self._incremental_style: bool = arguments.incremental_style
         self._no_start_server: bool = arguments.no_start
+        self._no_watchman: bool = getattr(arguments, "no_watchman", False)
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -93,6 +94,7 @@ class Incremental(Reporting):
         if (not self._no_start_server) and self._state() == State.DEAD:
             LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
+            arguments.no_watchman = self._no_watchman
             arguments.terminal = False
             arguments.store_type_check_resolution = False
             exit_code = (
