@@ -312,3 +312,41 @@ class IncrementalTest(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
             )
+
+    @patch.object(incremental.Incremental, "_send_and_handle_socket_request")
+    @patch.object(commands.Command, "_state")
+    @patch.object(incremental, "Start")
+    def test_run_passes_no_watchman_flag(
+        self,
+        start_class: MagicMock,
+        command_state: MagicMock,
+        send_and_handle_socket_request: MagicMock,
+    ) -> None:
+        incremental_command = incremental.Incremental(
+            mock_arguments(no_watchman=True),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        command_state.return_value = commands.command.State.DEAD
+        incremental_command._run()
+        self.assertTrue(start_class.call_args[0][0].no_watchman)
+
+    @patch.object(incremental.Incremental, "_send_and_handle_socket_request")
+    @patch.object(commands.Command, "_state")
+    @patch.object(incremental, "Start")
+    def test_run_passes_false_no_watchman_flag(
+        self,
+        start_class: MagicMock,
+        command_state: MagicMock,
+        send_and_handle_socket_request: MagicMock,
+    ) -> None:
+        incremental_command = incremental.Incremental(
+            mock_arguments(no_watchman=False),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        command_state.return_value = commands.command.State.DEAD
+        incremental_command._run()
+        self.assertFalse(start_class.call_args[0][0].no_watchman)

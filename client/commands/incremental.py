@@ -84,6 +84,10 @@ class Incremental(Reporting):
         incremental.add_argument(
             "--no-start", action="store_true", help=argparse.SUPPRESS
         )
+        # This is mostly to allow `restart` to pass on the flag to `start`.
+        incremental.add_argument(
+            "--no-watchman", action="store_true", help=argparse.SUPPRESS
+        )
 
     def _run(self) -> None:
         if (not self._no_start_server) and self._state() == State.DEAD:
@@ -91,7 +95,6 @@ class Incremental(Reporting):
             arguments = self._arguments
             arguments.terminal = False
             arguments.store_type_check_resolution = False
-            arguments.no_watchman = False
             exit_code = (
                 Start(
                     arguments,
