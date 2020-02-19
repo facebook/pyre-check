@@ -71,6 +71,17 @@ class Start(Reporting):
             help="How to approach doing incremental checks.",
         )
 
+    def _start_configuration_monitor(self) -> None:
+        if not self._arguments.no_watchman:
+            configuration_monitor.ConfigurationMonitor(
+                self._arguments,
+                self._configuration,
+                self._analysis_directory,
+                self._current_directory,
+                self._original_directory,
+                self.local_configuration,
+            ).daemonize()
+
     def _run(self) -> None:
         blocking = False
         lock = os.path.join(self._log_directory, "client.lock")
@@ -79,15 +90,7 @@ class Start(Reporting):
             # a message when the lock is being waited on.
             try:
                 with filesystem.acquire_lock(lock, blocking):
-                    configuration_monitor.ConfigurationMonitor(
-                        self._arguments,
-                        self._configuration,
-                        self._analysis_directory,
-                        self._current_directory,
-                        self._original_directory,
-                        self.local_configuration,
-                    ).daemonize()
-
+                    self._start_configuration_monitor()
                     # This unsafe call is OK due to the client lock always
                     # being acquired before starting a server - no server can
                     # spawn in the interim which would cause a race.

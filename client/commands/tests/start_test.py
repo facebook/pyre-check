@@ -770,3 +770,29 @@ class StartTest(unittest.TestCase):
                 "path1,path2,path3",
             ],
         )
+
+    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
+    def test_start_configuration_monitor_watchman_enabled(
+        self, daemonize: MagicMock
+    ) -> None:
+        start_command = commands.Start(
+            mock_arguments(no_watchman=False),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        start_command._start_configuration_monitor()
+        daemonize.assert_called_once()
+
+    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
+    def test_start_configuration_monitor_watchman_disabled(
+        self, daemonize: MagicMock
+    ) -> None:
+        start_command = commands.Start(
+            mock_arguments(no_watchman=True),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        start_command._start_configuration_monitor()
+        daemonize.assert_not_called()
