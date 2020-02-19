@@ -78,9 +78,11 @@ class TypeCollector(cst.CSTVisitor):
         self.attribute_annotations: Dict[str, cst.Annotation] = {}
         self.imports: Dict[str, ImportStatement] = {}
         self.existing_imports: Set[str] = existing_imports
+        self.class_definitions: Dict[str, cst.ClassDef] = {}
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
+        self.class_definitions[node.name.value] = node
 
     def leave_ClassDef(self, original_node: cst.ClassDef) -> None:
         self.qualifier.pop()
@@ -224,6 +226,7 @@ class TypeTransformer(cst.CSTTransformer):
         function_annotations: Dict[str, FunctionAnnotation],
         attribute_annotations: Dict[str, cst.Annotation],
         imports: Dict[str, ImportStatement],
+        class_definitions: Dict[str, cst.ClassDef],
     ) -> None:
         # Qualifier for storing the canonical name of the current function.
         self.qualifier: List[str] = []
@@ -231,6 +234,8 @@ class TypeTransformer(cst.CSTTransformer):
         self.function_annotations = function_annotations
         self.attribute_annotations = attribute_annotations
         self.toplevel_annotations: Dict[str, cst.CSTNode] = {}
+        self.class_definitions = class_definitions
+        self.visited_classes: Set[str] = set()
         self.imports = imports
         self.import_statements: List[cst.ImportFrom] = []
         self.is_generated: bool = False
@@ -349,6 +354,7 @@ class TypeTransformer(cst.CSTTransformer):
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
+        self.visited_classes.add(node.name.value)
 
     def leave_ClassDef(
         self, original_node: cst.ClassDef, updated_node: cst.ClassDef
@@ -420,9 +426,18 @@ class TypeTransformer(cst.CSTTransformer):
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
+        fresh_class_definitions = [
+            definition
+            for name, definition in self.class_definitions.items()
+            if name not in self.visited_classes
+        ]
         if self.is_generated:
             return original_node
-        if not self.toplevel_annotations and not self.imports:
+        if (
+            not self.toplevel_annotations
+            and not self.imports
+            and not fresh_class_definitions
+        ):
             return updated_node
         toplevel_statements = []
         # First, find the insertion point for imports
@@ -467,6 +482,8 @@ class TypeTransformer(cst.CSTTransformer):
             )
             toplevel_statements.append(cst.SimpleStatementLine([annotated_assign]))
 
+        toplevel_statements.extend(fresh_class_definitions)
+
         return updated_node.with_changes(
             body=[
                 *statements_before_imports,
@@ -487,7 +504,10 @@ def _annotate_source(stubs: cst.Module, source: cst.Module) -> cst.Module:
     visitor = TypeCollector(import_visitor.existing_imports)
     stubs.visit(visitor)
     transformer = TypeTransformer(
-        visitor.function_annotations, visitor.attribute_annotations, visitor.imports
+        visitor.function_annotations,
+        visitor.attribute_annotations,
+        visitor.imports,
+        visitor.class_definitions,
     )
     return source.visit(transformer)
 

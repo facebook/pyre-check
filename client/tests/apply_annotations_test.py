@@ -627,3 +627,68 @@ class ApplyAnnotationsTest(unittest.TestCase):
               return []
             """,
         )
+
+    def test_insert_simple_class(self) -> None:
+        """Insert a TypedDict class that is not in the source file."""
+        self.assert_annotations(
+            stub="""
+            from mypy_extensions import TypedDict
+
+            class MovieTypedDict(TypedDict):
+                name: str
+                year: int
+            """,
+            source="""
+            def foo() -> None:
+                pass
+            """,
+            expected="""
+            from mypy_extensions import TypedDict
+
+            class MovieTypedDict(TypedDict):
+                name: str
+                year: int
+
+            def foo() -> None:
+                pass
+            """,
+        )
+
+    def test_insert_only_class_that_does_not_exist(self) -> None:
+        self.assert_annotations(
+            stub="""
+            from mypy_extensions import TypedDict
+
+            class MovieTypedDict(TypedDict):
+                name: str
+                year: int
+
+            class ExistingMovieTypedDict(TypedDict):
+                name: str
+                year: int
+            """,
+            source="""
+            from mypy_extensions import TypedDict
+
+            class ExistingMovieTypedDict(TypedDict):
+                name: str
+                year: int
+
+            def foo() -> None:
+                pass
+            """,
+            expected="""
+            from mypy_extensions import TypedDict
+
+            class MovieTypedDict(TypedDict):
+                name: str
+                year: int
+
+            class ExistingMovieTypedDict(TypedDict):
+                name: str
+                year: int
+
+            def foo() -> None:
+                pass
+            """,
+        )
