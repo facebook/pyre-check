@@ -121,6 +121,101 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             os.path.join(scratch_directory, relative_path),
         )
 
+    @patch.object(os, "getcwd", return_value="/root")
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_get_new_deleted_and_tracked_paths_for_local_project(
+        self,
+        absolute_path: MagicMock,
+        isfile: MagicMock,
+        get_current_directory: MagicMock,
+    ) -> None:
+        def _isfile(path: str) -> bool:
+            return "foo/deleted" not in path
+
+        isfile.side_effect = _isfile
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[],
+            targets=["target1"],
+            search_path=["/scratch$baz$hello"],
+        )
+        shared_analysis_directory._symbolic_links = {
+            "/root/project/tracked.py": "/scratch/bar/tracked.py",
+            "/root/project/foo/deleted.py": "/scratch/foo/deleted.py",
+        }
+        shared_analysis_directory._local_configuration_root = "project"
+        (
+            new_paths,
+            deleted_paths,
+            tracked_paths,
+        ) = shared_analysis_directory._get_new_deleted_and_tracked_paths(
+            [
+                "/root/project/foo/deleted.py",
+                "/root/other-project/foo/deleted.py",
+                "/root/project/new.py",
+                "/root/other-project/new.py",
+                "/root/project/tracked.py",
+                "/scratch/baz/hello/also_tracked.py",
+            ]
+        )
+        self.assertEqual(
+            new_paths, ["/root/project/new.py", "/root/other-project/new.py"]
+        )
+        self.assertEqual(deleted_paths, ["/root/project/foo/deleted.py"])
+        self.assertEqual(
+            tracked_paths,
+            ["/root/project/tracked.py", "/scratch/baz/hello/also_tracked.py"],
+        )
+
+    @patch.object(os, "getcwd", return_value="/root")
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_get_new_deleted_and_tracked_paths_for_root_project(
+        self,
+        absolute_path: MagicMock,
+        isfile: MagicMock,
+        get_current_directory: MagicMock,
+    ) -> None:
+        def _isfile(path: str) -> bool:
+            return "foo/deleted" not in path
+
+        isfile.side_effect = _isfile
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[],
+            targets=["target1"],
+            search_path=["/scratch$baz$hello"],
+        )
+        shared_analysis_directory._symbolic_links = {
+            "/root/project/tracked.py": "/scratch/bar/tracked.py",
+            "/root/project/foo/deleted.py": "/scratch/foo/deleted.py",
+            "/root/other-project/foo/deleted.py": "/scratch/other-foo/deleted.py",
+        }
+        (
+            new_paths,
+            deleted_paths,
+            tracked_paths,
+        ) = shared_analysis_directory._get_new_deleted_and_tracked_paths(
+            [
+                "/root/project/foo/deleted.py",
+                "/root/other-project/foo/deleted.py",
+                "/root/project/new.py",
+                "/root/other-project/new.py",
+                "/root/project/tracked.py",
+                "/scratch/baz/hello/also_tracked.py",
+            ]
+        )
+        self.assertEqual(
+            new_paths, ["/root/project/new.py", "/root/other-project/new.py"]
+        )
+        self.assertEqual(
+            deleted_paths,
+            ["/root/project/foo/deleted.py", "/root/other-project/foo/deleted.py"],
+        )
+        self.assertEqual(
+            tracked_paths,
+            ["/root/project/tracked.py", "/scratch/baz/hello/also_tracked.py"],
+        )
+
     def test_should_rebuild(self) -> None:
         self.assertTrue(
             SharedAnalysisDirectory.should_rebuild(

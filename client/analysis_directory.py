@@ -399,30 +399,25 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     ) -> Tuple[List[str], List[str]]:
         # Translate the paths here because we need the old symbolic links
         # mapping to get their old scratch path.
-        tracked_deleted_paths = [
-            project_path
-            for project_path in deleted_paths
-            if project_path in self._symbolic_links
-        ]
-        deleted_scratch_paths = [
-            self._symbolic_links[path] for path in tracked_deleted_paths
-        ]
-        for path in tracked_deleted_paths:
+        deleted_scratch_paths = [self._symbolic_links[path] for path in deleted_paths]
+        for path in deleted_paths:
             link = self._symbolic_links.pop(path, None)
             if link:
                 try:
                     _delete_symbolic_link(link)
                 except OSError:
                     LOG.warning("Failed to delete link at `%s`.", link)
-        return tracked_deleted_paths, deleted_scratch_paths
+        return deleted_paths, deleted_scratch_paths
 
-    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
-        """Update the analysis directory for any new or deleted files.
-        Rebuild the directory using buck if needed.
-        Return the updated and deleted paths."""
-        deleted_scratch_paths = []
-        tracked_paths = []
-        deleted_paths = [path for path in paths if not os.path.isfile(path)]
+    def _get_new_deleted_and_tracked_paths(
+        self, paths: List[str]
+    ) -> Tuple[List[str], List[str], List[str]]:
+        deleted_paths = [
+            path
+            for path in paths
+            if not os.path.isfile(path)
+            and (path in self._symbolic_links or self._is_tracked(path))
+        ]
         new_paths = [
             path
             for path in paths
@@ -430,16 +425,25 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             and os.path.isfile(path)
             and is_parent(os.getcwd(), path)
         ]
-        updated_paths = [
+        tracked_paths = [
             path
             for path in paths
-            if path not in deleted_paths and path not in new_paths
+            if path not in new_paths
+            and path not in deleted_paths
+            and (path in self._symbolic_links or self._is_tracked(path))
         ]
+        return new_paths, deleted_paths, tracked_paths
 
-        for path in updated_paths:
-            if path in self._symbolic_links or self._is_tracked(path):
-                tracked_paths.append(path)
-
+    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
+        """Update the analysis directory for any new or deleted files.
+        Rebuild the directory using buck if needed.
+        Return the updated and deleted paths."""
+        deleted_scratch_paths = []
+        (
+            new_paths,
+            deleted_paths,
+            tracked_paths,
+        ) = self._get_new_deleted_and_tracked_paths(paths)
         if SharedAnalysisDirectory.should_rebuild(
             tracked_paths, new_paths, deleted_paths
         ):
