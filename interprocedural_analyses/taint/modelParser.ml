@@ -657,7 +657,8 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           location;
         }
         when is_simple_name name
-             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink["
+             || Expression.show annotation |> String.is_prefix ~prefix:"TaintInTaintOut[" ->
           let name = name_to_reference_exn name in
           let signature =
             {

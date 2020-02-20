@@ -120,20 +120,30 @@ let get_global_model ~resolution ~expression =
   | None -> None
 
 
+let global_root = AccessPath.Root.PositionalParameter { position = 0; name = "$global" }
+
 let get_global_sink_model ~resolution ~location ~expression =
   let to_sink
       (name, { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ })
     =
-    BackwardState.read
-      ~root:(AccessPath.Root.PositionalParameter { position = 0; name = "$global" })
-      ~path:[]
-      sink_taint
+    BackwardState.read ~root:global_root ~path:[] sink_taint
     |> BackwardState.Tree.apply_call
          location
          ~callees:[`Function (Reference.show name)]
          ~port:AccessPath.Root.LocalResult
   in
   get_global_model ~resolution ~expression >>| to_sink
+
+
+let get_global_tito_model ~resolution ~location:_ ~expression =
+  let to_tito
+      ( _,
+        { model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ }; _ }
+      )
+    =
+    BackwardState.read ~root:global_root ~path:[] taint_in_taint_out
+  in
+  get_global_model ~resolution ~expression >>| to_tito
 
 
 let get_model_sources ~paths =

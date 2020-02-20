@@ -48,3 +48,11 @@ class Recursive:
 
 def get_related(select):
     return Recursive(select)
+
+
+class FieldIsTITO:
+    add_tito: int = 1
+
+
+def adds_tito(x: FieldIsTITO) -> int:
+    return x.add_tito

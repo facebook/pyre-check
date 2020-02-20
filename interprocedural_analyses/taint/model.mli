@@ -28,6 +28,12 @@ val get_global_sink_model
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 
+val get_global_tito_model
+  :  resolution:Resolution.t ->
+  location:Location.WithModule.t ->
+  expression:Expression.t ->
+  Domains.BackwardState.Tree.t option
+
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 val infer_class_models

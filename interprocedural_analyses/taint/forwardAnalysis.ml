@@ -614,8 +614,41 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
       in
+      let add_tito_features taint =
+        let attribute_breadcrumbs =
+          let gather_features feature features =
+            let open Features in
+            match feature.Abstract.OverUnderSetDomain.element with
+            | Simple.Breadcrumb _ -> feature :: features
+            (* The ViaValueOf models will be converted to breadcrumbs at the call site via
+               `get_callsite_model`. *)
+            | Simple.ViaValueOf _ -> feature :: features
+            | _ -> features
+          in
+          Model.get_global_tito_model
+            ~resolution
+            ~location
+            ~expression:
+              (Node.create_with_default_location
+                 (Expression.Name
+                    (Name.Attribute { Name.Attribute.base; attribute; special = false })))
+          >>| BackwardState.Tree.fold
+                BackwardTaint.simple_feature_element
+                ~f:gather_features
+                ~init:[]
+        in
+        match attribute_breadcrumbs with
+        | Some (_ :: _ as breadcrumbs) ->
+            ForwardState.Tree.transform
+              ForwardTaint.simple_feature_set
+              Abstract.Domain.(Map (List.rev_append breadcrumbs))
+              taint
+        | _ -> taint
+      in
+
       let field = Abstract.TreeDomain.Label.Field attribute in
       analyze_expression ~resolution ~state ~expression:base
+      |>> add_tito_features
       |>> ForwardState.Tree.read [field]
       |>> ForwardState.Tree.transform
             ForwardTaint.simple_feature_set

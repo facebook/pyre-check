@@ -1,0 +1,3 @@
+taint_in_taint_out.FieldIsTITO.add_tito: TaintInTaintOut[Via[string_concat_lhs]]
+taint_in_taint_out.FieldIsTITO.add_tito: TaintSink[Test]
+def taint_in_taint_out.adds_tito(x: TaintSource[Test]): ...
