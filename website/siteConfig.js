@@ -45,6 +45,10 @@ const siteConfig = {
     theme: 'default',
   },
   scripts: ['https://buttons.github.io/buttons.js'],
+  algolia: {
+    apiKey: '751912c73065099b3ff10de18c55b7df',
+    indexName: 'pyre-check',
+  },
   repoUrl: 'https://github.com/facebook/pyre-check',
 };
 
