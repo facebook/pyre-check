@@ -350,3 +350,29 @@ class IncrementalTest(unittest.TestCase):
         command_state.return_value = commands.command.State.DEAD
         incremental_command._run()
         self.assertFalse(start_class.call_args[0][0].no_watchman)
+
+    @patch.object(incremental.ProjectFilesMonitor, "is_alive", return_value=True)
+    def test_refresh_file_monitor_noop_when_watchman_disabled(
+        self, is_alive: MagicMock
+    ) -> None:
+        incremental_command = incremental.Incremental(
+            mock_arguments(no_watchman=True),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        incremental_command._refresh_file_monitor()
+        is_alive.assert_not_called()
+
+    @patch.object(incremental.ProjectFilesMonitor, "is_alive", return_value=True)
+    def test_refresh_file_monitor_called_when_watchman_enabled(
+        self, is_alive: MagicMock
+    ) -> None:
+        incremental_command = incremental.Incremental(
+            mock_arguments(no_watchman=False),
+            "/original/directory",
+            mock_configuration(version_hash="hash"),
+            AnalysisDirectory("/root"),
+        )
+        incremental_command._refresh_file_monitor()
+        is_alive.assert_called_once()
