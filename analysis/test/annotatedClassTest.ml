@@ -329,24 +329,12 @@ let test_is_protocol _ =
 
 let test_class_attributes context =
   let setup source =
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-    in
-    let source = Option.value_exn source in
-    let parent =
-      match source |> last_statement_exn with
-      | { Node.value = Class definition; _ } -> definition
-      | _ -> failwith "Could not parse class"
-    in
-    ( GlobalResolution.create global_environment,
-      Node.create_with_default_location parent |> Node.map ~f:ClassSummary.create |> Class.create )
+    GlobalResolution.create global_environment
   in
-  let resolution, parent =
+  let resolution =
     setup
       {|
         class Metaclass:
@@ -372,8 +360,8 @@ let test_class_attributes context =
   let create_simple_attribute
       ?(annotation = Type.integer)
       ?(class_attribute = false)
-      ?value
-      ~parent:{ Node.value = { ClassSummary.name = parent; _ }; _ }
+      ?(initialized = Attribute.Explicitly)
+      ~parent
       name
     =
     Annotated.Attribute.create
@@ -383,47 +371,65 @@ let test_class_attributes context =
       ~async:false
       ~class_attribute
       ~defined:true
-      ~initialized:(if Option.is_some value then Explicitly else NotInitialized)
+      ~initialized
       ~name
-      ~parent:(Reference.show parent)
+      ~parent
       ~visibility:ReadWrite
       ~property:false
       ~static:false
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
-    let attribute_list_equal =
-      let equal left right =
-        Attribute.name left = Attribute.name right
-        && String.equal (Attribute.parent left) (Attribute.parent right)
-      in
-      List.equal equal
-    in
+    let attribute_list_equal = List.equal Attribute.equal_instantiated in
     let print_attributes attributes =
-      let print_attribute = Annotated.Attribute.name in
+      let print_attribute attribute =
+        Annotated.Attribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
+      in
       List.map attributes ~f:print_attribute |> String.concat ~sep:", "
+    in
+    let print format definition =
+      Format.fprintf
+        format
+        "%s"
+        (Sexp.to_string_hum [%message (definition : Attribute.instantiated list)])
     in
     assert_equal
       ~cmp:attribute_list_equal
       ~printer:print_attributes
+      ~pp_diff:(diff ~print)
       ( GlobalResolution.attributes ~resolution definition
       |> (fun a -> Option.value_exn a)
       |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution) )
       attributes
   in
+  let constructor =
+    Type.Callable.create
+      ~name:(Reference.create "test.foo.__init__")
+      ~parameters:(Defined [])
+      ~annotation:Any
+      ()
+  in
   assert_attributes
-    (Reference.show (Class.name parent))
+    "test.foo"
     [
-      create_simple_attribute ~parent "__init__";
-      create_simple_attribute ~parent ~class_attribute:true "class_attribute";
-      create_simple_attribute ~parent "first";
-      create_simple_attribute ~parent "implicit";
-      create_simple_attribute ~parent "second";
-      create_simple_attribute ~parent ~value:(+Expression.Integer 1) "third";
+      create_simple_attribute
+        ~parent:"test.foo"
+        ~annotation:constructor
+        ~initialized:Implicitly
+        "__init__";
+      create_simple_attribute
+        ~parent:"test.foo"
+        ~class_attribute:true
+        ~initialized:NotInitialized
+        "class_attribute";
+      create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "first";
+      create_simple_attribute ~parent:"test.foo" ~initialized:Implicitly "implicit";
+      create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "second";
+      create_simple_attribute ~parent:"test.foo" "third";
     ];
 
   (*(* Test 'attribute' *)*)
-  let resolution, parent =
+  let resolution =
     setup
       {|
         class Metaclass:
@@ -451,7 +457,7 @@ let test_class_attributes context =
     in
     let actual_attribute =
       GlobalResolution.attribute_from_class_name
-        (Reference.show (Class.name parent))
+        parent
         ~transitive:true
         ~class_attributes
         ~resolution
@@ -491,13 +497,13 @@ let test_class_attributes context =
          ~static:false)
   in
   assert_attribute
-    ~parent
+    ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:"bar"
     ~expected_attribute:
       (create_expected_attribute "bar" "typing.Callable('test.Attributes.bar')[[], int]");
   assert_attribute
-    ~parent
+    ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:"baz"
     ~expected_attribute:
@@ -505,7 +511,7 @@ let test_class_attributes context =
          "baz"
          "typing.Callable('test.Attributes.baz')[[Named(x, int)], int]");
   assert_attribute
-    ~parent
+    ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"implicit"
     ~expected_attribute:
@@ -514,13 +520,13 @@ let test_class_attributes context =
          "implicit"
          "typing.Callable('test.Metaclass.implicit')[[], int]");
   assert_attribute
-    ~parent
+    ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
       (create_expected_attribute ~property:true ~visibility:(ReadOnly Unrefinable) "property" "str");
   assert_attribute
-    ~parent
+    ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.Primitive "Nonsense")
     ~attribute_name:"property"
     ~expected_attribute:
