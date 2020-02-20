@@ -105,8 +105,11 @@ let class_metadata ({ dependency; _ } as resolution) annotation =
         (class_metadata_environment resolution)
 
 
-let is_suppressed_module resolution reference =
-  EmptyStubEnvironment.ReadOnly.from_empty_stub (empty_stub_environment resolution) reference
+let is_suppressed_module ({ dependency; _ } as resolution) reference =
+  EmptyStubEnvironment.ReadOnly.from_empty_stub
+    ?dependency
+    (empty_stub_environment resolution)
+    reference
 
 
 let undecorated_signature ({ dependency; _ } as resolution) =
