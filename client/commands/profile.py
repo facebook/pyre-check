@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -242,6 +243,29 @@ class TableStatistics:
         return counts
 
 
+class StatisticsOverTime:
+    _data: List[Tuple[str, int]] = []
+
+    def add(self, line: str) -> None:
+        divider = " MEMORY Shared memory size (size: "
+        if divider in line:
+            time, size = line.split(divider)
+            self._data.append((time, int(size[:-2])))
+
+    def graph_total_shared_memory_size_over_time(self) -> None:
+        try:
+            gnuplot = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
+            gnuplot.stdin.write(b"set term dumb 140 25\n")
+            gnuplot.stdin.write(b"plot '-' using 1:2 title '' with linespoints \n")
+            for (i, (_time, size)) in enumerate(self._data):
+                # This is graphing size against # of updates, not time
+                gnuplot.stdin.write(b"%f %f\n" % (i, size))
+            gnuplot.stdin.write(b"e\n")
+            gnuplot.stdin.flush()
+        except FileNotFoundError:
+            LOG.error("gnuplot is not installed")
+
+
 class Profile(Command):
     NAME = "profile"
     HIDDEN = True
@@ -270,26 +294,28 @@ class Profile(Command):
             default=ProfileOutput.COLD_START_PHASES,
         )
 
+    def get_stdout(self) -> Path:
+        server_stdout_path = os.path.join(self._log_directory, "server/server.stdout")
+        server_stdout = Path(server_stdout_path)
+        if not server_stdout.is_file():
+            raise RuntimeError(
+                "Cannot find server output at `{}`.".format(server_stdout_path)
+            )
+        return server_stdout
+
     def _run(self) -> None:
         output = self._profile_output
         if output == ProfileOutput.INDIVIDUAL_TABLE_SIZES:
-            server_stdout_path = os.path.join(
-                self._log_directory, "server/server.stdout"
-            )
-            server_stdout = Path(server_stdout_path)
-            if not server_stdout.is_file():
-                raise RuntimeError(
-                    "Cannot find server output at `{}`.".format(server_stdout_path)
-                )
+            server_stdout = self.get_stdout()
             extracted = TableStatistics()
-            with open(server_stdout) as server_stdout:
-                for line in server_stdout.readlines():
+            with open(server_stdout) as server_stdout_file:
+                for line in server_stdout_file.readlines():
                     extracted.add(line)
             if extracted.is_empty():
                 raise RuntimeError(
                     "Cannot find table size data in `{}`. "
                     "Please run Pyre with `--debug` option first.".format(
-                        server_stdout_path
+                        server_stdout.as_posix()
                     )
                 )
             sizes = json.dumps(extracted.get_totals())
@@ -303,6 +329,13 @@ class Profile(Command):
                 "}"
             )
             print(combined)
+        elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
+            server_stdout = self.get_stdout()
+            extracted = StatisticsOverTime()
+            with open(server_stdout) as server_stdout_file:
+                for line in server_stdout_file.readlines():
+                    extracted.add(line)
+            extracted.graph_total_shared_memory_size_over_time()
         else:
             try:
                 profiling_output = Path(self.profiling_log_path())

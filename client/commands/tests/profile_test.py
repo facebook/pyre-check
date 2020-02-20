@@ -10,6 +10,7 @@ from ..profile import (
     CounterEvent,
     DurationEvent,
     EventMetadata,
+    StatisticsOverTime,
     TableStatistics,
     parse_event,
     to_incremental_updates,
@@ -268,7 +269,7 @@ class ProfileTest(unittest.TestCase):
             "0.437840)",
         ]
         for line in lines:
-            statistics.add(line)
+            statistics.add(line + "\n")
         self.assertEqual(
             statistics.get_totals(),
             [
@@ -286,4 +287,43 @@ class ProfileTest(unittest.TestCase):
                 ("Alias", "1.158K"),
                 ("AST", "845"),
             ],
+        )
+
+    def test_statistics_over_time(self) -> None:
+        statistics = StatisticsOverTime()
+        lines = [
+            "2020-02-19 10:35:57 PERFORMANCE Check_TypeCheck: 1.767435s",
+            "2020-02-19 10:35:57 PROGRESS Postprocessing 51 sources...",
+            "2020-02-19 10:35:57 PROGRESS Postprocessed 51 of 51 sources",
+            "2020-02-19 10:35:57 MEMORY Shared memory size (size: 2105)",
+            "2020-02-19 10:35:57 INFO Number of new errors = 0",
+            "2020-02-19 10:35:57 PERFORMANCE Incremental check: 2.456214s",
+            "2020-02-19 10:35:57 PERFORMANCE Server request: 2.456249s",
+            "2020-02-19 10:35:57 PERFORMANCE Server request: 2.456372s",
+            "2020-02-19 10:36:06 PERFORMANCE Module tracker updated: 0.000838s",
+            "2020-02-19 10:36:06 INFO Parsing 9 updated modules...",
+            "2020-02-19 10:36:07 INFO Repopulating the environment for 9 " "modules.",
+            "2020-02-19 10:36:07 INFO Updating is from empty stub result "
+            "Environment",
+            "2020-02-19 10:36:07 INFO Updating Alias Environment",
+            "2020-02-19 10:36:07 INFO Updating Edges Environment",
+            "2020-02-19 10:36:07 INFO Updating Undecorated functions " "Environment",
+            "2020-02-19 10:36:07 INFO Updating Class metadata Environment",
+            "2020-02-19 10:36:07 INFO Updating parse annotation Environment",
+            "2020-02-19 10:36:07 INFO Updating attributes Environment",
+            "2020-02-19 10:36:07 INFO Updating Global Environment",
+            "2020-02-19 10:36:07 INFO Updating Global Locations Environment",
+            "2020-02-19 10:36:07 INFO Checking 295 functions...",
+            "2020-02-19 10:36:09 PROGRESS Processed 295 of 295 functions",
+            "2020-02-19 10:36:09 PERFORMANCE Check_TypeCheck: 2.156352s",
+            "2020-02-19 10:36:09 PROGRESS Postprocessing 23 sources...",
+            "2020-02-19 10:36:09 PROGRESS Postprocessed 23 of 23 sources",
+            "2020-02-19 10:36:09 MEMORY Shared memory size (size: 2106)",
+            "2020-02-19 10:36:09 INFO Number of new errors = 0",
+        ]
+        for line in lines:
+            statistics.add(line + "\n")
+        self.assertEqual(
+            statistics._data,
+            [("2020-02-19 10:35:57", 2105), ("2020-02-19 10:36:09", 2106)],
         )

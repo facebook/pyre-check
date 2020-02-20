@@ -73,6 +73,7 @@ class ProfileOutput(enum.Enum):
     COLD_START_PHASES: str = "cold_start_phases"
     INCREMENTAL_UPDATES: str = "incremental_updates"
     INDIVIDUAL_TABLE_SIZES: str = "individual_table_sizes"
+    TOTAL_SHARED_MEMORY_SIZE_OVER_TIME: str = "total_shared_memory_size_over_time"
 
     def __str__(self) -> str:
         return self.value
