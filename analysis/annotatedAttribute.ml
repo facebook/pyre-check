@@ -34,7 +34,6 @@ type 'a t = {
   visibility: visibility;
   property: bool;
   static: bool;
-  has_ellipsis_value: bool;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -59,7 +58,6 @@ let create
     ~visibility
     ~property
     ~static
-    ~has_ellipsis_value
   =
   {
     payload = { annotation; original_annotation };
@@ -73,7 +71,6 @@ let create
     visibility;
     property;
     static;
-    has_ellipsis_value;
   }
 
 
@@ -89,7 +86,6 @@ let create_uninstantiated
     ~visibility
     ~property
     ~static
-    ~has_ellipsis_value
   =
   {
     payload = uninstantiated_annotation;
@@ -103,7 +99,6 @@ let create_uninstantiated
     visibility;
     property;
     static;
-    has_ellipsis_value;
   }
 
 
@@ -151,8 +146,6 @@ let static { static; _ } = static
 let property { property; _ } = property
 
 let visibility { visibility; _ } = visibility
-
-let has_ellipsis_value { has_ellipsis_value; _ } = has_ellipsis_value
 
 let instantiate attribute ~annotation ~original_annotation =
   { attribute with payload = { annotation; original_annotation } }

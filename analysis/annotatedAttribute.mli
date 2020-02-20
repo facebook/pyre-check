@@ -40,7 +40,6 @@ val create
   visibility:visibility ->
   property:bool ->
   static:bool ->
-  has_ellipsis_value:bool ->
   instantiated
 
 val create_uninstantiated
@@ -55,7 +54,6 @@ val create_uninstantiated
   visibility:visibility ->
   property:bool ->
   static:bool ->
-  has_ellipsis_value:bool ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -81,7 +79,5 @@ val static : 'a t -> bool
 val property : 'a t -> bool
 
 val visibility : 'a t -> visibility
-
-val has_ellipsis_value : 'a t -> bool
 
 val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated

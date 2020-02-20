@@ -389,7 +389,6 @@ let test_class_attributes context =
       ~visibility:ReadWrite
       ~property:false
       ~static:false
-      ~has_ellipsis_value:true
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -489,8 +488,7 @@ let test_class_attributes context =
          ~parent
          ~property
          ~visibility
-         ~static:false
-         ~has_ellipsis_value:true)
+         ~static:false)
   in
   assert_attribute
     ~parent

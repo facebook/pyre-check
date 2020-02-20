@@ -835,7 +835,6 @@ module Implementation = struct
                 ~visibility:ReadWrite
                 ~static:false
                 ~property:false
-                ~has_ellipsis_value:true
             in
             List.map generated_methods ~f:make_attribute
       in
@@ -1264,8 +1263,7 @@ module Implementation = struct
                  ~parent:class_name
                  ~visibility:ReadWrite
                  ~static:true
-                 ~property:false
-                 ~has_ellipsis_value:true)
+                 ~property:false)
           else
             ()
         in
@@ -1801,7 +1799,7 @@ module Implementation = struct
     let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
     let parent_name = Reference.show parent_name in
     let class_annotation = Type.Primitive parent_name in
-    let annotation, value, class_attribute, visibility =
+    let annotation, class_attribute, visibility =
       match kind with
       | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
           let value = List.hd values >>| fun { value; _ } -> value in
@@ -1886,7 +1884,6 @@ module Implementation = struct
           in
           ( UninstantiatedAnnotation.Attribute
               { annotation; original_annotation = original; is_property = false },
-            value,
             class_attribute,
             visibility )
       | Method { signatures; final; _ } ->
@@ -1925,7 +1922,7 @@ module Implementation = struct
                 UninstantiatedAnnotation.Method { callable; is_class_method }
             | [] -> failwith "impossible"
           in
-          callable, None, default_class_attribute, visibility
+          callable, default_class_attribute, visibility
       | Property { kind; class_property; _ } ->
           let annotation, original, visibility =
             match kind with
@@ -1951,7 +1948,6 @@ module Implementation = struct
           in
           ( UninstantiatedAnnotation.Attribute
               { annotation; original_annotation = original; is_property = true },
-            None,
             class_property,
             visibility )
     in
@@ -1997,12 +1993,6 @@ module Implementation = struct
         ( match kind with
         | Property _ -> true
         | _ -> false )
-      ~has_ellipsis_value:
-        ( match value >>| Node.value with
-        | None
-        | Some Expression.Expression.Ellipsis ->
-            true
-        | Some _ -> false )
 
 
   let metaclass

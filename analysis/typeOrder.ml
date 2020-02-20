@@ -1389,8 +1389,7 @@ module OrderImplementation = struct
                           ~parent:"typing.Callable"
                           ~static:false
                           ~visibility:ReadWrite
-                          ~property:false
-                          ~has_ellipsis_value:true;
+                          ~property:false;
                       ]
                       |> Option.some
                     in

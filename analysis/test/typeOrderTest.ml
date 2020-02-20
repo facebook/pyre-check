@@ -48,7 +48,6 @@ let parse_attributes ~parse_annotation ~class_name =
       ~parent:class_name
       ~property:false
       ~static:false
-      ~has_ellipsis_value:true
       ~name
   in
   List.map ~f:parse_attribute

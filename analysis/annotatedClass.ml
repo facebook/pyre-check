@@ -125,8 +125,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                  ~parent:(Reference.show class_name_reference)
                  ~visibility:ReadWrite
                  ~property:false
-                 ~static:false
-                 ~has_ellipsis_value:true)
+                 ~static:false)
         | _ -> None )
     | _ -> None
   in

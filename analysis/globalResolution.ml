@@ -345,7 +345,6 @@ let attribute_from_class_name
               ~visibility:ReadWrite
               ~property:false
               ~static:false
-              ~has_ellipsis_value:true
             |> Option.some
         | None -> None )
   in
