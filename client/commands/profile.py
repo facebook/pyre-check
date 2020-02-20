@@ -6,13 +6,19 @@
 import argparse
 import json
 import logging
+import os
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from .command import Command, ProfileOutput
+
+
+if TYPE_CHECKING:
+    from typing import Final
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -182,6 +188,60 @@ def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
     return results
 
 
+class TableStatistics:
+    # category -> aggregation -> table name -> value
+    # pyre-ignore: T62493941
+    _data: Dict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
+    _shared_heap_category: "Final" = "bytes serialized into shared heap"
+
+    @staticmethod
+    def sort_by_value(items: List[Tuple[str, str]]) -> None:
+        def parse(number: str) -> float:
+            if number[-1] == "G":
+                return float(number[:-1]) * (10 ** 9)
+            if number[-1] == "M":
+                return float(number[:-1]) * (10 ** 6)
+            if number[-1] == "K":
+                return float(number[:-1]) * (10 ** 3)
+            return float(number)
+
+        items.sort(key=lambda x: parse(x[1]), reverse=True)
+
+    def add(self, line: str) -> None:
+        divider = "stats -- "
+        if divider in line:
+            header, data = line.split(divider)
+            cells = data[:-2].split(", ")
+            collected = [cell.split(": ") for cell in cells]
+            tag_and_category = header[:-2].split(" (")
+            if len(tag_and_category) == 2:
+                tag, category = tag_and_category
+            elif header[:3] == "ALL":
+                tag = "ALL"
+                category = header[4:-1]
+            elif header[:4] == "(ALL":
+                tag = "ALL"
+                category = header[5:-2]
+            else:
+                return
+            if len(tag) > 0:
+                for key, value in collected:
+                    self._data[category][key][tag] = value
+
+    def is_empty(self) -> bool:
+        return len(self._data) == 0
+
+    def get_totals(self) -> List[Tuple[str, str]]:
+        totals = list(self._data[self._shared_heap_category]["total"].items())
+        TableStatistics.sort_by_value(totals)
+        return totals
+
+    def get_counts(self) -> List[Tuple[str, str]]:
+        counts = list(self._data[self._shared_heap_category]["samples"].items())
+        TableStatistics.sort_by_value(counts)
+        return counts
+
+
 class Profile(Command):
     NAME = "profile"
     HIDDEN = True
@@ -211,25 +271,59 @@ class Profile(Command):
         )
 
     def _run(self) -> None:
-        try:
-            profiling_output = Path(self.profiling_log_path())
-            if not profiling_output.is_file():
+        output = self._profile_output
+        if output == ProfileOutput.INDIVIDUAL_TABLE_SIZES:
+            server_stdout_path = os.path.join(
+                self._log_directory, "server/server.stdout"
+            )
+            server_stdout = Path(server_stdout_path)
+            if not server_stdout.is_file():
                 raise RuntimeError(
-                    "Cannot find profiling output at `{}`. "
-                    "Please run Pyre with `--enable-profiling` or "
-                    "`--enable-memory-profiling` option first.".format(profiling_output)
+                    "Cannot find server output at `{}`.".format(server_stdout_path)
                 )
-            events = parse_events(profiling_output.read_text())
-            output = self._profile_output
-            if output == ProfileOutput.TRACE_EVENT:
-                print(json.dumps(to_traceevents(events)))
-            elif output == ProfileOutput.COLD_START_PHASES:
-                print(json.dumps(to_cold_start_phases(events), indent=2))
-            elif output == ProfileOutput.INCREMENTAL_UPDATES:
-                print(json.dumps(to_incremental_updates(events), indent=2))
-            else:
-                raise RuntimeError("Unrecognized output format: {}".format(output))
+            extracted = TableStatistics()
+            with open(server_stdout) as server_stdout:
+                for line in server_stdout.readlines():
+                    extracted.add(line)
+            if extracted.is_empty():
+                raise RuntimeError(
+                    "Cannot find table size data in `{}`. "
+                    "Please run Pyre with `--debug` option first.".format(
+                        server_stdout_path
+                    )
+                )
+            sizes = json.dumps(extracted.get_totals())
+            counts = json.dumps(extracted.get_counts())
+            # I manually put together this json in order to be
+            # simultaneously machine and human readable
+            combined = (
+                "{\n"
+                f'  "total_table_sizes": {sizes},\n'
+                f'  "table_key_counts": {counts}\n'
+                "}"
+            )
+            print(combined)
+        else:
+            try:
+                profiling_output = Path(self.profiling_log_path())
+                if not profiling_output.is_file():
+                    raise RuntimeError(
+                        "Cannot find profiling output at `{}`. "
+                        "Please run Pyre with `--enable-profiling` or "
+                        "`--enable-memory-profiling` option first.".format(
+                            profiling_output
+                        )
+                    )
+                events = parse_events(profiling_output.read_text())
+                if output == ProfileOutput.TRACE_EVENT:
+                    print(json.dumps(to_traceevents(events)))
+                elif output == ProfileOutput.COLD_START_PHASES:
+                    print(json.dumps(to_cold_start_phases(events), indent=2))
+                elif output == ProfileOutput.INCREMENTAL_UPDATES:
+                    print(json.dumps(to_incremental_updates(events), indent=2))
+                else:
+                    raise RuntimeError("Unrecognized output format: {}".format(output))
 
-        except Exception as e:
-            LOG.error("Failed to inspect profiling log: {}".format(e))
-            raise e
+            except Exception as e:
+                LOG.error("Failed to inspect profiling log: {}".format(e))
+                raise e

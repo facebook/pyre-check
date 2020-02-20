@@ -72,6 +72,7 @@ class ProfileOutput(enum.Enum):
     TRACE_EVENT: str = "trace_event"
     COLD_START_PHASES: str = "cold_start_phases"
     INCREMENTAL_UPDATES: str = "incremental_updates"
+    INDIVIDUAL_TABLE_SIZES: str = "individual_table_sizes"
 
     def __str__(self) -> str:
         return self.value
