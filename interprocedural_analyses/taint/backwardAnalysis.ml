@@ -605,6 +605,29 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~state ~expression:attribute_expression ~taint
           in
           analyze_expression ~resolution ~state ~expression:default ~taint
+      (* dictionary .keys() and .values() functions are special, as they require handling of
+         DictionaryKeys taint. *)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
+            _;
+          }
+        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+          let taint =
+            taint
+            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      | Call
+          { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+          let taint =
+            taint
+            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state

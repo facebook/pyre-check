@@ -501,6 +501,11 @@ let is_dictionary ?(with_key = None) = function
   | _ -> false
 
 
+let is_dictionary_or_mapping = function
+  | Parametric { name = "typing.Mapping" | "dict"; _ } -> true
+  | _ -> false
+
+
 let is_ellipsis = function
   | Primitive "ellipsis" -> true
   | _ -> false

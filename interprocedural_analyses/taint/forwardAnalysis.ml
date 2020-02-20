@@ -748,6 +748,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
           ForwardState.Tree.join attribute_taint default_taint, state
+      (* dictionary .keys() and .values() functions are special, as they require handling of
+         DictionaryKeys taint. *)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
+            _;
+          }
+        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+          analyze_expression ~resolution ~state ~expression:base
+          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+      | Call
+          { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+          analyze_expression ~resolution ~state ~expression:base
+          |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary { Dictionary.entries; keywords } ->

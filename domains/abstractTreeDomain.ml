@@ -596,14 +596,19 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         match label_element with
         | Label.Any when not use_precise_fields ->
             (* lookup all index fields and join result *)
-            let find_index_and_join ~key:_ ~data:subtree (ancestors_accumulator, tree_accumulator) =
-              let ancestors_result, subtree =
-                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
-              in
-              let subtree =
-                join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
-              in
-              Element.join ancestors_result ancestors_accumulator, subtree
+            let find_index_and_join ~key ~data:subtree (ancestors_accumulator, tree_accumulator) =
+              (* Dictionary keys are special - they should be excluded from [*]
+                 accesses unconditionally. *)
+              if key = Label.DictionaryKeys then
+                Element.bottom, None
+              else
+                let ancestors_result, subtree =
+                  read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
+                in
+                let subtree =
+                  join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
+                in
+                Element.join ancestors_result ancestors_accumulator, subtree
             in
             LabelMap.fold ~init:(ancestors, None) ~f:find_index_and_join children
         | Label.Field _ when not use_precise_fields -> (

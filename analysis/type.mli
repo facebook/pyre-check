@@ -420,6 +420,8 @@ val is_callable : t -> bool
 
 val is_dictionary : ?with_key:t option -> t -> bool
 
+val is_dictionary_or_mapping : t -> bool
+
 val is_ellipsis : t -> bool
 
 val is_final : t -> bool

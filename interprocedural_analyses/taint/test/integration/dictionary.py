@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Tuple
 
 
 def dictionary_source():
@@ -152,3 +152,20 @@ def return_comprehension_with_untainted_keys():
 def backwards_model_for_dictionary_comprehension(d) -> None:
     inferred = {k: d[k] for k in d}
     sink_dictionary_through_keys(inferred)
+
+
+def test_keys_and_values():
+    tainted_values = {"benign": ("benign", __test_source())}
+    # Should be an issue.
+    __test_sink(tainted_values.values())
+    # Shouldn't be an issue.
+    __test_sink(tainted_values.keys())
+    for item in tainted_values.values():
+        # TODO(T61722447) we need to make iteration read [*][1] here.
+        __test_sink(item[0])
+
+    tainted_keys = {__test_source(): ""}
+    # Should be an issue.
+    __test_sink(tainted_keys.keys())
+    # Shouldn't be an issue.
+    __test_sink(tainted_keys.values())
