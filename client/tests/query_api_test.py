@@ -37,24 +37,37 @@ class QueryAPITest(unittest.TestCase):
         pyre_connection.query_server.return_value = {
             "response": [{"Foo": ["object"]}, {"object": []}]
         }
-        self.assertEqual(
-            query_api.get_class_hierarchy(pyre_connection),
-            {"Foo": ["object"], "object": []},
-        )
+        hierarchy = query_api.get_class_hierarchy(pyre_connection)
+        assert hierarchy is not None
+        self.assertEqual(hierarchy.hierarchy, {"Foo": ["object"], "object": []})
+        # Reverse hierarchy.
+        self.assertEqual(hierarchy.reverse_hierarchy, {"object": ["Foo"], "Foo": []})
+        # Superclasses.
+        self.assertEqual(hierarchy.superclasses("Foo"), ["object"])
+        self.assertEqual(hierarchy.superclasses("object"), [])
+        self.assertEqual(hierarchy.superclasses("Nonexistent"), None)
+        # Subclasses.
+        self.assertEqual(hierarchy.subclasses("object"), ["Foo"])
+        self.assertEqual(hierarchy.subclasses("Foo"), [])
+        self.assertEqual(hierarchy.subclasses("Nonexistent"), None)
+
         pyre_connection.query_server.return_value = {
             "response": [
                 {"Foo": ["object"]},
                 {"object": []},
                 # This should never happen in practice, but unfortunately is something
                 # to consider due to the type of the JSON returned. The last entry wins.
-                {"Foo": ["Bar"]},
+                {"Foo": ["Bar", "Baz"]},
                 {"Bar": ["object"]},
             ]
         }
+        class_hierarchy = query_api.get_class_hierarchy(pyre_connection)
+        assert class_hierarchy is not None
         self.assertEqual(
-            query_api.get_class_hierarchy(pyre_connection),
-            {"Foo": ["Bar"], "Bar": ["object"], "object": []},
+            class_hierarchy.hierarchy,
+            {"Foo": ["Bar", "Baz"], "Bar": ["object"], "object": []},
         )
+        self.assertEqual(class_hierarchy.superclasses("Foo"), ["Bar", "Baz"])
         pyre_connection.query_server.return_value = {"error": "Found an issue"}
         self.assertEqual(query_api.get_class_hierarchy(pyre_connection), None)
 

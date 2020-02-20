@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
 from .connection_api import PyreConnection
@@ -32,6 +33,31 @@ class CallGraphTarget(NamedTuple):
     locations: List[Location]
 
 
+class ClassHierarchy:
+    def __init__(self, hierarchy: Dict[str, List[str]]) -> None:
+        self.hierarchy = hierarchy
+
+    # Poor man's cached property.
+    @property
+    @lru_cache(maxsize=1)
+    def reverse_hierarchy(self) -> Dict[str, List[str]]:
+        reversed_mapping = {}
+        # In order to distinguish between missing types and types
+        # with no subclasses, we initialize everything to [] for known keys.
+        for key in self.hierarchy:
+            reversed_mapping[key] = []
+        for key, values in self.hierarchy.items():
+            for value in values:
+                reversed_mapping[value].append(key)
+        return reversed_mapping
+
+    def subclasses(self, class_name: str) -> Optional[List[str]]:
+        return self.reverse_hierarchy.get(class_name)
+
+    def superclasses(self, class_name: str) -> Optional[List[str]]:
+        return self.hierarchy.get(class_name)
+
+
 def defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Define]:
     query = "defines({})".format(",".join(modules))
     result = pyre_connection.query_server(query)
@@ -52,9 +78,7 @@ def defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Def
     ]
 
 
-def get_class_hierarchy(
-    pyre_connection: PyreConnection
-) -> Optional[Dict[str, List[str]]]:
+def get_class_hierarchy(pyre_connection: PyreConnection) -> Optional[ClassHierarchy]:
     result = pyre_connection.query_server("dump_class_hierarchy()")
     if result is None or "response" not in result:
         return None
@@ -63,7 +87,7 @@ def get_class_hierarchy(
         for annotation_and_edges in result["response"]
         for key, edges in annotation_and_edges.items()
     }
-    return hierarchy
+    return ClassHierarchy(hierarchy)
 
 
 def get_superclasses(pyre_connection: PyreConnection, class_name: str) -> List[str]:

@@ -20,8 +20,6 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
-    paths: Iterable[str]
-
     def __init__(
         self,
         root: str,
