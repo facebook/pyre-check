@@ -124,7 +124,7 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
         Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
         |> Node.create ~location
         |> AttributeResolution.ReadOnly.parse_annotation
-             ~allow_invalid_type_parameters:true
+             ~validation:ValidatePrimitives
              ?dependency
              attribute_resolution
         |> Type.meta

@@ -106,8 +106,7 @@ let test_select context =
         let callable =
           expression
           |> GlobalResolution.parse_annotation
-               ~allow_untracked:true
-               ~allow_invalid_type_parameters:true
+               ~validation:NoValidation
                (Resolution.global_resolution resolution)
           |> enforce_callable
         in

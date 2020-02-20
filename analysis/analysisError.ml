@@ -3167,10 +3167,7 @@ let dequalify
   let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
       value.Expression.Parameter.annotation
-      >>| GlobalResolution.parse_annotation
-            ~allow_untracked:true
-            ~allow_invalid_type_parameters:true
-            resolution
+      >>| GlobalResolution.parse_annotation ~validation:NoValidation resolution
       >>| dequalify
       >>| Type.expression
       |> fun annotation ->
@@ -3179,10 +3176,7 @@ let dequalify
     let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =
       return_annotation
-      >>| GlobalResolution.parse_annotation
-            ~allow_untracked:true
-            ~allow_invalid_type_parameters:true
-            resolution
+      >>| GlobalResolution.parse_annotation ~validation:NoValidation resolution
       >>| dequalify
       >>| Type.expression
     in

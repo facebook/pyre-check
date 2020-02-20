@@ -926,8 +926,7 @@ module Implementation = struct
     parse_annotation:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-      ?allow_untracked:bool ->
-      ?allow_invalid_type_parameters:bool ->
+      ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
       ?dependency:SharedMemoryKeys.dependency ->
       Expression.expression Node.t ->
       Type.t;
@@ -1192,8 +1191,7 @@ module Implementation = struct
       { check_invalid_type_parameters; _ }
       ~assumptions
       ~class_metadata_environment
-      ?(allow_untracked = false)
-      ?(allow_invalid_type_parameters = false)
+      ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
       ?dependency
       expression
     =
@@ -1204,6 +1202,13 @@ module Implementation = struct
           |> fun alias -> Type.TypeAlias alias
       | result -> result
     in
+    let allow_untracked =
+      match validation with
+      | NoValidation -> true
+      | ValidatePrimitives
+      | ValidatePrimitivesAndTypeParameters ->
+          false
+    in
     let annotation =
       AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
         (alias_environment class_metadata_environment)
@@ -1213,15 +1218,17 @@ module Implementation = struct
         expression
     in
     let result =
-      if not allow_invalid_type_parameters then
-        check_invalid_type_parameters
-          ~class_metadata_environment
-          ?dependency
+      match validation with
+      | ValidatePrimitivesAndTypeParameters ->
+          check_invalid_type_parameters
+            ~class_metadata_environment
+            ?dependency
+            annotation
+            ~assumptions
+          |> snd
+      | NoValidation
+      | ValidatePrimitives ->
           annotation
-          ~assumptions
-        |> snd
-      else
-        annotation
     in
     result
 
@@ -2904,8 +2911,6 @@ module Implementation = struct
                         parse_annotation
                           ~assumptions
                           ~class_metadata_environment
-                          ?allow_untracked:None
-                          ?allow_invalid_type_parameters:None
                           ?dependency
                           expression
                         |> Type.meta
@@ -3294,12 +3299,7 @@ module ParseAnnotationCache = struct
 
     let produce_value
         class_metadata_environment
-        ( {
-            SharedMemoryKeys.ParseAnnotationKey.assumptions;
-            allow_untracked;
-            allow_invalid_type_parameters;
-            expression;
-          } as key )
+        ({ SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression } as key)
         ~track_dependencies
       =
       let uncached_open_recurser =
@@ -3315,8 +3315,7 @@ module ParseAnnotationCache = struct
         uncached_open_recurser
         ~assumptions
         ~class_metadata_environment
-        ~allow_untracked
-        ~allow_invalid_type_parameters
+        ~validation
         ?dependency
         expression
 
@@ -3336,20 +3335,14 @@ module ParseAnnotationCache = struct
         _open_recurser
         ~assumptions
         ~class_metadata_environment:_
-        ?(allow_untracked = false)
-        ?(allow_invalid_type_parameters = false)
+        ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
         ?dependency
         expression
       =
       get
         read_only
         ?dependency
-        {
-          SharedMemoryKeys.ParseAnnotationKey.assumptions;
-          allow_untracked;
-          allow_invalid_type_parameters;
-          expression;
-        }
+        { SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression }
   end
 end
 

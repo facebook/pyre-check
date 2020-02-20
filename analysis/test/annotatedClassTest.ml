@@ -197,7 +197,7 @@ let test_constructors context =
     let source = Option.value_exn source in
     let instantiated =
       parse_single_expression instantiated
-      |> GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
+      |> GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
     match last_statement_exn source with
     | { Node.value = Statement.Class { name; _ }; _ } ->

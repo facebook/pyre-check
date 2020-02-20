@@ -14,8 +14,7 @@ val resolve_literal : t -> Expression.t -> Type.t
 
 val parse_annotation
   :  t ->
-  ?allow_untracked:bool ->
-  ?allow_invalid_type_parameters:bool ->
+  ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
   Expression.t ->
   Type.t
 

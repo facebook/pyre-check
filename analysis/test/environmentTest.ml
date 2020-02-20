@@ -81,7 +81,7 @@ let class_definition environment =
 
 let parse_annotation environment =
   (* Allow untracked because we're not calling all of populate *)
-  GlobalResolution.create environment |> GlobalResolution.parse_annotation ~allow_untracked:true
+  GlobalResolution.create environment |> GlobalResolution.parse_annotation ~validation:NoValidation
 
 
 let test_register_aliases context =
@@ -567,7 +567,7 @@ let test_populate context =
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
-    (Type.parametric "collections.defaultdict" [Single Type.Any; Single Type.Any]);
+    (Type.Primitive "collections.defaultdict");
 
   (* Check custom class definitions. *)
   let global_resolution = GlobalResolution.create environment in

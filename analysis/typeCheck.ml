@@ -264,11 +264,7 @@ module State (Context : Context) = struct
         errors, Type.Top
     in
     let annotation =
-      GlobalResolution.parse_annotation
-        ~allow_untracked:true
-        ~allow_invalid_type_parameters:true
-        global_resolution
-        expression
+      GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
     in
     let errors =
       match annotation with
@@ -3094,11 +3090,7 @@ module State (Context : Context) = struct
           Type.class_variable_value annotation |> Option.value ~default:annotation
         in
         let parsed =
-          GlobalResolution.parse_annotation
-            ~allow_untracked:true
-            ~allow_invalid_type_parameters:true
-            global_resolution
-            value
+          GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
         in
         let is_type_alias =
           let value_is_type =

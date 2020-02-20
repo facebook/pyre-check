@@ -69,11 +69,16 @@ module AttributeTableKey = struct
 end
 
 module ParseAnnotationKey = struct
+  type type_validation_policy =
+    | NoValidation
+    | ValidatePrimitives
+    | ValidatePrimitivesAndTypeParameters
+  [@@deriving compare, sexp, hash, show]
+
   module T = struct
     type t = {
       assumptions: Assumptions.t;
-      allow_untracked: bool;
-      allow_invalid_type_parameters: bool;
+      validation: type_validation_policy;
       expression: Expression.t;
     }
     [@@deriving compare, sexp, hash, show]

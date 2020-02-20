@@ -65,13 +65,13 @@ let test_set_local_with_attributes context =
 
 
 let test_parse_annotation context =
-  let assert_parse_annotation ?(allow_untracked = false) ~resolution ~expected expression =
+  let assert_parse_annotation ~validation ~resolution ~expected expression =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
       (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
       ( parse_single_expression expression
-      |> GlobalResolution.parse_annotation ~allow_untracked resolution )
+      |> GlobalResolution.parse_annotation ~validation resolution )
   in
   let resolution =
     let resolution =
@@ -82,14 +82,23 @@ let test_parse_annotation context =
     in
     Resolution.global_resolution resolution
   in
-  assert_parse_annotation ~resolution ~expected:"int" "int";
   assert_parse_annotation
-    ~allow_untracked:true
+    ~validation:ValidatePrimitivesAndTypeParameters
+    ~resolution
+    ~expected:"int"
+    "int";
+  assert_parse_annotation
+    ~validation:NoValidation
     ~resolution
     ~expected:"qualifier.int"
     "$local_qualifier$int";
-  assert_parse_annotation ~resolution ~expected:"typing.Any" "empty.stub.Annotation";
   assert_parse_annotation
+    ~validation:ValidatePrimitivesAndTypeParameters
+    ~resolution
+    ~expected:"typing.Any"
+    "empty.stub.Annotation";
+  assert_parse_annotation
+    ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"typing.Dict[str, typing.Any]"
     "typing.Dict[str, empty.stub.Annotation]"

@@ -40,7 +40,7 @@ let test_inferred_generic_base context =
     in
     let resolution = GlobalResolution.create global_environment in
     let parse_annotation =
-      GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
+      GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
     assert_equal
       ~cmp:(List.equal Argument.equal)

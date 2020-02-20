@@ -210,11 +210,13 @@ let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compat
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
 
 let parse_reference ?(allow_untracked = false) ({ dependency; _ } as resolution) reference =
+  let validation =
+    if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives
+  in
   Expression.from_reference ~location:Location.any reference
   |> AttributeResolution.ReadOnly.parse_annotation
        ?dependency
-       ~allow_untracked
-       ~allow_invalid_type_parameters:true
+       ~validation
        (attribute_resolution resolution)
 
 
@@ -222,7 +224,7 @@ let parse_as_list_variadic ({ dependency; _ } as resolution) name =
   let parsed_as_type_variable =
     AttributeResolution.ReadOnly.parse_annotation
       ?dependency
-      ~allow_untracked:true
+      ~validation:ValidatePrimitives
       (attribute_resolution resolution)
       name
     |> Type.primitive_name
@@ -500,9 +502,15 @@ let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as r
     ?dependency
 
 
-let annotation_parser ?allow_invalid_type_parameters resolution =
+let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
+  let validation =
+    if allow_invalid_type_parameters then
+      SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitives
+    else
+      ValidatePrimitivesAndTypeParameters
+  in
   {
-    AnnotatedCallable.parse_annotation = parse_annotation ?allow_invalid_type_parameters resolution;
+    AnnotatedCallable.parse_annotation = parse_annotation ~validation resolution;
     parse_as_concatenation = parse_as_concatenation resolution;
     parse_as_parameter_specification_instance_annotation =
       parse_as_parameter_specification_instance_annotation resolution;

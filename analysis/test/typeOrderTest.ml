@@ -2547,10 +2547,7 @@ let test_solve_less_or_equal context =
       |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
       |> parse_single_expression
       |> (if do_prep then prep else Fn.id)
-      |> GlobalResolution.parse_annotation
-           ~allow_untracked:true
-           ~allow_invalid_type_parameters:true
-           resolution
+      |> GlobalResolution.parse_annotation ~validation:NoValidation resolution
     in
     let left =
       let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
@@ -3184,10 +3181,7 @@ let test_instantiate_protocol_parameters context =
       annotation
       |> substitute
       |> parse_single_expression
-      |> GlobalResolution.parse_annotation
-           resolution
-           ~allow_untracked:true
-           ~allow_invalid_type_parameters:true
+      |> GlobalResolution.parse_annotation resolution ~validation:NoValidation
     in
     let optional_ordered_types_printer optional =
       optional

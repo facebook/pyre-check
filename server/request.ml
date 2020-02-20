@@ -170,11 +170,7 @@ let process_type_query_request
       =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
-        GlobalResolution.parse_annotation
-          ~allow_untracked:true
-          ~allow_invalid_type_parameters:true
-          global_resolution
-          expression
+        GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
       in
       let annotation =
         if unknown_is_top then
