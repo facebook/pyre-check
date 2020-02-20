@@ -129,7 +129,7 @@ let test_transform_environment context =
         class Foo:
           name = 'abc'
           def __init__(self, name: str ='abc') -> None:
-            pass
+            self.name = name
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -155,7 +155,7 @@ let test_transform_environment context =
         class Foo:
           name: str
           def __init__(self, name: str) -> None:
-            pass
+            self.name = name
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -425,7 +425,7 @@ let test_transform_environment context =
           z: int = 10
           x: int
           def __init__(self, x: int = "a", y: int = 0, z: int = 10) -> None:
-            pass
+            self.x = x
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:

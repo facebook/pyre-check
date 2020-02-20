@@ -54,6 +54,19 @@ module UninstantiatedAttributeTable = struct
       names := name :: !names )
 
 
+  let mark_as_implicitly_initialized_if_uninitialized { attributes; _ } name =
+    let is_uninitialized attribute =
+      match AnnotatedAttribute.initialized attribute with
+      | NotInitialized -> true
+      | _ -> false
+    in
+    match Caml.Hashtbl.find_opt attributes name with
+    | Some attribute when is_uninitialized attribute ->
+        AnnotatedAttribute.with_initialized ~initialized:Implicitly attribute
+        |> Caml.Hashtbl.replace attributes name
+    | _ -> ()
+
+
   let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
 
   let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
@@ -706,6 +719,10 @@ module Implementation = struct
                       in
                       match AnnotatedAttribute.name attribute with
                       | name when not (Type.is_unknown annotation) ->
+                          UninstantiatedAttributeTable
+                          .mark_as_implicitly_initialized_if_uninitialized
+                            table
+                            name;
                           let name = "$parameter$" ^ name in
                           let value = extract_init_value (attribute, value) in
                           let rec override_existing_parameters unchecked_parameters =

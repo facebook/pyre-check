@@ -135,7 +135,7 @@ let test_transform_environment context =
         class Foo:
           name: str
           def __init__(self, name: str) -> None:
-            pass
+            self.name = name
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -155,7 +155,8 @@ let test_transform_environment context =
           name: str
           age: int
           def __init__(self, name: str, age: int) -> None:
-            pass
+            self.name = name
+            self.age = age
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -197,7 +198,7 @@ let test_transform_environment context =
           name: str
           age: unknown = 3
           def __init__(self, name: str) -> None:
-            pass
+            self.name = name
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -217,7 +218,7 @@ let test_transform_environment context =
           name: str
           age: int = 3
           def __init__(self, name: str, age: int = 3) -> None:
-            pass
+            self.name = name
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -239,7 +240,9 @@ let test_transform_environment context =
           age: typing.List[int]
           parent: typing.Tuple['int', 'str']
           def __init__(self, name: str, age: typing.List[int], parent: typing.Tuple['int', 'str']) -> None:
-            pass
+            self.name = name
+            self.age = age
+            self.parent = parent
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -504,7 +507,7 @@ let test_transform_environment context =
           z: int = 10
           x: int
           def __init__(self, x: int = "a", y: int = 0, z: int = 10) -> None:
-            pass
+           self.x = x
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:
@@ -646,7 +649,8 @@ let test_transform_environment context =
           x: int
           init_variable: dataclasses.InitVar[str]
           def __init__(self, x: int, init_variable: str) -> None:
-            pass
+            self.x = x
+            self.init_variable = init_variable
           def __repr__(self) -> str:
             pass
           def __eq__(self, o: object) -> bool:

@@ -446,6 +446,15 @@ let test_class_attributes context =
           @property
           def property(self) -> str:
             pass
+
+        @dataclass
+        class Parent:
+          inherited: int
+
+        @dataclass
+        class DC(Parent):
+          x: int
+          y: str
       |}
   in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
@@ -531,6 +540,28 @@ let test_class_attributes context =
     ~attribute_name:"property"
     ~expected_attribute:
       (create_expected_attribute ~property:true ~visibility:(ReadOnly Unrefinable) "property" "str");
+  assert_attribute
+    ~parent:"test.DC"
+    ~parent_instantiated_type:(Type.Primitive "test.DC")
+    ~attribute_name:"x"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.DC"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         "x"
+         "int");
+  assert_attribute
+    ~parent:"test.DC"
+    ~parent_instantiated_type:(Type.Primitive "test.DC")
+    ~attribute_name:"inherited"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.Parent"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         "inherited"
+         "int");
   ()
 
 

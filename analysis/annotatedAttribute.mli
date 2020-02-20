@@ -80,4 +80,6 @@ val property : 'a t -> bool
 
 val visibility : 'a t -> visibility
 
+val with_initialized : 'a t -> initialized:initialized -> 'a t
+
 val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated

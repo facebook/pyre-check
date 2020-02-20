@@ -149,3 +149,6 @@ let visibility { visibility; _ } = visibility
 
 let instantiate attribute ~annotation ~original_annotation =
   { attribute with payload = { annotation; original_annotation } }
+
+
+let with_initialized attribute ~initialized = { attribute with initialized }
