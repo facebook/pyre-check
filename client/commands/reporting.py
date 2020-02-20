@@ -57,19 +57,32 @@ class Reporting(Command):
         }
         return directories_to_analyze
 
+    @staticmethod
+    def _load_errors_from_json(json_output: str) -> List[Dict[str, Any]]:
+        try:
+            json_dictionary = json.loads(json_output)
+        except (json.JSONDecodeError):
+            raise ClientException(f"Invalid JSON output: `{json_output}`.")
+
+        error_list = []
+        if isinstance(json_dictionary, dict) and "errors" in json_dictionary:
+            error_list = json_dictionary["errors"]
+        else:
+            # TODO(T62259082): Identify why the client receives such JSON output.
+            LOG.error(
+                "Received invalid JSON output for the last `pyre` command"
+                " (known bug: GitHub issue #238 / T62259082)."
+                " You may want to rerun your command."
+            )
+            LOG.debug("Invalid JSON output: %s", json_output)
+        return error_list
+
     def _get_errors(
         self, result: Result, bypass_filtering: bool = False
     ) -> Sequence[Error]:
         result.check()
-
         errors: List[Error] = []
-        results: List[Dict[str, Any]] = []
-        try:
-            results = json.loads(result.output)
-            if "errors" in results:
-                results = results["errors"]
-        except (json.JSONDecodeError, ValueError):
-            raise ClientException("Invalid output: `{}`.".format(result.output))
+        results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
 
         for error in results:
             full_path = os.path.realpath(

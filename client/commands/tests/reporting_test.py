@@ -9,11 +9,12 @@ import json
 import os
 import subprocess
 import unittest
+from typing import Any, Dict
 from unittest.mock import MagicMock, mock_open, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
-from ..command import __name__ as client_name
+from ..command import ClientException, __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -112,6 +113,37 @@ class ReportingTest(unittest.TestCase):
             [error] = errors
             self.assertTrue(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
+
+    @patch.object(json, "loads")
+    def test_load_errors_from_json(self, loads: MagicMock) -> None:
+        error_list = [{"one": 1}, {"two": 2}]
+        loads.return_value = {"errors": error_list}
+        actual = commands.Reporting._load_errors_from_json("<some json string>")
+        self.assertEqual(actual, error_list)
+
+    @patch.object(json, "loads")
+    def test_load_errors_from_json_unexpected_format(self, loads: MagicMock) -> None:
+        error_list = [{"one": 1}, {"two": 2}]
+        loads.return_value = {"response": {"errors": error_list}}
+        actual = commands.Reporting._load_errors_from_json("<some json string>")
+        self.assertEqual(actual, [])
+
+    @patch.object(json, "loads")
+    def test_load_errors_from_json_list(self, loads: MagicMock) -> None:
+        error_list = [{"one": 1}, {"two": 2}]
+        loads.return_value = error_list
+        # It expects a dictionary, not a list.
+        actual = commands.Reporting._load_errors_from_json("<some json string>")
+        self.assertEqual(actual, [])
+
+    @patch.object(json, "loads")
+    def test_load_errors_from_json_decode_error(self, loads: MagicMock) -> None:
+        def raise_error(input: str) -> Dict[str, Any]:
+            raise json.JSONDecodeError("foo", "foo", 0)
+
+        loads.side_effect = raise_error
+        with self.assertRaises(ClientException):
+            commands.Reporting._load_errors_from_json("<some json string>")
 
     @patch.object(subprocess, "run")
     @patch("os.chdir")

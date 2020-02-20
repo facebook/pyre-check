@@ -5,10 +5,11 @@
 
 # pyre-unsafe
 
+import json
 import os
 import subprocess
 import unittest
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands, json_rpc
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
@@ -76,8 +77,8 @@ class IncrementalTest(unittest.TestCase):
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
 
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads", return_value=[]
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json, "loads", return_value=[]
         ):
             test_command = incremental.Incremental(
                 arguments, original_directory, configuration, analysis_directory
@@ -107,8 +108,8 @@ class IncrementalTest(unittest.TestCase):
         Monitor.reset_mock()
         Monitor.is_alive.return_value = True
         file_monitor_instance.reset_mock()
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads", return_value=[]
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json, "loads", return_value=[]
         ):
             nonblocking_arguments = mock_arguments()
             nonblocking_arguments.nonblocking = True
@@ -144,8 +145,8 @@ class IncrementalTest(unittest.TestCase):
         commands_Command_state.return_value = commands.command.State.DEAD
         Monitor.reset_mock()
         file_monitor_instance.reset_mock()
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads", return_value=[]
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json, "loads", return_value=[]
         ):
             test_command = commands.Incremental(
                 arguments, original_directory, configuration, analysis_directory
@@ -174,8 +175,8 @@ class IncrementalTest(unittest.TestCase):
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads", return_value=[]
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json, "loads", return_value=[]
         ), patch.object(SharedAnalysisDirectory, "prepare") as prepare:
             test_command = incremental.Incremental(
                 arguments, original_directory, configuration, analysis_directory
@@ -207,8 +208,8 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments(
             load_initial_state_from="/a/b", changed_files_path="/c/d"
         )
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads", return_value=[]
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json, "loads", return_value=[]
         ):
             test_command = commands.Incremental(
                 arguments, original_directory, configuration, analysis_directory
@@ -244,20 +245,23 @@ class IncrementalTest(unittest.TestCase):
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
 
-        with patch.object(SocketConnection, "connect") as connect, patch(
-            "json.loads",
-            return_value=[
-                {
-                    "line": 4,
-                    "column": 11,
-                    "path": "test/path.py",
-                    "code": -1,
-                    "name": "Revealed type",
-                    "description": ".Fake error",
-                    "inference": {},
-                    "define": "c.$toplevel",
-                }
-            ],
+        with patch.object(SocketConnection, "connect") as connect, patch.object(
+            json,
+            "loads",
+            return_value={
+                "errors": [
+                    {
+                        "line": 4,
+                        "column": 11,
+                        "path": "test/path.py",
+                        "code": -1,
+                        "name": "Revealed type",
+                        "description": ".Fake error",
+                        "inference": {},
+                        "define": "c.$toplevel",
+                    }
+                ]
+            },
         ):
             test_command = incremental.Incremental(
                 arguments, original_directory, configuration, analysis_directory

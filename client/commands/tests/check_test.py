@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import json
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
@@ -16,6 +17,9 @@ from .command_test import mock_arguments, mock_configuration
 
 
 _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
+
+
+NO_ERROR_JSON_OUTPUT = {"errors": []}
 
 
 class CheckTest(unittest.TestCase):
@@ -39,8 +43,10 @@ class CheckTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
@@ -65,9 +71,13 @@ class CheckTest(unittest.TestCase):
 
         shared_analysis_directory = MagicMock()
         shared_analysis_directory.get_root = lambda: "."
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
-        ), patch.object(shared_analysis_directory, "prepare") as prepare:
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
+        ), patch.object(
+            shared_analysis_directory, "prepare"
+        ) as prepare:
             command = commands.Check(
                 arguments, original_directory, configuration, shared_analysis_directory
             )
@@ -96,8 +106,10 @@ class CheckTest(unittest.TestCase):
         arguments.sequential = True
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
@@ -144,8 +156,10 @@ class CheckTest(unittest.TestCase):
         arguments.sequential = True
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
@@ -192,8 +206,10 @@ class CheckTest(unittest.TestCase):
         arguments.capable_terminal = False
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
@@ -238,8 +254,10 @@ class CheckTest(unittest.TestCase):
         arguments.hide_parse_errors = True
         configuration = mock_configuration()
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")
@@ -283,8 +301,10 @@ class CheckTest(unittest.TestCase):
         configuration = mock_configuration()
         configuration.strict = True
 
-        with patch.object(commands.Command, "_call_client") as call_client, patch(
-            "json.loads", return_value=[]
+        with patch.object(
+            commands.Command, "_call_client"
+        ) as call_client, patch.object(
+            json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
                 arguments, original_directory, configuration, AnalysisDirectory(".")

@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import json
 import textwrap
 import unittest
 from pathlib import Path
@@ -586,7 +587,7 @@ def mock_configuration() -> MagicMock:
 class InferTest(unittest.TestCase):
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    @patch("json.loads", return_value=[])
+    @patch.object(json, "loads", return_value={"errors": []})
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
