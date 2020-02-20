@@ -455,6 +455,10 @@ let test_class_attributes context =
         class DC(Parent):
           x: int
           y: str
+
+        class NT(typing.NamedTuple):
+          x: int
+          y: str
       |}
   in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
@@ -561,6 +565,17 @@ let test_class_attributes context =
          ~visibility:ReadWrite
          ~initialized:Implicitly
          "inherited"
+         "int");
+  assert_attribute
+    ~parent:"test.NT"
+    ~parent_instantiated_type:(Type.Primitive "test.NT")
+    ~attribute_name:"x"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.NT"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         "x"
          "int");
   ()
 

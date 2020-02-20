@@ -205,6 +205,25 @@
         ]
       },
       {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ],
+            "features": [ { "type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
@@ -242,6 +261,25 @@
         ]
       },
       {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ],
+            "features": [ { "always-type": "scalar" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
@@ -269,6 +307,24 @@
     "sources": [],
     "sinks": [],
     "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[bad]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[benign]" } ]
+          }
+        ]
+      },
       {
         "port": "formal(bad)",
         "taint": [

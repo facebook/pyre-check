@@ -1949,6 +1949,40 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Node.create ~location (Expression.Name (Name.Identifier "None")),
               Parameter.create ~location ~name:"$parameter$self" () )
         in
+        let assignments =
+          if is_new || List.is_empty parameters then
+            [
+              Node.create
+                ~location
+                (Statement.Expression (Node.create ~location Expression.Ellipsis));
+            ]
+          else
+            let to_assignment { Node.value = { Parameter.name; _ }; _ } =
+              Node.create
+                (Statement.Assign
+                   {
+                     target =
+                       Node.create
+                         ~location
+                         (Expression.Name
+                            (Attribute
+                               {
+                                 base =
+                                   Node.create
+                                     (Expression.Name (Identifier "$parameter$self"))
+                                     ~location;
+                                 attribute = name |> Identifier.sanitized;
+                                 special = false;
+                               }));
+                     annotation = None;
+                     value = Node.create (Expression.Name (Identifier name)) ~location;
+                     parent = None;
+                   })
+                ~location
+            in
+            List.map parameters ~f:to_assignment
+            @ [{ Node.location; value = Return { Return.expression = None; is_implicit = true } }]
+        in
         Statement.Define
           {
             signature =
@@ -1963,12 +1997,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 nesting_define = None;
               };
             captures = [];
-            body =
-              [
-                Node.create
-                  ~location
-                  (Statement.Expression (Node.create ~location Expression.Ellipsis));
-              ];
+            body = assignments;
           }
         |> Node.create ~location
       in

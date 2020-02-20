@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+named_tuples.MyNamedTuple::__init__ (method) -> []
+named_tuples.OldSchoolNamedTuple::__init__ (method) -> []
 named_tuples.inherited_tuple (fun) -> [__test_source (fun) named_tuples.MyNamedTuple::__init__ (method) named_tuples.MyNamedTuple::__new__ (method)]
 named_tuples.issue_with_bad (fun) -> [__test_sink (fun) named_tuples.tainted_tuple (fun)]
 named_tuples.issue_with_inherited_named_tuple (fun) -> [__test_sink (fun) named_tuples.inherited_tuple (fun)]
