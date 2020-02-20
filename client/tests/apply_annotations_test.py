@@ -349,20 +349,6 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
         self.assert_annotations(
             stub="""
-            def foo(x: int) -> int: ...
-            """,
-            source="""
-            def foo(x) -> int:
-                return x
-            """,
-            expected="""
-            def foo(x: int) -> int:
-                return x
-            """,
-        )
-
-        self.assert_annotations(
-            stub="""
             FOO: a.b.Example = ...
             """,
             source="""
