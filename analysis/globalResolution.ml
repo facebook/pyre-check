@@ -269,29 +269,6 @@ let source_is_unit_test resolution ~source =
   List.exists (Preprocessing.classes source) ~f:is_unittest
 
 
-let class_extends_placeholder_stub_class ({ dependency; _ } as resolution) { ClassSummary.bases; _ }
-  =
-  let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
-    let parsed =
-      AttributeResolution.ReadOnly.parse_annotation
-        ~allow_untracked:true
-        ~allow_invalid_type_parameters:true
-        ~allow_primitives_from_empty_stubs:true
-        ?dependency
-        (attribute_resolution resolution)
-        value
-    in
-    match parsed with
-    | Type.Primitive primitive
-    | Parametric { name = primitive; _ } ->
-        Reference.create primitive
-        |> fun reference ->
-        EmptyStubEnvironment.ReadOnly.from_empty_stub (empty_stub_environment resolution) reference
-    | _ -> false
-  in
-  List.exists bases ~f:is_from_placeholder_stub
-
-
 let global ({ dependency; _ } as resolution) reference =
   (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic for
      module and for class *)
