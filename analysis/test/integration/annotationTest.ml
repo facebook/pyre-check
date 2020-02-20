@@ -415,6 +415,17 @@ let test_check_invalid_type context =
       "Invalid type parameters [24]: Single type parameter `Variable[_S]` expected, but a type \
        parameter group `[str]` was given for generic type dict.";
     ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+
+      TValue = TypeVar("TValue", bound=int)
+
+      class Foo(Generic[TValue]): pass
+
+      def foo() -> Foo[garbage]: ...
+    |}
+    ["Undefined or invalid type [11]: Annotation `garbage` is not defined as a type."];
   ()
 
 
