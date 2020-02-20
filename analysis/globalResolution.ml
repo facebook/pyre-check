@@ -122,6 +122,12 @@ let aliases ({ dependency; _ } as resolution) =
   AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
 
 
+let base_is_from_placeholder_stub resolution =
+  AnnotatedBases.base_is_from_placeholder_stub
+    ~aliases:(aliases resolution)
+    ~from_empty_stub:(is_suppressed_module resolution)
+
+
 let module_exists ({ dependency; _ } as resolution) =
   AstEnvironment.ReadOnly.module_exists ?dependency (ast_environment resolution)
 

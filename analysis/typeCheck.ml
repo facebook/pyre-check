@@ -1069,18 +1069,8 @@ module State (Context : Context) = struct
     let check_base_annotations state =
       if Define.is_class_toplevel define then
         let open Annotated in
-        let check_base state { ExpressionCall.Argument.value; _ } =
+        let check_base state ({ ExpressionCall.Argument.value; _ } as base) =
           let state_with_errors, parsed = parse_and_check_annotation ~state value in
-          let is_actual_any () =
-            match
-              GlobalResolution.parse_annotation
-                global_resolution
-                value
-                ~allow_primitives_from_empty_stubs:true
-            with
-            | Any -> true
-            | _ -> false
-          in
           match parsed with
           | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
               (* Inheriting from type makes you a metaclass, and we don't want to
@@ -1091,7 +1081,8 @@ module State (Context : Context) = struct
           | Primitive _
           | Parametric _ ->
               state_with_errors
-          | Any when not (is_actual_any ()) -> state_with_errors
+          | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base ->
+              state_with_errors
           | annotation ->
               emit_error
                 ~state:state_with_errors

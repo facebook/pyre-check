@@ -13,6 +13,12 @@ val inferred_generic_base
   parse_annotation:(Expression.t -> Type.t) ->
   Expression.Call.Argument.t list
 
+val base_is_from_placeholder_stub
+  :  Expression.Call.Argument.t ->
+  aliases:(Type.Primitive.t -> Type.alias option) ->
+  from_empty_stub:(Reference.t -> bool) ->
+  bool
+
 val extends_placeholder_stub_class
   :  ClassSummary.t Node.t ->
   aliases:(Type.Primitive.t -> Type.alias option) ->
