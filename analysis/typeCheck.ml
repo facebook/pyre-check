@@ -4672,9 +4672,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       else
         errors
     in
-    (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
-       access the annotations added to resolution in the constructor. If a constructor does not
-       exist, this function is triggered in the toplevel. *)
+    (* Ensure all attributes are instantiated. *)
     let check_attribute_initialization definition errors =
       if
         (not (ClassSummary.is_protocol (Node.value definition)))
@@ -4806,18 +4804,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       else
         errors
     in
-    if Define.is_constructor define && not (Define.is_stub define) then
-      let check_attributes_initialized errors =
-        let open Annotated in
-        let definition =
-          Define.parent_definition ~resolution:global_resolution (Define.create define_node)
-        in
-        match definition with
-        | Some definition -> check_attribute_initialization definition errors
-        | None -> errors
-      in
-      errors |> check_attributes_initialized
-    else if Define.is_class_toplevel define then
+    if Define.is_class_toplevel define then
       let check_bases errors =
         let open Annotated in
         let is_final errors { ExpressionCall.Argument.name; value } =
@@ -4849,18 +4836,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         |> Option.value ~default:errors
       in
       let check_protocol definition errors = check_protocol_properties definition errors in
-      let check_attributes definition errors =
-        (* Error on uninitialized attributes if there was no constructor in which to do so. *)
-        if
-          not
-            (AnnotatedClass.has_explicit_constructor
-               (AnnotatedClass.name definition |> Reference.show)
-               ~resolution:global_resolution)
-        then
-          check_attribute_initialization definition errors
-        else
-          errors
-      in
       let check_overrides
           ( { Node.value = { ClassSummary.attribute_components; name = class_name; _ }; _ } as
           definition )
@@ -4983,7 +4958,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             errors
             |> check_bases
             |> check_protocol definition
-            |> check_attributes definition
+            |> check_attribute_initialization definition
             |> check_overrides definition
             |> check_redefined_class definition)
       |> Option.value ~default:errors

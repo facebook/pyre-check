@@ -139,6 +139,18 @@ let test_check_attributes context =
   assert_type_errors
     {|
       class Foo:
+        bar: int
+        def __init__(self, baz: int) -> None:
+          self.baz = baz
+
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type `int` \
+       but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
         bar: typing.Dict[str, typing.Any] = {}
         baz: typing.Dict[typing.Any, typing.Any] = {}
     |}
