@@ -16,7 +16,6 @@ val parse_annotation
   :  t ->
   ?allow_untracked:bool ->
   ?allow_invalid_type_parameters:bool ->
-  ?allow_primitives_from_empty_stubs:bool ->
   Expression.t ->
   Type.t
 

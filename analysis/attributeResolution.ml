@@ -928,7 +928,6 @@ module Implementation = struct
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
       ?allow_untracked:bool ->
       ?allow_invalid_type_parameters:bool ->
-      ?allow_primitives_from_empty_stubs:bool ->
       ?dependency:SharedMemoryKeys.dependency ->
       Expression.expression Node.t ->
       Type.t;
@@ -1195,7 +1194,6 @@ module Implementation = struct
       ~class_metadata_environment
       ?(allow_untracked = false)
       ?(allow_invalid_type_parameters = false)
-      ?(allow_primitives_from_empty_stubs = false)
       ?dependency
       expression
     =
@@ -1212,7 +1210,6 @@ module Implementation = struct
         ~modify_aliases
         ?dependency
         ~allow_untracked
-        ~allow_primitives_from_empty_stubs
         expression
     in
     let result =
@@ -2909,7 +2906,6 @@ module Implementation = struct
                           ~class_metadata_environment
                           ?allow_untracked:None
                           ?allow_invalid_type_parameters:None
-                          ?allow_primitives_from_empty_stubs:None
                           ?dependency
                           expression
                         |> Type.meta
@@ -3302,7 +3298,6 @@ module ParseAnnotationCache = struct
             SharedMemoryKeys.ParseAnnotationKey.assumptions;
             allow_untracked;
             allow_invalid_type_parameters;
-            allow_primitives_from_empty_stubs;
             expression;
           } as key )
         ~track_dependencies
@@ -3322,7 +3317,6 @@ module ParseAnnotationCache = struct
         ~class_metadata_environment
         ~allow_untracked
         ~allow_invalid_type_parameters
-        ~allow_primitives_from_empty_stubs
         ?dependency
         expression
 
@@ -3344,7 +3338,6 @@ module ParseAnnotationCache = struct
         ~class_metadata_environment:_
         ?(allow_untracked = false)
         ?(allow_invalid_type_parameters = false)
-        ?(allow_primitives_from_empty_stubs = false)
         ?dependency
         expression
       =
@@ -3355,7 +3348,6 @@ module ParseAnnotationCache = struct
           SharedMemoryKeys.ParseAnnotationKey.assumptions;
           allow_untracked;
           allow_invalid_type_parameters;
-          allow_primitives_from_empty_stubs;
           expression;
         }
   end

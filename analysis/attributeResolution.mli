@@ -155,7 +155,6 @@ module AttributeReadOnly : sig
     :  t ->
     ?allow_untracked:bool ->
     ?allow_invalid_type_parameters:bool ->
-    ?allow_primitives_from_empty_stubs:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
     Expression.expression Node.t ->
     Type.t

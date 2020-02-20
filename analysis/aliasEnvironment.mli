@@ -19,7 +19,6 @@ module AliasReadOnly : sig
     ?modify_aliases:(Type.alias -> Type.alias) ->
     ?dependency:dependency ->
     ?allow_untracked:bool ->
-    ?allow_primitives_from_empty_stubs:bool ->
     Expression.t ->
     Type.t
 

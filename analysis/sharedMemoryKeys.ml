@@ -74,7 +74,6 @@ module ParseAnnotationKey = struct
       assumptions: Assumptions.t;
       allow_untracked: bool;
       allow_invalid_type_parameters: bool;
-      allow_primitives_from_empty_stubs: bool;
       expression: Expression.t;
     }
     [@@deriving compare, sexp, hash, show]

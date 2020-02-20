@@ -363,7 +363,6 @@ module ReadOnly = struct
       ?modify_aliases
       ?dependency
       ?(allow_untracked = false)
-      ?(allow_primitives_from_empty_stubs = false)
       expression
     =
     let modify_aliases = Option.value modify_aliases ~default:Fn.id in
@@ -373,25 +372,22 @@ module ReadOnly = struct
       Type.create ~aliases expression
     in
     let annotation =
-      if allow_primitives_from_empty_stubs then
-        parsed
-      else
-        let constraints = function
-          | Type.Primitive name ->
-              let originates_from_empty_stub =
-                let reference = Reference.create name in
-                EmptyStubEnvironment.ReadOnly.from_empty_stub
-                  ?dependency
-                  (empty_stub_environment environment)
-                  reference
-              in
-              if originates_from_empty_stub then
-                Some Type.Any
-              else
-                None
-          | _ -> None
-        in
-        Type.instantiate parsed ~constraints
+      let constraints = function
+        | Type.Primitive name ->
+            let originates_from_empty_stub =
+              let reference = Reference.create name in
+              EmptyStubEnvironment.ReadOnly.from_empty_stub
+                ?dependency
+                (empty_stub_environment environment)
+                reference
+            in
+            if originates_from_empty_stub then
+              Some Type.Any
+            else
+              None
+        | _ -> None
+      in
+      Type.instantiate parsed ~constraints
     in
     let contains_untracked =
       UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
