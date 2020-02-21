@@ -11,27 +11,17 @@ type t = {
   annotation_store: RefinementUnit.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
-  resolve_assignment: resolution:t -> Statement.Assign.t -> t;
-  resolve_assertion: resolution:t -> asserted_expression:Expression.t -> t;
+  resolve_statement: resolution:t -> Statement.t -> t * AnalysisError.t list;
   parent: Reference.t option;
 }
 
-let create
-    ~global_resolution
-    ~annotation_store
-    ~resolve
-    ~resolve_assignment
-    ~resolve_assertion
-    ?parent
-    ()
-  =
+let create ~global_resolution ~annotation_store ~resolve ~resolve_statement ?parent () =
   {
     global_resolution;
     annotation_store;
     type_variables = Type.Variable.Set.empty;
     resolve;
-    resolve_assignment;
-    resolve_assertion;
+    resolve_statement;
     parent;
   }
 
@@ -68,12 +58,27 @@ let resolve_reference ({ resolve; _ } as resolution) reference =
   |> Annotation.annotation
 
 
-let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
-  resolve_assignment ~resolution assignment
+let resolve_statement ({ resolve_statement; _ } as resolution) statement =
+  resolve_statement ~resolution statement
 
 
-let resolve_assertion ({ resolve_assertion; _ } as resolution) ~asserted_expression =
-  resolve_assertion ~resolution ~asserted_expression
+let resolve_assignment ({ resolve_statement; _ } as resolution) assign =
+  Statement.Statement.Assign assign
+  |> Ast.Node.create_with_default_location
+  |> resolve_statement ~resolution
+  |> fst
+
+
+let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_expression =
+  Statement.Statement.Assert
+    {
+      Statement.Assert.test = asserted_expression;
+      message = None;
+      origin = Ast.Statement.Assert.Origin.Assertion;
+    }
+  |> Ast.Node.create_with_default_location
+  |> resolve_statement ~resolution
+  |> fst
 
 
 let partition_name resolution ~name =

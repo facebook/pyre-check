@@ -11,8 +11,7 @@ val create
   :  global_resolution:GlobalResolution.t ->
   annotation_store:RefinementUnit.t Reference.Map.t ->
   resolve:(resolution:t -> Expression.t -> Annotation.t) ->
-  resolve_assignment:(resolution:t -> Statement.Assign.t -> t) ->
-  resolve_assertion:(resolution:t -> asserted_expression:Expression.t -> t) ->
+  resolve_statement:(resolution:t -> Statement.t -> t * AnalysisError.t list) ->
   ?parent:Reference.t ->
   unit ->
   t
@@ -22,6 +21,8 @@ val resolve : t -> Expression.t -> Type.t
 val resolve_to_annotation : t -> Expression.t -> Annotation.t
 
 val resolve_reference : t -> Reference.t -> Type.t
+
+val resolve_statement : t -> Statement.t -> t * AnalysisError.t list
 
 val resolve_assignment : t -> Statement.Assign.t -> t
 
