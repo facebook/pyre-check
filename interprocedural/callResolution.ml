@@ -129,7 +129,7 @@ let rec is_all_names = function
 
 
 let resolve_target ~resolution ?receiver_type callee =
-  let callable_type = Resolution.resolve resolution callee in
+  let callable_type = resolve_ignoring_optional ~resolution callee in
   let global =
     match get_identifier_base callee, Node.value callee with
     | Some "super", _
@@ -145,7 +145,7 @@ let resolve_target ~resolution ?receiver_type callee =
         let is_class =
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) ->
-              Resolution.resolve resolution base
+              resolve_ignoring_optional ~resolution base
               |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
               |> Option.is_some
           | _ -> false
@@ -198,7 +198,7 @@ let resolve_target ~resolution ?receiver_type callee =
 
 
 let get_indirect_targets ~resolution ~receiver ~method_name =
-  let receiver_type = Resolution.resolve resolution receiver in
+  let receiver_type = resolve_ignoring_optional ~resolution receiver in
   let callee =
     Expression.Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
     |> Node.create_with_default_location
@@ -214,7 +214,7 @@ let resolve_property_targets ~resolution ~base ~attribute ~setter =
   | None -> None
   | Some defining_parent ->
       let targets =
-        let receiver_type = Resolution.resolve resolution base in
+        let receiver_type = resolve_ignoring_optional ~resolution base in
         if Type.is_meta receiver_type then
           [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
         else
@@ -243,10 +243,10 @@ let resolve_call_targets ~resolution call =
   let { Call.callee; _ } = Analysis.Annotated.Call.redirect_special_calls ~resolution call in
   match Node.value callee with
   | Name (Name.Attribute { base; _ }) ->
-      let receiver_type = Resolution.resolve resolution base in
+      let receiver_type = resolve_ignoring_optional ~resolution base in
       resolve_target ~resolution ~receiver_type callee
   | Name (Name.Identifier name) when name <> "super" ->
-      let receiver_type = Resolution.resolve resolution callee in
+      let receiver_type = resolve_ignoring_optional ~resolution callee in
       if Type.is_meta receiver_type then
         let callee =
           Expression.Name

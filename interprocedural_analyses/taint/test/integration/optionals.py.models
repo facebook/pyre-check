@@ -1,0 +1,86 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "optionals.test",
+    "callable_line": 17,
+    "code": 5002,
+    "line": 18,
+    "start": 32,
+    "end": 47,
+    "filename": "optionals.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "optionals.py",
+              "line": 18,
+              "start": 32,
+              "end": 47
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "optionals.py",
+                "line": 18,
+                "start": 32,
+                "end": 47
+              },
+              "resolves_to": [ "optionals.Client.offer" ],
+              "port": "formal(message)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "optionals.Client.offer",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(message)",
+        "taint": [
+          {
+            "root": {
+              "filename": "optionals.py",
+              "line": 6,
+              "start": 20,
+              "end": 27
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
