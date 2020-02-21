@@ -1088,6 +1088,13 @@ let rec process
   Statistics.performance
     ~name:"server request"
     ~timer
-    ~normals:["request kind", Request.name request]
+    ~normals:
+      [
+        "request kind", Request.name request;
+        ( "LSP request",
+          match request with
+          | LanguageServerProtocolRequest request -> request
+          | _ -> "" );
+      ]
     ();
   result
