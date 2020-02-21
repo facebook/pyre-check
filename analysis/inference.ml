@@ -262,8 +262,86 @@ module State (Context : Context) = struct
     if bottom then
       state
     else
-      let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
+      let global_resolution = Resolution.global_resolution resolution in
       let resolve annotation = Resolution.resolve resolution annotation |> Type.weaken_literals in
+      let validate_return ~expression ~actual =
+        let create_missing_return_error expression actual =
+          let {
+            Node.location = define_location;
+            value =
+              {
+                Define.signature =
+                  { async; return_annotation = return_annotation_expression; _ } as signature;
+                _;
+              } as define;
+          }
+            =
+            Context.define
+          in
+          let return_annotation =
+            let annotation =
+              let parser = GlobalResolution.annotation_parser global_resolution in
+              Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+            in
+            if async then
+              Type.coroutine_value annotation |> Option.value ~default:Type.Top
+            else
+              annotation
+          in
+          let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
+          let actual =
+            GlobalResolution.resolve_mutable_literals
+              global_resolution
+              ~resolve:(Resolution.resolve resolution)
+              ~expression
+              ~resolved:actual
+              ~expected:return_annotation
+          in
+          let contains_literal_any =
+            return_annotation_expression
+            >>| Type.expression_contains_any
+            |> Option.value ~default:false
+          in
+          if
+            (not (Define.has_return_annotation define))
+            || (contains_literal_any && Type.contains_prohibited_any return_annotation)
+          then
+            let given_annotation =
+              Option.some_if (Define.has_return_annotation define) return_annotation
+            in
+            Some
+              (Error.create
+                 ~location:(Location.with_module ~qualifier:Context.qualifier define_location)
+                 ~define:Context.define
+                 ~kind:
+                   (Error.MissingReturnAnnotation
+                      {
+                        name = Reference.create "$return_annotation";
+                        annotation = Some actual;
+                        given_annotation;
+                        evidence_locations = [];
+                        thrown_at_source = true;
+                      }))
+          else
+            None
+        in
+        match create_missing_return_error expression actual with
+        | None -> state
+        | Some error ->
+            let emit_error
+                errors
+                ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
+              =
+              let error =
+                let location = { Location.start; stop } in
+                match Map.find errors { TypeCheck.ErrorMap.location; kind = Error.code error } with
+                | Some other_error -> Error.join ~resolution:global_resolution error other_error
+                | None -> error
+              in
+              TypeCheck.ErrorMap.add ~errors error
+            in
+            { state with errors = emit_error errors error }
+      in
       match value with
       | Statement.Expression
           {
@@ -352,8 +430,31 @@ module State (Context : Context) = struct
             add_local ~resolution ~name ~annotation:(Annotation.create (Type.list Type.Bottom))
           in
           { state with resolution }
+      | Statement.Return { Return.expression; _ } ->
+          let actual =
+            Option.value_map expression ~f:(Resolution.resolve resolution) ~default:Type.none
+          in
+          validate_return ~expression ~actual
+      | Statement.Yield { Node.value = Expression.Yield return; _ } ->
+          let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
+          let actual =
+            match return with
+            | Some expression -> Resolution.resolve resolution expression |> Type.generator ~async
+            | None -> Type.generator ~async Type.none
+          in
+          validate_return ~expression:None ~actual
+      | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
+          let resolved = Resolution.resolve resolution return in
+          let actual =
+            match GlobalResolution.join global_resolution resolved (Type.iterator Type.Bottom) with
+            | Type.Parametric { name = "typing.Iterator"; parameters = [Single parameter] } ->
+                Type.generator parameter
+            | annotation -> Type.generator annotation
+          in
+          validate_return ~expression:None ~actual
       | _ ->
           let final_type_check_state =
+            let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
             TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
           in
           {
