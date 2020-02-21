@@ -57,7 +57,6 @@ module type Signature = sig
 
   val create
     :  ?bottom:bool ->
-    ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
     ?resolution_fixpoint:LocalAnnotationMap.t ->
     unit ->
@@ -65,7 +64,7 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  val error_map : t -> ErrorMap.t
+  val errors : t -> Error.t list
 
   val initial : resolution:Resolution.t -> t
 
@@ -158,13 +157,13 @@ module State (Context : Context) = struct
     && Bool.equal left.bottom right.bottom
 
 
-  let create ?(bottom = false) ?(errors = ErrorMap.Map.empty) ~resolution ?resolution_fixpoint () =
+  let create ?(bottom = false) ~resolution ?resolution_fixpoint () =
     let resolution_fixpoint =
       match resolution_fixpoint with
       | Some resolution_fixpoint -> resolution_fixpoint
       | None -> LocalAnnotationMap.empty ()
     in
-    { resolution; errors; bottom; resolution_fixpoint }
+    { resolution; errors = ErrorMap.Map.empty; bottom; resolution_fixpoint }
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
@@ -302,7 +301,7 @@ module State (Context : Context) = struct
 
   let resolution { resolution; _ } = resolution
 
-  let error_map { errors; _ } = errors
+  let errors { errors; _ } = ErrorMap.Map.data errors
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
     let global_resolution = Resolution.global_resolution resolution in

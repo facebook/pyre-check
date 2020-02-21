@@ -3,24 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Core
 open Ast
 open Statement
 module Error = AnalysisError
-
-module ErrorMap : sig
-  type key = {
-    location: Location.t;
-    kind: int;
-  }
-  [@@deriving compare, sexp]
-
-  module Map : Map.S with type Key.t = key
-
-  type t = Error.t Map.t
-
-  val add : errors:t -> Error.t -> t
-end
 
 module type Context = sig
   val qualifier : Reference.t
@@ -37,7 +22,6 @@ module type Signature = sig
 
   val create
     :  ?bottom:bool ->
-    ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
     ?resolution_fixpoint:LocalAnnotationMap.t ->
     unit ->
@@ -45,7 +29,7 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  val error_map : t -> ErrorMap.t
+  val errors : t -> Error.t list
 
   val initial : resolution:Resolution.t -> t
 

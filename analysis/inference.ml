@@ -16,6 +16,28 @@ let add_local ~resolution ~name ~annotation =
   | None -> resolution
 
 
+module ErrorMap = struct
+  type key = {
+    location: Location.t;
+    kind: int;
+  }
+  [@@deriving compare, sexp]
+
+  module Map = Map.Make (struct
+    type nonrec t = key
+
+    let compare = compare_key
+
+    let sexp_of_t = sexp_of_key
+
+    let t_of_sexp = key_of_sexp
+  end)
+
+  let add ~errors ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error) =
+    let location = { Location.start; stop } in
+    Map.set errors ~key:{ location; kind = Error.code error } ~data:error
+end
+
 module type Context = sig
   val configuration : Configuration.Analysis.t
 
@@ -53,7 +75,7 @@ module State (Context : Context) = struct
 
   type t = {
     resolution: Resolution.t;
-    errors: Error.t TypeCheck.ErrorMap.Map.t;
+    errors: Error.t ErrorMap.Map.t;
     bottom: bool;
   }
 
@@ -115,9 +137,7 @@ module State (Context : Context) = struct
     && Bool.equal left.bottom right.bottom
 
 
-  let create ?(bottom = false) ~resolution () =
-    { resolution; errors = TypeCheck.ErrorMap.Map.empty; bottom }
-
+  let create ?(bottom = false) ~resolution () = { resolution; errors = ErrorMap.Map.empty; bottom }
 
   let errors { resolution; errors; _ } =
     let global_resolution = Resolution.global_resolution resolution in
@@ -250,8 +270,12 @@ module State (Context : Context) = struct
 
 
   let initial ~resolution =
-    let initial = TypeCheckState.initial ~resolution in
-    { resolution; errors = TypeCheckState.error_map initial; bottom = false }
+    let errors =
+      TypeCheckState.initial ~resolution
+      |> TypeCheckState.errors
+      |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
+    in
+    { resolution; errors; bottom = false }
 
 
   let forward
@@ -334,11 +358,11 @@ module State (Context : Context) = struct
               =
               let error =
                 let location = { Location.start; stop } in
-                match Map.find errors { TypeCheck.ErrorMap.location; kind = Error.code error } with
+                match Map.find errors { ErrorMap.location; kind = Error.code error } with
                 | Some other_error -> Error.join ~resolution:global_resolution error other_error
                 | None -> error
               in
-              TypeCheck.ErrorMap.add ~errors error
+              ErrorMap.add ~errors error
             in
             { state with errors = emit_error errors error }
       in
@@ -453,14 +477,13 @@ module State (Context : Context) = struct
           in
           validate_return ~expression:None ~actual
       | _ ->
-          let final_type_check_state =
-            let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
-            TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
-          in
+          let resolution, statement_errors = Resolution.resolve_statement resolution statement in
           {
             state with
-            resolution = TypeCheckState.resolution final_type_check_state;
-            errors = TypeCheckState.error_map final_type_check_state;
+            resolution;
+            errors =
+              List.fold statement_errors ~init:errors ~f:(fun errors error ->
+                  ErrorMap.add ~errors error);
           }
 
 
@@ -554,7 +577,7 @@ module State (Context : Context) = struct
                        })
                   ~define:Context.define
               in
-              TypeCheck.ErrorMap.add ~errors error)
+              ErrorMap.add ~errors error)
         |> Option.value ~default:errors
       in
       match annotation with
@@ -584,12 +607,8 @@ module State (Context : Context) = struct
       | Type.Top, target_annotation -> Some target_annotation
       | _ -> Some annotation
     in
-    let forward_expression ~state:{ errors; resolution; _ } ~expression =
-      let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
-      let { TypeCheckState.resolved; _ } =
-        TypeCheckState.forward_expression ~state:initial_type_check_state ~expression
-      in
-      resolved
+    let forward_expression ~state:{ resolution; _ } ~expression =
+      Resolution.resolve resolution expression
     in
     let annotate_call_accesses statement resolution =
       let propagate resolution { Call.callee; arguments } =
