@@ -27,6 +27,8 @@ val resolve_assignment : t -> Statement.Assign.t -> t
 
 val resolve_assertion : t -> asserted_expression:Expression.t -> t
 
+val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type.t
+
 val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
 
 val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t

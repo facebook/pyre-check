@@ -161,6 +161,19 @@ let unset_local ({ annotation_store; _ } as resolution) ~reference =
   { resolution with annotation_store = Map.remove annotation_store reference }
 
 
+let resolve_attribute_access resolution ~base_type ~attribute =
+  let unique_name = Reference.create "$n" in
+  let resolution =
+    set_local resolution ~reference:unique_name ~annotation:(Annotation.create base_type)
+  in
+  let expression_to_analyze =
+    Expression.from_reference
+      ~location:Location.any
+      (Reference.create ~prefix:unique_name attribute)
+  in
+  resolve resolution expression_to_analyze
+
+
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
   { resolution with type_variables = Type.Variable.Set.add type_variables variable }
 

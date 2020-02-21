@@ -25,15 +25,17 @@ let defining_attribute ~resolution parent_type attribute =
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
 
 let rec resolve_ignoring_optional ~resolution expression =
-  match Node.value expression with
-  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-      let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
-      match defining_attribute ~resolution base_type attribute with
-      | Some attribute ->
-          Annotated.Attribute.annotation attribute |> Annotation.annotation |> strip_optional
-      | None -> Resolution.resolve resolution expression |> strip_optional )
-  (* Lookup the base_type for the attribute you were interested in *)
-  | _ -> Resolution.resolve resolution expression |> strip_optional
+  let annotation =
+    match Node.value expression with
+    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+        let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
+        match defining_attribute ~resolution base_type attribute with
+        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
+        | None -> Resolution.resolve resolution expression
+        (* Lookup the base_type for the attribute you were interested in *) )
+    | _ -> Resolution.resolve resolution expression
+  in
+  strip_optional annotation
 
 
 let strip_optional_and_meta t =

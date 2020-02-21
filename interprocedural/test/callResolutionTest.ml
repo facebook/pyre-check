@@ -129,4 +129,27 @@ let test_get_property_callable context =
     ~expected:(Some "x.C::foo$setter (method)")
 
 
-let () = "callResolution" >::: ["get_property_callable" >:: test_get_property_callable] |> Test.run
+let test_resolve_ignoring_optional context =
+  let assert_resolved_without_optional ~source ~expression ~expected =
+    let resolution =
+      ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
+    in
+    CallResolution.resolve_ignoring_optional ~resolution (Test.parse_single_expression expression)
+    |> assert_equal ~printer:Type.show expected
+  in
+  assert_resolved_without_optional
+    ~source:{|
+    class Data:
+      def __init__(self, x: int) -> None: ...
+  |}
+    ~expression:"x.Data()"
+    ~expected:(Type.Primitive "x.Data")
+
+
+let () =
+  "callResolution"
+  >::: [
+         "get_property_callable" >:: test_get_property_callable;
+         "resolve_ignoring_optional" >:: test_resolve_ignoring_optional;
+       ]
+  |> Test.run
