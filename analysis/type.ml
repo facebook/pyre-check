@@ -1682,6 +1682,23 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         create_concatenation_operator_from_annotation parameter ~variable_aliases
         >>| fun concatenation -> Record.OrderedTypes.Concatenation concatenation
   in
+  let substitute_parameter_variadic = function
+    | Primitive name -> (
+        match variable_aliases name with
+        | Some (ParameterVariadic variable) -> Some { Record.Callable.variable; head = [] }
+        | _ -> None )
+    | Parametric { name; parameters }
+      when Identifier.equal name Record.OrderedTypes.RecordConcatenate.public_name -> (
+        match List.rev parameters with
+        | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
+          :: reversed_head ->
+            Parameter.all_singles reversed_head
+            >>| List.rev
+            >>| fun head -> { Record.Callable.variable; head }
+        | _ -> None )
+    | _ -> None
+  in
+
   let result =
     let create_logic = create_logic ~aliases ~variable_aliases in
     let resolve_aliases annotation =
@@ -1893,11 +1910,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
               match Node.value parameters with
               | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
               | _ -> (
-                  match variable_aliases (Expression.show parameters) with
-                  | Some (Record.Variable.ParameterVariadic variable) ->
-                      ParameterVariadicTypeVariable { head = []; variable }
+                  let parsed = create_logic parameters in
+                  match substitute_parameter_variadic parsed with
+                  | Some variable -> ParameterVariadicTypeVariable variable
                   | _ -> (
-                      match parse_as_variadic (create_logic parameters) with
+                      match parse_as_variadic parsed with
                       | Some variadic -> Defined [CallableParameter.Variable variadic]
                       | None -> Undefined ) )
             in
@@ -2079,9 +2096,8 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                   match substitute_ordered_types parsed with
                   | Some ordered -> Record.Parameter.Group ordered
                   | None -> (
-                      match variable_aliases (Expression.show element) with
-                      | Some (ParameterVariadic variable) ->
-                          CallableParameters (ParameterVariadicTypeVariable { head = []; variable })
+                      match substitute_parameter_variadic parsed with
+                      | Some variable -> CallableParameters (ParameterVariadicTypeVariable variable)
                       | _ -> Record.Parameter.Single parsed ) )
             in
             match argument with

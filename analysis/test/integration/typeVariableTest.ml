@@ -1883,14 +1883,33 @@ let test_user_defined_parameter_specification_classes context =
       class CallableReturningInt(Protocol[TParams]):
         def __call__(__self, __f: int, *args: TParams.args, **kwargs: TParams.kwargs) -> int:
           ...
-      def za(f: CallableReturningInt[TParams]) -> Callable[TParams, int]: ...
-      def goof(x: int) -> int:
+      def remove_int_argument(f: CallableReturningInt[TParams]) -> Callable[TParams, int]: ...
+      def goof(x: int, y: str) -> int:
         return x
       def foo() -> None:
-        f = za(goof)
+        f = remove_int_argument(goof)
         reveal_type(f)
     |}
-    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[], int]`."];
+    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[Named(y, str)], int]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from pyre_extensions.type_variable_operators import Concatenate
+      from typing import TypeVar, Generic, Callable, Protocol
+      TParams = ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def remove_int_argument(f: Callable[Concatenate[int, TParams], str]) -> Callable[TParams, int]:
+        def inner( *args: TParams.args, **kwargs: TParams.kwargs) -> int:
+          s = f(75, *args, **kwargs)
+          return int(s)
+        return inner
+      def goof(x: int, y: str) -> str:
+        return str(x)
+      def foo() -> None:
+        f = remove_int_argument(goof)
+        reveal_type(f)
+    |}
+    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[Named(y, str)], int]`."];
   assert_type_errors
     {|
     from typing import Protocol
@@ -1914,8 +1933,44 @@ let test_user_defined_parameter_specification_classes context =
          return assert_test
     class TestCommand:
       @track_assertion
-      def method(self, x: int) -> bool:
-        return True
+      def method(self: "TestCommand", x: int) -> None:
+        pass
+
+    def foo() -> None:
+      m = TestCommand().method
+      reveal_type(m)
+
+    |}
+    [
+      (* Note that this isn't working because we don't support decorators that return anything but
+         an actual callable type. It should be returning int. *)
+      "Revealed type [-1]: Revealed type for `m` is `typing.Callable(TestCommand.method)[[Named(x, \
+       int)], None]`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import Protocol
+    from pyre_extensions import ParameterSpecification
+    from pyre_extensions.type_variable_operators import Concatenate
+    from typing import TypeVar, Generic, Callable
+    TParams = ParameterSpecification("TParams")
+    TReturn = TypeVar("TReturn")
+    TSelf = TypeVar("TSelf")
+    def track_assertion(
+      assertion: Callable[Concatenate["TestCommand", TParams], None]
+    ) -> Callable[Concatenate["TestCommand", TParams], int]:
+         def assert_test(
+           __self: "TestCommand",
+           *args: TParams.args,
+           **kwargs: TParams.kwargs
+         ) -> int:
+           assertion(__self, *args, **kwargs)
+           return 7
+         return assert_test
+    class TestCommand:
+      @track_assertion
+      def method(self: "TestCommand", x: int) -> None:
+        pass
 
     def foo() -> None:
       m = TestCommand().method
@@ -1924,8 +1979,27 @@ let test_user_defined_parameter_specification_classes context =
     |}
     [
       "Revealed type [-1]: Revealed type for `m` is `typing.Callable(TestCommand.method)[[Named(x, \
-       int)], bool]`.";
+       int)], int]`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from pyre_extensions.type_variable_operators import Concatenate
+      from typing import TypeVar, Generic, Callable, Protocol
+      TParams = ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def add_on_argument(f: Callable[TParams, str]) -> Callable[Concatenate[str, TParams], int]:
+        def inner(first: str, /, *args: TParams.args, **kwargs: TParams.kwargs) -> int:
+          s = f( *args, **kwargs)
+          return int(s)
+        return inner
+      def goof(x: int) -> str:
+        return str(x)
+      def foo() -> None:
+        f = add_on_argument(goof)
+        reveal_type(f)
+    |}
+    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[str, Named(x, int)], int]`."];
   assert_type_errors
     {|
       from pyre_extensions import ParameterSpecification
