@@ -74,6 +74,6 @@ class Rage(Command):
             file=output_file,
             flush=True,
         )
-        result = self._call_client(command=self.NAME, capture_output=True)
-        output_file.write(result.output)
-        result.check()
+        self._call_client(
+            command=self.NAME, capture_output=False, stdout=output_file
+        ).check()

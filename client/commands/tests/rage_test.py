@@ -4,13 +4,23 @@
 # LICENSE file in the root directory of this source tree.
 
 import io
+import sys
 import unittest
+from typing import IO, Optional
 from unittest.mock import MagicMock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
-from ...commands import command
+from ...commands.command import Result
 from .command_test import mock_arguments, mock_configuration
+
+
+def _call_client_side_effect(
+    command: str, capture_output: bool = True, stdout: Optional[IO[str]] = None
+) -> Result:
+    if stdout:
+        stdout.write("<SERVER RAGE>")
+    return Result(output="", code=0)
 
 
 class RageTest(unittest.TestCase):
@@ -36,9 +46,7 @@ class RageTest(unittest.TestCase):
 
     @patch("sys.stdout", new_callable=io.StringIO)
     @patch.object(
-        commands.Command,
-        "_call_client",
-        return_value=command.Result(output="<SERVER RAGE>", code=0),
+        commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
     def test_terminal_output(self, call_client: MagicMock, stdout: MagicMock) -> None:
         arguments = mock_arguments()
@@ -51,14 +59,12 @@ class RageTest(unittest.TestCase):
             arguments, original_directory, configuration, analysis_directory
         ).run()
         call_client.assert_called_once_with(
-            command=commands.Rage.NAME, capture_output=True
+            command=commands.Rage.NAME, capture_output=False, stdout=sys.stdout
         )
         self.assert_output(stdout)
 
     @patch.object(
-        commands.Command,
-        "_call_client",
-        return_value=command.Result(output="<SERVER RAGE>", code=0),
+        commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
     def test_file_output(self, call_client: MagicMock) -> None:
         arguments = mock_arguments()
@@ -81,6 +87,6 @@ class RageTest(unittest.TestCase):
             ).run()
             open.assert_called_once_with("/output", "w")
             call_client.assert_called_once_with(
-                command=commands.Rage.NAME, capture_output=True
+                command=commands.Rage.NAME, capture_output=False, stdout=output_file
             )
             self.assert_output(output_content)

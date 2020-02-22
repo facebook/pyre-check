@@ -315,6 +315,7 @@ class IncrementalTest(unittest.TestCase):
                 ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
+                text=True,
             )
 
     @patch.object(incremental.Incremental, "_send_and_handle_socket_request")

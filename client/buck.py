@@ -102,6 +102,7 @@ class FastBuckBuilder(BuckBuilder):
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            text=True,
         ) as buck_builder_process:
             # Java's logging conflicts with Python's logging, we capture the
             # logs and re-log them with python's logger.
@@ -116,9 +117,7 @@ class FastBuckBuilder(BuckBuilder):
             if return_code == 0:
                 LOG.info("Finished building targets.")
                 if self._debug_mode:
-                    debug_output = json.loads(
-                        "".join([line.decode() for line in buck_builder_process.stdout])
-                    )
+                    debug_output = json.load(buck_builder_process.stdout)
                     self.conflicting_files += debug_output["conflictingFiles"]
                     self.unsupported_files += debug_output["unsupportedFiles"]
                 return [self._output_directory]

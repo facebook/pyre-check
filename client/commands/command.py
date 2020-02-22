@@ -16,7 +16,7 @@ import subprocess
 import sys
 import threading
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional
+from typing import IO, Iterable, List, Optional
 
 from .. import (
     find_local_root,
@@ -577,19 +577,19 @@ class Command(CommandParser, ABC):
             return ["-features", json.dumps(filtered)]
         return []
 
-    def _read_stdout(self, stdout: Iterable[bytes]) -> None:
+    def _read_stdout(self, stdout: Iterable[str]) -> None:
         self._buffer = []
         for line in stdout:
-            self._buffer.append(line.decode())
+            self._buffer.append(line)
 
-    def _read_stderr(self, stream: Iterable[bytes]) -> None:
+    def _read_stderr(self, stream: Iterable[str]) -> None:
         buffer = None
         log_pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)")
         try:
             for line in stream:
                 if self._call_client_terminated:
                     return
-                line = line.decode().rstrip()
+                line = line.rstrip()
                 match = log_pattern.match(line)
                 if match:
                     if buffer:
@@ -604,7 +604,12 @@ class Command(CommandParser, ABC):
         except Exception:
             pass
 
-    def _call_client(self, command: str, capture_output: bool = True) -> Result:
+    def _call_client(
+        self,
+        command: str,
+        capture_output: bool = True,
+        stdout: Optional[IO[str]] = None,
+    ) -> Result:
         if not os.path.isdir(self._analysis_directory.get_root()):
             raise EnvironmentException(
                 "`{}` is not a link tree.".format(self._analysis_directory.get_root())
@@ -622,12 +627,17 @@ class Command(CommandParser, ABC):
                 # Run the process with unlimited memory if the underlying syscall fails.
                 pass
 
+        if capture_output:
+            assert stdout is None, "capture_output and stdout are mutually exclusive"
+            stdout = subprocess.PIPE
+
         LOG.debug("Running `%s`", " ".join(client_command))
         with subprocess.Popen(
             client_command,
-            stdout=subprocess.PIPE if capture_output else None,
+            stdout=stdout,
             stderr=subprocess.PIPE,
             preexec_fn=limit_memory_usage,
+            text=True,
         ) as process:
 
             # Read stdout output

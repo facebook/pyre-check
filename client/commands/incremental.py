@@ -10,7 +10,7 @@ import logging
 import os
 import subprocess
 from logging import Logger
-from typing import IO, List, Optional, cast
+from typing import List, Optional
 
 from .. import json_rpc
 from ..analysis_directory import AnalysisDirectory
@@ -154,9 +154,10 @@ class Incremental(Reporting):
             ["tail", "--follow", "--lines=0", stderr_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
+            text=True,
         ) as stderr_tail:
             atexit.register(stderr_tail.terminate)
-            super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
+            super(Incremental, self)._read_stderr(stderr_tail.stdout)
 
     def _refresh_file_monitor(self) -> None:
         if self._no_watchman:
