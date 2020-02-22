@@ -2,6 +2,68 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "features.issue_from_tuple",
+    "callable_line": 71,
+    "code": 5002,
+    "line": 73,
+    "start": 16,
+    "end": 17,
+    "filename": "features.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "features.py",
+                "line": 72,
+                "start": 11,
+                "end": 34
+              },
+              "resolves_to": [ "features.return_tuple_of_bools" ],
+              "port": "result[0]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 73,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "features.issue_via_bool",
     "callable_line": 51,
     "code": 5002,
@@ -192,6 +254,66 @@
 {
   "kind": "model",
   "data": {
+    "callable": "features.return_tuple_of_bools",
+    "sources": [
+      {
+        "port": "result[0]",
+        "taint": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 68,
+              "start": 11,
+              "end": 26
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "result[1]",
+        "taint": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 68,
+              "start": 28,
+              "end": 43
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "features.returns_tainted_object",
     "sources": [
       {
@@ -351,6 +473,33 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_with_tuple",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 78, "start": 34, "end": 35 },
+              { "line": 78, "start": 19, "end": 20 }
+            ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[1]" },
+              { "kind": "LocalReturn", "name": "[0]" }
+            ],
+            "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }
         ]
       }

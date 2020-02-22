@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 
 def len(o: Any) -> int:
@@ -62,3 +62,19 @@ def issue_via_equality():
     o = returns_tainted_object()
     matches_tainted = o == "tainted"
     __test_sink(matches_tainted)
+
+
+def return_tuple_of_bools() -> Tuple[bool, bool]:
+    return __test_source(), __test_source()
+
+
+def issue_from_tuple():
+    a, b = return_tuple_of_bools()
+    __test_sink(a)
+
+
+def tito_with_tuple(o: Any, b: bool) -> Tuple[bool, bool]:
+    if b:
+        return min(o, "abc"), min(o, "abc")
+    else:
+        return o, o

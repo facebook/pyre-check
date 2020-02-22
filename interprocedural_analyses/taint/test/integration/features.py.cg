@@ -1,8 +1,10 @@
 @generated
 Call dependencies
+features.issue_from_tuple (fun) -> [__test_sink (fun) features.return_tuple_of_bools (fun)]
 features.issue_via_bool (fun) -> [__test_sink (fun) __test_source (fun) object::__init__ (method) object::__new__ (method)]
 features.issue_via_equality (fun) -> [__test_sink (fun) features.returns_tainted_object (fun) object::__eq__ (method)]
 features.optional_scalar (fun) -> []
+features.return_tuple_of_bools (fun) -> [__test_source (fun)]
 features.returns_tainted_object (fun) -> [__test_source (fun)]
 features.tito_via_constructor (fun) -> [int::__init__ (method) object::__new__ (method)]
 features.tito_via_len (fun) -> [features.len (fun)]
@@ -11,3 +13,4 @@ features.tito_via_min_or_not (fun) -> [features.min (fun)]
 features.tito_via_min_right (fun) -> [features.min (fun)]
 features.tito_via_named (fun) -> [features.named (fun)]
 features.tito_via_optional (fun) -> [features.optional_scalar (fun)]
+features.tito_with_tuple (fun) -> [features.min (fun)]

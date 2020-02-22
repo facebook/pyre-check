@@ -107,26 +107,31 @@ module ComplexSet = Abstract.ElementSetDomain.Make (Complex)
 let obscure = Simple.Breadcrumb Breadcrumb.Obscure
 
 let add_type_breadcrumb ~resolution annotation =
-  let rec matches_modulo_optional_and_awaitable ~f annotation =
-    match annotation with
-    | None
-    | Some Type.Any
-    | Some Type.Bottom ->
-        false
-    | Some (Type.Optional annotation)
-    | Some (Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] }) ->
-        matches_modulo_optional_and_awaitable ~f (Some annotation)
-    | Some annotation -> f annotation
+  let matches_at_leaves ~f annotation =
+    let rec matches_at_leaves ~f annotation =
+      match annotation with
+      | Type.Any
+      | Type.Bottom ->
+          false
+      | Type.Optional annotation
+      | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
+          matches_at_leaves ~f annotation
+      | Type.Tuple (Type.Unbounded annotation) -> matches_at_leaves ~f annotation
+      | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
+          List.for_all annotations ~f:(matches_at_leaves ~f)
+      | annotation -> f annotation
+    in
+    annotation >>| matches_at_leaves ~f |> Option.value ~default:false
   in
   let is_scalar =
     let scalar_predicate return_type =
       GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
       || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
     in
-    matches_modulo_optional_and_awaitable annotation ~f:scalar_predicate
+    matches_at_leaves annotation ~f:scalar_predicate
   in
   let is_boolean =
-    matches_modulo_optional_and_awaitable annotation ~f:(fun left ->
+    matches_at_leaves annotation ~f:(fun left ->
         GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
   in
   let add feature_set =
