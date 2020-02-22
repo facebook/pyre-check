@@ -4,7 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-from typing import List, Optional
+import os
+import sys
+from typing import IO, List, Optional
 
 from .. import get_binary_version
 from ..analysis_directory import AnalysisDirectory
@@ -26,6 +28,7 @@ class Rage(Command):
         super(Rage, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
+        self._output_path: Optional[str] = arguments.output_path
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -33,10 +36,18 @@ class Rage(Command):
             cls.NAME,
             epilog="""
             Collects troubleshooting diagnostics for Pyre, and writes this
-            information to the terminal.
+            information to the terminal or to a file.
             """,
         )
         rage.set_defaults(command=cls)
+        rage.add_argument(
+            "--output-file",
+            default=None,
+            metavar="PATH",
+            dest="output_path",
+            help="The path to the output file (defaults to stdout)",
+            type=os.path.abspath,
+        )
 
     def _flags(self) -> List[str]:
         log_directory = self._log_directory
@@ -46,12 +57,23 @@ class Rage(Command):
             return []
 
     def _run(self) -> None:
+        output_path = self._output_path
+        if output_path:
+            with open(output_path, "w") as output_file:
+                self._rage(output_file)
+        else:
+            self._rage(sys.stdout)
+
+    def _rage(self, output_file: IO[str]) -> None:
         # Do not use logging. Logging goes to stderr.
-        print("Client version:", __version__, flush=True)
-        print("Binary path:", self._configuration.binary, flush=True)
+        print("Client version:", __version__, file=output_file, flush=True)
+        print("Binary path:", self._configuration.binary, file=output_file, flush=True)
         print(
             "Configured binary version:",
             get_binary_version(self._configuration),
+            file=output_file,
             flush=True,
         )
-        self._call_client(command=self.NAME, capture_output=False).check()
+        result = self._call_client(command=self.NAME, capture_output=True)
+        output_file.write(result.output)
+        result.check()
