@@ -9,6 +9,7 @@ import os
 import shutil
 import signal
 import subprocess
+import tempfile
 from itertools import chain
 from pathlib import Path
 from typing import Optional
@@ -21,6 +22,7 @@ from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
 from ..watchman_subscriber import WatchmanSubscriber
 from .command import Command
+from .rage import Rage
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -174,6 +176,20 @@ class Kill(Command):
         for path in chain(socket_paths, json_server_paths, pid_paths):
             self._delete_linked_path(path)
 
+    def _rage(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            prefix="pyre-rage-", suffix=".log", delete=False
+        ) as output:
+            LOG.warning("Saving the output of `pyre rage` into `%s`", output.name)
+            arguments = self._arguments
+            arguments.output_path = output.name
+            Rage(
+                arguments,
+                self._original_directory,
+                self._configuration,
+                self._analysis_directory,
+            ).run()
+
     def _run(self) -> None:
         explicit_local = self._arguments.local_configuration
         if explicit_local:
@@ -181,6 +197,7 @@ class Kill(Command):
                 "Pyre kill will terminate all running servers. "
                 "Specifying local path `{}` is unnecessary.".format(explicit_local)
             )
+        self._rage()
         self._kill_binary_processes()
         self._delete_server_files()
         self._delete_caches()

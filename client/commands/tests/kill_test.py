@@ -7,6 +7,7 @@ import os
 import shutil
 import signal
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
@@ -14,8 +15,10 @@ from unittest.mock import MagicMock, Mock, call, patch
 import psutil
 
 from ... import commands
+from ...analysis_directory import AnalysisDirectory
 from .. import kill
 from ..kill import Kill, _get_process_name
+from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
@@ -25,6 +28,28 @@ class KillTest(unittest.TestCase):
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "foo")
         get_environment.return_value = "/tmp/pyre_directory/main.exe"
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
+
+    @patch.object(kill, "Rage")
+    @patch.object(
+        tempfile, "NamedTemporaryFile", return_value=MagicMock(name="/tmp/file")
+    )
+    def test_rage(self, named_temporary_file: MagicMock, rage: MagicMock) -> None:
+        original_directory = "/original/directory"
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+
+        kill_command = Kill(
+            arguments, original_directory, configuration, analysis_directory
+        )
+        kill_command._rage()
+
+        named_temporary_file.assert_called_once_with(
+            prefix="pyre-rage-", suffix=".log", delete=False
+        )
+        rage.assert_called_with(
+            arguments, original_directory, configuration, analysis_directory
+        )
 
     @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
     @patch.object(psutil, "process_iter")
@@ -161,10 +186,12 @@ class KillTest(unittest.TestCase):
     @patch.object(Kill, "_delete_caches")
     @patch.object(Kill, "_kill_client_processes")
     @patch.object(Kill, "_kill_binary_processes")
+    @patch.object(Kill, "_rage")
     @patch.object(Kill, "__init__", return_value=None)
     def test_kill(
         self,
         kill_init: MagicMock,
+        rage: MagicMock,
         kill_binary_processes: MagicMock,
         kill_client_processes: MagicMock,
         delete_caches: MagicMock,
@@ -176,15 +203,17 @@ class KillTest(unittest.TestCase):
         kill_command._configuration = Mock()
         kill_command._run()
 
-        delete_caches.assert_called_once()
+        rage.assert_called_once()
         kill_binary_processes.assert_called_once()
         kill_client_processes.assert_called_once()
+        delete_caches.assert_called_once()
         delete_server_files.assert_called_once()
 
         kill_command._arguments = Mock(with_fire=True)
         kill_command._run()
 
-        self.assertEqual(delete_caches.call_count, 2)
+        self.assertEqual(rage.call_count, 2)
         self.assertEqual(kill_binary_processes.call_count, 2)
         self.assertEqual(kill_client_processes.call_count, 2)
+        self.assertEqual(delete_caches.call_count, 2)
         self.assertEqual(delete_server_files.call_count, 2)
