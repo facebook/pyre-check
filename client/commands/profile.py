@@ -38,10 +38,10 @@ class EventMetadata:
 
 
 @dataclass(frozen=True)
+# pyre-fixme[13]: Attribute `metadata` is never initialized.
 class Event:
     metadata: EventMetadata
 
-    # pyre-fixme[13]: Attribute `metadata` is never initialized.
     def __init__(self, metadata: EventMetadata) -> None:
         raise NotImplementedError
 
