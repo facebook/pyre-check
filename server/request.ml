@@ -669,7 +669,7 @@ let process_type_query_request
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
     | TypeQuery.Type expression ->
-        let annotation = Resolution.resolve_expression resolution expression in
+        let annotation = Resolution.resolve_expression_to_type resolution expression in
         TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.TypeAtPosition { path; position } ->
         let default =

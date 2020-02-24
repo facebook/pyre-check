@@ -10,13 +10,15 @@ type t [@@deriving show]
 val create
   :  global_resolution:GlobalResolution.t ->
   annotation_store:RefinementUnit.t Reference.Map.t ->
-  resolve_expression:(resolution:t -> Expression.t -> Annotation.t) ->
+  resolve_expression:(resolution:t -> Expression.t -> t * Annotation.t) ->
   resolve_statement:(resolution:t -> Statement.t -> t * AnalysisError.t list) ->
   ?parent:Reference.t ->
   unit ->
   t
 
-val resolve_expression : t -> Expression.t -> Type.t
+val resolve_expression : t -> Expression.t -> t * Type.t
+
+val resolve_expression_to_type : t -> Expression.t -> Type.t
 
 val resolve_expression_to_annotation : t -> Expression.t -> Annotation.t
 

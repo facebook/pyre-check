@@ -82,7 +82,7 @@ let get_global_model ~resolution ~expression =
                 else
                   false, annotation
           in
-          is_meta (Resolution.resolve_expression resolution base)
+          is_meta (Resolution.resolve_expression_to_type resolution base)
         in
         let global_resolution = Resolution.global_resolution resolution in
         let parent =

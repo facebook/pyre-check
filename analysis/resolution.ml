@@ -10,7 +10,7 @@ type t = {
   global_resolution: GlobalResolution.t;
   annotation_store: RefinementUnit.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
-  resolve_expression: resolution:t -> Expression.t -> Annotation.t;
+  resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> t * AnalysisError.t list;
   parent: Reference.t option;
 }
@@ -47,16 +47,22 @@ let is_global { global_resolution; _ } ~reference =
 
 
 let resolve_expression ({ resolve_expression; _ } as resolution) expression =
-  resolve_expression ~resolution expression |> Annotation.annotation
+  let resolution, annotation = resolve_expression ~resolution expression in
+  resolution, Annotation.annotation annotation
+
+
+let resolve_expression_to_type ({ resolve_expression; _ } as resolution) expression =
+  resolve_expression ~resolution expression |> snd |> Annotation.annotation
 
 
 let resolve_expression_to_annotation ({ resolve_expression; _ } as resolution) expression =
-  resolve_expression ~resolution expression
+  resolve_expression ~resolution expression |> snd
 
 
 let resolve_reference ({ resolve_expression; _ } as resolution) reference =
   Expression.from_reference ~location:Location.any reference
   |> resolve_expression ~resolution
+  |> snd
   |> Annotation.annotation
 
 
@@ -178,7 +184,7 @@ let resolve_attribute_access resolution ~base_type ~attribute =
       ~location:Location.any
       (Reference.create ~prefix:unique_name attribute)
   in
-  resolve_expression resolution expression_to_analyze
+  resolve_expression_to_type resolution expression_to_analyze
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
@@ -200,7 +206,9 @@ let parent { parent; _ } = parent
 let with_parent resolution ~parent = { resolution with parent }
 
 let is_consistent_with ({ global_resolution; _ } as resolution) =
-  GlobalResolution.is_consistent_with global_resolution ~resolve:(resolve_expression resolution)
+  GlobalResolution.is_consistent_with
+    global_resolution
+    ~resolve:(resolve_expression_to_type resolution)
 
 
 let global_resolution { global_resolution; _ } = global_resolution

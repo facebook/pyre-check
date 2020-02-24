@@ -138,7 +138,7 @@ module NodeVisitor = struct
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
           in
           let annotate_expression ({ Node.location; _ } as expression) =
-            store_annotation location (Resolution.resolve_expression resolution expression)
+            store_annotation location (Resolution.resolve_expression_to_type resolution expression)
           in
           annotate_expression key;
           annotate_expression value
