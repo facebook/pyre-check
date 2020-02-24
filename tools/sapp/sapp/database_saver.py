@@ -29,6 +29,7 @@ from .trace_graph import TraceGraph
 log = logging.getLogger("sapp")
 
 
+# pyre-fixme[13]: Attribute `summary` is never initialized.
 class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
     RUN_MODEL = Run
 

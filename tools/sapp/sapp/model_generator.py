@@ -35,6 +35,8 @@ from .trace_graph import TraceGraph
 log = logging.getLogger("sapp")
 
 
+# pyre-fixme[13]: Attribute `graph` is never initialized.
+# pyre-fixme[13]: Attribute `summary` is never initialized.
 class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
     def __init__(self) -> None:
         super().__init__()
