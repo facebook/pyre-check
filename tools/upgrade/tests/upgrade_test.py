@@ -1055,11 +1055,11 @@ class FixmeTargetsTest(unittest.TestCase):
         a/b/TARGETS:name = "herp",
             srcs = [],
             check_types = True,
-            check_types_options = "pyre",
+            check_types_options = "pyre, strict",
         a/b/TARGETS:name = "merp",
             srcs = [],
             check_types = True,
-            check_types_options = "pyre",
+            check_types_options = "mypy",
         """
         subprocess.return_value = grep_return
         upgrade_core.run_fixme_targets(arguments, VERSION_CONTROL)
@@ -1081,8 +1081,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 "grep",
                 "-RPzo",
                 "--include=*TARGETS",
-                "(?s)name = ((?!\\n\\s*name).)*check_types ?= ?True"
-                + '((?!\\n\\s*name).)*check_types_options ?= ?"[^"]*pyre[^"]*",?',
+                r"(?s)name = ((?!\n\s*name).)*check_types ?= ?True((?!\n\s*name).)*",
                 Path("derp"),
             ],
             stderr=-1,

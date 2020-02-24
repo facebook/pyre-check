@@ -645,9 +645,8 @@ def run_fixme_targets(
     LOG.info("Finding typecheck targets in %s", search_root)
     # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
     typing_field = "check_types ?= ?True"
-    typing_options_field = 'check_types_options ?= ?"[^"]*pyre[^"]*",?'
-    targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*{}".format(
-        typing_field, typing_options_field
+    targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*".format(
+        typing_field
     )
     find_targets_command = [
         "grep",
@@ -666,8 +665,8 @@ def run_fixme_targets(
         LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
         return
     output = find_targets.stdout.decode()
-    targets = re.split(typing_options_field, output)
-    target_pattern = re.compile(r"(.*)\/TARGETS:.*name = \"([^\"]*)\".*")
+    targets = re.split(typing_field, output)
+    target_pattern = re.compile(r".*?([^\s]*)\/TARGETS:.*name = \"([^\"]*)\".*")
     target_names = {}
     total_targets = 0
     for target in targets:
