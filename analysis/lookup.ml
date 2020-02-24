@@ -118,6 +118,7 @@ module NodeVisitor = struct
         let store_condition_and_refine resolution condition =
           annotate_expression resolution condition;
           Resolution.resolve_assertion resolution ~asserted_expression:condition
+          |> Option.value ~default:resolution
         in
         let resolution = List.fold conditions ~f:store_condition_and_refine ~init:resolution in
         annotate_expression resolution target;

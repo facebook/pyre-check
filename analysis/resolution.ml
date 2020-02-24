@@ -11,9 +11,16 @@ type t = {
   annotation_store: RefinementUnit.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
-  resolve_statement: resolution:t -> Statement.t -> t * AnalysisError.t list;
+  resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
   parent: Reference.t option;
 }
+
+and resolve_statement_result_t =
+  | Unreachable
+  | Reachable of {
+      resolution: t;
+      errors: AnalysisError.t list;
+    }
 
 let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ?parent () =
   {
@@ -74,7 +81,9 @@ let resolve_assignment ({ resolve_statement; _ } as resolution) assign =
   Statement.Statement.Assign assign
   |> Ast.Node.create_with_default_location
   |> resolve_statement ~resolution
-  |> fst
+  |> function
+  | Unreachable -> resolution
+  | Reachable { resolution; _ } -> resolution
 
 
 let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_expression =
@@ -86,7 +95,9 @@ let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_express
     }
   |> Ast.Node.create_with_default_location
   |> resolve_statement ~resolution
-  |> fst
+  |> function
+  | Unreachable -> None
+  | Reachable { resolution; _ } -> Some resolution
 
 
 let partition_name resolution ~name =

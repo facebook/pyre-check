@@ -482,15 +482,17 @@ module State (Context : Context) = struct
             | annotation -> Type.generator annotation
           in
           validate_return ~expression:None ~actual
-      | _ ->
-          let resolution, statement_errors = Resolution.resolve_statement resolution statement in
-          {
-            state with
-            resolution;
-            errors =
-              List.fold statement_errors ~init:errors ~f:(fun errors error ->
-                  ErrorMap.add ~errors error);
-          }
+      | _ -> (
+          match Resolution.resolve_statement resolution statement with
+          | Resolution.Unreachable -> { state with bottom = true }
+          | Resolution.Reachable { resolution; errors = statement_errors } ->
+              {
+                state with
+                resolution;
+                errors =
+                  List.fold statement_errors ~init:errors ~f:(fun errors error ->
+                      ErrorMap.add ~errors error);
+              } )
 
 
   let return_reference = Reference.create "$return"

@@ -4561,7 +4561,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
         ~global_resolution
         ~annotation_store:Reference.Map.empty
         ~resolve_expression:(fun ~resolution _ -> resolution, Annotation.create Type.Top)
-        ~resolve_statement:(fun ~resolution _ -> resolution, [])
+        ~resolve_statement:(fun ~resolution:_ _ -> Resolution.Unreachable)
         ()
     in
     {
@@ -4581,7 +4581,11 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
   let resolve_statement ~resolution statement =
     let state = { state_without_resolution with State.resolution } in
     State.forward_statement ~state ~statement
-    |> fun { State.resolution; errors; _ } -> resolution, ErrorMap.Map.data errors
+    |> fun { State.resolution; errors; bottom; _ } ->
+    if bottom then
+      Resolution.Unreachable
+    else
+      Resolution.Reachable { resolution; errors = ErrorMap.Map.data errors }
   in
   Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
