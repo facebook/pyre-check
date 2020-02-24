@@ -613,7 +613,7 @@ let process_type_query_request
         let get_signatures function_name =
           let keep_known_annotation annotation =
             match annotation with
-            | Type.(Any | Top) -> None
+            | Type.Top -> None
             | _ -> Some annotation
           in
           match

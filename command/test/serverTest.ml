@@ -1113,7 +1113,7 @@ let test_query context =
        (Protocol.TypeQuery.FoundSignature
           [
             {
-              Protocol.TypeQuery.return_type = None;
+              Protocol.TypeQuery.return_type = Some Type.Any;
               function_name = "test.foo";
               parameters =
                 [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
@@ -1130,7 +1130,7 @@ let test_query context =
        (Protocol.TypeQuery.FoundSignature
           [
             {
-              Protocol.TypeQuery.return_type = None;
+              Protocol.TypeQuery.return_type = Some Type.Any;
               function_name = "test.foo";
               parameters =
                 [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
