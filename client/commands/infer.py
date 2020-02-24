@@ -486,7 +486,10 @@ class Infer(Reporting):
 
             type_directory = Path(os.path.join(self._log_directory, "types"))
             annotate_from_existing_stubs(
-                Path(self._local_root), self._arguments, self._formatter, type_directory
+                Path(self._original_directory),
+                self._arguments,
+                self._formatter,
+                type_directory,
             )
             return self
         if self._json:

@@ -777,3 +777,22 @@ class InferTest(unittest.TestCase):
             "/root/.pyre/types/foo/bar/types/baz.pyi",
             "/root/foo/bar/types/baz.py",
         )
+
+    @patch.object(Path, "rglob")
+    @patch.object(infer, "annotate_path")
+    def test_annotate_from_existing_stubs_relative_local_root(
+        self, annotate_path: MagicMock, recursive_glob: MagicMock
+    ) -> None:
+        root = Path("/root")
+        recursive_glob.return_value = [
+            Path("/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi")
+        ]
+        arguments = Mock(in_place=["local-root/foo/bar"])
+        infer.annotate_from_existing_stubs(
+            root, arguments, None, type_directory=Path("/root/.pyre/local-root/types")
+        )
+        annotate_path.assert_called_once_with(
+            arguments,
+            "/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
+            "/root/local-root/foo/bar/baz.py",
+        )
