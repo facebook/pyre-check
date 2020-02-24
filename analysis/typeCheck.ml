@@ -4560,7 +4560,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
       Resolution.create
         ~global_resolution
         ~annotation_store:Reference.Map.empty
-        ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
+        ~resolve_expression:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ~resolve_statement:(fun ~resolution _ -> resolution, [])
         ()
     in
@@ -4571,7 +4571,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
       resolution = empty_resolution;
     }
   in
-  let resolve ~resolution expression =
+  let resolve_expression ~resolution expression =
     let state = { state_without_resolution with State.resolution } in
     State.forward_expression ~state ~expression
     |> fun { State.resolved; resolved_annotation; _ } ->
@@ -4582,7 +4582,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
     State.forward_statement ~state ~statement
     |> fun { State.resolution; errors; _ } -> resolution, ErrorMap.Map.data errors
   in
-  Resolution.create ~global_resolution ~annotation_store ~resolve ~resolve_statement ()
+  Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
 
 let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =

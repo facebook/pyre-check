@@ -23,7 +23,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
     | Some { Expression.Call.callee = transformed_call; arguments = transformed_arguments } ->
         let resolution = Analysis.TypeCheck.resolution global_resolution () in
         begin
-          match Resolution.resolve resolution transformed_call with
+          match Resolution.resolve_expression resolution transformed_call with
           | Type.Callable callable ->
               DefaultBuilder.add_callee
                 ~global_resolution
@@ -45,7 +45,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                meaning that __new__ wasn't called), but will, in the worst case, lead to
                over-analysis, which will have a perf implication but not a consistency one. *)
             let resolution = Analysis.TypeCheck.resolution global_resolution () in
-            Resolution.resolve
+            Resolution.resolve_expression
               resolution
               (Node.create_with_default_location
                  (Expression.Expression.Name

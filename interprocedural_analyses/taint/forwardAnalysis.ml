@@ -345,7 +345,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let joined = ForwardState.Tree.join result_taint tito in
           if taint_model.is_obscure then
             let annotation =
-              Resolution.resolve
+              Resolution.resolve_expression
                 resolution
                 (Node.create_with_default_location (Expression.Call { Call.callee; arguments }))
             in
@@ -418,7 +418,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         =
         let taint, state =
           let iterator_is_dictionary =
-            match Resolution.resolve resolution iterator with
+            match Resolution.resolve_expression resolution iterator with
             | Type.Parametric { name; _ } ->
                 GlobalResolution.is_transitive_successor
                   (Resolution.global_resolution resolution)
@@ -530,7 +530,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               Location.pp
               (Node.location callee)
               (Ast.Transform.sanitize_expression expression |> Expression.show)
-              (Resolution.resolve resolution expression |> Type.show)
+              (Resolution.resolve_expression resolution expression |> Type.show)
         | _ -> ()
       end;
       match AccessPath.get_global ~resolution callee, Node.value callee with
@@ -788,13 +788,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
             _;
           }
-        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+        when Resolution.resolve_expression resolution base |> Type.is_dictionary_or_mapping ->
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.Any]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
       | Call
           { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+        when Resolution.resolve_expression resolution base |> Type.is_dictionary_or_mapping ->
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]

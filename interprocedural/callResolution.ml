@@ -31,9 +31,9 @@ let rec resolve_ignoring_optional ~resolution expression =
         let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
         match defining_attribute ~resolution base_type attribute with
         | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
-        | None -> Resolution.resolve resolution expression
+        | None -> Resolution.resolve_expression resolution expression
         (* Lookup the base_type for the attribute you were interested in *) )
-    | _ -> Resolution.resolve resolution expression
+    | _ -> Resolution.resolve_expression resolution expression
   in
   strip_optional annotation
 
@@ -43,7 +43,7 @@ let strip_optional_and_meta t =
 
 
 let get_property_defining_parent ~resolution ~base ~attribute =
-  let annotation = Resolution.resolve resolution base |> strip_optional_and_meta in
+  let annotation = Resolution.resolve_expression resolution base |> strip_optional_and_meta in
   match defining_attribute ~resolution annotation attribute with
   | Some property when Annotated.Attribute.property property ->
       Annotated.Attribute.parent property |> Reference.create |> Option.some

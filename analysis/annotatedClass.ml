@@ -104,7 +104,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
               match
                 GlobalResolution.signature_select
                   ~global_resolution:(Resolution.global_resolution resolution)
-                  ~resolve:(Resolution.resolve resolution)
+                  ~resolve:(Resolution.resolve_expression resolution)
                   ~arguments
                   ~callable
               with

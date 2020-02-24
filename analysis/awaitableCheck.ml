@@ -302,7 +302,7 @@ module State (Context : Context) = struct
               let state = { state with need_to_await } in
               awaitables, state
         in
-        let annotation = Resolution.resolve resolution expression in
+        let annotation = Resolution.resolve_expression resolution expression in
         let { unawaited; locals; need_to_await } = state in
         let find_aliases { Node.value; location } =
           if Map.mem unawaited location then
@@ -555,7 +555,7 @@ module State (Context : Context) = struct
         forward_expression ~resolution ~state ~expression:test |> snd
     | Assign { value; target; _ } ->
         let awaitables, state = forward_expression ~resolution ~state ~expression:value in
-        let annotation = Resolution.resolve resolution value in
+        let annotation = Resolution.resolve_expression resolution value in
         forward_assign
           ~state
           ~resolution:global_resolution

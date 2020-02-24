@@ -115,7 +115,7 @@ let test_select context =
             ~arguments
             ~global_resolution
             ~callable
-            ~resolve:(Resolution.resolve resolution) )
+            ~resolve:(Resolution.resolve_expression resolution) )
       in
       callable, signature
     in

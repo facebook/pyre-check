@@ -273,7 +273,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let obscure_taint =
           if taint_model.is_obscure then
             let annotation =
-              Resolution.resolve resolution { Node.value = call_expression; location }
+              Resolution.resolve_expression resolution { Node.value = call_expression; location }
             in
             BackwardState.Tree.collapse call_taint
             |> BackwardTaint.transform
@@ -373,7 +373,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_resolution = Resolution.global_resolution resolution in
           let label =
             let iterator_is_dictionary =
-              match Resolution.resolve resolution iterator with
+              match Resolution.resolve_expression resolution iterator with
               | Type.Parametric { name; _ } ->
                   GlobalResolution.is_transitive_successor
                     global_resolution
@@ -612,7 +612,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
             _;
           }
-        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+        when Resolution.resolve_expression resolution base |> Type.is_dictionary_or_mapping ->
           let taint =
             taint
             |> BackwardState.Tree.read [Abstract.TreeDomain.Label.Any]
@@ -621,7 +621,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint ~state ~expression:base
       | Call
           { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-        when Resolution.resolve resolution base |> Type.is_dictionary_or_mapping ->
+        when Resolution.resolve_expression resolution base |> Type.is_dictionary_or_mapping ->
           let taint =
             taint
             |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]

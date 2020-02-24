@@ -130,7 +130,8 @@ module State (Context : Context) = struct
     let bottom =
       match value with
       | Statement.Assert { Assert.test = { Node.value = False; _ }; _ } -> true
-      | Expression expression -> Type.is_noreturn (Resolution.resolve resolution expression)
+      | Expression expression ->
+          Type.is_noreturn (Resolution.resolve_expression resolution expression)
       | Return _ -> true
       | _ -> false
     in

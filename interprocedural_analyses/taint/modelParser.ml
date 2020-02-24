@@ -702,7 +702,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
         let global_type () =
           name
           |> from_reference ~location:Location.any
-          |> Resolution.resolve_to_annotation resolution
+          |> Resolution.resolve_expression_to_annotation resolution
         in
         let parent = Option.value_exn (Reference.prefix name) in
         let get_matching_method ~predicate =

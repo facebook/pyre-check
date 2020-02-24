@@ -308,7 +308,7 @@ let test_resolve_mutable_literals context =
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
-    let resolved = Resolution.resolve resolution expression in
+    let resolved = Resolution.resolve_expression resolution expression in
     let expression = Some expression in
     let expected = parse_annotation against in
     assert_equal
@@ -316,7 +316,7 @@ let test_resolve_mutable_literals context =
       (parse_annotation expected_output)
       (GlobalResolution.resolve_mutable_literals
          (Resolution.global_resolution resolution)
-         ~resolve:(Resolution.resolve resolution)
+         ~resolve:(Resolution.resolve_expression resolution)
          ~expression
          ~resolved
          ~expected)
@@ -494,7 +494,7 @@ let test_resolve_mutable_literal_to_complex_type context =
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
-    let resolved = Resolution.resolve resolution expression in
+    let resolved = Resolution.resolve_expression resolution expression in
     let expression = Some expression in
     let expected = parse_annotation against in
     assert_equal
@@ -502,7 +502,7 @@ let test_resolve_mutable_literal_to_complex_type context =
       (parse_annotation expected_output)
       (GlobalResolution.resolve_mutable_literals
          (Resolution.global_resolution resolution)
-         ~resolve:(Resolution.resolve resolution)
+         ~resolve:(Resolution.resolve_expression resolution)
          ~expression
          ~resolved
          ~expected)
@@ -573,14 +573,14 @@ let test_resolve_mutable_literals_typed_dictionary context =
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
-    let resolved = Resolution.resolve resolution expression in
+    let resolved = Resolution.resolve_expression resolution expression in
     let expression = Some expression in
     assert_equal
       ~printer:Type.show
       expected_output_type
       (GlobalResolution.resolve_mutable_literals
          (Resolution.global_resolution resolution)
-         ~resolve:(Resolution.resolve resolution)
+         ~resolve:(Resolution.resolve_expression resolution)
          ~expression
          ~resolved
          ~expected:against_type)
