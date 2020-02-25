@@ -14,11 +14,9 @@ Dynamic model generators run before Pysa, and generate `.pysa` files to identify
 
 1. `operate_on_twos` accepts a raw string in its interface, which is extracted from the request URL, according to the pattern specified in `urls.py`. This string is user-controlled, but Pysa doesn't know that. Update `generate_models.py` to correctly generate a `.pysa` file, which will tell Pysa that the `operator` argument to `operate_on_twos` is user-controlled. _Note that this `urls.py` + `views.py` pattern is designed to closely resemble how Django dispatches incoming requests._
 
-   1. Replace the TODO in `generate_models.py` with the name for the correct dynamic model generator to taint a Django-style API
+   1. Run `python3 generate_models.py --output-directory .` from this directory
 
-   1. Run `python3 ./generate_models.py` from this directory
-
-   1. Verify that you have a `.pysa` file generated for you, and that the file correctly declares the `operator` argument to `operate_on_twos` as `UserControlled`
+   1. Verify that you have a `.pysa` file generated for you, and that the file correctly declares the `operator` argument to `operate_on_twos` as `TaintSource[UserControlled]`
 
    1. Run `pyre analyze`, and verify you see **1 issue** in the output.
 
@@ -28,8 +26,8 @@ Dynamic model generators run before Pysa, and generate `.pysa` files to identify
 
    1. Update `generate_models.py` to also call the generator you identified.
 
-   1. Run `python3 ./generate_models.py` from this directory
+   1. Run `python3 generate_models.py --output-directory .` from this directory
 
-   1. Verify that you have a new `.pysa` file generated, in addition to the one from the previous section. Check that this file is correctly declaring the `operator` argument to `operate_on_threes` as `UserControlled`
+   1. Verify that you have a new `.pysa` file generated, in addition to the one from the previous section. Check that this file is correctly declaring the `operator` argument to `operate_on_threes` as `TaintSource[UserControlled]`
 
    1. Run `pyre analyze`, and verify you see **2 issues** in the output.

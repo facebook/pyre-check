@@ -2,11 +2,11 @@
 ## Overview
 The purpose of this exercise is to learn how to remove false positive issues using _sanitizers_.
 
-None of the functions in `views.py` are vulnerable, but they will all show up in `pyre analyze` as false positives. The goal of this exercise is the make changes to `sources_sinks.pysa` and `views.py` in order to remove the false positives.
+None of the functions in `views.py` are vulnerable, but they will all show up in `pyre analyze` as false positives. The goal of this exercise is to make changes to `sources_sinks.pysa` and `views.py` in order to remove the false positives.
 
 ## What you need to know
 ### Pre-written Taint Annotations
-Pysa comes with pre-written sources, sinks, and rules for much of the Python standard library, and many open source libraries. Since the previous exercises already covered those concepts, from this exercise forward we will be relying on pre-written sources, sinks, and rules where we can. You can look at collection of pre-written `taint.config` and `.pysa` files in the `stubs/taint` folder in this repository. If you're curious about what changed between this and the previous exercise to allow us to take advantage of those pre-written files, compare the `.pyre_configuration` files.
+Pysa comes with pre-written sources, sinks, and rules for much of the Python standard library, and many open source libraries. Since the previous exercises already covered those concepts, from this exercise forward we will be relying on pre-written sources, sinks, and rules where we can. You can look at the collection of pre-written `taint.config` and `.pysa` files in the `stubs/taint` folder in this repository. If you're curious about what changed between this and the previous exercise to allow us to take advantage of those pre-written files, compare the `.pyre_configuration` files.
 
 ### Sanitizers
 _Sanitizers_ are defined in `.pysa` files, just like sources and sinks. An example is provided in `sanitizers.pysa` and you'll have to add more of your own.
