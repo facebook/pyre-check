@@ -266,7 +266,7 @@ let test_check_undefined_type context =
       "Prohibited any [33]: `Derp` cannot alias to `Any`.";
       "Prohibited any [33]: `Herp` cannot alias to a type containing `Any`.";
     ];
-  assert_type_errors
+  assert_strict_type_errors
     {|
       def foo() -> None:
         x: int = 1

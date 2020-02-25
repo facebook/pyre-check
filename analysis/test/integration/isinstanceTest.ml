@@ -9,6 +9,7 @@ open IntegrationTest
 let test_check_isinstance context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_default_type_errors
     {|
       def f(x) -> int:
@@ -25,7 +26,7 @@ let test_check_isinstance context =
           return 1
     |}
     [];
-  assert_type_errors
+  assert_strict_type_errors
     {|
       isinstance(1, NonexistentClass)
     |}
@@ -44,7 +45,7 @@ let test_check_isinstance context =
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
     ];
-  assert_type_errors
+  assert_strict_type_errors
     {|
       def foo(x: int) -> None:
         if isinstance(x, NonexistentClass):

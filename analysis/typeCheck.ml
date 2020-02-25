@@ -2109,7 +2109,6 @@ module State (Context : Context) = struct
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
           let { state; _ } = forward_expression ~state ~expression in
-          let previous_errors = Map.length state.errors in
           let state, annotations =
             let rec collect_types (state, collected) = function
               | { Node.value = Expression.Tuple annotations; _ } ->
@@ -2132,43 +2131,38 @@ module State (Context : Context) = struct
             in
             collect_types (state, []) annotations
           in
-          if Map.length state.errors > previous_errors then
-            state
-          else
-            let add_incompatible_non_meta_error state (non_meta, location) =
-              emit_error
-                ~state
-                ~location
-                ~kind:
-                  (Error.IncompatibleParameterType
-                     {
-                       name = None;
-                       position = 2;
-                       callee = Some (Reference.create "isinstance");
-                       mismatch =
-                         {
-                           Error.actual = non_meta;
-                           expected =
-                             Type.union
-                               [
-                                 Type.meta Type.Any; Type.Tuple (Type.Unbounded (Type.meta Type.Any));
-                               ];
-                           due_to_invariance = false;
-                         };
-                     })
-            in
-            let rec is_compatible annotation =
-              match annotation with
-              | _ when Type.is_meta annotation -> true
-              | Type.Tuple (Type.Unbounded annotation) -> Type.is_meta annotation
-              | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
-                  List.for_all ~f:Type.is_meta annotations
-              | Type.Union annotations -> List.for_all annotations ~f:is_compatible
-              | _ -> false
-            in
-            List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
-            >>| add_incompatible_non_meta_error state
-            |> Option.value ~default:state
+          let add_incompatible_non_meta_error state (non_meta, location) =
+            emit_error
+              ~state
+              ~location
+              ~kind:
+                (Error.IncompatibleParameterType
+                   {
+                     name = None;
+                     position = 2;
+                     callee = Some (Reference.create "isinstance");
+                     mismatch =
+                       {
+                         Error.actual = non_meta;
+                         expected =
+                           Type.union
+                             [Type.meta Type.Any; Type.Tuple (Type.Unbounded (Type.meta Type.Any))];
+                         due_to_invariance = false;
+                       };
+                   })
+          in
+          let rec is_compatible annotation =
+            match annotation with
+            | _ when Type.is_meta annotation -> true
+            | Type.Tuple (Type.Unbounded annotation) -> Type.is_meta annotation
+            | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
+                List.for_all ~f:Type.is_meta annotations
+            | Type.Union annotations -> List.for_all annotations ~f:is_compatible
+            | _ -> false
+          in
+          List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
+          >>| add_incompatible_non_meta_error state
+          |> Option.value ~default:state
         in
         { state; resolved = Type.bool; resolved_annotation = None; base = None }
     | Call
