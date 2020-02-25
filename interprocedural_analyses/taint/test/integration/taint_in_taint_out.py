@@ -56,3 +56,11 @@ class FieldIsTITO:
 
 def adds_tito(x: FieldIsTITO) -> int:
     return x.add_tito
+
+
+class InheritsFromTITO(FieldIsTITO):
+    pass
+
+
+def adds_tito_inherited(x: InheritsFromTITO) -> int:
+    return x.add_tito

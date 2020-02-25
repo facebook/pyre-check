@@ -160,6 +160,50 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.adds_tito_inherited",
+    "sources": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 65,
+              "start": 24,
+              "end": 25
+            },
+            "leaves": [ { "kind": "Test" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_lhs" },
+              { "always-has": "first-field" },
+              { "always-first-field": "add_tito" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)[add_tito]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.get_data",
     "sources": [],
     "sinks": [],
