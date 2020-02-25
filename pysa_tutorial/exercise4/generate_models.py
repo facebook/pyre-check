@@ -26,20 +26,19 @@ class Ignore:
 def main() -> None:
     # Here, specify all the generators that you might want to call.
     generators = {
-        # TODO
-        # "replace_me": generate_taint_models.SomeGenerator(
-        #     ...
-        # ),
+        "get_REST_api_sources": generate_taint_models.RESTApiSourceGenerator(
+            django_urls=view_generator.DjangoUrls(
+                urls_module="urls",
+                url_pattern_type=UrlPattern,
+                url_resolver_type=Ignore,
+            )
+        )
     }
     # The `run_generators` function will take care of parsing command-line arguments, as
     # well as executing the generators specified in `default_modes` unless you pass in a
     # specific set from the command line.
     generate_taint_models.run_generators(
-        generators,
-        default_modes=[
-            # TODO
-            # "replace_me",
-        ],
+        generators, default_modes=["get_REST_api_sources"]
     )
 
 
