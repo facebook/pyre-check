@@ -39,6 +39,13 @@ class ServerDetails(NamedTuple):
             local_root=str(server_pid_path.relative_to(dot_pyre_root).parent.parent),
         )
 
+    @property
+    def name(self) -> str:
+        if self.local_root == ".":
+            return ROOT_PLACEHOLDER_NAME
+        else:
+            return self.local_root
+
 
 class Servers(Command):
     NAME: str = "servers"
@@ -79,13 +86,7 @@ class Servers(Command):
         all_server_details: List[ServerDetails], output_format: str
     ) -> None:
         server_details = [
-            {
-                "pid": details.pid,
-                "name": details.local_root
-                if details.local_root != "."
-                else ROOT_PLACEHOLDER_NAME,
-            }
-            for details in all_server_details
+            {"pid": details.pid, "name": details.name} for details in all_server_details
         ]
         if output_format == JSON:
             log.stdout.write(json.dumps(server_details))
@@ -106,6 +107,7 @@ class Servers(Command):
 
     def _stop_servers(self, servers: List[ServerDetails]) -> None:
         for server in servers:
+            LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
             Stop(
                 arguments=self._arguments,
                 original_directory=str(
