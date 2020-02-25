@@ -126,6 +126,58 @@ let test_successors _ =
   assert_equal (successors order "bottom") ["4"; "2"; "1"; "0"; "3"]
 
 
+let test_is_transitive_successor _ =
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
+  let predecessor = "predecessor" in
+  let successor = "successor" in
+  insert order predecessor;
+  insert order successor;
+  connect order ~predecessor ~successor;
+
+  let no_placeholder_subclasses_handler order =
+    ( module struct
+      let edges = Hashtbl.find order.edges
+
+      let extends_placeholder_stub _ = false
+
+      let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
+    end : ClassHierarchy.Handler )
+  in
+  let all_placeholder_subclasses_handler order =
+    ( module struct
+      let edges = Hashtbl.find order.edges
+
+      let extends_placeholder_stub _ = true
+
+      let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
+    end : ClassHierarchy.Handler )
+  in
+  assert_true
+    (is_transitive_successor
+       (no_placeholder_subclasses_handler order)
+       ~source:predecessor
+       ~target:successor);
+  assert_false
+    (is_transitive_successor
+       (no_placeholder_subclasses_handler order)
+       ~source:successor
+       ~target:predecessor);
+  assert_true
+    (is_transitive_successor
+       (all_placeholder_subclasses_handler order)
+       ~source:successor
+       ~target:predecessor);
+  (* The flag disables the special-casing of placeholder stub subclasses. *)
+  assert_false
+    (is_transitive_successor
+       ~placeholder_subclass_extends_all:false
+       (all_placeholder_subclasses_handler order)
+       ~source:successor
+       ~target:predecessor);
+  ()
+
+
 let test_least_upper_bound _ =
   assert_equal (least_upper_bound order "3" "1") ["3"];
   assert_equal (least_upper_bound order "4" "bottom") ["4"];
@@ -631,6 +683,7 @@ let () =
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
          "successors" >:: test_successors;
+         "is_transitive_successor" >:: test_is_transitive_successor;
          "to_dot" >:: test_to_dot;
          "to_json" >:: test_to_json;
          "variables" >:: test_variables;

@@ -71,6 +71,7 @@ let order_and_environment ~context source =
           protocol_assumptions = Assumptions.ProtocolAssumptions.empty;
           callable_assumptions = Assumptions.CallableAssumptions.empty;
         };
+      get_typed_dictionary = (fun _ -> None);
     },
     environment )
 

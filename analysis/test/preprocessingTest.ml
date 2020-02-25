@@ -2174,50 +2174,54 @@ let test_expand_typed_dictionaries _ =
     in
     assert_source_equal ~location_insensitive:true expected actual
   in
+  (* Vary the module from which TypedDict is imported. *)
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       Movie = typing_extensions.TypedDict('Movie', {'name': str, 'year': int})
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       Movie = typing.TypedDict('Movie', {'name': str, 'year': int})
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {})
     |}
     {|
-      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', True)]] = (
-        mypy_extensions.TypedDict[('Movie', True)])
+      class Movie(TypedDictionary): pass
     |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {}, total=False)
     |}
     {|
-      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', False)]] = (
-        mypy_extensions.TypedDict[('Movie', False)])
+      class Movie(TypedDictionary, NonTotalTypedDictionary): pass
     |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {}, total=True)
     |}
     {|
-      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', True)]] = (
-        mypy_extensions.TypedDict[('Movie', True)])
+      class Movie(TypedDictionary): pass
     |};
   assert_expand
     {|
@@ -2225,55 +2229,66 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(typing_extensions.TypedDict):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(typing.TypedDict):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" )
-    ~handle:"foo/bar.py";
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary, NonTotalTypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True):
@@ -2281,9 +2296,11 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
 
   (* Invalid TypedDicts *)
   assert_expand
@@ -2307,36 +2324,55 @@ let test_expand_typed_dictionaries _ =
         year: int
         def ignored_method(self) -> None: pass
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True, total=False):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, garbage=7):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, OtherClass):
         name: str
         year: int
     |}
-    ( "Movie: "
-    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
-    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
+  assert_expand
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |}
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: int
+    |};
   ()
 
 

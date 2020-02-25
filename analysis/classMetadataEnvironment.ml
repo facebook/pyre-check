@@ -15,6 +15,7 @@ type class_metadata = {
   extends_placeholder_stub_class: bool;
   is_abstract: bool;
   is_protocol: bool;
+  is_typed_dictionary: bool;
 }
 [@@deriving eq, compare, show]
 
@@ -64,10 +65,10 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
     let in_test = List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors) in
+    let dependency =
+      Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
+    in
     let extends_placeholder_stub_class =
-      let dependency =
-        Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
-      in
       let empty_stub_environment =
         AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
       in
@@ -79,6 +80,12 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
     in
     let is_protocol = ClassSummary.is_protocol (Node.value definition) in
     let is_abstract = ClassSummary.is_abstract (Node.value definition) in
+    let class_hierarchy =
+      ClassHierarchyEnvironment.ReadOnly.class_hierarchy ?dependency class_hierarchy_environment
+    in
+    let is_typed_dictionary =
+      ClassHierarchy.is_typed_dictionary_subclass ~class_hierarchy class_name
+    in
     {
       is_test = in_test;
       successors;
@@ -86,6 +93,7 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
       extends_placeholder_stub_class;
       is_protocol;
       is_abstract;
+      is_typed_dictionary;
     }
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
@@ -123,8 +131,15 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let serialize_value = function
     | Some
-        { successors; is_test; is_final; extends_placeholder_stub_class; is_protocol; is_abstract }
-      ->
+        {
+          successors;
+          is_test;
+          is_final;
+          extends_placeholder_stub_class;
+          is_protocol;
+          is_abstract;
+          is_typed_dictionary;
+        } ->
         `Assoc
           [
             "successors", `String (List.to_string ~f:Type.Primitive.show successors);
@@ -133,6 +148,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
             "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
             "is_abstract", `Bool is_abstract;
             "is_protocol", `Bool is_protocol;
+            "is_typed_dictionary", `Bool is_typed_dictionary;
           ]
         |> Yojson.to_string
     | None -> "None"
@@ -149,6 +165,12 @@ module ReadOnly = struct
   include MetadataTable.ReadOnly
 
   let get_class_metadata = get
+
+  let is_typed_dictionary read_only ?dependency class_name =
+    get read_only ?dependency class_name
+    |> Option.value_map ~default:false ~f:(fun ({ is_typed_dictionary; _ } : class_metadata) ->
+           is_typed_dictionary)
+
 
   let undecorated_function_environment = upstream_environment
 

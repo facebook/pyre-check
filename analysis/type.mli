@@ -151,6 +151,21 @@ module Record : sig
       | Group of 'annotation OrderedTypes.record
       | CallableParameters of 'annotation Callable.record_parameters
   end
+
+  module TypedDictionary : sig
+    type 'annotation typed_dictionary_field = {
+      name: string;
+      annotation: 'annotation;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation record = {
+      name: Identifier.t;
+      fields: 'annotation typed_dictionary_field list;
+      total: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Primitive : sig
@@ -172,11 +187,6 @@ and tuple =
   | Bounded of t Record.OrderedTypes.record
   | Unbounded of t
 
-and typed_dictionary_field = {
-  name: string;
-  annotation: t;
-}
-
 and t =
   | Annotated of t
   | Bottom
@@ -192,11 +202,7 @@ and t =
   | Primitive of Primitive.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of {
-      name: Identifier.t;
-      fields: typed_dictionary_field list;
-      total: bool;
-    }
+  | TypedDictionary of t Record.TypedDictionary.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
@@ -818,21 +824,27 @@ val variable
 val is_concrete : t -> bool
 
 module TypedDictionary : sig
-  val anonymous : total:bool -> typed_dictionary_field list -> t
+  open Record.TypedDictionary
+
+  val anonymous : total:bool -> t typed_dictionary_field list -> t
+
+  val create_field : name:string -> annotation:t -> t typed_dictionary_field
 
   val fields_have_colliding_keys
-    :  typed_dictionary_field list ->
-    typed_dictionary_field list ->
+    :  t typed_dictionary_field list ->
+    t typed_dictionary_field list ->
     bool
 
   val constructor
     :  name:Identifier.t ->
-    fields:typed_dictionary_field list ->
+    fields:t typed_dictionary_field list ->
     total:bool ->
     Callable.t
 
+  val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
+
   val special_overloads
-    :  fields:typed_dictionary_field list ->
+    :  fields:t typed_dictionary_field list ->
     method_name:string ->
     total:bool ->
     t Callable.overload list option

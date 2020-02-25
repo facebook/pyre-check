@@ -11,6 +11,7 @@ type order = {
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
+  get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
   assumptions: Assumptions.t;
 }
 

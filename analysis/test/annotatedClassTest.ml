@@ -580,6 +580,466 @@ let test_class_attributes context =
   ()
 
 
+let test_typed_dictionary_attributes context =
+  let assert_attributes sources ~class_name ~expected_attributes =
+    let project = ScratchProject.setup ~context sources in
+    let resolution = ScratchProject.build_resolution project in
+    let resolution = Resolution.global_resolution resolution in
+    let attributes =
+      GlobalResolution.attributes
+        ~resolution
+        ~class_attributes:true
+        ~transitive:true
+        ~include_generated_attributes:true
+        class_name
+    in
+    assert_equal
+      ~printer:[%show: (string * string) list option]
+      expected_attributes
+      (Option.map
+         ~f:
+           (List.map ~f:(fun attribute ->
+                Annotated.Attribute.name attribute, Annotated.Attribute.parent attribute))
+         attributes)
+  in
+  assert_attributes
+    ["foo.py", "class Foo:\n  x: int\n"]
+    ~class_name:"foo.Foo"
+    ~expected_attributes:
+      (Some
+         [
+           "x", "foo.Foo";
+           "__class__", "object";
+           "__delattr__", "object";
+           "__doc__", "object";
+           "__eq__", "object";
+           "__format__", "object";
+           "__getattribute__", "object";
+           "__hash__", "object";
+           "__init__", "object";
+           "__ne__", "object";
+           "__new__", "object";
+           "__reduce__", "object";
+           "__repr__", "object";
+           "__setattr__", "object";
+           "__sizeof__", "object";
+           "__str__", "object";
+           "__call__", "type";
+           "__name__", "type";
+         ]);
+  assert_attributes
+    ["test.py", "class Movie(TypedDictionary):\n  name: str\n  year: int"]
+    ~class_name:"test.Movie"
+    ~expected_attributes:
+      (* The fields `name` and `year` are not present. *)
+      (Some
+         [
+           "__init__", "test.Movie";
+           "__getitem__", "test.Movie";
+           "__setitem__", "test.Movie";
+           "get", "test.Movie";
+           "setdefault", "test.Movie";
+           "update", "test.Movie";
+           "__iter__", "TypedDictionary";
+           "__len__", "TypedDictionary";
+           "copy", "TypedDictionary";
+           "__contains__", "typing.Mapping";
+           "items", "typing.Mapping";
+           "keys", "typing.Mapping";
+           "values", "typing.Mapping";
+           "__class__", "object";
+           "__delattr__", "object";
+           "__doc__", "object";
+           "__eq__", "object";
+           "__format__", "object";
+           "__getattribute__", "object";
+           "__hash__", "object";
+           "__ne__", "object";
+           "__new__", "object";
+           "__reduce__", "object";
+           "__repr__", "object";
+           "__setattr__", "object";
+           "__sizeof__", "object";
+           "__str__", "object";
+           "__call__", "type";
+           "__name__", "type";
+         ]);
+  ()
+
+
+let test_typed_dictionary_individual_attributes context =
+  let assert_attribute ~parent_name ~attribute_name ~expected_attribute =
+    let sources =
+      [
+        ( "test.py",
+          {|
+            class Movie(TypedDictionary):
+              name: str
+              year: int
+            class ChildMovie(Movie):
+              rating: int
+            class NonTotalMovie(TypedDictionary, NonTotalTypedDictionary):
+              name: str
+              year: int
+            class EmptyNonTotalMovie(TypedDictionary, NonTotalTypedDictionary): ...
+            class RegularClass: ...
+          |}
+        );
+      ]
+    in
+    let project = ScratchProject.setup ~context sources in
+    let resolution = ScratchProject.build_resolution project in
+    let resolution = Resolution.global_resolution resolution in
+    let attribute =
+      GlobalResolution.attribute_from_class_name
+        ~transitive:true
+        ~class_attributes:false
+        ~resolution
+        parent_name
+        ~name:attribute_name
+        ~instantiated:(Type.Primitive parent_name)
+    in
+    assert_equal ~printer:[%show: Attribute.instantiated option] expected_attribute attribute
+  in
+  let create_expected_attribute
+      ?(property = false)
+      ?(visibility = Attribute.ReadWrite)
+      ?(parent = "test.Attributes")
+      ?(initialized = Annotated.Attribute.Implicitly)
+      ?(defined = true)
+      ~annotation
+      name
+    =
+    Some
+      (Annotated.Attribute.create
+         ~annotation
+         ~original_annotation:annotation
+         ~abstract:false
+         ~async:false
+         ~class_attribute:false
+         ~defined
+         ~initialized
+         ~name
+         ~parent
+         ~property
+         ~visibility
+         ~static:false)
+  in
+  assert_attribute
+    ~parent_name:"test.RegularClass"
+    ~attribute_name:"non_existent"
+    ~expected_attribute:
+      (create_expected_attribute
+         "non_existent"
+         ~parent:"test.RegularClass"
+         ~annotation:Type.Top
+         ~defined:false
+         ~initialized:Annotated.Attribute.NotInitialized);
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"non_existent"
+    ~expected_attribute:
+      (create_expected_attribute
+         "non_existent"
+         ~parent:"test.Movie"
+         ~annotation:Type.Top
+         ~defined:false
+         ~initialized:Annotated.Attribute.NotInitialized);
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"name"
+    ~expected_attribute:
+      (create_expected_attribute
+         "name"
+         ~parent:"test.Movie"
+         ~annotation:Type.Top
+         ~defined:false
+         ~initialized:Annotated.Attribute.NotInitialized);
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"year"
+    ~expected_attribute:
+      (create_expected_attribute
+         "year"
+         ~parent:"test.Movie"
+         ~annotation:Type.Top
+         ~defined:false
+         ~initialized:Annotated.Attribute.NotInitialized);
+  assert_attribute
+    ~parent_name:"test.ChildMovie"
+    ~attribute_name:"year"
+    ~expected_attribute:
+      (create_expected_attribute
+         "year"
+         ~parent:"test.ChildMovie"
+         ~annotation:Type.Top
+         ~defined:false
+         ~initialized:Annotated.Attribute.NotInitialized);
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"__getitem__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__getitem__"
+         ~parent:"test.Movie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named
+                    (Reference.create_from_list
+                       [Type.TypedDictionary.class_name ~total:true; "__getitem__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.string;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                Type.Record.Callable.RecordParameter.name = "k";
+                                annotation = Type.Literal (Type.String "name");
+                                default = false;
+                              };
+                          ];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.integer;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                Type.Record.Callable.RecordParameter.name = "k";
+                                annotation = Type.Literal (Type.String "year");
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit =
+                  Some
+                    {
+                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.Movie";
+                      name = "self";
+                    };
+              }));
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"__init__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__init__"
+         ~parent:"test.Movie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
+                                annotation = Type.string;
+                                default = false;
+                              };
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
+                                annotation = Type.integer;
+                                default = false;
+                              };
+                          ];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.PositionalOnly
+                              {
+                                index = 0;
+                                annotation = Type.Primitive "test.Movie";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit = None;
+              }));
+  assert_attribute
+    ~parent_name:"test.ChildMovie"
+    ~attribute_name:"__init__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__init__"
+         ~parent:"test.ChildMovie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$rating";
+                                annotation = Type.integer;
+                                default = false;
+                              };
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
+                                annotation = Type.string;
+                                default = false;
+                              };
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
+                                annotation = Type.integer;
+                                default = false;
+                              };
+                          ];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.PositionalOnly
+                              {
+                                index = 0;
+                                annotation = Type.Primitive "test.ChildMovie";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit = None;
+              }));
+  assert_attribute
+    ~parent_name:"test.NonTotalMovie"
+    ~attribute_name:"__init__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__init__"
+         ~parent:"test.NonTotalMovie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
+                                annotation = Type.string;
+                                default = true;
+                              };
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
+                                annotation = Type.integer;
+                                default = true;
+                              };
+                          ];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.PositionalOnly
+                              {
+                                index = 0;
+                                annotation = Type.Primitive "test.NonTotalMovie";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit = None;
+              }));
+  assert_attribute
+    ~parent_name:"test.EmptyNonTotalMovie"
+    ~attribute_name:"__init__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__init__"
+         ~parent:"test.EmptyNonTotalMovie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                      parameters = Type.Record.Callable.Defined [];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.PositionalOnly
+                              {
+                                index = 0;
+                                annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit = None;
+              }));
+  ()
+
+
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
     let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
@@ -1152,6 +1612,8 @@ let () =
   "class"
   >::: [
          "attributes" >:: test_class_attributes;
+         "typed_dictionary_attributes" >:: test_typed_dictionary_attributes;
+         "typed_dictionary_individual_attributes" >:: test_typed_dictionary_individual_attributes;
          "constraints" >:: test_constraints;
          "constructors" >:: test_constructors;
          "fallback_attribute" >:: test_fallback_attribute;

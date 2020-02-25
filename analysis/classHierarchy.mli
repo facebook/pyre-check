@@ -97,7 +97,8 @@ val to_json : (module Handler) -> indices:IndexTracker.t list -> Yojson.Safe.t
 val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
 
 val is_transitive_successor
-  :  (module Handler) ->
+  :  ?placeholder_subclass_extends_all:bool ->
+  (module Handler) ->
   source:Type.Primitive.t ->
   target:Type.Primitive.t ->
   bool
@@ -107,3 +108,7 @@ val instantiate_successors_parameters
   source:Type.t ->
   target:Type.Primitive.t ->
   Type.Parameter.t list option
+
+val is_typed_dictionary_subclass : class_hierarchy:(module Handler) -> string -> bool
+
+val is_total_typed_dictionary : class_hierarchy:(module Handler) -> string -> bool

@@ -161,6 +161,13 @@ val resolve_mutable_literals
   expected:Type.t ->
   Type.t
 
+val get_typed_dictionary
+  :  resolution:t ->
+  Type.t ->
+  Type.t Type.Record.TypedDictionary.record option
+
+val is_typed_dictionary : resolution:t -> Type.t -> bool
+
 val is_consistent_with
   :  t ->
   resolve:(Expression.expression Node.t -> Type.t) ->

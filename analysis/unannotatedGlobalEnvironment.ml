@@ -417,11 +417,11 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make
         ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
-        "TypedDictionary";
+        (Type.TypedDictionary.class_name ~total:true);
       make
-        ~bases:[Type.Primitive "TypedDictionary"]
+        ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:false)
-        "NonTotalTypedDictionary";
+        (Type.TypedDictionary.class_name ~total:false);
     ]
   in
   builtin_classes, typing_classes, typing_extension_classes

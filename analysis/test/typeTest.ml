@@ -2275,6 +2275,34 @@ let test_infer_transform _ =
     ~expected:(Type.Optional (Type.Primitive "string"))
 
 
+let test_fields_from_constructor _ =
+  let assert_fields ~constructor ~expected =
+    assert_equal
+      ~printer:[%show: Type.t Type.Record.TypedDictionary.typed_dictionary_field list option]
+      expected
+      (Type.TypedDictionary.fields_from_constructor constructor)
+  in
+  let fields =
+    [
+      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string };
+      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer };
+    ]
+  in
+  let non_constructor =
+    match Type.Callable.create ~annotation:Type.integer () with
+    | Type.Callable callable -> callable
+    | _ -> failwith "expected callable"
+  in
+  assert_fields ~constructor:non_constructor ~expected:None;
+  assert_fields
+    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields ~total:true)
+    ~expected:(Some fields);
+  assert_fields
+    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields ~total:false)
+    ~expected:(Some fields);
+  ()
+
+
 let test_is_unit_test _ =
   let assert_is_unit_test name expected =
     Type.Primitive.is_unit_test name |> assert_equal expected
@@ -2332,6 +2360,7 @@ let () =
          "concatenation_operator_replace_variable" >:: test_concatenation_operator_replace_variable;
          "concatenation_zip" >:: test_concatenation_zip;
          "infer_transform" >:: test_infer_transform;
+         "fields_from_constructor" >:: test_fields_from_constructor;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

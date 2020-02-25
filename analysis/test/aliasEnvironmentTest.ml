@@ -121,10 +121,8 @@ let test_harder_registrations context =
       a: X
   |}
     "test.Q"
-    (Some
-       (Type.TypedDictionary
-          { name = "Q"; total = true; fields = [{ name = "a"; annotation = Type.integer }] }));
-  ();
+    (* TypedDicts are treated as proper classes, not aliases. *)
+    None;
   parsed_assert_registers {|
     class Foo: ...
     X = Foo[unknown.get("key")]

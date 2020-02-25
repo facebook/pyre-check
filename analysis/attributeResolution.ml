@@ -33,6 +33,14 @@ type uninstantiated = UninstantiatedAnnotation.t
 
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
 
+let create_uninstantiated_method
+    ?(is_class_method = false)
+    ?(accessed_via_metaclass = false)
+    callable
+  =
+  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Method { callable; is_class_method } }
+
+
 module UninstantiatedAttributeTable = struct
   type element = UninstantiatedAnnotation.t AnnotatedAttribute.t [@@deriving compare]
 
@@ -272,7 +280,14 @@ let undecorated_signature class_metadata_environment ~dependency =
 
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
-let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~comparator =
+let rec weaken_mutable_literals
+    resolve
+    ~get_typed_dictionary
+    ~expression
+    ~resolved
+    ~expected
+    ~comparator
+  =
   let open Expression in
   match expression, resolved, expected with
   | _, _, Type.Union expected_types -> (
@@ -280,6 +295,7 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
         List.map
           ~f:(fun expected_type ->
             weaken_mutable_literals
+              ~get_typed_dictionary
               resolve
               ~expression
               ~resolved
@@ -294,7 +310,13 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
       | _ -> resolved )
   | _, _, Type.Optional expected_type ->
       let resolved_type =
-        weaken_mutable_literals resolve ~expression ~resolved ~expected:expected_type ~comparator
+        weaken_mutable_literals
+          ~get_typed_dictionary
+          resolve
+          ~expression
+          ~resolved
+          ~expected:expected_type
+          ~comparator
       in
       if comparator ~left:resolved_type ~right:expected_type then
         expected
@@ -308,6 +330,7 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
           (List.map
              ~f:(fun item ->
                weaken_mutable_literals
+                 ~get_typed_dictionary
                  resolve
                  ~expression:(Some item)
                  ~resolved:actual_item_type
@@ -332,6 +355,7 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
           (List.map
              ~f:(fun item ->
                weaken_mutable_literals
+                 ~get_typed_dictionary
                  resolve
                  ~expression:(Some item)
                  ~resolved:actual_item_type
@@ -348,50 +372,59 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
       Type.Parametric { name = "set"; parameters = [Single expected_parameter] } )
     when comparator ~left:actual ~right:expected_parameter ->
       expected
-  | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
-      _,
-      Type.TypedDictionary { total; fields; _ } ) ->
-      let find_matching_field ~name =
-        let matching_name { Type.name = expected_name; _ } = String.equal name expected_name in
-        List.find ~f:matching_name
-      in
-      let resolve_entry { Dictionary.Entry.key; value } =
-        let key = resolve key in
-        match key with
-        | Type.Literal (Type.String name) ->
-            let annotation =
-              let resolved = resolve value in
-              let relax { Type.annotation; _ } =
-                if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
-                  weaken_mutable_literals
-                    resolve
-                    ~expression:(Some value)
-                    ~resolved
-                    ~expected:annotation
-                    ~comparator
-                else if comparator ~left:resolved ~right:annotation then
-                  annotation
-                else
-                  resolved
-              in
-              find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
+  | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ }, _, Type.Primitive _
+    -> (
+      let open Type.Record.TypedDictionary in
+      match get_typed_dictionary expected with
+      | Some { fields; total; _ } ->
+          let find_matching_field ~name =
+            let matching_name ({ name = expected_name; _ } : Type.t typed_dictionary_field) =
+              String.equal name expected_name
             in
-            Some { Type.name; annotation }
-        | _ -> None
-      in
-      let add_missing_fields sofar =
-        let is_missing { Type.name; _ } = Option.is_none (find_matching_field sofar ~name) in
-        sofar @ List.filter fields ~f:is_missing
-      in
-      List.map entries ~f:resolve_entry
-      |> Option.all
-      >>| (if total then Fn.id else add_missing_fields)
-      >>| Type.TypedDictionary.anonymous ~total
-      |> Option.value_map ~default:resolved ~f:(fun typed_dictionary ->
-             if comparator ~left:typed_dictionary ~right:expected then
-               expected
-             else
-               typed_dictionary)
+            List.find ~f:matching_name
+          in
+          let resolve_entry { Dictionary.Entry.key; value } =
+            let key = resolve key in
+            match key with
+            | Type.Literal (Type.String name) ->
+                let annotation =
+                  let resolved = resolve value in
+                  let relax { annotation; _ } =
+                    if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
+                      weaken_mutable_literals
+                        ~get_typed_dictionary
+                        resolve
+                        ~expression:(Some value)
+                        ~resolved
+                        ~expected:annotation
+                        ~comparator
+                    else if comparator ~left:resolved ~right:annotation then
+                      annotation
+                    else
+                      resolved
+                  in
+                  find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
+                in
+                Some { name; annotation }
+            | _ -> None
+          in
+          let add_missing_fields sofar =
+            let is_missing ({ name; _ } : Type.t typed_dictionary_field) =
+              Option.is_none (find_matching_field sofar ~name)
+            in
+            sofar @ List.filter fields ~f:is_missing
+          in
+          List.map entries ~f:resolve_entry
+          |> Option.all
+          >>| (if total then Fn.id else add_missing_fields)
+          >>| Type.TypedDictionary.anonymous ~total
+          >>| (fun typed_dictionary ->
+                if comparator ~left:typed_dictionary ~right:expected then
+                  expected
+                else
+                  typed_dictionary)
+          |> Option.value ~default:resolved
+      | None -> resolved )
   | ( Some { Node.value = Expression.Dictionary _; _ },
       _,
       Type.Parametric { name = "typing.Mapping" as generic_name; parameters } )
@@ -413,6 +446,7 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
       in
       let weakened_fallback_type =
         weaken_mutable_literals
+          ~get_typed_dictionary
           resolve
           ~resolved
           ~expected:(Type.parametric mutable_generic_name parameters)
@@ -424,7 +458,13 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
           Type.parametric generic_name parameters
       | _ -> resolved )
   | Some { Node.value = Expression.Dictionary { entries; _ }; _ }, _, _ ->
-      weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries
+      weaken_dictionary_entries
+        ~get_typed_dictionary
+        resolve
+        ~resolved
+        ~expected
+        ~comparator
+        ~entries
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
       Type.Parametric { name = "dict"; parameters = [Single actual_key; Single actual_value] },
       Type.Parametric { name = "dict"; parameters = [Single expected_key; Single expected_value] } )
@@ -434,7 +474,8 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
   | _ -> resolved
 
 
-and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
+and weaken_dictionary_entries ~get_typed_dictionary resolve ~resolved ~expected ~comparator ~entries
+  =
   match entries with
   | _ -> (
       match resolved, expected with
@@ -448,6 +489,7 @@ and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
               (List.map
                  ~f:(fun { key; _ } ->
                    weaken_mutable_literals
+                     ~get_typed_dictionary
                      resolve
                      ~expression:(Some key)
                      ~resolved:actual_key_type
@@ -460,6 +502,7 @@ and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
               (List.map
                  ~f:(fun { value; _ } ->
                    weaken_mutable_literals
+                     ~get_typed_dictionary
                      resolve
                      ~expression:(Some value)
                      ~resolved:actual_value_type
@@ -467,7 +510,6 @@ and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
                      ~comparator)
                  entries)
           in
-
           if
             comparator ~left:weakened_key_type ~right:expected_key_type
             && comparator ~left:weakened_value_type ~right:expected_value_type
@@ -1005,10 +1047,57 @@ module Implementation = struct
       ?instantiated:Type.t ->
       UninstantiatedAnnotation.t AnnotatedAttribute.t ->
       AnnotatedAttribute.instantiated;
+    get_typed_dictionary:
+      assumptions:Assumptions.t ->
+      class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
+      ?dependency:SharedMemoryKeys.dependency ->
+      Type.t ->
+      Type.t Type.Record.TypedDictionary.record option;
   }
 
+  let get_typed_dictionary
+      { attribute; _ }
+      ~assumptions
+      ~class_metadata_environment
+      ?dependency
+      annotation
+    =
+    match annotation with
+    | Type.Primitive class_name
+      when ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+             class_metadata_environment
+             ?dependency
+             class_name ->
+        let fields =
+          attribute
+            ~assumptions
+            ~class_metadata_environment
+            ~transitive:false
+            ~class_attributes:false
+            ~include_generated_attributes:true
+            ~instantiated:annotation
+            ?dependency
+            ~special_method:false
+            ~attribute_name:"__init__"
+            class_name
+          >>| AnnotatedAttribute.annotation
+          >>| Annotation.annotation
+          >>= function
+          | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
+          | _ -> None
+        in
+        let class_hierarchy =
+          ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+            ?dependency
+            (class_hierarchy_environment class_metadata_environment)
+        in
+        let total = ClassHierarchy.is_total_typed_dictionary ~class_hierarchy class_name in
+        fields >>| fun fields -> { Type.Record.TypedDictionary.fields; total; name = class_name }
+    | _ -> None
+
+
   let full_order
-      { constructor; all_attributes; instantiate_attribute; _ }
+      ({ constructor; all_attributes; instantiate_attribute; _ } as open_recurser)
       ~assumptions
       ?dependency
       class_metadata_environment
@@ -1063,6 +1152,8 @@ module Implementation = struct
       attributes;
       is_protocol;
       assumptions;
+      get_typed_dictionary =
+        get_typed_dictionary open_recurser ~assumptions ~class_metadata_environment ?dependency;
     }
 
 
@@ -1233,6 +1324,147 @@ module Implementation = struct
     result
 
 
+  let typed_dictionary_special_methods_table
+      ~create_attribute
+      ~assumptions
+      ~class_attributes
+      ~include_generated_attributes
+      ~in_test
+      ~accessed_via_metaclass
+      ?dependency
+      ~class_metadata_environment
+      ~class_name
+      ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition)
+    =
+    let table = UninstantiatedAttributeTable.create () in
+    let add_special_methods () =
+      let class_definition =
+        UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+          (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+             class_metadata_environment)
+          ?dependency
+      in
+      let successor_definitions =
+        ClassMetadataEnvironment.ReadOnly.successors
+          class_metadata_environment
+          ?dependency
+          (Reference.show name)
+        |> List.filter_map ~f:class_definition
+      in
+      let total =
+        ClassHierarchy.is_total_typed_dictionary
+          ~class_hierarchy:
+            (ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+               ?dependency
+               (class_hierarchy_environment class_metadata_environment))
+          class_name
+      in
+      let base_typed_dictionary_definition =
+        match class_definition (Type.TypedDictionary.class_name ~total) with
+        | Some definition -> definition
+        | None -> failwith "Expected to find TypedDictionary"
+      in
+      let typed_dictionary_definitions =
+        List.filter
+          (parent_definition :: successor_definitions)
+          ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
+            ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+              class_metadata_environment
+              ?dependency
+              (Reference.show name))
+      in
+      let get_field_attributes
+          ~include_generated_attributes
+          { Node.value = { ClassSummary.attribute_components; _ }; _ }
+        =
+        Class.attributes ~include_generated_attributes ~in_test attribute_components
+        |> Identifier.SerializableMap.bindings
+        |> List.map ~f:(fun (_, field_attribute) ->
+               create_attribute
+                 ~assumptions
+                 ~class_metadata_environment
+                 ?dependency
+                 ~parent:parent_definition
+                 ?defined:(Some true)
+                 ?default_class_attribute:(Some class_attributes)
+                 ~accessed_via_metaclass
+                 (Node.value field_attribute))
+      in
+      let attribute_to_typed_dictionary_field attribute =
+        match AnnotatedAttribute.uninstantiated_annotation attribute with
+        | { UninstantiatedAnnotation.kind = Attribute { annotation; _ }; _ } ->
+            Some
+              (Type.TypedDictionary.create_field
+                 ~name:(AnnotatedAttribute.name attribute)
+                 ~annotation)
+        | _ -> None
+      in
+      let fields =
+        List.concat_map
+          typed_dictionary_definitions
+          ~f:(get_field_attributes ~include_generated_attributes:false)
+        |> List.filter_map ~f:attribute_to_typed_dictionary_field
+      in
+      let overload_method attribute =
+        match AnnotatedAttribute.uninstantiated_annotation attribute with
+        | { UninstantiatedAnnotation.kind = Method { callable; is_class_method }; _ } as
+          uninstantiated_annotation ->
+            let overloaded_callable overloads =
+              {
+                callable with
+                Type.Callable.implementation = { annotation = Type.Top; parameters = Undefined };
+                overloads;
+                implicit =
+                  Some
+                    {
+                      Type.Record.Callable.implicit_annotation = Type.Primitive class_name;
+                      name = "self";
+                    };
+              }
+            in
+            Type.TypedDictionary.special_overloads
+              ~fields
+              ~method_name:(AnnotatedAttribute.name attribute)
+              ~total
+            >>| fun overloads ->
+            AnnotatedAttribute.with_uninstantiated_annotation
+              ~uninstantiated_annotation:
+                {
+                  uninstantiated_annotation with
+                  UninstantiatedAnnotation.kind =
+                    Method { callable = overloaded_callable overloads; is_class_method };
+                }
+              attribute
+        | _ -> None
+      in
+      let constructor =
+        Type.TypedDictionary.constructor ~name:class_name ~fields ~total
+        |> create_uninstantiated_method
+        |> fun uninstantiated_annotation ->
+        AnnotatedAttribute.create_uninstantiated
+          ~uninstantiated_annotation
+          ~abstract:false
+          ~async:false
+          ~class_attribute:false
+          ~defined:true
+          ~initialized:Implicitly
+          ~name:"__init__"
+          ~parent:class_name
+          ~visibility:ReadWrite
+          ~static:false
+          ~property:false
+      in
+      let all_special_methods =
+        constructor
+        :: ( get_field_attributes ~include_generated_attributes:true base_typed_dictionary_definition
+           |> List.filter_map ~f:overload_method )
+      in
+      List.iter ~f:(UninstantiatedAttributeTable.add table) all_special_methods
+    in
+    if include_generated_attributes then add_special_methods ();
+    table
+
+
   let single_uninstantiated_attribute_table
       { create_attribute; instantiate_attribute; _ }
       ~assumptions
@@ -1326,7 +1558,26 @@ module Implementation = struct
       (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment class_metadata_environment)
       ?dependency
       class_name
-    >>| handle
+    >>| fun definition ->
+    if
+      ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+        class_metadata_environment
+        ?dependency
+        class_name
+    then
+      typed_dictionary_special_methods_table
+        ~create_attribute
+        ~assumptions
+        ~class_attributes
+        ~include_generated_attributes
+        ~in_test
+        ~accessed_via_metaclass
+        ?dependency
+        ~class_metadata_environment
+        ~class_name
+        definition
+    else
+      handle definition
 
 
   let uninstantiated_attribute_tables
@@ -1582,7 +1833,14 @@ module Implementation = struct
                 implicit;
               }
             in
-            if String.equal attribute_name "__new__" then
+            if
+              ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+                class_metadata_environment
+                ?dependency
+                class_annotation
+            then
+              callable
+            else if String.equal attribute_name "__new__" then
               (* Special case __new__ because it is the only static method with one of its
                  parameters implicitly annotated. *)
               let add_class_annotation { Type.Callable.annotation; parameters } =
@@ -3089,7 +3347,7 @@ module Implementation = struct
 
 
   let resolve_mutable_literals
-      { constraints_solution_exists; _ }
+      ({ constraints_solution_exists; _ } as open_recurser)
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -3097,6 +3355,8 @@ module Implementation = struct
     =
     weaken_mutable_literals
       resolve
+      ~get_typed_dictionary:
+        (get_typed_dictionary open_recurser ~assumptions ~class_metadata_environment ?dependency)
       ~comparator:(constraints_solution_exists ?dependency ~class_metadata_environment ~assumptions)
 
 
@@ -3242,6 +3502,7 @@ let make_open_recurser ~given_single_uninstantiated_attribute_table ~given_parse
       constraints_solution_exists;
       constructor;
       instantiate_attribute;
+      get_typed_dictionary;
     }
   and single_uninstantiated_attribute_table ~assumptions =
     given_single_uninstantiated_attribute_table open_recurser ~assumptions
@@ -3266,6 +3527,8 @@ let make_open_recurser ~given_single_uninstantiated_attribute_table ~given_parse
   and constructor ~assumptions = Implementation.constructor open_recurser ~assumptions
   and instantiate_attribute ~assumptions =
     Implementation.instantiate_attribute open_recurser ~assumptions
+  and get_typed_dictionary ~assumptions =
+    Implementation.get_typed_dictionary open_recurser ~assumptions
   in
   open_recurser
 
@@ -3502,6 +3765,10 @@ module ReadOnly = struct
       (open_recurser_with_both_caches read_only)
       ~assumptions:empty_assumptions
       (class_metadata_environment read_only)
+
+
+  let get_typed_dictionary =
+    add_both_caches_and_empty_assumptions Implementation.get_typed_dictionary
 
 
   let signature_select = add_both_caches_and_empty_assumptions Implementation.signature_select

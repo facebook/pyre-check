@@ -11,6 +11,7 @@ type class_metadata = {
   extends_placeholder_stub_class: bool;
   is_abstract: bool;
   is_protocol: bool;
+  is_typed_dictionary: bool;
 }
 [@@deriving eq, compare, show]
 
@@ -18,6 +19,8 @@ module MetadataReadOnly : sig
   include Environment.ReadOnly
 
   val get_class_metadata : t -> ?dependency:dependency -> Type.Primitive.t -> class_metadata option
+
+  val is_typed_dictionary : t -> ?dependency:dependency -> Type.Primitive.t -> bool
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 

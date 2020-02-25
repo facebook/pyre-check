@@ -13,6 +13,7 @@ type order = {
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
+  get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
   assumptions: Assumptions.t;
 }
 
@@ -357,15 +358,35 @@ module OrderImplementation = struct
        extract possible solutions to the constraints set you have built up with List.filter_map
        ~f:OrderedConstraints.solve *)
     and solve_less_or_equal
-        ( { handler; constructor; is_protocol; assumptions = { protocol_assumptions; _ }; _ } as
-        order )
+        ( {
+            handler = (module Handler : ClassHierarchy.Handler) as handler;
+            constructor;
+            is_protocol;
+            assumptions = { protocol_assumptions; _ };
+            get_typed_dictionary;
+            _;
+          } as order )
         ~constraints
         ~left
         ~right
       =
+      let open Type.Record.TypedDictionary in
       let add_fallbacks other =
         Type.Variable.all_free_variables other
         |> List.fold ~init:constraints ~f:OrderedConstraints.add_fallback_to_any
+      in
+      let solve_less_or_equal_primitives ~source ~target =
+        if ClassHierarchy.is_transitive_successor handler ~source ~target then
+          [constraints]
+        else if
+          is_protocol right ~protocol_assumptions
+          && [%compare.equal: Type.Parameter.t list option]
+               (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
+               (Some [])
+        then
+          [constraints]
+        else
+          []
       in
       match left, right with
       | _, _ when Type.equal left right -> [constraints]
@@ -542,19 +563,25 @@ module OrderImplementation = struct
             | _ -> parameters
           in
           parameters >>= solve_parameters |> Option.value ~default:[]
-      | Type.Primitive source, Type.Primitive target
+      | Type.Primitive source, Type.Primitive target -> (
+          let left_typed_dictionary = get_typed_dictionary left in
+          let right_typed_dictionary = get_typed_dictionary right in
+          match left_typed_dictionary, right_typed_dictionary with
+          | Some left, Some right ->
+              solve_less_or_equal
+                order
+                ~constraints
+                ~left:(Type.TypedDictionary left)
+                ~right:(Type.TypedDictionary right)
+          | Some { total; _ }, None ->
+              let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              solve_less_or_equal order ~constraints ~left ~right
+          | None, Some { total; _ } ->
+              let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              solve_less_or_equal order ~constraints ~left ~right
+          | None, None -> solve_less_or_equal_primitives ~source ~target )
       | Type.Parametric { name = source; _ }, Type.Primitive target ->
-          if ClassHierarchy.is_transitive_successor handler ~source ~target then
-            [constraints]
-          else if
-            is_protocol right ~protocol_assumptions
-            && [%compare.equal: Type.Parameter.t list option]
-                 (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
-                 (Some [])
-          then
-            [constraints]
-          else
-            []
+          solve_less_or_equal_primitives ~source ~target
       (* A <= B -> A <= Optional[B].*)
       | Optional left, Optional right
       | left, Optional right
@@ -617,19 +644,40 @@ module OrderImplementation = struct
       | Type.Callable _, _ -> []
       | Type.TypedDictionary left, Type.TypedDictionary right ->
           let field_not_found field =
-            not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
+            not
+              (List.exists
+                 left.fields
+                 ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
           in
           if Bool.equal left.total right.total && not (List.exists right.fields ~f:field_not_found)
           then
             [constraints]
           else
             []
-      | Type.TypedDictionary { total; _ }, _ ->
-          let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
-          solve_less_or_equal order ~constraints ~left ~right
-      | _, Type.TypedDictionary { total; _ } ->
-          let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
-          solve_less_or_equal order ~constraints ~left ~right
+      | _, Type.TypedDictionary { total; _ } -> (
+          let left_typed_dictionary = get_typed_dictionary left in
+          match left_typed_dictionary with
+          | Some typed_dictionary ->
+              solve_less_or_equal
+                order
+                ~constraints
+                ~left:(Type.TypedDictionary typed_dictionary)
+                ~right
+          | None ->
+              let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              solve_less_or_equal order ~constraints ~left ~right )
+      | Type.TypedDictionary { total; _ }, _ -> (
+          let right_typed_dictionary = get_typed_dictionary right in
+          match right_typed_dictionary with
+          | Some typed_dictionary ->
+              solve_less_or_equal
+                order
+                ~constraints
+                ~left
+                ~right:(Type.TypedDictionary typed_dictionary)
+          | None ->
+              let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              solve_less_or_equal order ~constraints ~left ~right )
       | _, Type.Literal _ -> []
       | Type.Literal _, _ ->
           solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
@@ -1093,14 +1141,21 @@ module OrderImplementation = struct
                   left_fields
                 else
                   let found_match field =
-                    List.exists left_fields ~f:(Type.equal_typed_dictionary_field field)
+                    List.exists
+                      left_fields
+                      ~f:
+                        (Type.Record.TypedDictionary.equal_typed_dictionary_field
+                           Type.equal_type_t
+                           field)
                   in
                   List.filter right_fields ~f:found_match
               in
               Type.TypedDictionary.anonymous ~total:left_total join_fields
         | Type.TypedDictionary _, other
         | other, Type.TypedDictionary _ ->
-            let class_join = join order (Type.Primitive "TypedDictionary") other in
+            let class_join =
+              join order (Type.Primitive (Type.TypedDictionary.class_name ~total:true)) other
+            in
             let failed =
               Type.exists class_join ~predicate:(function
                   | Type.Primitive "TypedDictionary" -> true
@@ -1283,7 +1338,8 @@ module OrderImplementation = struct
                 else
                   List.dedup_and_sort
                     (left_fields @ right_fields)
-                    ~compare:Type.compare_typed_dictionary_field
+                    ~compare:
+                      [%compare: Type.type_t Type.Record.TypedDictionary.typed_dictionary_field]
               in
               Type.TypedDictionary.anonymous ~total:left_total meet_fields
         | Type.TypedDictionary _, _

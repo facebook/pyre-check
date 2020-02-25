@@ -128,6 +128,7 @@ type signature_match = {
 
 val weaken_mutable_literals
   :  (Expression.expression Node.t -> Type.t) ->
+  get_typed_dictionary:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
   expression:Expression.expression Node.t option ->
   resolved:Type.t ->
   expected:Type.t ->
@@ -142,6 +143,12 @@ module AttributeReadOnly : sig
   include Environment.ReadOnly
 
   val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+
+  val get_typed_dictionary
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Type.t ->
+    Type.t Type.Record.TypedDictionary.record option
 
   val full_order : ?dependency:dependency -> t -> TypeOrder.order
 

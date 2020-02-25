@@ -1561,87 +1561,89 @@ let expand_typed_dictionary_declarations
   =
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
-      let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent ~total =
-        let arguments =
-          let fields =
-            let tuple (key, value) = Node.create (Expression.Tuple [key; value]) ~location in
-            List.map fields ~f:tuple
-          in
-          let total = Node.create (if total then Expression.True else Expression.False) ~location in
-          [
-            {
-              Call.Argument.name = None;
-              value = Node.create (Expression.Tuple (name :: total :: fields)) ~location;
-            };
-          ]
-        in
-        let name =
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.location;
-                  value =
-                    Name
-                      (Name.Attribute
+      let string_literal identifier =
+        Expression.String { value = identifier; kind = StringLiteral.String }
+        |> Node.create ~location
+      in
+      let extract_string_literal literal_expression =
+        match Node.value literal_expression with
+        | Expression.String { StringLiteral.value; kind = StringLiteral.String } -> Some value
+        | _ -> None
+      in
+      let typed_dictionary_class_declaration ~name ~fields ~total =
+        match name with
+        | { Node.value = Expression.String { value = class_name; kind = StringLiteral.String }; _ }
+          ->
+            let class_reference = Reference.create class_name in
+            let assignments =
+              let assignment (key, value) =
+                match Node.value key with
+                | Expression.String
+                    { StringLiteral.value = attribute_name; kind = StringLiteral.String } ->
+                    Some
+                      ( Statement.Assign
+                          {
+                            target =
+                              Expression.Name
+                                (Name.Attribute
+                                   {
+                                     base = from_reference ~location class_reference;
+                                     attribute = attribute_name;
+                                     special = false;
+                                   })
+                              |> Node.create ~location;
+                            annotation = Some value;
+                            value = Node.create ~location Expression.Ellipsis;
+                            parent = Some class_reference;
+                          }
+                      |> Node.create ~location )
+                | _ -> None
+              in
+              match List.filter_map fields ~f:assignment with
+              | [] -> [Node.create ~location Statement.Pass]
+              | assignments -> assignments
+            in
+
+            (* Note: Add a placeholder to indicate the totality of the class. Not using
+               `total=False` because that gives an error saying `False` is not a valid literal type.
+               Not using `total=Literal[False]` because that requires importing `Literal`. *)
+            let non_total_base =
+              {
+                Call.Argument.name = None;
+                value =
+                  Node.create
+                    ~location
+                    (Expression.Name
+                       (create_name
+                          ~location
+                          (* Note: Cannot use `Type.TypedDictionary.class_name` because Type is not
+                             available here. *)
+                          "NonTotalTypedDictionary"));
+              }
+            in
+            Some
+              (Statement.Class
+                 {
+                   name = Node.create ~location class_reference;
+                   bases =
+                     ( [
                          {
-                           base =
-                             {
-                               Node.location;
-                               value =
-                                 Name
-                                   (Name.Attribute
-                                      {
-                                        base =
-                                          {
-                                            Node.location;
-                                            value = Name (Name.Identifier "mypy_extensions");
-                                          };
-                                        attribute = "TypedDict";
-                                        special = false;
-                                      });
-                             };
-                           attribute = "__getitem__";
-                           special = true;
-                         });
-                };
-              arguments;
-            }
-          |> Node.create ~location
-        in
-        let annotation =
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.location;
-                  value =
-                    Name
-                      (Name.Attribute
-                         {
-                           base =
-                             {
-                               Node.location;
-                               value =
-                                 Name
-                                   (Name.Attribute
-                                      {
-                                        base =
-                                          { Node.location; value = Name (Name.Identifier "typing") };
-                                        attribute = "Type";
-                                        special = false;
-                                      });
-                             };
-                           attribute = "__getitem__";
-                           special = true;
-                         });
-                };
-              arguments = [{ Call.Argument.name = None; value = name }];
-            }
-          |> Node.create ~location
-          |> Option.some
-        in
-        Statement.Assign { target; annotation; value = name; parent }
+                           Call.Argument.name = None;
+                           value =
+                             Node.create
+                               ~location
+                               (Expression.Name (create_name ~location "TypedDictionary"));
+                         };
+                       ]
+                     @
+                     if total then
+                       []
+                     else
+                       [non_total_base] );
+                   decorators = [];
+                   body = assignments;
+                 })
+        | _ -> None
       in
       let extract_totality arguments =
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
@@ -1664,7 +1666,6 @@ let expand_typed_dictionary_declarations
       match value with
       | Statement.Assign
           {
-            target;
             value =
               {
                 Node.value =
@@ -1700,15 +1701,15 @@ let expand_typed_dictionary_declarations
                     };
                 _;
               };
-            parent;
             _;
           } ->
-          typed_dictionary_declaration_assignment
-            ~name
-            ~fields:(List.map entries ~f:(fun { Dictionary.Entry.key; value } -> key, value))
-            ~target
-            ~parent
-            ~total:(extract_totality argument_tail)
+          extract_string_literal name
+          >>= (fun name ->
+                typed_dictionary_class_declaration
+                  ~name:(string_literal (Reference.show (Reference.create ~prefix:qualifier name)))
+                  ~fields:(List.map entries ~f:(fun { Dictionary.Entry.key; value } -> key, value))
+                  ~total:(extract_totality argument_tail))
+          |> Option.value ~default:value
       | Class
           {
             name = { Node.value = class_name; _ };
@@ -1739,10 +1740,6 @@ let expand_typed_dictionary_declarations
             body;
             decorators = _;
           } ->
-          let string_literal identifier =
-            Expression.String { value = identifier; kind = StringLiteral.String }
-            |> Node.create ~location
-          in
           let fields =
             let extract = function
               | {
@@ -1764,25 +1761,16 @@ let expand_typed_dictionary_declarations
             List.filter_map body ~f:extract
           in
           let declaration class_name =
-            let qualified =
-              let qualifier =
-                Reference.show qualifier |> String.substr_replace_all ~pattern:"." ~with_:"?"
-              in
-              class_name
-              |> Format.asprintf "$local_%s$%s" qualifier
-              |> fun identifier -> Expression.Name (Name.Identifier identifier)
+            (* Note: We create the class anew because we don't want to keep any methods. *)
+            let class_declaration =
+              typed_dictionary_class_declaration
+                ~name:(string_literal class_name)
+                ~fields
+                ~total:(extract_totality bases_tail)
             in
-            typed_dictionary_declaration_assignment
-              ~name:(string_literal class_name)
-              ~fields
-              ~target:(Node.create qualified ~location)
-              ~parent:None
-              ~total:(extract_totality bases_tail)
+            class_declaration
           in
-          Reference.drop_prefix ~prefix:qualifier class_name
-          |> Reference.single
-          >>| declaration
-          |> Option.value ~default:value
+          declaration (Reference.show class_name) |> Option.value ~default:value
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }

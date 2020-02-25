@@ -53,6 +53,8 @@ let parse_attributes ~parse_annotation ~class_name =
   List.map ~f:parse_attribute
 
 
+let get_typed_dictionary _ = None
+
 let less_or_equal
     ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     ?(attributes = fun _ ~assumptions:_ -> None)
@@ -70,6 +72,7 @@ let less_or_equal
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
         };
+      get_typed_dictionary;
     }
 
 
@@ -85,6 +88,7 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
         };
+      get_typed_dictionary;
     }
 
 
@@ -104,6 +108,7 @@ let join
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
         };
+      get_typed_dictionary;
     }
 
 
@@ -119,6 +124,7 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
         };
+      get_typed_dictionary;
     }
 
 
@@ -1101,64 +1107,6 @@ let test_less_or_equal context =
        ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
        ~right:"typing.Callable[[object], object][[[str], str]]");
 
-  (* TypedDictionaries *)
-  assert_true
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', float))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
-  assert_true
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
-       ~right:"typing.Mapping[str, typing.Any]");
-
-  assert_true
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', int))]"
-       ~right:"typing.Mapping[str, typing.Any]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
-       ~right:"typing.Mapping[str, int]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"typing.Mapping[str, typing.Any]"
-       ~right:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
-       ~right:"dict[str, typing.Any]");
-
   (* Literals *)
   assert_true
     (less_or_equal
@@ -1243,7 +1191,10 @@ let test_less_or_equal context =
   let assert_less_or_equal ?(source = "") ~left ~right expected_result =
     let resolution = resolution ~source context in
     let parse_annotation annotation =
-      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
+      annotation
+      (* Preprocess literal TypedDict syntax. *)
+      |> parse_single_expression ~preprocess:true
+      |> GlobalResolution.parse_annotation resolution
     in
     let left, right = parse_annotation left, parse_annotation right in
     assert_equal
@@ -1313,6 +1264,114 @@ let test_less_or_equal context =
     ~left:"test.Grandchild"
     ~right:"test.GenericBase[typing.Any, typing.Any]"
     true;
+
+  (* TypedDictionaries *)
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]
+      Beta = mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    true;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]
+      Beta = mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    true;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]
+      Beta = mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]
+      Beta = mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', float))]
+      Beta = mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str))]
+      Beta = mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"test.Beta"
+    true;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"typing.Mapping[str, typing.Any]"
+    true;
+
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"typing.Mapping[str, typing.Any]"
+    true;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"typing.Mapping[str, int]"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]
+    |}
+    ~left:"typing.Mapping[str, typing.Any]"
+    ~right:"test.Alpha"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      import mypy_extensions
+      Alpha = mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]
+    |}
+    ~left:"test.Alpha"
+    ~right:"dict[str, typing.Any]"
+    false;
   ()
 
 
@@ -2539,6 +2598,7 @@ let test_solve_less_or_equal context =
             protocol_assumptions = ProtocolAssumptions.empty;
             callable_assumptions = CallableAssumptions.empty;
           };
+        get_typed_dictionary;
       }
     in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
@@ -3218,6 +3278,7 @@ let test_instantiate_protocol_parameters context =
             protocol_assumptions = ProtocolAssumptions.empty;
             callable_assumptions = CallableAssumptions.empty;
           };
+        get_typed_dictionary;
       }
     in
     assert_equal
@@ -3400,6 +3461,7 @@ let test_mark_escaped_as_escaped context =
             protocol_assumptions = ProtocolAssumptions.empty;
             callable_assumptions = CallableAssumptions.empty;
           };
+        get_typed_dictionary;
       }
     in
     let constraints = TypeConstraints.empty in

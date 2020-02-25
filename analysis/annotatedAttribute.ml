@@ -127,6 +127,10 @@ let annotation { payload = { annotation; original_annotation }; async; defined; 
 
 let uninstantiated_annotation { payload; _ } = payload
 
+let with_uninstantiated_annotation ~uninstantiated_annotation attribute =
+  { attribute with payload = uninstantiated_annotation }
+
+
 let name { name; _ } = name
 
 let parent { parent; _ } = parent

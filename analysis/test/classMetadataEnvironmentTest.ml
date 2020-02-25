@@ -48,6 +48,7 @@ let test_simple_registration context =
          extends_placeholder_stub_class = false;
          is_protocol = false;
          is_abstract = false;
+         is_typed_dictionary = false;
        });
   assert_registers
     {|
@@ -65,6 +66,7 @@ let test_simple_registration context =
          extends_placeholder_stub_class = false;
          is_protocol = false;
          is_abstract = false;
+         is_typed_dictionary = false;
        });
   assert_registers
     {|
@@ -80,6 +82,7 @@ let test_simple_registration context =
          extends_placeholder_stub_class = false;
          is_protocol = false;
          is_abstract = true;
+         is_typed_dictionary = false;
        });
   assert_registers
     {|
@@ -95,6 +98,7 @@ let test_simple_registration context =
          extends_placeholder_stub_class = false;
          is_protocol = true;
          is_abstract = false;
+         is_typed_dictionary = false;
        });
   assert_registers
     ~source_name:"unittest"
@@ -111,6 +115,7 @@ let test_simple_registration context =
          extends_placeholder_stub_class = false;
          is_protocol = false;
          is_abstract = false;
+         is_typed_dictionary = false;
        });
   ()
 
@@ -217,6 +222,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ~expected_triggers:[]
@@ -232,6 +238,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ();
@@ -258,6 +265,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ~expected_triggers:[dependency]
@@ -273,6 +281,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ();
@@ -312,6 +321,7 @@ let test_updates context =
               extends_placeholder_stub_class = true;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ~expected_triggers:[dependency]
@@ -327,6 +337,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ();
@@ -366,6 +377,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
         ( "test.D",
           dependency,
@@ -377,6 +389,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
         ( "test.B",
           dependency,
@@ -388,6 +401,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
         ( "test.E",
           dependency,
@@ -399,6 +413,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
         ( "test.F",
           dependency,
@@ -410,6 +425,7 @@ let test_updates context =
               extends_placeholder_stub_class = true;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ~expected_triggers:[]
@@ -437,6 +453,7 @@ let test_updates context =
               extends_placeholder_stub_class = false;
               is_protocol = false;
               is_abstract = false;
+              is_typed_dictionary = false;
             } );
       ]
     ();

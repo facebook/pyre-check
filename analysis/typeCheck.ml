@@ -1810,22 +1810,34 @@ module State (Context : Context) = struct
                     let normal =
                       Error.IncompatibleParameterType { name; position; callee; mismatch }
                     in
+                    let typed_dictionary_error
+                        ~method_name
+                        ~position
+                        { Type.Record.TypedDictionary.fields; total; name }
+                      =
+                      if Type.TypedDictionary.is_special_mismatch ~method_name ~position ~total then
+                        match actual with
+                        | Type.Literal (Type.String missing_key) ->
+                            Error.TypedDictionaryKeyNotFound
+                              { typed_dictionary_name = name; missing_key }
+                        | Type.Primitive "str" ->
+                            Error.TypedDictionaryAccessWithNonLiteral
+                              (List.map fields ~f:(fun { name; _ } -> name))
+                        | _ -> normal
+                      else
+                        normal
+                    in
                     match implicit, callee >>| Reference.as_list with
-                    | ( Some
-                          { implicit_annotation = Type.TypedDictionary { fields; name; total }; _ },
+                    | ( Some { implicit_annotation = Type.TypedDictionary typed_dictionary; _ },
                         Some [_; method_name] ) ->
-                        if Type.TypedDictionary.is_special_mismatch ~method_name ~position ~total
-                        then
-                          match actual with
-                          | Type.Literal (Type.String missing_key) ->
-                              Error.TypedDictionaryKeyNotFound
-                                { typed_dictionary_name = name; missing_key }
-                          | Type.Primitive "str" ->
-                              Error.TypedDictionaryAccessWithNonLiteral
-                                (List.map fields ~f:(fun { name; _ } -> name))
-                          | _ -> normal
-                        else
-                          normal
+                        typed_dictionary_error ~method_name ~position typed_dictionary
+                    | ( Some { implicit_annotation = Type.Primitive _ as annotation; _ },
+                        Some [_; method_name] ) ->
+                        GlobalResolution.get_typed_dictionary
+                          ~resolution:global_resolution
+                          annotation
+                        >>| typed_dictionary_error ~method_name ~position
+                        |> Option.value ~default:normal
                     | _ -> normal
                   in
                   let location = Location.with_module ~qualifier:Context.qualifier location in
@@ -3337,7 +3349,18 @@ module State (Context : Context) = struct
                       match resolved_base, attribute with
                       | Some parent, Some (attribute, name)
                         when not (Annotated.Attribute.defined attribute) ->
-                          if is_undefined_attribute parent then
+                          let is_meta_typed_dictionary =
+                            Type.is_meta parent
+                            && GlobalResolution.is_typed_dictionary
+                                 ~resolution:global_resolution
+                                 (Type.single_parameter parent)
+                          in
+                          if is_meta_typed_dictionary then
+                            (* Ignore the error from the attribute declaration `Movie.name = ...`,
+                               which would raise an error because `name` was removed as an attribute
+                               from the TypedDictionary. *)
+                            state
+                          else if is_undefined_attribute parent then
                             emit_error
                               ~state
                               ~location
@@ -3526,7 +3549,13 @@ module State (Context : Context) = struct
                     | None -> Type.Top
                     | Some reference -> Type.Primitive (Reference.show reference)
                   in
-                  explicit && not (Type.equal parent_annotation (Primitive attribute_parent))
+                  explicit
+                  (* [Movie.items: int] would raise an error because [Mapping] also has [items]. *)
+                  && (not
+                        (GlobalResolution.is_typed_dictionary
+                           ~resolution:global_resolution
+                           parent_annotation))
+                  && not (Type.equal parent_annotation (Primitive attribute_parent))
                 in
                 let parent_class =
                   match name with
@@ -3692,7 +3721,28 @@ module State (Context : Context) = struct
                           |> Option.some
                         else
                           None
-                    | None -> None )
+                    | None ->
+                        Option.some_if
+                          ( insufficiently_annotated
+                          && GlobalResolution.is_typed_dictionary
+                               ~resolution:global_resolution
+                               (Type.Primitive class_name) )
+                          (Error.create
+                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~kind:
+                               (Error.ProhibitedAny
+                                  {
+                                    missing_annotation =
+                                      {
+                                        Error.name = reference;
+                                        annotation = actual_annotation;
+                                        given_annotation = Option.some_if is_immutable expected;
+                                        evidence_locations;
+                                        thrown_at_source = true;
+                                      };
+                                    is_type_alias = false;
+                                  })
+                             ~define:Context.define) )
                 | _ ->
                     Error.create
                       ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -4618,7 +4668,11 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     let check_attribute_initialization definition errors =
       if
         (not (ClassSummary.is_protocol (Node.value definition)))
-        && not (AnnotatedClass.has_abstract_base definition)
+        && (not (AnnotatedClass.has_abstract_base definition))
+        && not
+             (GlobalResolution.is_typed_dictionary
+                ~resolution:global_resolution
+                (Type.Primitive (Reference.show (AnnotatedClass.name definition))))
       then
         let unimplemented_errors =
           let uninitialized_attributes =
@@ -4847,7 +4901,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         >>| Node.location
                         |> Option.value ~default:location
                       in
-
                       Some
                         (Error.create
                            ~location:(Location.with_module ~qualifier:Context.qualifier location)

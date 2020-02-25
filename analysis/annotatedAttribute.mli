@@ -60,6 +60,8 @@ val annotation : instantiated -> Annotation.t
 
 val uninstantiated_annotation : 'a t -> 'a
 
+val with_uninstantiated_annotation : uninstantiated_annotation:'a -> 'a t -> 'a t
+
 val name : 'a t -> Identifier.t
 
 val abstract : 'a t -> bool

@@ -257,7 +257,12 @@ let least_upper_bound ((module Handler : Handler) as order) =
   least_common_successor order ~successors
 
 
-let is_transitive_successor ((module Handler : Handler) as handler) ~source ~target =
+let is_transitive_successor
+    ?(placeholder_subclass_extends_all = true)
+    ((module Handler : Handler) as handler)
+    ~source
+    ~target
+  =
   raise_if_untracked handler source;
   raise_if_untracked handler target;
   let worklist = Queue.create () in
@@ -272,7 +277,7 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
         | Ok () ->
             if
               IndexTracker.equal current (index_of target)
-              || Handler.extends_placeholder_stub current
+              || (placeholder_subclass_extends_all && Handler.extends_placeholder_stub current)
             then
               true
             else (
@@ -485,3 +490,24 @@ let to_dot (module Handler : Handler) ~indices =
   List.iter ~f:add_edges indices;
   Buffer.add_string buffer "}";
   Buffer.contents buffer
+
+
+let is_typed_dictionary_subclass ~class_hierarchy name =
+  let (module TypeOrderHandler : Handler) = class_hierarchy in
+  TypeOrderHandler.contains name
+  && TypeOrderHandler.contains (Type.TypedDictionary.class_name ~total:true)
+  && is_transitive_successor
+       ~placeholder_subclass_extends_all:false
+       class_hierarchy
+       ~source:name
+       ~target:(Type.TypedDictionary.class_name ~total:true)
+  && not (String.equal name (Type.TypedDictionary.class_name ~total:true))
+
+
+let is_total_typed_dictionary ~class_hierarchy name =
+  not
+    (is_transitive_successor
+       ~placeholder_subclass_extends_all:false
+       class_hierarchy
+       ~source:name
+       ~target:(Type.TypedDictionary.class_name ~total:false))

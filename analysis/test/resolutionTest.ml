@@ -566,7 +566,30 @@ let test_resolve_mutable_literal_to_complex_type context =
 
 
 let test_resolve_mutable_literals_typed_dictionary context =
-  let resolution = make_resolution ~context "" in
+  let resolution =
+    make_resolution
+      ~context
+      {|
+      import mypy_extensions
+      class ClassBasedMovie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+
+      class OuterTypedDict(mypy_extensions.TypedDict):
+        outer_foo: ClassBasedMovie
+
+      class Child(ClassBasedMovie):
+        rating: int
+
+      class RegularClass:
+        name: str
+        year: int
+
+      class NonTotalMovie(mypy_extensions.TypedDict, total=False):
+        name: str
+        year: int
+    |}
+  in
   let assert_resolve_mutable_literals ~source ~against_type expected_output_type =
     let expression =
       match parse_single_statement source with
@@ -585,25 +608,6 @@ let test_resolve_mutable_literals_typed_dictionary context =
          ~resolved
          ~expected:against_type)
   in
-  let movie_type =
-    Type.TypedDictionary
-      {
-        name = "Movie";
-        fields =
-          [
-            { name = "name"; annotation = Type.string }; { name = "year"; annotation = Type.integer };
-          ];
-        total = true;
-      }
-  in
-  let nested_typed_dictionary_type =
-    Type.TypedDictionary
-      {
-        name = "OuterTypedDict";
-        fields = [{ name = "outer_foo"; annotation = movie_type }];
-        total = true;
-      }
-  in
   let slightly_wrong_movie_type =
     Type.TypedDictionary.anonymous
       ~total:true
@@ -612,6 +616,19 @@ let test_resolve_mutable_literals_typed_dictionary context =
         { name = "year"; annotation = Type.integer };
       ]
   in
+  let slightly_wrong_non_total_movie_type =
+    Type.TypedDictionary.anonymous
+      ~total:false
+      [
+        { name = "name"; annotation = Type.literal_integer 37 };
+        { name = "year"; annotation = Type.integer };
+      ]
+  in
+  let slightly_wrong_child_type =
+    Type.TypedDictionary.anonymous
+      ~total:true
+      [{ name = "name"; annotation = Type.string }; { name = "year"; annotation = Type.integer }]
+  in
   let slightly_wrong_nested_type =
     Type.TypedDictionary.anonymous
       ~total:true
@@ -619,43 +636,55 @@ let test_resolve_mutable_literals_typed_dictionary context =
   in
   assert_resolve_mutable_literals
     ~source:"{}"
-    ~against_type:movie_type
+    ~against_type:(Type.Primitive "test.ClassBasedMovie")
     (Type.TypedDictionary.anonymous ~total:true []);
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
-    ~against_type:movie_type
-    movie_type;
+    ~against_type:(Type.Primitive "test.ClassBasedMovie")
+    (Type.Primitive "test.ClassBasedMovie");
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999, 'rating': 10 }"
+    ~against_type:(Type.Primitive "test.Child")
+    (Type.Primitive "test.Child");
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:(Type.Primitive "test.RegularClass")
+    (Type.dictionary ~key:Type.string ~value:(Type.union [Type.integer; Type.string]));
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:(Type.Primitive "test.Child")
+    slightly_wrong_child_type;
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37, 'year': 1999 }"
-    ~against_type:movie_type
+    ~against_type:(Type.Primitive "test.ClassBasedMovie")
     slightly_wrong_movie_type;
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999, 'extra_key': 1 }"
-    ~against_type:movie_type
-    movie_type;
+    ~against_type:(Type.Primitive "test.ClassBasedMovie")
+    (Type.Primitive "test.ClassBasedMovie");
   assert_resolve_mutable_literals
     ~source:"{'hello': { 'name': 'The Matrix', 'year': 1999 }}"
-    ~against_type:(Type.dictionary ~key:Type.string ~value:movie_type)
-    (Type.dictionary ~key:Type.string ~value:movie_type);
+    ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))
+    (Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"));
   assert_resolve_mutable_literals
     ~source:"{'outer_foo': { 'name': 'The Matrix', 'year': 1999 }}"
-    ~against_type:nested_typed_dictionary_type
-    nested_typed_dictionary_type;
+    ~against_type:(Type.Primitive "test.OuterTypedDict")
+    (Type.Primitive "test.OuterTypedDict");
   assert_resolve_mutable_literals
     ~source:"{'hello': { 'name': 37, 'year': 1999 }}"
-    ~against_type:(Type.dictionary ~key:Type.string ~value:movie_type)
+    ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))
     (Type.dictionary ~key:Type.string ~value:slightly_wrong_movie_type);
   assert_resolve_mutable_literals
     ~source:"{'outer_foo': { 'name': 37, 'year': 1999 }}"
-    ~against_type:nested_typed_dictionary_type
+    ~against_type:(Type.Primitive "test.OuterTypedDict")
     slightly_wrong_nested_type;
   assert_resolve_mutable_literals
     ~source:"{'outer_dict': {'outer_foo': { 'name': 37, 'year': 1999 }}}"
-    ~against_type:(Type.dictionary ~key:Type.string ~value:nested_typed_dictionary_type)
+    ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.OuterTypedDict"))
     (Type.dictionary ~key:Type.string ~value:slightly_wrong_nested_type);
   assert_resolve_mutable_literals
     ~source:"{'outer_dict': {'outer_foo': {}}}"
-    ~against_type:(Type.dictionary ~key:Type.string ~value:nested_typed_dictionary_type)
+    ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.OuterTypedDict"))
     (Type.dictionary
        ~key:Type.string
        ~value:
@@ -664,16 +693,101 @@ let test_resolve_mutable_literals_typed_dictionary context =
             [{ name = "outer_foo"; annotation = Type.TypedDictionary.anonymous ~total:true [] }]));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
-    ~against_type:(Type.union [movie_type; Type.integer])
-    (Type.union [movie_type; Type.integer]);
+    ~against_type:(Type.union [Type.Primitive "test.ClassBasedMovie"; Type.integer])
+    (Type.union [Type.Primitive "test.ClassBasedMovie"; Type.integer]);
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
-    ~against_type:(Type.optional movie_type)
-    (Type.optional movie_type);
+    ~against_type:(Type.optional (Type.Primitive "test.ClassBasedMovie"))
+    (Type.optional (Type.Primitive "test.ClassBasedMovie"));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37, 'year': 1999 }"
-    ~against_type:(Type.optional movie_type)
+    ~against_type:(Type.optional (Type.Primitive "test.ClassBasedMovie"))
     slightly_wrong_movie_type;
+
+  (* Non-total typed dictionary. *)
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:(Type.Primitive "test.NonTotalMovie")
+    (Type.Primitive "test.NonTotalMovie");
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix'}"
+    ~against_type:(Type.Primitive "test.NonTotalMovie")
+    (Type.Primitive "test.NonTotalMovie");
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 37}"
+    ~against_type:(Type.Primitive "test.NonTotalMovie")
+    slightly_wrong_non_total_movie_type;
+  ()
+
+
+let test_get_typed_dictionary context =
+  let resolution =
+    make_resolution
+      ~context
+      {|
+      import mypy_extensions
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+
+      class NonTotalMovie(mypy_extensions.TypedDict, total=False):
+        name: str
+        year: int
+
+      class Child(Movie):
+        rating: int
+
+      class RegularClass:
+        def __init__(self, x: int) -> None:
+          self.x = x
+    |}
+  in
+  let assert_typed_dictionary ~annotation expected_type =
+    assert_equal
+      ~printer:[%show: Type.t Type.Record.TypedDictionary.record option]
+      expected_type
+      (GlobalResolution.get_typed_dictionary
+         ~resolution:(Resolution.global_resolution resolution)
+         annotation)
+  in
+  assert_typed_dictionary ~annotation:(Type.Primitive "test.RegularClass") None;
+  assert_typed_dictionary
+    ~annotation:(Type.Primitive "test.Movie")
+    (Some
+       {
+         name = "test.Movie";
+         total = true;
+         fields =
+           [
+             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string };
+             { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer };
+           ];
+       });
+  assert_typed_dictionary
+    ~annotation:(Type.Primitive "test.Child")
+    (Some
+       {
+         name = "test.Child";
+         total = true;
+         fields =
+           [
+             { Type.Record.TypedDictionary.name = "rating"; annotation = Type.integer };
+             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string };
+             { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer };
+           ];
+       });
+  assert_typed_dictionary
+    ~annotation:(Type.Primitive "test.NonTotalMovie")
+    (Some
+       {
+         name = "test.NonTotalMovie";
+         total = false;
+         fields =
+           [
+             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string };
+             { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer };
+           ];
+       });
   ()
 
 
@@ -831,6 +945,7 @@ let () =
          "resolve_mutable_literal_to_complex_type" >:: test_resolve_mutable_literal_to_complex_type;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
+         "get_typed_dictionary " >:: test_get_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
          "class_definitions" >:: test_class_definitions;
          "source_is_unit_test" >:: test_source_is_unit_test;

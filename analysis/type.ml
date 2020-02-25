@@ -383,6 +383,21 @@ module Record = struct
       | Group _ ->
           None
   end
+
+  module TypedDictionary = struct
+    type 'annotation typed_dictionary_field = {
+      name: string;
+      annotation: 'annotation;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation record = {
+      name: Identifier.t;
+      fields: 'annotation typed_dictionary_field list;
+      total: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 open Record.Callable
@@ -413,11 +428,6 @@ module T = struct
     | Bounded of t Record.OrderedTypes.record
     | Unbounded of t
 
-  and typed_dictionary_field = {
-    name: string;
-    annotation: t;
-  }
-
   and t =
     | Annotated of t
     | Bottom
@@ -434,11 +444,7 @@ module T = struct
     | Primitive of Primitive.t
     | Top
     | Tuple of tuple
-    | TypedDictionary of {
-        name: Identifier.t;
-        fields: typed_dictionary_field list;
-        total: bool;
-      }
+    | TypedDictionary of t Record.TypedDictionary.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
@@ -703,10 +709,11 @@ let rec pp format annotation =
         | Unbounded parameter -> Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
-  | TypedDictionary { name; fields; total } ->
+  | TypedDictionary { Record.TypedDictionary.name; fields; total } ->
       let fields =
         fields
-        |> List.map ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp annotation)
+        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation } ->
+               Format.asprintf "%s: %a" name pp annotation)
         |> String.concat ~sep:", "
       in
       let totality = if total then "" else " (non-total)" in
@@ -804,7 +811,7 @@ let rec pp_concise format annotation =
   | TypedDictionary { name = "$anonymous"; fields; _ } ->
       let fields =
         fields
-        |> List.map ~f:(fun { name; annotation } ->
+        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation } ->
                Format.asprintf "%s: %a" name pp_concise annotation)
         |> String.concat ~sep:", "
       in
@@ -1166,7 +1173,7 @@ let rec expression annotation =
     | TypedDictionary { name; fields; total } ->
         let argument =
           let tail =
-            let field_to_tuple { name; annotation } =
+            let field_to_tuple { Record.TypedDictionary.name; annotation } =
               Node.create_with_default_location
                 (Expression.Tuple
                    [
@@ -1321,7 +1328,7 @@ module Transform = struct
         | Tuple (Bounded ordered) -> Tuple (Bounded (visit_ordered_types ordered))
         | Tuple (Unbounded annotation) -> Tuple (Unbounded (visit_annotation annotation ~state))
         | TypedDictionary ({ fields; _ } as typed_dictionary) ->
-            let visit_field ({ annotation; _ } as field) =
+            let visit_field ({ Record.TypedDictionary.annotation; _ } as field) =
               { field with annotation = visit_annotation annotation ~state }
             in
             TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field }
@@ -2048,7 +2055,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                       ];
                   _;
                 } ->
-                  Some { name = field_name; annotation = create_logic field_annotation }
+                  Some
+                    {
+                      Record.TypedDictionary.name = field_name;
+                      annotation = create_logic field_annotation;
+                    }
               | _ -> None
             in
             fields |> List.filter_map ~f:tuple_to_field
@@ -2276,6 +2287,13 @@ let primitives annotation =
   collect annotation ~predicate
 
 
+let typed_dictionary_class_name ~total =
+  if total then
+    "TypedDictionary"
+  else
+    "NonTotalTypedDictionary"
+
+
 let elements annotation =
   let module CollectorTransform = Transform.Make (struct
     type state = Primitive.t list
@@ -2294,7 +2312,7 @@ let elements annotation =
         | Parametric { name; _ } -> name :: sofar
         | Primitive annotation -> annotation :: sofar
         | Tuple _ -> "tuple" :: sofar
-        | TypedDictionary _ -> "TypedDictionary" :: sofar
+        | TypedDictionary _ -> typed_dictionary_class_name ~total:true :: sofar
         | Union _ -> "typing.Union" :: sofar
         | ParameterVariadicComponent _
         | Bottom
@@ -2515,13 +2533,6 @@ module OrderedTypes = struct
     | Any -> None
     | Concatenation concatenation -> Concatenation.replace_variable concatenation ~replacement
 end
-
-let typed_dictionary_class_name ~total =
-  if total then
-    "TypedDictionary"
-  else
-    "NonTotalTypedDictionary"
-
 
 let split annotation =
   let open Record.Parameter in
@@ -3679,7 +3690,11 @@ let dequalify map annotation =
 
 
 module TypedDictionary = struct
+  open Record.TypedDictionary
+
   let anonymous ~total fields = TypedDictionary { name = "$anonymous"; fields; total }
+
+  let create_field ~name ~annotation = { name; annotation }
 
   let fields_have_colliding_keys left_fields right_fields =
     let found_collision { name = needle_name; annotation = needle_annotation } =
@@ -3700,7 +3715,7 @@ module TypedDictionary = struct
 
 
   let constructor ~name ~fields ~total =
-    let annotation = TypedDictionary { name; fields; total } in
+    let annotation = Primitive name in
     {
       Callable.kind = Named (Reference.create "__init__");
       implementation = { annotation = Top; parameters = Undefined };
@@ -3721,10 +3736,22 @@ module TypedDictionary = struct
     }
 
 
+  let fields_from_constructor = function
+    | { Callable.kind = Named name; overloads = [{ parameters = Defined parameters; _ }; _]; _ }
+      when String.equal (Reference.show name) "__init__" ->
+        let parameter_to_field = function
+          | Record.Callable.RecordParameter.KeywordOnly { name; annotation; _ } ->
+              Some { name = String.split ~on:'$' name |> List.last_exn; annotation }
+          | _ -> None
+        in
+        List.map ~f:parameter_to_field parameters |> Option.all
+    | _ -> None
+
+
   type special_method = {
     name: string;
     special_index: int option;
-    overloads: typed_dictionary_field list -> t Callable.overload list;
+    overloads: t typed_dictionary_field list -> t Callable.overload list;
   }
 
   let key_parameter name =

@@ -365,6 +365,18 @@ let attribute_from_annotation resolution ~parent:annotation ~name =
   | Some (_ :: _) -> None
 
 
+let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.get_typed_dictionary (attribute_resolution resolution) ?dependency
+
+
+let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation =
+  Type.primitive_name annotation
+  >>| ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+        (class_metadata_environment resolution)
+        ?dependency
+  |> Option.value ~default:false
+
+
 let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
   let comparator ~left ~right =
     AttributeResolution.ReadOnly.constraints_solution_exists
@@ -377,6 +389,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
   let left =
     AttributeResolution.weaken_mutable_literals
       resolve
+      ~get_typed_dictionary:(get_typed_dictionary ~resolution)
       ~expression
       ~resolved:left
       ~expected:right
