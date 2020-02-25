@@ -367,9 +367,7 @@ let test_type_collection context =
           module Builder = Callgraph.NullBuilder
         end)
         in
-        let state = State.create ~resolution () in
-        let { State.resolved; _ } = State.forward_expression ~state ~expression in
-        match resolved with
+        match Resolution.resolve_expression_to_type resolution expression with
         | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->
             assert_equal expected_type (Reference.show callable_type)
         | _ -> assert false

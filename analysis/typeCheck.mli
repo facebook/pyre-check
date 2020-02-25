@@ -20,12 +20,7 @@ end
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create
-    :  ?bottom:bool ->
-    resolution:Resolution.t ->
-    ?resolution_fixpoint:LocalAnnotationMap.t ->
-    unit ->
-    t
+  val create : ?bottom:bool -> resolution:Resolution.t -> unit -> t
 
   val resolution : t -> Resolution.t
 
@@ -33,24 +28,7 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  type base =
-    | Class of Type.t
-    | Instance of Type.t
-    | Super of Type.t
-
-  and resolved = {
-    state: t;
-    resolved: Type.t;
-    resolved_annotation: Annotation.t option;
-    base: base option;
-  }
-  [@@deriving show]
-
   val parse_and_check_annotation : ?bind_variables:bool -> state:t -> Expression.t -> t * Type.t
-
-  val forward_expression : state:t -> expression:Expression.t -> resolved
-
-  val forward_statement : state:t -> statement:Statement.t -> t
 
   include Fixpoint.State with type t := t
 end

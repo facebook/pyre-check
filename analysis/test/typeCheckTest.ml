@@ -21,28 +21,49 @@ module DefaultContext = struct
   module Builder = Callgraph.NullBuilder
 end
 
+let create_annotation_store ?(immutables = []) annotations =
+  let immutables = String.Map.of_alist_exn immutables in
+  let annotify (name, annotation) =
+    let annotation =
+      let create annotation =
+        match Map.find immutables name with
+        | Some original ->
+            RefinementUnit.create
+              ~base:(Annotation.create_immutable ~original:(Some original) annotation)
+              ()
+        | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
+      in
+      create annotation
+    in
+    !&name, annotation
+  in
+  List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
+
+
+let assert_annotation_store ~expected actual =
+  let actual = Resolution.annotation_store actual in
+  let pp_annotation_store formatter annotation_store =
+    let annotation_to_string (name, refinement_unit) =
+      Format.asprintf "%a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
+    in
+    let printed =
+      Map.to_alist annotation_store |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
+    in
+    Format.fprintf formatter "%s" printed
+  in
+  assert_equal
+    ~cmp:(Reference.Map.equal [%equal: RefinementUnit.t])
+    ~printer:(Format.asprintf "%a" pp_annotation_store)
+    ~pp_diff:(diff ~print:pp_annotation_store)
+    expected
+    actual
+
+
 module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false) ?(immutables = []) ~resolution annotations =
     let module State = State (Context) in
     let resolution =
-      let annotation_store =
-        let immutables = String.Map.of_alist_exn immutables in
-        let annotify (name, annotation) =
-          let annotation =
-            let create annotation =
-              match Map.find immutables name with
-              | Some original ->
-                  RefinementUnit.create
-                    ~base:(Annotation.create_immutable ~original:(Some original) annotation)
-                    ()
-              | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
-            in
-            create annotation
-          in
-          !&name, annotation
-        in
-        List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
-      in
+      let annotation_store = create_annotation_store ~immutables annotations in
       Resolution.with_annotation_store resolution ~annotation_store
     in
     State.create ~bottom ~resolution ()
@@ -312,11 +333,7 @@ let assert_resolved ~context sources expression expected =
   let module State = State (DefaultContext) in
   let resolution = ScratchProject.setup ~context sources |> ScratchProject.build_resolution in
   let resolved =
-    let state = State.create ~resolution () in
-    let { State.resolved; _ } =
-      State.forward_expression ~state ~expression:(parse_single_expression expression)
-    in
-    resolved
+    Resolution.resolve_expression_to_type resolution (parse_single_expression expression)
   in
   assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 
@@ -458,10 +475,6 @@ type parameter_kind =
 
 let test_forward_expression context =
   let module State = State (DefaultContext) in
-  let create =
-    let module Create = Create (DefaultContext) in
-    Create.create
-  in
   let assert_forward
       ?(precondition = [])
       ?(postcondition = [])
@@ -477,19 +490,18 @@ let test_forward_expression context =
       | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
-    let resolution =
-      ScratchProject.setup ~context ["test.py", environment] |> ScratchProject.build_resolution
+    let global_resolution =
+      ScratchProject.setup ~context ["test.py", environment]
+      |> ScratchProject.build_global_resolution
     in
-    let { State.state = forwarded; resolved; _ } =
-      State.forward_expression ~state:(create ~resolution precondition) ~expression
+    let new_resolution, resolved =
+      let resolution =
+        let annotation_store = create_annotation_store precondition in
+        TypeCheck.resolution ~annotation_store global_resolution ()
+      in
+      Resolution.resolve_expression resolution expression
     in
-    let assert_state_equal =
-      assert_equal
-        ~cmp:State.equal
-        ~printer:(Format.asprintf "%a" State.pp)
-        ~pp_diff:(diff ~print:State.pp)
-    in
-    assert_state_equal (create ~resolution postcondition) forwarded;
+    assert_annotation_store ~expected:(create_annotation_store postcondition) new_resolution;
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved
   in
   (* Await. *)
@@ -855,26 +867,23 @@ let test_forward_expression context =
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
-      ScratchProject.setup ~context ["test.py", environment] |> ScratchProject.build_resolution
+      let global_resolution =
+        ScratchProject.setup ~context ["test.py", environment]
+        |> ScratchProject.build_global_resolution
+      in
+      let annotation_store = create_annotation_store precondition in
+      TypeCheck.resolution ~annotation_store global_resolution ()
     in
-    let { State.resolved_annotation; _ } =
-      State.forward_expression ~state:(create ~resolution precondition) ~expression
-    in
-    assert_equal
-      ~cmp:(Option.equal Annotation.equal)
-      ~printer:(fun annotation -> annotation >>| Annotation.show |> Option.value ~default:"None")
-      annotation
-      resolved_annotation
+    let resolved_annotation = Resolution.resolve_expression_to_annotation resolution expression in
+    assert_equal ~cmp:Annotation.equal ~printer:Annotation.show annotation resolved_annotation
   in
-  assert_annotation "1" None;
-  assert_annotation ~environment:"x = 1" "test.x" (Some (Annotation.create_immutable Type.integer));
+  assert_annotation ~environment:"x = 1" "test.x" (Annotation.create_immutable Type.integer);
   assert_annotation
     ~environment:"x: typing.Union[int, str] = 1"
     "test.x"
-    (Some
-       (Annotation.create_immutable
-          ~original:(Some (Type.union [Type.string; Type.integer]))
-          (Type.union [Type.string; Type.integer])));
+    (Annotation.create_immutable
+       ~original:(Some (Type.union [Type.string; Type.integer]))
+       (Type.union [Type.string; Type.integer]));
   assert_annotation
     ~environment:
       {|
@@ -883,11 +892,13 @@ let test_forward_expression context =
             self.attribute: int = 1
       |}
     "test.Foo().attribute"
-    (Some (Annotation.create_immutable Type.integer))
+    (Annotation.create_immutable Type.integer)
 
 
 let test_forward_statement context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
   let assert_forward
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
@@ -917,14 +928,7 @@ let test_forward_statement context =
       module Builder = Callgraph.NullBuilder
     end
     in
-    let module Create = Create (Context) in
     let module State = State (Context) in
-    let assert_state_equal =
-      assert_equal
-        ~cmp:State.equal
-        ~printer:(Format.asprintf "%a" State.pp)
-        ~pp_diff:(diff ~print:State.pp)
-    in
     let forwarded =
       let parsed =
         parse statement
@@ -932,14 +936,27 @@ let test_forward_statement context =
         | { Source.statements = statement :: rest; _ } -> statement :: rest
         | _ -> failwith "unable to parse test"
       in
-      List.fold
-        ~f:(fun state statement -> State.forward_statement ~state ~statement)
-        ~init:(Create.create ~immutables:precondition_immutables ~resolution precondition)
-        parsed
+      let resolution =
+        let annotation_store =
+          create_annotation_store ~immutables:precondition_immutables precondition
+        in
+        TypeCheck.resolution global_resolution ~annotation_store ()
+      in
+      let rec process_statement resolution = function
+        | [] -> Some resolution
+        | statement :: rest -> (
+            match Resolution.resolve_statement resolution statement with
+            | Resolution.Unreachable -> None
+            | Resolution.Reachable { resolution; _ } -> process_statement resolution rest )
+      in
+      process_statement resolution parsed
     in
-    assert_state_equal
-      (Create.create ~bottom ~immutables:postcondition_immutables ~resolution postcondition)
-      forwarded
+    match forwarded with
+    | None -> assert_true bottom
+    | Some actual_resolution ->
+        assert_annotation_store
+          ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
+          actual_resolution
   in
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
