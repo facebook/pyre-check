@@ -130,12 +130,11 @@ class Kill(Command):
                     exception,
                 )
 
-    def _kill_client_processes(self) -> None:
+    def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):
-            if process.info["name"] != CLIENT_NAME:
+            if process.info["name"] != name:
                 continue
-            # We need to be careful about how we kill the client here, as otherwise we
-            # might cause a race where we attempt to kill the `pyre kill` command.
+            # Do not kill the `pyre kill` command itself.
             pid_to_kill = process.pid
             if pid_to_kill == os.getpgid(os.getpid()):
                 continue
@@ -152,6 +151,9 @@ class Kill(Command):
                         process.info["name"], pid_to_kill, exception
                     )
                 )
+
+    def _kill_client_processes(self) -> None:
+        self._kill_processes_by_name(CLIENT_NAME)
         WatchmanSubscriber.stop_subscriber(
             ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
         )
@@ -160,12 +162,11 @@ class Kill(Command):
             configuration_monitor.ConfigurationMonitor.NAME,
         )
 
-    @staticmethod
-    def _kill_binary_processes() -> None:
+    def _kill_binary_processes(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.
         binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
-        subprocess.run(["pkill", binary_name])
+        self._kill_processes_by_name(binary_name)
 
     def _delete_server_files(self) -> None:
         root_log_directory = Path(self._current_directory, LOG_DIRECTORY)

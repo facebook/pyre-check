@@ -51,20 +51,18 @@ class KillTest(unittest.TestCase):
             arguments, original_directory, configuration, analysis_directory
         )
 
-    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
     @patch.object(psutil, "process_iter")
     @patch.object(os, "getpgid", side_effect=lambda id: id)
     @patch.object(os, "getpid", return_value=1234)
     @patch.object(os, "kill")
     @patch.object(Kill, "__init__", return_value=None)
-    def test_kill_client_processes(
+    def test_kill_processes_by_name(
         self,
         kill_init: MagicMock,
         os_kill: MagicMock,
         get_process_id: MagicMock,
         get_process_group_id: MagicMock,
         process_iterator: MagicMock,
-        stop_subscriber: MagicMock,
     ) -> None:
         process_iterator.return_value = [
             Mock(info={"name": "pyre-client"}, pid=1234),
@@ -73,48 +71,40 @@ class KillTest(unittest.TestCase):
             Mock(info={"name": "pyre-client"}, pid=9101),
         ]
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._configuration = MagicMock(log_directory=".pyre")
-        kill_command._kill_client_processes()
+        kill_command._kill_processes_by_name("pyre-client")
         os_kill.assert_has_calls(
             [call(5678, signal.SIGKILL), call(9101, signal.SIGKILL)]
         )
+
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        os_kill.side_effect = ProcessLookupError
+        # Ensure that we don't crash even if os.kill fails to find a process.
+        kill_command._kill_processes_by_name("pyre-client")
+
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        os_kill.side_effect = PermissionError
+        # Ensure that we don't crash even if os.kill fails due to permissions.
+        kill_command._kill_processes_by_name("pyre-client")
+
+    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
+    @patch.object(Kill, "_kill_processes_by_name")
+    @patch.object(Kill, "__init__", return_value=None)
+    def test_kill_client_processes(
+        self,
+        kill_init: MagicMock,
+        kill_processes_by_name: MagicMock,
+        stop_subscriber: MagicMock,
+    ) -> None:
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._configuration = MagicMock(log_directory=".pyre")
+        kill_command._kill_client_processes()
+        kill_processes_by_name.assert_called_with("pyre-client")
         stop_subscriber.assert_has_calls(
             [
                 call(".pyre/file_monitor", "file_monitor"),
                 call(".pyre/configuration_monitor", "configuration_monitor"),
             ]
         )
-
-        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._configuration = MagicMock(log_directory=".pyre")
-        os_kill.side_effect = ProcessLookupError
-        # Ensure that we don't crash even if os.kill fails to find a process.
-        kill_command._kill_client_processes()
-
-    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
-    @patch.object(psutil, "process_iter")
-    @patch.object(os, "getpgid", side_effect=lambda id: id)
-    @patch.object(os, "getpid", return_value=1234)
-    @patch.object(os, "kill")
-    @patch.object(Kill, "__init__", return_value=None)
-    def test_kill_client_processes_permission_error(
-        self,
-        kill_init: MagicMock,
-        os_kill: MagicMock,
-        get_process_id: MagicMock,
-        get_process_group_id: MagicMock,
-        process_iterator: MagicMock,
-        stop_subscriber: MagicMock,
-    ) -> None:
-        process_iterator.return_value = [
-            Mock(info={"name": "pyre-client"}, pid=1234),
-            Mock(info={"name": "pyre-client"}, pid=5678),
-        ]
-        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._configuration = MagicMock(log_directory=".pyre")
-        os_kill.side_effect = PermissionError
-        # Ensure that we don't crash even if os.kill fails due to permissions.
-        kill_command._kill_client_processes()
 
     @patch.object(subprocess, "check_output", return_value=b"/root/pyre\n")
     @patch.object(shutil, "rmtree")
@@ -154,13 +144,18 @@ class KillTest(unittest.TestCase):
         remove.assert_called_once_with("/tmp/actual_socket")
         unlink.assert_called_once_with(socket_path)
 
-    @patch.object(subprocess, "run")
     @patch.object(kill, "_get_process_name", return_value="foo.exe")
+    @patch.object(Kill, "_kill_processes_by_name")
+    @patch.object(Kill, "__init__", return_value=None)
     def test_kill_binary_processes(
-        self, get_process_name: MagicMock, run: MagicMock
+        self,
+        kill_init: MagicMock,
+        kill_processes_by_name: MagicMock,
+        get_process_name: MagicMock,
     ) -> None:
-        Kill._kill_binary_processes()
-        run.assert_called_once_with(["pkill", "foo.exe"])
+        kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        kill_command._kill_binary_processes()
+        kill_processes_by_name.assert_called_with("foo.exe")
 
     @patch.object(Kill, "_delete_linked_path")
     @patch.object(kill, "Path")
