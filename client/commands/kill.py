@@ -165,6 +165,11 @@ class Kill(Command):
     def _kill_binary_processes(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.
+        LOG.warning("Force-killing all running pyre servers.")
+        LOG.warning(
+            "Use `pyre servers stop` if you want to gracefully stop"
+            " all running servers."
+        )
         binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
         self._kill_processes_by_name(binary_name)
 
