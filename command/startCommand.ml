@@ -353,15 +353,6 @@ let request_handler_thread
     loop ()
   in
   try loop () with
-  | Unix.Unix_error (Unix.Error.EBADF, function_name, arguments) ->
-      (* TODO (T62878036): We could avoid this ugly workaround if all mutations to `json_sockets`
-         are performed on the request handler thread *)
-      Log.log
-        ~section:`Server
-        "Hit Bad File Descriptor error in `%s` with arguments %s"
-        function_name
-        arguments;
-      loop ()
   | uncaught_exception ->
       Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";
       Operations.stop ~reason:"exception" ~configuration:server_configuration
