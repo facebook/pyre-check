@@ -1040,6 +1040,49 @@ class Run(Base):  # noqa
         )
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
+class MetaRun(Base):  # noqa
+    """An identifier that represents multiple runs which should be grouped semantically.
+
+    Meta-runs and runs have a many-to-many relationship, and the purpose of a meta-run
+    is to allow querying & displaying results for all related runs without having to
+    browse each of them separately."""
+
+    __tablename__ = "metaruns"
+
+    id = Column(String(length=255), primary_key=True)
+
+    # This is the moral equivalent of job_id, but named in a more intuitive manner.
+    # Allows determining the latest meta run for each custom run separately.
+    custom_run_name = Column(String(length=255), nullable=True)
+
+    date = Column(
+        DateTime, doc="The date/time the meta-run was generated", nullable=False
+    )
+
+    # We want to be able to filter meta-runs by completion. Towards that end, we plan on
+    # using the information of number of total runs vs. the number of runs written in
+    # the database.
+    expected_run_count = Column(Integer, nullable=True)
+
+    kind = Column(
+        String(length=255),
+        doc=(
+            "Specify different kinds of runs, e.g. MASTER vs. TEST., GKFORXXX, etc. "
+            "in the same DB"
+        ),
+        nullable=True,
+        index=True,
+    )
+
+    db_version = Column(
+        Integer,
+        doc="Tracks under which DB version this was written (for migrations)",
+        nullable=False,
+        default=CURRENT_DB_VERSION,
+    )
+
+
 class RunSummary:
     def __init__(
         self,
@@ -1069,6 +1112,32 @@ class RunSummary:
     @classmethod
     def fromdict(cls, d):
         return cls(**d)
+
+
+# pyre-fixme[11]: Type `Base` is not defined.
+class MetaRunToRunAssoc(Base, PrepareMixin, RecordMixin):  # noqa
+    """The responsibility of filling out the meta-run to run assoc is on the child jobs
+    of a larger run.
+    """
+
+    __tablename__ = "metarun_run_assoc"
+
+    meta_run_id = Column(String(length=255), nullable=False, primary_key=True)
+    run_id = Column(BIGDBIDType, nullable=False, primary_key=True)
+    meta_run = relationship(
+        "MetaRun",
+        primaryjoin=("MetaRunToRunAssoc.meta_run_id == foreign(MetaRun.id)"),
+        uselist=False,
+    )
+    run = relationship(
+        "Run",
+        primaryjoin=("MetaRunToRunAssoc.run_id == foreign(Run.id)"),
+        uselist=False,
+    )
+
+    @classmethod
+    def merge(cls, session, items):
+        return cls._merge_assocs(session, items, cls.meta_run_id, cls.run_id)
 
 
 # pyre-fixme[11]: Type `Base` is not defined.
