@@ -399,21 +399,20 @@ module State (Context : Context) = struct
       }
 
 
-  let emit_raw_error
-      ~state:({ errors; resolution; _ } as state)
-      ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
-    =
-    let error =
-      let location = { Location.start; stop } in
-      match Map.find errors { ErrorMap.location; kind = Error.code error } with
-      | Some other_error ->
-          Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
-      | None -> error
-    in
-    { state with errors = ErrorMap.add ~errors error }
-
-
   let emit_error ~state ~location ~kind =
+    let emit_raw_error
+        ~state:({ errors; resolution; _ } as state)
+        ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
+      =
+      let error =
+        let location = { Location.start; stop } in
+        match Map.find errors { ErrorMap.location; kind = Error.code error } with
+        | Some other_error ->
+            Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
+        | None -> error
+      in
+      { state with errors = ErrorMap.add ~errors error }
+    in
     Error.create
       ~location:(Location.with_module ~qualifier:Context.qualifier location)
       ~kind
@@ -1073,265 +1072,237 @@ module State (Context : Context) = struct
       else
         state
     in
-    let check_behavioral_subtyping ({ errors; _ } as state) =
-      let errors =
-        try
-          if
-            Define.is_constructor define
-            || Define.is_class_method define
-            || Define.is_dunder_method define
-          then
-            errors
-          else
-            let open Annotated in
-            begin
-              match define with
-              | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
-                  Class.overrides
-                    (Reference.show parent)
-                    ~resolution:global_resolution
-                    ~name:(StatementDefine.unqualified_name define)
-                  >>| fun overridden_attribute ->
-                  let errors =
-                    match AnnotatedAttribute.visibility overridden_attribute with
-                    | ReadOnly (Refinable { overridable = false }) ->
-                        let parent = overridden_attribute |> Attribute.parent in
-                        let error =
-                          Error.create
-                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                            ~kind:(Error.InvalidOverride { parent; decorator = Final })
-                            ~define:Context.define
-                        in
-                        ErrorMap.add ~errors error
-                    | _ -> errors
-                  in
-                  let errors =
-                    if
-                      not
-                        (Bool.equal
-                           (Attribute.static overridden_attribute)
-                           (StatementDefine.is_static_method define))
-                    then
+    let check_behavioral_subtyping state =
+      try
+        if
+          Define.is_constructor define
+          || Define.is_class_method define
+          || Define.is_dunder_method define
+        then
+          state
+        else
+          let open Annotated in
+          begin
+            match define with
+            | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+                Class.overrides
+                  (Reference.show parent)
+                  ~resolution:global_resolution
+                  ~name:(StatementDefine.unqualified_name define)
+                >>| fun overridden_attribute ->
+                let state =
+                  match AnnotatedAttribute.visibility overridden_attribute with
+                  | ReadOnly (Refinable { overridable = false }) ->
                       let parent = overridden_attribute |> Attribute.parent in
-                      let decorator =
-                        if Attribute.static overridden_attribute then
-                          Error.StaticSuper
-                        else
-                          Error.StaticOverride
+                      emit_error
+                        ~state
+                        ~location
+                        ~kind:(Error.InvalidOverride { parent; decorator = Final })
+                  | _ -> state
+                in
+                let state =
+                  if
+                    not
+                      (Bool.equal
+                         (Attribute.static overridden_attribute)
+                         (StatementDefine.is_static_method define))
+                  then
+                    let parent = overridden_attribute |> Attribute.parent in
+                    let decorator =
+                      if Attribute.static overridden_attribute then
+                        Error.StaticSuper
+                      else
+                        Error.StaticOverride
+                    in
+                    emit_error ~state ~location ~kind:(Error.InvalidOverride { parent; decorator })
+                  else
+                    state
+                in
+                (* Check strengthening of postcondition. *)
+                match Annotation.annotation (Attribute.annotation overridden_attribute) with
+                | Type.Callable { Type.Callable.implementation; _ }
+                  when not (StatementDefine.is_static_method define) ->
+                    let original_implementation =
+                      resolve_reference_type ~state:{ state with resolution } (Node.value name)
+                      |> function
+                      | Type.Callable { Type.Callable.implementation = original_implementation; _ }
+                        ->
+                          original_implementation
+                      | annotation -> raise (ClassHierarchy.Untracked annotation)
+                    in
+                    let state =
+                      let expected = Type.Callable.Overload.return_annotation implementation in
+                      let actual =
+                        Type.Callable.Overload.return_annotation original_implementation
                       in
-                      let error =
-                        Error.create
-                          ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                          ~kind:(Error.InvalidOverride { parent; decorator })
-                          ~define:Context.define
-                      in
-                      ErrorMap.add ~errors error
-                    else
-                      errors
-                  in
-                  (* Check strengthening of postcondition. *)
-                  match Annotation.annotation (Attribute.annotation overridden_attribute) with
-                  | Type.Callable { Type.Callable.implementation; _ }
-                    when not (StatementDefine.is_static_method define) ->
-                      let original_implementation =
-                        resolve_reference_type ~state:{ state with resolution } (Node.value name)
-                        |> function
-                        | Type.Callable
-                            { Type.Callable.implementation = original_implementation; _ } ->
-                            original_implementation
-                        | annotation -> raise (ClassHierarchy.Untracked annotation)
-                      in
-                      let errors =
-                        let expected = Type.Callable.Overload.return_annotation implementation in
-                        let actual =
-                          Type.Callable.Overload.return_annotation original_implementation
-                        in
-                        if
-                          Type.Variable.all_variables_are_resolved expected
-                          && not
-                               (GlobalResolution.less_or_equal
-                                  global_resolution
-                                  ~left:actual
-                                  ~right:expected)
-                        then
-                          let error =
-                            Error.create
-                              ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                              ~kind:
-                                (Error.InconsistentOverride
-                                   {
-                                     overridden_method = StatementDefine.unqualified_name define;
-                                     parent =
-                                       Attribute.parent overridden_attribute |> Reference.create;
-                                     override_kind = Method;
-                                     override =
-                                       Error.WeakenedPostcondition
-                                         (Error.create_mismatch
-                                            ~resolution:global_resolution
-                                            ~actual
-                                            ~expected
-                                            ~covariant:false);
-                                   })
-                              ~define:Context.define
+                      if
+                        Type.Variable.all_variables_are_resolved expected
+                        && not
+                             (GlobalResolution.less_or_equal
+                                global_resolution
+                                ~left:actual
+                                ~right:expected)
+                      then
+                        emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.InconsistentOverride
+                               {
+                                 overridden_method = StatementDefine.unqualified_name define;
+                                 parent = Attribute.parent overridden_attribute |> Reference.create;
+                                 override_kind = Method;
+                                 override =
+                                   Error.WeakenedPostcondition
+                                     (Error.create_mismatch
+                                        ~resolution:global_resolution
+                                        ~actual
+                                        ~expected
+                                        ~covariant:false);
+                               })
+                      else
+                        state
+                    in
+                    (* Check weakening of precondition. *)
+                    let overriding_parameters =
+                      let parameter_annotations
+                          { StatementDefine.signature = { parameters; _ }; _ }
+                          ~resolution
+                        =
+                        let element { Node.value = { Parameter.name; annotation; _ }; _ } =
+                          let annotation =
+                            annotation
+                            >>| (fun annotation ->
+                                  GlobalResolution.parse_annotation resolution annotation)
+                            |> Option.value ~default:Type.Top
                           in
-                          ErrorMap.add ~errors error
-                        else
-                          errors
+                          name, annotation
+                        in
+                        List.map parameters ~f:element
                       in
-                      (* Check weakening of precondition. *)
-                      let overriding_parameters =
-                        let parameter_annotations
-                            { StatementDefine.signature = { parameters; _ }; _ }
-                            ~resolution
-                          =
-                          let element { Node.value = { Parameter.name; annotation; _ }; _ } =
-                            let annotation =
-                              annotation
-                              >>| (fun annotation ->
-                                    GlobalResolution.parse_annotation resolution annotation)
-                              |> Option.value ~default:Type.Top
+                      parameter_annotations define ~resolution:global_resolution
+                      |> List.map ~f:(fun (name, annotation) ->
+                             { Type.Callable.Parameter.name; annotation; default = false })
+                      |> Type.Callable.Parameter.create
+                    in
+                    let check_parameter state overridden_parameter =
+                      let validate_match ~expected = function
+                        | Some actual -> (
+                            let is_compatible =
+                              let expected = Type.Variable.mark_all_variables_as_bound expected in
+                              GlobalResolution.constraints_solution_exists
+                                global_resolution
+                                ~left:expected
+                                ~right:actual
                             in
-                            name, annotation
-                          in
-                          List.map parameters ~f:element
-                        in
-                        parameter_annotations define ~resolution:global_resolution
-                        |> List.map ~f:(fun (name, annotation) ->
-                               { Type.Callable.Parameter.name; annotation; default = false })
-                        |> Type.Callable.Parameter.create
-                      in
-                      let check_parameter errors overridden_parameter =
-                        let validate_match ~expected = function
-                          | Some actual -> (
-                              let is_compatible =
-                                let expected = Type.Variable.mark_all_variables_as_bound expected in
-                                GlobalResolution.constraints_solution_exists
-                                  global_resolution
-                                  ~left:expected
-                                  ~right:actual
-                              in
-                              try
-                                if (not (Type.is_top expected)) && not is_compatible then
-                                  let error =
-                                    Error.create
-                                      ~location:
-                                        (Location.with_module ~qualifier:Context.qualifier location)
-                                      ~kind:
-                                        (Error.InconsistentOverride
-                                           {
-                                             overridden_method =
-                                               StatementDefine.unqualified_name define;
-                                             parent =
-                                               Attribute.parent overridden_attribute
-                                               |> Reference.create;
-                                             override_kind = Method;
-                                             override =
-                                               Error.StrengthenedPrecondition
-                                                 (Error.Found
-                                                    (Error.create_mismatch
-                                                       ~resolution:global_resolution
-                                                       ~actual
-                                                       ~expected
-                                                       ~covariant:false));
-                                           })
-                                      ~define:Context.define
-                                  in
-                                  ErrorMap.add ~errors error
-                                else
-                                  errors
-                              with
-                              | ClassHierarchy.Untracked _ ->
-                                  (* TODO(T27409168): Error here. *)
-                                  errors )
-                          | None ->
-                              let has_keyword_and_anonymous_starred_parameters =
-                                List.exists overriding_parameters ~f:(function
-                                    | Keywords _ -> true
-                                    | _ -> false)
-                                && List.exists overriding_parameters ~f:(function
-                                       | Variable _ -> true
-                                       | _ -> false)
-                              in
-                              if has_keyword_and_anonymous_starred_parameters then
-                                errors
+                            try
+                              if (not (Type.is_top expected)) && not is_compatible then
+                                emit_error
+                                  ~state
+                                  ~location
+                                  ~kind:
+                                    (Error.InconsistentOverride
+                                       {
+                                         overridden_method = StatementDefine.unqualified_name define;
+                                         parent =
+                                           Attribute.parent overridden_attribute |> Reference.create;
+                                         override_kind = Method;
+                                         override =
+                                           Error.StrengthenedPrecondition
+                                             (Error.Found
+                                                (Error.create_mismatch
+                                                   ~resolution:global_resolution
+                                                   ~actual
+                                                   ~expected
+                                                   ~covariant:false));
+                                       })
                               else
-                                let error =
-                                  Error.create
-                                    ~location:
-                                      (Location.with_module ~qualifier:Context.qualifier location)
-                                    ~kind:
-                                      (Error.InconsistentOverride
-                                         {
-                                           overridden_method =
-                                             StatementDefine.unqualified_name define;
-                                           override_kind = Method;
-                                           parent =
-                                             Attribute.parent overridden_attribute
-                                             |> Reference.create;
-                                           override =
-                                             Error.StrengthenedPrecondition
-                                               (Error.NotFound overridden_parameter);
-                                         })
-                                    ~define:Context.define
-                                in
-                                ErrorMap.add ~errors error
-                        in
-                        match overridden_parameter with
-                        | Type.Callable.Parameter.PositionalOnly { index; annotation; _ } ->
-                            List.nth overriding_parameters index
-                            >>= (function
-                                  | PositionalOnly { annotation; _ }
-                                  | Named { annotation; _ } ->
-                                      Some annotation
-                                  | _ -> None)
-                            |> validate_match ~expected:annotation
-                        | KeywordOnly { name = overridden_name; annotation; _ }
-                        | Named { name = overridden_name; annotation; _ } ->
-                            (* TODO(T44178876): ensure index match as well for named parameters *)
-                            let equal_name = function
-                              | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
-                              | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                                  Option.some_if
-                                    (Identifier.equal
-                                       (Identifier.remove_leading_underscores name)
-                                       (Identifier.remove_leading_underscores overridden_name))
-                                    annotation
-                              | _ -> None
+                                state
+                            with
+                            | ClassHierarchy.Untracked _ ->
+                                (* TODO(T27409168): Error here. *)
+                                state )
+                        | None ->
+                            let has_keyword_and_anonymous_starred_parameters =
+                              List.exists overriding_parameters ~f:(function
+                                  | Keywords _ -> true
+                                  | _ -> false)
+                              && List.exists overriding_parameters ~f:(function
+                                     | Variable _ -> true
+                                     | _ -> false)
                             in
-                            List.find_map overriding_parameters ~f:equal_name
-                            |> validate_match ~expected:annotation
-                        | Variable (Concrete annotation) ->
-                            let find_variable_parameter = function
-                              | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                                  Some annotation
-                              | _ -> None
-                            in
-                            List.find_map overriding_parameters ~f:find_variable_parameter
-                            |> validate_match ~expected:annotation
-                        | Keywords annotation ->
-                            let find_variable_parameter = function
-                              | Type.Callable.Parameter.Keywords annotation -> Some annotation
-                              | _ -> None
-                            in
-                            List.find_map overriding_parameters ~f:find_variable_parameter
-                            |> validate_match ~expected:annotation
-                        | Variable (Concatenation _) ->
-                            (* TODO(T44178876): There is no reasonable way to compare either of
-                               these alone, which is the central issue with this comparison
-                               strategy. For now, let's just ignore this *)
-                            errors
+                            if has_keyword_and_anonymous_starred_parameters then
+                              state
+                            else
+                              emit_error
+                                ~state
+                                ~location
+                                ~kind:
+                                  (Error.InconsistentOverride
+                                     {
+                                       overridden_method = StatementDefine.unqualified_name define;
+                                       override_kind = Method;
+                                       parent =
+                                         Attribute.parent overridden_attribute |> Reference.create;
+                                       override =
+                                         Error.StrengthenedPrecondition
+                                           (Error.NotFound overridden_parameter);
+                                     })
                       in
-                      Type.Callable.Overload.parameters implementation
-                      |> Option.value ~default:[]
-                      |> List.fold ~init:errors ~f:check_parameter
-                  | _ -> errors )
-              | _ -> None
-            end
-            |> Option.value ~default:errors
-        with
-        | ClassHierarchy.Untracked _ -> errors
-      in
-      { state with errors }
+                      match overridden_parameter with
+                      | Type.Callable.Parameter.PositionalOnly { index; annotation; _ } ->
+                          List.nth overriding_parameters index
+                          >>= (function
+                                | PositionalOnly { annotation; _ }
+                                | Named { annotation; _ } ->
+                                    Some annotation
+                                | _ -> None)
+                          |> validate_match ~expected:annotation
+                      | KeywordOnly { name = overridden_name; annotation; _ }
+                      | Named { name = overridden_name; annotation; _ } ->
+                          (* TODO(T44178876): ensure index match as well for named parameters *)
+                          let equal_name = function
+                            | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
+                            | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                                Option.some_if
+                                  (Identifier.equal
+                                     (Identifier.remove_leading_underscores name)
+                                     (Identifier.remove_leading_underscores overridden_name))
+                                  annotation
+                            | _ -> None
+                          in
+                          List.find_map overriding_parameters ~f:equal_name
+                          |> validate_match ~expected:annotation
+                      | Variable (Concrete annotation) ->
+                          let find_variable_parameter = function
+                            | Type.Callable.Parameter.Variable (Concrete annotation) ->
+                                Some annotation
+                            | _ -> None
+                          in
+                          List.find_map overriding_parameters ~f:find_variable_parameter
+                          |> validate_match ~expected:annotation
+                      | Keywords annotation ->
+                          let find_variable_parameter = function
+                            | Type.Callable.Parameter.Keywords annotation -> Some annotation
+                            | _ -> None
+                          in
+                          List.find_map overriding_parameters ~f:find_variable_parameter
+                          |> validate_match ~expected:annotation
+                      | Variable (Concatenation _) ->
+                          (* TODO(T44178876): There is no reasonable way to compare either of these
+                             alone, which is the central issue with this comparison strategy. For
+                             now, let's just ignore this *)
+                          state
+                    in
+                    Type.Callable.Overload.parameters implementation
+                    |> Option.value ~default:[]
+                    |> List.fold ~init:state ~f:check_parameter
+                | _ -> state )
+            | _ -> None
+          end
+          |> Option.value ~default:state
+      with
+      | ClassHierarchy.Untracked _ -> state
     in
     let check_constructor_return state =
       if not (Define.is_constructor define) then
@@ -1528,22 +1499,18 @@ module State (Context : Context) = struct
                 match Reference.prefix reference with
                 | Some qualifier when not (Reference.is_empty qualifier) ->
                     if GlobalResolution.module_exists global_resolution qualifier then
-                      Error.UndefinedAttribute
-                        { attribute = Reference.last reference; origin = Error.Module qualifier }
-                      |> (fun kind ->
-                           Error.create
-                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                             ~kind
-                             ~define:Context.define)
-                      |> emit_raw_error ~state
+                      emit_error
+                        ~state
+                        ~location
+                        ~kind:
+                          (Error.UndefinedAttribute
+                             {
+                               attribute = Reference.last reference;
+                               origin = Error.Module qualifier;
+                             })
                     else
                       state
-                | _ ->
-                    Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                      ~kind:(Error.UndefinedName reference)
-                      ~define:Context.define
-                    |> emit_raw_error ~state
+                | _ -> emit_error ~state ~location ~kind:(Error.UndefinedName reference)
               in
               { state; resolved = Type.Top; resolved_annotation = None; base = None }
           | _ -> { state; resolved = Type.Top; resolved_annotation = None; base = None } )
@@ -1761,7 +1728,7 @@ module State (Context : Context) = struct
               reason = Some reason;
             }) ->
           let state =
-            let error =
+            let error_location, error_kind =
               let callee =
                 match kind with
                 | Type.Callable.Named callable -> Some callable
@@ -1769,29 +1736,16 @@ module State (Context : Context) = struct
               in
               match reason with
               | AbstractClassInstantiation { class_name; abstract_methods } ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:
-                      (Error.InvalidClassInstantiation
-                         (Error.AbstractClassInstantiation { class_name; abstract_methods }))
-                    ~define:Context.define
+                  ( location,
+                    Error.InvalidClassInstantiation
+                      (Error.AbstractClassInstantiation { class_name; abstract_methods }) )
               | CallingParameterVariadicTypeVariable ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.NotCallable (Type.Callable callable))
-                    ~define:Context.define
+                  location, Error.NotCallable (Type.Callable callable)
               | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
-                  let kind = Error.InvalidArgument (Error.Keyword { expression; annotation }) in
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create ~location ~kind ~define:Context.define
+                  location, Error.InvalidArgument (Error.Keyword { expression; annotation })
               | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-                  let kind =
-                    Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
-                  in
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create ~location ~kind ~define:Context.define
+                  ( location,
+                    Error.InvalidArgument (Error.ConcreteVariable { expression; annotation }) )
               | Mismatch mismatch ->
                   let { AttributeResolution.actual; expected; name; position } =
                     Node.value mismatch
@@ -1840,68 +1794,29 @@ module State (Context : Context) = struct
                         |> Option.value ~default:normal
                     | _ -> normal
                   in
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create ~location ~kind ~define:Context.define
+                  location, kind
               | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))
-                    ~define:Context.define
-              | MissingArgument parameter ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.MissingArgument { callee; parameter })
-                    ~define:Context.define
+                  location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })
+              | MissingArgument parameter -> location, Error.MissingArgument { callee; parameter }
               | MutuallyRecursiveTypeVariables ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.MutuallyRecursiveTypeVariables callee)
-                    ~define:Context.define
+                  location, Error.MutuallyRecursiveTypeVariables callee
               | ProtocolInstantiation class_name ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.InvalidClassInstantiation (ProtocolInstantiation class_name))
-                    ~define:Context.define
+                  location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)
               | TooManyArguments { expected; provided } ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.TooManyArguments { callee; expected; provided })
-                    ~define:Context.define
-              | UnexpectedKeyword name ->
-                  let location = Location.with_module ~qualifier:Context.qualifier location in
-                  Error.create
-                    ~location
-                    ~kind:(Error.UnexpectedKeyword { callee; name })
-                    ~define:Context.define
+                  location, Error.TooManyArguments { callee; expected; provided }
+              | UnexpectedKeyword name -> location, Error.UnexpectedKeyword { callee; name }
             in
-            emit_raw_error ~state error
+            emit_error ~state ~location:error_location ~kind:error_kind
           in
           { state; resolved = annotation; resolved_annotation = None; base = None }
       | _ ->
           let state =
             match resolved, potential_missing_operator_error with
-            | Type.Top, Some kind ->
-                Error.create
-                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                  ~kind
-                  ~define:Context.define
-                |> emit_raw_error ~state
+            | Type.Top, Some kind -> emit_error ~state ~location ~kind
             | Type.Any, _
             | Type.Top, _ ->
                 state
-            | _ ->
-                Error.NotCallable resolved
-                |> (fun kind ->
-                     Error.create
-                       ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                       ~kind
-                       ~define:Context.define)
-                |> emit_raw_error ~state
+            | _ -> emit_error ~state ~location ~kind:(Error.NotCallable resolved)
           in
           { state; resolved = Type.Top; resolved_annotation = None; base = None }
     in
@@ -2557,18 +2472,16 @@ module State (Context : Context) = struct
         let ({ errors; _ } as state), resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
             let state =
-              Error.IncompleteType
-                {
-                  target = base;
-                  annotation = resolved_base;
-                  attempted_action = Error.AttributeAccess attribute;
-                }
-              |> (fun kind ->
-                   Error.create
-                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                     ~kind
-                     ~define:Context.define)
-              |> emit_raw_error ~state
+              emit_error
+                ~state
+                ~location
+                ~kind:
+                  (Error.IncompleteType
+                     {
+                       target = base;
+                       annotation = resolved_base;
+                       attempted_action = Error.AttributeAccess attribute;
+                     })
             in
             state, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
           else
@@ -2613,13 +2526,10 @@ module State (Context : Context) = struct
                     | Type.Callable { Type.Callable.kind = Named name; _ } -> Some name
                     | _ -> None
                   in
-                  Error.UndefinedAttribute { attribute; origin = Error.Callable name }
-                  |> (fun kind ->
-                       Error.create
-                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                         ~kind
-                         ~define:Context.define)
-                  |> emit_raw_error ~state
+                  emit_error
+                    ~state
+                    ~location
+                    ~kind:(Error.UndefinedAttribute { attribute; origin = Error.Callable name })
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
@@ -2661,17 +2571,16 @@ module State (Context : Context) = struct
             with
             | None ->
                 let state =
-                  Error.UndefinedAttribute
-                    {
-                      attribute;
-                      origin = Error.Class { annotation = resolved_base; class_attribute = false };
-                    }
-                  |> (fun kind ->
-                       Error.create
-                         ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                         ~kind
-                         ~define:Context.define)
-                  |> emit_raw_error ~state
+                  emit_error
+                    ~state
+                    ~location
+                    ~kind:
+                      (Error.UndefinedAttribute
+                         {
+                           attribute;
+                           origin =
+                             Error.Class { annotation = resolved_base; class_attribute = false };
+                         })
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
             | Some [] -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
@@ -2707,36 +2616,28 @@ module State (Context : Context) = struct
                   in
                   match reference, definition with
                   | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
-                      Error.UndefinedName reference
-                      |> (fun kind ->
-                           Error.create
-                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                             ~kind
-                             ~define:Context.define)
-                      |> emit_raw_error ~state
+                      emit_error ~state ~location ~kind:(Error.UndefinedName reference)
                   | _, (attribute, Some target) ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
                         state
                       else
-                        Error.UndefinedAttribute
-                          {
-                            attribute = name;
-                            origin =
-                              Error.Class
-                                {
-                                  annotation = target;
-                                  class_attribute = Annotated.Attribute.class_attribute attribute;
-                                };
-                          }
-                        |> (fun kind ->
-                             Error.create
-                               ~location:
-                                 (Location.with_module ~qualifier:Context.qualifier location)
-                               ~kind
-                               ~define:Context.define)
-                        |> emit_raw_error ~state
+                        emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.UndefinedAttribute
+                               {
+                                 attribute = name;
+                                 origin =
+                                   Error.Class
+                                     {
+                                       annotation = target;
+                                       class_attribute =
+                                         Annotated.Attribute.class_attribute attribute;
+                                     };
+                               })
                   | _ ->
                       let enclosing_class_reference =
                         let open Annotated in
@@ -2758,19 +2659,17 @@ module State (Context : Context) = struct
                           enclosing_class_reference
                       in
                       if is_private_attribute attribute && not is_accessed_in_base_class then
-                        Error.UndefinedAttribute
-                          {
-                            attribute = name;
-                            origin =
-                              Error.Class { annotation = resolved_base; class_attribute = false };
-                          }
-                        |> (fun kind ->
-                             Error.create
-                               ~location:
-                                 (Location.with_module ~qualifier:Context.qualifier location)
-                               ~kind
-                               ~define:Context.define)
-                        |> emit_raw_error ~state
+                        emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.UndefinedAttribute
+                               {
+                                 attribute = name;
+                                 origin =
+                                   Error.Class
+                                     { annotation = resolved_base; class_attribute = false };
+                               })
                       else
                         state
                 in
@@ -3496,7 +3395,7 @@ module State (Context : Context) = struct
                 | _ -> state
               in
               (* Check for missing annotations. *)
-              let error =
+              let check_annotation state =
                 let insufficiently_annotated, thrown_at_source =
                   let is_reassignment =
                     (* Special-casing re-use of typed parameters as attributes *)
@@ -3570,61 +3469,65 @@ module State (Context : Context) = struct
                         |> GlobalResolution.global_location global_resolution
                         |> Option.value ~default:location
                       in
-                      Error.create
-                        ~location:
-                          (Location.with_module ~qualifier:Context.qualifier global_location)
-                        ~kind:
-                          (Error.MissingGlobalAnnotation
-                             {
-                               Error.name = reference;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source;
-                             })
-                        ~define:Context.define
-                      |> Option.some
+                      ( emit_error
+                          ~state
+                          ~location:global_location
+                          ~kind:
+                            (Error.MissingGlobalAnnotation
+                               {
+                                 Error.name = reference;
+                                 annotation = actual_annotation;
+                                 given_annotation = Option.some_if is_immutable expected;
+                                 evidence_locations;
+                                 thrown_at_source;
+                               }),
+                        true )
                     else if explicit && insufficiently_annotated then
-                      Error.create
-                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                        ~kind:
-                          (Error.ProhibitedAny
-                             {
-                               missing_annotation =
-                                 {
-                                   Error.name = reference;
-                                   annotation = actual_annotation;
-                                   given_annotation = Option.some_if is_immutable expected;
-                                   evidence_locations;
-                                   thrown_at_source = true;
-                                 };
-                               is_type_alias = false;
-                             })
-                        ~define:Context.define
-                      |> Option.some
+                      ( emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.ProhibitedAny
+                               {
+                                 missing_annotation =
+                                   {
+                                     Error.name = reference;
+                                     annotation = actual_annotation;
+                                     given_annotation = Option.some_if is_immutable expected;
+                                     evidence_locations;
+                                     thrown_at_source = true;
+                                   };
+                                 is_type_alias = false;
+                               }),
+                        true )
                     else if is_type_alias && Type.expression_contains_any value then
                       let value_annotation =
                         GlobalResolution.parse_annotation global_resolution value
                       in
-                      Error.create
-                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                        ~kind:
-                          (Error.ProhibitedAny
-                             {
-                               missing_annotation =
+                      let state =
+                        if Type.contains_prohibited_any value_annotation then
+                          emit_error
+                            ~state
+                            ~location
+                            ~kind:
+                              (Error.ProhibitedAny
                                  {
-                                   Error.name = reference;
-                                   annotation = None;
-                                   given_annotation = Some value_annotation;
-                                   evidence_locations;
-                                   thrown_at_source = true;
-                                 };
-                               is_type_alias;
-                             })
-                        ~define:Context.define
-                      |> Option.some_if (Type.contains_prohibited_any value_annotation)
+                                   missing_annotation =
+                                     {
+                                       Error.name = reference;
+                                       annotation = None;
+                                       given_annotation = Some value_annotation;
+                                       evidence_locations;
+                                       thrown_at_source = true;
+                                     };
+                                   is_type_alias;
+                                 })
+                        else
+                          state
+                      in
+                      state, true
                     else
-                      None
+                      state, true
                 | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
                   when is_simple_name base && insufficiently_annotated ->
                     (* Module *)
@@ -3634,25 +3537,25 @@ module State (Context : Context) = struct
                       && (not is_type_alias)
                       && not (GlobalResolution.module_exists global_resolution reference)
                     then
-                      Error.create
-                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                        ~kind:
-                          (Error.ProhibitedAny
-                             {
-                               missing_annotation =
-                                 {
-                                   Error.name = Reference.create ~prefix:reference attribute;
-                                   annotation = actual_annotation;
-                                   given_annotation = Option.some_if is_immutable expected;
-                                   evidence_locations;
-                                   thrown_at_source = true;
-                                 };
-                               is_type_alias = false;
-                             })
-                        ~define:Context.define
-                      |> Option.some
+                      ( emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.ProhibitedAny
+                               {
+                                 missing_annotation =
+                                   {
+                                     Error.name = Reference.create ~prefix:reference attribute;
+                                     annotation = actual_annotation;
+                                     given_annotation = Option.some_if is_immutable expected;
+                                     evidence_locations;
+                                     thrown_at_source = true;
+                                   };
+                                 is_type_alias = false;
+                               }),
+                        true )
                     else
-                      None
+                      state, true
                 | ( Name.Attribute { attribute; _ },
                     Some ({ Type.instantiated; class_attributes; class_name } :: _) ) -> (
                     (* Instance *)
@@ -3670,86 +3573,82 @@ module State (Context : Context) = struct
                     | Some attribute ->
                         if is_illegal_attribute_annotation attribute then
                           (* Non-self attributes may not be annotated. *)
-                          Error.create
-                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                            ~kind:(Error.IllegalAnnotationTarget target)
-                            ~define:Context.define
-                          |> Option.some
+                          ( emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target),
+                            false )
                         else if
                           Annotated.Class.Attribute.defined attribute && insufficiently_annotated
                         then
-                          Error.create
-                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                            ~kind:
-                              (Error.MissingAttributeAnnotation
-                                 {
-                                   parent = Primitive (Annotated.Attribute.parent attribute);
-                                   missing_annotation =
-                                     {
-                                       Error.name = reference;
-                                       annotation = actual_annotation;
-                                       given_annotation = Option.some_if is_immutable expected;
-                                       evidence_locations;
-                                       thrown_at_source;
-                                     };
-                                 })
-                            ~define:Context.define
-                          |> Option.some
+                          ( emit_error
+                              ~state
+                              ~location
+                              ~kind:
+                                (Error.MissingAttributeAnnotation
+                                   {
+                                     parent = Primitive (Annotated.Attribute.parent attribute);
+                                     missing_annotation =
+                                       {
+                                         Error.name = reference;
+                                         annotation = actual_annotation;
+                                         given_annotation = Option.some_if is_immutable expected;
+                                         evidence_locations;
+                                         thrown_at_source;
+                                       };
+                                   }),
+                            true )
                         else if insufficiently_annotated && explicit && not is_type_alias then
-                          Error.create
-                            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                            ~kind:
-                              (Error.ProhibitedAny
-                                 {
-                                   missing_annotation =
-                                     {
-                                       Error.name = reference;
-                                       annotation = actual_annotation;
-                                       given_annotation = Option.some_if is_immutable expected;
-                                       evidence_locations;
-                                       thrown_at_source = true;
-                                     };
-                                   is_type_alias = false;
-                                 })
-                            ~define:Context.define
-                          |> Option.some
+                          ( emit_error
+                              ~state
+                              ~location
+                              ~kind:
+                                (Error.ProhibitedAny
+                                   {
+                                     missing_annotation =
+                                       {
+                                         Error.name = reference;
+                                         annotation = actual_annotation;
+                                         given_annotation = Option.some_if is_immutable expected;
+                                         evidence_locations;
+                                         thrown_at_source = true;
+                                       };
+                                     is_type_alias = false;
+                                   }),
+                            true )
                         else
-                          None
+                          state, true
                     | None ->
-                        Option.some_if
-                          ( insufficiently_annotated
+                        if
+                          insufficiently_annotated
                           && GlobalResolution.is_typed_dictionary
                                ~resolution:global_resolution
-                               (Type.Primitive class_name) )
-                          (Error.create
-                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                             ~kind:
-                               (Error.ProhibitedAny
-                                  {
-                                    missing_annotation =
-                                      {
-                                        Error.name = reference;
-                                        annotation = actual_annotation;
-                                        given_annotation = Option.some_if is_immutable expected;
-                                        evidence_locations;
-                                        thrown_at_source = true;
-                                      };
-                                    is_type_alias = false;
-                                  })
-                             ~define:Context.define) )
+                               (Type.Primitive class_name)
+                        then
+                          ( emit_error
+                              ~state
+                              ~location
+                              ~kind:
+                                (Error.ProhibitedAny
+                                   {
+                                     missing_annotation =
+                                       {
+                                         Error.name = reference;
+                                         annotation = actual_annotation;
+                                         given_annotation = Option.some_if is_immutable expected;
+                                         evidence_locations;
+                                         thrown_at_source = true;
+                                       };
+                                     is_type_alias = false;
+                                   }),
+                            true )
+                        else
+                          state, true )
                 | _ ->
-                    Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                      ~kind:(Error.IllegalAnnotationTarget target)
-                      ~define:Context.define
-                    |> Option.some_if explicit
+                    if explicit then
+                      ( emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target),
+                        false )
+                    else
+                      state, true
               in
-              let state = error >>| emit_raw_error ~state |> Option.value ~default:state in
-              let is_valid_annotation =
-                match error with
-                | Some { Error.kind = IllegalAnnotationTarget _; _ } -> false
-                | _ -> true
-              in
+              let state, is_valid_annotation = check_annotation state in
               (* Propagate annotations. *)
               let state =
                 let is_global =
@@ -4119,7 +4018,7 @@ module State (Context : Context) = struct
                 };
             } -> (
             let expected = parse_refinement_annotation annotation_expression in
-            let contradiction_error =
+            let contradiction =
               let { resolved; _ } = forward_expression ~state ~expression:value in
               if
                 Type.is_unbound resolved
@@ -4134,13 +4033,9 @@ module State (Context : Context) = struct
                 None
               else
                 Some
-                  (Error.create
-                     ~location:
-                       (Location.with_module ~qualifier:Context.qualifier (Node.location test))
-                     ~kind:
-                       (Error.ImpossibleAssertion
-                          { statement; expression = value; annotation = resolved })
-                     ~define:Context.define)
+                  ( Node.location test,
+                    Error.ImpossibleAssertion
+                      { statement; expression = value; annotation = resolved } )
             in
             let resolve ~name =
               match Resolution.get_local_with_attributes resolution ~name with
@@ -4155,8 +4050,9 @@ module State (Context : Context) = struct
                   |> Option.value ~default:resolution
               | _ -> resolution
             in
-            match contradiction_error, value with
-            | Some error, _ -> emit_raw_error ~state:{ state with bottom = true } error
+            match contradiction, value with
+            | Some (location, kind), _ ->
+                emit_error ~state:{ state with bottom = true } ~location ~kind
             | _, { Node.value = Name name; _ } when is_simple_name name ->
                 { state with resolution = resolve ~name }
             | _ -> state )
@@ -4228,13 +4124,12 @@ module State (Context : Context) = struct
         | Name name when is_simple_name name -> (
             match refinable_annotation name with
             | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
-                Error.create
-                  ~location:(Location.with_module ~qualifier:Context.qualifier (Node.location test))
+                emit_error
+                  ~state:{ state with bottom = true }
+                  ~location:(Node.location test)
                   ~kind:
                     (Error.ImpossibleAssertion
                        { statement; expression = test; annotation = Type.Optional Type.Bottom })
-                  ~define:Context.define
-                |> emit_raw_error ~state:{ state with bottom = true }
             | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
                 let resolution =
                   Resolution.set_local_with_attributes
@@ -4384,9 +4279,9 @@ module State (Context : Context) = struct
             | Some annotation -> (
                 match Annotation.annotation annotation with
                 | t when Type.is_none t ->
-                    Error.create
-                      ~location:
-                        (Location.with_module ~qualifier:Context.qualifier (Node.location test))
+                    emit_error
+                      ~state
+                      ~location:(Node.location test)
                       ~kind:
                         (Error.ImpossibleAssertion
                            {
@@ -4394,8 +4289,6 @@ module State (Context : Context) = struct
                              expression = test;
                              annotation = Type.list (Type.Optional Type.Bottom);
                            })
-                      ~define:Context.define
-                    |> emit_raw_error ~state:{ state with bottom = true }
                 | Type.Parametric { name = "list"; parameters = [Single (Type.Optional parameter)] }
                   ->
                     let resolution =
