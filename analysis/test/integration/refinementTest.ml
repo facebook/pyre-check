@@ -389,6 +389,7 @@ let test_check_isinstance context =
 
 let test_assert_contains_none context =
   let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo(x: typing.List[typing.Optional[int]]) -> None:
@@ -410,7 +411,46 @@ let test_assert_contains_none context =
         assert None not in y
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `typing.List[int]`."]
+    ["Revealed type [-1]: Revealed type for `y` is `typing.List[int]`."];
+
+  (* Invalid assertions *)
+  assert_type_errors
+    {|
+      def foo(x: None) -> None:
+        assert None not in x
+    |}
+    ["Undefined attribute [16]: Optional type has no attribute `__getitem__`."];
+  assert_type_errors
+    {|
+      def foo(x: Derp) -> None:
+        assert None not in x
+    |}
+    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
+  assert_default_type_errors
+    {|
+      def foo(x: typing.Any) -> None:
+        assert None not in x
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_type_errors
+    {|
+      def foo(x: typing.List[Derp]) -> None:
+        assert None not in x
+        reveal_type(x)
+    |}
+    [
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+    ];
+  assert_default_type_errors
+    {|
+      def foo(x: typing.List[typing.Any]) -> None:
+        assert None not in x
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`."];
+  ()
 
 
 let test_check_callable context =

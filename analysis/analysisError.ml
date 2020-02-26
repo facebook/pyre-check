@@ -158,7 +158,7 @@ type kind =
   | ImpossibleAssertion of {
       expression: Expression.t;
       annotation: Type.t;
-      statement: Statement.t;
+      test: Expression.t;
     }
   | IncompatibleAttributeType of {
       parent: Type.t;
@@ -564,23 +564,14 @@ let messages ~concise ~signature location kind =
           consequence;
       ]
   | ImpossibleAssertion _ when concise -> ["Assertion will always fail."]
-  | ImpossibleAssertion { expression; annotation; statement } ->
-      let statement_string =
-        show statement
-        |> String.chop_prefix_exn ~prefix:"assert"
-        |> String.strip ~drop:(function
-               | ' '
-               | ',' ->
-                   true
-               | _ -> false)
-      in
+  | ImpossibleAssertion { expression; annotation; test } ->
       [
         Format.asprintf
           "`%s` has type `%a`, assertion `%s` will always fail."
-          (Expression.show expression)
+          (show_sanitized_expression expression)
           pp_type
           annotation
-          statement_string;
+          (show_sanitized_expression test);
       ]
   | IncompatibleAwaitableType actual ->
       [Format.asprintf "Expected an awaitable but got `%a`." pp_type actual]
@@ -2040,8 +2031,8 @@ let less_or_equal ~resolution left right =
   | DeadStore left, DeadStore right -> Identifier.equal left right
   | Deobfuscation left, Deobfuscation right -> Source.equal left right
   | IllegalAnnotationTarget left, IllegalAnnotationTarget right -> Expression.equal left right
-  | ImpossibleAssertion left, ImpossibleAssertion right
-    when Statement.equal left.statement right.statement ->
+  | ImpossibleAssertion left, ImpossibleAssertion right when Expression.equal left.test right.test
+    ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
       GlobalResolution.less_or_equal resolution ~left ~right

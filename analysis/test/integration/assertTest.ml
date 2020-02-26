@@ -266,11 +266,83 @@ let test_check_all context =
     ]
 
 
+let test_check_impossible_assert context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = None
+        assert x
+    |}
+    ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."];
+  assert_type_errors
+    {|
+      def foo(x: None) -> None:
+        assert x
+    |}
+    ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."];
+  assert_type_errors
+    {|
+      def foo(x: Derp) -> None:
+        assert x
+    |}
+    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
+  assert_default_type_errors {|
+      def foo(x: typing.Any) -> None:
+        assert x
+    |} [];
+
+  assert_type_errors
+    {|
+      class Derp: ...
+      def derp(x: Derp) -> None:
+        assert not isinstance(x, Derp)
+    |}
+    [
+      "Impossible assertion [25]: `x` has type `Derp`, assertion `not isinstance(x, test.Derp)` \
+       will always fail.";
+    ];
+  assert_default_type_errors
+    {|
+      class Derp: ...
+      def derp(x: Derp) -> None:
+        assert not isinstance(x, Herp)
+    |}
+    [
+      "Undefined name [18]: Global name `Herp` is not defined, or there is at least one control \
+       flow path that doesn't define `Herp`.";
+    ];
+  assert_default_type_errors
+    {|
+      class Derp: ...
+      def derp(x: Derp, y: typing.Type[typing.Any]) -> None:
+        assert not isinstance(x, y)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Derp: ...
+      def derp(x: Derp) -> None:
+        assert not isinstance(x, int)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Derp: ...
+      def derp() -> None:
+        assert not isinstance(42, Derp)
+    |}
+    [];
+  ()
+
+
 let () =
   "assert"
   >::: [
          "check_assert" >:: test_check_assert;
          "check_assert_functions" >:: test_check_assert_functions;
          "check_all" >:: test_check_all;
+         "check_impossible_assert" >:: test_check_impossible_assert;
        ]
   |> Test.run

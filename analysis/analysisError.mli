@@ -149,7 +149,7 @@ type kind =
   | ImpossibleAssertion of {
       expression: Expression.t;
       annotation: Type.t;
-      statement: Statement.t;
+      test: Expression.t;
     }
   | IncompatibleAttributeType of {
       parent: Type.t;

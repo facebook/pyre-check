@@ -2807,10 +2807,7 @@ module State (Context : Context) = struct
         { state; resolved = Type.generator Type.none; resolved_annotation = None; base = None }
 
 
-  and forward_statement
-      ~state:({ resolution; _ } as state)
-      ~statement:({ Node.location; value } as statement)
-    =
+  and forward_statement ~state:({ resolution; _ } as state) ~statement:{ Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
     let {
       Node.location = define_location;
@@ -3992,23 +3989,26 @@ module State (Context : Context) = struct
             } -> (
             let expected = parse_refinement_annotation annotation_expression in
             let contradiction =
-              let { resolved; _ } = forward_expression ~state ~expression:value in
-              if
-                Type.is_unbound resolved
-                || Type.is_unknown resolved
-                || Type.is_any resolved
-                || not
-                     (GlobalResolution.less_or_equal
-                        global_resolution
-                        ~left:resolved
-                        ~right:expected)
-              then
+              if Type.is_unknown expected || Type.is_any expected then
                 None
               else
-                Some
-                  ( Node.location test,
-                    Error.ImpossibleAssertion
-                      { statement; expression = value; annotation = resolved } )
+                let { resolved; _ } = forward_expression ~state ~expression:value in
+                if
+                  Type.is_unbound resolved
+                  || Type.is_unknown resolved
+                  || Type.is_any resolved
+                  || not
+                       (GlobalResolution.less_or_equal
+                          global_resolution
+                          ~left:resolved
+                          ~right:expected)
+                then
+                  None
+                else
+                  Some
+                    ( Node.location test,
+                      Error.ImpossibleAssertion { test; expression = value; annotation = resolved }
+                    )
             in
             let resolve ~name =
               match Resolution.get_local_with_attributes resolution ~name with
@@ -4102,7 +4102,7 @@ module State (Context : Context) = struct
                   ~location:(Node.location test)
                   ~kind:
                     (Error.ImpossibleAssertion
-                       { statement; expression = test; annotation = Type.Optional Type.Bottom })
+                       { test; expression = test; annotation = Type.Optional Type.Bottom })
             | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
                 let resolution =
                   Resolution.set_local_with_attributes
@@ -4251,17 +4251,6 @@ module State (Context : Context) = struct
             match annotation with
             | Some annotation -> (
                 match Annotation.annotation annotation with
-                | t when Type.is_none t ->
-                    emit_error
-                      ~state
-                      ~location:(Node.location test)
-                      ~kind:
-                        (Error.ImpossibleAssertion
-                           {
-                             statement;
-                             expression = test;
-                             annotation = Type.list (Type.Optional Type.Bottom);
-                           })
                 | Type.Parametric { name = "list"; parameters = [Single (Type.Optional parameter)] }
                   ->
                     let resolution =
