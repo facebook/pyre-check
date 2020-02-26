@@ -109,28 +109,38 @@ def find_project_root(original_directory: str) -> str:
     return global_root or original_directory
 
 
-def find_local_root(original_directory: str) -> Optional[str]:
+def find_local_root(
+    original_directory: str, local_root: Optional[str] = None
+) -> Optional[str]:
+    if local_root:
+        check_nested_configurations(local_root)
+        return local_root
+
     global_root = find_root(original_directory, CONFIGURATION_FILE)
     local_root = find_root(original_directory, LOCAL_CONFIGURATION_FILE)
     # Check for illegal nested local configuration.
-    if local_root:
-        parent_local_root = find_root(
-            os.path.dirname(local_root), LOCAL_CONFIGURATION_FILE
-        )
-        if parent_local_root:
-            raise EnvironmentException(
-                "Local configuration is nested under another local configuration at "
-                "`{}`. Please combine the sources into a single configuration or split "
-                "the parent configuration to avoid inconsistent errors.".format(
-                    parent_local_root
-                )
-            )
+    check_nested_configurations(local_root)
 
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):
         local_root = None
     if local_root:
         return local_root
+
+
+def check_nested_configurations(local_root: Optional[str]) -> None:
+    if local_root:
+        parent_local_root = find_root(
+            os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
+        )
+        if parent_local_root:
+            LOG.warning(
+                "Local configuration is nested under another local configuration at "
+                "`{}`.\nPlease combine the sources into a single configuration or "
+                "split the parent configuration to avoid inconsistent errors.".format(
+                    parent_local_root
+                )
+            )
 
 
 def find_log_directory(

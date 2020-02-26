@@ -188,8 +188,8 @@ class CommandParser(ABC):
         self._capable_terminal: bool = is_capable_terminal()
         self._original_directory: str = original_directory
         self._current_directory: str = find_project_root(self._original_directory)
-        self._local_configuration = self._local_configuration or find_local_root(
-            self._original_directory
+        self._local_configuration = find_local_root(
+            self._original_directory, self._local_configuration
         )
         self._log_directory: str = find_log_directory(
             self._log_directory, self._current_directory, self._local_configuration

@@ -39,7 +39,8 @@ class InitTest(unittest.TestCase):
             directory = find_project_root(original_directory)
             self.assertEqual(directory, "/a/b")
 
-    def test_find_local_root(self) -> None:
+    @patch("{}.LOG.warning".format(client_name))
+    def test_find_local_root(self, warning) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(
             "os.path.isfile", return_value=False
@@ -53,12 +54,12 @@ class InitTest(unittest.TestCase):
             local_root = find_local_root(original_directory)
             self.assertEqual(local_root, "/a/b")
 
-            with self.assertRaises(EnvironmentException):
-                isfile.side_effect = (
-                    lambda directory: directory == "/a/b/.pyre_configuration.local"
-                    or directory == "/a/.pyre_configuration.local"
-                )
-                find_local_root(original_directory)
+            isfile.side_effect = (
+                lambda directory: directory == "/a/b/.pyre_configuration.local"
+                or directory == "/a/.pyre_configuration.local"
+            )
+            find_local_root(original_directory)
+            warning.assert_called_once()
 
     @patch("{}.Path".format(client_name))
     @patch("{}.Path.mkdir".format(client_name))
