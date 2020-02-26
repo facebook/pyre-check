@@ -180,7 +180,7 @@ class Statistics(Command):
             collector.path = path
             module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
-        log.stdout.write(str(issues))
+        log.stdout.write(json.dumps(issues))
 
     def _get_strict_issues(self) -> None:
         collector = StrictIssueCollector(strict_by_default=False)
@@ -197,7 +197,7 @@ class Statistics(Command):
                 collector.is_strict = is_default_strict
                 module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
-        log.stdout.write(str(issues))
+        log.stdout.write(json.dumps(issues))
 
     def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
