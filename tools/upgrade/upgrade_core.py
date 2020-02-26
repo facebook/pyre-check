@@ -568,7 +568,7 @@ def run_fixme_targets_file(
     version_control: VersionControl,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
-    targets = [path + ":" + name + "-typecheck" for name in target_names]
+    targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
     buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
 
     def get_errors(path: str) -> Optional[List[Dict[str, Any]]]:

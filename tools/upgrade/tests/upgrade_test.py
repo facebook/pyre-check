@@ -1109,6 +1109,17 @@ class FixmeTargetsTest(unittest.TestCase):
         upgrade_core.run_fixme_targets_file(
             arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
+        subprocess.assert_called_once_with(
+            [
+                "buck",
+                "test",
+                "--show-full-json-output",
+                "a/b:derp-pyre-typecheck",
+                "a/b:herp-pyre-typecheck",
+            ],
+            stdout=-1,
+            stderr=-1,
+        )
         fix.assert_not_called()
 
         buck_return.returncode = 0
