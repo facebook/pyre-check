@@ -678,7 +678,7 @@ module State (Context : Context) = struct
       let state = process_signature signature in
       List.fold captures ~init:state ~f:process_capture
     in
-    let check_parameter_annotations ({ resolution; resolution_fixpoint; _ } as state) =
+    let check_parameter_annotations ({ resolution; _ } as state) =
       let state, annotation_store =
         let make_parameter_name name =
           name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
@@ -1018,11 +1018,6 @@ module State (Context : Context) = struct
               parameters
       in
       let resolution = Resolution.with_annotation_store resolution ~annotation_store in
-      let () =
-        let postcondition = Resolution.annotation_store resolution in
-        let key = [%hash: int * int] (Cfg.entry_index, 0) in
-        LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
-      in
       { state with resolution }
     in
     let check_base_annotations state =
@@ -1314,14 +1309,23 @@ module State (Context : Context) = struct
                     ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
         | _ -> state
     in
-    create ~resolution:(Resolution.with_parent resolution ~parent) ()
-    |> check_return_annotation
-    |> add_capture_annotations
-    |> check_decorators
-    |> check_parameter_annotations
-    |> check_base_annotations
-    |> check_behavioral_subtyping
-    |> check_constructor_return
+    let state =
+      create ~resolution:(Resolution.with_parent resolution ~parent) ()
+      |> check_return_annotation
+      |> add_capture_annotations
+      |> check_decorators
+      |> check_parameter_annotations
+      |> check_base_annotations
+      |> check_behavioral_subtyping
+      |> check_constructor_return
+    in
+    let () =
+      let { resolution; resolution_fixpoint; _ } = state in
+      let postcondition = Resolution.annotation_store resolution in
+      let key = [%hash: int * int] (Cfg.entry_index, 0) in
+      LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
+    in
+    state
 
 
   and forward_expression ~state:({ resolution; _ } as state) ~expression:{ Node.location; value } =
