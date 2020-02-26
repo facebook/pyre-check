@@ -24,6 +24,7 @@ from ..filesystem import (
     __name__ as filesystem_name,
     _delete_symbolic_link,
     acquire_lock,
+    acquire_lock_if_needed,
     add_symbolic_link,
     find_python_paths,
     find_root,
@@ -129,6 +130,16 @@ class FilesystemTest(unittest.TestCase):
         with self.assertRaises(OSError):
             with acquire_lock(path, blocking=False):
                 pass
+
+    @patch.object(filesystem, "acquire_lock")
+    def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
+        acquire_lock_if_needed("/some/path", blocking=True, needed=True)
+        acquire_lock.assert_called_once()
+
+    @patch.object(filesystem, "acquire_lock")
+    def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
+        acquire_lock_if_needed("/some/path", blocking=True, needed=False)
+        acquire_lock.assert_not_called()
 
     @patch("shutil.rmtree")
     def test_cleanup(self, rmtree) -> None:

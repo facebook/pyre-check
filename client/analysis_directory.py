@@ -21,7 +21,7 @@ from .filesystem import (
     BuckBuilder,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
-    acquire_lock,
+    acquire_lock_if_needed,
     add_symbolic_link,
     find_python_paths,
     is_empty,
@@ -204,7 +204,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             pass  # Swallow.
 
         lock = os.path.join(root, ".pyre.lock")
-        with acquire_lock(lock, blocking=True):
+        with acquire_lock_if_needed(lock, blocking=True, needed=not self._isolate):
             self._clear()
             self._merge()
             LOG.log(
@@ -220,7 +220,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         self._resolve_source_directories()
 
-        with filesystem.acquire_lock(os.path.join(root, ".pyre.lock"), blocking=True):
+        with acquire_lock_if_needed(
+            os.path.join(root, ".pyre.lock"), blocking=True, needed=not self._isolate
+        ):
             all_paths = {}
             for source_directory in self._source_directories:
                 self._merge_into_paths(source_directory, all_paths)

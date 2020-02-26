@@ -10,8 +10,8 @@ import logging
 import os
 import shutil
 import subprocess
-from contextlib import contextmanager
-from typing import Dict, Generator, Iterable, List, Optional, Set
+from contextlib import contextmanager, nullcontext
+from typing import ContextManager, Dict, Generator, Iterable, List, Optional, Set
 
 from .exceptions import EnvironmentException
 
@@ -198,6 +198,15 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
     except FileNotFoundError:
         LOG.debug(f"Unable to acquire lock because lock file {path} was not found")
         yield
+
+
+def acquire_lock_if_needed(
+    lock_path: str, blocking: bool, needed: bool
+) -> ContextManager[Optional[int]]:
+    if needed:
+        return acquire_lock(lock_path, blocking)
+    else:
+        return nullcontext()
 
 
 class Filesystem:
