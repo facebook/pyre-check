@@ -144,48 +144,70 @@ module State (Context : Context) = struct
     }
 
 
-  let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
+  let emit_error ~state ~location ~kind =
+    let emit_raw_error
+        ~state:({ errors; resolution; _ } as state)
+        ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
+      =
+      let error =
+        let location = { Location.start; stop } in
+        match Map.find errors { ErrorMap.location; kind = Error.code error } with
+        | Some other_error ->
+            Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
+        | None -> error
+      in
+      { state with errors = ErrorMap.add ~errors error }
+    in
+    Error.create
+      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~kind
+      ~define:Context.define
+    |> emit_raw_error ~state
+
+
+  let emit_raw_error_no_join ~state:({ errors; _ } as state) error =
+    { state with errors = ErrorMap.add ~errors error }
+
+
+  let emit_error_no_join ~state ~location ~kind =
+    Error.create
+      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~kind
+      ~define:Context.define
+    |> emit_raw_error_no_join ~state
+
+
+  let add_invalid_type_parameters_errors ~resolution ~location ~state annotation =
     let mismatches, annotation =
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
-    let add_error errors mismatch =
-      Error.create
-        ~location:(Location.with_module ~qualifier:Context.qualifier location)
-        ~kind:(Error.InvalidTypeParameters mismatch)
-        ~define:Context.define
-      |> ErrorMap.add ~errors
+    let add_error state mismatch =
+      emit_error_no_join ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in
-    List.fold mismatches ~f:add_error ~init:errors, annotation
+    List.fold mismatches ~f:add_error ~init:state, annotation
 
 
-  let add_untracked_annotation_errors ~resolution ~location ~errors annotation =
-    let untracked_annotation_error class_name =
+  let add_untracked_annotation_errors ~resolution ~location ~state annotation =
+    let is_untracked_name class_name =
       match class_name with
-      | "..." -> None
-      | _ -> (
-          match GlobalResolution.is_tracked resolution class_name with
-          | true -> None
-          | false ->
-              Some
-                (Error.create
-                   ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                   ~kind:(Error.UndefinedType (Primitive class_name))
-                   ~define:Context.define) )
+      | "..." -> false
+      | _ -> not (GlobalResolution.is_tracked resolution class_name)
     in
-    let untracked = List.filter_map (Type.elements annotation) ~f:untracked_annotation_error in
+    let untracked = List.filter (Type.elements annotation) ~f:is_untracked_name in
     let errors =
-      List.fold untracked ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error)
+      List.fold untracked ~init:state ~f:(fun state name ->
+          emit_error_no_join ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     errors, List.is_empty untracked
 
 
   let parse_and_check_annotation
       ?(bind_variables = true)
-      ~state:({ errors; resolution; _ } as state)
+      ~state:({ resolution; _ } as state)
       ({ Node.location; _ } as expression)
     =
     let global_resolution = Resolution.global_resolution resolution in
-    let check_and_correct_annotation ~resolution ~location ~annotation errors =
+    let check_and_correct_annotation ~resolution ~location ~annotation state =
       let check_invalid_variables resolution variable =
         if not (Resolution.type_variable_exists resolution ~variable) then
           let origin =
@@ -196,11 +218,7 @@ module State (Context : Context) = struct
             else
               Error.Define
           in
-          Error.create
-            ~location:(Location.with_module ~qualifier:Context.qualifier location)
-            ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
-            ~define:Context.define
-          |> Option.some
+          Error.InvalidTypeVariable { annotation = variable; origin } |> Option.some
         else
           None
       in
@@ -217,46 +235,40 @@ module State (Context : Context) = struct
               ~init:resolution
         | _ -> resolution
       in
-      let all_primitives_and_variables_are_valid, errors =
-        let errors, no_untracked =
-          add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors annotation
+      let all_primitives_and_variables_are_valid, state =
+        let state, no_untracked =
+          add_untracked_annotation_errors ~resolution:global_resolution ~location ~state annotation
         in
-        let invalid_variables_errors =
+        let invalid_variable_error_kinds =
           Type.Variable.all_free_variables annotation
           |> List.filter_map ~f:(check_invalid_variables resolution)
         in
-        let add_errors errors ~add =
-          List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error) add
-        in
-        ( no_untracked && List.is_empty invalid_variables_errors,
-          add_errors errors ~add:invalid_variables_errors )
+        ( no_untracked && List.is_empty invalid_variable_error_kinds,
+          List.fold invalid_variable_error_kinds ~init:state ~f:(fun state kind ->
+              emit_error_no_join ~state ~location ~kind) )
       in
       if all_primitives_and_variables_are_valid then
-        add_invalid_type_parameters_errors
-          annotation
-          ~resolution:global_resolution
-          ~location
-          ~errors
+        add_invalid_type_parameters_errors annotation ~resolution:global_resolution ~location ~state
       else
-        errors, Type.Top
+        state, Type.Top
     in
     let annotation =
       GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
     in
-    let errors =
+    let state =
       match annotation with
       | Type.Top ->
-          Error.create
-            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+          emit_error_no_join
+            ~state
+            ~location
             ~kind:
               (Error.InvalidType
                  (InvalidType
                     { annotation = Type.Primitive (Expression.show expression); expected = "" }))
-            ~define:Context.define
-          |> ErrorMap.add ~errors
       | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
-          Error.create
-            ~location:(Location.with_module ~qualifier:Context.qualifier location)
+          emit_error_no_join
+            ~state
+            ~location
             ~kind:
               (Error.InvalidType
                  (InvalidType
@@ -264,17 +276,13 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
-            ~define:Context.define
-          |> ErrorMap.add ~errors
-      | _ -> errors
+      | _ -> state
     in
-    let errors, annotation =
-      check_and_correct_annotation errors ~resolution ~location ~annotation
-    in
+    let state, annotation = check_and_correct_annotation state ~resolution ~location ~annotation in
     let annotation =
       if bind_variables then Type.Variable.mark_all_variables_as_bound annotation else annotation
     in
-    { state with errors }, annotation
+    state, annotation
 
 
   let resolution { resolution; _ } = resolution
@@ -397,27 +405,6 @@ module State (Context : Context) = struct
         resolution = Resolution.with_annotation_store resolution ~annotation_store;
         resolution_fixpoint = next.resolution_fixpoint;
       }
-
-
-  let emit_error ~state ~location ~kind =
-    let emit_raw_error
-        ~state:({ errors; resolution; _ } as state)
-        ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
-      =
-      let error =
-        let location = { Location.start; stop } in
-        match Map.find errors { ErrorMap.location; kind = Error.code error } with
-        | Some other_error ->
-            Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
-        | None -> error
-      in
-      { state with errors = ErrorMap.add ~errors error }
-    in
-    Error.create
-      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-      ~kind
-      ~define:Context.define
-    |> emit_raw_error ~state
 
 
   type base =
@@ -2122,7 +2109,7 @@ module State (Context : Context) = struct
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base; _ } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
-        let { state = { errors = updated_errors; _ } as updated_state; resolved; _ } =
+        let { state = updated_state; resolved; _ } =
           let target_and_dynamic resolved_callee =
             if Type.is_meta resolved_callee then
               Some (Type.single_parameter resolved_callee), false
@@ -2167,25 +2154,17 @@ module State (Context : Context) = struct
           Map.is_empty (Map.filter ~f:is_terminating_error callee_errors)
           || not (Type.is_top resolved_callee || Type.is_undeclared resolved_callee)
         then
-          let errors =
-            Map.merge_skewed
-              ~combine:(fun ~key:_ left right ->
-                Error.join ~resolution:global_resolution left right)
-              callee_errors
-              updated_errors
+          let state =
+            Map.fold callee_errors ~init:updated_state ~f:(fun ~key:_ ~data state ->
+                emit_raw_error_no_join ~state data)
           in
-          {
-            state = { updated_state with errors };
-            resolved;
-            resolved_annotation = None;
-            base = None;
-          }
+          { state; resolved; resolved_annotation = None; base = None }
         else (* Do not throw more errors if callee already contains terminating error. *)
-          let errors =
-            Map.fold callee_errors ~init:state.errors ~f:(fun ~key:_ ~data errors ->
-                ErrorMap.add ~errors data)
+          let state =
+            Map.fold callee_errors ~init:state ~f:(fun ~key:_ ~data state ->
+                emit_raw_error_no_join ~state data)
           in
-          { state = { state with errors }; resolved; resolved_annotation = None; base = None }
+          { state; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let resolve_in_call
@@ -2469,7 +2448,7 @@ module State (Context : Context) = struct
         let { state = { errors = base_errors; _ }; resolved = resolved_base; base = super_base; _ } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:base
         in
-        let ({ errors; _ } as state), resolved_base =
+        let state, resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
             let state =
               emit_error
@@ -2487,13 +2466,7 @@ module State (Context : Context) = struct
           else
             state, resolved_base
         in
-        let {
-          state = { errors = updated_errors; _ } as updated_state;
-          resolved;
-          resolved_annotation;
-          _;
-        }
-          =
+        let { state = updated_state; resolved; resolved_annotation; _ } =
           if Type.is_undeclared resolved_base then
             let state =
               reference
@@ -2732,17 +2705,17 @@ module State (Context : Context) = struct
           Map.is_empty (Map.filter ~f:is_terminating_error base_errors)
           || not (Type.is_top resolved_base || Type.is_undeclared resolved_base)
         then
-          let errors =
-            Map.fold base_errors ~init:updated_errors ~f:(fun ~key:_ ~data errors ->
-                ErrorMap.add ~errors data)
+          let state =
+            Map.fold base_errors ~init:updated_state ~f:(fun ~key:_ ~data state ->
+                emit_raw_error_no_join ~state data)
           in
-          { state = { updated_state with errors }; resolved; resolved_annotation; base }
+          { state; resolved; resolved_annotation; base }
         else (* Do not throw more errors if base already contains terminating error. *)
-          let errors =
-            Map.fold base_errors ~init:errors ~f:(fun ~key:_ ~data errors ->
-                ErrorMap.add ~errors data)
+          let state =
+            Map.fold base_errors ~init:state ~f:(fun ~key:_ ~data state ->
+                emit_raw_error_no_join ~state data)
           in
-          { state = { state with errors }; resolved; resolved_annotation; base }
+          { state; resolved; resolved_annotation; base }
     | Set elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
         { state; resolved = Type.set resolved; resolved_annotation = None; base = None }
@@ -3012,33 +2985,29 @@ module State (Context : Context) = struct
           let resolved = Type.remove_undeclared resolved in
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
           if is_type_alias then
-            let add_annotation_errors errors =
+            let add_annotation_errors state =
               add_invalid_type_parameters_errors
                 ~resolution:global_resolution
                 ~location
-                ~errors
+                ~state
                 parsed
               |> fst
-              |> fun errors ->
-              add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors parsed
+              |> fun state ->
+              add_untracked_annotation_errors ~resolution:global_resolution ~location ~state parsed
               |> fst
             in
-            let add_type_variable_errors errors =
+            let add_type_variable_errors state =
               match parsed with
               | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
                   let kind =
                     AnalysisError.InvalidType
                       (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable))
                   in
-                  Error.create
-                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                    ~kind
-                    ~define:Context.define
-                  |> ErrorMap.add ~errors
-              | _ -> errors
+                  emit_error_no_join ~state ~location ~kind
+              | _ -> state
             in
-            let errors = state.errors |> add_annotation_errors |> add_type_variable_errors in
-            { state with resolution; errors }, resolved
+            let state = add_annotation_errors state |> add_type_variable_errors in
+            { state with resolution }, resolved
           else
             new_state, resolved
         in
