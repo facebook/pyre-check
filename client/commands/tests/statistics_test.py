@@ -19,7 +19,7 @@ from ...statistics_collectors import (
     IgnoreCountCollector,
     StrictCountCollector,
 )
-from ..statistics import Statistics, _find_paths
+from ..statistics import Statistics, _find_paths, parse_path_to_module
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -67,6 +67,24 @@ class StatisticsTest(unittest.TestCase):
             arguments, original_directory, configuration, analysis_directory
         )._run()
         log.assert_called()
+
+    def test_parse_module(self) -> None:
+        invalid_python = """
+            def foo -> int:
+                pass
+        """
+        valid_python = """
+        def foo() -> int:
+            pass
+        """
+        path = MagicMock()
+        path.read_text = MagicMock(
+            return_value=textwrap.dedent(invalid_python.rstrip())
+        )
+        self.assertEqual(parse_path_to_module(path), None)
+
+        path.read_text = MagicMock(return_value=textwrap.dedent(valid_python.rstrip()))
+        self.assertIsNotNone(parse_path_to_module(path))
 
 
 class AnnotationCountCollectorTest(unittest.TestCase):

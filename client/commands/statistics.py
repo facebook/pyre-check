@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import libcst as cst
+from libcst._exceptions import ParserSyntaxError
 from libcst.metadata import MetadataWrapper
 
 from .. import log, log_statistics
@@ -37,13 +38,17 @@ def _get_paths(target_directory: Path) -> List[Path]:
     ]
 
 
-def parse_path_to_module(path: Path) -> cst.Module:
-    return cst.parse_module(path.read_text())
+def parse_path_to_module(path: Path) -> Optional[cst.Module]:
+    try:
+        return cst.parse_module(path.read_text())
+    except ParserSyntaxError:
+        return None
 
 
-def parse_path_to_metadata_module(path: Path) -> MetadataWrapper:
-    module = cst.parse_module(path.read_text())
-    return MetadataWrapper(module)
+def parse_path_to_metadata_module(path: Path) -> Optional[MetadataWrapper]:
+    module = parse_path_to_module(path)
+    if module is not None:
+        return MetadataWrapper(module)
 
 
 def _parse_paths(paths: List[Path]) -> List[Path]:
@@ -149,7 +154,11 @@ class Statistics(Command):
         if self._collect is None:
             self._analysis_directory.prepare()
             paths = self._find_paths()
-            modules = [parse_path_to_module(path) for path in _parse_paths(paths)]
+            modules = []
+            for path in _parse_paths(paths):
+                module = parse_path_to_module(path)
+                if module is not None:
+                    modules.append(module)
             annotations = _count(modules, AnnotationCountCollector())
             fixmes = _count(modules, FixmeCountCollector())
             ignores = _count(modules, IgnoreCountCollector())
@@ -177,8 +186,9 @@ class Statistics(Command):
             for path in _parse_paths(paths)
         }
         for path, module in modules.items():
-            collector.path = path
-            module.visit(collector)
+            if module is not None:
+                collector.path = path
+                module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
         log.stdout.write(json.dumps(issues))
 
@@ -193,9 +203,10 @@ class Statistics(Command):
                 for path in _parse_paths(paths)
             }
             for path, module in modules.items():
-                collector.path = path
-                collector.is_strict = is_default_strict
-                module.visit(collector)
+                if module is not None:
+                    collector.path = path
+                    collector.is_strict = is_default_strict
+                    module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
         log.stdout.write(json.dumps(issues))
 
