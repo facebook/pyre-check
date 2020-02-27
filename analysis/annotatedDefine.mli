@@ -17,7 +17,7 @@ val define : t -> Define.t Node.t
 
 val parameter_annotations : t -> resolution:GlobalResolution.t -> Type.t Int.Map.t
 
-val parent_definition : t -> resolution:GlobalResolution.t -> Class.t option
+val parent_definition : t -> resolution:GlobalResolution.t -> ClassSummary.t Node.t option
 
 val decorate : t -> resolution:GlobalResolution.t -> t
 

@@ -1047,7 +1047,8 @@ module State (Context : Context) = struct
           Node.create define ~location
           |> Define.create
           |> Define.parent_definition ~resolution:global_resolution
-          >>| Class.bases
+          >>| Node.value
+          >>| ClassSummary.bases
           |> Option.value ~default:[]
         in
         List.fold ~init:state ~f:check_base bases
@@ -2624,7 +2625,8 @@ module State (Context : Context) = struct
                         Define.parent_definition
                           ~resolution:(Resolution.global_resolution resolution)
                           (Define.create Context.define)
-                        >>= fun definition -> Some (AnnotatedClass.name definition)
+                        >>| Node.value
+                        >>| ClassSummary.name
                       in
                       let base_class =
                         if Type.is_meta resolved_base then
@@ -4494,13 +4496,13 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
   let global_resolution = Resolution.global_resolution resolution in
   let class_initialization_errors errors =
     let check_protocol_properties definition errors =
-      if Node.value definition |> ClassSummary.is_protocol then
+      if ClassSummary.is_protocol definition then
         let private_protocol_property_errors =
           GlobalResolution.attributes
             ~transitive:false
             ~include_generated_attributes:true
             ~resolution:global_resolution
-            (Reference.show (Annotated.Class.name definition))
+            (Reference.show (ClassSummary.name definition))
           >>| List.map ~f:AnnotatedAttribute.name
           >>| List.filter ~f:is_private_attribute
           >>| List.map ~f:(fun name ->
@@ -4508,7 +4510,10 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
                     ~kind:
                       (Error.PrivateProtocolProperty
-                         { name; parent = Annotated.Class.annotation definition })
+                         {
+                           name;
+                           parent = Type.Primitive (ClassSummary.name definition |> Reference.show);
+                         })
                     ~define:Context.define)
           |> Option.value ~default:[]
         in
@@ -4519,12 +4524,12 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     (* Ensure all attributes are instantiated. *)
     let check_attribute_initialization definition errors =
       if
-        (not (ClassSummary.is_protocol (Node.value definition)))
-        && (not (AnnotatedClass.has_abstract_base definition))
+        (not (ClassSummary.is_protocol definition))
+        && (not (ClassSummary.is_abstract definition))
         && not
              (GlobalResolution.is_typed_dictionary
                 ~resolution:global_resolution
-                (Type.Primitive (Reference.show (AnnotatedClass.name definition))))
+                (Type.Primitive (Reference.show (ClassSummary.name definition))))
       then
         let unimplemented_errors =
           let uninitialized_attributes =
@@ -4580,11 +4585,11 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               |> List.map ~f:AnnotatedAttribute.name
               |> List.fold ~init:attribute_map ~f:Map.remove
             in
-            if AnnotatedClass.has_abstract_base definition then
+            if ClassSummary.is_abstract definition then
               []
             else
               let abstract_superclasses, concrete_superclasses, _superclasses_missing_metadata =
-                let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+                let { ClassSummary.name; _ } = definition in
                 let class_name = Reference.show name in
                 let is_protocol_or_abstract class_name =
                   match
@@ -4600,11 +4605,11 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 |> List.partition3_map ~f:is_protocol_or_abstract
               in
               let name_and_metadata =
-                let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+                let { ClassSummary.name; _ } = definition in
                 {
                   class_name = Reference.show name;
-                  is_abstract = ClassSummary.is_abstract (Node.value definition);
-                  is_protocol = ClassSummary.is_protocol (Node.value definition);
+                  is_abstract = ClassSummary.is_abstract definition;
+                  is_protocol = ClassSummary.is_protocol definition;
                 }
               in
               List.cons name_and_metadata abstract_superclasses
@@ -4641,7 +4646,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                           (Error.UninitializedAttribute
                              {
                                name;
-                               parent = Annotated.Class.annotation definition;
+                               parent =
+                                 Type.Primitive (ClassSummary.name definition |> Reference.show);
                                mismatch =
                                  { Error.expected; actual = expected; due_to_invariance = false };
                                kind = error_kind;
@@ -4679,14 +4685,14 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           | _ -> errors
         in
         Define.parent_definition ~resolution:global_resolution (Define.create define_node)
-        >>| Class.bases
+        >>| Node.value
+        >>| ClassSummary.bases
         >>| List.fold ~init:errors ~f:is_final
         |> Option.value ~default:errors
       in
       let check_protocol definition errors = check_protocol_properties definition errors in
       let check_overrides
-          ( { Node.value = { ClassSummary.attribute_components; name = class_name; _ }; _ } as
-          definition )
+          ({ ClassSummary.attribute_components; name = class_name; _ } as definition)
           errors
         =
         let components =
@@ -4698,7 +4704,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           GlobalResolution.attributes
             ~include_generated_attributes:false
             ~resolution:global_resolution
-            (Reference.show (AnnotatedClass.name definition))
+            (Reference.show (ClassSummary.name definition))
           >>| List.filter_map ~f:(fun attribute ->
                   let annotation =
                     GlobalResolution.instantiate_attribute
@@ -4770,7 +4776,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         (* Detect when a class from an import is redefined. This relies on the fact that
            resolve_exports always chooses an imported class if it exists, so we can compare that
            against the current class definition to determine if it is shadowing an imported class. *)
-        let class_name = AnnotatedClass.name definition in
+        let class_name = ClassSummary.name definition in
         let exported_name =
           GlobalResolution.resolve_exports global_resolution ~reference:class_name
         in
@@ -4800,7 +4806,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       in
       let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
       GlobalResolution.class_definition global_resolution (Type.Primitive name)
-      >>| Annotated.Class.create
+      >>| Node.value
       >>| (fun definition ->
             errors
             |> check_bases

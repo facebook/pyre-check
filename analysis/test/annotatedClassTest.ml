@@ -12,7 +12,6 @@ open Statement
 open Pyre
 open Test
 module StatementClass = Class
-module StatementAttribute = Attribute
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Argument = Call.Argument
@@ -70,7 +69,6 @@ let test_get_decorator context =
           let actual =
             Node.create_with_default_location definition
             |> Node.map ~f:ClassSummary.create
-            |> Class.create
             |> AstEnvironment.ReadOnly.get_decorator
                  (GlobalResolution.ast_environment resolution)
                  ~decorator
@@ -1055,11 +1053,11 @@ let test_fallback_attribute context =
       in
       let source = Option.value_exn source in
       last_statement_exn source
+      |> Node.value
       |> (function
-           | { Node.location; value = Statement.Class definition; _ } ->
-               Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
+           | Statement.Class definition -> ClassSummary.create definition
            | _ -> failwith "Last statement was not a class")
-      |> Class.name
+      |> ClassSummary.name
       |> Reference.show
       |> Class.fallback_attribute ~resolution ~name
     in
@@ -1451,10 +1449,7 @@ let test_metaclasses context =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show (Node.value name) = target ->
-            { Node.location; value = definition }
-            |> Node.map ~f:ClassSummary.create
-            |> Class.create
-            |> Option.some
+            { Node.location; value = definition } |> Node.map ~f:ClassSummary.create |> Option.some
         | _ -> None
       in
       List.find_map ~f:target statements

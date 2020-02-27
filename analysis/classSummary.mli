@@ -25,3 +25,7 @@ val is_final : t -> bool
 val is_abstract : t -> bool
 
 val fields_tuple_value : t -> string list option
+
+val name : t -> Reference.t
+
+val bases : t -> Expression.Call.Argument.t list

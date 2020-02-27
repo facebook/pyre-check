@@ -11,16 +11,6 @@ open Statement
 module StatementAttribute = Attribute
 module Attribute = AnnotatedAttribute
 
-type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
-
-let create definition = definition
-
-let name { Node.value = { ClassSummary.name; _ }; _ } = name
-
-let bases { Node.value = { ClassSummary.bases; _ }; _ } = bases
-
-let annotation { Node.value = { ClassSummary.name; _ }; _ } = Type.Primitive (Reference.show name)
-
 let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   let class_name_reference = Reference.create class_name in
   let compound_backup =
@@ -127,6 +117,3 @@ let overrides class_name ~resolution ~name =
     >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   in
   GlobalResolution.successors class_name ~resolution |> List.find_map ~f:find_override
-
-
-let has_abstract_base { Node.value = summary; _ } = ClassSummary.is_abstract summary

@@ -116,3 +116,8 @@ let fields_tuple_value { attribute_components; _ } =
       in
       Some (List.filter_map fields ~f:name)
   | _ -> None
+
+
+let name { name; _ } = name
+
+let bases { bases; _ } = bases

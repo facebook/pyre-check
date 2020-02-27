@@ -8,18 +8,6 @@ open Statement
 module StatementAttribute = Attribute
 module Attribute = AnnotatedAttribute
 
-type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
-
-val create : ClassSummary.t Node.t -> t
-
-val name : t -> Reference.t
-
-val bases : t -> Expression.Call.Argument.t list
-
-val annotation : t -> Type.t
-
-val has_abstract_base : t -> bool
-
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  resolution:Resolution.t ->

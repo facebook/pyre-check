@@ -11,7 +11,6 @@ open Pyre
 open Statement
 open Test
 module StatementDefine = Define
-module Class = Annotated.Class
 module Define = Annotated.Define
 
 let test_parent_definition context =
@@ -39,7 +38,9 @@ let test_parent_definition context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let actual = parent_class_definition global_environment name parent >>| Class.name in
+    let actual =
+      parent_class_definition global_environment name parent >>| Node.value >>| ClassSummary.name
+    in
     let cmp = Option.equal Reference.equal in
     let printer = function
       | None -> "None"

@@ -35,7 +35,7 @@ let parent_definition { Node.value = { Define.signature = { parent; _ }; _ }; _ 
   match parent with
   | Some parent ->
       let parent_type = Type.Primitive (Reference.show parent) in
-      GlobalResolution.class_definition resolution parent_type >>| Class.create
+      GlobalResolution.class_definition resolution parent_type
   | _ -> None
 
 
