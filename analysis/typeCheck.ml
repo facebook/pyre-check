@@ -1650,9 +1650,12 @@ module State (Context : Context) = struct
               >>| (function
                     | class_name ->
                         let abstract_methods =
-                          Annotated.Class.get_abstract_attributes
-                            ~resolution:global_resolution
+                          GlobalResolution.attributes
+                            ~transitive:true
                             class_name
+                            ~resolution:global_resolution
+                          >>| List.filter ~f:AnnotatedAttribute.abstract
+                          |> Option.value ~default:[]
                           |> List.map ~f:Annotated.Attribute.name
                         in
                         if not (List.is_empty abstract_methods) then

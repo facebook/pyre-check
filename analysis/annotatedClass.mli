@@ -20,11 +20,6 @@ val annotation : t -> Type.t
 
 val has_abstract_base : t -> bool
 
-val get_abstract_attributes
-  :  resolution:GlobalResolution.t ->
-  Type.Primitive.t ->
-  AttributeResolution.uninstantiated_attribute list
-
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  resolution:Resolution.t ->

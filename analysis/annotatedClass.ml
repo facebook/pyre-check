@@ -130,8 +130,3 @@ let overrides class_name ~resolution ~name =
 
 
 let has_abstract_base { Node.value = summary; _ } = ClassSummary.is_abstract summary
-
-let get_abstract_attributes ~resolution class_name =
-  GlobalResolution.attributes ~transitive:true class_name ~resolution
-  >>| List.filter ~f:AnnotatedAttribute.abstract
-  |> Option.value ~default:[]
