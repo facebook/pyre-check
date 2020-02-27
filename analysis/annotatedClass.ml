@@ -13,15 +13,6 @@ module Attribute = AnnotatedAttribute
 
 type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
-type global_resolution = GlobalResolution.t
-
-let name_equal
-    { Node.value = { ClassSummary.name = left; _ }; _ }
-    { Node.value = { ClassSummary.name = right; _ }; _ }
-  =
-  Reference.equal left right
-
-
 let create definition = definition
 
 let name { Node.value = { ClassSummary.name; _ }; _ } = name
@@ -29,10 +20,6 @@ let name { Node.value = { ClassSummary.name; _ }; _ } = name
 let bases { Node.value = { ClassSummary.bases; _ }; _ } = bases
 
 let annotation { Node.value = { ClassSummary.name; _ }; _ } = Type.Primitive (Reference.show name)
-
-let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ }; _ } =
-  Class.implicit_attributes attribute_components
-
 
 let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   let class_name_reference = Reference.create class_name in
@@ -126,34 +113,6 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   match compound_backup with
   | Some backup when AnnotatedAttribute.defined backup -> Some backup
   | _ -> getitem_backup ()
-
-
-let has_explicit_constructor class_name ~resolution =
-  let names =
-    GlobalResolution.attribute_names
-      ~resolution
-      ~transitive:false
-      ~class_attributes:false
-      ?instantiated:None
-      class_name
-    >>| Identifier.Set.of_list
-  in
-  match names with
-  | Some names ->
-      let in_test =
-        let successors = GlobalResolution.successors ~resolution class_name in
-        List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors)
-      in
-      let mem = Identifier.Set.mem names in
-      mem "__init__"
-      || mem "__new__"
-      || in_test
-         && ( mem "async_setUp"
-            || mem "setUp"
-            || mem "_setup"
-            || mem "_async_setup"
-            || mem "with_context" )
-  | _ -> false
 
 
 let overrides class_name ~resolution ~name =

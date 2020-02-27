@@ -10,10 +10,6 @@ module Attribute = AnnotatedAttribute
 
 type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
-type global_resolution = GlobalResolution.t
-
-val name_equal : t -> t -> bool
-
 val create : ClassSummary.t Node.t -> t
 
 val name : t -> Reference.t
@@ -29,16 +25,12 @@ val get_abstract_attributes
   Type.Primitive.t ->
   AttributeResolution.uninstantiated_attribute list
 
-val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
-
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  resolution:Resolution.t ->
   name:Identifier.t ->
   Type.Primitive.t ->
   Attribute.instantiated option
-
-val has_explicit_constructor : Type.Primitive.t -> resolution:GlobalResolution.t -> bool
 
 val overrides
   :  Type.Primitive.t ->
