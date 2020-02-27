@@ -1162,7 +1162,18 @@ let test_fallback_attribute context =
         @overload
         def Foo.__getattr__(self, attribute: str) -> None: ...
     |}
-    (Some Type.none)
+    (Some Type.none);
+  assert_fallback_attribute
+    ~name:"baz"
+    {|
+      from typing import overload
+      import typing_extensions
+      class Foo:
+        @overload
+        def Foo.__getattr__(self: Foo, attribute: str) -> int: ...
+    |}
+    (Some Type.integer);
+  ()
 
 
 let test_constraints context =

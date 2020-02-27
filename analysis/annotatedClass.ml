@@ -70,7 +70,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
     let fallback =
       GlobalResolution.attribute_from_class_name
         class_name
-        ~class_attributes:true
+        ~class_attributes:false
         ~transitive:true
         ~resolution:(Resolution.global_resolution resolution)
         ~name:"__getattr__"
@@ -82,12 +82,6 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
         match annotation with
         | Type.Callable ({ implementation; _ } as callable) ->
             let arguments =
-              let self_argument =
-                {
-                  Call.Argument.name = None;
-                  value = from_reference ~location:Location.any class_name_reference;
-                }
-              in
               let name_argument =
                 {
                   Call.Argument.name = None;
@@ -98,7 +92,7 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
                     };
                 }
               in
-              [self_argument; name_argument]
+              [name_argument]
             in
             let implementation =
               match
