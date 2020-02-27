@@ -803,18 +803,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
         let message =
           Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
         in
-        let toplevel_module_does_not_exist =
-          if Reference.length name > 1 then
-            Reference.head name
-            |> (fun head -> Option.value_exn head)
-            |> fun reference -> not (GlobalResolution.module_exists global_resolution reference)
-          else
-            false
-        in
-        if toplevel_module_does_not_exist then (
-          Log.warning "%s" message;
-          None )
-        else if verify then
+        if verify then
           raise_invalid_model message
         else (
           Log.error "%s" message;

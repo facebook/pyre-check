@@ -572,8 +572,11 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!"
     ();
-  assert_valid_model
+  assert_invalid_model
     ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:
+      "Invalid model for `not_in_the_environment.derp`: Modeled entity is not part of the \
+       environment!"
     ();
 
   assert_invalid_model
