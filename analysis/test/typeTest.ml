@@ -961,26 +961,30 @@ let test_is_type_alias _ =
   assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" ![Type.Top]))
 
 
-let test_is_unknown _ =
-  assert_false (Type.is_unknown Type.Bottom);
-  assert_false (Type.is_unknown Type.Any);
-  assert_true (Type.is_unknown (Type.optional Type.Top));
-  assert_false (Type.is_unknown (Type.optional Type.integer));
+let test_contains_unknown _ =
+  assert_false (Type.contains_unknown Type.Bottom);
+  assert_false (Type.contains_unknown Type.Any);
+  assert_true (Type.contains_unknown (Type.optional Type.Top));
+  assert_false (Type.contains_unknown (Type.optional Type.integer));
   assert_true
-    (Type.is_unknown
+    (Type.contains_unknown
        (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })));
   assert_true
-    (Type.is_unknown (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }));
-  assert_false (Type.is_unknown (Type.Parametric { name = "foo"; parameters = ![Type.integer] }));
-  assert_false (Type.is_unknown Type.integer);
-  assert_true (Type.is_unknown Type.Top);
-  assert_true (Type.is_unknown (Type.Union [Type.integer; Type.Top]));
-  assert_false (Type.is_unknown (Type.Union [Type.integer; Type.string]));
-  assert_false (Type.is_unknown (Type.variable "derp"));
-  assert_true (Type.is_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Top]))));
-  assert_false (Type.is_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string]))));
-  assert_true (Type.is_unknown (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_false (Type.is_unknown (Type.Tuple (Type.Unbounded Type.integer)))
+    (Type.contains_unknown
+       (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }));
+  assert_false
+    (Type.contains_unknown (Type.Parametric { name = "foo"; parameters = ![Type.integer] }));
+  assert_false (Type.contains_unknown Type.integer);
+  assert_true (Type.contains_unknown Type.Top);
+  assert_true (Type.contains_unknown (Type.Union [Type.integer; Type.Top]));
+  assert_false (Type.contains_unknown (Type.Union [Type.integer; Type.string]));
+  assert_false (Type.contains_unknown (Type.variable "derp"));
+  assert_true
+    (Type.contains_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Top]))));
+  assert_false
+    (Type.contains_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string]))));
+  assert_true (Type.contains_unknown (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_false (Type.contains_unknown (Type.Tuple (Type.Unbounded Type.integer)))
 
 
 let test_is_resolved _ =
@@ -2332,7 +2336,7 @@ let () =
          "is_meta" >:: test_is_meta;
          "is_none" >:: test_is_none;
          "is_type_alias" >:: test_is_type_alias;
-         "is_unknown" >:: test_is_unknown;
+         "contains_unknown" >:: test_contains_unknown;
          "is_resolved" >:: test_is_resolved;
          "is_iterator" >:: test_is_iterator;
          "class_name" >:: test_class_name;

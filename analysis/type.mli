@@ -340,8 +340,6 @@ end
 
 val exists : t -> predicate:(t -> bool) -> bool
 
-val is_unknown : t -> bool
-
 val is_undeclared : t -> bool
 
 module Callable : sig

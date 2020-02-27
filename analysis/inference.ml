@@ -520,7 +520,7 @@ module State (Context : Context) = struct
         match RefinementUnit.base data with
         | Some annotation ->
             if
-              Type.is_unknown annotation.annotation
+              Type.contains_unknown annotation.annotation
               || Type.is_not_instantiated annotation.annotation
               || Reference.equal key return_reference
             then

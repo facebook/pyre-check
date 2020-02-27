@@ -1387,7 +1387,11 @@ let exists annotation ~predicate =
   fst (ExistsTransform.visit false annotation)
 
 
-let is_unknown annotation = exists annotation ~predicate:is_top
+let contains_callable annotation = exists annotation ~predicate:is_callable
+
+let contains_any annotation = exists annotation ~predicate:is_any
+
+let contains_unknown annotation = exists annotation ~predicate:is_top
 
 let is_undeclared annotation = exists annotation ~predicate:(equal undeclared)
 
@@ -1494,7 +1498,7 @@ module Callable = struct
 
     let is_undefined { parameters; annotation; _ } =
       match parameters with
-      | Undefined -> is_unknown annotation
+      | Undefined -> contains_unknown annotation
       | _ -> false
   end
 
@@ -2200,12 +2204,6 @@ let create ~aliases =
   in
   create_logic ~aliases ~variable_aliases
 
-
-let contains_callable annotation = exists annotation ~predicate:is_callable
-
-let contains_any annotation = exists annotation ~predicate:is_any
-
-let contains_unknown annotation = exists annotation ~predicate:is_unknown
 
 module LiteralAnyVisitor = struct
   module Visitor = struct

@@ -1546,7 +1546,7 @@ let messages ~concise ~signature location kind =
         match mutability with
         | Mutable -> Format.asprintf "%a" pp_type annotation, ""
         | Immutable { Annotation.original; _ } ->
-            if Type.is_unknown original then
+            if Type.contains_unknown original then
               Format.asprintf "%a" pp_type annotation, ""
             else if Type.equal annotation original then
               Format.asprintf "%a" pp_type original, ""
@@ -1961,12 +1961,12 @@ let due_to_analysis_limitations { kind; _ } =
   | RedundantCast actual
   | UninitializedAttribute { mismatch = { actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.is_unknown actual
+      Type.contains_unknown actual
       || Type.is_unbound actual
       || Type.is_type_alias actual
       || Type.is_undeclared actual
   | Top -> true
-  | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.is_unknown annotation
+  | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
   | DeadStore _
   | Deobfuscation _

@@ -760,7 +760,7 @@ module Implementation = struct
                         | annotation -> annotation
                       in
                       match AnnotatedAttribute.name attribute with
-                      | name when not (Type.is_unknown annotation) ->
+                      | name when not (Type.contains_unknown annotation) ->
                           UninstantiatedAttributeTable
                           .mark_as_implicitly_initialized_if_uninitialized
                             table

@@ -3015,7 +3015,7 @@ module State (Context : Context) = struct
         let guide =
           (* This is the annotation determining how we recursively break up the assignment. *)
           match original_annotation with
-          | Some annotation when not (Type.is_unknown annotation) -> annotation
+          | Some annotation when not (Type.contains_unknown annotation) -> annotation
           | _ -> resolved
         in
         let explicit = Option.is_some annotation in
@@ -3281,7 +3281,7 @@ module State (Context : Context) = struct
                 match expected with
                 | Parametric { name = "type"; parameters = [Single parameter] }
                   when is_typed_dictionary parameter ->
-                    is_unknown resolved
+                    contains_unknown resolved
                 | _ -> false
               in
               let state =
@@ -3378,7 +3378,7 @@ module State (Context : Context) = struct
                           Ast.Transform.sanitize_expression value |> Expression.show
                         in
                         is_immutable
-                        && (not (Type.is_unknown expected))
+                        && (not (Type.contains_unknown expected))
                         && ( String.equal attribute sanitized
                            || String.equal attribute ("_" ^ sanitized) )
                     | _ -> false
@@ -3989,13 +3989,13 @@ module State (Context : Context) = struct
             } -> (
             let expected = parse_refinement_annotation annotation_expression in
             let contradiction =
-              if Type.is_unknown expected || Type.is_any expected then
+              if Type.contains_unknown expected || Type.is_any expected then
                 None
               else
                 let { resolved; _ } = forward_expression ~state ~expression:value in
                 if
                   Type.is_unbound resolved
-                  || Type.is_unknown resolved
+                  || Type.contains_unknown resolved
                   || Type.is_any resolved
                   || not
                        (GlobalResolution.less_or_equal
