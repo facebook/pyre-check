@@ -8,8 +8,16 @@ open Ast
 open Pyre
 open Assumptions
 
+type class_hierarchy = {
+  instantiate_successors_parameters:
+    source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
+  is_transitive_successor: source:Type.Primitive.t -> target:Type.Primitive.t -> bool;
+  variables: Type.Primitive.t -> Type.Variable.t list option;
+  least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t list;
+}
+
 type order = {
-  handler: (module ClassHierarchy.Handler);
+  class_hierarchy: class_hierarchy;
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
@@ -359,7 +367,8 @@ module OrderImplementation = struct
        ~f:OrderedConstraints.solve *)
     and solve_less_or_equal
         ( {
-            handler = (module Handler : ClassHierarchy.Handler) as handler;
+            class_hierarchy =
+              { instantiate_successors_parameters; variables; is_transitive_successor; _ };
             constructor;
             is_protocol;
             assumptions = { protocol_assumptions; _ };
@@ -376,7 +385,7 @@ module OrderImplementation = struct
         |> List.fold ~init:constraints ~f:OrderedConstraints.add_fallback_to_any
       in
       let solve_less_or_equal_primitives ~source ~target =
-        if ClassHierarchy.is_transitive_successor handler ~source ~target then
+        if is_transitive_successor ~source ~target then
           [constraints]
         else if
           is_protocol right ~protocol_assumptions
@@ -546,17 +555,12 @@ module OrderImplementation = struct
                       solve_less_or_equal order ~constraints ~left ~right)
               | _ -> []
             in
-            ClassHierarchy.variables handler right_name
+            variables right_name
             >>= Type.Variable.zip_on_two_parameter_lists ~left_parameters ~right_parameters
             >>| List.fold ~f:handle_variables ~init:[constraints]
           in
           let parameters =
-            let parameters =
-              ClassHierarchy.instantiate_successors_parameters
-                handler
-                ~source:left
-                ~target:right_name
-            in
+            let parameters = instantiate_successors_parameters ~source:left ~target:right_name in
             match parameters with
             | None when is_protocol right ~protocol_assumptions ->
                 instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
@@ -935,7 +939,7 @@ module OrderImplementation = struct
 
     and join
         ( {
-            handler = (module Handler : ClassHierarchy.Handler) as handler;
+            class_hierarchy = { least_upper_bound; instantiate_successors_parameters; variables; _ };
             constructor;
             is_protocol;
             assumptions = { protocol_assumptions; _ };
@@ -1019,13 +1023,9 @@ module OrderImplementation = struct
                 | ClassHierarchy.Untracked _ -> None
               in
               let handle_target target =
-                let left_parameters =
-                  ClassHierarchy.instantiate_successors_parameters handler ~source:left ~target
-                in
-                let right_parameters =
-                  ClassHierarchy.instantiate_successors_parameters handler ~source:right ~target
-                in
-                let variables = ClassHierarchy.variables handler target in
+                let left_parameters = instantiate_successors_parameters ~source:left ~target in
+                let right_parameters = instantiate_successors_parameters ~source:right ~target in
+                let variables = variables target in
                 let parameters =
                   let join_parameters (left, right, variable) =
                     match left, right, variable with
@@ -1202,7 +1202,7 @@ module OrderImplementation = struct
                && always_less_or_equal order ~left:right ~right:left ->
             left
         | Primitive left, Primitive right -> (
-            match List.hd (ClassHierarchy.least_upper_bound handler left right) with
+            match List.hd (least_upper_bound left right) with
             | Some joined ->
                 if Type.Primitive.equal joined left then
                   Type.Primitive left
@@ -1214,13 +1214,7 @@ module OrderImplementation = struct
 
 
     and meet
-        ( {
-            handler = (module Handler : ClassHierarchy.Handler);
-            constructor;
-            is_protocol;
-            assumptions = { protocol_assumptions; _ };
-            _;
-          } as order )
+        ({ constructor; is_protocol; assumptions = { protocol_assumptions; _ }; _ } as order)
         left
         right
       =
@@ -1365,7 +1359,7 @@ module OrderImplementation = struct
     and instantiate_protocol_parameters
         ( {
             attributes;
-            handler = (module Handler : ClassHierarchy.Handler) as handler;
+            class_hierarchy = { variables; _ };
             assumptions = { protocol_assumptions; _ } as assumptions;
             _;
           } as order )
@@ -1374,8 +1368,7 @@ module OrderImplementation = struct
         : Type.Parameter.t list option
       =
       match candidate with
-      | Type.Primitive candidate_name
-        when Option.is_some (ClassHierarchy.variables handler candidate_name) ->
+      | Type.Primitive candidate_name when Option.is_some (variables candidate_name) ->
           (* If we are given a "stripped" generic, we decline to do structural analysis, as these
              kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
           None
@@ -1391,7 +1384,7 @@ module OrderImplementation = struct
           match assumed_protocol_parameters with
           | Some result -> Some result
           | None -> (
-              let protocol_generics = ClassHierarchy.variables handler protocol in
+              let protocol_generics = variables protocol in
               let protocol_generic_parameters =
                 protocol_generics
                 >>| List.map ~f:(function

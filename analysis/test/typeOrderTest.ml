@@ -55,15 +55,26 @@ let parse_attributes ~parse_annotation ~class_name =
 
 let get_typed_dictionary _ = None
 
+let hierarchy class_hierarchy_handler =
+  {
+    TypeOrder.instantiate_successors_parameters =
+      ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+    is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+    variables = ClassHierarchy.variables class_hierarchy_handler;
+    least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
+  }
+
+
 let less_or_equal
     ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     ?(attributes = fun _ ~assumptions:_ -> None)
     ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
     handler
   =
+  let class_hierarchy = hierarchy handler in
   always_less_or_equal
     {
-      handler;
+      class_hierarchy;
       constructor;
       attributes;
       is_protocol;
@@ -77,9 +88,10 @@ let less_or_equal
 
 
 let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
+  let class_hierarchy = hierarchy handler in
   is_compatible_with
     {
-      handler;
+      class_hierarchy;
       constructor;
       attributes = (fun _ ~assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -97,9 +109,10 @@ let join
     ?(attributes = fun _ ~assumptions:_ -> None)
     handler
   =
+  let class_hierarchy = hierarchy handler in
   join
     {
-      handler;
+      class_hierarchy;
       constructor;
       attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -113,9 +126,10 @@ let join
 
 
 let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
+  let class_hierarchy = hierarchy handler in
   meet
     {
-      handler;
+      class_hierarchy;
       constructor;
       attributes = (fun _ ~assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -2587,9 +2601,11 @@ let test_solve_less_or_equal context =
         |> Type.primitive_name
         >>| GlobalResolution.constructor ~instantiated ~resolution
       in
-      let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+      let class_hierarchy =
+        GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
+      in
       {
-        handler;
+        class_hierarchy;
         constructor;
         attributes;
         is_protocol;
@@ -3270,7 +3286,7 @@ let test_instantiate_protocol_parameters context =
       in
       let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
-        handler;
+        class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
@@ -3453,7 +3469,7 @@ let test_mark_escaped_as_escaped context =
     let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
     let handler =
       {
-        handler;
+        class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);

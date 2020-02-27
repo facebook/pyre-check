@@ -6,8 +6,16 @@
 open Core
 open Assumptions
 
+type class_hierarchy = {
+  instantiate_successors_parameters:
+    source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
+  is_transitive_successor: source:Type.Primitive.t -> target:Type.Primitive.t -> bool;
+  variables: Type.Primitive.t -> Type.Variable.t list option;
+  least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t list;
+}
+
 type order = {
-  handler: (module ClassHierarchy.Handler);
+  class_hierarchy: class_hierarchy;
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;

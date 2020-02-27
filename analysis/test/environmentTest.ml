@@ -60,20 +60,9 @@ let populate ?include_typeshed_stubs ?include_helpers sources =
 
 let order_and_environment ~context source =
   let environment = populate ~context source in
-  let global_resolution = GlobalResolution.create environment in
-  ( {
-      TypeOrder.handler = GlobalResolution.class_hierarchy global_resolution;
-      constructor = (fun _ ~protocol_assumptions:_ -> None);
-      attributes = (fun _ ~assumptions:_ -> None);
-      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      assumptions =
-        {
-          protocol_assumptions = Assumptions.ProtocolAssumptions.empty;
-          callable_assumptions = Assumptions.CallableAssumptions.empty;
-        };
-      get_typed_dictionary = (fun _ -> None);
-    },
-    environment )
+  AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution environment
+  |> AttributeResolution.ReadOnly.full_order
+  |> fun order -> order, environment
 
 
 let class_definition environment =
@@ -1068,7 +1057,8 @@ let test_modules context =
 
 
 let test_default_class_hierarchy context =
-  let order, _ = order_and_environment ~context [] in
+  let order, environment = order_and_environment ~context [] in
+  let global_resolution = GlobalResolution.create environment in
   let open TypeOrder in
   let less_or_equal = always_less_or_equal in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
@@ -1079,7 +1069,7 @@ let test_default_class_hierarchy context =
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
-    assert_true (ClassHierarchy.contains order.handler primitive_name)
+    assert_true (GlobalResolution.class_exists global_resolution primitive_name)
   in
   assert_has_special_form "typing.Generic";
   assert_has_special_form "typing.Protocol";

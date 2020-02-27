@@ -1143,11 +1143,20 @@ module Implementation = struct
         ?dependency
         annotation
     in
+    let class_hierarchy_handler =
+      ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+        ?dependency
+        (class_hierarchy_environment class_metadata_environment)
+    in
     {
-      TypeOrder.handler =
-        ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-          ?dependency
-          (class_hierarchy_environment class_metadata_environment);
+      TypeOrder.class_hierarchy =
+        {
+          instantiate_successors_parameters =
+            ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
+          is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+          variables = ClassHierarchy.variables class_hierarchy_handler;
+          least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
+        };
       constructor;
       attributes;
       is_protocol;
