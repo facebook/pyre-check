@@ -1392,27 +1392,26 @@ module OrderImplementation = struct
           | Some result -> Some result
           | None -> (
               let protocol_generics = ClassHierarchy.variables handler protocol in
+              let protocol_generic_parameters =
+                protocol_generics
+                >>| List.map ~f:(function
+                        | Type.Variable.Unary variable ->
+                            Type.Parameter.Single (Type.Variable variable)
+                        | ListVariadic variable ->
+                            Group
+                              (Concatenation
+                                 ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
+                                 |> Type.OrderedTypes.Concatenation.create ))
+                        | ParameterVariadic variable ->
+                            CallableParameters
+                              (ParameterVariadicTypeVariable { head = []; variable }))
+              in
               let new_assumptions =
-                let protocol_parameters =
-                  protocol_generics
-                  >>| List.map ~f:(function
-                          | Type.Variable.Unary variable ->
-                              Type.Parameter.Single (Type.Variable variable)
-                          | ListVariadic variable ->
-                              Group
-                                (Concatenation
-                                   ( Type.OrderedTypes.Concatenation.Middle.create_bare variable
-                                   |> Type.OrderedTypes.Concatenation.create ))
-                          | ParameterVariadic variable ->
-                              CallableParameters
-                                (ParameterVariadicTypeVariable { head = []; variable }))
-                  |> Option.value ~default:[]
-                in
                 ProtocolAssumptions.add
                   protocol_assumptions
                   ~candidate
                   ~protocol
-                  ~protocol_parameters
+                  ~protocol_parameters:(Option.value protocol_generic_parameters ~default:[])
               in
               let protocol_attributes =
                 let is_not_object_or_generic_method attribute =
@@ -1420,9 +1419,11 @@ module OrderImplementation = struct
                   (not (Type.is_object (Primitive parent)))
                   && not (Type.is_generic_primitive (Primitive parent))
                 in
-                attributes
-                  ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
-                  (Type.Primitive protocol)
+                protocol_generic_parameters
+                >>| Type.parametric protocol
+                |> Option.value ~default:(Type.Primitive protocol)
+                |> attributes
+                     ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
               let candidate_attributes, desanitize_map =

@@ -1152,7 +1152,7 @@ let test_less_or_equal context =
              ~parse_annotation
              ~class_name:"DoesNotMatchProtocol"
              ["__call__", "typing.Callable[[str], int]"])
-    | Type.Primitive "B" ->
+    | Type.Parametric { name = "B"; _ } ->
         Some
           (parse_attributes
              ~parse_annotation
@@ -2931,7 +2931,7 @@ let test_solve_less_or_equal context =
   in
   let attributes annotation ~assumptions:_ =
     match annotation with
-    | Type.Primitive "test.G_invariant" ->
+    | Type.Parametric { name = "test.G_invariant"; _ } ->
         Some
           (parse_attributes
              ~parse_annotation
@@ -3258,6 +3258,7 @@ let test_instantiate_protocol_parameters context =
       let classes, protocols = parse_attributes classes, parse_attributes protocols in
       let attributes annotation ~assumptions:_ =
         match annotation with
+        | Type.Parametric { name = primitive; _ }
         | Type.Primitive primitive ->
             List.Assoc.find (classes @ protocols) primitive ~equal:String.equal
         | _ -> None
