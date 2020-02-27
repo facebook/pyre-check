@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Pyre
 open Ast
 open Expression
 open Statement
@@ -103,17 +102,3 @@ let fallback_attribute ~(resolution : Resolution.t) ~name class_name =
   match compound_backup with
   | Some backup when AnnotatedAttribute.defined backup -> Some backup
   | _ -> getitem_backup ()
-
-
-let overrides class_name ~resolution ~name =
-  let find_override parent =
-    GlobalResolution.attribute_from_class_name
-      ~transitive:false
-      ~class_attributes:true
-      ~name
-      parent
-      ~resolution
-      ~instantiated:(Primitive class_name)
-    >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
-  in
-  GlobalResolution.successors class_name ~resolution |> List.find_map ~f:find_override

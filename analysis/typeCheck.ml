@@ -1068,7 +1068,7 @@ module State (Context : Context) = struct
           begin
             match define with
             | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
-                Class.overrides
+                GlobalResolution.overrides
                   (Reference.show parent)
                   ~resolution:global_resolution
                   ~name:(StatementDefine.unqualified_name define)
@@ -4765,7 +4765,10 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                            ~kind
                            ~define:Context.define)
                   in
-                  Class.overrides ~resolution:global_resolution ~name (Reference.show class_name)
+                  GlobalResolution.overrides
+                    ~resolution:global_resolution
+                    ~name
+                    (Reference.show class_name)
                   >>| check_override
                   |> Option.value ~default:None)
           |> Option.value ~default:[]

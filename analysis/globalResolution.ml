@@ -557,3 +557,17 @@ let class_exists ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.class_exists
     (unannotated_global_environment resolution)
     ?dependency
+
+
+let overrides class_name ~resolution ~name =
+  let find_override parent =
+    attribute_from_class_name
+      ~transitive:false
+      ~class_attributes:true
+      ~name
+      parent
+      ~resolution
+      ~instantiated:(Primitive class_name)
+    >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
+  in
+  successors class_name ~resolution |> List.find_map ~f:find_override

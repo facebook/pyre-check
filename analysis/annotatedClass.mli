@@ -14,9 +14,3 @@ val fallback_attribute
   name:Identifier.t ->
   Type.Primitive.t ->
   Attribute.instantiated option
-
-val overrides
-  :  Type.Primitive.t ->
-  resolution:GlobalResolution.t ->
-  name:Identifier.t ->
-  Attribute.instantiated option

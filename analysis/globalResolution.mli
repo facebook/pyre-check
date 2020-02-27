@@ -237,3 +237,9 @@ val attribute_names
 val global_location : t -> Reference.t -> Location.t option
 
 val class_exists : t -> Type.Primitive.t -> bool
+
+val overrides
+  :  Type.Primitive.t ->
+  resolution:t ->
+  name:Identifier.t ->
+  AnnotatedAttribute.instantiated option

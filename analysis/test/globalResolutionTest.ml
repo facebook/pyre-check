@@ -1420,6 +1420,32 @@ let test_metaclasses context =
     "MoreMeta"
 
 
+let test_overrides context =
+  let resolution =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
+      class Foo:
+        def foo(): pass
+      class Bar(Foo):
+        pass
+      class Baz(Bar):
+        def foo(): pass
+        def baz(): pass
+    |}
+        );
+      ]
+    |> ScratchProject.build_global_resolution
+  in
+  assert_is_none (GlobalResolution.overrides "test.Baz" ~resolution ~name:"baz");
+  let overrides = GlobalResolution.overrides "test.Baz" ~resolution ~name:"foo" in
+  assert_is_some overrides;
+  assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
+  assert_equal (Option.value_exn overrides |> Attribute.parent) "test.Foo"
+
+
 let () =
   "class"
   >::: [
@@ -1432,5 +1458,6 @@ let () =
          "is_protocol" >:: test_is_protocol;
          "metaclasses" >:: test_metaclasses;
          "superclasses" >:: test_superclasses;
+         "overrides" >:: test_overrides;
        ]
   |> Test.run

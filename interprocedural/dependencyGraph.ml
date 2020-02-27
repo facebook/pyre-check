@@ -245,7 +245,7 @@ let create_overrides ~environment ~source =
     let class_method_overrides { Node.value = { Class.body; name; _ }; _ } =
       let get_method_overrides class_ child_method =
         let method_name = Define.unqualified_name child_method in
-        Annotated.Class.overrides (Reference.show class_) ~name:method_name ~resolution
+        GlobalResolution.overrides (Reference.show class_) ~name:method_name ~resolution
         >>| fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
