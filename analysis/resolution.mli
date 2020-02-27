@@ -75,3 +75,10 @@ val with_parent : t -> parent:Reference.t option -> t
 val is_consistent_with : t -> Type.t -> Type.t -> expression:Ast.Expression.t option -> bool
 
 val global_resolution : t -> GlobalResolution.t
+
+(* Attribute defined by `__getattr__`. *)
+val fallback_attribute
+  :  resolution:t ->
+  name:Identifier.t ->
+  Type.Primitive.t ->
+  AnnotatedAttribute.instantiated option

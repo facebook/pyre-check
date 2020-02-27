@@ -2529,7 +2529,7 @@ module State (Context : Context) = struct
               | Some attribute ->
                   let attribute =
                     if not (Annotated.Attribute.defined attribute) then
-                      Annotated.Class.fallback_attribute class_name ~resolution ~name
+                      Resolution.fallback_attribute class_name ~resolution ~name
                       |> Option.value ~default:attribute
                     else
                       attribute
@@ -3550,8 +3550,7 @@ module State (Context : Context) = struct
                           (* Non-self attributes may not be annotated. *)
                           ( emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target),
                             false )
-                        else if
-                          Annotated.Class.Attribute.defined attribute && insufficiently_annotated
+                        else if Annotated.Attribute.defined attribute && insufficiently_annotated
                         then
                           ( emit_error
                               ~state

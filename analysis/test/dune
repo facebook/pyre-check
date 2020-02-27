@@ -4,7 +4,6 @@
   analysisErrorTest
   annotatedBasesTest
   annotatedCallableTest
-  annotatedClassTest
   annotatedDefineTest
   annotatedGlobalEnvironmentTest
   annotatedSignatureTest

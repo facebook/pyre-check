@@ -6,7 +6,6 @@
 module Bases = AnnotatedBases
 module Call = AnnotatedCall
 module Callable = AnnotatedCallable
-module Class = AnnotatedClass
 module Attribute = AnnotatedAttribute
 module Define = AnnotatedDefine
 module Signature = AnnotatedSignature

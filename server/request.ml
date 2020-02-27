@@ -239,13 +239,13 @@ let process_type_query_request
         TypeQuery.Response (TypeQuery.Errors errors)
     | TypeQuery.Attributes annotation ->
         let to_attribute attribute =
-          let name = Annotated.Class.Attribute.name attribute in
+          let name = Annotated.Attribute.name attribute in
           let annotation =
             GlobalResolution.instantiate_attribute ~resolution:global_resolution attribute
-            |> Annotated.Class.Attribute.annotation
+            |> Annotated.Attribute.annotation
             |> Annotation.annotation
           in
-          let property = Annotated.Class.Attribute.property attribute in
+          let property = Annotated.Attribute.property attribute in
           let kind =
             if property then
               TypeQuery.Property
