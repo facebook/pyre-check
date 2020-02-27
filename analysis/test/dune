@@ -22,6 +22,7 @@
   dataClassTest
   environmentTest
   fixpointTest
+  globalResolutionTest
   inferenceTest
   livenessCheckTest
   lookupTest
