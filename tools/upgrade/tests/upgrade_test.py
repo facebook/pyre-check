@@ -1194,6 +1194,97 @@ positional only parameter to call `merp` but got `Optional[str]`.
         )
         fix.assert_called_once_with(arguments, expected_errors)
 
+        # Test fallback to type check targets with modified names
+        subprocess.reset_mock()
+        fix.reset_mock()
+        failed_buck_return = MagicMock()
+        failed_buck_return.returncode = 5
+        failed_buck_return.stdout = b""
+        buck_query_return = MagicMock()
+        buck_query_return.stdout = b"//target/to:retry-pyre-typecheck"
+        subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
+        upgrade_core.run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp"], VERSION_CONTROL
+        )
+        subprocess.assert_has_calls(
+            [
+                call(
+                    [
+                        "buck",
+                        "test",
+                        "--show-full-json-output",
+                        "a/b:derp-pyre-typecheck",
+                    ],
+                    stdout=-1,
+                    stderr=-1,
+                ),
+                call(
+                    ["buck", "query", "a/b:derp-pyre-typecheck"], stdout=-1, stderr=-1
+                ),
+                call(
+                    [
+                        "buck",
+                        "test",
+                        "--show-full-json-output",
+                        "//target/to:retry-pyre-typecheck",
+                    ],
+                    stdout=-1,
+                    stderr=-1,
+                ),
+            ]
+        )
+        fix.assert_called_once_with(arguments, expected_errors)
+
+        subprocess.reset_mock()
+        fix.reset_mock()
+        failed_buck_return = MagicMock()
+        failed_buck_return.returncode = 5
+        failed_buck_return.stdout = b""
+        buck_query_return = MagicMock()
+        buck_query_return.stdout = b""
+        buck_query_return.stderr = b"""
+        Error in preloading targets. The rule //a/b:derp-pyre-typecheck could \
+        not be found.
+        Please check the spelling and whether it is one of the 10 targets in \
+        /a/b/TARGETS. (1000 bytes)
+        2 similar targets in \
+        /data/users/szhu/fbsource/fbcode/tools/build/test/TARGETS are:
+          //target/to:retry-pyre-typecheck
+          //target/to:retry_non_typecheck
+        """
+        subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
+        upgrade_core.run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp"], VERSION_CONTROL
+        )
+        subprocess.assert_has_calls(
+            [
+                call(
+                    [
+                        "buck",
+                        "test",
+                        "--show-full-json-output",
+                        "a/b:derp-pyre-typecheck",
+                    ],
+                    stdout=-1,
+                    stderr=-1,
+                ),
+                call(
+                    ["buck", "query", "a/b:derp-pyre-typecheck"], stdout=-1, stderr=-1
+                ),
+                call(
+                    [
+                        "buck",
+                        "test",
+                        "--show-full-json-output",
+                        "//target/to:retry-pyre-typecheck",
+                    ],
+                    stdout=-1,
+                    stderr=-1,
+                ),
+            ]
+        )
+        fix.assert_called_once_with(arguments, expected_errors)
+
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:

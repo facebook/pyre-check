@@ -568,13 +568,15 @@ def run_fixme_targets_file(
     version_control: VersionControl,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
-    targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
-    buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
 
-    def get_errors(path: str) -> Optional[List[Dict[str, Any]]]:
+    def get_errors(
+        path: str, targets: List[str], check_alternate_names: bool = True
+    ) -> Optional[List[Dict[str, Any]]]:
+        buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
         buck_test = subprocess.run(
             buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        errors = None
         if buck_test.returncode == 0:
             # Successful run with no type errors
             LOG.info("No errors in %s/TARGETS...", path)
@@ -601,15 +603,43 @@ def run_fixme_targets_file(
                         "concise_description": description,
                     }
                     errors[(line, column, path, code)] = error
-            return list(errors.values())
+            errors = list(errors.values())
+        elif check_alternate_names and buck_test.returncode == 5:
+            # Generated type check target was not named as expected.
+            LOG.warning("Could not find buck test targets: %s", targets)
+            LOG.info("Looking for similar targets...")
+            targets_to_retry = []
+            for target in targets:
+                query_command = ["buck", "query", target]
+                similar_targets = subprocess.run(
+                    query_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                output = similar_targets.stdout.decode()
+                error_output = similar_targets.stderr.decode()
+                if output:
+                    targets_to_retry.append(output)
+                elif error_output:
+                    typecheck_targets = [
+                        target.strip()
+                        for target in error_output.split("\n")
+                        if target.strip().endswith("-pyre-typecheck")
+                    ]
+                    targets_to_retry += typecheck_targets
+            if targets_to_retry:
+                LOG.info("Retrying similar targets: %s", targets_to_retry)
+                errors = get_errors(path, targets_to_retry, check_alternate_names=False)
+            else:
+                LOG.error("No similar targets to retry.")
         else:
             LOG.error(
                 "Failed to run buck test command:\n\t%s\n\n%s",
                 " ".join(buck_test_command),
                 buck_test.stderr.decode(),
             )
+        return errors
 
-    errors = get_errors(path)
+    targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
+    errors = get_errors(path, targets)
     if not errors:
         return
     LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
@@ -621,7 +651,7 @@ def run_fixme_targets_file(
     lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
     if lint_status:
         apply_lint(version_control.LINTERS_TO_SKIP)
-        errors = get_errors(path)
+        errors = get_errors(path, targets)
         if not errors:
             LOG.info("Errors unchanged after linting.")
             return
