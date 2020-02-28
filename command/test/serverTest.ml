@@ -352,7 +352,8 @@ let test_query context =
     ~source:"class C(int): ..."
     ~query:"join(list[test.C], list[int])"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.Type (parse_annotation "typing.List[typing.Any]")));
+       (Protocol.TypeQuery.Type
+          (Type.union [Type.list (Type.Primitive "test.C"); Type.list Type.integer])));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[test.C], list[int])"

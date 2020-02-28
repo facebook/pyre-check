@@ -1046,61 +1046,55 @@ module OrderImplementation = struct
                 let left_parameters = instantiate_successors_parameters ~source:left ~target in
                 let right_parameters = instantiate_successors_parameters ~source:right ~target in
                 let variables = variables target in
-                let parameters =
-                  let join_parameters (left, right, variable) =
-                    match left, right, variable with
-                    | Type.Parameter.Group _, _, _
-                    | _, Type.Parameter.Group _, _
-                    | _, _, Type.Variable.ListVariadic _
-                    | CallableParameters _, _, _
-                    | _, CallableParameters _, _
-                    | _, _, ParameterVariadic _ ->
-                        (* TODO(T47348395): Implement joining for variadics *)
+                let join_parameters (left, right, variable) =
+                  match left, right, variable with
+                  | Type.Parameter.Group _, _, _
+                  | _, Type.Parameter.Group _, _
+                  | _, _, Type.Variable.ListVariadic _
+                  | CallableParameters _, _, _
+                  | _, CallableParameters _, _
+                  | _, _, ParameterVariadic _ ->
+                      (* TODO(T47348395): Implement joining for variadics *)
+                      None
+                  | Single Type.Bottom, Single other, _
+                  | Single other, Single Type.Bottom, _ ->
+                      Some other
+                  | Single Type.Top, _, _
+                  | _, Single Type.Top, _ ->
+                      Some Type.Top
+                  | Single left, Single right, Unary { variance = Covariant; _ } ->
+                      Some (join order left right)
+                  | Single left, Single right, Unary { variance = Contravariant; _ } ->
+                      Some (meet order left right)
+                  | Single left, Single right, Unary { variance = Invariant; _ } ->
+                      if
+                        always_less_or_equal order ~left ~right
+                        && always_less_or_equal order ~left:right ~right:left
+                      then
+                        Some left
+                      else
                         None
-                    | Single Type.Bottom, Single other, _
-                    | Single other, Single Type.Bottom, _ ->
-                        Some other
-                    | Single Type.Top, _, _
-                    | _, Single Type.Top, _ ->
-                        Some Type.Top
-                    | Single left, Single right, Unary { variance = Covariant; _ } ->
-                        Some (join order left right)
-                    | Single left, Single right, Unary { variance = Contravariant; _ } ->
-                        Some (meet order left right)
-                    | Single left, Single right, Unary { variance = Invariant; _ } ->
-                        if
-                          always_less_or_equal order ~left ~right
-                          && always_less_or_equal order ~left:right ~right:left
-                        then
-                          Some left
-                        else
-                          (* We fallback to Type.Any if type equality fails to help display
-                             meaningful error messages. *)
-                          Some Type.Any
-                  in
-                  match left_parameters, right_parameters, variables with
-                  | Some left_parameters, Some right_parameters, Some variables ->
-                      let replace_free_unary_variables_with_top =
-                        let replace_if_free variable =
-                          Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
-                        in
-                        Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
-                      in
-                      Type.Variable.zip_on_two_parameter_lists
-                        ~left_parameters
-                        ~right_parameters
-                        variables
-                      >>| List.map ~f:join_parameters
-                      >>= Option.all
-                      >>| List.map ~f:replace_free_unary_variables_with_top
-                      >>| List.map ~f:(fun single -> Type.Parameter.Single single)
-                  | _ -> None
                 in
-                match parameters with
-                | Some parameters -> Type.Parametric { name = target; parameters }
-                | None -> Type.Primitive target
+                match left_parameters, right_parameters, variables with
+                | Some left_parameters, Some right_parameters, Some variables ->
+                    let replace_free_unary_variables_with_top =
+                      let replace_if_free variable =
+                        Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                      in
+                      Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
+                    in
+                    Type.Variable.zip_on_two_parameter_lists
+                      ~left_parameters
+                      ~right_parameters
+                      variables
+                    >>| List.map ~f:join_parameters
+                    >>= Option.all
+                    >>| List.map ~f:replace_free_unary_variables_with_top
+                    >>| List.map ~f:(fun single -> Type.Parameter.Single single)
+                    >>| fun parameters -> Type.Parametric { name = target; parameters }
+                | _ -> None
               in
-              target >>| handle_target |> Option.value ~default:union
+              target >>= handle_target |> Option.value ~default:union
         (* Special case joins of optional collections with their uninstantated counterparts. *)
         | ( Type.Parametric ({ parameters = [Single Type.Bottom]; _ } as other),
             Type.Optional (Type.Parametric ({ parameters = [Single parameter]; _ } as collection)) )

@@ -1769,7 +1769,10 @@ let test_join context =
 
   (* Parametric types. *)
   assert_join "typing.List[float]" "typing.List[float]" "typing.List[float]";
-  assert_join "typing.List[float]" "typing.List[int]" "typing.List[typing.Any]";
+  assert_join
+    "typing.List[float]"
+    "typing.List[int]"
+    "typing.Union[typing.List[float], typing.List[int]]";
   assert_join "typing.List[int]" "typing.Iterator[int]" "typing.Iterator[int]";
   assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
   assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
@@ -1821,7 +1824,7 @@ let test_join context =
   assert_join
     "typing.Dict[str, str]"
     "typing.Dict[str, typing.List[str]]"
-    "typing.Dict[str, typing.Any]";
+    "typing.Union[typing.Dict[str, typing.List[str]], typing.Dict[str, str]]";
   assert_join "typing.Union[typing.List[int], typing.Set[int]]" "typing.Sized" "typing.Sized";
   assert_join "typing.Tuple[int, ...]" "typing.Iterable[int]" "typing.Iterable[int]";
   assert_join "typing.Tuple[str, ...]" "typing.Iterator[str]" "typing.Iterator[str]";
@@ -2045,7 +2048,8 @@ let test_join context =
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[int, str]"
-    "typing.Mapping[typing.Any, object]";
+    "typing.Union[typing.Mapping[int, str], mypy_extensions.TypedDict[('Alpha', True, ('bar', \
+     str), ('foo', str), ('ben', str))]]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Dict[str, str]"
@@ -2222,7 +2226,11 @@ let test_join context =
        variance_order
        (Type.parametric "Map" ![Type.integer; Type.integer])
        (Type.parametric "Map" ![Type.Top; Type.string]))
-    (Type.parametric "Map" ![Type.Top; Type.Any]);
+    (Type.union
+       [
+         Type.parametric "Map" ![Type.integer; Type.integer];
+         Type.parametric "Map" ![Type.Top; Type.string];
+       ]);
   assert_type_equal
     (join
        variance_order
