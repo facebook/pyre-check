@@ -14,6 +14,7 @@ from .decorators import log_time
 from .models import (
     Issue,
     IssueInstanceSharedTextAssoc,
+    MetaRunToRunAssoc,
     PrimaryKeyGenerator,
     Run,
     RunStatus,
@@ -107,6 +108,14 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
             )
             self.summary["run"].id.resolve(id=pk_gen.get(Run), is_new=True)
             session.add(self.summary["run"])
+            meta_run_identifier = self.summary["meta_run_identifier"]
+            if meta_run_identifier is not None:
+                session.add(
+                    # pyre-ignore[28]: SQLAlchemy and Pysa don't get along.
+                    MetaRunToRunAssoc(
+                        meta_run_id=meta_run_identifier, run_id=self.summary["run"].id
+                    )
+                )
             session.commit()
 
             run_id = self.summary["run"].id.resolved()
