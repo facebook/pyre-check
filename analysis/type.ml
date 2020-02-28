@@ -388,13 +388,13 @@ module Record = struct
     type 'annotation typed_dictionary_field = {
       name: string;
       annotation: 'annotation;
+      required: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'annotation record = {
       name: Identifier.t;
       fields: 'annotation typed_dictionary_field list;
-      total: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -709,14 +709,13 @@ let rec pp format annotation =
         | Unbounded parameter -> Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
-  | TypedDictionary { Record.TypedDictionary.name; fields; total } ->
+  | TypedDictionary { Record.TypedDictionary.name; fields } ->
       let fields =
         fields
-        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation } ->
-               Format.asprintf "%s: %a" name pp annotation)
+        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation; required } ->
+               Format.asprintf "%s%s: %a" name (if required then "" else "?") pp annotation)
         |> String.concat ~sep:", "
       in
-      let totality = if total then "" else " (non-total)" in
       let name =
         if String.equal name "$anonymous" then
           ""
@@ -732,7 +731,7 @@ let rec pp format annotation =
         else
           ""
       in
-      Format.fprintf format "TypedDict%s%s%s" totality name fields
+      Format.fprintf format "TypedDict%s%s" name fields
   | Union parameters ->
       Format.fprintf
         format
@@ -811,8 +810,8 @@ let rec pp_concise format annotation =
   | TypedDictionary { name = "$anonymous"; fields; _ } ->
       let fields =
         fields
-        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation } ->
-               Format.asprintf "%s: %a" name pp_concise annotation)
+        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation; required } ->
+               Format.asprintf "%s%s: %a" name (if required then "" else "?") pp_concise annotation)
         |> String.concat ~sep:", "
       in
       Format.fprintf format "TypedDict(%s)" fields
@@ -984,6 +983,8 @@ let parametric_substitution_map =
   ]
   |> Identifier.Table.of_alist_exn
 
+
+let are_fields_total = List.for_all ~f:(fun { Record.TypedDictionary.required; _ } -> required)
 
 let rec expression annotation =
   let location = Location.any in
@@ -1170,10 +1171,10 @@ let rec expression annotation =
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
-    | TypedDictionary { name; fields; total } ->
+    | TypedDictionary { name; fields } ->
         let argument =
           let tail =
-            let field_to_tuple { Record.TypedDictionary.name; annotation } =
+            let field_to_tuple { Record.TypedDictionary.name; annotation; _ } =
               Node.create_with_default_location
                 (Expression.Tuple
                    [
@@ -1185,7 +1186,7 @@ let rec expression annotation =
             List.map fields ~f:field_to_tuple
           in
           let totality =
-            (if total then Expression.True else Expression.False)
+            (if are_fields_total fields then Expression.True else Expression.False)
             |> Node.create_with_default_location
           in
           Expression.String { value = name; kind = StringLiteral.String }
@@ -2063,12 +2064,13 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                     {
                       Record.TypedDictionary.name = field_name;
                       annotation = create_logic field_annotation;
+                      required = total;
                     }
               | _ -> None
             in
             fields |> List.filter_map ~f:tuple_to_field
           in
-          TypedDictionary { name = typed_dictionary_name; fields; total }
+          TypedDictionary { name = typed_dictionary_name; fields }
         in
         let undefined_primitive =
           Primitive (Expression.show (Node.create_with_default_location expression))
@@ -2544,7 +2546,8 @@ let split annotation =
         | Unbounded parameter -> [Single parameter]
       in
       Primitive "tuple", parameters
-  | TypedDictionary { total; _ } -> Primitive (typed_dictionary_class_name ~total), []
+  | TypedDictionary { fields; _ } ->
+      Primitive (typed_dictionary_class_name ~total:(are_fields_total fields)), []
   | Literal _ as literal -> weaken_literals literal, []
   | annotation -> annotation, []
 
@@ -3690,36 +3693,45 @@ let dequalify map annotation =
 module TypedDictionary = struct
   open Record.TypedDictionary
 
-  let anonymous ~total fields = TypedDictionary { name = "$anonymous"; fields; total }
+  let anonymous fields = TypedDictionary { name = "$anonymous"; fields }
 
-  let create_field ~name ~annotation = { name; annotation }
+  let create_field ~name ~annotation ~required = { name; annotation; required }
+
+  let are_fields_total = are_fields_total
 
   let fields_have_colliding_keys left_fields right_fields =
-    let found_collision { name = needle_name; annotation = needle_annotation } =
-      let same_name_different_annotation { name; annotation } =
-        String.equal name needle_name && not (equal annotation needle_annotation)
+    let found_collision
+        { name = needle_name; annotation = needle_annotation; required = needle_required }
+      =
+      let same_name_different_annotation_or_requiredness { name; annotation; required } =
+        String.equal name needle_name
+        && ((not (equal annotation needle_annotation)) || not (Bool.equal required needle_required))
       in
-      List.exists left_fields ~f:same_name_different_annotation
+      List.exists left_fields ~f:same_name_different_annotation_or_requiredness
     in
     List.exists right_fields ~f:found_collision
 
 
-  let field_named_parameters ~default fields =
-    let field_to_argument { name; annotation } =
+  let field_named_parameters ?(all_default = false) fields =
+    let field_to_argument { name; annotation; required } =
       Record.Callable.RecordParameter.KeywordOnly
-        { name = Format.asprintf "$parameter$%s" name; annotation; default }
+        {
+          name = Format.asprintf "$parameter$%s" name;
+          annotation;
+          default = all_default || not required;
+        }
     in
     List.map ~f:field_to_argument fields |> fun parameters -> Defined parameters
 
 
-  let constructor ~name ~fields ~total =
+  let constructor ~name ~fields =
     let annotation = Primitive name in
     {
       Callable.kind = Named (Reference.create "__init__");
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [
-          { annotation; parameters = field_named_parameters ~default:(not total) fields };
+          { annotation; parameters = field_named_parameters fields };
           {
             annotation;
             parameters =
@@ -3738,8 +3750,13 @@ module TypedDictionary = struct
     | { Callable.kind = Named name; overloads = [{ parameters = Defined parameters; _ }; _]; _ }
       when String.equal (Reference.show name) "__init__" ->
         let parameter_to_field = function
-          | Record.Callable.RecordParameter.KeywordOnly { name; annotation; _ } ->
-              Some { name = String.split ~on:'$' name |> List.last_exn; annotation }
+          | Record.Callable.RecordParameter.KeywordOnly { name; annotation; default } ->
+              Some
+                {
+                  name = String.split ~on:'$' name |> List.last_exn;
+                  annotation;
+                  required = not default;
+                }
           | _ -> None
         in
         List.map ~f:parameter_to_field parameters |> Option.all
@@ -3758,13 +3775,13 @@ module TypedDictionary = struct
 
   let common_special_methods =
     let getitem_overloads =
-      let overload { name; annotation } =
+      let overload { name; annotation; _ } =
         { annotation; parameters = Defined [key_parameter name] }
       in
       List.map ~f:overload
     in
     let setitem_overloads =
-      let overload { name; annotation } =
+      let overload { name; annotation; _ } =
         {
           annotation = none;
           parameters =
@@ -3774,7 +3791,7 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let get_overloads =
-      let overloads { name; annotation } =
+      let overloads { name; annotation; _ } =
         [
           { annotation = Optional annotation; parameters = Defined [key_parameter name] };
           {
@@ -3796,7 +3813,7 @@ module TypedDictionary = struct
       List.concat_map ~f:overloads
     in
     let setdefault_overloads =
-      let overload { name; annotation } =
+      let overload { name; annotation; _ } =
         {
           annotation;
           parameters =
@@ -3806,7 +3823,7 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let update_overloads fields =
-      [{ annotation = none; parameters = field_named_parameters fields ~default:true }]
+      [{ annotation = none; parameters = field_named_parameters ~all_default:true fields }]
     in
     [
       { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
@@ -3819,7 +3836,7 @@ module TypedDictionary = struct
 
   let non_total_special_methods =
     let pop_overloads =
-      let overloads { name; annotation } =
+      let overloads { name; annotation; _ } =
         [
           { annotation; parameters = Defined [key_parameter name] };
           {
@@ -3841,7 +3858,7 @@ module TypedDictionary = struct
       List.concat_map ~f:overloads
     in
     let delitem_overloads fields =
-      let overload { name; annotation = _ } =
+      let overload { name; annotation = _; _ } =
         { annotation = none; parameters = Defined [key_parameter name] }
       in
       List.map ~f:overload fields
@@ -3852,17 +3869,24 @@ module TypedDictionary = struct
     ]
 
 
-  let special_overloads ~fields ~method_name ~total =
+  let special_overloads ~fields ~method_name =
+    let total = are_fields_total fields in
     let special_methods =
-      if total then common_special_methods else non_total_special_methods @ common_special_methods
+      if total then
+        common_special_methods
+      else
+        non_total_special_methods @ common_special_methods
     in
     List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>| fun { overloads; _ } -> overloads fields
 
 
-  let is_special_mismatch ~method_name ~position ~total =
+  let is_special_mismatch ~total ~method_name ~position =
     let special_methods =
-      if total then common_special_methods else non_total_special_methods @ common_special_methods
+      if total then
+        common_special_methods
+      else
+        non_total_special_methods @ common_special_methods
     in
     List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>= (fun { special_index; _ } -> special_index)
@@ -3872,16 +3896,16 @@ module TypedDictionary = struct
 
   let class_name = typed_dictionary_class_name
 
-  let defines ~t_self_expression ~total =
+  let defines ~total ~t_self_expression =
     let open Statement in
-    let class_name = class_name ~total in
     let define ?self_parameter ?return_annotation name =
       Statement.Define
         {
           signature =
             {
               name =
-                Reference.create_from_list [class_name; name] |> Node.create_with_default_location;
+                Reference.create_from_list [class_name ~total; name]
+                |> Node.create_with_default_location;
               parameters =
                 [
                   { ExpressionParameter.name = "self"; value = None; annotation = self_parameter }
@@ -3891,7 +3915,7 @@ module TypedDictionary = struct
               return_annotation;
               async = false;
               generator = false;
-              parent = Some (Reference.create class_name);
+              parent = Some (Reference.create (class_name ~total));
               nesting_define = None;
             };
           captures = [];

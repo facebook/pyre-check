@@ -376,7 +376,7 @@ let rec weaken_mutable_literals
     -> (
       let open Type.Record.TypedDictionary in
       match get_typed_dictionary expected with
-      | Some { fields; total; _ } ->
+      | Some { fields; _ } ->
           let find_matching_field ~name =
             let matching_name ({ name = expected_name; _ } : Type.t typed_dictionary_field) =
               String.equal name expected_name
@@ -387,37 +387,43 @@ let rec weaken_mutable_literals
             let key = resolve key in
             match key with
             | Type.Literal (Type.String name) ->
-                let annotation =
+                let annotation, required =
                   let resolved = resolve value in
                   let relax { annotation; _ } =
                     if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
                       weaken_mutable_literals
-                        ~get_typed_dictionary
                         resolve
                         ~expression:(Some value)
                         ~resolved
                         ~expected:annotation
                         ~comparator
+                        ~get_typed_dictionary
                     else if comparator ~left:resolved ~right:annotation then
                       annotation
                     else
                       resolved
                   in
-                  find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
+                  find_matching_field fields ~name
+                  >>| (fun field -> relax field, field.required)
+                  |> Option.value ~default:(resolved, true)
                 in
-                Some { name; annotation }
+                Some { name; annotation; required }
             | _ -> None
           in
-          let add_missing_fields sofar =
+          let add_missing_fields_if_all_non_required sofar =
             let is_missing ({ name; _ } : Type.t typed_dictionary_field) =
               Option.is_none (find_matching_field sofar ~name)
             in
-            sofar @ List.filter fields ~f:is_missing
+            let missing_fields = List.filter fields ~f:is_missing in
+            if List.for_all missing_fields ~f:(fun { required; _ } -> not required) then
+              sofar @ List.filter fields ~f:is_missing
+            else
+              sofar
           in
           List.map entries ~f:resolve_entry
           |> Option.all
-          >>| (if total then Fn.id else add_missing_fields)
-          >>| Type.TypedDictionary.anonymous ~total
+          >>| add_missing_fields_if_all_non_required
+          >>| Type.TypedDictionary.anonymous
           >>| (fun typed_dictionary ->
                 if comparator ~left:typed_dictionary ~right:expected then
                   expected
@@ -1086,13 +1092,7 @@ module Implementation = struct
           | Type.Callable callable -> Type.TypedDictionary.fields_from_constructor callable
           | _ -> None
         in
-        let class_hierarchy =
-          ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-            ?dependency
-            (class_hierarchy_environment class_metadata_environment)
-        in
-        let total = ClassHierarchy.is_total_typed_dictionary ~class_hierarchy class_name in
-        fields >>| fun fields -> { Type.Record.TypedDictionary.fields; total; name = class_name }
+        fields >>| fun fields -> { Type.Record.TypedDictionary.fields; name = class_name }
     | _ -> None
 
 
@@ -1384,28 +1384,35 @@ module Implementation = struct
       in
       let get_field_attributes
           ~include_generated_attributes
-          { Node.value = { ClassSummary.attribute_components; _ }; _ }
+          { Node.value = { ClassSummary.attribute_components; bases; _ }; _ }
         =
+        let required =
+          not
+            (List.exists bases ~f:(fun { value; _ } ->
+                 String.equal (Expression.show value) (Type.TypedDictionary.class_name ~total:false)))
+        in
         Class.attributes ~include_generated_attributes ~in_test attribute_components
         |> Identifier.SerializableMap.bindings
         |> List.map ~f:(fun (_, field_attribute) ->
-               create_attribute
-                 ~assumptions
-                 ~class_metadata_environment
-                 ?dependency
-                 ~parent:parent_definition
-                 ?defined:(Some true)
-                 ?default_class_attribute:(Some class_attributes)
-                 ~accessed_via_metaclass
-                 (Node.value field_attribute))
+               ( create_attribute
+                   ~assumptions
+                   ~class_metadata_environment
+                   ?dependency
+                   ~parent:parent_definition
+                   ?defined:(Some true)
+                   ?default_class_attribute:(Some class_attributes)
+                   ~accessed_via_metaclass
+                   (Node.value field_attribute),
+                 required ))
       in
-      let attribute_to_typed_dictionary_field attribute =
+      let attribute_to_typed_dictionary_field (attribute, required) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with
         | { UninstantiatedAnnotation.kind = Attribute { annotation; _ }; _ } ->
             Some
               (Type.TypedDictionary.create_field
                  ~name:(AnnotatedAttribute.name attribute)
-                 ~annotation)
+                 ~annotation
+                 ~required)
         | _ -> None
       in
       let fields =
@@ -1414,7 +1421,7 @@ module Implementation = struct
           ~f:(get_field_attributes ~include_generated_attributes:false)
         |> List.filter_map ~f:attribute_to_typed_dictionary_field
       in
-      let overload_method attribute =
+      let overload_method (attribute, _) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with
         | { UninstantiatedAnnotation.kind = Method { callable; is_class_method }; _ } as
           uninstantiated_annotation ->
@@ -1434,7 +1441,6 @@ module Implementation = struct
             Type.TypedDictionary.special_overloads
               ~fields
               ~method_name:(AnnotatedAttribute.name attribute)
-              ~total
             >>| fun overloads ->
             AnnotatedAttribute.with_uninstantiated_annotation
               ~uninstantiated_annotation:
@@ -1447,7 +1453,7 @@ module Implementation = struct
         | _ -> None
       in
       let constructor =
-        Type.TypedDictionary.constructor ~name:class_name ~fields ~total
+        Type.TypedDictionary.constructor ~name:class_name ~fields
         |> create_uninstantiated_method
         |> fun uninstantiated_annotation ->
         AnnotatedAttribute.create_uninstantiated
@@ -1882,8 +1888,8 @@ module Implementation = struct
           (* Special cases *)
           let callable =
             match instantiated, attribute_name, callable with
-            | Type.TypedDictionary { fields; total; _ }, method_name, callable ->
-                Type.TypedDictionary.special_overloads ~fields ~method_name ~total
+            | Type.TypedDictionary { fields; _ }, method_name, callable ->
+                Type.TypedDictionary.special_overloads ~fields ~method_name
                 >>| (fun overloads ->
                       {
                         callable with

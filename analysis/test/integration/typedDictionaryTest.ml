@@ -66,6 +66,14 @@ let test_check_typed_dictionaries context =
   assert_test_typed_dictionary
     {|
       import mypy_extensions
+      Empty = mypy_extensions.TypedDict('Empty', {})
+      d: Empty
+      reveal_type(d)
+    |}
+    ["Revealed type [-1]: Revealed type for `d` is `Empty`."];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -883,11 +891,12 @@ let test_check_typed_dictionaries context =
         year: int
       def f() -> int:
         movie: Movie = {'name' : "Blade Runner"}
+        reveal_type(movie)
         # this will fail at runtime, but that's the cost of doing business with non-total
         # typeddicts
         return movie['year']
     |}
-    [];
+    ["Revealed type [-1]: Revealed type for `movie` is `Movie`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -900,7 +909,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible variable type [9]: movie is declared to have type `Movie` but is used as type \
-       `TypedDict (non-total) with fields (name: int, year: int)`.";
+       `TypedDict with fields (name?: int, year?: int)`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -955,18 +964,6 @@ let test_check_typed_dictionaries context =
         return {'name' : "Blade Runner", 'something': Child()}
     |}
     [];
-  assert_test_typed_dictionary
-    {|
-      import mypy_extensions
-      class BaseTypedDict(mypy_extensions.TypedDict):
-        required: int
-      class ChildTypedDict(BaseTypedDict, total=False):
-        optional: str
-    |}
-    [
-      (* TODO(T61665125): Handle totality for inherited TypedDict. *)
-      "Invalid type [31]: Expression `False` is not a valid type.";
-    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -1415,6 +1412,55 @@ let test_check_typed_dictionary_inheritance context =
        call `takes_nonchild` but got `Child`.";
       "Incompatible parameter type [6]: Expected `NonChild` for 1st positional only parameter to \
        call `takes_nonchild` but got `ExplicitChild`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      class TotalBase(mypy_extensions.TypedDict):
+        foo: int
+      class NonTotalChild(TotalBase, total=False):
+        bar: str
+      def f() -> None:
+        d: NonTotalChild = {"foo": 1}
+        reveal_type(d["bar"])
+        d2: NonTotalChild = {"bar": "hello"}
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `d[\"bar\"]` is `str`.";
+      "Incompatible variable type [9]: d2 is declared to have type `NonTotalChild` but is used as \
+       type `TypedDict with fields (bar?: str)`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      class NonTotalBase(mypy_extensions.TypedDict, total=False):
+        foo: int
+      class TotalChild(NonTotalBase):
+        bar: str
+      def f() -> None:
+        d: TotalChild = {"bar": "hello"}
+        reveal_type(d)
+        reveal_type(d["foo"])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `d` is `TotalChild`.";
+      "Revealed type [-1]: Revealed type for `d[\"foo\"]` is `int`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class NonTotalBase(mypy_extensions.TypedDict, total=False):
+          foo: int
+        class NonTotalChild(NonTotalBase, total=False):
+          bar: str
+
+        d: NonTotalChild
+        reveal_type(d["foo"])
+        reveal_type(d["bar"])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `d[\"foo\"]` is `int`.";
+      "Revealed type [-1]: Revealed type for `d[\"bar\"]` is `str`.";
     ];
   (* TypedDict operations. *)
   assert_test_typed_dictionary

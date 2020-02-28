@@ -1645,23 +1645,25 @@ let expand_typed_dictionary_declarations
                  })
         | _ -> None
       in
-      let extract_totality arguments =
+      let extract_totality_from_base base =
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
-        List.find_map arguments ~f:(function
-            | {
-                Call.Argument.name = Some { value = total; _ };
-                value = { Node.value = Expression.True; _ };
-              }
-              when is_total ~total ->
-                Some true
-            | {
-                Call.Argument.name = Some { value = total; _ };
-                value = { Node.value = Expression.False; _ };
-              }
-              when is_total ~total ->
-                Some false
-            | _ -> None)
-        |> Option.value ~default:true
+        match base with
+        | {
+         Call.Argument.name = Some { value = total; _ };
+         value = { Node.value = Expression.True; _ };
+        }
+          when is_total ~total ->
+            Some true
+        | {
+         Call.Argument.name = Some { value = total; _ };
+         value = { Node.value = Expression.False; _ };
+        }
+          when is_total ~total ->
+            Some false
+        | _ -> None
+      in
+      let extract_totality arguments =
+        List.find_map arguments ~f:extract_totality_from_base |> Option.value ~default:true
       in
       match value with
       | Statement.Assign
@@ -1771,6 +1773,21 @@ let expand_typed_dictionary_declarations
             class_declaration
           in
           declaration (Reference.show class_name) |> Option.value ~default:value
+      | Class ({ bases; _ } as class_definition) ->
+          let replace_totality base =
+            match extract_totality_from_base base with
+            | Some true -> None
+            | Some false ->
+                Some
+                  {
+                    Call.Argument.name = None;
+                    value =
+                      Expression.Name (create_name ~location "NonTotalTypedDictionary")
+                      |> Node.create ~location;
+                  }
+            | None -> Some base
+          in
+          Class { class_definition with bases = List.filter_map bases ~f:replace_totality }
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }

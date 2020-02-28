@@ -1554,8 +1554,8 @@ module State (Context : Context) = struct
             | meta when Type.is_meta meta -> (
                 let backup = find_method ~parent:meta ~name:"__call__" in
                 match Type.single_parameter meta with
-                | TypedDictionary { name; fields; total } ->
-                    Type.TypedDictionary.constructor ~name ~fields ~total |> Option.some
+                | TypedDictionary { name; fields } ->
+                    Type.TypedDictionary.constructor ~name ~fields |> Option.some
                 | Variable { constraints = Type.Variable.Unconstrained; _ } -> backup
                 | Variable { constraints = Type.Variable.Explicit constraints; _ }
                   when List.length constraints > 1 ->
@@ -1762,9 +1762,14 @@ module State (Context : Context) = struct
                     let typed_dictionary_error
                         ~method_name
                         ~position
-                        { Type.Record.TypedDictionary.fields; total; name }
+                        { Type.Record.TypedDictionary.fields; name }
                       =
-                      if Type.TypedDictionary.is_special_mismatch ~method_name ~position ~total then
+                      if
+                        Type.TypedDictionary.is_special_mismatch
+                          ~method_name
+                          ~position
+                          ~total:(Type.TypedDictionary.are_fields_total fields)
+                      then
                         match actual with
                         | Type.Literal (Type.String missing_key) ->
                             Error.TypedDictionaryKeyNotFound

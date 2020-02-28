@@ -415,10 +415,9 @@ let test_create _ =
          name = "Movie";
          fields =
            [
-             { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer; required = true };
+             { name = "name"; annotation = Type.string; required = true };
            ];
-         total = true;
        });
   assert_create
     "mypy_extensions.TypedDict[('Movie', False, ('year', int), ('name', str))]"
@@ -427,10 +426,9 @@ let test_create _ =
          name = "Movie";
          fields =
            [
-             { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer; required = false };
+             { name = "name"; annotation = Type.string; required = false };
            ];
-         total = false;
        });
   assert_create
     ~aliases:(function
@@ -613,10 +611,9 @@ let test_expression _ =
          name = "Movie";
          fields =
            [
-             { name = "title"; annotation = Type.string };
-             { name = "year"; annotation = Type.integer };
+             { name = "title"; annotation = Type.string; required = true };
+             { name = "year"; annotation = Type.integer; required = true };
            ];
-         total = true;
        })
     "mypy_extensions.TypedDict[(\"Movie\", True, (\"title\", str), (\"year\", int))]";
   assert_expression
@@ -625,10 +622,9 @@ let test_expression _ =
          name = "Movie";
          fields =
            [
-             { name = "title"; annotation = Type.string };
-             { name = "year"; annotation = Type.integer };
+             { name = "title"; annotation = Type.string; required = false };
+             { name = "year"; annotation = Type.integer; required = false };
            ];
-         total = false;
        })
     "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]";
   assert_expression
@@ -732,10 +728,9 @@ let test_concise _ =
          name = "Movie";
          fields =
            [
-             { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer; required = true };
+             { name = "name"; annotation = Type.string; required = true };
            ];
-         total = true;
        })
     "Movie";
   assert_concise
@@ -744,10 +739,9 @@ let test_concise _ =
          name = "$anonymous";
          fields =
            [
-             { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer; required = true };
+             { name = "name"; annotation = Type.string; required = true };
            ];
-         total = true;
        })
     "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
@@ -823,10 +817,9 @@ let test_primitives _ =
           name = "Movie";
           fields =
             [
-              { name = "year"; annotation = Type.integer };
-              { name = "name"; annotation = Type.string };
+              { name = "year"; annotation = Type.integer; required = true };
+              { name = "name"; annotation = Type.string; required = true };
             ];
-          total = true;
         }
     |> Type.primitives )
 
@@ -868,10 +861,9 @@ let test_elements _ =
           name = "Movie";
           fields =
             [
-              { name = "year"; annotation = Type.integer };
-              { name = "name"; annotation = Type.string };
+              { name = "year"; annotation = Type.integer; required = true };
+              { name = "name"; annotation = Type.string; required = true };
             ];
-          total = true;
         }
     |> Type.elements )
 
@@ -2288,8 +2280,8 @@ let test_fields_from_constructor _ =
   in
   let fields =
     [
-      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string };
-      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer };
+      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
+      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
     ]
   in
   let non_constructor =
@@ -2299,10 +2291,10 @@ let test_fields_from_constructor _ =
   in
   assert_fields ~constructor:non_constructor ~expected:None;
   assert_fields
-    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields ~total:true)
+    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields)
     ~expected:(Some fields);
   assert_fields
-    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields ~total:false)
+    ~constructor:(Type.TypedDictionary.constructor ~name:"Movie" ~fields)
     ~expected:(Some fields);
   ()
 

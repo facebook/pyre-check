@@ -577,11 +577,19 @@ module OrderImplementation = struct
                 ~constraints
                 ~left:(Type.TypedDictionary left)
                 ~right:(Type.TypedDictionary right)
-          | Some { total; _ }, None ->
-              let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+          | Some { fields; _ }, None ->
+              let left =
+                Type.Primitive
+                  (Type.TypedDictionary.class_name
+                     ~total:(Type.TypedDictionary.are_fields_total fields))
+              in
               solve_less_or_equal order ~constraints ~left ~right
-          | None, Some { total; _ } ->
-              let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+          | None, Some { fields; _ } ->
+              let right =
+                Type.Primitive
+                  (Type.TypedDictionary.class_name
+                     ~total:(Type.TypedDictionary.are_fields_total fields))
+              in
               solve_less_or_equal order ~constraints ~left ~right
           | None, None -> solve_less_or_equal_primitives ~source ~target )
       | Type.Parametric { name = source; _ }, Type.Primitive target ->
@@ -653,12 +661,16 @@ module OrderImplementation = struct
                  left.fields
                  ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
           in
-          if Bool.equal left.total right.total && not (List.exists right.fields ~f:field_not_found)
+          if
+            Bool.equal
+              (Type.TypedDictionary.are_fields_total left.fields)
+              (Type.TypedDictionary.are_fields_total right.fields)
+            && not (List.exists right.fields ~f:field_not_found)
           then
             [constraints]
           else
             []
-      | _, Type.TypedDictionary { total; _ } -> (
+      | _, Type.TypedDictionary { fields; _ } -> (
           let left_typed_dictionary = get_typed_dictionary left in
           match left_typed_dictionary with
           | Some typed_dictionary ->
@@ -668,9 +680,13 @@ module OrderImplementation = struct
                 ~left:(Type.TypedDictionary typed_dictionary)
                 ~right
           | None ->
-              let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              let right =
+                Type.Primitive
+                  (Type.TypedDictionary.class_name
+                     ~total:(Type.TypedDictionary.are_fields_total fields))
+              in
               solve_less_or_equal order ~constraints ~left ~right )
-      | Type.TypedDictionary { total; _ }, _ -> (
+      | Type.TypedDictionary { fields; _ }, _ -> (
           let right_typed_dictionary = get_typed_dictionary right in
           match right_typed_dictionary with
           | Some typed_dictionary ->
@@ -680,7 +696,11 @@ module OrderImplementation = struct
                 ~left
                 ~right:(Type.TypedDictionary typed_dictionary)
           | None ->
-              let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+              let left =
+                Type.Primitive
+                  (Type.TypedDictionary.class_name
+                     ~total:(Type.TypedDictionary.are_fields_total fields))
+              in
               solve_less_or_equal order ~constraints ~left ~right )
       | _, Type.Literal _ -> []
       | Type.Literal _, _ ->
@@ -1122,12 +1142,9 @@ module OrderImplementation = struct
             Type.Callable { Callable.kind = Callable.Named right; _ } )
           when Reference.equal left right ->
             callable
-        | ( Type.TypedDictionary { fields = left_fields; total = left_total; _ },
-            Type.TypedDictionary { fields = right_fields; total = right_total; _ } ) ->
-            if
-              Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields
-              || left_total <> right_total
-            then
+        | ( Type.TypedDictionary { fields = left_fields; _ },
+            Type.TypedDictionary { fields = right_fields; _ } ) ->
+            if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
               Type.Parametric
                 {
                   name = "typing.Mapping";
@@ -1150,7 +1167,7 @@ module OrderImplementation = struct
                   in
                   List.filter right_fields ~f:found_match
               in
-              Type.TypedDictionary.anonymous ~total:left_total join_fields
+              Type.TypedDictionary.anonymous join_fields
         | Type.TypedDictionary _, other
         | other, Type.TypedDictionary _ ->
             let class_join =
@@ -1316,12 +1333,9 @@ module OrderImplementation = struct
             >>= constructor ~protocol_assumptions
             >>| meet order (Type.Callable callable)
             |> Option.value ~default:Type.Bottom
-        | ( Type.TypedDictionary { fields = left_fields; total = left_total; _ },
-            Type.TypedDictionary { fields = right_fields; total = right_total; _ } ) ->
-            if
-              Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields
-              || left_total <> right_total
-            then
+        | ( Type.TypedDictionary { fields = left_fields; _ },
+            Type.TypedDictionary { fields = right_fields; _ } ) ->
+            if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
               Type.Bottom
             else
               let meet_fields =
@@ -1335,7 +1349,7 @@ module OrderImplementation = struct
                     ~compare:
                       [%compare: Type.type_t Type.Record.TypedDictionary.typed_dictionary_field]
               in
-              Type.TypedDictionary.anonymous ~total:left_total meet_fields
+              Type.TypedDictionary.anonymous meet_fields
         | Type.TypedDictionary _, _
         | _, Type.TypedDictionary _ ->
             Type.Bottom

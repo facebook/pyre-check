@@ -2373,6 +2373,28 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |};
+  assert_expand
+    {|
+      class Movie(MovieBase, total=True):
+        name: str
+        year: int
+    |}
+    {|
+      class Movie(MovieBase):
+        name: str
+        year: int
+    |};
+  assert_expand
+    {|
+      class Movie(MovieBase, total=False):
+        name: str
+        year: int
+    |}
+    {|
+      class Movie(MovieBase, NonTotalTypedDictionary):
+        name: str
+        year: int
+    |};
   ()
 
 

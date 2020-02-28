@@ -156,13 +156,13 @@ module Record : sig
     type 'annotation typed_dictionary_field = {
       name: string;
       annotation: 'annotation;
+      required: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'annotation record = {
       name: Identifier.t;
       fields: 'annotation typed_dictionary_field list;
-      total: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -824,32 +824,29 @@ val is_concrete : t -> bool
 module TypedDictionary : sig
   open Record.TypedDictionary
 
-  val anonymous : total:bool -> t typed_dictionary_field list -> t
+  val anonymous : t typed_dictionary_field list -> t
 
-  val create_field : name:string -> annotation:t -> t typed_dictionary_field
+  val create_field : name:string -> annotation:t -> required:bool -> t typed_dictionary_field
+
+  val are_fields_total : t typed_dictionary_field list -> bool
 
   val fields_have_colliding_keys
     :  t typed_dictionary_field list ->
     t typed_dictionary_field list ->
     bool
 
-  val constructor
-    :  name:Identifier.t ->
-    fields:t typed_dictionary_field list ->
-    total:bool ->
-    Callable.t
+  val constructor : name:Identifier.t -> fields:t typed_dictionary_field list -> Callable.t
 
   val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
 
   val special_overloads
     :  fields:t typed_dictionary_field list ->
     method_name:string ->
-    total:bool ->
     t Callable.overload list option
 
-  val is_special_mismatch : method_name:string -> position:int -> total:bool -> bool
+  val is_special_mismatch : total:bool -> method_name:string -> position:int -> bool
 
-  val defines : t_self_expression:Expression.t -> total:bool -> Statement.t list
+  val defines : total:bool -> t_self_expression:Expression.t -> Statement.t list
 
   val class_name : total:bool -> Primitive.t
 end
