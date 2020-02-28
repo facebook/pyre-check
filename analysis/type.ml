@@ -3896,6 +3896,10 @@ module TypedDictionary = struct
 
   let class_name = typed_dictionary_class_name
 
+  let is_builtin_typed_dictionary_class base_name =
+    List.mem [class_name ~total:true; class_name ~total:false] base_name ~equal:String.equal
+
+
   let defines ~total ~t_self_expression =
     let open Statement in
     let define ?self_parameter ?return_annotation name =

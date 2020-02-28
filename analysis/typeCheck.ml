@@ -1030,9 +1030,35 @@ module State (Context : Context) = struct
               (* Inheriting from type makes you a metaclass, and we don't want to
                * suggest that instead you need to use typing.Type[Something] *)
               state
+          | Primitive base_name ->
+              let is_subclass_typed_dictionary =
+                define.signature.parent
+                >>| Reference.show
+                >>| (fun subclass_name ->
+                      GlobalResolution.is_typed_dictionary
+                        ~resolution:global_resolution
+                        (Primitive subclass_name))
+                |> Option.value ~default:false
+              in
+              if
+                is_subclass_typed_dictionary
+                && not
+                     ( GlobalResolution.is_typed_dictionary
+                         ~resolution:global_resolution
+                         (Primitive base_name)
+                     || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name )
+              then
+                emit_error
+                  ~state:state_with_errors
+                  ~location:(Node.location value)
+                  ~kind:
+                    (InvalidInheritance
+                       (UninheritableType
+                          { annotation = parsed; is_parent_class_typed_dictionary = true }))
+              else
+                state_with_errors
           | Top
           (* There's some other problem we already errored on *)
-          | Primitive _
           | Parametric _ ->
               state_with_errors
           | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base ->
@@ -1041,7 +1067,9 @@ module State (Context : Context) = struct
               emit_error
                 ~state:state_with_errors
                 ~location:(Node.location value)
-                ~kind:(InvalidInheritance (UninheritableType annotation))
+                ~kind:
+                  (InvalidInheritance
+                     (UninheritableType { annotation; is_parent_class_typed_dictionary = false }))
         in
         let bases =
           Node.create define ~location

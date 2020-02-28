@@ -1553,21 +1553,30 @@ let test_check_typed_dictionary_inheritance context =
         import mypy_extensions
         class Base(mypy_extensions.TypedDict):
           foo: int
+
         class NonTypedDict:
-          bar: int
+          not_a_field: int
         class Child(Base, NonTypedDict):
           baz: str
-        d: Child
-        x: str = d["foo"]
-        y: str = d["bar"]
+        class NonTotalChild(Base, NonTypedDict, total=False):
+          non_total_baz: str
+
+        reveal_type(Child.__init__)
+        reveal_type(NonTotalChild.__init__)
     |}
-    (* TODO(T61663042): This should raise an error about the superclass not being a subclass of
-       TypedDict. *)
     [
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `NonTypedDict` to have \
-       type `int` but is never initialized.";
-      "Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.Child` has no key `bar`.";
+      "Uninitialized attribute [13]: Attribute `not_a_field` is declared in class `NonTypedDict` \
+       to have type `int` but is never initialized.";
+      "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
+       dictionary. Expected a typed dictionary.";
+      "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
+       dictionary. Expected a typed dictionary.";
+      "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
+       `typing.Callable(__init__)[..., unknown][[[KeywordOnly(baz, str), KeywordOnly(foo, int)], \
+       Child][[Child], Child]]`.";
+      "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
+       `typing.Callable(__init__)[..., unknown][[[KeywordOnly(non_total_baz, str, default), \
+       KeywordOnly(foo, int)], NonTotalChild][[NonTotalChild], NonTotalChild]]`.";
     ];
   ()
 

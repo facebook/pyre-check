@@ -96,7 +96,10 @@ and override_kind =
 and invalid_inheritance =
   | ClassName of Identifier.t
   | NonMethodFunction of Identifier.t
-  | UninheritableType of Type.t
+  | UninheritableType of {
+      annotation: Type.t;
+      is_parent_class_typed_dictionary: bool;
+    }
 
 and invalid_override_kind =
   | Final

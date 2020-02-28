@@ -849,6 +849,8 @@ module TypedDictionary : sig
   val defines : total:bool -> t_self_expression:Expression.t -> Statement.t list
 
   val class_name : total:bool -> Primitive.t
+
+  val is_builtin_typed_dictionary_class : Primitive.t -> bool
 end
 
 val remove_undeclared : t -> t

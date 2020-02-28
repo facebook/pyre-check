@@ -105,7 +105,10 @@ and override_kind =
 and invalid_inheritance =
   | ClassName of Identifier.t
   | NonMethodFunction of Identifier.t
-  | UninheritableType of Type.t
+  | UninheritableType of {
+      annotation: Type.t;
+      is_parent_class_typed_dictionary: bool;
+    }
 
 and invalid_override_kind =
   | Final
@@ -1074,10 +1077,17 @@ let messages ~concise ~signature location kind =
               pp_identifier
               decorator_name;
           ]
-      | UninheritableType (TypedDictionary _) ->
-          [Format.asprintf "Building TypedDicts up through inheritance is not yet supported."]
-      | UninheritableType annotation ->
-          [Format.asprintf "`%a` is not a valid parent class." pp_type annotation] )
+      | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
+          [
+            Format.asprintf
+              "`%a` is not a valid parent class%s."
+              pp_type
+              annotation
+              ( if is_parent_class_typed_dictionary then
+                  " for a typed dictionary. Expected a typed dictionary"
+              else
+                "" );
+          ] )
   | InvalidOverride { parent; decorator } ->
       let preamble, message =
         match decorator with
@@ -2920,7 +2930,8 @@ let dequalify
   let dequalify_invalid_inheritance = function
     | ClassName name -> ClassName (dequalify_identifier name)
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
-    | UninheritableType annotation -> UninheritableType (dequalify annotation)
+    | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
+        UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }
   in
   let dequalify_invalid_assignment = function
     | FinalAttribute attribute -> FinalAttribute (dequalify_reference attribute)
