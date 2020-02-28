@@ -1,7 +1,6 @@
 # Exceptions
 
 def BaseException.__init__(self, *args: TaintSink[Logging]): ...
-def Exception.__init__(self, *args: TaintSink[Logging]): ...
 
 # logging.Logger
 

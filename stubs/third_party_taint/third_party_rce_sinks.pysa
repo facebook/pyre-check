@@ -1,0 +1,11 @@
+# paramiko module
+def paramiko.proxy_command.ProxyCommand.__init__(self, command_line: TaintSink[RemoteCodeExecution]): ...
+def paramiko.client.SSHClient.exec_command(
+    self,
+    command: TaintSink[RemoteCodeExecution],
+    bufsize = ...,
+    timeout = ...,
+    get_pty = ...,
+    environment = ...,
+): ...
+def paramiko.Channel.exec_command(self, command: TaintSink[RemoteCodeExecution]): ...
