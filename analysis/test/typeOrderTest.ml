@@ -954,7 +954,7 @@ let test_less_or_equal context =
     (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[float], int]");
 
   (* Named vs. anonymous callables. *)
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:"typing.Callable[[int], int]"

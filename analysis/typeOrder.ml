@@ -627,6 +627,27 @@ module OrderImplementation = struct
           Type.Callable { Callable.kind = Callable.Named right; _ } )
         when Reference.equal left right ->
           [constraints]
+      | ( Type.Callable
+            {
+              Callable.kind = Callable.Anonymous;
+              implementation = left_implementation;
+              overloads = left_overloads;
+              implicit = left_implicit;
+            },
+          Type.Callable
+            {
+              Callable.kind = Callable.Named _;
+              implementation = right_implementation;
+              overloads = right_overloads;
+              implicit = right_implicit;
+            } )
+        when Callable.equal_overload Type.equal left_implementation right_implementation
+             && List.equal (Callable.equal_overload Type.equal) left_overloads right_overloads
+             && Option.equal
+                  (Callable.equal_implicit_record Type.equal)
+                  left_implicit
+                  right_implicit ->
+          []
       | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
           let fold_overload sofar called_as =
             let call_as_overload constraints =
