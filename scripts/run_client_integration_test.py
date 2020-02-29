@@ -875,14 +875,17 @@ class KillTest(TestCommand):
 class PersistentTest(TestCommand):
     def initial_filesystem(self) -> None:
         self.create_project_configuration()
+        # TODO(T57341910): Test persistent interaction with -l flag.
         self.create_local_configuration("local", {"source_directories": ["."]})
 
     def test_persistent(self) -> None:
-        # TODO(T57341910): Fill in test cases
-        self.run_pyre("persistent", interrupt_after_seconds=5)
-
-    def test_local_persistent(self) -> None:
-        self.run_pyre("-l", "local", "persistent", interrupt_after_seconds=5)
+        result = self.run_pyre("persistent", interrupt_after_seconds=3)
+        output = result.output
+        output = [line for line in output.split("\r\n") if line][-1] if output else ""
+        result = PyreResult(
+            result.command, output, result.error_output, result.return_code
+        )
+        self.assert_output_matches(result, VALID_DICT)
 
 
 class QueryTest(TestCommand):
