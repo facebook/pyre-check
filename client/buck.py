@@ -126,9 +126,9 @@ class FastBuckBuilder(BuckBuilder):
                     "Could not build targets. Check the paths or run `buck clean`."
                 )
 
-    def _read_stderr(self, stream: Iterable[bytes]) -> None:
+    def _read_stderr(self, stream: Iterable[str]) -> None:
         for line in stream:
-            line = line.decode().rstrip()
+            line = line.rstrip()
             if line.startswith("INFO: "):
                 LOG.info(line[6:])
             elif line.startswith("WARNING: "):
