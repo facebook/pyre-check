@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import List, Optional, Tuple, Type
 
 
@@ -70,3 +71,14 @@ class HasClassmethods:
 
 def test():
     HasClassmethods._async_results_for_non_empty_query_from_db(__test_source())
+
+
+class HasDecoratedClassmethod:
+    @classmethod
+    @contextmanager
+    def to_sink(self, x):
+        __test_sink(x)
+
+
+def test_decorated_classmethod():
+    HasDecoratedClassmethod.to_sink(__test_source())

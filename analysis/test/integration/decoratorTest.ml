@@ -128,7 +128,17 @@ let test_check_contextmanager context =
           return manager
         return ""
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      from typing import Iterator
+      from contextlib import contextmanager
+      @contextmanager
+      def f(x: int) -> Iterator[None]:
+        yield
+      f()
+    |}
+    ["Missing argument [20]: Call `f` expects argument `x`."]
 
 
 let test_check_asynccontextmanager context =
@@ -203,7 +213,17 @@ let test_check_asynccontextmanager context =
           return value
         return ""
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      from typing import Iterator
+      from contextlib import asynccontextmanager
+      @asynccontextmanager
+      def f(x: int) -> Iterator[None]:
+        yield
+      f()
+    |}
+    ["Missing argument [20]: Call `f` expects argument `x`."]
 
 
 let test_check_click_command context =

@@ -4,9 +4,9 @@
   "data": {
     "callable":
       "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
-    "callable_line": 38,
+    "callable_line": 39,
     "code": 5002,
-    "line": 39,
+    "line": 40,
     "start": 4,
     "end": 39,
     "filename": "class_flows.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 39,
+              "line": 40,
               "start": 42,
               "end": 57
             },
@@ -39,7 +39,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 39,
+              "line": 40,
               "start": 4,
               "end": 39
             },
@@ -61,9 +61,9 @@
   "data": {
     "callable":
       "class_flows.tainted_class_attribute_through_optional_class_issue",
-    "callable_line": 42,
+    "callable_line": 43,
     "code": 5002,
-    "line": 46,
+    "line": 47,
     "start": 8,
     "end": 44,
     "filename": "class_flows.py",
@@ -75,7 +75,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 46,
+              "line": 47,
               "start": 47,
               "end": 62
             },
@@ -96,7 +96,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 46,
+              "line": 47,
               "start": 8,
               "end": 44
             },
@@ -117,9 +117,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.global_class_attribute_issue",
-    "callable_line": 49,
+    "callable_line": 50,
     "code": 5002,
-    "line": 50,
+    "line": 51,
     "start": 4,
     "end": 29,
     "filename": "class_flows.py",
@@ -131,7 +131,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 50,
+              "line": 51,
               "start": 32,
               "end": 47
             },
@@ -152,7 +152,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 50,
+              "line": 51,
               "start": 4,
               "end": 29
             },
@@ -173,9 +173,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_flow_issue",
-    "callable_line": 14,
+    "callable_line": 15,
     "code": 5002,
-    "line": 15,
+    "line": 16,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -187,7 +187,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 15,
+              "line": 16,
               "start": 26,
               "end": 41
             },
@@ -208,7 +208,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 15,
+              "line": 16,
               "start": 4,
               "end": 23
             },
@@ -229,9 +229,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_through_inheritance_issue",
-    "callable_line": 26,
+    "callable_line": 27,
     "code": 5002,
-    "line": 27,
+    "line": 28,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -243,7 +243,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 27,
+              "line": 28,
               "start": 26,
               "end": 41
             },
@@ -264,7 +264,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 27,
+              "line": 28,
               "start": 4,
               "end": 23
             },
@@ -285,9 +285,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_class_attribute_through_class_issue",
-    "callable_line": 34,
+    "callable_line": 35,
     "code": 5002,
-    "line": 35,
+    "line": 36,
     "start": 4,
     "end": 40,
     "filename": "class_flows.py",
@@ -299,7 +299,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 35,
+              "line": 36,
               "start": 43,
               "end": 58
             },
@@ -320,7 +320,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 35,
+              "line": 36,
               "start": 4,
               "end": 40
             },
@@ -341,9 +341,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.test",
-    "callable_line": 71,
+    "callable_line": 72,
     "code": 5002,
-    "line": 72,
+    "line": 73,
     "start": 63,
     "end": 78,
     "filename": "class_flows.py",
@@ -355,7 +355,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 72,
+              "line": 73,
               "start": 63,
               "end": 78
             },
@@ -377,7 +377,7 @@
             "call": {
               "position": {
                 "filename": "class_flows.py",
-                "line": 72,
+                "line": 73,
                 "start": 63,
                 "end": 78
               },
@@ -386,6 +386,66 @@
               ],
               "port": "formal(locale)",
               "length": 2
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.test_decorated_classmethod",
+    "callable_line": 83,
+    "code": 5002,
+    "line": 84,
+    "start": 36,
+    "end": 51,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 84,
+              "start": 36,
+              "end": 51
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "class_flows.py",
+                "line": 84,
+                "start": 36,
+                "end": 51
+              },
+              "resolves_to": [
+                "class_flows.HasDecoratedClassmethod.to_sink"
+              ],
+              "port": "formal(x)",
+              "length": 1
             },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
@@ -411,7 +471,7 @@
             "call": {
               "position": {
                 "filename": "class_flows.py",
-                "line": 59,
+                "line": 60,
                 "start": 49,
                 "end": 55
               },
@@ -444,9 +504,36 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 63,
+              "line": 64,
               "start": 20,
               "end": 26
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_flows.HasDecoratedClassmethod.to_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 80,
+              "start": 20,
+              "end": 21
             },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }

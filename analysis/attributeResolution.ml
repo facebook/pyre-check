@@ -2588,7 +2588,9 @@ module Implementation = struct
                   ]
               in
               { overload with Type.Callable.parameters }
-          | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
+          | name
+            when String.equal name "contextlib.asynccontextmanager"
+                 || Set.mem Recognized.asyncio_contextmanager_decorators name ->
               let joined =
                 let order = full_order ?dependency class_metadata_environment ~assumptions in
                 try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
@@ -2603,6 +2605,25 @@ module Implementation = struct
                   Type.Callable.annotation =
                     Type.parametric
                       "typing.AsyncContextManager"
+                      [Single (Type.single_parameter joined)];
+                }
+              else
+                overload
+          | "contextlib.contextmanager" ->
+              let joined =
+                let order = full_order ?dependency class_metadata_environment ~assumptions in
+                try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
+                | ClassHierarchy.Untracked _ ->
+                    (* create_overload gets called when building the environment, which is unsound
+                       and can raise. *)
+                    Type.Any
+              in
+              if Type.is_iterator joined then
+                {
+                  overload with
+                  Type.Callable.annotation =
+                    Type.parametric
+                      "contextlib._GeneratorContextManager"
                       [Single (Type.single_parameter joined)];
                 }
               else
