@@ -732,12 +732,23 @@ class InferTest(TestCommand):
             result=result,
         )
 
-        json_stub = result.output
+        # TODO(T62259082): Fix JSON formatting
+        output = result.output
+        json_stub = '{"errors": ' + output + "}" if output else ""
         self.assertTrue(json_stub is not None)
         result = self.run_pyre(
             "-l", "local_project", "infer", "--in-place", "--json", prompts=[json_stub]
         )
-        self.assert_succeeded(result)
+        self.assert_file_exists(
+            "local_project/missing_annotation.py",
+            contents=self.typed_contents,
+            result=result,
+        )
+        self.assert_file_exists(
+            "local_project/missing_annotation_two.py",
+            contents=self.typed_contents,
+            result=result,
+        )
 
     def test_infer_recursive(self) -> None:
         result = self.run_pyre("-l", "local_project", "infer", "--recursive")

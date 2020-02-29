@@ -9,6 +9,7 @@ import fnmatch
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set
 
 from .. import log
@@ -85,21 +86,23 @@ class Reporting(Command):
         results: List[Dict[str, Any]] = self._load_errors_from_json(result.output)
 
         for error in results:
-            full_path = os.path.realpath(
-                os.path.join(self._analysis_directory.get_root(), error["path"])
-            )
+            path = os.path.realpath(error["path"])
+            analysis_root = os.path.realpath(self._analysis_directory.get_root())
+            if not Path(analysis_root) in Path(path).parents:
+                path = os.path.realpath(os.path.join(analysis_root, error["path"]))
+
             # Relativize path to user's cwd.
-            relative_path = self._relative_path(full_path)
+            relative_path = self._relative_path(path)
             error["path"] = relative_path
             ignore_error = False
             external_to_global_root = True
-            if full_path.startswith(self._current_directory):
+            if path.startswith(self._current_directory):
                 external_to_global_root = False
-            if not os.path.exists(full_path):
+            if not os.path.exists(path):
                 # Nonexistent paths can be created when search path stubs are renamed.
                 external_to_global_root = True
             for absolute_ignore_path in self._ignore_all_errors_paths:
-                if fnmatch.fnmatch(full_path, (absolute_ignore_path + "*")):
+                if fnmatch.fnmatch(path, (absolute_ignore_path + "*")):
                     ignore_error = True
                     break
             errors.append(Error(error, ignore_error, external_to_global_root))

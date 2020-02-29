@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import copy
 import json
 import os
 import subprocess
@@ -50,7 +51,7 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
         )
-        with patch.object(json, "loads", return_value=json_errors):
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
             [error] = errors
@@ -62,7 +63,7 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
         )
-        with patch.object(json, "loads", return_value=json_errors):
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
             [error] = errors
@@ -75,7 +76,7 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/test/h/i")
         )
-        with patch.object(json, "loads", return_value=json_errors):
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
             [error] = errors
@@ -83,18 +84,38 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
-        original_directory = "/"  # called from
-        find_project_root.return_value = "/"  # project root
-        find_local_root.return_value = "/test"  # local configuration
+        original_directory = "/project"  # called from
+        find_project_root.return_value = "/project"  # project root
+        find_local_root.return_value = "/project/test"  # local configuration
         handler = commands.Reporting(
-            arguments, original_directory, configuration, AnalysisDirectory("/shared")
+            arguments, original_directory, configuration, AnalysisDirectory("/project")
         )
-        with patch.object(json, "loads", return_value=json_errors):
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
             [error] = errors
             self.assertFalse(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
+
+        # Test overlapping analysis directory and error path
+        original_directory = "/project"  # called from
+        find_project_root.return_value = "/project"  # project root
+        find_local_root.return_value = "/project/test"  # local configuration
+        handler = commands.Reporting(
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory("/project/test"),
+        )
+        json_errors = copy.deepcopy(json_errors)
+        json_errors["errors"][0]["path"] = "/project/test/path.py"
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertFalse(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
+            self.assertEqual(error.path, "test/path.py")
 
         return
 
@@ -107,7 +128,7 @@ class ReportingTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory("/a")
         )
         json_errors["errors"][0]["path"] = "b/c.py"
-        with patch.object(json, "loads", return_value=json_errors):
+        with patch.object(json, "loads", return_value=copy.deepcopy(json_errors)):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
             [error] = errors
