@@ -1346,6 +1346,162 @@ class MigrateTest(unittest.TestCase):
             )
 
 
+class TargetsToConfigurationTest(unittest.TestCase):
+    @patch("builtins.open")
+    @patch("%s.Configuration.find_project_configuration" % upgrade_core.__name__)
+    @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
+    @patch("%s.find_targets" % upgrade_core.__name__)
+    def test_run_targets_to_configuration(
+        self,
+        find_targets,
+        find_local_configuration,
+        find_project_configuration,
+        open_mock,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.subdirectory = "subdirectory"
+        find_targets.return_value = {
+            "subdirectory/a": ["target_one"],
+            "subdirectory/b/c": ["target_two", "target_three"],
+        }
+
+        # Do not attempt to create a configuration when no existing project-level
+        # configuration is found.
+        find_project_configuration.return_value = None
+        find_local_configuration.return_value = None
+        upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+        open_mock.assert_not_called()
+
+        # Add to existing project configuration if it lives at given subdirectory
+        find_project_configuration.return_value = Path(
+            "subdirectory/.pyre_configuration"
+        )
+        configuration_contents = json.dumps(
+            {"version": "abc", "search_path": ["stubs"]}
+        )
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            expected_configuration_contents = {
+                "search_path": ["stubs"],
+                "targets": [
+                    "subdirectory/a:target_one",
+                    "subdirectory/b/c:target_two",
+                    "subdirectory/b/c:target_three",
+                ],
+                "version": "abc",
+            }
+            open_mock.assert_has_calls(
+                [
+                    call(Path("subdirectory/.pyre_configuration")),
+                    call(Path("subdirectory/.pyre_configuration"), "w"),
+                ]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+
+        # Create local project configuration
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            expected_configuration_contents = {
+                "targets": [
+                    "subdirectory/a:target_one",
+                    "subdirectory/b/c:target_two",
+                    "subdirectory/b/c:target_three",
+                ],
+                "push_blocking": True,
+            }
+            open_mock.assert_has_calls(
+                [
+                    call(Path(".pyre_configuration")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
+                ]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+
+        # Add to existing local project configuration
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        find_local_configuration.return_value = Path(
+            "subdirectory/.pyre_configuration.local"
+        )
+        configuration_contents = json.dumps({"targets": ["existing:target"]})
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            expected_configuration_contents = {
+                "targets": [
+                    "existing:target",
+                    "subdirectory/a:target_one",
+                    "subdirectory/b/c:target_two",
+                    "subdirectory/b/c:target_three",
+                ]
+            }
+            open_mock.assert_has_calls(
+                [
+                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
+                ]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+
+        # Refuse to nest local configurations
+        arguments.subdirectory = "nested/subdirectory"
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        find_local_configuration.return_value = Path(
+            "subdirectory/.pyre_configuration.local"
+        )
+        configuration_contents = json.dumps({"targets": ["existing:target"]})
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            expected_configuration_contents = {
+                "targets": [
+                    "existing:target",
+                    "subdirectory/a:target_one",
+                    "subdirectory/b/c:target_two",
+                    "subdirectory/b/c:target_three",
+                ]
+            }
+            open_mock.assert_has_calls(
+                [
+                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
+                ]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+
+
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
         with patch.object(postprocess.LOG, "error") as mock_error:
