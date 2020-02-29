@@ -672,7 +672,7 @@ def run_fixme_targets(
         return
     project_directory = project_configuration.parent
     search_root = subdirectory if subdirectory else project_directory
-    LOG.info("Finding typecheck targets in %s", search_root)
+    LOG.info("Finding typecheck targets in {}".format(search_root))
     # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
     typing_field = "check_types ?= ?True"
     targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*".format(
@@ -692,7 +692,9 @@ def run_fixme_targets(
         LOG.info("Did not find any targets to upgrade.")
         return
     if find_targets.returncode != 0:
-        LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
+        LOG.error(
+            "Failed to search for targets: {}".format(find_targets.stderr.decode())
+        )
         return
     output = find_targets.stdout.decode()
     targets = re.split(typing_field, output)
@@ -710,9 +712,9 @@ def run_fixme_targets(
             else:
                 target_names[path] = [target_name]
     LOG.info(
-        "Found %d typecheck targets in %d TARGETS files to analyze",
-        total_targets,
-        len(target_names),
+        "Found {} typecheck targets in {} TARGETS files to analyze".format(
+            total_targets, len(target_names)
+        )
     )
     for path, target_names in target_names.items():
         run_fixme_targets_file(
@@ -726,6 +728,49 @@ def run_fixme_targets(
             )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
+
+
+def run_migrate_targets(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
+    subdirectory = arguments.subdirectory
+    subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+    LOG.info("Migrating typecheck targets in {}".format(subdirectory))
+
+    # Remove explicit check types options.
+    targets_files = [
+        str(subdirectory / path)
+        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/TARGETS"])
+    ]
+    LOG.info("...found {} targets files".format(len(targets_files)))
+    remove_check_types_command = [
+        "sed",
+        "-i",
+        r'/check_types_options \?= \?"mypy",/d',
+    ] + targets_files
+    remove_options_command = [
+        "sed",
+        "-i",
+        r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
+    ] + targets_files
+    subprocess.check_output(remove_check_types_command)
+    subprocess.check_output(remove_options_command)
+
+    # Remove old-style ignores.
+    python_files = [
+        str(subdirectory / path)
+        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/*.py"])
+    ]
+    LOG.info("...cleaning {} python files".format(len(python_files)))
+    remove_type_ignore_command = [
+        "sed",
+        "-i",
+        r"s/# \?type: \?ignore$//g",
+    ] + python_files
+    subprocess.check_output(remove_type_ignore_command)
+
+    # Suppress errors.
+    run_fixme_targets(arguments, version_control)
 
 
 def path_exists(filename: str) -> Path:
@@ -862,6 +907,29 @@ def run(version_control: VersionControl) -> None:
     fixme_targets.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
     )
+
+    # Subcommand: Migrate and fixme errors in targets running type checking
+    migrate_targets = commands.add_parser("migrate-targets")
+    migrate_targets.set_defaults(function=run_migrate_targets)
+    migrate_targets.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    migrate_targets.add_argument(
+        "--submit", action="store_true", help=argparse.SUPPRESS
+    )
+    migrate_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+    migrate_targets.add_argument(
+        "--subdirectory", help="Only upgrade TARGETS files within this directory."
+    )
+    migrate_targets.add_argument(
+        "--no-commit", action="store_true", help="Keep changes in working state."
+    )
+    migrate_targets.add_argument(
+        "--create-configuration",
+        action="store_true",
+        help="Remove type checking from targets and create pyre configuration.",
+    )
+
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):

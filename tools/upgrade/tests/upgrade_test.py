@@ -1286,6 +1286,66 @@ positional only parameter to call `merp` but got `Optional[str]`.
         fix.assert_called_once_with(arguments, expected_errors)
 
 
+class MigrateTest(unittest.TestCase):
+    @patch("subprocess.check_output")
+    @patch("%s.run_fixme_targets" % upgrade_core.__name__)
+    def test_run_migrate_targets(self, fix_targets, subprocess) -> None:
+        arguments = MagicMock()
+        arguments.subdirectory = "subdirectory"
+        process = MagicMock()
+        process.stdout = "a/TARGETS\nb/TARGETS\n".encode()
+        with patch("subprocess.run", return_value=process) as subprocess_run:
+            upgrade_core.run_migrate_targets(arguments, VERSION_CONTROL)
+            subprocess.assert_has_calls(
+                [
+                    call(
+                        [
+                            "sed",
+                            "-i",
+                            r'/check_types_options \?= \?"mypy",/d',
+                            "subdirectory/a/TARGETS",
+                            "subdirectory/b/TARGETS",
+                        ]
+                    ),
+                    call(
+                        [
+                            "sed",
+                            "-i",
+                            r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
+                            "subdirectory/a/TARGETS",
+                            "subdirectory/b/TARGETS",
+                        ]
+                    ),
+                    call(
+                        [
+                            "sed",
+                            "-i",
+                            r"s/# \?type: \?ignore$//g",
+                            "subdirectory/a/TARGETS",
+                            "subdirectory/b/TARGETS",
+                        ]
+                    ),
+                ]
+            )
+            fix_targets.assert_called_once_with(arguments, VERSION_CONTROL)
+            subprocess_run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", r"**/TARGETS"],
+                        cwd="subdirectory",
+                        stderr=-3,
+                        stdout=-1,
+                    ),
+                    call(
+                        ["hg", "files", "--include", r"**/*.py"],
+                        cwd="subdirectory",
+                        stderr=-3,
+                        stdout=-1,
+                    ),
+                ]
+            )
+
+
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
         with patch.object(postprocess.LOG, "error") as mock_error:
