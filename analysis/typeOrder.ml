@@ -22,6 +22,7 @@ type order = {
   attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
+  metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
   assumptions: Assumptions.t;
 }
 
@@ -371,8 +372,9 @@ module OrderImplementation = struct
               { instantiate_successors_parameters; variables; is_transitive_successor; _ };
             constructor;
             is_protocol;
-            assumptions = { protocol_assumptions; _ };
+            assumptions = { protocol_assumptions; _ } as assumptions;
             get_typed_dictionary;
+            metaclass;
             _;
           } as order )
         ~constraints
@@ -504,6 +506,11 @@ module OrderImplementation = struct
           else
             List.concat_map rights ~f:(fun right ->
                 solve_less_or_equal order ~constraints ~left ~right)
+      | ( Type.Parametric { name = "type"; parameters = [Single (Type.Primitive left)] },
+          Type.Primitive _ ) ->
+          metaclass left ~assumptions
+          >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
+          |> Option.value ~default:[]
       | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
           let solve_parameters left_parameters =
             let handle_variables constraints (left, right, variable) =

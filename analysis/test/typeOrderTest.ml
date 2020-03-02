@@ -84,6 +84,7 @@ let less_or_equal
           callable_assumptions = CallableAssumptions.empty;
         };
       get_typed_dictionary;
+      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -101,6 +102,7 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
           callable_assumptions = CallableAssumptions.empty;
         };
       get_typed_dictionary;
+      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -122,6 +124,7 @@ let join
           callable_assumptions = CallableAssumptions.empty;
         };
       get_typed_dictionary;
+      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -139,6 +142,7 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
           callable_assumptions = CallableAssumptions.empty;
         };
       get_typed_dictionary;
+      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
     }
 
 
@@ -2678,6 +2682,12 @@ let test_solve_less_or_equal context =
       class Parent: pass
       class ChildA(Parent): pass
       class ChildB(Parent): pass
+
+      class Meta(type):
+        pass
+
+      class HasMeta(metaclass=Meta):
+        pass
     |}
       context
   in
@@ -2746,6 +2756,10 @@ let test_solve_less_or_equal context =
       let class_hierarchy =
         GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
       in
+      let metaclass name ~assumptions:_ =
+        GlobalResolution.class_definition resolution (Primitive name)
+        >>| GlobalResolution.metaclass ~resolution
+      in
       {
         class_hierarchy;
         constructor;
@@ -2757,6 +2771,7 @@ let test_solve_less_or_equal context =
             callable_assumptions = CallableAssumptions.empty;
           };
         get_typed_dictionary;
+        metaclass;
       }
     in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
@@ -3369,10 +3384,8 @@ let test_solve_less_or_equal context =
     ~left:"typing.Union[typing.Type[test.ChildA], typing.Type[test.ChildB]]"
     ~right:"typing.Callable[[], test.Parent]"
     [[]];
-  assert_solve
-    ~left:"typing.Type[typing.Union[test.ChildA, test.ChildB]]"
-    ~right:"typing.Callable[[], test.Parent]"
-    [[]];
+  assert_solve ~left:"typing.Type[test.ChildA]" ~right:"test.Meta" [];
+  assert_solve ~left:"typing.Type[test.HasMeta]" ~right:"test.Meta" [[]];
   ()
 
 
@@ -3438,6 +3451,7 @@ let test_instantiate_protocol_parameters context =
             callable_assumptions = CallableAssumptions.empty;
           };
         get_typed_dictionary;
+        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
       }
     in
     assert_equal
@@ -3621,6 +3635,7 @@ let test_mark_escaped_as_escaped context =
             callable_assumptions = CallableAssumptions.empty;
           };
         get_typed_dictionary;
+        metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
       }
     in
     let constraints = TypeConstraints.empty in

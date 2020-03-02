@@ -1097,7 +1097,7 @@ module Implementation = struct
 
 
   let full_order
-      ({ constructor; all_attributes; instantiate_attribute; _ } as open_recurser)
+      ({ constructor; all_attributes; instantiate_attribute; metaclass; _ } as open_recurser)
       ~assumptions
       ?dependency
       class_metadata_environment
@@ -1148,6 +1148,14 @@ module Implementation = struct
         ?dependency
         (class_hierarchy_environment class_metadata_environment)
     in
+    let metaclass class_name ~assumptions =
+      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+        (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+           class_metadata_environment)
+        ?dependency
+        class_name
+      >>| metaclass ~assumptions ~class_metadata_environment ?dependency
+    in
     {
       TypeOrder.class_hierarchy =
         {
@@ -1163,6 +1171,7 @@ module Implementation = struct
       assumptions;
       get_typed_dictionary =
         get_typed_dictionary open_recurser ~assumptions ~class_metadata_environment ?dependency;
+      metaclass;
     }
 
 
