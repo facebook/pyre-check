@@ -10,6 +10,7 @@ open Analysis
 open Statement
 open Test
 module Callable = Annotated.Callable
+open Pyre
 
 let test_return_annotation context =
   let assert_return_annotation expected ~return_annotation ~async ~generator =
@@ -64,19 +65,27 @@ let test_return_annotation context =
 
 
 let test_create_overload context =
-  let assert_overload source expected =
+  let assert_overload ?parent source expected =
+    let parent = parent >>| Reference.create in
     let resolution =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
     let resolution = Resolution.global_resolution resolution in
     let parser = GlobalResolution.annotation_parser resolution in
+    let variables = GlobalResolution.variables resolution in
+    let last_statement_define { Source.statements; _ } =
+      match List.last_exn statements with
+      | { Node.value = Statement.Define define; _ } -> define
+      | _ -> failwith "last statement not define"
+    in
     assert_equal
       ~cmp:(Type.Callable.equal_overload Type.equal)
       expected
       ( source
-      |> Test.parse_single_define
-      |> (fun { Define.signature; _ } -> signature)
-      |> Callable.create_overload_without_applying_decorators ~parser )
+      |> Test.parse
+      |> last_statement_define
+      |> (fun { Define.signature; _ } -> { signature with parent })
+      |> Callable.create_overload_without_applying_decorators ~parser ~variables )
   in
   assert_overload
     {|
@@ -103,7 +112,87 @@ let test_create_overload context =
               { index = 0; default = false; annotation = Type.integer };
             Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
           ];
-    }
+    };
+  assert_overload
+    {|
+      class C:
+        pass
+      def foo(x, y: str) -> None:
+        pass
+    |}
+    ~parent:"test.C"
+    {
+      Type.Callable.annotation = Type.none;
+      parameters =
+        Type.Callable.Defined
+          [
+            Type.Callable.Parameter.Named
+              { name = "x"; default = false; annotation = Type.Primitive "test.C" };
+            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+          ];
+    };
+  assert_overload
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar("T")
+      class C(Generic[T]):
+        pass
+      def foo(x, y: str) -> None:
+        pass
+    |}
+    ~parent:"test.C"
+    {
+      Type.Callable.annotation = Type.none;
+      parameters =
+        Type.Callable.Defined
+          [
+            Type.Callable.Parameter.Named
+              {
+                name = "x";
+                default = false;
+                annotation = Type.parametric "test.C" [Single (Type.variable "test.T")];
+              };
+            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+          ];
+    };
+  assert_overload
+    {|
+      class C:
+        pass
+      @classmethod
+      def foo(x, y: str) -> None:
+        pass
+    |}
+    ~parent:"test.C"
+    {
+      Type.Callable.annotation = Type.none;
+      parameters =
+        Type.Callable.Defined
+          [
+            Type.Callable.Parameter.Named
+              { name = "x"; default = false; annotation = Type.meta (Primitive "test.C") };
+            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+          ];
+    };
+  assert_overload
+    {|
+      class C:
+        pass
+      @staticmethod
+      def foo(x, y: str) -> None:
+        pass
+    |}
+    ~parent:"test.C"
+    {
+      Type.Callable.annotation = Type.none;
+      parameters =
+        Type.Callable.Defined
+          [
+            Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.Top };
+            Type.Callable.Parameter.Named { name = "y"; default = false; annotation = Type.string };
+          ];
+    };
+  ()
 
 
 let () =

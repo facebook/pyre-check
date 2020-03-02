@@ -257,7 +257,7 @@ let test_lookup_attributes context =
       "4:23-4:24/int";
       "4:26-4:29/typing.Type[int]";
       "4:34-4:38/None";
-      "4:8-4:16/typing.Callable(test.A.__init__)[[Named(self, unknown), Named(i, int)], None]";
+      "4:8-4:16/typing.Callable(test.A.__init__)[[Named(self, test.A), Named(i, int)], None]";
       "5:17-5:18/int";
       "5:8-5:12/test.A";
       "5:8-5:14/int";
@@ -479,7 +479,7 @@ let test_lookup_comprehensions context =
       "3:21-3:22/int";
       "3:24-3:27/typing.Type[int]";
       "3:32-3:36/None";
-      "3:6-3:14/typing.Callable(test.Foo.__init__)[[Named(self, unknown), Named(x, int)], None]";
+      "3:6-3:14/typing.Callable(test.Foo.__init__)[[Named(self, test.Foo), Named(x, int)], None]";
       "6:13-6:17/None";
       "6:4-6:7/typing.Callable(test.foo)[[], None]";
       "7:18-7:19/int";

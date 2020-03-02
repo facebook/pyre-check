@@ -497,8 +497,8 @@ let test_check_user_decorators context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable(C.f)[[C, int], None]`.";
-      "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, \
-       unknown), Named(y, int)], None]`.";
+      "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, D), \
+       Named(y, int)], None]`.";
     ];
   assert_type_errors
     {|

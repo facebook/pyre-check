@@ -484,7 +484,7 @@ let test_check_method_parameters context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.Foo.foo` is "
-      ^ "`typing.Callable(Foo.foo)[[Named(self, unknown)], None]`.";
+      ^ "`typing.Callable(Foo.foo)[[Named(self, Foo)], None]`.";
       "Revealed type [-1]: Revealed type for `test.Foo().foo` is "
       ^ "`typing.Callable(Foo.foo)[[], None]`.";
     ];
@@ -1433,7 +1433,7 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got "
-      ^ "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
+      ^ "`typing.Callable(Foo.bar)[[Named(self, Foo), Named(x, int)], str]`.";
     ];
   assert_type_errors
     {|
@@ -1504,7 +1504,10 @@ let test_check_explicit_method_call context =
           pass
       Class.method(object(), 1)
     |}
-    []
+    [
+      "Incompatible parameter type [6]: Expected `Class` for 1st positional only parameter to call \
+       `Class.method` but got `object`.";
+    ]
 
 
 let test_check_self context =

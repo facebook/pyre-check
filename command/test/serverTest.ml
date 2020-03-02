@@ -1162,7 +1162,10 @@ let test_query context =
               function_name = "test.C.foo";
               parameters =
                 [
-                  { Protocol.TypeQuery.parameter_name = "self"; annotation = None };
+                  {
+                    Protocol.TypeQuery.parameter_name = "self";
+                    annotation = Some (Type.Primitive "test.C");
+                  };
                   { Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer };
                 ];
             };
@@ -1189,7 +1192,10 @@ let test_query context =
               function_name = "test.C.foo";
               parameters =
                 [
-                  { Protocol.TypeQuery.parameter_name = "self"; annotation = None };
+                  {
+                    Protocol.TypeQuery.parameter_name = "self";
+                    annotation = Some (Type.Primitive "test.C");
+                  };
                   {
                     Protocol.TypeQuery.parameter_name = "x";
                     annotation = Some (Type.union [Type.integer; Type.string]);

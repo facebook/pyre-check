@@ -623,9 +623,11 @@ let process_type_query_request
           with
           | Some { value = { Statement.Define.signature; _ }; _ } -> (
               let parser = GlobalResolution.annotation_parser global_resolution in
+              let variables = GlobalResolution.variables global_resolution in
               let { Type.Callable.annotation; parameters; _ } =
                 Analysis.Annotated.Callable.create_overload_without_applying_decorators
                   ~parser
+                  ~variables
                   signature
               in
               match parameters with

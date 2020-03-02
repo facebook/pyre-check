@@ -25,5 +25,6 @@ val return_annotation_without_applying_decorators
 
 val create_overload_without_applying_decorators
   :  parser:annotation_parser ->
+  variables:(Type.Primitive.t -> Type.Variable.t list option) ->
   Define.Signature.t ->
   Type.t Type.Callable.overload

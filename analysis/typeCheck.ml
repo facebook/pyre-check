@@ -489,8 +489,9 @@ module State (Context : Context) = struct
         let parser =
           GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
         in
+        let variables = GlobalResolution.variables global_resolution in
         let define_variables =
-          AnnotatedCallable.create_overload_without_applying_decorators ~parser signature
+          AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
           |> Type.Variable.all_free_variables
           |> List.dedup_and_sort ~compare:Type.Variable.compare

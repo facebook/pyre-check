@@ -760,7 +760,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Invalid model for `test.C.foo`: Model signature parameters do not match implementation \
-       `(self: unknown) -> int`. Reason(s): unexpected named parameter: `value`."
+       `(self: C) -> int`. Reason(s): unexpected named parameter: `value`."
     ();
   assert_invalid_model
     ~source:
@@ -779,7 +779,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Invalid model for `test.C.foo`: Model signature parameters do not match implementation \
-       `(self: unknown, value: int) -> None`. Reason(s): missing named parameters: `value`."
+       `(self: C, value: int) -> None`. Reason(s): missing named parameters: `value`."
     ();
   assert_invalid_model
     ~model_source:

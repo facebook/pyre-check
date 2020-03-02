@@ -45,7 +45,8 @@ let create_overload_without_applying_decorators
           parse_as_parameter_specification_instance_annotation;
           _;
         } as parser )
-    ({ Define.Signature.parameters; _ } as signature)
+    ~variables
+    ({ Define.Signature.parameters; parent; _ } as signature)
   =
   let open Type.Callable in
   let parameters =
@@ -101,5 +102,33 @@ let create_overload_without_applying_decorators
       | _ -> Defined (List.map parameters ~f:parse)
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
+  in
+  let parameters =
+    match parameters, parent with
+    | ( Type.Callable.Defined
+          (Named { Type.Callable.Parameter.name; annotation = Type.Top; default } :: tail),
+        Some parent ) ->
+        let replacement ~meta =
+          let parent_type =
+            let class_annotation = Reference.show parent in
+            variables class_annotation
+            >>| List.map ~f:Type.Variable.to_parameter
+            >>| Type.parametric class_annotation
+            |> Option.value ~default:(Type.Primitive class_annotation)
+          in
+          let annotation = if meta then Type.meta parent_type else parent_type in
+          Type.Callable.Defined (Named { Type.Callable.Parameter.name; annotation; default } :: tail)
+        in
+        if String.equal (Define.Signature.unqualified_name signature) "__new__" then
+          replacement ~meta:true
+        else if Define.Signature.is_static_method signature then
+          parameters
+        else if
+          Define.Signature.is_class_method signature || Define.Signature.is_class_property signature
+        then
+          replacement ~meta:true
+        else
+          replacement ~meta:false
+    | _ -> parameters
   in
   { annotation = return_annotation_without_applying_decorators ~signature ~parser; parameters }

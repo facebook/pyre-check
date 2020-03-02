@@ -713,8 +713,10 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
                   && Reference.equal (Node.value define.Define.signature.Define.Signature.name) name
                 then
                   let parser = GlobalResolution.annotation_parser global_resolution in
+                  let variables = GlobalResolution.variables global_resolution in
                   Annotated.Define.Callable.create_overload_without_applying_decorators
                     ~parser
+                    ~variables
                     signature
                   |> Type.Callable.create_from_implementation
                   |> Option.some

@@ -1856,25 +1856,7 @@ module Implementation = struct
             then
               callable
             else if String.equal attribute_name "__new__" then
-              (* Special case __new__ because it is the only static method with one of its
-                 parameters implicitly annotated. *)
-              let add_class_annotation { Type.Callable.annotation; parameters } =
-                let parameters =
-                  match parameters with
-                  | Defined
-                      (Named { Type.Callable.Parameter.name; annotation = Type.Top; default }
-                      :: parameters) ->
-                      Type.Callable.Defined
-                        (Named { name; annotation = Type.meta instantiated; default } :: parameters)
-                  | _ -> parameters
-                in
-                { Type.Callable.annotation; parameters }
-              in
-              {
-                callable with
-                implementation = add_class_annotation implementation;
-                overloads = List.map overloads ~f:add_class_annotation;
-              }
+              callable
             else if is_class_method then
               partial_apply_self ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
@@ -2750,21 +2732,28 @@ module Implementation = struct
       | Expression.Name name -> resolve_decorators name ~arguments:None
       | _ -> overload
     in
-    let parser =
-      {
-        AnnotatedCallable.parse_annotation =
-          parse_annotation ?dependency ~class_metadata_environment ~assumptions;
-        parse_as_concatenation =
-          AliasEnvironment.ReadOnly.parse_as_concatenation
-            (alias_environment class_metadata_environment)
-            ?dependency;
-        parse_as_parameter_specification_instance_annotation =
-          AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-            (alias_environment class_metadata_environment)
-            ?dependency;
-      }
+    let init =
+      let parser =
+        {
+          AnnotatedCallable.parse_annotation =
+            parse_annotation ?dependency ~class_metadata_environment ~assumptions;
+          parse_as_concatenation =
+            AliasEnvironment.ReadOnly.parse_as_concatenation
+              (alias_environment class_metadata_environment)
+              ?dependency;
+          parse_as_parameter_specification_instance_annotation =
+            AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+              (alias_environment class_metadata_environment)
+              ?dependency;
+        }
+      in
+      let variables =
+        ClassHierarchyEnvironment.ReadOnly.variables
+          (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment)
+          ?dependency
+      in
+      AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
     in
-    let init = AnnotatedCallable.create_overload_without_applying_decorators ~parser signature in
     decorators |> List.rev |> List.fold ~init ~f:apply_decorator
 
 

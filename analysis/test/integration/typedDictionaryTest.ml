@@ -1721,9 +1721,9 @@ let test_check_typed_dictionary_in_alias context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.C.__init__` is \
-       `typing.Callable(G.__init__)[[Named(self, unknown), Named(x, Child)], None]`.";
+       `typing.Callable(G.__init__)[[Named(self, G[Child]), Named(x, Child)], None]`.";
       "Revealed type [-1]: Revealed type for `test.C.return_T` is \
-       `typing.Callable(G.return_T)[[Named(self, unknown)], Child]`.";
+       `typing.Callable(G.return_T)[[Named(self, G[Child])], Child]`.";
       "Incompatible parameter type [6]: Expected `Child` for 1st positional only parameter to call \
        `G.__init__` but got `Base`.";
       "Revealed type [-1]: Revealed type for `d` is `Base` (inferred: `Child`).";
