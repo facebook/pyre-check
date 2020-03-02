@@ -132,6 +132,7 @@ and invalid_type_kind =
     }
   | NestedAlias of Identifier.t
   | NestedTypeVariables of Type.Variable.t
+  | SingleExplicit of Type.t
 
 and unawaited_awaitable = {
   references: Reference.t list;
@@ -921,6 +922,13 @@ let messages ~concise ~signature location kind =
                variables in their constraints."
               Type.Variable.pp_concise
               variable;
+          ]
+      | SingleExplicit variable ->
+          [
+            Format.asprintf
+              "TypeVar can't have a single explicit constraint. Did you mean `bound=%a`?"
+              Expression.pp
+              (Type.expression variable);
           ] )
   | InvalidTypeParameters
       { name; kind = AttributeResolution.IncorrectNumberOfParameters { expected; actual } } ->
@@ -3016,6 +3024,7 @@ let dequalify
     | InvalidType (NestedAlias name) -> InvalidType (NestedAlias name)
     | InvalidType (NestedTypeVariables variable) ->
         InvalidType (NestedTypeVariables (Type.Variable.dequalify dequalify_map variable))
+    | InvalidType (SingleExplicit explicit) -> InvalidType (SingleExplicit (dequalify explicit))
     | InvalidTypeParameters invalid_type_parameters ->
         InvalidTypeParameters (dequalify_invalid_type_parameters invalid_type_parameters)
     | InvalidTypeVariable { annotation; origin } ->

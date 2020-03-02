@@ -1222,7 +1222,10 @@ let test_attribute_type_variable_resolution context =
     def f(t: typing.Type[T]) -> None:
       a = t()
   |}
-    []
+    [
+      "Invalid type [31]: TypeVar can't have a single explicit constraint. Did you mean `bound=int`?";
+    ];
+  ()
 
 
 let test_check_getattr context =

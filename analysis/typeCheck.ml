@@ -3037,14 +3037,19 @@ module State (Context : Context) = struct
               |> fst
             in
             let add_type_variable_errors state =
-              match parsed with
-              | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
-                  let kind =
-                    AnalysisError.InvalidType
-                      (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable))
-                  in
-                  emit_error_no_join ~state ~location ~kind
-              | _ -> state
+              let kind =
+                match parsed with
+                | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
+                    Some
+                      (AnalysisError.InvalidType
+                         (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)))
+                | Variable { constraints = Explicit [explicit]; _ } ->
+                    Some (AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
+                | _ -> None
+              in
+              kind
+              >>| (fun kind -> emit_error_no_join ~state ~location ~kind)
+              |> Option.value ~default:state
             in
             let state = add_annotation_errors state |> add_type_variable_errors in
             { state with resolution }, resolved

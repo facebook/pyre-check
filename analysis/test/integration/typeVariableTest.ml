@@ -1059,6 +1059,19 @@ let test_nested_variable_error context =
   ()
 
 
+let test_single_explicit_error context =
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      T1 = typing.TypeVar("T1", int)
+    |}
+    [
+      "Invalid type [31]: TypeVar can't have a single explicit constraint. Did you mean `bound=int`?";
+    ];
+  ()
+
+
 let test_callable_parameter_variadics context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -2028,6 +2041,7 @@ let () =
          "distinguish" >:: test_distinguish;
          "integer_variables" >:: test_integer_variables;
          "nested_variable_error" >:: test_nested_variable_error;
+         "single_explicit_error" >:: test_single_explicit_error;
          "callable_parameter_variadics" >:: test_callable_parameter_variadics;
          "list_variadics" >:: test_list_variadics;
          "map" >:: test_map;
