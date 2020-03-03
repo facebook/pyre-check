@@ -41,11 +41,9 @@ def sort_errors(
 def filter_errors(
     arguments: argparse.Namespace, errors: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
-    def matches_error_code(error: Dict[str, Any]) -> bool:
-        return error["code"] == arguments.only_fix_error_code
-
-    if arguments.only_fix_error_code:
-        errors = list(filter(matches_error_code, errors))
+    only_fix_error_code: Optional[int] = arguments.only_fix_error_code
+    if only_fix_error_code is not None:
+        errors = [error for error in errors if error["code"] == only_fix_error_code]
     return errors
 
 

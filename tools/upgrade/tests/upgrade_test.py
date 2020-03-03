@@ -1669,26 +1669,39 @@ class FilterErrorTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.sandcastle = None
         arguments.only_fix_error_code = 44
-        pyre_errors = [
-            {
-                "line": 2,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            }
-        ]
+        error7 = {
+            "line": 2,
+            "column": 4,
+            "path": "local.py",
+            "code": 7,
+            "name": "Kind",
+            "concise_description": "Error",
+            "inference": {},
+            "ignore_error": False,
+            "external_to_global_root": False,
+        }
+        error0 = {
+            "line": 2,
+            "column": 2,
+            "path": "local.py",
+            "code": 0,
+            "name": "Unused ignore",
+            "concise_description": "Unused ignore",
+            "inference": {},
+            "ignore_error": False,
+            "external_to_global_root": False,
+        }
+        pyre_errors = [error7, error0]
         self.assertEqual(errors.filter_errors(arguments, pyre_errors), [])
 
         arguments.only_fix_error_code = 7
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), pyre_errors)
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error7])
+
+        arguments.only_fix_error_code = 0
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error0])
 
         arguments.only_fix_error_code = None
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), pyre_errors)
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error7, error0])
 
 
 class DefaultStrictTest(unittest.TestCase):
