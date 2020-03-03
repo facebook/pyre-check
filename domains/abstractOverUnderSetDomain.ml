@@ -146,9 +146,12 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
       match from, to_remove with
       | Bottom, _ -> Bottom
       | _, Bottom -> from
-      | BiSet { over; under }, BiSet { over = remove_over; under = _remove_under } ->
+      | BiSet { over; under }, BiSet { over = remove_over; under = remove_under } ->
           let over = Set.diff over remove_over in
-          make ~old:from ~over ~under
+          if Set.is_empty over && Set.equal under remove_under then
+            Bottom
+          else
+            make ~old:from ~over ~under
 
 
   module CommonArg = struct

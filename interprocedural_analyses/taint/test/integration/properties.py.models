@@ -110,7 +110,7 @@
               }
             ],
             "features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
           },
@@ -133,10 +133,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [
-              { "via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -338,7 +335,7 @@
               }
             ],
             "features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "special_source" }
             ]
           },
@@ -354,7 +351,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [ { "line": 15, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -362,10 +358,7 @@
                 "on_all_flows": true
               }
             ],
-            "features": [
-              { "via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }

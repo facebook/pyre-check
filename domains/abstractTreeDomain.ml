@@ -187,11 +187,6 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         | None, None -> None
       in
       merge combine left right |> fold ~f ~init
-
-    (*
-    let exists ~f =
-      exists (fun _key data -> f data)
-*)
   end
 
   type t = {
@@ -358,14 +353,11 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
   let collapse tree = collapse_tree Element.bottom tree
 
   let create_leaf_option ~ancestors ~element =
-    if Element.less_or_equal ~left:element ~right:ancestors then
+    let difference = Element.subtract ancestors ~from:element in
+    if Element.less_or_equal ~left:difference ~right:ancestors then
       None
     else
-      let difference = Element.subtract ancestors ~from:element in
-      if Element.is_bottom difference then
-        None
-      else
-        Some (create_leaf difference)
+      Some (create_leaf difference)
 
 
   let create_node_option element children =
@@ -388,14 +380,11 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
   }
 
   let filter_by_ancestors ~ancestors ~element =
-    if Element.less_or_equal ~left:element ~right:ancestors then
+    let difference = Element.subtract ancestors ~from:element in
+    if Element.less_or_equal ~left:difference ~right:ancestors then
       { new_element = Element.bottom; ancestors }
     else
-      let difference = Element.subtract ancestors ~from:element in
-      if Element.is_bottom difference then
-        { new_element = Element.bottom; ancestors }
-      else
-        { new_element = difference; ancestors = Element.join ancestors element }
+      { new_element = difference; ancestors = Element.join ancestors element }
 
 
   let rec prune_tree ancestors { element; children } =

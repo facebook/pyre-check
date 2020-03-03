@@ -9,7 +9,7 @@
     "start": 7,
     "end": 8,
     "filename": "conditional.py",
-    "message": "[{sources}] flow into conditional",
+    "message": "[MySource] flow into conditional",
     "traces": [
       {
         "name": "forward",
@@ -59,7 +59,7 @@
     "start": 16,
     "end": 17,
     "filename": "conditional.py",
-    "message": "[{sources}] flow into conditional",
+    "message": "[MySource] flow into conditional",
     "traces": [
       {
         "name": "forward",

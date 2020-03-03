@@ -28,7 +28,7 @@
         "port": "formal(wrapper)[b]",
         "taint": [
           {
-            "decl": "MISSING",
+            "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
           }
         ]
@@ -74,7 +74,7 @@
         "port": "formal(wrapper)[b]",
         "taint": [
           {
-            "decl": "MISSING",
+            "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[y]" } ]
           }
         ]
