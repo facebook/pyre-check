@@ -1475,6 +1475,21 @@ let test_check_typed_dictionary_inheritance context =
       "Revealed type [-1]: Revealed type for `d[\"foo\"]` is `int`.";
       "Revealed type [-1]: Revealed type for `d[\"bar\"]` is `str`.";
     ];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      class TotalBase(mypy_extensions.TypedDict):
+        foo: int
+      class NonTotalChild(TotalBase, total=False):
+        bar: str
+      class TotalChild(TotalBase):
+        bar: str
+      d: NonTotalChild
+      d2: TotalChild
+      d3: TotalBase = d
+      d4: TotalBase = d2
+    |}
+    [];
   (* TypedDict operations. *)
   assert_test_typed_dictionary
     {|

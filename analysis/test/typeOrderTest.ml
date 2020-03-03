@@ -1390,6 +1390,62 @@ let test_less_or_equal context =
     ~left:"test.Alpha"
     ~right:"dict[str, typing.Any]"
     false;
+  assert_less_or_equal
+    ~source:
+      {|
+      from mypy_extensions import TypedDict
+      class Base(TypedDict):
+        foo: str
+      class BarNotRequired(Base, total=False):
+        bar: int
+      class BarRequired(Base):
+        bar: int
+    |}
+    ~left:"test.BarNotRequired"
+    ~right:"test.BarRequired"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      from mypy_extensions import TypedDict
+      class Base(TypedDict):
+        foo: str
+      class BarNotRequired(Base, total=False):
+        bar: int
+      class BarRequired(Base):
+        bar: int
+    |}
+    ~left:"test.BarRequired"
+    ~right:"test.BarNotRequired"
+    false;
+  assert_less_or_equal
+    ~source:
+      {|
+      from mypy_extensions import TypedDict
+      class Base(TypedDict):
+        foo: str
+      class BarNotRequired(Base, total=False):
+        bar: int
+      class BarNotPresent(TypedDict):
+        foo: str
+    |}
+    ~left:"test.BarNotRequired"
+    ~right:"test.BarNotPresent"
+    true;
+  assert_less_or_equal
+    ~source:
+      {|
+      from mypy_extensions import TypedDict
+      class Base(TypedDict):
+        foo: str
+      class BarRequired(Base):
+        bar: int
+      class BarNotPresent(TypedDict):
+        foo: str
+    |}
+    ~left:"test.BarRequired"
+    ~right:"test.BarNotPresent"
+    true;
   ()
 
 

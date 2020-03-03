@@ -689,12 +689,7 @@ module OrderImplementation = struct
                  left.fields
                  ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
           in
-          if
-            Bool.equal
-              (Type.TypedDictionary.are_fields_total left.fields)
-              (Type.TypedDictionary.are_fields_total right.fields)
-            && not (List.exists right.fields ~f:field_not_found)
-          then
+          if not (List.exists right.fields ~f:field_not_found) then
             [constraints]
           else
             []
