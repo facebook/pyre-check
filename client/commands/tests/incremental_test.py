@@ -38,7 +38,7 @@ class IncrementalTest(unittest.TestCase):
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
-    @patch.object(incremental, "ProjectFilesMonitor")
+    @patch.object(incremental.Incremental, "_restart_file_monitor_if_needed")
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
     @patch.object(stop, "Stop")
@@ -47,7 +47,7 @@ class IncrementalTest(unittest.TestCase):
         commands_Stop,
         commands_Start,
         commands_Command_state,
-        Monitor,
+        restart_file_monitor_if_needed,
         exists,
         find_local_root,
         find_project_root,
@@ -66,9 +66,6 @@ class IncrementalTest(unittest.TestCase):
         start_command = commands_Start()
         start_command._configuration = mock_configuration()
         start_command.run().exit_code = start_exit_code
-        file_monitor_instance = MagicMock()
-        Monitor.return_value = file_monitor_instance
-        Monitor.is_alive.return_value = False
 
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -101,13 +98,9 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             connect.assert_called_once()
-            Monitor.is_alive.assert_called_once_with(configuration)
-            Monitor.assert_called_once_with(configuration, ".", analysis_directory)
-            file_monitor_instance.daemonize.assert_called_once_with()
+            restart_file_monitor_if_needed.assert_called_once()
 
-        Monitor.reset_mock()
-        Monitor.is_alive.return_value = True
-        file_monitor_instance.reset_mock()
+        restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
         ):
@@ -138,13 +131,10 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             connect.assert_called_once()
-            Monitor.is_alive.assert_called_once_with(configuration)
-            Monitor.assert_not_called()
-            file_monitor_instance.daemonize.assert_not_called()
+            restart_file_monitor_if_needed.assert_called_once()
 
+        restart_file_monitor_if_needed.reset_mock()
         commands_Command_state.return_value = commands.command.State.DEAD
-        Monitor.reset_mock()
-        file_monitor_instance.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
         ):
@@ -172,9 +162,9 @@ class IncrementalTest(unittest.TestCase):
                 arguments, original_directory, configuration, analysis_directory
             )
             connect.assert_called_once()
-            Monitor.assert_not_called()
-            file_monitor_instance.daemonize.assert_not_called()
+            restart_file_monitor_if_needed.assert_not_called()
 
+        restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
         ), patch.object(SharedAnalysisDirectory, "prepare") as prepare:
@@ -199,8 +189,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             connect.assert_called_once()
-            Monitor.assert_not_called()
-            file_monitor_instance.daemonize.assert_not_called()
+            restart_file_monitor_if_needed.assert_not_called()
             # Prepare only gets called when actually starting the server.
             prepare.assert_not_called()
 
@@ -208,6 +197,7 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments(
             load_initial_state_from="/a/b", changed_files_path="/c/d"
         )
+        restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
         ):
@@ -235,8 +225,7 @@ class IncrementalTest(unittest.TestCase):
                 arguments, original_directory, configuration, analysis_directory
             )
             connect.assert_called_once()
-            Monitor.assert_not_called()
-            file_monitor_instance.daemonize.assert_not_called()
+            restart_file_monitor_if_needed.assert_not_called()
 
         arguments = mock_arguments()
         original_directory = "/test"  # called from
@@ -245,6 +234,7 @@ class IncrementalTest(unittest.TestCase):
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
 
+        restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json,
             "loads",
@@ -284,8 +274,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             connect.assert_called_once()
-            Monitor.assert_not_called()
-            file_monitor_instance.daemonize.assert_not_called()
+            restart_file_monitor_if_needed.assert_not_called()
             self.assertEqual(test_command._exit_code, commands.ExitCode.FOUND_ERRORS)
 
         # If Start returns with an error, fail early
@@ -356,9 +345,9 @@ class IncrementalTest(unittest.TestCase):
         incremental_command._run()
         self.assertFalse(start_class.call_args[0][0].no_watchman)
 
-    @patch.object(incremental.ProjectFilesMonitor, "is_alive", return_value=True)
-    def test_refresh_file_monitor_noop_when_watchman_disabled(
-        self, is_alive: MagicMock
+    @patch.object(incremental.ProjectFilesMonitor, "restart_if_dead")
+    def test_restart_file_monitor_if_needed_no_watchman(
+        self, restart_if_dead: MagicMock
     ) -> None:
         incremental_command = incremental.Incremental(
             mock_arguments(no_watchman=True),
@@ -366,18 +355,16 @@ class IncrementalTest(unittest.TestCase):
             mock_configuration(version_hash="hash"),
             AnalysisDirectory("/root"),
         )
-        incremental_command._refresh_file_monitor()
-        is_alive.assert_not_called()
+        incremental_command._restart_file_monitor_if_needed()
+        restart_if_dead.assert_not_called()
 
-    @patch.object(incremental.ProjectFilesMonitor, "is_alive", return_value=True)
-    def test_refresh_file_monitor_called_when_watchman_enabled(
-        self, is_alive: MagicMock
-    ) -> None:
+    @patch.object(incremental.ProjectFilesMonitor, "restart_if_dead")
+    def test_restart_file_monitor_if_needed(self, restart_if_dead: MagicMock) -> None:
         incremental_command = incremental.Incremental(
             mock_arguments(no_watchman=False),
             "/original/directory",
             mock_configuration(version_hash="hash"),
             AnalysisDirectory("/root"),
         )
-        incremental_command._refresh_file_monitor()
-        is_alive.assert_called_once()
+        incremental_command._restart_file_monitor_if_needed()
+        restart_if_dead.assert_called_once()

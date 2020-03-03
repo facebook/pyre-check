@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from .. import json_rpc, project_files_monitor
-from ..analysis_directory import UpdatedPaths
+from ..analysis_directory import AnalysisDirectory, UpdatedPaths
 from ..commands.tests.command_test import mock_arguments, mock_configuration
 from ..json_rpc import Request, read_request
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
@@ -228,3 +228,30 @@ class MonitorTest(unittest.TestCase):
             with socket_created_lock:
                 SocketConnection(socket_link).connect()
             server_thread.join()
+
+    @patch.object(ProjectFilesMonitor, "daemonize")
+    @patch.object(ProjectFilesMonitor, "__init__", return_value=False)
+    @patch.object(ProjectFilesMonitor, "is_alive", return_value=True)
+    def test_restart_if_dead_when_alive(
+        self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
+    ) -> None:
+        ProjectFilesMonitor.restart_if_dead(
+            mock_configuration(version_hash="hash"),
+            "/original/directory",
+            AnalysisDirectory("/root"),
+        )
+        constructor.assert_not_called()
+
+    @patch.object(ProjectFilesMonitor, "daemonize")
+    @patch.object(ProjectFilesMonitor, "__init__", return_value=None)
+    @patch.object(ProjectFilesMonitor, "is_alive", return_value=False)
+    def test_restart_if_dead_when_dead(
+        self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
+    ) -> None:
+        ProjectFilesMonitor.restart_if_dead(
+            mock_configuration(version_hash="hash"),
+            "/original/directory",
+            AnalysisDirectory("/root"),
+        )
+        constructor.assert_called_once()
+        daemonize.assert_called_once()

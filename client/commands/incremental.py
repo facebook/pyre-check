@@ -111,7 +111,7 @@ class Incremental(Reporting):
                 self._exit_code = ExitCode.FAILURE
                 return
         else:
-            self._refresh_file_monitor()
+            self._restart_file_monitor_if_needed()
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
@@ -159,17 +159,9 @@ class Incremental(Reporting):
             atexit.register(stderr_tail.terminate)
             super(Incremental, self)._read_stderr(stderr_tail.stdout)
 
-    def _refresh_file_monitor(self) -> None:
+    def _restart_file_monitor_if_needed(self) -> None:
         if self._no_watchman:
             return
-        if not ProjectFilesMonitor.is_alive(self._configuration):
-            LOG.info("File monitor is not running.")
-            try:
-                ProjectFilesMonitor(
-                    self._configuration,
-                    self._current_directory,
-                    self._analysis_directory,
-                ).daemonize()
-                LOG.info("Restarted file monitor.")
-            except MonitorException as exception:
-                LOG.warning("Failed to restart file monitor: %s", exception)
+        ProjectFilesMonitor.restart_if_dead(
+            self._configuration, self._current_directory, self._analysis_directory
+        )

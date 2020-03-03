@@ -141,3 +141,20 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 "the current directory `{}`".format(directory)
             )
         return watchman_path
+
+    @staticmethod
+    def restart_if_dead(
+        configuration: Configuration,
+        current_directory: str,
+        analysis_directory: AnalysisDirectory,
+    ) -> None:
+        if ProjectFilesMonitor.is_alive(configuration):
+            return
+        LOG.info("File monitor is not running.")
+        try:
+            ProjectFilesMonitor(
+                configuration, current_directory, analysis_directory
+            ).daemonize()
+            LOG.info("Restarted file monitor.")
+        except MonitorException as exception:
+            LOG.warning("Failed to restart file monitor: %s", exception)
