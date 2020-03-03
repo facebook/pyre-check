@@ -3773,7 +3773,7 @@ module TypedDictionary = struct
     CallableParameter.Named { name = "k"; annotation = literal_string name; default = false }
 
 
-  let common_special_methods =
+  let common_special_methods ~class_name =
     let getitem_overloads =
       let overload { name; annotation; _ } =
         { annotation; parameters = Defined [key_parameter name] }
@@ -3823,7 +3823,18 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let update_overloads fields =
-      [{ annotation = none; parameters = field_named_parameters ~all_default:true fields }]
+      [
+        { annotation = none; parameters = field_named_parameters ~all_default:true fields };
+        {
+          annotation = none;
+          parameters =
+            Defined
+              [
+                Record.Callable.RecordParameter.PositionalOnly
+                  { index = 0; annotation = Primitive class_name; default = false };
+              ];
+        };
+      ]
     in
     [
       { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
@@ -3869,24 +3880,24 @@ module TypedDictionary = struct
     ]
 
 
-  let special_overloads ~fields ~method_name =
+  let special_overloads ~class_name ~fields ~method_name =
     let total = are_fields_total fields in
     let special_methods =
       if total then
-        common_special_methods
+        common_special_methods ~class_name
       else
-        non_total_special_methods @ common_special_methods
+        non_total_special_methods @ common_special_methods ~class_name
     in
     List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>| fun { overloads; _ } -> overloads fields
 
 
-  let is_special_mismatch ~total ~method_name ~position =
+  let is_special_mismatch ~class_name ~total ~method_name ~position =
     let special_methods =
       if total then
-        common_special_methods
+        common_special_methods ~class_name
       else
-        non_total_special_methods @ common_special_methods
+        non_total_special_methods @ common_special_methods ~class_name
     in
     List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>= (fun { special_index; _ } -> special_index)
@@ -3936,7 +3947,9 @@ module TypedDictionary = struct
           ~return_annotation:(expression (iterator string))
           "__iter__";
       ]
-      @ List.map common_special_methods ~f:(fun { name; _ } -> define name)
+      @ List.map
+          (common_special_methods ~class_name:(class_name ~total))
+          ~f:(fun { name; _ } -> define name)
     in
     if total then
       common_methods

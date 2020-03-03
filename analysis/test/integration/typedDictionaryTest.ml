@@ -636,6 +636,19 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDictionary.update`.";
     ];
   assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      movie1: Movie
+      movie2: Movie
+      movie2.update(movie1)
+      movie2.update(7)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
+       `TypedDictionary.update` but got `int`.";
+    ];
+  assert_test_typed_dictionary
     (* TODO(T37629490): We should handle the alias not being the same as the TypedDict name. *)
     {|
       import mypy_extensions

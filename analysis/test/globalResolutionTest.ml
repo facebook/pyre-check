@@ -1034,6 +1034,61 @@ let test_typed_dictionary_individual_attributes context =
                   ];
                 implicit = None;
               }));
+  assert_attribute
+    ~parent_name:"test.Movie"
+    ~attribute_name:"update"
+    ~expected_attribute:
+      (create_expected_attribute
+         "update"
+         ~parent:"test.Movie"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named
+                    (Reference.create_from_list ["TypedDictionary"; "update"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      Type.Record.Callable.annotation = Type.none;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
+                                annotation = Type.string;
+                                default = true;
+                              };
+                            Type.Record.Callable.RecordParameter.KeywordOnly
+                              {
+                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
+                                annotation = Type.integer;
+                                default = true;
+                              };
+                          ];
+                    };
+                    {
+                      Type.Record.Callable.annotation = Type.none;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.PositionalOnly
+                              {
+                                index = 0;
+                                annotation = Type.Primitive "test.Movie";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit = Some { implicit_annotation = Type.Primitive "test.Movie"; name = "self" };
+              }));
   ()
 
 

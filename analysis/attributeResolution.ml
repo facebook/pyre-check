@@ -1448,6 +1448,7 @@ module Implementation = struct
               }
             in
             Type.TypedDictionary.special_overloads
+              ~class_name
               ~fields
               ~method_name:(AnnotatedAttribute.name attribute)
             >>| fun overloads ->
@@ -1787,7 +1788,7 @@ module Implementation = struct
       attribute
     =
     let default_class_attribute = AnnotatedAttribute.class_attribute attribute in
-    let class_annotation = AnnotatedAttribute.parent attribute in
+    let class_name = AnnotatedAttribute.parent attribute in
     let attribute_name = AnnotatedAttribute.name attribute in
     let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
       AnnotatedAttribute.uninstantiated_annotation attribute
@@ -1796,7 +1797,7 @@ module Implementation = struct
       let instantiated =
         match instantiated with
         | Some instantiated -> instantiated
-        | None -> Type.Primitive class_annotation
+        | None -> Type.Primitive class_name
       in
       let instantiated = if accessed_via_metaclass then Type.meta instantiated else instantiated in
       match annotation with
@@ -1861,7 +1862,7 @@ module Implementation = struct
               ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
                 class_metadata_environment
                 ?dependency
-                class_annotation
+                class_name
             then
               callable
             else if String.equal attribute_name "__new__" then
@@ -1880,7 +1881,7 @@ module Implementation = struct
           let callable =
             match instantiated, attribute_name, callable with
             | Type.TypedDictionary { fields; _ }, method_name, callable ->
-                Type.TypedDictionary.special_overloads ~fields ~method_name
+                Type.TypedDictionary.special_overloads ~class_name ~fields ~method_name
                 >>| (fun overloads ->
                       {
                         callable with
@@ -2028,7 +2029,7 @@ module Implementation = struct
                 (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
                    class_metadata_environment)
                 ?dependency
-                class_annotation
+                class_name
               >>= Type.Variable.all_unary
               >>| List.map ~f:Type.Variable.Unary.self_reference
               >>| Type.Set.of_list
@@ -2057,7 +2058,7 @@ module Implementation = struct
           let solution =
             constraints
               ?dependency
-              ~target:class_annotation
+              ~target:class_name
               ~instantiated
               ~class_metadata_environment
               ~assumptions

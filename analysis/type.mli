@@ -840,11 +840,17 @@ module TypedDictionary : sig
   val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
 
   val special_overloads
-    :  fields:t typed_dictionary_field list ->
+    :  class_name:Primitive.t ->
+    fields:t typed_dictionary_field list ->
     method_name:string ->
     t Callable.overload list option
 
-  val is_special_mismatch : total:bool -> method_name:string -> position:int -> bool
+  val is_special_mismatch
+    :  class_name:Primitive.t ->
+    total:bool ->
+    method_name:string ->
+    position:int ->
+    bool
 
   val defines : total:bool -> t_self_expression:Expression.t -> Statement.t list
 

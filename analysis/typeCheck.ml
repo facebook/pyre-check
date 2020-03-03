@@ -1795,6 +1795,7 @@ module State (Context : Context) = struct
                       =
                       if
                         Type.TypedDictionary.is_special_mismatch
+                          ~class_name:name
                           ~method_name
                           ~position
                           ~total:(Type.TypedDictionary.are_fields_total fields)
