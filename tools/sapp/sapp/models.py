@@ -926,7 +926,7 @@ class Run(Base):  # noqa
 
     id = Column(BIGDBIDType, primary_key=True)
 
-    job_id = Column(String(length=255), unique=True)
+    job_id = Column(String(length=255), index=True)
 
     date = Column(DateTime, doc="The date/time the analysis was run", nullable=False)
 
