@@ -1803,9 +1803,19 @@ module State (Context : Context) = struct
                           ~total:(Type.TypedDictionary.are_fields_total fields)
                       then
                         match actual with
-                        | Type.Literal (Type.String missing_key) ->
-                            Error.TypedDictionaryKeyNotFound
-                              { typed_dictionary_name = name; missing_key }
+                        | Type.Literal (Type.String field_name) ->
+                            let required_field_exists =
+                              List.exists
+                                ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
+                                  String.equal name field_name && required)
+                                fields
+                            in
+                            if required_field_exists then
+                              Error.TypedDictionaryInvalidOperation
+                                { typed_dictionary_name = name; field_name; method_name }
+                            else
+                              Error.TypedDictionaryKeyNotFound
+                                { typed_dictionary_name = name; missing_key = field_name }
                         | Type.Primitive "str" ->
                             Error.TypedDictionaryAccessWithNonLiteral
                               (List.map fields ~f:(fun { name; _ } -> name))

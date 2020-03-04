@@ -1508,6 +1508,24 @@ let test_check_typed_dictionary_inheritance context =
       "Revealed type [-1]: Revealed type for `child[\"foo\"]` is `int`.";
       "Revealed type [-1]: Revealed type for `child[\"bar\"]` is `str`.";
     ];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+
+        class Base(mypy_extensions.TypedDict):
+          foo: int
+        class Child(Base, total=False):
+          bar: int
+        child: Child
+        y: int = child.pop("foo")
+        y: int = child.pop("bar")
+        child.__delitem__("foo")
+        child.__delitem__("bar")
+    |}
+    [
+      "Invalid TypedDict operation [54]: Cannot `pop` required field `foo` from TypedDict `Child`.";
+      "Invalid TypedDict operation [54]: Cannot delete required field `foo` from TypedDict `Child`.";
+    ];
   (* Multiple inheritance. *)
   assert_test_typed_dictionary
     {|

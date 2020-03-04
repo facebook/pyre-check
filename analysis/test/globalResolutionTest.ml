@@ -680,6 +680,11 @@ let test_typed_dictionary_individual_attributes context =
               year: int
             class EmptyNonTotalMovie(TypedDictionary, NonTotalTypedDictionary): ...
             class RegularClass: ...
+
+            class Base(TypedDictionary):
+              required: int
+            class NonTotalChild(Base, total=False):
+              non_required: str
           |}
         );
       ]
@@ -1088,6 +1093,108 @@ let test_typed_dictionary_individual_attributes context =
                     };
                   ];
                 implicit = Some { implicit_annotation = Type.Primitive "test.Movie"; name = "self" };
+              }));
+  assert_attribute
+    ~parent_name:"test.NonTotalChild"
+    ~attribute_name:"pop"
+    ~expected_attribute:
+      (create_expected_attribute
+         "pop"
+         ~parent:"test.NonTotalChild"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named
+                    (Reference.create_from_list ["NonTotalTypedDictionary"; "pop"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      annotation = Type.string;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                name = "k";
+                                annotation = Type.literal_string "non_required";
+                                default = false;
+                              };
+                          ];
+                    };
+                    {
+                      annotation =
+                        Union [Type.string; Type.Variable (Type.Variable.Unary.create "_T")];
+                      parameters =
+                        Defined
+                          [
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                name = "k";
+                                annotation = Type.literal_string "non_required";
+                                default = false;
+                              };
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                name = "default";
+                                annotation = Type.Variable (Type.Variable.Unary.create "_T");
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit =
+                  Some
+                    {
+                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.NonTotalChild";
+                      name = "self";
+                    };
+              }));
+  assert_attribute
+    ~parent_name:"test.NonTotalChild"
+    ~attribute_name:"__delitem__"
+    ~expected_attribute:
+      (create_expected_attribute
+         "__delitem__"
+         ~parent:"test.NonTotalChild"
+         ~annotation:
+           (Type.Callable
+              {
+                Type.Record.Callable.kind =
+                  Type.Record.Callable.Named
+                    (Reference.create_from_list ["NonTotalTypedDictionary"; "__delitem__"]);
+                implementation =
+                  {
+                    Type.Record.Callable.annotation = Type.Top;
+                    parameters = Type.Record.Callable.Undefined;
+                  };
+                overloads =
+                  [
+                    {
+                      annotation = Type.none;
+                      parameters =
+                        Type.Record.Callable.Defined
+                          [
+                            Type.Record.Callable.RecordParameter.Named
+                              {
+                                name = "k";
+                                annotation = Type.literal_string "non_required";
+                                default = false;
+                              };
+                          ];
+                    };
+                  ];
+                implicit =
+                  Some
+                    {
+                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.NonTotalChild";
+                      name = "self";
+                    };
               }));
   ()
 

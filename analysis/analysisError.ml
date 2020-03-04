@@ -298,6 +298,11 @@ type kind =
       unused_mode: Source.local_mode Node.t;
       actual_mode: Source.local_mode Node.t;
     }
+  | TypedDictionaryInvalidOperation of {
+      typed_dictionary_name: Identifier.t;
+      field_name: Identifier.t;
+      method_name: Identifier.t;
+    }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -360,6 +365,7 @@ let code = function
   | UnusedLocalMode _ -> 51
   | PrivateProtocolProperty _ -> 52
   | MissingCaptureAnnotation _ -> 53
+  | TypedDictionaryInvalidOperation _ -> 54
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -409,6 +415,7 @@ let name = function
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
+  | TypedDictionaryInvalidOperation _ -> "Invalid TypedDict operation"
   | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
   | UndefinedAttribute _ -> "Undefined attribute"
@@ -1643,6 +1650,17 @@ let messages ~concise ~signature location kind =
             typed_dictionary_name
             missing_key;
         ]
+  | TypedDictionaryInvalidOperation { typed_dictionary_name; field_name; method_name } ->
+      [
+        Format.asprintf
+          "Cannot %s required field `%s` from TypedDict%s."
+          (if String.equal method_name "pop" then "`pop`" else "delete")
+          field_name
+          ( if String.equal typed_dictionary_name "$anonymous" then
+              ""
+          else
+            Format.asprintf " `%s`" typed_dictionary_name );
+      ]
   | Unpack { expected_count; unpack_problem } -> (
       match unpack_problem with
       | UnacceptableType bad_type ->
@@ -2015,6 +2033,7 @@ let due_to_analysis_limitations { kind; _ } =
   | ProhibitedAny _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
+  | TypedDictionaryInvalidOperation _
   | TypedDictionaryKeyNotFound _
   | Unpack _
   | RedefinedClass _
@@ -2268,6 +2287,7 @@ let less_or_equal ~resolution left right =
   | TooManyArguments _, _
   | Top, _
   | TypedDictionaryAccessWithNonLiteral _, _
+  | TypedDictionaryInvalidOperation _, _
   | TypedDictionaryKeyNotFound _, _
   | UnawaitedAwaitable _, _
   | UndefinedAttribute _, _
@@ -2551,6 +2571,9 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
       when List.equal String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
+    | TypedDictionaryInvalidOperation _, TypedDictionaryInvalidOperation _
+      when [%equal: kind] left.kind right.kind ->
+        left.kind
     | Top, _
     | _, Top ->
         Top
@@ -2597,6 +2620,7 @@ let join ~resolution left right =
     | TooManyArguments _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryKeyNotFound _, _
+    | TypedDictionaryInvalidOperation _, _
     | UnawaitedAwaitable _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
@@ -3138,6 +3162,9 @@ let dequalify
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound key -> TypedDictionaryKeyNotFound key
+    | TypedDictionaryInvalidOperation ({ typed_dictionary_name; _ } as record) ->
+        TypedDictionaryInvalidOperation
+          { record with typed_dictionary_name = dequalify_identifier typed_dictionary_name }
     | UninitializedAttribute ({ mismatch; parent; kind; _ } as inconsistent_usage) ->
         UninitializedAttribute
           {

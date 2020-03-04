@@ -3847,32 +3847,37 @@ module TypedDictionary = struct
 
   let non_total_special_methods =
     let pop_overloads =
-      let overloads { name; annotation; _ } =
-        [
-          { annotation; parameters = Defined [key_parameter name] };
-          {
-            annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
-            parameters =
-              Defined
-                [
-                  key_parameter name;
-                  Named
-                    {
-                      name = "default";
-                      annotation = Variable (Variable.Unary.create "_T");
-                      default = false;
-                    };
-                ];
-          };
-        ]
+      let overloads { name; annotation; required } =
+        if required then
+          []
+        else
+          [
+            { annotation; parameters = Defined [key_parameter name] };
+            {
+              annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
+              parameters =
+                Defined
+                  [
+                    key_parameter name;
+                    Named
+                      {
+                        name = "default";
+                        annotation = Variable (Variable.Unary.create "_T");
+                        default = false;
+                      };
+                  ];
+            };
+          ]
       in
       List.concat_map ~f:overloads
     in
     let delitem_overloads fields =
-      let overload { name; annotation = _; _ } =
-        { annotation = none; parameters = Defined [key_parameter name] }
+      let overload { name; annotation = _; required } =
+        Option.some_if
+          (not required)
+          { annotation = none; parameters = Defined [key_parameter name] }
       in
-      List.map ~f:overload fields
+      List.filter_map ~f:overload fields
     in
     [
       { name = "pop"; special_index = Some 1; overloads = pop_overloads };

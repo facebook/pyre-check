@@ -289,6 +289,11 @@ type kind =
       unused_mode: Source.local_mode Node.t;
       actual_mode: Source.local_mode Node.t;
     }
+  | TypedDictionaryInvalidOperation of {
+      typed_dictionary_name: Identifier.t;
+      field_name: Identifier.t;
+      method_name: Identifier.t;
+    }
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t
