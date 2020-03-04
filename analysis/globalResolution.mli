@@ -243,3 +243,6 @@ val overrides
   resolution:t ->
   name:Identifier.t ->
   AnnotatedAttribute.instantiated option
+
+(* If the given type is a subtype of generic type `AsName[X]`, return X *)
+val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
