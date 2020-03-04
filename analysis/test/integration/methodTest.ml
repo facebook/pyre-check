@@ -267,7 +267,7 @@ let test_check_inverse_operator context =
     [
       "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
        `Any`.";
-      "Revealed type [-1]: Revealed type for `a` is `undefined`.";
+      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
     ];
   assert_type_errors
     ~context
@@ -296,7 +296,7 @@ let test_check_inverse_operator context =
     [
       "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
        `Any`.";
-      "Revealed type [-1]: Revealed type for `a` is `undefined`.";
+      "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
       "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
     ];
   assert_type_errors

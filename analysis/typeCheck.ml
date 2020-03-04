@@ -1418,11 +1418,13 @@ module State (Context : Context) = struct
         | Expression.Starred (Starred.Once expression) ->
             let { state; resolved = new_resolved; _ } = forward_expression ~state ~expression in
             let parameter =
-              (* TODO (T56720048): Stop joining with iterable bottom *)
               match
-                GlobalResolution.join global_resolution new_resolved (Type.iterable Type.Bottom)
+                GlobalResolution.extract_type_parameters
+                  global_resolution
+                  ~target:"typing.Iterable"
+                  ~source:new_resolved
               with
-              | Type.Parametric { parameters = [Single parameter]; _ } -> parameter
+              | Some [element_type] -> element_type
               | _ -> Type.Any
             in
             {
@@ -3092,11 +3094,14 @@ module State (Context : Context) = struct
             match annotation with
             | Type.Tuple (Type.Unbounded parameter) -> parameter
             | _ -> (
-                (* TODO (T56720048): Stop joining with iterable bottom *)
-                GlobalResolution.join global_resolution annotation (Type.iterable Type.Bottom)
-                |> function
-                | Type.Parametric { parameters = [Single parameter]; _ } -> parameter
-                | _ -> Type.Top )
+                match
+                  GlobalResolution.extract_type_parameters
+                    global_resolution
+                    ~target:"typing.Iterable"
+                    ~source:annotation
+                with
+                | Some [element_type] -> element_type
+                | _ -> Type.Any )
           in
           let nonuniform_sequence_parameters annotation =
             match annotation with
@@ -4238,55 +4243,51 @@ module State (Context : Context) = struct
               operator = ComparisonOperator.In;
               right;
             }
-          when is_simple_name name ->
+          when is_simple_name name -> (
             let reference = name_to_reference_exn name in
             let { resolved; _ } = forward_expression ~state ~expression:right in
-            (* TODO (T56720048): Stop joining with iterable bottom *)
-            let iterable =
-              GlobalResolution.join global_resolution resolved (Type.iterable Type.Bottom)
-            in
-            if Type.is_iterable iterable then
-              match Type.single_parameter iterable with
-              | Type.Any
-              | Type.Bottom ->
-                  state
-              | element_type -> (
-                  let annotation =
-                    Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
-                  in
-                  match annotation with
-                  | Some previous ->
-                      let refined =
-                        if Annotation.is_immutable previous then
-                          Annotation.create_immutable
-                            ~original:(Some (Annotation.original previous))
-                            element_type
-                        else
-                          Annotation.create element_type
-                      in
-                      if
-                        RefinementUnit.less_or_equal
-                          ~global_resolution
-                          (RefinementUnit.create ~base:refined ())
-                          (RefinementUnit.create ~base:previous ())
-                      then
-                        let resolution =
-                          Resolution.set_local_with_attributes resolution ~name ~annotation:refined
-                        in
-                        { state with resolution }
-                      else (* Keeping previous state, since it is more refined. *)
-                        state
-                  | None when not (Resolution.is_global resolution ~reference) ->
+            match
+              GlobalResolution.extract_type_parameters
+                global_resolution
+                ~target:"typing.Iterable"
+                ~source:resolved
+            with
+            | Some [element_type] -> (
+                let annotation =
+                  Resolution.get_local_with_attributes ~global_fallback:false ~name resolution
+                in
+                match annotation with
+                | Some previous ->
+                    let refined =
+                      if Annotation.is_immutable previous then
+                        Annotation.create_immutable
+                          ~original:(Some (Annotation.original previous))
+                          element_type
+                      else
+                        Annotation.create element_type
+                    in
+                    if
+                      RefinementUnit.less_or_equal
+                        ~global_resolution
+                        (RefinementUnit.create ~base:refined ())
+                        (RefinementUnit.create ~base:previous ())
+                    then
                       let resolution =
-                        Resolution.set_local_with_attributes
-                          resolution
-                          ~name
-                          ~annotation:(Annotation.create element_type)
+                        Resolution.set_local_with_attributes resolution ~name ~annotation:refined
                       in
                       { state with resolution }
-                  | _ -> state )
-            else
-              state
+                    else (* Keeping previous state, since it is more refined. *)
+                      state
+                | None when not (Resolution.is_global resolution ~reference) ->
+                    let resolution =
+                      Resolution.set_local_with_attributes
+                        resolution
+                        ~name
+                        ~annotation:(Annotation.create element_type)
+                    in
+                    { state with resolution }
+                | _ -> state )
+            | _ -> state )
         | ComparisonOperator
             {
               ComparisonOperator.left = { Node.value = Name (Name.Identifier "None"); _ };
@@ -4383,10 +4384,14 @@ module State (Context : Context) = struct
     | YieldFrom { Node.value = Expression.Yield (Some return); _ } ->
         let { state; resolved; _ } = forward_expression ~state ~expression:return in
         let actual =
-          match GlobalResolution.join global_resolution resolved (Type.iterator Type.Bottom) with
-          | Type.Parametric { name = "typing.Iterator"; parameters = [Single parameter] } ->
-              Type.generator parameter
-          | annotation -> Type.generator annotation
+          match
+            GlobalResolution.extract_type_parameters
+              global_resolution
+              ~target:"typing.Iterator"
+              ~source:resolved
+          with
+          | Some [parameter] -> Type.generator parameter
+          | _ -> Type.generator Type.Any
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
     | YieldFrom _ -> state

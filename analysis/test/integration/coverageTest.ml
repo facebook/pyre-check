@@ -58,7 +58,7 @@ let test_check_coverage context =
     ~additional_errors:
       [
         "Incompatible return type [7]: Expected `None` but got "
-        ^ "`typing.Generator[unknown, None, None]`.";
+        ^ "`typing.Generator[typing.Any, None, None]`.";
       ]
     "yield from ERROR";
 
