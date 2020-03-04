@@ -877,7 +877,7 @@ module State (Context : Context) = struct
                           ~state
                           ~given_annotation:None
                           (Some value_annotation),
-                        Annotation.create value_annotation )
+                        Annotation.create Type.Any )
                   | None, None ->
                       ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
                         Annotation.create Type.Any ) )

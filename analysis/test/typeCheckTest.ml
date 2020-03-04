@@ -138,7 +138,7 @@ let test_initial context =
     "def foo(x: int = 1.0) -> None: ..."
     ~immutables:["x", Type.integer]
     ~annotations:["x", Type.integer];
-  assert_initial ~annotations:["x", Type.float] "def foo(x = 1.0) -> None: ...";
+  assert_initial ~annotations:["x", Type.Any] "def foo(x = 1.0) -> None: ...";
   assert_initial
     "def foo(x: int) -> int: ..."
     ~immutables:["x", Type.integer]
