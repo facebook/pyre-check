@@ -1227,7 +1227,7 @@ destruct 1 as [
     now apply eval_list_length in hvs;
         rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
   destruct (prepare_call_state_same_length Empty0 vs (parameters function_def))
-    as [ after hafter ]; [ now rewrite hlen2 in hlen | now destruct function_def | ].
+    as [ after hafter ]; [now rewrite hlen2 in hlen | ].
   repeat eexists.
   econstructor; [| now apply hvs| now apply hafter].
   apply well_formed_get_info with (function_name := function_name) in hwf;
@@ -1242,7 +1242,7 @@ destruct 1 as [
     now apply eval_list_length in hvs;
         rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
   destruct (prepare_call_state_same_length Empty0 vs (parameters function_def))
-    as [ after hafter ]; [ now rewrite hlen2 in hlen | now destruct function_def | ].
+    as [ after hafter ]; [ now rewrite hlen2 in hlen | ].
   repeat eexists.
   econstructor; [| now apply hvs| now apply hafter].
   apply well_formed_get_info with (function_name := function_name) in hwf;
