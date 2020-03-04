@@ -506,7 +506,7 @@ let test_forward_expression context =
   in
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
-  assert_forward "await undefined" Type.Top;
+  assert_forward "await undefined" Type.Any;
 
   (* Boolean operator. *)
   assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);

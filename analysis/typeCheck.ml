@@ -1882,9 +1882,14 @@ module State (Context : Context) = struct
             state
         in
         let resolved =
-          GlobalResolution.join global_resolution (Type.awaitable Type.Bottom) resolved
-          |> Type.awaitable_value
-          |> Option.value ~default:Type.Top
+          match
+            GlobalResolution.extract_type_parameters
+              global_resolution
+              ~target:"typing.Awaitable"
+              ~source:resolved
+          with
+          | Some [awaited_type] -> awaited_type
+          | _ -> Type.Any
         in
         { state; resolved; resolved_annotation = None; base = None }
     | BooleanOperator { BooleanOperator.left; operator; right } ->

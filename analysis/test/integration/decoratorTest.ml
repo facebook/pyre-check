@@ -185,7 +185,6 @@ let test_check_asynccontextmanager context =
       (* TODO(T41786660): AsyncIterable should have attribute `__aenter__` ? *)
       "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
       "Undefined attribute [16]: `typing.AsyncIterable` has no attribute `__aenter__`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
