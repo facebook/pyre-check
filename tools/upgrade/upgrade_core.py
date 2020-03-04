@@ -16,7 +16,7 @@ import traceback
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 from ...client.commands import ExitCode
 from ...client.filesystem import get_filesystem
@@ -102,14 +102,18 @@ class Configuration:
         return Configuration.find_parent_file(".pyre_configuration.local", directory)
 
     @staticmethod
-    def gather_local_configurations(arguments) -> List["Configuration"]:
-        LOG.info("Finding configurations...")
-        configuration_paths = [
+    def gather_local_configuration_paths(directory: str) -> Sequence[Path]:
+        return [
             Path(path)
             for path in get_filesystem().list(
-                ".", patterns=[r"**\.pyre_configuration.local"]
+                directory, patterns=[r"**\.pyre_configuration.local"]
             )
         ]
+
+    @staticmethod
+    def gather_local_configurations(arguments) -> List["Configuration"]:
+        LOG.info("Finding configurations...")
+        configuration_paths = Configuration.gather_local_configuration_paths(".")
         if not configuration_paths:
             LOG.info("No projects with local configurations found.")
             project_configuration = Configuration.find_project_configuration()
