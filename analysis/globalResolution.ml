@@ -286,7 +286,8 @@ let global ({ dependency; _ } as resolution) reference =
   match Reference.last reference with
   | "__doc__"
   | "__file__"
-  | "__name__" ->
+  | "__name__"
+  | "__package__" ->
       let annotation = Annotation.create_immutable Type.string in
       Some annotation
   | "__dict__" ->

@@ -434,6 +434,12 @@ let test_check_return_control_flow context =
         return __doc__
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      def f() -> int:
+        return __package__
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   (* Meta. *)
   assert_type_errors
