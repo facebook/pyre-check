@@ -126,9 +126,7 @@ class Initialize(CommandParser):
             if push_blocking:
                 # Push blocking implies continuous, it's confusing to have both.
                 del configuration["continuous"]
-                configuration["differential"] = log.get_yes_no_input(
-                    "Should pyre only be push-blocking on newly introduced errors?"
-                )
+                configuration["differential"] = False
         return configuration
 
     def _run(self) -> None:

@@ -106,7 +106,7 @@ class InitializeTest(unittest.TestCase):
                 },
             )
 
-            yes_no_input.side_effect = [True, True, True, False]
+            yes_no_input.side_effect = [True, True, True]
             self.assertEqual(
                 command._get_local_configuration(),
                 {
@@ -116,11 +116,11 @@ class InitializeTest(unittest.TestCase):
                 },
             )
 
-            yes_no_input.side_effect = [True, True, True, True]
+            yes_no_input.side_effect = [True, True, True]
             self.assertEqual(
                 command._get_local_configuration(),
                 {
-                    "differential": True,
+                    "differential": False,
                     "push_blocking": True,
                     "targets": ["//target/..."],
                 },
