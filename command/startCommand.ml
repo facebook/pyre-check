@@ -276,7 +276,9 @@ let request_handler_thread
       Mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
-      Log.error "Stopping server due to missing source root.";
+      Log.error
+        "Stopping server due to missing source root, %s is not a directory."
+        (Path.show local_root);
       Operations.stop ~reason:"missing source root" ~configuration:server_configuration );
     let readable =
       Unix.select
