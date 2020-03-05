@@ -289,8 +289,7 @@ module State (Context : Context) = struct
 
   let errors { errors; _ } = ErrorMap.Map.data errors
 
-  let less_or_equal ~left:({ resolution; _ } as left) ~right =
-    let global_resolution = Resolution.global_resolution resolution in
+  let less_or_equal ~left ~right =
     if left.bottom then
       true
     else if right.bottom then
@@ -311,7 +310,7 @@ module State (Context : Context) = struct
            ~f:
              (entry_less_or_equal
                 (Resolution.annotation_store right.resolution)
-                (RefinementUnit.less_or_equal ~global_resolution))
+                RefinementUnit.equal)
            (Resolution.annotation_store left.resolution)
 
 
