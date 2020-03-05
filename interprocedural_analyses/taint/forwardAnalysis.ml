@@ -972,14 +972,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               match property_targets with
               | Some targets ->
-                  apply_call_targets
-                    ~resolution
-                    ~callee:target
-                    (Location.with_module ~qualifier:FunctionContext.qualifier location)
-                    [{ Call.Argument.value; name = None }]
-                    state
-                    targets
-                  |> snd
+                  let taint, state =
+                    apply_call_targets
+                      ~resolution
+                      ~callee:target
+                      (Location.with_module ~qualifier:FunctionContext.qualifier location)
+                      [{ Call.Argument.value; name = None }]
+                      state
+                      targets
+                  in
+                  store_taint_option (AccessPath.of_expression ~resolution base) taint state
               | None ->
                   let taint, state = analyze_expression ~resolution ~state ~expression:value in
                   analyze_assignment ~resolution target taint taint state )
@@ -1127,7 +1129,15 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   in
   let return_taint =
     let return_variable =
-      if Reference.last name = "__init__" then
+      (* Our handling of property setters is counterintuitive.
+       * We treat `a.property = x` as `a = a.property(x)`.
+       *
+       * This is because the property setter callable can arbitrarily mutate self in
+       * its body, meaning that we can't do a naive join of the taint returned by the property
+       * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
+       * self as implicitly returned here allows this handling to work and simulates runtime
+       * behavior accurately. *)
+      if Reference.last name = "__init__" || Define.is_property_setter define then
         match parameters with
         | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
             AccessPath.Root.Variable self_parameter

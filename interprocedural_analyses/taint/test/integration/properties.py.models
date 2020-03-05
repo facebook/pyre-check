@@ -1,5 +1,84 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "properties.setters_are_simulated",
+    "callable_line": 106,
+    "code": 5002,
+    "line": 112,
+    "start": 16,
+    "end": 19,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 110,
+              "start": 10,
+              "end": 25
+            },
+            "tito": [
+              { "line": 112, "start": 16, "end": 17 },
+              { "line": 110, "start": 10, "end": 25 }
+            ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 112,
+              "start": 16,
+              "end": 19
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Ovr{properties.Class::my_property}",
@@ -166,7 +245,17 @@
         ]
       }
     ],
-    "tito": []
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -177,6 +266,20 @@
       {
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
       }
     ],
     "sinks": [
@@ -206,6 +309,15 @@
             "decl": null,
             "leaves": [ { "kind": "ParameterUpdate0" } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }
@@ -495,7 +607,36 @@
         ]
       }
     ],
-    "tito": []
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.GrandDerived.my_property$setter",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -568,6 +709,72 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.SetterMutatesValue.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.SetterMutatesValue.p",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)[_p]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.SetterMutatesValue.p$setter",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[_p]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.TaintedGetterAndSetter.my_property",
     "sources": [
       {
@@ -605,6 +812,20 @@
       {
         "port": "formal(self)",
         "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 58,
+              "start": 20,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
       }
     ],
     "sinks": [],
@@ -616,6 +837,15 @@
             "decl": null,
             "leaves": [ { "kind": "ParameterUpdate0" } ],
             "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }

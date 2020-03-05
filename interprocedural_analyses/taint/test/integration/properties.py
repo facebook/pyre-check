@@ -88,3 +88,25 @@ class GrandDerived(DerivedTaintedSetter):
 
 def sets_tainted_value(t: TaintedGetterAndSetter) -> None:
     t.my_property = __test_source()
+
+
+class SetterMutatesValue:
+    def __init__(self) -> None:
+        self._p = ""
+
+    @property
+    def p(self) -> str:
+        return self._p
+
+    @p.setter
+    def p(self, value) -> None:
+        self._p = value
+
+
+def setters_are_simulated() -> None:
+    x = SetterMutatesValue()
+    # Expect no issue
+    __test_sink(x.p)
+    x.p = __test_source()
+    # x.p should now have an issue
+    __test_sink(x.p)

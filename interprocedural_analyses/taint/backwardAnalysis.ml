@@ -47,7 +47,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
-    if FunctionContext.is_constructor () then (* Constructor. Make self the return value *)
+    (* We handle constructors and property setters specially and track effects. *)
+    if
+      FunctionContext.is_constructor ()
+      || Define.is_property_setter (Node.value FunctionContext.definition)
+    then
       match FunctionContext.first_parameter () with
       | Some root ->
           BackwardState.assign
