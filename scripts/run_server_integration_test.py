@@ -52,7 +52,7 @@ def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
 
 
 def poor_mans_rsync(source_directory: str, destination_directory: str) -> None:
-    ignored_files = [".pyre_configuration"]
+    ignored_files = [".pyre_configuration", ".watchmanconfig"]
     ignored_directories = [".pyre"]
     # Do not delete the server directory while copying!
     assert_readable_directory(source_directory)
@@ -145,6 +145,10 @@ class Repository:
                 },
                 configuration_file,
             )
+        with open(
+            os.path.join(self._pyre_directory, ".watchmanconfig"), "w"
+        ) as watchman_configuration:
+            json.dump({}, watchman_configuration)
 
         self.debug = debug
         # Seed the repository with the base commit.
