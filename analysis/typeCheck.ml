@@ -851,16 +851,16 @@ module State (Context : Context) = struct
                     | _ -> state
                   in
                   match parsed_annotation, value_annotation with
-                  | Some annotation, Some value_annotation when Type.contains_final annotation ->
+                  | Some annotation, Some _ when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
-                        Annotation.create_immutable ~original:(Some annotation) value_annotation )
+                        Annotation.create_immutable annotation )
                   | Some annotation, Some value_annotation when contains_prohibited_any annotation
                     ->
                       ( add_missing_parameter_annotation_error
                           ~state
                           ~given_annotation:(Some annotation)
                           (Some value_annotation),
-                        Annotation.create_immutable ~original:(Some annotation) value_annotation )
+                        Annotation.create_immutable annotation )
                   | Some annotation, _ when Type.contains_final annotation ->
                       ( add_final_parameter_annotation_error ~state,
                         Annotation.create_immutable annotation )

@@ -282,6 +282,14 @@ let test_check_impossible_assert context =
         assert x
     |}
     ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."];
+  assert_default_type_errors
+    {|
+      from typing import Optional, Any
+      def foo(x: Optional[Any] = None) -> None:
+        assert x
+    |}
+    (* We should not treat `x` as having type `None` here *)
+    [];
   assert_type_errors
     {|
       def foo(x: Derp) -> None:
