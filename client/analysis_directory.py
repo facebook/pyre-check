@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import subprocess
+import textwrap
 from itertools import chain
 from pathlib import Path
 from time import time
@@ -189,7 +190,14 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self._source_directories.update(new_source_directories)
 
         if len(self._source_directories) == 0:
-            raise EnvironmentException("No targets or source directories to analyze.")
+            message = """
+            No targets or source directories to analyze.
+            Did you mean to run the command within a Pyre project?
+            (A Pyre project is a directory with a `.pyre_configuration.local` file.
+            If it is in directory foo/, you can also run `pyre -l foo`.)
+            See `pyre --help` for more details.
+            """
+            raise EnvironmentException(textwrap.dedent(message).strip())
 
     def prepare(self) -> None:
         start = time()
