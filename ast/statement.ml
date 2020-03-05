@@ -1315,7 +1315,15 @@ end = struct
 
     let test_initializers =
       String.Set.of_list
-        ["asyncSetUp"; "async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
+        [
+          "asyncSetUp";
+          "async_setUp";
+          "setUp";
+          "_setup";
+          "_async_setup";
+          "with_context";
+          "setUpClass";
+        ]
 
 
     let is_test_setup ({ parent; _ } as signature) =

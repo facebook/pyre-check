@@ -697,6 +697,17 @@ let test_attributes _ =
       attribute ~name:"setUp" ~number_of_defines:1 ();
       attribute ~name:"with_context" ~number_of_defines:1 ();
     ];
+  assert_attributes
+    ~in_test:true
+    {|
+      class Test:
+        def Test.setUpClass(self):
+          self.attribute = value
+    |}
+    [
+      attribute ~name:"attribute" ~values:["value", Attribute.Implicit] ();
+      attribute ~name:"setUpClass" ~number_of_defines:1 ();
+    ];
 
   (* __slot__ attributes *)
   assert_attributes

@@ -465,6 +465,19 @@ let test_check_attributes context =
           return self.attribute
     |}
     [];
+  assert_type_errors
+    {|
+      import unittest
+
+      class TestFoo(unittest.TestCase):
+        @classmethod
+        def setUpClass(cls) -> None:
+          cls.foo: int = 1
+
+        def testFoo(self) -> None:
+          reveal_type(self.foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `self.foo` is `int`."];
 
   (* Undefined attributes. *)
   assert_strict_type_errors
