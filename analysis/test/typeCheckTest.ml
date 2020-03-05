@@ -278,7 +278,7 @@ let test_check_annotation context =
     let errors =
       State.parse_and_check_annotation ~state !expression
       |> fst
-      |> State.errors
+      |> State.local_errors
       |> AnalysisError.deduplicate
     in
     let errors = List.map ~f:(description ~resolution) errors in

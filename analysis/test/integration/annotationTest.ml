@@ -49,14 +49,13 @@ let test_check_undefined_type context =
         return x
     |}
     ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
-
-  (* TODO(T44482498): Fix our locations for types to also throw for Derp. *)
   assert_default_type_errors
     {|
       def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
         pass
     |}
     [
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
       "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
@@ -87,14 +86,15 @@ let test_check_undefined_type context =
         pass
     |}
     ["Undefined or invalid type [11]: Annotation `Optional` is not defined as a type."];
-
-  (* TODO(T44482498): We should error on both Optional and Any. *)
   assert_default_type_errors
     {|
       def foo(x: Optional[Any]) -> None:
         pass
     |}
-    ["Undefined or invalid type [11]: Annotation `Optional` is not defined as a type."];
+    [
+      "Undefined or invalid type [11]: Annotation `Any` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Optional` is not defined as a type.";
+    ];
   assert_default_type_errors
     {|
       def foo(x: Dict) -> None:

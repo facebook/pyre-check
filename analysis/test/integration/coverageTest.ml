@@ -24,9 +24,7 @@ let test_check_coverage context =
       (preprocess source)
       (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
   in
-  let assert_not_covered ?(additional_errors = []) source =
-    assert_type_errors ~context (preprocess source) additional_errors
-  in
+
   (* Return statement. *)
   assert_covered
     ~additional_errors:["Incompatible return type [7]: Expected `None` but got `unknown`."]
@@ -109,8 +107,7 @@ let test_check_coverage context =
   (* Boolean operator. *)
   assert_covered "ERROR or False";
 
-  (* True or UNDEFINED evaluates to True in python. *)
-  assert_not_covered "True or ERROR";
+  assert_covered "True or ERROR";
   assert_covered "ERROR and False";
   assert_covered "True and ERROR";
 

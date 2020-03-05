@@ -18,28 +18,14 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
-module ErrorMap = struct
-  type key = {
-    location: Location.t;
-    kind: int;
-  }
-  [@@deriving compare, sexp]
+module LocalErrorMap = struct
+  type t = Error.t list Int.Table.t
 
-  module Map = Map.Make (struct
-    type nonrec t = key
+  let empty () = Int.Table.create ()
 
-    let compare = compare_key
+  let set error_map ~key ~errors = Int.Table.set error_map ~key ~data:errors
 
-    let sexp_of_t = sexp_of_key
-
-    let t_of_sexp = key_of_sexp
-  end)
-
-  type t = Error.t Map.t
-
-  let add ~errors ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error) =
-    let location = { Location.start; stop } in
-    Map.set errors ~key:{ location; kind = Error.code error } ~data:error
+  let all_errors error_map = Int.Table.data error_map |> List.concat
 end
 
 module type Context = sig
@@ -59,7 +45,9 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  val errors : t -> Error.t list
+  val local_errors : t -> Error.t list
+
+  val all_errors : t -> Error.t list
 
   val initial : resolution:Resolution.t -> t
 
@@ -76,9 +64,10 @@ module State (Context : Context) = struct
 
   and t = {
     resolution: Resolution.t;
-    errors: ErrorMap.t;
+    errors: Error.t list;
     bottom: bool;
     resolution_fixpoint: LocalAnnotationMap.t;
+    error_map: LocalErrorMap.t;
   }
 
   let pp format { resolution; errors; bottom; _ } =
@@ -112,7 +101,7 @@ module State (Context : Context) = struct
           (Error.Instantiated.location error)
           (Error.Instantiated.description error ~show_error_traces:true)
       in
-      List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
+      List.map errors ~f:error_to_string |> String.concat ~sep:"\n"
     in
     Format.fprintf
       format
@@ -138,25 +127,16 @@ module State (Context : Context) = struct
   let create ?(bottom = false) ~resolution () =
     {
       resolution;
-      errors = ErrorMap.Map.empty;
+      errors = [];
       bottom;
       resolution_fixpoint = LocalAnnotationMap.empty ();
+      error_map = LocalErrorMap.empty ();
     }
 
 
   let emit_error ~state ~location ~kind =
-    let emit_raw_error
-        ~state:({ errors; resolution; _ } as state)
-        ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error)
-      =
-      let error =
-        let location = { Location.start; stop } in
-        match Map.find errors { ErrorMap.location; kind = Error.code error } with
-        | Some other_error ->
-            Error.join ~resolution:(Resolution.global_resolution resolution) error other_error
-        | None -> error
-      in
-      { state with errors = ErrorMap.add ~errors error }
+    let emit_raw_error ~state:({ errors; _ } as state) error =
+      { state with errors = error :: errors }
     in
     Error.create
       ~location:(Location.with_module ~qualifier:Context.qualifier location)
@@ -165,24 +145,12 @@ module State (Context : Context) = struct
     |> emit_raw_error ~state
 
 
-  let emit_raw_error_no_join ~state:({ errors; _ } as state) error =
-    { state with errors = ErrorMap.add ~errors error }
-
-
-  let emit_error_no_join ~state ~location ~kind =
-    Error.create
-      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-      ~kind
-      ~define:Context.define
-    |> emit_raw_error_no_join ~state
-
-
   let add_invalid_type_parameters_errors ~resolution ~location ~state annotation =
     let mismatches, annotation =
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
     let add_error state mismatch =
-      emit_error_no_join ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
+      emit_error ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in
     List.fold mismatches ~f:add_error ~init:state, annotation
 
@@ -196,7 +164,7 @@ module State (Context : Context) = struct
     let untracked = List.filter (Type.elements annotation) ~f:is_untracked_name in
     let errors =
       List.fold untracked ~init:state ~f:(fun state name ->
-          emit_error_no_join ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
+          emit_error ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     errors, List.is_empty untracked
 
@@ -245,7 +213,7 @@ module State (Context : Context) = struct
         in
         ( no_untracked && List.is_empty invalid_variable_error_kinds,
           List.fold invalid_variable_error_kinds ~init:state ~f:(fun state kind ->
-              emit_error_no_join ~state ~location ~kind) )
+              emit_error ~state ~location ~kind) )
       in
       if all_primitives_and_variables_are_valid then
         add_invalid_type_parameters_errors annotation ~resolution:global_resolution ~location ~state
@@ -258,7 +226,7 @@ module State (Context : Context) = struct
     let state =
       match annotation with
       | Type.Top ->
-          emit_error_no_join
+          emit_error
             ~state
             ~location
             ~kind:
@@ -266,7 +234,7 @@ module State (Context : Context) = struct
                  (InvalidType
                     { annotation = Type.Primitive (Expression.show expression); expected = "" }))
       | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
-          emit_error_no_join
+          emit_error
             ~state
             ~location
             ~kind:
@@ -287,7 +255,9 @@ module State (Context : Context) = struct
 
   let resolution { resolution; _ } = resolution
 
-  let errors { errors; _ } = ErrorMap.Map.data errors
+  let local_errors { errors; _ } = errors
+
+  let all_errors { error_map; _ } = LocalErrorMap.all_errors error_map
 
   let less_or_equal ~left ~right =
     if left.bottom then
@@ -302,16 +272,10 @@ module State (Context : Context) = struct
         | Some other -> less_or_equal data other
         | _ -> false
       in
-      let left_errors = Map.data left.errors |> Error.Set.of_list in
-      let right_errors = Map.data right.errors |> Error.Set.of_list in
-      Set.is_subset left_errors ~of_:right_errors
-      && Map.fold
-           ~init:true
-           ~f:
-             (entry_less_or_equal
-                (Resolution.annotation_store right.resolution)
-                RefinementUnit.equal)
-           (Resolution.annotation_store left.resolution)
+      Map.fold
+        ~init:true
+        ~f:(entry_less_or_equal (Resolution.annotation_store right.resolution) RefinementUnit.equal)
+        (Resolution.annotation_store left.resolution)
 
 
   let join left right =
@@ -340,14 +304,7 @@ module State (Context : Context) = struct
         in
         Resolution.with_annotation_store left_resolution ~annotation_store
       in
-      let combine_errors ~key:_ left_error right_error =
-        Error.join ~resolution:(Resolution.global_resolution left.resolution) left_error right_error
-      in
-      {
-        left with
-        errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
-        resolution = join_resolutions left.resolution right.resolution;
-      }
+      { left with errors = []; resolution = join_resolutions left.resolution right.resolution }
 
 
   let widening_threshold = 10
@@ -392,17 +349,12 @@ module State (Context : Context) = struct
           (Resolution.annotation_store previous.resolution)
           (Resolution.annotation_store next.resolution)
       in
-      let combine_errors ~key:_ left_error right_error =
-        if iteration > widening_threshold then
-          { left_error with Error.kind = Error.Top }
-        else
-          Error.join ~resolution:global_resolution left_error right_error
-      in
       {
         previous with
-        errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
+        errors = [];
         resolution = Resolution.with_annotation_store resolution ~annotation_store;
         resolution_fixpoint = next.resolution_fixpoint;
+        error_map = next.error_map;
       }
 
 
@@ -1349,10 +1301,11 @@ module State (Context : Context) = struct
       |> check_constructor_return
     in
     let () =
-      let { resolution; resolution_fixpoint; _ } = state in
+      let { resolution; resolution_fixpoint; errors; error_map; _ } = state in
       let postcondition = Resolution.annotation_store resolution in
       let key = [%hash: int * int] (Cfg.entry_index, 0) in
-      LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
+      LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition;
+      LocalErrorMap.set error_map ~key ~errors
     in
     state
 
@@ -1372,25 +1325,26 @@ module State (Context : Context) = struct
         |> Node.create ~location
       in
       let state =
-        let { errors; _ } = state in
-        let ({ errors = iterator_errors; _ } as state) =
-          forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
+        let { errors = iterator_errors; resolution = iterator_resolution; _ } =
+          forward_statement ~state:{ state with errors = [] } ~statement:iterator
         in
-        (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
-           temporarily minting a variable in a new scope and old annotations should be ignored. *)
-        let errors =
+        let iterator_errors =
+          (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
+             temporarily minting a variable in a new scope and old annotations should be ignored. *)
           let is_not_assignment_error = function
             | { Error.kind = Error.IncompatibleVariableType _; _ } -> false
             | _ -> true
           in
-          Map.filter ~f:is_not_assignment_error iterator_errors
-          |> fun iterator_errors ->
-          Map.merge_skewed
-            ~combine:(fun ~key:_ left right -> Error.join ~resolution:global_resolution left right)
-            iterator_errors
-            errors
+          List.filter ~f:is_not_assignment_error iterator_errors
         in
-        { state with errors }
+        (* We want the resolution in the iterator assignment -- they will become useful in
+           `forward_comprehension`. Don't worry about annotation store pollutions as we will throw
+           away generator-local variables there. *)
+        {
+          state with
+          resolution = iterator_resolution;
+          errors = List.append iterator_errors state.errors;
+        }
       in
       List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
@@ -1915,7 +1869,12 @@ module State (Context : Context) = struct
           | resolved_left, resolved_right, _ ->
               GlobalResolution.join global_resolution resolved_left resolved_right
         in
-        { state = join state_left state_right; resolved; resolved_annotation = None; base = None }
+        let state =
+          let { errors; _ } = state_right in
+          let joined_state = join state_left state_right in
+          { joined_state with errors }
+        in
+        { state; resolved; resolved_annotation = None; base = None }
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
         let metadata =
           Resolution.parent resolution
@@ -2150,7 +2109,7 @@ module State (Context : Context) = struct
     | Call call ->
         let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base; _ } =
-          forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
+          forward_expression ~state:{ state with errors = [] } ~expression:callee
         in
         let { state = updated_state; resolved; _ } =
           let target_and_dynamic resolved_callee =
@@ -2194,19 +2153,15 @@ module State (Context : Context) = struct
               forward_callable ~state ~target ~dynamic ~callee ~resolved:resolved_callee ~arguments
         in
         if
-          Map.is_empty (Map.filter ~f:is_terminating_error callee_errors)
+          List.is_empty (List.filter ~f:is_terminating_error callee_errors)
           || not (Type.is_top resolved_callee || Type.is_undeclared resolved_callee)
         then
           let state =
-            Map.fold callee_errors ~init:updated_state ~f:(fun ~key:_ ~data state ->
-                emit_raw_error_no_join ~state data)
+            { updated_state with errors = List.append callee_errors updated_state.errors }
           in
           { state; resolved; resolved_annotation = None; base = None }
         else (* Do not throw more errors if callee already contains terminating error. *)
-          let state =
-            Map.fold callee_errors ~init:state ~f:(fun ~key:_ ~data state ->
-                emit_raw_error_no_join ~state data)
-          in
+          let state = { state with errors = List.append callee_errors state.errors } in
           { state; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
@@ -2489,7 +2444,7 @@ module State (Context : Context) = struct
     | Name (Name.Attribute { base; attribute; special } as name) ->
         let reference = name_to_reference name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base; base = super_base; _ } =
-          forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:base
+          forward_expression ~state:{ state with errors = [] } ~expression:base
         in
         let state, resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
@@ -2746,19 +2701,15 @@ module State (Context : Context) = struct
                 Some (Instance resolved_base)
         in
         if
-          Map.is_empty (Map.filter ~f:is_terminating_error base_errors)
+          List.is_empty (List.filter ~f:is_terminating_error base_errors)
           || not (Type.is_top resolved_base || Type.is_undeclared resolved_base)
         then
           let state =
-            Map.fold base_errors ~init:updated_state ~f:(fun ~key:_ ~data state ->
-                emit_raw_error_no_join ~state data)
+            { updated_state with errors = List.append base_errors updated_state.errors }
           in
           { state; resolved; resolved_annotation; base }
         else (* Do not throw more errors if base already contains terminating error. *)
-          let state =
-            Map.fold base_errors ~init:state ~f:(fun ~key:_ ~data state ->
-                emit_raw_error_no_join ~state data)
-          in
+          let state = { state with errors = List.append base_errors state.errors } in
           { state; resolved; resolved_annotation; base }
     | Set elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
@@ -2792,18 +2743,25 @@ module State (Context : Context) = struct
            until the parser gets full support of them. *)
         { state; resolved = Type.string; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
-        let state = { state with resolution } in
-        let target =
-          forward_statement ~state ~statement:(Statement.assume test)
+        let ({ state = { errors = target_errors; _ }; _ } as target) =
+          forward_statement ~state:{ state with errors = [] } ~statement:(Statement.assume test)
           |> fun state -> forward_expression ~state ~expression:target
         in
-        let alternative =
-          forward_statement ~state ~statement:(Statement.assume (negate test))
+        let ({ state = { errors = alternative_errors; _ }; _ } as alternative) =
+          forward_statement
+            ~state:{ state with errors = [] }
+            ~statement:(Statement.assume (negate test))
           |> fun state -> forward_expression ~state ~expression:alternative
         in
         let { state; resolved; _ } = join_resolved target alternative in
+        let errors = List.append target_errors alternative_errors in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
-        { state = { state with resolution }; resolved; resolved_annotation = None; base = None }
+        {
+          state = { state with resolution; errors };
+          resolved;
+          resolved_annotation = None;
+          base = None;
+        }
     | True ->
         {
           state;
@@ -3049,7 +3007,7 @@ module State (Context : Context) = struct
                 | _ -> None
               in
               kind
-              >>| (fun kind -> emit_error_no_join ~state ~location ~kind)
+              >>| (fun kind -> emit_error ~state ~location ~kind)
               |> Option.value ~default:state
             in
             let state = add_annotation_errors state |> add_type_variable_errors in
@@ -4435,6 +4393,7 @@ module State (Context : Context) = struct
 
 
   let forward ~key ({ bottom; resolution; _ } as state) ~statement =
+    let state = { state with errors = [] } in
     let state =
       if bottom then
         state
@@ -4442,12 +4401,13 @@ module State (Context : Context) = struct
         forward_statement ~state ~statement
     in
     let () =
-      let { resolution = post_resolution; _ } = state in
+      let { resolution = post_resolution; errors; _ } = state in
       let precondition = Resolution.annotation_store resolution in
       let postcondition = Resolution.annotation_store post_resolution in
-      LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition
+      LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition;
+      LocalErrorMap.set state.error_map ~key ~errors
     in
-    state
+    { state with errors = [] }
 
 
   let backward ~key:_ state ~statement:_ = state
@@ -4489,10 +4449,11 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
         ()
     in
     {
-      State.errors = ErrorMap.Map.empty;
+      State.errors = [];
       bottom = false;
-      resolution_fixpoint = LocalAnnotationMap.empty ();
       resolution = empty_resolution;
+      resolution_fixpoint = LocalAnnotationMap.empty ();
+      error_map = LocalErrorMap.empty ();
     }
   in
   let resolve_expression ~resolution expression =
@@ -4509,7 +4470,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
     if bottom then
       Resolution.Unreachable
     else
-      Resolution.Reachable { resolution; errors = ErrorMap.Map.data errors }
+      Resolution.Reachable { resolution; errors }
   in
   Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
@@ -5221,8 +5182,8 @@ let exit_state ~resolution (module Context : Context) =
   in
   let global_resolution = Resolution.global_resolution resolution in
   if Define.is_stub define then
-    let { State.resolution; errors; _ } = initial in
-    let errors_sofar = Map.data errors |> Error.deduplicate in
+    let { State.resolution; _ } = initial in
+    let errors_sofar = State.local_errors initial |> Error.deduplicate in
     ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
       |> filter_errors (module Context) ~global_resolution,
       None,
@@ -5247,8 +5208,8 @@ let exit_state ~resolution (module Context : Context) =
     let errors, local_annotations =
       match exit with
       | None -> [], None
-      | Some { State.errors; resolution_fixpoint; _ } ->
-          let errors_in_state = Map.data errors |> Error.deduplicate in
+      | Some ({ State.resolution_fixpoint; _ } as state) ->
+          let errors_in_state = State.all_errors state |> Error.deduplicate in
           ( emit_errors
               (module Context)
               ~global_resolution

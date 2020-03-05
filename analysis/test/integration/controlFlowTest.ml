@@ -310,9 +310,9 @@ let test_check_unbound_variables context =
         return unknown
     |}
     [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
        flow path that doesn't define `unknown`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -357,11 +357,12 @@ let test_check_nested context =
       def foo() -> Derp.Word: pass
     |}
     [
+      "Missing attribute annotation [4]: Attribute `noun` of class `Derp.Word` must have a type \
+       other than `Any`.";
       "Missing attribute annotation [4]: Attribute `verb` of class `Derp.Word` must have a type \
        other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `noun` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `verb` must have a type other than `Any`.";
-      "Undefined error [1]: Problem with analysis.";
-      "Undefined error [1]: Problem with analysis.";
       "Incompatible return type [7]: Expected `Derp.Word` but got "
       ^ "implicit return value of `None`.";
     ];

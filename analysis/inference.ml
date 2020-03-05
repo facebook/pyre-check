@@ -272,7 +272,7 @@ module State (Context : Context) = struct
   let initial ~resolution =
     let errors =
       TypeCheckState.initial ~resolution
-      |> TypeCheckState.errors
+      |> TypeCheckState.all_errors
       |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
     { resolution; errors; bottom = false }
