@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import ContextManager, Dict, Generator, Iterable, List, Optional, Set
 
 from .exceptions import EnvironmentException
@@ -200,13 +200,18 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
         yield
 
 
+@contextmanager
+def do_nothing() -> Generator[None, None, None]:
+    yield
+
+
 def acquire_lock_if_needed(
     lock_path: str, blocking: bool, needed: bool
 ) -> ContextManager[Optional[int]]:
     if needed:
         return acquire_lock(lock_path, blocking)
     else:
-        return nullcontext()
+        return do_nothing()
 
 
 class Filesystem:
