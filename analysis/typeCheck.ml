@@ -4377,6 +4377,76 @@ module State (Context : Context) = struct
           |> fun resolution -> { state with resolution }
         else
           state
+    | Import { Import.from; imports } ->
+        let check_import import =
+          let rec check_lead lead = function
+            | [] -> None
+            | name :: rest -> (
+                let lead = lead @ [name] in
+                let reference = Reference.create_from_list lead in
+                match GlobalResolution.module_exists global_resolution reference with
+                | true -> check_lead lead rest
+                | false -> (
+                    match resolve_reference_type ~state reference with
+                    | Type.Any ->
+                        (* Import from Any is ok *)
+                        None
+                    | _ -> Some reference ) )
+          in
+          match GlobalResolution.is_suppressed_module global_resolution import with
+          | true -> None
+          | false -> check_lead [] (Reference.as_list import)
+        in
+        let undefined_imports =
+          match from with
+          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
+          | None ->
+              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+                  check_import name)
+        in
+        List.fold undefined_imports ~init:state ~f:(fun state reference ->
+            emit_error ~state ~location ~kind:(Error.UndefinedImport reference))
+    | Class { Class.bases; _ } when bases <> [] ->
+        (* Check that variance isn't widened on inheritence *)
+        let check_base state { Call.Argument.value = base; _ } =
+          let check_pair state extended actual =
+            match extended, actual with
+            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
+                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
+                match left, right with
+                | Type.Variable.Covariant, Type.Variable.Invariant
+                | Type.Variable.Contravariant, Type.Variable.Invariant
+                | Type.Variable.Covariant, Type.Variable.Contravariant
+                | Type.Variable.Contravariant, Type.Variable.Covariant ->
+                    emit_error
+                      ~state
+                      ~location
+                      ~kind:
+                        (Error.InvalidTypeVariance
+                           { annotation = extended; origin = Error.Inheritance actual })
+                | _ -> state )
+            | _, _ -> state
+          in
+          match GlobalResolution.parse_annotation global_resolution base with
+          | Type.Parametric { name; parameters = extended_parameters }
+            when not (String.equal name "typing.Generic") ->
+              Type.Parameter.all_singles extended_parameters
+              >>| (fun extended_parameters ->
+                    let actual_parameters =
+                      GlobalResolution.variables global_resolution name
+                      >>= Type.Variable.all_unary
+                      >>| List.map ~f:(fun unary -> Type.Variable unary)
+                      |> Option.value ~default:[]
+                    in
+                    match
+                      List.fold2 extended_parameters actual_parameters ~init:state ~f:check_pair
+                    with
+                    | Ok state -> state
+                    | Unequal_lengths -> state)
+              |> Option.value ~default:state
+          | _ -> state
+        in
+        List.fold bases ~f:check_base ~init:state
     | Class _ ->
         (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
         state
@@ -4386,9 +4456,6 @@ module State (Context : Context) = struct
     | With _
     | While _ ->
         (* Check happens implicitly in the resulting control flow. *)
-        state
-    | Import _ ->
-        (* Check happens after typing is done. *)
         state
     | Break
     | Continue
@@ -4955,230 +5022,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
   class_initialization_errors errors_sofar |> overload_errors
 
 
-let emit_error (module Context : Context) ~errors_sofar ~kind ~location =
-  Error.create
-    ~location:(Location.with_module ~qualifier:Context.qualifier location)
-    ~kind
-    ~define:Context.define
-  :: errors_sofar
-
-
-(* TODO (T59974010): Migrate error emission logic from `State.forward_expression` to this function *)
-let emit_errors_in_expression (module Context : Context) ~errors_sofar ~resolution expression =
-  let rec emit_errors_in_expression ~errors_sofar ~resolution { Node.value = expression; _ } =
-    match expression with
-    | Expression.Await await -> emit_errors_in_expression ~resolution ~errors_sofar await
-    | BooleanOperator { BooleanOperator.left; right; _ } ->
-        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar left in
-        emit_errors_in_expression ~resolution ~errors_sofar right
-    | Call { Call.callee; arguments } ->
-        let errors_sofar =
-          List.fold arguments ~init:errors_sofar ~f:(fun errors_sofar { Call.Argument.value; _ } ->
-              emit_errors_in_expression ~resolution ~errors_sofar value)
-        in
-        emit_errors_in_expression ~resolution ~errors_sofar callee
-    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar left in
-        emit_errors_in_expression ~resolution ~errors_sofar right
-    | Dictionary { Dictionary.entries; keywords } ->
-        let errors_sofar =
-          List.fold entries ~init:errors_sofar ~f:(fun errors_sofar entry ->
-              emit_errors_in_dictionary_entry ~resolution ~errors_sofar entry)
-        in
-        List.fold keywords ~init:errors_sofar ~f:(fun errors_sofar keyword ->
-            emit_errors_in_expression ~resolution ~errors_sofar keyword)
-    | List expressions
-    | Set expressions
-    | Tuple expressions ->
-        List.fold expressions ~init:errors_sofar ~f:(fun errors_sofar expression ->
-            emit_errors_in_expression ~resolution ~errors_sofar expression)
-    | Starred (Once expression | Twice expression) ->
-        emit_errors_in_expression ~resolution ~errors_sofar expression
-    | String { kind = Format expressions; _ } ->
-        List.fold expressions ~init:errors_sofar ~f:(fun errors_sofar expression ->
-            emit_errors_in_expression ~resolution ~errors_sofar expression)
-    | Ternary { target; test; alternative } ->
-        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar test in
-        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar target in
-        emit_errors_in_expression ~resolution ~errors_sofar alternative
-    | UnaryOperator { operand; _ } -> emit_errors_in_expression ~resolution ~errors_sofar operand
-    | WalrusOperator { target; value } ->
-        let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar target in
-        emit_errors_in_expression ~resolution ~errors_sofar value
-    | Yield (Some expression) -> emit_errors_in_expression ~resolution ~errors_sofar expression
-    | Name _
-    | Lambda _
-    | Generator _
-    | ListComprehension _
-    | SetComprehension _
-    | DictionaryComprehension _ ->
-        (* TODO: Process these expressions *)
-        errors_sofar
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
-    | String _
-    | True
-    | Yield None ->
-        (* Not possible to error *)
-        errors_sofar
-  and emit_errors_in_dictionary_entry ~resolution ~errors_sofar { Dictionary.Entry.key; value } =
-    let errors_sofar = emit_errors_in_expression ~resolution ~errors_sofar key in
-    emit_errors_in_expression ~resolution ~errors_sofar value
-  in
-  emit_errors_in_expression ~errors_sofar ~resolution expression
-
-
-let emit_errors_in_body
-    (module Context : Context)
-    ~global_resolution
-    ~errors_sofar
-    ~cfg
-    ~local_annotations
-    ()
-  =
-  (* TODO (T59974010): Migrate error emission logic from `State.forward_statement` to this function *)
-  let emit_errors_in_statement
-      ~pre_resolution
-      ~post_resolution:_
-      ~errors_sofar
-      { Node.value = statement; location }
-    =
-    match statement with
-    | Statement.Import { Import.from; imports } ->
-        let check_import import =
-          let rec check_lead lead = function
-            | [] -> None
-            | name :: rest -> (
-                let lead = lead @ [name] in
-                let reference = Reference.create_from_list lead in
-                match GlobalResolution.module_exists global_resolution reference with
-                | true -> check_lead lead rest
-                | false -> (
-                    match Resolution.resolve_reference pre_resolution reference with
-                    | Type.Any ->
-                        (* Import from Any is ok *)
-                        None
-                    | _ -> Some reference ) )
-          in
-          match GlobalResolution.is_suppressed_module global_resolution import with
-          | true -> None
-          | false -> check_lead [] (Reference.as_list import)
-        in
-        let undefined_imports =
-          match from with
-          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
-          | None ->
-              List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
-                  check_import name)
-        in
-        let add_import_error errors_sofar reference =
-          emit_error
-            (module Context)
-            ~errors_sofar
-            ~kind:(Error.UndefinedImport reference)
-            ~location
-        in
-        List.fold undefined_imports ~init:errors_sofar ~f:add_import_error
-    | Statement.Class { Class.bases; _ } when bases <> [] ->
-        (* Check that variance isn't widened on inheritence *)
-        let check_base errors_sofar { Call.Argument.value = base; _ } =
-          let check_pair errors_sofar extended actual =
-            match extended, actual with
-            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
-                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
-                match left, right with
-                | Type.Variable.Covariant, Type.Variable.Invariant
-                | Type.Variable.Contravariant, Type.Variable.Invariant
-                | Type.Variable.Covariant, Type.Variable.Contravariant
-                | Type.Variable.Contravariant, Type.Variable.Covariant ->
-                    emit_error
-                      (module Context)
-                      ~errors_sofar
-                      ~location
-                      ~kind:
-                        (Error.InvalidTypeVariance
-                           { annotation = extended; origin = Error.Inheritance actual })
-                | _ -> errors_sofar )
-            | _, _ -> errors_sofar
-          in
-          match GlobalResolution.parse_annotation global_resolution base with
-          | Type.Parametric { name; parameters = extended_parameters }
-            when not (String.equal name "typing.Generic") ->
-              Type.Parameter.all_singles extended_parameters
-              >>| (fun extended_parameters ->
-                    let actual_parameters =
-                      GlobalResolution.variables global_resolution name
-                      >>= Type.Variable.all_unary
-                      >>| List.map ~f:(fun unary -> Type.Variable unary)
-                      |> Option.value ~default:[]
-                    in
-                    match
-                      List.fold2
-                        extended_parameters
-                        actual_parameters
-                        ~init:errors_sofar
-                        ~f:check_pair
-                    with
-                    | Ok errors -> errors
-                    | Unequal_lengths -> errors_sofar)
-              |> Option.value ~default:errors_sofar
-          | _ -> errors_sofar
-        in
-        List.fold bases ~f:check_base ~init:errors_sofar
-    | _ -> errors_sofar
-  in
-  let walk_statement node_id statement_index errors_sofar statement =
-    let pre_annotations, post_annotations =
-      let key = [%hash: int * int] (node_id, statement_index) in
-      ( LocalAnnotationMap.ReadOnly.get_precondition local_annotations key
-        |> Option.value ~default:Reference.Map.empty,
-        LocalAnnotationMap.ReadOnly.get_postcondition local_annotations key
-        |> Option.value ~default:Reference.Map.empty )
-    in
-    let pre_resolution, post_resolution =
-      ( resolution global_resolution ~annotation_store:pre_annotations (),
-        resolution global_resolution ~annotation_store:post_annotations () )
-    in
-    emit_errors_in_statement ~pre_resolution ~post_resolution ~errors_sofar statement
-  in
-  let walk_cfg_node ~key:node_id ~data:cfg_node errors_sofar =
-    let statements = Cfg.Node.statements cfg_node in
-    List.foldi statements ~init:errors_sofar ~f:(walk_statement node_id)
-  in
-  Hashtbl.fold cfg ~init:errors_sofar ~f:walk_cfg_node
-
-
-(* TODO (T59974010): Take errors out of state and get rid of the `errors_in_state` parameter *)
-let emit_errors
-    (module Context : Context)
-    ~global_resolution
-    ~errors_in_state
-    ~cfg
-    ~local_annotations
-    ()
-  =
-  let errors_in_body =
-    emit_errors_in_body
-      (module Context)
-      ~global_resolution
-      ~errors_sofar:errors_in_state
-      ~cfg
-      ~local_annotations
-      ()
-  in
-  let exit_resolution =
-    let annotation_store =
-      LocalAnnotationMap.ReadOnly.get_postcondition local_annotations Cfg.exit_index
-      |> Option.value ~default:Reference.Map.empty
-    in
-    resolution global_resolution ~annotation_store ()
-  in
-  emit_errors_on_exit (module Context) ~errors_sofar:errors_in_body ~resolution:exit_resolution ()
-
-
 let filter_errors (module Context : Context) ~global_resolution errors =
   if Context.debug then
     errors
@@ -5228,15 +5071,9 @@ let exit_state ~resolution (module Context : Context) =
     let errors, local_annotations =
       match exit with
       | None -> [], None
-      | Some ({ State.resolution_fixpoint; _ } as state) ->
-          let errors_in_state = State.all_errors state |> Error.deduplicate in
-          ( emit_errors
-              (module Context)
-              ~global_resolution
-              ~errors_in_state
-              ~cfg
-              ~local_annotations:(LocalAnnotationMap.read_only resolution_fixpoint)
-              ()
+      | Some ({ State.resolution_fixpoint; resolution; _ } as state) ->
+          let errors_sofar = State.all_errors state |> Error.deduplicate in
+          ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
             |> filter_errors (module Context) ~global_resolution,
             Some resolution_fixpoint )
     in
