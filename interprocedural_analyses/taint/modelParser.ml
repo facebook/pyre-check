@@ -23,6 +23,15 @@ let _ = show_breadcrumbs (* unused but derived *)
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
+module T = struct
+  type parse_result = {
+    models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    errors: string list;
+  }
+end
+
+include T
+
 type leaf_kind =
   | Leaf of string
   | Breadcrumbs of breadcrumbs
@@ -509,7 +518,7 @@ let taint_return
   parse_annotations ~configuration ~parameters expression |> List.fold ~init:model ~f:add_to_model
 
 
-let create ~resolution ?path ~configuration ~verify ~rule_filter source =
+let create ~resolution ?path ~configuration ~rule_filter source =
   let sources_to_keep, sinks_to_keep =
     match rule_filter with
     | None -> None, None
@@ -533,7 +542,23 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
         Some sources_to_keep, Some sinks_to_keep
   in
   let global_resolution = Resolution.global_resolution resolution in
-  let signatures =
+  let invalid_model_error ~location ~name message =
+    let model_origin =
+      match path with
+      | None -> ""
+      | Some path ->
+          Format.sprintf
+            " defined in `%s:%d`"
+            (Path.absolute path)
+            location.Location.start.Location.line
+    in
+    let message =
+      Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
+    in
+    Core.Result.Error message
+  in
+
+  let signatures, errors =
     let filter_define_signature = function
       | {
           Node.value =
@@ -552,14 +577,19 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in
-          [signature, location, call_target]
-      | { Node.value = Class { Class.name = { Node.value = name; _ }; bases; body; _ }; _ } ->
-          begin
-            match body with
-            | [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }] ->
-                ()
-            | _ -> raise_invalid_model "Class models must have a body of `...`."
-          end;
+          Core.Result.Ok [signature, location, call_target]
+      | {
+          Node.value =
+            Class
+              {
+                Class.name = { Node.value = name; _ };
+                bases;
+                body =
+                  [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }];
+                _;
+              };
+          _;
+        } ->
           let sink_annotation =
             let class_sink_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
@@ -634,8 +664,11 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
                   in
                   List.filter_map body ~f:signature)
             |> Option.value ~default:[]
+            |> Core.Result.return
           else
-            []
+            Core.Result.Ok []
+      | { Node.value = Class { Class.name = { Node.value = name; _ }; _ }; location } ->
+          invalid_model_error ~location ~name "Class model must have a body of `...`."
       | {
           Node.value =
             Assign
@@ -661,7 +694,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
               nesting_define = None;
             }
           in
-          [signature, location, Callable.create_object name]
+          Core.Result.Ok [signature, location, Callable.create_object name]
       | {
           Node.value =
             Assign
@@ -688,14 +721,16 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
               nesting_define = None;
             }
           in
-          [signature, location, Callable.create_object name]
-      | _ -> []
+          Core.Result.Ok [signature, location, Callable.create_object name]
+      | _ -> Core.Result.Ok []
     in
     String.split ~on:'\n' source
     |> Parser.parse
     |> Source.create
     |> Source.statements
-    |> List.concat_map ~f:filter_define_signature
+    |> List.map ~f:filter_define_signature
+    |> List.partition_result
+    |> fun (results, errors) -> List.concat results, errors
   in
   let create_model
       ( ( {
@@ -805,41 +840,33 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
              ~callable_annotation
              ~sources_to_keep
              ~sinks_to_keep)
-      |> fun model -> Some { model; call_target; is_obscure = false }
+      |> fun model -> Core.Result.Ok { model; call_target; is_obscure = false }
     with
     | Failure message
     | Model.InvalidModel message ->
-        let model_origin =
-          match path with
-          | None -> ""
-          | Some path ->
-              Format.sprintf
-                " defined in `%s:%d`"
-                (Path.absolute path)
-                location.Location.start.Location.line
-        in
-        let message =
-          Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
-        in
-        if verify then
-          raise_invalid_model message
-        else (
-          Log.error "%s" message;
-          None )
+        invalid_model_error ~location ~name message
   in
-  List.filter_map signatures ~f:create_model
+  List.rev_append
+    (List.map errors ~f:(fun error -> Core.Result.Error error))
+    (List.map signatures ~f:create_model)
 
 
-let parse ~resolution ?path ?(verify = true) ?rule_filter ~source ~configuration models =
-  create ~resolution ?path ~verify ~rule_filter ~configuration source
-  |> List.map ~f:(fun model -> model.call_target, model.model)
-  |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
-  |> Callable.Map.merge models ~f:(fun ~key:_ ->
-       function
-       | `Both (a, b) -> Some (join ~iteration:0 a b)
-       | `Left model
-       | `Right model ->
-           Some model)
+let parse ~resolution ?path ?rule_filter ~source ~configuration models =
+  let new_models, errors =
+    create ~resolution ?path ~rule_filter ~configuration source |> List.partition_result
+  in
+  {
+    models =
+      List.map new_models ~f:(fun model -> model.call_target, model.model)
+      |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
+      |> Callable.Map.merge models ~f:(fun ~key:_ ->
+           function
+           | `Both (a, b) -> Some (join ~iteration:0 a b)
+           | `Left model
+           | `Right model ->
+               Some model);
+    errors;
+  }
 
 
 let verify_model_syntax ~path ~source =

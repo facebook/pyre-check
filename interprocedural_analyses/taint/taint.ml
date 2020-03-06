@@ -15,6 +15,7 @@ module ForwardAnalysis = ForwardAnalysis
 
 module Model = struct
   include Model
+  include ModelParser.T
 
   let parse = ModelParser.parse
 

@@ -30,15 +30,17 @@ include TaintResult.Register (struct
         None
     in
     let create_models ~configuration sources =
-      List.fold sources ~init:models ~f:(fun models (path, source) ->
-          ModelParser.parse
-            ~resolution:(Analysis.TypeCheck.resolution global_resolution ())
-            ~path
-            ~source
-            ~configuration
-            ~verify
-            ?rule_filter
-            models)
+      List.fold sources ~init:(models, []) ~f:(fun (models, errors) (path, source) ->
+          let { ModelParser.T.models; errors = new_errors } =
+            ModelParser.parse
+              ~resolution:(Analysis.TypeCheck.resolution global_resolution ())
+              ~path
+              ~source
+              ~configuration
+              ?rule_filter
+              models
+          in
+          models, List.rev_append new_errors errors)
     in
     let model_paths =
       Yojson.Safe.Util.member "model_paths" taint
@@ -52,7 +54,11 @@ include TaintResult.Register (struct
           let paths = List.map model_paths ~f:Path.create_absolute in
           let configuration = Configuration.create ~rule_filter ~paths in
           Configuration.register configuration;
-          Model.get_model_sources ~paths |> create_models ~configuration
+          let models, errors = Model.get_model_sources ~paths |> create_models ~configuration in
+          List.iter errors ~f:(fun error -> Log.error "%s" error);
+          if verify && not (List.is_empty errors) then
+            raise (Model.InvalidModel (List.hd_exn errors));
+          models
         with
         | exn ->
             Log.error "Error getting taint models.";

@@ -36,12 +36,15 @@ let assert_taint ?models ~context source expect =
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
-        Model.parse
-          ~resolution:(TypeCheck.resolution global_resolution ())
-          ~source:model_source
-          ~configuration:TaintConfiguration.default
-          Callable.Map.empty
-        |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+        let { Model.models; errors } =
+          Model.parse
+            ~resolution:(TypeCheck.resolution global_resolution ())
+            ~source:model_source
+            ~configuration:TaintConfiguration.default
+            Callable.Map.empty
+        in
+        assert_bool "Error while parsing models." (List.is_empty errors);
+        Callable.Map.map models ~f:(Interprocedural.Result.make_model Taint.Result.kind)
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in

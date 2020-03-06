@@ -713,25 +713,27 @@ let process_type_query_request
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
           let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~paths in
-          let create_models sources =
-            let create_model (path, source) =
+          let get_model_errors sources =
+            let model_errors (path, source) =
               Taint.Model.parse
                 ~resolution:(TypeCheck.resolution global_resolution ())
                 ~path
-                ~verify:true
                 ~source
                 ~configuration
                 Interprocedural.Callable.Map.empty
-              |> ignore
+              |> fun { Taint.Model.errors; _ } -> errors
             in
-            List.iter sources ~f:create_model
+            List.concat_map sources ~f:model_errors
           in
-          Taint.Model.get_model_sources ~paths |> create_models;
-          TypeQuery.Response
-            (TypeQuery.Success
-               (Format.asprintf
-                  "Models in `%s` are valid."
-                  (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+          let errors = Taint.Model.get_model_sources ~paths |> get_model_errors in
+          if List.is_empty errors then
+            TypeQuery.Response
+              (TypeQuery.Success
+                 (Format.asprintf
+                    "Models in `%s` are valid."
+                    (paths |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+          else
+            TypeQuery.Error (String.concat errors ~sep:"\n")
         with
         | error -> TypeQuery.Error (Exn.to_string error) )
   in
