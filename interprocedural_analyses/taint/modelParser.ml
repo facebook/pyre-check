@@ -573,6 +573,8 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
             let class_source_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSource[" then
                 Some value
+              else if Expression.show value |> String.equal "SkipAnalysis" then
+                Some value
               else
                 None
             in

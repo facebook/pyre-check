@@ -327,6 +327,7 @@ let test_skipped_analysis context =
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
+              ~analysis_mode:Taint.Result.SkipAnalysis
               "qualifier.skipped_model";
           ];
         iterations = 1;
@@ -355,6 +356,7 @@ let test_sanitized_analysis context =
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
+              ~analysis_mode:Taint.Result.Sanitize
               "qualifier.sanitized_model";
           ];
         iterations = 1;
@@ -503,4 +505,4 @@ let () =
     "primed_sink_analysis", test_primed_sink_analysis;
     "overrides", test_overrides;
   ]
-  |> TestHelper.run_with_taint_models ~name:"taint"
+  |> TestHelper.run_with_taint_models ~name:"fixpoint"

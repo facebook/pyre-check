@@ -37,6 +37,7 @@ type expectation = {
   returns: Taint.Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
+  analysis_mode: Taint.Result.mode;
 }
 
 let environment
@@ -69,6 +70,7 @@ let outcome
     ?(returns = [])
     ?(errors = [])
     ?obscure
+    ?(analysis_mode = Taint.Result.Normal)
     define_name
   =
   {
@@ -80,6 +82,7 @@ let outcome
     returns;
     errors;
     obscure;
+    analysis_mode;
   }
 
 
@@ -115,6 +118,7 @@ let check_expectation
       errors;
       kind;
       obscure;
+      analysis_mode = expected_analysis_mode;
     }
   =
   let callable = create_callable kind define_name in
@@ -145,10 +149,8 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let backward, forward, is_obscure =
-    let { backward; forward; _ }, is_obscure = get_model callable in
-    backward, forward, is_obscure
-  in
+  let { backward; forward; mode }, is_obscure = get_model callable in
+  assert_equal mode expected_analysis_mode;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue

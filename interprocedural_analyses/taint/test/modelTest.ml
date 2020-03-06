@@ -366,6 +366,23 @@ let test_class_models context =
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
     ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.prop"]
+    ();
+  assert_model
+    ~source:
+      {|
+        class SkipMe:
+          def SkipMe.method(parameter): ...
+          def SkipMe.method_with_multiple_parameters(first, second): ...
+      |}
+    ~model_source:"class test.SkipMe(SkipAnalysis): ..."
+    ~expect:
+      [
+        outcome ~kind:`Method ~analysis_mode:Taint.Result.SkipAnalysis "test.SkipMe.method";
+        outcome
+          ~kind:`Method
+          ~analysis_mode:Taint.Result.SkipAnalysis
+          "test.SkipMe.method_with_multiple_parameters";
+      ]
     ()
 
 
