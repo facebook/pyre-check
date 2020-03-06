@@ -1050,7 +1050,7 @@ class MetaRun(Base):  # noqa
 
     __tablename__ = "metaruns"
 
-    id = Column(String(length=255), primary_key=True)
+    id = Column(BIGDBIDType, primary_key=True)
 
     # This is the moral equivalent of job_id, but named in a more intuitive manner.
     # Allows determining the latest meta run for each custom run separately.
@@ -1122,7 +1122,7 @@ class MetaRunToRunAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "metarun_run_assoc"
 
-    meta_run_id = Column(String(length=255), nullable=False, primary_key=True)
+    meta_run_id = Column(BIGDBIDType, nullable=False, primary_key=True)
     run_id = Column(BIGDBIDType, nullable=False, primary_key=True)
     meta_run = relationship(
         "MetaRun",
