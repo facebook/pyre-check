@@ -290,9 +290,9 @@ let create define =
          *       |      --> [handler2] -+-----------/
          *       |              |       |
          *       |  ------------/       |     (from all nodes on normal exit)
-         *       V  V  (on error)       |               |
-         *   [uncaught; finally] <------/          [finally; return exit]
-         *       |                                      |
+         *       |  V  (on error)       |               |
+         *       | <------/          [return exit]----- |
+         *       V                                     \|
          *   [global error exit]                   [global normal exit]
          *)
         let finally () =
@@ -304,26 +304,19 @@ let create define =
         Node.connect predecessor split;
         let dispatch = Node.empty graph Node.Dispatch in
         Node.connect split dispatch;
-        let uncaught_entry, uncaught_exit = finally () in
-        Node.connect dispatch uncaught_entry;
-        Node.connect_option uncaught_exit jumps.error;
-        let return_entry, return_exit = finally () in
-        Node.connect_option return_exit jumps.normal;
+        Node.connect dispatch jumps.error;
         let normal_entry, normal_exit = finally () in
-        (* Used for all blocks but the body. *)
-        let local_jumps = { jumps with error = uncaught_entry; normal = return_entry } in
         (* Normal execution. *)
         let body_orelse =
-          let body_jumps = { jumps with error = dispatch; normal = return_entry } in
-          create body body_jumps split >>= create orelse local_jumps
+          let body_jumps = { jumps with error = dispatch } in
+          create body body_jumps split >>= create orelse jumps
         in
         Node.connect_option body_orelse normal_entry;
 
         (* Exception handling. *)
         let handler ({ Try.Handler.body; _ } as handler) =
           let preamble = Try.preamble handler in
-          create (preamble @ body) local_jumps dispatch
-          |> (Fn.flip Node.connect_option) normal_entry
+          create (preamble @ body) jumps dispatch |> (Fn.flip Node.connect_option) normal_entry
         in
         List.iter handlers ~f:handler;
 
