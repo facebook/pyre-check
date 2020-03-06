@@ -7,7 +7,7 @@ import json
 import subprocess
 import unittest
 from collections import namedtuple
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import ANY, MagicMock, call, mock_open, patch
 
 from .. import buck
 
@@ -118,6 +118,7 @@ class BuckTest(unittest.TestCase):
                         ],
                         stderr=subprocess.PIPE,
                         timeout=600,
+                        env=ANY,
                     )
                 ]
             )
@@ -128,6 +129,7 @@ class BuckTest(unittest.TestCase):
             buck_build.assert_called_once_with(
                 ["buck", "build", "//t:subtarget", "//t:subtarget2"],
                 stderr=subprocess.PIPE,
+                env=ANY,
             )
 
     def test_map_normalized_targets_to_original(self) -> None:
@@ -211,6 +213,7 @@ class BuckTest(unittest.TestCase):
                 ],
                 timeout=30,
                 stderr=subprocess.DEVNULL,
+                env=ANY,
             )
 
         with patch.object(subprocess, "check_output") as check_output:
