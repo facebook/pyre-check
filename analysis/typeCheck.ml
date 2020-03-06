@@ -1669,7 +1669,8 @@ module State (Context : Context) = struct
       in
       let error_from_not_found
           ~callable:
-            ({ Type.Callable.implementation = { annotation; _ }; kind; implicit; _ } as callable)
+            ( { Type.Callable.implementation = { annotation; parameters }; kind; implicit; _ } as
+            callable )
           ~reason
         =
         let state =
@@ -1711,11 +1712,11 @@ module State (Context : Context) = struct
                   let typed_dictionary_error
                       ~method_name
                       ~position
-                      { Type.Record.TypedDictionary.fields; name }
+                      { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
                     =
                     if
                       Type.TypedDictionary.is_special_mismatch
-                        ~class_name:name
+                        ~class_name:typed_dictionary_name
                         ~method_name
                         ~position
                         ~total:(Type.TypedDictionary.are_fields_total fields)
@@ -1730,16 +1731,35 @@ module State (Context : Context) = struct
                           in
                           if required_field_exists then
                             Error.TypedDictionaryInvalidOperation
-                              { typed_dictionary_name = name; field_name; method_name }
+                              { typed_dictionary_name; field_name; method_name; mismatch }
                           else
                             Error.TypedDictionaryKeyNotFound
-                              { typed_dictionary_name = name; missing_key = field_name }
+                              { typed_dictionary_name; missing_key = field_name }
                       | Type.Primitive "str" ->
                           Error.TypedDictionaryAccessWithNonLiteral
                             (List.map fields ~f:(fun { name; _ } -> name))
                       | _ -> normal
                     else
-                      normal
+                      match method_name with
+                      | "__setitem__" ->
+                          let field_name =
+                            match parameters with
+                            | Type.Record.Callable.Defined
+                                [
+                                  Type.Record.Callable.RecordParameter.Named
+                                    {
+                                      name = "k";
+                                      annotation = Type.Literal (Type.String field_name);
+                                      _;
+                                    };
+                                  _;
+                                ] ->
+                                field_name
+                            | _ -> failwith "Expected __setitem__ callable to have a key parameter"
+                          in
+                          Error.TypedDictionaryInvalidOperation
+                            { typed_dictionary_name; field_name; method_name; mismatch }
+                      | _ -> normal
                   in
                   match implicit, callee >>| Reference.as_list with
                   | ( Some { implicit_annotation = Type.TypedDictionary typed_dictionary; _ },

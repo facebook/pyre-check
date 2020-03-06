@@ -460,10 +460,8 @@ let test_check_typed_dictionaries context =
         movie['name'] = 7
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 2nd positional only parameter to call `TypedDictionary.__setitem__` \
-         but got "
-      ^ "`int`.";
+      "Invalid TypedDict operation [54]: Expected `str` to be assigned to `Movie` field `name` but \
+       got `int`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -499,9 +497,8 @@ let test_check_typed_dictionaries context =
         movie['something'] = A()
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `B` for 2nd positional only parameter to call `TypedDictionary.__setitem__` but \
-         got `A`.";
+      "Invalid TypedDict operation [54]: Expected `B` to be assigned to `Movie` field `something` \
+       but got `A`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -732,10 +729,10 @@ let test_check_typed_dictionaries context =
         movie['name'] += 7
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
-      ^ "to call `TypedDictionary.__setitem__` but got `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__radd__` but got `str`.";
+      "Invalid TypedDict operation [54]: Expected `str` to be assigned to `Movie` field `name` but \
+       got `int`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -749,10 +746,10 @@ let test_check_typed_dictionaries context =
         reversedMovie['name'] = 7
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
-      ^ "to call `TypedDictionary.__setitem__` but got `int`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter "
-      ^ "to call `TypedDictionary.__setitem__` but got `int`.";
+      "Invalid TypedDict operation [54]: Expected `str` to be assigned to `Movie` field `name` but \
+       got `int`.";
+      "Invalid TypedDict operation [54]: Expected `str` to be assigned to `ReversedMovie` field \
+       `name` but got `int`.";
     ];
   assert_test_typed_dictionary
     {|

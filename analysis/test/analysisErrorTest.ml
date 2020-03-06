@@ -825,7 +825,17 @@ let test_suppress _ =
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
   assert_not_suppressed
     Source.Strict
-    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"))
+    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
+  assert_suppressed
+    Source.Strict
+    (Error.TypedDictionaryInvalidOperation
+       {
+         typed_dictionary_name = "Movie";
+         field_name = "name";
+         method_name = "__setitem__";
+         mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
+       });
+  ()
 
 
 let test_namespace_insensitive_set _ =

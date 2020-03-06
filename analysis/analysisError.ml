@@ -302,6 +302,7 @@ type kind =
       typed_dictionary_name: Identifier.t;
       field_name: Identifier.t;
       method_name: Identifier.t;
+      mismatch: mismatch;
     }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
@@ -491,6 +492,8 @@ let weaken_literals kind =
   | IncompatibleAwaitableType annotation ->
       IncompatibleAwaitableType (Type.weaken_literals annotation)
   | NotCallable annotation -> NotCallable (Type.weaken_literals annotation)
+  | TypedDictionaryInvalidOperation ({ mismatch; _ } as record) ->
+      TypedDictionaryInvalidOperation { record with mismatch = weaken_mismatch mismatch }
   | _ -> kind
 
 
@@ -1650,17 +1653,29 @@ let messages ~concise ~signature location kind =
             typed_dictionary_name
             missing_key;
         ]
-  | TypedDictionaryInvalidOperation { typed_dictionary_name; field_name; method_name } ->
-      [
-        Format.asprintf
-          "Cannot %s required field `%s` from TypedDict%s."
-          (if String.equal method_name "pop" then "`pop`" else "delete")
-          field_name
-          ( if String.equal typed_dictionary_name "$anonymous" then
-              ""
-          else
-            Format.asprintf " `%s`" typed_dictionary_name );
-      ]
+  | TypedDictionaryInvalidOperation { typed_dictionary_name; field_name; method_name; mismatch } ->
+      if List.mem ["pop"; "__delitem__"] method_name ~equal:String.equal then
+        [
+          Format.asprintf
+            "Cannot %s required field `%s` from TypedDict%s."
+            (if String.equal method_name "pop" then "`pop`" else "delete")
+            field_name
+            ( if String.equal typed_dictionary_name "$anonymous" then
+                ""
+            else
+              Format.asprintf " `%s`" typed_dictionary_name );
+        ]
+      else
+        [
+          Format.asprintf
+            "Expected `%a` to be assigned to `%s` field `%s` but got `%a`."
+            pp_type
+            mismatch.expected
+            typed_dictionary_name
+            field_name
+            pp_type
+            mismatch.actual;
+        ]
   | Unpack { expected_count; unpack_problem } -> (
       match unpack_problem with
       | UnacceptableType bad_type ->
@@ -1980,6 +1995,7 @@ let due_to_analysis_limitations { kind; _ } =
   | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+  | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
@@ -2033,7 +2049,6 @@ let due_to_analysis_limitations { kind; _ } =
   | ProhibitedAny _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
-  | TypedDictionaryInvalidOperation _
   | TypedDictionaryKeyNotFound _
   | Unpack _
   | RedefinedClass _
@@ -2571,9 +2586,12 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
       when List.equal String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
-    | TypedDictionaryInvalidOperation _, TypedDictionaryInvalidOperation _
-      when [%equal: kind] left.kind right.kind ->
-        left.kind
+    | TypedDictionaryInvalidOperation left, TypedDictionaryInvalidOperation right
+      when Identifier.equal_sanitized left.typed_dictionary_name right.typed_dictionary_name
+           && Identifier.equal_sanitized left.field_name right.field_name
+           && Identifier.equal_sanitized left.method_name right.method_name ->
+        let mismatch = join_mismatch left.mismatch right.mismatch in
+        TypedDictionaryInvalidOperation { left with mismatch }
     | Top, _
     | _, Top ->
         Top
@@ -2733,6 +2751,7 @@ let filter ~resolution errors =
       | IncompatibleParameterType { mismatch = { actual; _ }; _ }
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
+      | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
             try
@@ -2796,6 +2815,7 @@ let filter ~resolution errors =
       | IncompatibleReturnType { mismatch = { expected; actual; _ }; _ }
       | IncompatibleAttributeType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ }
+      | TypedDictionaryInvalidOperation { mismatch = { expected; actual; _ }; _ }
       | IncompatibleVariableType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ } -> (
           match actual with
@@ -3162,9 +3182,13 @@ let dequalify
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound key -> TypedDictionaryKeyNotFound key
-    | TypedDictionaryInvalidOperation ({ typed_dictionary_name; _ } as record) ->
+    | TypedDictionaryInvalidOperation ({ typed_dictionary_name; mismatch; _ } as record) ->
         TypedDictionaryInvalidOperation
-          { record with typed_dictionary_name = dequalify_identifier typed_dictionary_name }
+          {
+            record with
+            typed_dictionary_name = dequalify_identifier typed_dictionary_name;
+            mismatch = dequalify_mismatch mismatch;
+          }
     | UninitializedAttribute ({ mismatch; parent; kind; _ } as inconsistent_usage) ->
         UninitializedAttribute
           {

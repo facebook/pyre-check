@@ -293,6 +293,7 @@ type kind =
       typed_dictionary_name: Identifier.t;
       field_name: Identifier.t;
       method_name: Identifier.t;
+      mismatch: mismatch;
     }
   (* Additional errors. *)
   | DeadStore of Identifier.t
