@@ -112,9 +112,7 @@ def run_generators(
         generated_models[mode] = set(generator_options[mode].generate_models())
 
         elapsed_time_seconds = time.time() - start
-        LOG.info(
-            f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
-        )
+        LOG.info(f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds.")
 
         if logger_executable is not None:
             elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
