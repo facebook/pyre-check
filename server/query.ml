@@ -192,7 +192,7 @@ let parse_query
           in
           match lines with
           | Some pairs -> Request.TypeQueryRequest (DecodeOcamlValues pairs)
-          | None -> raise (InvalidQuery (Format.sprintf "Malformatted file at `%s`" (string path)))
+          | None -> raise (InvalidQuery (Format.sprintf "malformatted file at `%s`" (string path)))
           )
       | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
       | "dump_memory_to_sqlite", arguments ->
@@ -208,7 +208,7 @@ let parse_query
                 Path.create_relative
                   ~root:(Configuration.Analysis.log_directory configuration)
                   ~relative:"memory.sqlite"
-            | _ -> raise (InvalidQuery "Too many arguments to `dump_memory_to_sqlite`")
+            | _ -> raise (InvalidQuery "too many arguments to `dump_memory_to_sqlite`")
           in
           Request.TypeQueryRequest (DumpMemoryToSqlite path)
       | "help", _ -> Request.TypeQueryRequest (Help (help ()))
@@ -266,8 +266,7 @@ let parse_query
               Path.create_relative ~root ~relative:(string argument)
           in
           Request.TypeQueryRequest (ValidateTaintModels (Some path))
-      | _ -> raise (InvalidQuery "unexpected query call") )
+      | _ -> raise (InvalidQuery "unexpected query") )
   | _ when String.equal query "help" -> Request.TypeQueryRequest (Help (help ()))
   | _ -> raise (InvalidQuery "unexpected query")
-  | exception PyreParser.Parser.Error message ->
-      raise (InvalidQuery ("failed to parse query: " ^ message))
+  | exception PyreParser.Parser.Error _ -> raise (InvalidQuery "failed to parse query")
