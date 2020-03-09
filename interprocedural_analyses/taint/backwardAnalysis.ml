@@ -1003,6 +1003,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
 
 
 let run ~environment ~qualifier ~define ~existing_model =
+  let timer = Timer.start () in
   let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
       define )
     =
@@ -1066,4 +1067,12 @@ let run ~environment ~qualifier ~define ~existing_model =
     let () = log "Callable: %a Models: %a" Reference.pp name TaintResult.Backward.pp_model model in
     model
   in
+  Statistics.performance
+    ~randomly_log_every:1000
+    ~always_log_time_threshold:1.0 (* Seconds *)
+    ~name:"Backward analysis"
+    ~normals:["callable", Reference.show name]
+    ~timer
+    ();
+
   entry_state >>| extract_model |> Option.value ~default:TaintResult.Backward.empty

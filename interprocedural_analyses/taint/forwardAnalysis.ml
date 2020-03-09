@@ -1223,6 +1223,7 @@ let run ~environment ~qualifier ~define ~existing_model =
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
   log "Starting analysis of %a" Interprocedural.Callable.pp (Interprocedural.Callable.create define);
+  let timer = Timer.start () in
   let cfg = Cfg.create define.value in
   let initial =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
@@ -1245,4 +1246,11 @@ let run ~environment ~qualifier ~define ~existing_model =
   in
   let issues = Context.generate_issues () in
   let model = exit_state >>| extract_model |> Option.value ~default:TaintResult.Forward.empty in
+  Statistics.performance
+    ~randomly_log_every:1000
+    ~always_log_time_threshold:1.0 (* Seconds *)
+    ~name:"Forward analysis"
+    ~normals:["callable", Reference.show name]
+    ~timer
+    ();
   model, issues
