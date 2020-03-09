@@ -26,7 +26,13 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
       | None -> []
     in
     Taint.TaintConfiguration.
-      { empty with sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules }
+      {
+        empty with
+        sources = ["TestTest"];
+        sinks = ["TestSink"; "OtherSink"];
+        features = ["special"];
+        rules;
+      }
   in
   let models =
     let source = Test.trim_extra_indentation model_source in
@@ -42,7 +48,9 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     let { Taint.Model.models; errors } =
       Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
     in
-    assert_bool "Models have parsing errors" (List.is_empty errors);
+    assert_bool
+      (Format.sprintf "Models have parsing errors: %s" (List.to_string errors ~f:ident))
+      (List.is_empty errors);
     models
   in
   let get_model callable =
@@ -292,6 +300,53 @@ let test_class_models context =
           "test.Sink.method_with_multiple_parameters";
       ]
     ();
+  assert_model
+    ~source:
+      {|
+        class Sink:
+          def Sink.method(parameter): ...
+          def Sink.method_with_multiple_parameters(first, second): ...
+      |}
+    ~model_source:"class test.Sink(TaintSink[TestSink], TaintSink[OtherSink]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Method
+          ~sink_parameters:
+            [
+              {
+                name = "parameter";
+                sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"];
+              };
+            ]
+          "test.Sink.method";
+        outcome
+          ~kind:`Method
+          ~sink_parameters:
+            [
+              { name = "first"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
+              { name = "second"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
+            ]
+          "test.Sink.method_with_multiple_parameters";
+      ]
+    ();
+  assert_model
+    ~source:
+      {|
+        class SinkAndSource:
+          def SinkAndSource.method(parameter): ...
+      |}
+    ~model_source:"class test.SinkAndSource(TaintSink[TestSink], TaintSource[TestTest]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Method
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~returns:[Sources.NamedSource "TestTest"]
+          "test.SinkAndSource.method";
+      ]
+    ();
+
   assert_model
     ~source:
       {|

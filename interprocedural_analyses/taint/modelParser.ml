@@ -590,16 +590,16 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               };
           _;
         } ->
-          let sink_annotation =
+          let sink_annotations =
             let class_sink_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
                 Some value
               else
                 None
             in
-            List.find_map bases ~f:class_sink_base
+            List.filter_map bases ~f:class_sink_base
           in
-          let source_annotation =
+          let source_annotations =
             let class_source_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSource[" then
                 Some value
@@ -608,9 +608,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
               else
                 None
             in
-            List.find_map bases ~f:class_source_base
+            List.filter_map bases ~f:class_source_base
           in
-          if Option.is_some sink_annotation || Option.is_some source_annotation then
+          if (not (List.is_empty sink_annotations)) || not (List.is_empty source_annotations) then
             GlobalResolution.class_definitions global_resolution name
             >>= List.hd
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
@@ -627,7 +627,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             } as signature;
                           _;
                         } ->
-                        let signature =
+                        let signature ~source_annotation ~sink_annotation =
                           let parameters =
                             let sink_parameter parameter =
                               let update_annotation { Parameter.name; value; _ } =
@@ -652,17 +652,32 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                             else
                               []
                           in
-                          {
-                            signature with
-                            Define.Signature.parameters;
-                            return_annotation = source_annotation;
-                            decorators;
-                          }
+                          ( {
+                              signature with
+                              Define.Signature.parameters;
+                              return_annotation = source_annotation;
+                              decorators;
+                            },
+                            location,
+                            Callable.create_method name )
                         in
-                        Some (signature, location, Callable.create_method name)
-                    | _ -> None
+                        let sources =
+                          List.map source_annotations ~f:(fun source_annotation ->
+                              signature
+                                ~source_annotation:(Some source_annotation)
+                                ~sink_annotation:None)
+                        in
+                        let sinks =
+                          List.map sink_annotations ~f:(fun sink_annotation ->
+                              signature
+                                ~source_annotation:None
+                                ~sink_annotation:(Some sink_annotation))
+                        in
+                        sources @ sinks
+                    | _ -> []
                   in
-                  List.filter_map body ~f:signature)
+
+                  List.concat_map body ~f:signature)
             |> Option.value ~default:[]
             |> Core.Result.return
           else
