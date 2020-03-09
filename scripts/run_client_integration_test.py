@@ -18,8 +18,11 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Generator, List, NamedTuple, Optional, Pattern, overload
 
-from pyre_paths import pyre_buck_builder, pyre_client
+import libfb.py.pathutils as pathutils
+from pyre_paths import pyre_buck_builder
 
+
+PYRE_CLIENT: str = pathutils.get_build_rule_output_path("//tools/pyre/client:pyre")
 
 LOG: Logger = logging.getLogger(__name__)
 CONFIGURATION = ".pyre_configuration"
@@ -83,7 +86,7 @@ class TestCommand(unittest.TestCase, ABC):
         self.typeshed = Path(".")
         self.command_history = []
         if not os.environ.get("PYRE_CLIENT"):
-            os.environ["PYRE_CLIENT"] = pyre_client
+            os.environ["PYRE_CLIENT"] = PYRE_CLIENT
 
     def setUp(self) -> None:
         self.directory = Path(tempfile.mkdtemp())
