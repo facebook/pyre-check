@@ -89,8 +89,9 @@ class TypeCollector(cst.CSTVisitor):
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         self.qualifier.append(node.name.value)
-        if node.returns is not None:
-            return_annotation = self._create_import_from_annotation(node.returns)
+        returns = node.returns
+        if returns is not None:
+            return_annotation = self._create_import_from_annotation(returns)
             parameter_annotations = self._import_parameter_annotations(node.params)
             self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
                 parameters=parameter_annotations, returns=return_annotation
