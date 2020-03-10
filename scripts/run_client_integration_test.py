@@ -837,7 +837,7 @@ class InitializeTest(TestCommand):
                 prompts=["Y", "//example:target", "Y", "Y", "Y"],
             )
             expected_contents = {
-                "differential": True,
+                "differential": False,
                 "push_blocking": True,
                 "targets": ["//example:target"],
             }
