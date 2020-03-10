@@ -198,12 +198,16 @@ def log_statistics(
         integers["time"] = int(time.time())
     normals = normals or {}
     if configuration:
+        # pyre-fixme[9]: normals has type `Dict[str, str]`; used as `Union[Dict[str,
+        #  Optional[str]], Dict[str, str]]`.
         normals: Dict[str, str] = {**normals, "version": configuration.version_hash}
         if not logger:
             logger = configuration.logger
     if not logger:
         raise ValueError("Logger must either be given or in configuration")
     if arguments:
+        # pyre-fixme[9]: normals has type `Optional[Dict[str, Optional[str]]]`; used
+        #  as `Union[Dict[str, Optional[str]], Dict[str, str]]`.
         normals = {**normals, "arguments": str(arguments)}
     try:
         statistics = {

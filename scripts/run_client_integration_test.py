@@ -596,6 +596,7 @@ class IncrementalTest(TestCommand):
         self.assert_has_errors(result)
 
     def test_incremental_with_changes(self) -> None:
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             self.create_file("local_project/test.py", contents="def foo(): ...")
             result = self.run_pyre("-l", "local_project")
@@ -813,6 +814,7 @@ class InitializeTest(TestCommand):
 
     # TODO(T61790851): Make prompting explicit, test conditions that skip prompts.
     def test_initialize_project_configuration(self) -> None:
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             result = self.run_pyre(
                 "init",
@@ -829,6 +831,7 @@ class InitializeTest(TestCommand):
 
     def test_initialize_local_configuration(self) -> None:
         self.create_directory("local_project")
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             result = self.run_pyre(
                 "init",
@@ -1046,6 +1049,7 @@ class StartTest(TestCommand):
         self.assert_failed(result)
 
     def test_server_start(self) -> None:
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             result = self.run_pyre("-l", "local_one", "start")
             self.assert_no_errors(result)
@@ -1073,6 +1077,7 @@ class StartTest(TestCommand):
             self.assert_has_errors(result)
 
     def test_server_no_watchman(self) -> None:
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             result = self.run_pyre("-l", "local_one", "start", "--no-watchman")
             self.assert_no_errors(result)
