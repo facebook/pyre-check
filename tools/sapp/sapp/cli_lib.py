@@ -89,9 +89,13 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
     raise click.BadParameter("Could not guess a database location")
 
 
-@click.command(help="interactive exploration of issues")
+@click.command(
+    help="interactive exploration of issues",
+    context_settings={"ignore_unknown_options": True},
+)
 @pass_context
-def explore(ctx: Context):
+@click.argument("ipython_args", nargs=-1, type=click.UNPROCESSED)
+def explore(ctx: Context, ipython_args):
     scope_vars = Interactive(
         database=ctx.database,
         # pyre-fixme[6]: Expected `str` for 2nd param but got `Optional[str]`.
@@ -107,7 +111,10 @@ def explore(ctx: Context):
 
     config.InteractiveShell.show_rewritten_input = False
     config.InteractiveShell.autocall = 2
-    IPython.start_ipython(argv=[], user_ns=scope_vars, config=config)
+
+    IPython.start_ipython(
+        argv=ipython_args if ipython_args else [], user_ns=scope_vars, config=config
+    )
 
 
 @click.command(help="parse static analysis output and save to disk")
