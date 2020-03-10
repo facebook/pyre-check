@@ -19,10 +19,13 @@ from pathlib import Path
 from typing import Any, Dict, Generator, List, NamedTuple, Optional, Pattern, overload
 
 import libfb.py.pathutils as pathutils
-from pyre_paths import pyre_buck_builder
 
 
 PYRE_CLIENT: str = pathutils.get_build_rule_output_path("//tools/pyre/client:pyre")
+PYRE_BUCK_BUILDER: str = pathutils.get_build_rule_output_path(
+    "//tools/pyre/facebook/tools/buck_project_builder:fb_buck_project_builder",
+    rule_type=pathutils.BuildRuleTypes.JEX_BINARY,
+)
 
 LOG: Logger = logging.getLogger(__name__)
 CONFIGURATION = ".pyre_configuration"
@@ -526,7 +529,7 @@ class CheckTest(TestCommand):
             "--target",
             "//buck_project:example",
             "--buck-builder-binary",
-            pyre_buck_builder,
+            PYRE_BUCK_BUILDER,
             "check",
         )
         self.assert_has_errors(result)
