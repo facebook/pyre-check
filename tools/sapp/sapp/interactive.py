@@ -1054,10 +1054,14 @@ details              show additional information about the current trace frame
 
         if kind is None or kind == TraceKind.POSTCONDITION:
             print(f"\nPostconditions with caller ({callable}):")
+            # pyre-fixme[6]: Expected `Optional[TraceKind]` for 2nd param but got
+            #  `(cls: TraceKind) -> Any`.
             self.frames(callers=callable, kind=TraceKind.POSTCONDITION, limit=limit)
 
         if kind is None or kind == TraceKind.PRECONDITION:
             print(f"\nPreconditions with caller ({callable}):")
+            # pyre-fixme[6]: Expected `Optional[TraceKind]` for 2nd param but got
+            #  `(cls: TraceKind) -> Any`.
             self.frames(callers=callable, kind=TraceKind.PRECONDITION, limit=limit)
 
     def warning(self, message: str) -> None:
@@ -1747,8 +1751,12 @@ details              show additional information about the current trace frame
         self, trace_kind: Optional[TraceKind]
     ) -> SharedTextKind:
         if trace_kind == TraceKind.POSTCONDITION:
+            # pyre-fixme[7]: Expected `SharedTextKind` but got `(cls:
+            #  SharedTextKind) -> Any`.
             return SharedTextKind.SOURCE
         if trace_kind == TraceKind.PRECONDITION:
+            # pyre-fixme[7]: Expected `SharedTextKind` but got `(cls:
+            #  SharedTextKind) -> Any`.
             return SharedTextKind.SINK
 
         raise AssertionError(f"{trace_kind} is invalid")
