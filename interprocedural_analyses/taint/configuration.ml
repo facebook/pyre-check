@@ -35,7 +35,7 @@ let empty =
 (* There's only a single taint configuration *)
 let key = "root"
 
-module SharedConfig =
+module ConfigurationSharedMemory =
   SharedMemory.WithCache.Make
     (struct
       include String
@@ -124,10 +124,10 @@ let parse source =
 
 let register configuration =
   let () =
-    if SharedConfig.mem key then
-      SharedConfig.remove_batch (SharedConfig.KeySet.singleton key)
+    if ConfigurationSharedMemory.mem key then
+      ConfigurationSharedMemory.remove_batch (ConfigurationSharedMemory.KeySet.singleton key)
   in
-  SharedConfig.add key configuration
+  ConfigurationSharedMemory.add key configuration
 
 
 let default =
@@ -209,7 +209,7 @@ let default =
 
 
 let get () =
-  match SharedConfig.get key with
+  match ConfigurationSharedMemory.get key with
   | None -> default
   | Some configuration -> configuration
 
