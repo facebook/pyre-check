@@ -57,11 +57,13 @@ class Configuration:
         self.original_contents = json_contents
 
         # Configuration fields
-        self.strict = json_contents.get("strict")
-        self.targets = json_contents.get("targets")
-        self.source_directories = json_contents.get("source_directories")
-        self.push_blocking = bool(json_contents.get("push_blocking"))
-        self.version = json_contents.get("version")
+        self.strict: bool = bool(json_contents.get("strict"))
+        self.targets: Optional[List[str]] = json_contents.get("targets")
+        self.source_directories: Optional[List[str]] = json_contents.get(
+            "source_directories"
+        )
+        self.push_blocking: bool = bool(json_contents.get("push_blocking"))
+        self.version: Optional[str] = json_contents.get("version")
 
     def get_contents(self) -> Dict[str, Any]:
         contents = self.original_contents
@@ -175,8 +177,9 @@ class Configuration:
         self.write()
 
     def add_targets(self, targets: List[str]) -> None:
-        if self.targets:
-            self.targets += targets
+        existing_targets = self.targets
+        if existing_targets:
+            self.targets = sorted(set(existing_targets + targets))
         else:
             self.targets = targets
         self.write()
@@ -826,6 +829,7 @@ def run_targets_to_configuration(
 ) -> None:
     # TODO(T62926437): Support glob target with file-level suppression of files
     # excluded from original targets.
+    # TODO(T62926437): Dedup additional targets with existing glob targets.
     # TODO(T62926437): Clean up old style errors & suppress new errors
     subdirectory = arguments.subdirectory
     subdirectory = Path(subdirectory) if subdirectory else Path.cwd()

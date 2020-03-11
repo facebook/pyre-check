@@ -1460,8 +1460,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "targets": [
                     "existing:target",
                     "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_two",
                     "subdirectory/b/c:target_three",
+                    "subdirectory/b/c:target_two",
                 ]
             }
             open_mock.assert_has_calls(
@@ -1494,8 +1494,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "targets": [
                     "existing:target",
                     "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_two",
                     "subdirectory/b/c:target_three",
+                    "subdirectory/b/c:target_two",
                 ]
             }
             open_mock.assert_has_calls(
