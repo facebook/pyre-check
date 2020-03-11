@@ -11,15 +11,13 @@ import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+from typing_extensions import Final
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from .command import Command, ProfileOutput
-
-
-if TYPE_CHECKING:
-    from typing import Final
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -63,7 +61,7 @@ class DurationEvent(Event):
 
 @dataclass(frozen=True)
 class CounterEvent(Event):
-    description: Optional[str]
+    description: Final[Optional[str]]
 
 
 def _parse_tags(input: List[List[str]]) -> Dict[str, str]:
@@ -193,7 +191,7 @@ class TableStatistics:
     # category -> aggregation -> table name -> value
     # pyre-ignore: T62493941
     _data: Dict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
-    _shared_heap_category: "Final" = "bytes serialized into shared heap"
+    _shared_heap_category: Final = "bytes serialized into shared heap"
 
     @staticmethod
     def sort_by_value(items: List[Tuple[str, str]]) -> None:

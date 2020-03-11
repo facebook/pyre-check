@@ -6,7 +6,7 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Iterator, List, Mapping, Optional, overload
 
-from typing_extensions import Literal
+from typing_extensions import Final, Literal
 
 from .environment import Environment
 from .specification import Specification
@@ -198,7 +198,7 @@ class ProfileLogs:
 
 @dataclass
 class ResultComparison:
-    discrepancy: Optional[InconsistentOutput]
+    discrepancy: Final[Optional[InconsistentOutput]]
     profile_logs: ProfileLogs
 
     def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:

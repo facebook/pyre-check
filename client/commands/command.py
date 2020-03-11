@@ -18,6 +18,8 @@ import threading
 from abc import ABC, abstractmethod
 from typing import IO, Iterable, List, Optional
 
+from typing_extensions import Final
+
 from .. import (
     find_local_root,
     find_log_directory,
@@ -142,7 +144,7 @@ class CommandParser(ABC):
 
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         self._arguments = arguments
-        self._local_configuration: Optional[str] = arguments.local_configuration
+        self._local_configuration: Final[Optional[str]] = arguments.local_configuration
         self._version: bool = arguments.version
         self._debug: bool = arguments.debug
         self._sequential: bool = arguments.sequential
@@ -175,14 +177,18 @@ class CommandParser(ABC):
         self._search_path: List[str] = arguments.search_path
         self._preserve_pythonpath: bool = arguments.preserve_pythonpath
         self._binary: str = arguments.binary
-        self._buck_builder_binary: Optional[str] = arguments.buck_builder_binary
-        self._buck_builder_target: Optional[str] = arguments.buck_builder_target
+        self._buck_builder_binary: Final[Optional[str]] = arguments.buck_builder_binary
+        self._buck_builder_target: Final[Optional[str]] = arguments.buck_builder_target
         self._exclude: List[str] = arguments.exclude
         self._typeshed: str = arguments.typeshed
-        self._save_initial_state_to: Optional[str] = arguments.save_initial_state_to
-        self._load_initial_state_from: Optional[str] = arguments.load_initial_state_from
-        self._changed_files_path: Optional[str] = arguments.changed_files_path
-        self._saved_state_project: Optional[str] = arguments.saved_state_project
+        self._save_initial_state_to: Final[
+            Optional[str]
+        ] = arguments.save_initial_state_to
+        self._load_initial_state_from: Final[
+            Optional[str]
+        ] = arguments.load_initial_state_from
+        self._changed_files_path: Final[Optional[str]] = arguments.changed_files_path
+        self._saved_state_project: Final[Optional[str]] = arguments.saved_state_project
 
         # Derived arguments
         self._capable_terminal: bool = is_capable_terminal()
@@ -464,7 +470,7 @@ class Command(CommandParser, ABC):
         )
         self._number_of_workers: int = self._configuration.number_of_workers
         self._version_hash: str = self._configuration.version_hash
-        self._formatter: Optional[str] = self._configuration.formatter
+        self._formatter: Final[Optional[str]] = self._configuration.formatter
         self._taint_models_path: List[str] = [
             translate_path(self._original_directory, path)
             for path in self._configuration.taint_models_path
@@ -473,7 +479,7 @@ class Command(CommandParser, ABC):
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
         )
-        self._features: Optional[str] = arguments.features
+        self._features: Final[Optional[str]] = arguments.features
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from typing_extensions import Final
+
 from ..environment import CommandOutput, Environment
 
 
@@ -9,7 +11,7 @@ from ..environment import CommandOutput, Environment
 class CommandInput:
     working_directory: Path
     command: str
-    stdin: Optional[str] = None
+    stdin: Final[Optional[str]] = None
 
 
 MockExecuteCallable = Callable[[CommandInput], CommandOutput]

@@ -8,6 +8,8 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional, Set, Tuple, Union, cast
 
+from typing_extensions import Final
+
 
 FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
@@ -17,8 +19,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @dataclass
 class Decorator:
     name: str
-    arguments: Optional[Set[str]] = None
-    keywords: Optional[Set[Tuple[Optional[str], str]]] = None
+    arguments: Final[Optional[Set[str]]] = None
+    keywords: Final[Optional[Set[Tuple[Optional[str], str]]]] = None
 
     def has_attributes(self) -> bool:
         return bool(self.arguments or self.keywords)

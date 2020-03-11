@@ -12,6 +12,8 @@ import logging
 import os
 from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
+from typing_extensions import Final
+
 from .model import AssignmentModel, FunctionDefinitionModel, Model
 from .model_generator import ModelGenerator, qualifier
 from .module_loader import find_all_paths, load_module
@@ -30,7 +32,7 @@ class GlobalModelGenerator(ModelGenerator):
         blacklisted_global_directories: Optional[Set[str]] = None,
     ) -> None:
         self.root: str = root
-        self.stub_root: Optional[str] = stub_root
+        self.stub_root: Final[Optional[str]] = stub_root
         self.blacklisted_globals: Set[str] = (blacklisted_globals or set())
         self.blacklisted_global_directories: Set[str] = (
             blacklisted_global_directories or set()

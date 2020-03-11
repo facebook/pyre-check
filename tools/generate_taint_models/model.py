@@ -12,6 +12,7 @@ import types
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
 
 import _ast
+from typing_extensions import Final
 
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
 
@@ -93,8 +94,8 @@ class RawCallableModel(Model):
 
 class CallableModel(RawCallableModel):
     callable_object: Callable[..., object]
-    whitelisted_parameters: Optional[Iterable[str]]
-    parameter_name_whitelist: Optional[Set[str]]
+    whitelisted_parameters: Final[Optional[Iterable[str]]]
+    parameter_name_whitelist: Final[Optional[Set[str]]]
 
     def __init__(
         self,

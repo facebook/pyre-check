@@ -8,6 +8,8 @@ import argparse
 import os
 from typing import List, Optional
 
+from typing_extensions import Final
+
 from .. import assert_writable_directory, log, readable_directory
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
@@ -43,10 +45,10 @@ class Analyze(Check):
             arguments.taint_models_path or self._configuration.taint_models_path
         )
         self._no_verify: bool = arguments.no_verify
-        self._save_results_to: Optional[str] = arguments.save_results_to
+        self._save_results_to: Final[Optional[str]] = arguments.save_results_to
         self._dump_call_graph: bool = arguments.dump_call_graph
-        self._repository_root: Optional[str] = arguments.repository_root
-        self._rules: Optional[List[int]] = arguments.rule
+        self._repository_root: Final[Optional[str]] = arguments.repository_root
+        self._rules: Final[Optional[List[int]]] = arguments.rule
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

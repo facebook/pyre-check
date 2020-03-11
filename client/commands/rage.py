@@ -8,6 +8,8 @@ import os
 import sys
 from typing import IO, List, Optional
 
+from typing_extensions import Final
+
 from .. import get_binary_version
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
@@ -28,7 +30,7 @@ class Rage(Command):
         super(Rage, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._output_path: Optional[str] = arguments.output_path
+        self._output_path: Final[Optional[str]] = arguments.output_path
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

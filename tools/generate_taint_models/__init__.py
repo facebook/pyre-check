@@ -12,6 +12,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Type
 
+from typing_extensions import Final
+
 from ...client import log_statistics
 from .generator_specifications import DecoratorAnnotationSpecification
 from .get_annotated_free_functions_with_decorator import (  # noqa
@@ -40,9 +42,9 @@ class GenerationArguments:
     outside the current directory, and adding a non-optional argument will break those.
     """
 
-    mode: Optional[List[str]]
+    mode: Final[Optional[List[str]]]
     verbose: bool
-    output_directory: Optional[str]
+    output_directory: Final[Optional[str]]
 
 
 def _file_exists(path: str) -> str:

@@ -11,6 +11,8 @@ import os
 from logging import Logger
 from typing import List, Optional
 
+from typing_extensions import Final
+
 from .. import configuration_monitor, filesystem, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
@@ -41,10 +43,10 @@ class Start(Reporting):
         self._incremental_style: IncrementalStyle = arguments.incremental_style
 
         if self._no_saved_state:
-            self._save_initial_state_to: Optional[str] = None
-            self._changed_files_path: Optional[str] = None
-            self._load_initial_state_from: Optional[str] = None
-            self._saved_state_project: Optional[str] = None
+            self._save_initial_state_to: Final[Optional[str]] = None
+            self._changed_files_path: Final[Optional[str]] = None
+            self._load_initial_state_from: Final[Optional[str]] = None
+            self._saved_state_project: Final[Optional[str]] = None
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
