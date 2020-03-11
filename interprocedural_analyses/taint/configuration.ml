@@ -20,6 +20,10 @@ type implicit_sinks = { conditional_test: Sinks.t list }
 
 let empty_implicit_sinks = { conditional_test = [] }
 
+type analysis_model_constraints = { maximum_model_width: int }
+
+let analysis_model_constraints = { maximum_model_width = 25 }
+
 type t = {
   sources: string list;
   sinks: string list;

@@ -940,7 +940,10 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
     |> BackwardState.Tree.transform
          BackwardTaint.simple_feature_set
          Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution annotation))
+    |> BackwardState.Tree.limit_to
+         ~width:Configuration.analysis_model_constraints.maximum_model_width
   in
+
   let split_and_simplify model (parameter, name, original) =
     let annotation = original.Node.value.Parameter.annotation in
     let partition =
