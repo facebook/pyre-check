@@ -1351,8 +1351,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.Configuration.find_project_configuration" % upgrade_core.__name__)
     @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
     @patch("%s.find_targets" % upgrade_core.__name__)
+    @patch("%s.get_filesystem" % upgrade_core.__name__)
     def test_run_targets_to_configuration(
         self,
+        get_filesystem,
         find_targets,
         find_local_configuration,
         find_project_configuration,
@@ -1364,6 +1366,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
             "subdirectory/a": ["target_one"],
             "subdirectory/b/c": ["target_two", "target_three"],
         }
+
+        filesystem_list = MagicMock()
+        filesystem_list.return_value = []
+        get_filesystem.list = filesystem_list
 
         # Do not attempt to create a configuration when no existing project-level
         # configuration is found.
@@ -1423,6 +1429,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                     "subdirectory/b/c:target_three",
                 ],
                 "push_blocking": True,
+                "strict": True,
             }
             open_mock.assert_has_calls(
                 [
@@ -1500,6 +1507,66 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
+
+    @patch("subprocess.run")
+    @patch("builtins.open")
+    @patch("%s.Configuration.find_project_configuration" % upgrade_core.__name__)
+    @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
+    @patch("%s.find_targets" % upgrade_core.__name__)
+    @patch("%s.get_filesystem" % upgrade_core.__name__)
+    def test_targets_file_cleanup(
+        self,
+        get_filesystem,
+        find_targets,
+        find_local_configuration,
+        find_project_configuration,
+        open_mock,
+        subprocess_run,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.subdirectory = "subdirectory"
+        find_targets.return_value = {
+            "subdirectory/a": ["target_one"],
+            "subdirectory/b/c": ["target_two", "target_three"],
+        }
+
+        filesystem_list = MagicMock()
+        filesystem_list.return_value = []
+        get_filesystem.list = filesystem_list
+
+        configuration_contents = json.dumps(
+            {"version": "abc", "search_path": ["stubs"]}
+        )
+        mocks = [
+            mock_open(read_data=configuration_contents).return_value,
+            mock_open(read_data="{}").return_value,
+        ]
+        open_mock.side_effect = mocks
+
+        # Do not modify TAREGTS when no existing project-level configuration is found.
+        find_project_configuration.return_value = None
+        find_local_configuration.return_value = None
+        upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+        subprocess_run.assert_not_called()
+
+        # Clean up typing-related fields from TARGETS.
+        subprocess_run.reset_mock()
+        find_project_configuration.return_value = Path(
+            "subdirectory/.pyre_configuration"
+        )
+        upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+        subprocess_run.assert_has_calls(
+            [
+                call(
+                    [
+                        "sed",
+                        "-i",
+                        "/typing \\?=.*\\|check_types \\?=.*\\|"
+                        "check_types_options \\?=.*\\|typing_options \\?=.*/d",
+                    ]
+                )
+            ]
+        )
 
 
 class DecodeTest(unittest.TestCase):

@@ -90,7 +90,10 @@ class Configuration:
             configuration_path = directory / filename
             if configuration_path.is_file():
                 return configuration_path
-            directory = directory.parent
+            parent = directory.parent
+            if directory == parent:
+                return None
+            directory = parent
         return None
 
     @staticmethod
@@ -823,18 +826,21 @@ def run_targets_to_configuration(
 ) -> None:
     # TODO(T62926437): Support glob target with file-level suppression of files
     # excluded from original targets.
-    # TODO(T62926437): Remove all type-related target settings &
-    # ensure strict settings are preserved
     # TODO(T62926437): Clean up old style errors & suppress new errors
     subdirectory = arguments.subdirectory
     subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-    LOG.info("Creating configuration from typecheck targets in %s", subdirectory)
+    LOG.info("Converting typecheck targets to pyre configuration in `%s`", subdirectory)
 
+    # Create or amend to existing pyre configuration
     all_targets = find_targets(subdirectory)
     new_targets = []
     if not all_targets:
         LOG.warning("No configuration created because no targets found.")
         return
+    targets_files = [
+        str(subdirectory / path)
+        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/TARGETS"])
+    ]
     for path, target_names in all_targets.items():
         new_targets += [path + ":" + name for name in target_names]
     project_configuration = Configuration.find_project_configuration(subdirectory)
@@ -851,6 +857,7 @@ def run_targets_to_configuration(
             )
             configuration.add_targets(new_targets)
     elif project_configuration:
+        LOG.info("Found project configuration at %s.", project_configuration)
         with open(project_configuration) as configuration_file:
             configuration = Configuration(
                 project_configuration, json.load(configuration_file)
@@ -860,11 +867,33 @@ def run_targets_to_configuration(
                 or configuration.source_directories
                 or configuration.get_path() == subdirectory / ".pyre_configuration"
             ):
+                LOG.info("Amending targets to existing project configuration.")
                 configuration.add_targets(new_targets)
             else:
-                configuration_contents = {"targets": new_targets, "push_blocking": True}
+                local_configuration_path = subdirectory / ".pyre_configuration.local"
+                LOG.info(
+                    "Creating local configuration at %s.", local_configuration_path
+                )
+                configuration_contents = {
+                    "targets": new_targets,
+                    "push_blocking": True,
+                    "strict": True,
+                }
+                # Heuristic: if all targets with type checked targets are setting
+                # a target to be strictly checked, let's turn on default strict.
+                for targets_file in targets_files:
+                    regex_patterns = [
+                        r"check_types_options \?=.*strict.*",
+                        r"typing_options \?=.*strict.*",
+                    ]
+                    result = subprocess.run(
+                        ["grep", "-x", r"\|".join(regex_patterns), targets_file]
+                    )
+                    if result.returncode != 0:
+                        configuration_contents["strict"] = False
+                        break
                 configuration = Configuration(
-                    subdirectory / ".pyre_configuration.local", configuration_contents
+                    local_configuration_path, configuration_contents
                 )
                 configuration.write()
     else:
@@ -873,6 +902,21 @@ def run_targets_to_configuration(
             locations.\nPlease run `pyre init` before attempting to migrate."
         )
         return
+
+    # Remove all type-related target settings
+    LOG.info("Removing typing options from %s targets files", len(targets_files))
+    typing_options_regex = [
+        r"typing \?=.*",
+        r"check_types \?=.*",
+        r"check_types_options \?=.*",
+        r"typing_options \?=.*",
+    ]
+    remove_typing_fields_command = [
+        "sed",
+        "-i",
+        "/" + r"\|".join(typing_options_regex) + "/d",
+    ] + targets_files
+    subprocess.run(remove_typing_fields_command)
 
 
 def path_exists(filename: str) -> Path:
