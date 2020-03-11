@@ -30,7 +30,6 @@ val get_global_sink_model
 
 val get_global_tito_model
   :  resolution:Resolution.t ->
-  location:Location.WithModule.t ->
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 

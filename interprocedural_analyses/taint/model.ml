@@ -135,7 +135,7 @@ let get_global_sink_model ~resolution ~location ~expression =
   get_global_model ~resolution ~expression >>| to_sink
 
 
-let get_global_tito_model ~resolution ~location:_ ~expression =
+let get_global_tito_model ~resolution ~expression =
   let to_tito
       ( _,
         { model = { TaintResult.backward = { TaintResult.Backward.taint_in_taint_out; _ }; _ }; _ }

@@ -541,6 +541,19 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
            if Taint.equal_leaf leaf candidate then Some true else None)
     |> (fun map -> Map.Poly.find map true)
     |> Option.value ~default:Taint.bottom
+
+
+  let get_all_breadcrumbs taint_tree =
+    let gather_features feature features =
+      let open Features in
+      match feature.Abstract.OverUnderSetDomain.element with
+      | Simple.Breadcrumb _ -> feature :: features
+      (* The ViaValueOf models will be converted to breadcrumbs at the call site via
+         `get_callsite_model`. *)
+      | Simple.ViaValueOf _ -> feature :: features
+      | _ -> features
+    in
+    fold FlowDetails.simple_feature_element ~f:gather_features ~init:[] taint_tree
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct

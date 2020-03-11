@@ -692,9 +692,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           with
           | None ->
               let field = Abstract.TreeDomain.Label.Field attribute in
-              let taint =
-                BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+              let add_tito_features taint =
+                let expression =
+                  Node.create_with_default_location
+                    (Expression.Name
+                       (Name.Attribute { Name.Attribute.base; attribute; special = false }))
+                in
+                let attribute_breadcrumbs =
+                  Model.get_global_tito_model ~resolution ~expression
+                  >>| BackwardState.Tree.get_all_breadcrumbs
+                in
+                match attribute_breadcrumbs with
+                | Some (_ :: _ as breadcrumbs) ->
+                    BackwardState.Tree.transform
+                      BackwardTaint.simple_feature_set
+                      Abstract.Domain.(Map (List.rev_append breadcrumbs))
+                      taint
+                | _ -> taint
               in
+              let taint = BackwardState.Tree.prepend [field] (add_tito_features taint) in
               analyze_expression ~resolution ~taint ~state ~expression:base
           | Some targets ->
               let arguments = [{ Call.Argument.name = None; value = base }] in
