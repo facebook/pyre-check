@@ -456,6 +456,12 @@ let test_class_attributes context =
         class NT(typing.NamedTuple):
           x: int
           y: str
+
+        class Prot(typing.Protocol):
+          def method(self, x: int) -> str: ...
+
+        class ExplicitProtChild(Prot):
+          def other(self, x: int) -> str: ...
       |}
   in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
@@ -487,10 +493,11 @@ let test_class_attributes context =
       ?(parent = "test.Attributes")
       ?(initialized = Annotated.Attribute.Implicitly)
       ?(defined = true)
+      ?callable_name
       name
       callable
     =
-    let annotation = parse_callable callable in
+    let annotation = parse_callable ?name:callable_name callable in
     Some
       (Annotated.Attribute.create
          ~annotation
@@ -574,6 +581,32 @@ let test_class_attributes context =
          ~initialized:Implicitly
          "x"
          "int");
+  assert_attribute
+    ~parent:"test.Prot"
+    ~parent_instantiated_type:(Type.Primitive "test.Prot")
+    ~attribute_name:"method"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.Prot"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         "method"
+         "typing.Callable[[Named(x, int)], str]");
+  (* This is still not great, since the signature of ExplicitProtChild.method is probably actually
+     [[ExplicitProtChild, int], str] not [[Prot, int], str] as this would suggest, but until
+     typeshed is fixed to explicitly re-list all of the methods inherited from protocol parents *)
+  assert_attribute
+    ~parent:"test.Prot"
+    ~parent_instantiated_type:(Type.Primitive "test.ExplicitProtChild")
+    ~attribute_name:"method"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.Prot"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         ~callable_name:(Reference.create "test.Prot.method")
+         "method"
+         "typing.Callable[[Named(x, int)], str]");
   ()
 
 
@@ -1633,7 +1666,7 @@ let test_extract_type_parameter context =
            def derp(self) -> T: ...
          class NotMyProtocol:
            def herp(self) -> int: ...
-        
+
          ListOfInt = List[int]
        |}
         );

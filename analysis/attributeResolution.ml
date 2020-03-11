@@ -1875,7 +1875,21 @@ module Implementation = struct
               (* Keep first argument around when calling instance methods from class attributes. *)
               callable
             else
-              partial_apply_self ~self_type:instantiated
+              let applied = partial_apply_self ~self_type:instantiated in
+              let instantiated_is_protocol =
+                Type.split instantiated
+                |> fst
+                |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
+                     (unannotated_global_environment class_metadata_environment)
+                     ?dependency
+              in
+              if (not (String.equal class_name "object")) && instantiated_is_protocol then
+                (* We don't have a way of tracing taint through protocols, so maintaining a name and
+                   implicit for methods of protocols isn't valuable. It also will complicate things
+                   down the line with BoundMethods *)
+                { applied with kind = Anonymous; implicit = None }
+              else
+                applied
           in
           (* Special cases *)
           let callable =
