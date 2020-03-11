@@ -14,6 +14,7 @@ import subprocess
 import sys
 import traceback
 from collections import defaultdict
+from enum import Enum
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
@@ -30,6 +31,18 @@ from .postprocess import apply_lint, get_lint_status
 
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+class LocalMode(Enum):
+    IGNORE = "pyre-ignore-all-errors"
+    UNSAFE = "pyre-unsafe"
+    STRICT = "pyre-strict"
+
+    def get_regex(self) -> str:
+        return "^[ \t]*# *" + self.value + " *$"
+
+    def get_comment(self) -> str:
+        return "# " + self.value
 
 
 class VersionControl:
@@ -404,7 +417,9 @@ def fix(
 
 
 @verify_stable_ast
-def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
+def add_local_mode(
+    arguments: argparse.Namespace, filename: str, mode: LocalMode
+) -> None:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
     text = path.read_text()
@@ -414,12 +429,11 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
 
     lines = text.split("\n")  # type: List[str]
 
-    # Check if already locally strict or ignore-all.
+    # Check if a local mode is already set.
     for line in lines:
-        if re.match("^[ \t]*# *pyre-strict *$", line) or re.match(
-            "^[ \t]*# *pyre-ignore-all-errors *$", line
-        ):
-            return
+        for local_mode in LocalMode:
+            if re.match(local_mode.get_regex(), line):
+                return
 
     def is_header(line: str) -> bool:
         is_comment = line.lstrip().startswith("#")
@@ -430,7 +444,7 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
         )
         return is_comment and not is_pyre_ignore
 
-    # Add local unsafe.
+    # Add local mode.
     new_lines = []
     past_header = False
     for line in lines:
@@ -438,7 +452,7 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
             past_header = True
             if len(new_lines) != 0:
                 new_lines.append("")
-            new_lines.append("# pyre-unsafe")
+            new_lines.append(mode.get_comment())
         new_lines.append(line)
     new_text = "\n".join(new_lines)
     path.write_text(new_text)
@@ -533,7 +547,7 @@ def run_strict_default(
         if len(errors) > 0:
             result = sort_errors(errors)
             for filename, _ in result:
-                add_local_unsafe(arguments, filename)
+                add_local_mode(arguments, filename, LocalMode.UNSAFE)
 
             if arguments.lint:
                 lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)

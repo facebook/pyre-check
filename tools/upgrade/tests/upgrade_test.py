@@ -1782,30 +1782,52 @@ class FilterErrorTest(unittest.TestCase):
 
 class DefaultStrictTest(unittest.TestCase):
     @patch.object(Path, "read_text")
-    def test_add_local_unsafe(self, read_text) -> None:
+    def test_add_local_mode(self, read_text) -> None:
         arguments = MagicMock()
         arguments.sandcastle = None
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade_core.add_local_unsafe(arguments, "local.py")
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
+            )
             path_write_text.assert_called_once_with("# pyre-unsafe\n1\n2")
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# comment\n1"
-            upgrade_core.add_local_unsafe(arguments, "local.py")
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
+            )
             path_write_text.assert_called_once_with(
                 "# comment\n# comment\n\n# pyre-unsafe\n1"
             )
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-strict\n1"
-            upgrade_core.add_local_unsafe(arguments, "local.py")
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
+            )
             path_write_text.assert_not_called()
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-ignore-all-errors\n1"
-            upgrade_core.add_local_unsafe(arguments, "local.py")
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
+            )
             path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.STRICT
+            )
+            path_write_text.assert_called_once_with("# pyre-strict\n1\n2")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            upgrade_core.add_local_mode(
+                arguments, "local.py", upgrade_core.LocalMode.IGNORE
+            )
+            path_write_text.assert_called_once_with("# pyre-ignore-all-errors\n1\n2")
 
     @patch.object(
         upgrade_core.Configuration, "find_project_configuration", return_value=Path(".")
@@ -1813,12 +1835,12 @@ class DefaultStrictTest(unittest.TestCase):
     @patch.object(upgrade_core.Configuration, "get_directory")
     @patch.object(upgrade_core.Configuration, "add_strict")
     @patch.object(upgrade_core.Configuration, "get_errors")
-    @patch("%s.add_local_unsafe" % upgrade_core.__name__)
+    @patch("%s.add_local_mode" % upgrade_core.__name__)
     @patch("%s.get_lint_status" % upgrade_core.__name__, return_value=0)
     def test_run_strict_default(
         self,
         get_lint_status,
-        add_local_unsafe,
+        add_local_mode,
         get_errors,
         add_strict,
         get_directory,
@@ -1832,9 +1854,9 @@ class DefaultStrictTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_strict_default(arguments, VERSION_CONTROL)
-            add_local_unsafe.assert_not_called()
+            add_local_mode.assert_not_called()
 
-        add_local_unsafe.reset_mock()
+        add_local_mode.reset_mock()
         get_errors.reset_mock()
         pyre_errors = [
             {
@@ -1853,11 +1875,11 @@ class DefaultStrictTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_strict_default(arguments, VERSION_CONTROL)
-            add_local_unsafe.assert_called_once()
+            add_local_mode.assert_called_once()
 
         arguments.reset_mock()
         get_errors.return_value = []
-        add_local_unsafe.reset_mock()
+        add_local_mode.reset_mock()
         get_errors.reset_mock()
         pyre_errors = [
             {
@@ -1876,4 +1898,4 @@ class DefaultStrictTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_strict_default(arguments, VERSION_CONTROL)
-            add_local_unsafe.assert_called_once()
+            add_local_mode.assert_called_once()
