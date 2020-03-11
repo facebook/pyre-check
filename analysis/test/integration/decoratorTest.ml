@@ -322,8 +322,8 @@ let test_check_click_command context =
     |}
     (* These errors are filtered in production. *)
     [
-      "Undefined attribute [16]: Callable `test.main` has no attribute `command`.";
-      "Undefined attribute [16]: Callable `test.main` has no attribute `command`.";
+      "Undefined attribute [16]: Callable `main` has no attribute `command`.";
+      "Undefined attribute [16]: Callable `main` has no attribute `command`.";
     ];
 
   assert_type_errors

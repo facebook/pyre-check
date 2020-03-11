@@ -3212,7 +3212,8 @@ let dequalify
                   dequalify annotation
               in
               Class { annotation; class_attribute }
-          | _ -> origin
+          | Callable callable -> Callable (callable >>| dequalify_reference)
+          | Module module_name -> Module (dequalify_reference module_name)
         in
         UndefinedAttribute { attribute; origin }
     | UndefinedName name -> UndefinedName name

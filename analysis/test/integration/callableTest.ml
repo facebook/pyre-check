@@ -89,7 +89,7 @@ let test_callable_attribute_access context =
       def bar() -> None:
         foo.attr
     |}
-    ["Undefined attribute [16]: Callable `test.foo` has no attribute `attr`."];
+    ["Undefined attribute [16]: Callable `foo` has no attribute `attr`."];
   assert_type_errors
     ~context
     {|
@@ -145,7 +145,7 @@ let test_position_only_parameters context =
     {|
     def foo(a: int, b: int, /) -> None:
         pass
-    
+
     foo(a=1, 2)
     |}
     ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
@@ -153,7 +153,7 @@ let test_position_only_parameters context =
     {|
     def foo(a: int, b: int, /, c: str) -> None:
         pass
-    
+
     foo(1, 2, c="a")
     |}
     [];
@@ -161,7 +161,7 @@ let test_position_only_parameters context =
     {|
     def foo(a: int, b: int, /, c: str, *, d: int) -> None:
         pass
-    
+
     foo(1, 2, "a", 1)
     |}
     ["Too many arguments [19]: Call `foo` expects 3 positional arguments, 4 were provided."];
@@ -169,7 +169,7 @@ let test_position_only_parameters context =
     {|
     def foo(a: int, b: int, /, c: str, *, d: int) -> None:
         pass
-    
+
     foo(1, 2, "a", d=1)
     |}
     []
