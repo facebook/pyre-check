@@ -261,6 +261,17 @@ let parse_and_translate
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
             None )
+    | "initialize" -> (
+        match InitializeRequest.of_yojson request with
+        | Ok request ->
+            Log.info "Request method: %s" request.InitializeRequest.method_;
+            Some (InitializeRequest request.InitializeRequest.id)
+        | Error error ->
+            Log.log
+              ~section:`Server
+              "Error: Could not parse initialize request message for record field: %s"
+              error;
+            None )
     | unmatched_method ->
         Log.log ~section:`Server "Unhandled %s" unmatched_method;
         None

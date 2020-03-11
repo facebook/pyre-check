@@ -803,6 +803,7 @@ let rec process
   let { Configuration.Features.go_to_definition; click_to_fix; hover } =
     Configuration.Analysis.features configuration
   in
+  let { Configuration.Analysis.perform_autocompletion = autocomplete; _ } = configuration in
   let timer = Timer.start () in
   let log_request_error ~error =
     Statistics.event
@@ -1062,6 +1063,19 @@ let rec process
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";
           { state; response = None }
+      | InitializeRequest request_id ->
+          let { Configuration.Server.server_uuid; _ } = server_configuration in
+          let response =
+            LanguageServer.Protocol.InitializeResponse.default
+              ~server_uuid
+              ~features:{ click_to_fix; autocomplete; hover; go_to_definition }
+              request_id
+            |> LanguageServer.Protocol.InitializeResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
     with
     | Unix.Unix_error (kind, name, parameters) ->
         Log.log_unix_error (kind, name, parameters);

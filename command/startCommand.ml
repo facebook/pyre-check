@@ -136,6 +136,9 @@ let computation_thread
                 write_to_json_socket (Jsonrpc.Response.TypeErrors.to_json response)
             | Some (TypeQueryResponse response) ->
                 write_to_json_socket (TypeQuery.json_socket_response response)
+            | Some (LanguageServerProtocolResponse response) ->
+                Connections.write_lsp_response_to_json_socket ~socket response;
+                Connections.remove_json_socket ~connections:state.connections ~socket |> ignore
             | _ -> () );
             state
         | Protocol.Request.FileNotifier ->

@@ -390,6 +390,7 @@ module Request = struct
     | GetDefinitionRequest of DefinitionRequest.t
     | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
+    | InitializeRequest of LanguageServer.Types.RequestId.t
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t
@@ -430,6 +431,7 @@ module Request = struct
     | GetDefinitionRequest _ -> "GetDefinition"
     | CompletionRequest _ -> "Completion"
     | HoverRequest _ -> "Hover"
+    | InitializeRequest _ -> "Initialize"
     | OpenDocument _ -> "OpenDocument"
     | CloseDocument _ -> "CloseDocument"
     | DocumentChange _ -> "DocumentChange"

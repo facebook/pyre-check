@@ -61,13 +61,8 @@ module Request = struct
 
   let origin ~socket request =
     match request_method request with
-    | "displayTypeErrors"
-    | "window/showStatus"
-    | "stop"
-    | "typeQuery" ->
-        Some (Protocol.Request.JSONSocket socket)
     | "updateFiles" -> Some Protocol.Request.FileNotifier
-    | _ -> None
+    | _ -> Some (Protocol.Request.JSONSocket socket)
 
 
   let format_request ~configuration request =

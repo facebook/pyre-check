@@ -129,5 +129,7 @@ val to_message : Yojson.Safe.json -> string
 val write_message : Out_channel.t -> Yojson.Safe.json -> unit
 (** Write a language server protocol message to a channel *)
 
+val write_adapter_message : Out_channel.t -> string -> unit
+
 val read_message : In_channel.t -> Yojson.Safe.json option
 (** Read a language server protocol message from a channel (can raise End_of_file) *)

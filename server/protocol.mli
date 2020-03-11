@@ -250,6 +250,7 @@ module Request : sig
     | GetDefinitionRequest of DefinitionRequest.t
     | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
+    | InitializeRequest of LanguageServer.Types.RequestId.t
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t

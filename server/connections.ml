@@ -26,6 +26,8 @@ module type Connections = sig
   val close_json_sockets : connections:State.connections -> unit
 
   val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
+
+  val write_lsp_response_to_json_socket : socket:Network.Socket.t -> string -> unit
 end
 
 module Make (Socket : sig
@@ -126,6 +128,12 @@ end) : Connections = struct
   let write_to_json_socket ~socket message =
     let out_channel = Unix.out_channel_of_descr socket in
     LanguageServer.Protocol.write_message out_channel message;
+    Out_channel.flush out_channel
+
+
+  let write_lsp_response_to_json_socket ~socket message =
+    let out_channel = Unix.out_channel_of_descr socket in
+    LanguageServer.Protocol.write_adapter_message out_channel message;
     Out_channel.flush out_channel
 end
 

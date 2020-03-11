@@ -281,11 +281,12 @@ module RageResponse = struct
   let create ~items ~id = { jsonrpc = "2.0"; id; result = Some items; error = None }
 end
 
-let to_message json =
-  let json_string = Yojson.Safe.to_string json in
-  let length = String.length json_string in
-  Format.sprintf "Content-Length: %d\r\n\r\n%s" length json_string
+let format_message string =
+  let length = String.length string in
+  Format.sprintf "Content-Length: %d\r\n\r\n%s" length string
 
+
+let to_message json = format_message (Yojson.Safe.to_string json)
 
 let write_message channel json =
   Log.log
@@ -293,6 +294,12 @@ let write_message channel json =
     "LSP message sent:@.%s@."
     (Yojson.Safe.prettify (Yojson.Safe.to_string json));
   Out_channel.output_string channel (to_message json);
+  Out_channel.flush channel
+
+
+let write_adapter_message channel message =
+  Log.log ~section:`Server "LSP message sent to adapter:@.%s@" message;
+  Out_channel.output_string channel (format_message message);
   Out_channel.flush channel
 
 
