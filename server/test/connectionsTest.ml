@@ -144,6 +144,8 @@ let test_json_sockets _ =
   (* Removing a file notifier preserves order. *)
   Connections.remove_json_socket ~connections:mock_connections ~socket:!+43;
   assert_json_sockets mock_connections [!+44; !+42];
+
+  Connections.close_json_sockets ~connections:mock_connections;
   assert_equal true (Hash_set.mem TrackedWrites.closed !+43);
 
   (* It's a no-op to remove a non-existent file notifier. *)

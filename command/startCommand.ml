@@ -284,6 +284,7 @@ let request_handler_thread
         "Stopping server due to missing source root, %s is not a directory."
         (Path.show local_root);
       Operations.stop ~reason:"missing source root" ~configuration:server_configuration );
+    Connections.close_json_sockets ~connections;
     let readable =
       Unix.select
         ~restart:true
@@ -379,7 +380,14 @@ let serve
       {
         lock = Mutex.create ();
         connections =
-          ref { socket; json_socket; persistent_clients = Socket.Map.empty; json_sockets = [] };
+          ref
+            {
+              socket;
+              json_socket;
+              persistent_clients = Socket.Map.empty;
+              json_sockets = [];
+              sockets_to_close = [];
+            };
       }
     in
     (* Register signal handlers. *)

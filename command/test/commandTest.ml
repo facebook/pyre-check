@@ -206,6 +206,7 @@ module ScratchServer = struct
                   json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
                   persistent_clients = Network.Socket.Map.empty;
                   json_sockets = [];
+                  sockets_to_close = [];
                 };
           };
         scheduler = Test.mock_scheduler ();

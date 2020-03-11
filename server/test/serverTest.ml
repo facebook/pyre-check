@@ -24,6 +24,7 @@ let connections persistent_clients =
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           persistent_clients;
           json_sockets = [];
+          sockets_to_close = [];
         };
   }
 

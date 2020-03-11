@@ -23,6 +23,8 @@ module type Connections = sig
 
   val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
+  val close_json_sockets : connections:State.connections -> unit
+
   val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
 end
 

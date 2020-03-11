@@ -11,6 +11,7 @@ type raw_connections = {
   json_socket: Socket.t;
   persistent_clients: int Socket.Map.t;
   json_sockets: Socket.t list;
+  sockets_to_close: Socket.t list;
 }
 
 type connections = {

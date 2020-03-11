@@ -23,6 +23,8 @@ module type Connections = sig
 
   val remove_json_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
+  val close_json_sockets : connections:State.connections -> unit
+
   val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
 end
 
@@ -99,19 +101,26 @@ end) : Connections = struct
 
   let remove_json_socket ~connections:{ State.lock; connections; _ } ~socket =
     Mutex.critical_section lock ~f:(fun () ->
-        let ({ State.json_sockets; _ } as cached_connections) = !connections in
-        let json_sockets =
-          List.filter
+        let ({ State.json_sockets; sockets_to_close; _ } as cached_connections) = !connections in
+        let json_sockets, to_close =
+          List.partition_tf
             ~f:(fun file_notifier_socket ->
               if socket = file_notifier_socket then (
-                Log.log ~section:`Server "Removing file notifier";
-                Socket.close socket;
+                Log.log ~section:`Server "Adding json socket to be removed.";
                 false )
               else
                 true)
             json_sockets
         in
-        connections := { cached_connections with json_sockets })
+        let sockets_to_close = List.append sockets_to_close to_close in
+        connections := { cached_connections with json_sockets; sockets_to_close })
+
+
+  let close_json_sockets ~connections:{ State.lock; connections; _ } =
+    Mutex.critical_section lock ~f:(fun () ->
+        let ({ State.sockets_to_close; _ } as cached_connections) = !connections in
+        List.iter sockets_to_close ~f:(fun socket -> Socket.close socket);
+        connections := { cached_connections with sockets_to_close = [] })
 
 
   let write_to_json_socket ~socket message =
