@@ -70,6 +70,9 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () : sig
   (* Collapse subtrees at depth *)
   val collapse_to : depth:int -> t -> t
 
+  (* Collapses the given tree to a depth that keeps at most `width` leaves. *)
+  val limit_to : width:int -> t -> t
+
   (* shape tree ~mold performs a join of tree and mold such that the resulting tree only has
      branches that are already in mold. *)
   val shape : t -> mold:t -> t

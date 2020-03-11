@@ -783,6 +783,35 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
     from
 
 
+  (* Makes sure tree has at most ~width leaves by collapsing levels (lowest
+     first). Only entire levels are collapsed. *)
+  let limit_to ~width tree =
+    let rec compute_max_depth ~depth leaves_left roots =
+      if roots = [] then
+        raise Exit (* tree does not exceed leaf limit *)
+      else if leaves_left < List.length roots then
+        depth - 1
+      else
+        let leaves, roots =
+          List.fold_left
+            (fun (leaves, roots) tree ->
+              if LabelMap.is_empty tree.children then
+                leaves + 1, roots
+              else
+                ( leaves,
+                  LabelMap.fold ~f:(fun ~key:_ ~data -> List.cons data) tree.children ~init:roots ))
+            (0, [])
+            roots
+        in
+        compute_max_depth ~depth:(depth + 1) (leaves_left - leaves) roots
+    in
+    try
+      let depth = compute_max_depth ~depth:0 width [tree] in
+      collapse_to ~depth tree
+    with
+    | Exit -> tree
+
+
   let verify_less_or_equal left_tree right_tree message =
     match less_or_equal_tree left_tree Element.bottom right_tree |> Checks.get_witness with
     | None -> ()

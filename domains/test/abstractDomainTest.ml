@@ -2088,7 +2088,23 @@ module TreeOfStringSets = struct
       (create [Part (Path, ([], StringSet.of_list ["a"]))])
       (parse_tree ["$keys", ["a"]])
       ~expected:(create [Part (Path, ([], StringSet.of_list ["a"]))]);
-    ()
+    ();
+    (* limit_to width. *)
+    let assert_limit_to ~expected ~width tree =
+      assert_equal ~cmp:compare ~printer:show expected (limit_to ~width tree)
+    in
+    assert_limit_to
+      ~expected:(parse_tree ["a", ["a"]; "b", ["b"]])
+      ~width:2
+      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_limit_to
+      ~expected:(parse_tree ["a", ["a"]; "b", ["b"]])
+      ~width:3
+      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    assert_limit_to
+      ~expected:(create [Part (Path, ([], StringSet.of_list ["a"; "b"]))])
+      ~width:1
+      (parse_tree ["a", ["a"]; "b", ["b"]])
 end
 
 module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)
