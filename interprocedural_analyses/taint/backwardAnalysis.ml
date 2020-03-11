@@ -1072,6 +1072,7 @@ let run ~environment ~qualifier ~define ~existing_model =
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Backward analysis"
     ~normals:["callable", Reference.show name]
+    ~section:`Taint
     ~timer
     ();
 

@@ -1250,6 +1250,7 @@ let run ~environment ~qualifier ~define ~existing_model =
     ~randomly_log_every:1000
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Forward analysis"
+    ~section:`Taint
     ~normals:["callable", Reference.show name]
     ~timer
     ();
