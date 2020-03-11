@@ -781,6 +781,23 @@ def run_fixme_targets(
         LOG.info("Error while running hg.")
 
 
+def remove_non_pyre_ignores(
+    subdirectory: Path, arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
+    python_files = [
+        str(subdirectory / path)
+        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/*.py"])
+    ]
+    if python_files:
+        LOG.info("...cleaning %s python files", len(python_files))
+        remove_type_ignore_command = [
+            "sed",
+            "-i",
+            r"s/# \?type: \?ignore$//g",
+        ] + python_files
+        subprocess.check_output(remove_type_ignore_command)
+
+
 def run_migrate_targets(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
@@ -807,30 +824,17 @@ def run_migrate_targets(
     subprocess.check_output(remove_check_types_command)
     subprocess.check_output(remove_options_command)
 
-    # Remove old-style ignores.
-    python_files = [
-        str(subdirectory / path)
-        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/*.py"])
-    ]
-    LOG.info("...cleaning {} python files".format(len(python_files)))
-    remove_type_ignore_command = [
-        "sed",
-        "-i",
-        r"s/# \?type: \?ignore$//g",
-    ] + python_files
-    subprocess.check_output(remove_type_ignore_command)
-
-    # Suppress errors.
+    remove_non_pyre_ignores(subdirectory, arguments, version_control)
     run_fixme_targets(arguments, version_control)
 
 
 def run_targets_to_configuration(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
+    # TODO(T62926437): Basic integration testing.
     # TODO(T62926437): Support glob target with file-level suppression of files
     # excluded from original targets.
     # TODO(T62926437): Dedup additional targets with existing glob targets.
-    # TODO(T62926437): Clean up old style errors & suppress new errors
     subdirectory = arguments.subdirectory
     subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
     LOG.info("Converting typecheck targets to pyre configuration in `%s`", subdirectory)
@@ -921,6 +925,10 @@ def run_targets_to_configuration(
         "/" + r"\|".join(typing_options_regex) + "/d",
     ] + targets_files
     subprocess.run(remove_typing_fields_command)
+
+    remove_non_pyre_ignores(subdirectory, arguments, version_control)
+    arguments.path = subdirectory
+    run_fixme_single(arguments, version_control)
 
 
 def path_exists(filename: str) -> Path:

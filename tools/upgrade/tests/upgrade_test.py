@@ -1344,6 +1344,7 @@ class MigrateTest(unittest.TestCase):
                     ),
                 ]
             )
+            fix_targets.assert_called_once_with(arguments, VERSION_CONTROL)
 
 
 class TargetsToConfigurationTest(unittest.TestCase):
@@ -1352,8 +1353,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
     @patch("%s.find_targets" % upgrade_core.__name__)
     @patch("%s.get_filesystem" % upgrade_core.__name__)
+    @patch("%s.run_fixme_single" % upgrade_core.__name__)
     def test_run_targets_to_configuration(
         self,
+        run_fixme_single,
         get_filesystem,
         find_targets,
         find_local_configuration,
@@ -1377,6 +1380,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_local_configuration.return_value = None
         upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
         open_mock.assert_not_called()
+        run_fixme_single.assert_not_called()
 
         # Add to existing project configuration if it lives at given subdirectory
         find_project_configuration.return_value = Path(
@@ -1410,10 +1414,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
+            run_fixme_single.assert_called_once_with(arguments, VERSION_CONTROL)
 
         # Create local project configuration
         open_mock.reset_mock()
         dump_mock.reset_mock()
+        run_fixme_single.reset_mock()
         find_project_configuration.return_value = Path(".pyre_configuration")
         with patch("json.dump") as dump_mock:
             mocks = [
@@ -1440,6 +1446,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
+            run_fixme_single.assert_called_once_with(arguments, VERSION_CONTROL)
 
         # Add to existing local project configuration
         open_mock.reset_mock()
@@ -1514,8 +1521,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
     @patch("%s.find_targets" % upgrade_core.__name__)
     @patch("%s.get_filesystem" % upgrade_core.__name__)
+    @patch("%s.run_fixme_single" % upgrade_core.__name__)
     def test_targets_file_cleanup(
         self,
+        run_fixme_single,
         get_filesystem,
         find_targets,
         find_local_configuration,
