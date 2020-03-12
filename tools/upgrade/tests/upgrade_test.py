@@ -9,6 +9,7 @@ import argparse
 import json
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
@@ -375,15 +376,16 @@ class FixmeAllTest(unittest.TestCase):
         error_map = {7: [{"code": "6", "description": "Foo"}]}
         with tempfile.NamedTemporaryFile(delete=False) as file:
             contents = """
-def foo(x: int) -> str:
-    return str(x)
+                def foo(x: int) -> str:
+                    return str(x)
 
-def bar(x: str) -> str:
-    return f\'\'\'
-    first line
-    second {foo(x)}
-    \'\'\'
-"""
+                def bar(x: str) -> str:
+                    return f\'\'\'
+                    first line
+                    second {foo(x)}
+                    \'\'\'
+                """
+            contents = textwrap.dedent(contents)
             file.write(contents.encode())
             upgrade_core.fix_file(mock_arguments, file.name, error_map)
 
@@ -394,15 +396,16 @@ def bar(x: str) -> str:
 
         with tempfile.NamedTemporaryFile(delete=False) as file:
             contents = """
-def foo(x: int) -> str:
-    return str(x)
+                def foo(x: int) -> str:
+                    return str(x)
 
-def bar(x: str) -> str:
-     if True \
-        and True \
-        and foo(x):
-         return x
-"""
+                def bar(x: str) -> str:
+                    if True \
+                        and True \
+                        and foo(x):
+                        return x
+                """
+            contents = textwrap.dedent(contents)
             file.write(contents.encode())
             upgrade_core.fix_file(mock_arguments, file.name, error_map)
 
@@ -1140,10 +1143,9 @@ class FixmeTargetsTest(unittest.TestCase):
         >         WARNING: Invoking pyre through buck TARGETS may...
         >         See `https://wiki/configuration/` to set up Pyre for your project.
         >
-        > 	a/b/x.py:278:28 Undefined attribute [16]: `Optional` has no attribute `derp`.
-        > 	a/b/x.py:325:41 Undefined attribute [16]: `Optional` has no attribute `herp`.
-        > 	a/b/y.py:86:26 Incompatible parameter type [6]: Expected `str` for 1st \
-positional only parameter to call `merp` but got `Optional[str]`.
+        > 	a/b/x.py:278:28 %s
+        > 	a/b/x.py:325:41 %s
+        > 	a/b/y.py:86:26 %s
                a/b:c-typecheck - main 0.000 (passed)
         Finished test run: https://url
         Summary (total time 58.75s):
@@ -1154,7 +1156,12 @@ positional only parameter to call `merp` but got `Optional[str]`.
           FATAL: 0
           TIMEOUT: 0
           OMIT: 0
-        """
+        """ % (
+            b"Undefined attribute [16]: `Optional` has no attribute `derp`.",
+            b"Undefined attribute [16]: `Optional` has no attribute `herp`.",
+            b"Incompatible parameter type [6]: Expected `str` for 1st positional only "
+            + b"parameter to call `merp` but got `Optional[str]`.",
+        )
         subprocess.return_value = buck_return
         expected_errors = [
             {
