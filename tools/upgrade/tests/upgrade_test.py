@@ -646,7 +646,7 @@ class FixmeTest(unittest.TestCase):
         arguments.run = False
         arguments.lint = False
 
-        # Test error with comment.
+        # Test error with custom message.
         with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
@@ -662,6 +662,25 @@ class FixmeTest(unittest.TestCase):
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
             arguments.comment = None
             path_write_text.assert_called_once_with("# pyre-fixme[1]: T1234\n1\n2")
+
+        # Test error with existing comment.
+        with patch.object(Path, "write_text") as path_write_text:
+            pyre_errors = [
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [1]: description",
+                }
+            ]
+            arguments.comment = None
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
+            path_read_text.return_value = "# existing comment\n2"
+            upgrade_core.run_fixme(arguments, VERSION_CONTROL)
+            arguments.comment = None
+            path_write_text.assert_called_once_with(
+                "# existing comment\n# pyre-fixme[1]: description\n2"
+            )
 
         # Test multiple errors and multiple lines.
         with patch.object(Path, "write_text") as path_write_text:
@@ -895,12 +914,12 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = (
-                "  # pyre-ignore[0]: [1, 2, 3]\n# user comment\n2"
+                "  # pyre-ignore[0]: [1, 2, 3]\n# assumed continuation\n2"
             )
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
             arguments.comment = None
             arguments.truncate = True
-            path_write_text.assert_called_once_with("# user comment\n2")
+            path_write_text.assert_called_once_with("2")
 
         with patch.object(Path, "write_text") as path_write_text:
             arguments.max_line_length = 30

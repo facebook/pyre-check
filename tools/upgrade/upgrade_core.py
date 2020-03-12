@@ -307,9 +307,10 @@ def fix_file(
     removing_pyre_comments = False
     for index, line in enumerate(lines):
         if removing_pyre_comments:
-            # Only delete continuation comments of the form
-            # "# pyre-fixme[2]:\n#  expected type `T`."
-            if line.lstrip().startswith("#  "):
+            stripped = line.lstrip()
+            if line.startswith("#") and not re.match(
+                r"# *pyre-(ignore|fixme).*$", stripped
+            ):
                 continue
             else:
                 removing_pyre_comments = False
