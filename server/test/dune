@@ -20,12 +20,13 @@
  (names
   autoCompleteTest
   connectionsTest
-  lookupLocationTest
   incrementalCheckTest
   incrementalStaticAnalysisTest
+  jsonrpcTest
+  lookupLocationTest
+  operationsTest
   queryTest
   requestTest
-  operationsTest
   savedStateTest)
  (modules :standard \ serverTest)
  (preprocess

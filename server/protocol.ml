@@ -401,6 +401,10 @@ module Request = struct
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeQueryRequest of TypeQuery.request
+    | UnparsableQuery of {
+        query: string;
+        reason: string;
+      }
   [@@deriving eq, show]
 
   type origin =
@@ -439,6 +443,7 @@ module Request = struct
     | TypeCheckRequest [] -> "TypeCheck"
     | TypeCheckRequest _ -> "IncrementalCheck"
     | TypeQueryRequest _ -> "TypeQuery"
+    | UnparsableQuery _ -> "UnparsableQuery"
 end
 
 type response =

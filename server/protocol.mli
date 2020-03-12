@@ -261,6 +261,10 @@ module Request : sig
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeQueryRequest of TypeQuery.request
+    | UnparsableQuery of {
+        query: string;
+        reason: string;
+      }
   [@@deriving eq, show]
 
   type origin =

@@ -821,6 +821,9 @@ let rec process
           Mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
+      | UnparsableQuery { query; reason } ->
+          let response = TypeQuery.Error (Format.sprintf "Unable to parse %s: %s" query reason) in
+          { state; response = Some (TypeQueryResponse response) }
       | DisplayTypeErrors paths ->
           let configuration = { configuration with include_hints = true } in
           process_display_type_errors_request ~state ~configuration paths

@@ -67,7 +67,10 @@ module Request = struct
 
   let format_request ~configuration request =
     match request_method request with
-    | "typeQuery" -> query_parameter request |> Query.parse_query ~configuration
+    | "typeQuery" -> (
+        let query = query_parameter request in
+        try Query.parse_query query ~configuration with
+        | Query.InvalidQuery reason -> Protocol.Request.UnparsableQuery { query; reason } )
     | "stop" -> Protocol.Request.StopRequest
     | _ ->
         request
