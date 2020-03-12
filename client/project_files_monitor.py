@@ -62,6 +62,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     @functools.lru_cache(1)
     def _subscriptions(self) -> List[Subscription]:
         subscription = {
+            "empty_on_fresh_instance": True,
             "expression": [
                 "allof",
                 ["type", "f"],

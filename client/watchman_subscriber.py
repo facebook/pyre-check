@@ -125,6 +125,10 @@ class WatchmanSubscriber(object):
                 # This call is blocking, which prevents this loop from burning CPU.
                 response = connection.receive()
                 if response.get("is_fresh_instance", False):
+                    # TODO: is_fresh_instance can occur at any time, not just the first
+                    # response.  Ignoring the initial response is fine, but if we
+                    # receive a fresh instance response later we should assume that all
+                    # files may have been changed.
                     LOG.info(
                         "Ignoring initial watchman message for %s",
                         response.get("root", "<no-root-found>"),
