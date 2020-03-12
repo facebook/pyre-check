@@ -45,10 +45,6 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   type request =
-    | RunCheck of {
-        check_name: string;
-        paths: Path.t list;
-      }
     | Attributes of Reference.t
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
@@ -66,6 +62,10 @@ module TypeQuery : sig
     | Methods of Expression.t
     | NormalizeType of Expression.t
     | PathOfModule of Reference.t
+    | RunCheck of {
+        check_name: string;
+        paths: Path.t list;
+      }
     | SaveServerState of Path.t
     | Signature of Reference.t list
     | Superclasses of Expression.t
@@ -204,13 +204,13 @@ module TypeQuery : sig
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | Errors of AnalysisError.Instantiated.t list
-    | Help of string
     | FoundAttributes of attribute list
     | FoundDefines of define list
     | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list
+    | Help of string
     | Path of Pyre.Path.t
     | References of Reference.t list
     | Success of string
@@ -242,21 +242,21 @@ module Request : sig
         diagnostics: LanguageServer.Types.Diagnostic.t list;
         path: Path.t;
       }
+    | CompletionRequest of CompletionRequest.t
     | DisplayTypeErrors of Path.t list
+    | DocumentChange of File.t
     | ExecuteCommandRequest of {
         id: LanguageServer.Types.RequestId.t;
         arguments: LanguageServer.Types.CommandArguments.t list;
       }
     | GetDefinitionRequest of DefinitionRequest.t
-    | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
     | InitializeRequest of LanguageServer.Types.RequestId.t
+    | GetServerUuid
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t
-    | DocumentChange of File.t
     | SaveDocument of Path.t
-    | GetServerUuid
     | ShowStatusRequest of LanguageServer.Types.ShowStatusParameters.t
     | StopRequest
     | TypeCheckRequest of Path.t list
@@ -264,10 +264,10 @@ module Request : sig
   [@@deriving eq, show]
 
   type origin =
-    | PersistentSocket of Unix.File_descr.t
-    | NewConnectionSocket of Unix.File_descr.t
     | FileNotifier
     | JSONSocket of Unix.File_descr.t
+    | NewConnectionSocket of Unix.File_descr.t
+    | PersistentSocket of Unix.File_descr.t
 
   val origin_name : origin -> string
 
@@ -275,13 +275,13 @@ module Request : sig
 end
 
 type response =
-  | LanguageServerProtocolResponse of string
   | ClientConnectionResponse of client
   | ClientExitResponse of client
-  | TypeCheckResponse of AnalysisError.Instantiated.t list
-  | TypeQueryResponse of TypeQuery.response
-  | StopResponse
   | GetDefinitionResponse of Location.WithPath.t option
   | HoverResponse of Location.t option
+  | LanguageServerProtocolResponse of string
   | ServerUuidResponse of string
+  | StopResponse
+  | TypeCheckResponse of AnalysisError.Instantiated.t list
+  | TypeQueryResponse of TypeQuery.response
 [@@deriving eq, show]
