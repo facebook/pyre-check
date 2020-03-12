@@ -208,12 +208,11 @@ class Kill(Command):
         self._delete_server_files()
         self._delete_caches()
         self._kill_client_processes()
-        if self._arguments.with_fire is True:
+        if self._arguments.with_fire:
             LOG.warning(
-                "All --with-fire functionality has now been included in `pyre kill`.\n   "
-                "The flag is now a no-op, but here is a pyre for your troubles."
+                "Note that `--with-fire` adds emphasis to `pyre kill` but does not affect its behavior."
+                f"\n{PYRE_FIRE}"
             )
-            LOG.info(PYRE_FIRE)
 
 
 def _get_process_name(environment_variable_name: str, default: str) -> str:
