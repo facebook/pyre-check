@@ -17,8 +17,8 @@ Import Pyre.Expression.ListHelpers.
     The bool parameter is only used in the typing of
     Statement.t 
 *)
-Definition TContext := @RawState0 (bool * Typ.t).
-
+Definition TContext := SMap.t (bool * Typ.t).
+Definition Empty : TContext := SMap.empty _.
 Section TypingExpression.
 
 Import Pyre.Expression.
@@ -57,7 +57,7 @@ Inductive ok : TContext -> Expression.t -> Typ.t -> Prop :=
           ok context test Typ.Boolean ->
           ok context (Ternary target test alternative) typ
   | TyId: forall context id b T,
-          get0 context id = Some (b, T) ->
+          SMap.find id context = Some (b, T) ->
           ok context (Id id) T
 with ok_list: TContext -> Expression.tlist -> Typ.t -> Prop :=
   | tyListNil : forall context typ, ok_list context Nil typ
@@ -273,15 +273,15 @@ Hint Constructors okv okv_list okv_tuple : core.
     for any typed variable in the context, there must be a value of the
     right type associated to in the the state. *)
 Definition well_formed_estate (state : EState) (context: TContext) : Prop :=
-    (forall k b T, get0 context k = Some (b, T) ->
-     exists v, get0 state k = Some v /\ okv v T)
+    (forall k b T, SMap.find k context = Some (b, T) ->
+     exists v, SMap.find k state = Some v /\ okv v T)
 .
 
 (* begin hide *)
 Lemma well_formed_estate_get: forall state context,
   well_formed_estate state context ->
-  forall id b T, get0 context id = Some (b, T) ->
-  exists v, get0 state id = Some v /\ okv v T.
+  forall id b T, SMap.find id context = Some (b, T) ->
+  exists v, SMap.find id state = Some v /\ okv v T.
 Proof.
 intros s context hwf k T.
 now apply hwf.
@@ -525,14 +525,17 @@ Fixpoint prepare_call_context (now: TContext)
     match parameters with
     | nil => now
     | (name, ty) :: parameters =>
-        prepare_call_context (set0 now name (true, ty)) parameters
+        prepare_call_context (SMap.add name (true, ty) now) parameters
 end.
 
 (** General context for type checking statements: it is made of an expression
     typing context and some information about declared function *)
-Definition Context := @RawState (bool * Typ.t) Eval.func.
+Definition Context := @Map.State (bool * Typ.t).
+Definition TContext_of_Context (context : Context) : TContext := RawState context.
+Coercion TContext_of_Context : Context >-> TContext.
 
-Definition mkContext context info : Context := mkRawState context info.
+Definition mkContext context info : Context :=
+  mkState _ context info.
 
 (** Typing judgement for statements
 
@@ -543,17 +546,17 @@ Definition mkContext context info : Context := mkRawState context info.
 *)
 Inductive typ : Context -> Typ.t -> Statement.t -> Context -> Prop :=
   | typAssignIdNone: forall (context: Context) return_type id value T,
-      get context id = None ->
+      SMap.find id context = None ->
       ok context value T ->
       typ context return_type
       (Assign (Lvalue.Id id) None value) (set context id (false, T))
   | typAssignIdNoneWeak: forall (context: Context) return_type id value T Tid,
-      get context id = Some (false, Tid) ->
+      SMap.find id context = Some (false, Tid) ->
       ok context value T ->
       typ context return_type
       (Assign (Lvalue.Id id) None value) (set context id (false, T))
   | typAssignIdNoneStrong: forall (context: Context) return_type id value T,
-      get context id = Some (true, T) ->
+      SMap.find id context = Some (true, T) ->
       ok context value T ->
       typ context return_type
       (Assign (Lvalue.Id id) None value) (set context id (true, T))
@@ -607,7 +610,7 @@ Inductive typ : Context -> Typ.t -> Statement.t -> Context -> Prop :=
     and return annotation. *)
 Definition well_formed_function function_info (f: func) : Prop :=
   (exists return_context,
-    typ (mkContext (prepare_call_context Empty0 (parameters f)) function_info)
+    typ (mkContext (prepare_call_context Empty (parameters f)) function_info)
         (return_annotation f)
         (body f) return_context)
 .
@@ -617,28 +620,28 @@ Definition well_formed_function function_info (f: func) : Prop :=
     - They must store the same information about function definitions.
     - Every function definition recorded so far must be well-formed.
 *)
-Definition well_formed (state: State) (context: Context) : Prop :=
+Definition well_formed (state: Eval.State) (context: Context) : Prop :=
     (* underlying states are coherent *)
     well_formed_estate state context /\
     (* same function definitions in both context *)
-    (info state = info context) /\
+    (FuncState state = FuncState context) /\
     (* functions are correctly typed *)
     (forall function_name function_def,
       get_info context function_name = Some function_def ->
-      well_formed_function (info context) function_def)
+      well_formed_function (FuncState context) function_def)
 .
 
 (* begin hide *)
 Lemma well_formed_get: forall state context, well_formed state context ->
-    forall id b T, get context id = Some (b, T) ->
-    exists v, get state id = Some v /\ okv v T.
+    forall id b T, SMap.find id context = Some (b, T) ->
+    exists v, SMap.find id state = Some v /\ okv v T.
 Proof.
 intros [s ?] [context ?] [hwf ?] k T h; simpl in *.
 now apply hwf.
 Qed.
 
 Lemma well_formed_info_eq: forall state context, well_formed state context ->
-  info state = info context.
+  FuncState state = FuncState context.
 Proof.
 intros s context h; now apply h.
 Qed.
@@ -647,7 +650,7 @@ Lemma well_formed_function_get: forall state context,
   well_formed state context ->
   forall function_name function_def,
   get_info context function_name = Some function_def ->
-  well_formed_function (info context) function_def.
+  well_formed_function (FuncState context) function_def.
 Proof.
 intros s context h f func hg; now apply h in hg.
 Qed.
@@ -665,7 +668,7 @@ Lemma well_formed_function_get_alt: forall state context,
   well_formed state context ->
   forall function_name function_def,
   get_info state function_name = Some function_def ->
-  well_formed_function (info state) function_def.
+  well_formed_function (FuncState state) function_def.
 Proof.
 intros s context h f  func hg.
 rewrite (well_formed_info_eq _ _ h).
@@ -700,8 +703,8 @@ Inductive ktyp : Context -> Typ.t -> Cont -> Prop :=
         ktyp context Typ.None (KCall saved_state None k)
     | ktypKCallFun: forall context call_context return_type saved_state target
         annotation k,
-        well_formed saved_state (unset call_context target) ->
-        get call_context target = Some (true, annotation) ->
+        well_formed saved_state (remove call_context target) ->
+        SMap.find target call_context = Some (true, annotation) ->
         ktyp call_context return_type k ->
         ktyp context annotation (KCall saved_state (Some (Lvalue.Id target, annotation)) k)
 .
@@ -855,17 +858,18 @@ now constructor.
 Qed.
 
 (* begin hide *)
-Lemma well_formed_estate_set: forall state context,
+Lemma well_formed_estate_add: forall state context,
   well_formed_estate state context ->
   forall id b v T, okv v T ->
-  well_formed_estate (set0 state id v) (set0 context id (b, T)).
+  well_formed_estate (SMap.add id v state) (SMap.add id (b, T) context).
 Proof.
 intros state context hwf id b v T hok.
-intros k b' S; unfold set, set0, get0; simpl.
-rewrite !get_set_map.
+intros k b' S.
+rewrite !find_add_smap.
 destruct String.eqb.
 - intro h; injection h; clear h; intros; subst.
-  now exists v.
+  exists v; split; [ | assumption ].
+  reflexivity.
 - now apply hwf.
 Qed.
 
@@ -875,7 +879,7 @@ Lemma well_formed_set: forall state context,
   well_formed (set state id v) (set context id (b, T)).
 Proof.
 intros state context hwf id b v T hok; split; [| split].
-- now destruct hwf; apply well_formed_estate_set.
+- now destruct hwf; apply well_formed_estate_add.
 - now apply hwf.
 - intros f func; simpl.
   now apply hwf.
@@ -920,8 +924,8 @@ induction arguments as [ | [? expr] arguments hi];
     subst; simpl.
   destruct hcheck as [hok hcheck].
   simpl in hprep.
-  apply (hi _ hcheck _ hvs (set0 state s v) _); [ | assumption ].
-  apply well_formed_estate_set; [ now idtac | ].
+  apply (hi _ hcheck _ hvs (SMap.add s v state) _); [ | assumption ].
+  apply well_formed_estate_add; [ now idtac | ].
   apply eval_ok with (state := current_state) in hok; [ | now idtac ].
   destruct hok as [w [h1 h2]].
   now rewrite hv in h1; injection h1; clear h1; intro h1; subst.
@@ -933,8 +937,8 @@ Lemma well_formed_estate_prepare:
   check_arguments context arguments parameters ->
   eval_list state (from_list (map snd arguments)) = Some value_arguments ->
   forall new_state,
-  prepare_call_state Empty0 value_arguments parameters =  Some new_state ->
-  well_formed_estate new_state (prepare_call_context Empty0 parameters).
+  prepare_call_state Eval.Empty value_arguments parameters =  Some new_state ->
+  well_formed_estate new_state (prepare_call_context Empty parameters).
 Proof.
 intros context state arguments parameters value_arguments hwf hcheck heval 
   new_state hprep.
@@ -946,15 +950,15 @@ eapply well_formed_estate_prepare_.
 - now apply hprep.
 Qed.
 
-Lemma well_formed_estate_set_unset: forall state context,
+Lemma well_formed_estate_add_remove: forall state context,
   well_formed_estate state context ->
   forall id b T,
-  well_formed_estate state (unset0 (set0 context id (b, T)) id).
+  well_formed_estate state (SMap.remove id (SMap.add id (b, T) context)).
 Proof.
 intros s ctx hwf id b T id' b' T'; simpl.
-rewrite get0_unset0.
+rewrite find_remove_smap.
 case_eq (id' =? id)%string; intros heq; [ intro; discriminate | ].
-rewrite get0_set0, heq; intro hg.
+rewrite find_add_smap, heq; intro hg.
 now apply hwf in hg.
 Qed.
 (* end hide *)
@@ -1051,16 +1055,17 @@ destruct h as [
   rewrite (well_formed_info_eq _ _ hwf), hg in H8; injection H8; intros;
     subst; clear H8.
   apply well_formed_function_get with (state := s) in hg as [fctx hf]; [| now idtac].
-  exists (mkContext (prepare_call_context Empty0 (parameters func0)) (info context)).
+  exists (mkContext (prepare_call_context Empty (parameters func0))
+  (FuncState context)).
   exists fctx; exists (return_annotation func0); split; [ assumption | split ].
   + apply ktypKCallFun with 
       (call_context := set context target (true, return_annotation func0))
       (return_type := return_type); intuition.
-      * split; [ now apply well_formed_estate_set_unset; apply hwf | ].
+      * split; [ now apply well_formed_estate_add_remove; apply hwf | ].
         split; [ now apply hwf | ].
         intros f' func'; simpl.
         now apply hwf.
-      * now rewrite get_set, String.eqb_refl.
+      * now rewrite find_add, String.eqb_refl.
   + split; [ | split ].
     * eapply well_formed_estate_prepare;
       [now apply hwf | now apply hcheck | now apply H9| assumption].
@@ -1071,7 +1076,7 @@ destruct h as [
   unfold get_info in H1; unfold get_info in hg.
   rewrite (well_formed_info_eq  _ _ hwf), hg in H1; injection H1; intros; subst; clear H1.
   apply well_formed_function_get with (state := s) in hg as [ fctx hf ]; [ | now idtac ].
-  exists (mkContext (prepare_call_context Empty0 (parameters func0)) (info context)).
+  exists (mkContext (prepare_call_context Empty (parameters func0)) (FuncState context)).
   rewrite hret in hf.
   exists fctx; exists Typ.None; split; [ assumption | split ].
   + now apply ktypKCallProc with (call_context := context) (return_type := return_type).
@@ -1092,14 +1097,16 @@ destruct h as [
     intros x bx Tx hx.
     unfold get in H7.
     generalize (hewf x bx Tx).
-    unfold unset; simpl.
-    rewrite get0_unset0, get0_set0.
+    simpl.
+    rewrite find_remove_smap, find_add_smap.
     case_eq (x =? id)%string; intro heq.
     * intros _.
       apply String.eqb_eq in heq; subst.
+      unfold TContext_of_Context in hx.
       rewrite hx in H7; injection H7; clear H7; intro; subst.
-      apply eval_ok with (state := s) in hok; [ | now apply hwf ].
+      apply eval_ok with (state := RawState s) in hok; [ | now apply hwf ].
       destruct hok as [w [hw ?]].
+      unfold EState_of_State in H1.
       rewrite hw in H1; injection H1; clear H1; intro; subst.
       now exists vret.
     * intro hg; apply hg in hx as [v [hv hv2]].
@@ -1186,47 +1193,47 @@ destruct 1 as [
   | context return_type function_name arguments function_def hg hret hcheck 
   | context context' ret T hok
 ]; intros hk state hwf.
-- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+- apply eval_ok with (state := RawState state) in okvalue; [ | now apply hwf ].
   destruct okvalue as [v hv].
   now right; repeat eexists; econstructor; apply hv.
-- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+- apply eval_ok with (state := RawState state) in okvalue; [ | now apply hwf ].
   destruct okvalue as [v hv].
   now right; repeat eexists; econstructor; apply hv.
-- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+- apply eval_ok with (state := RawState state) in okvalue; [ | now apply hwf ].
   destruct okvalue as [v hv].
   now right; repeat eexists; econstructor; apply hv.
-- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+- apply eval_ok with (state := RawState state) in okvalue; [ | now apply hwf ].
   destruct okvalue as [v hv].
   now right; repeat eexists; econstructor; apply hv.
-- apply eval_ok with (state := state) in h; [ | now apply hwf ].
+- apply eval_ok with (state := RawState state) in h; [ | now apply hwf ].
   destruct h as [v hv].
   now right; repeat eexists; econstructor; apply hv.
 - right.
-  apply ty_bool with (state := state) in oktest; [ | now apply hwf].
+  apply ty_bool with (state := RawState state) in oktest; [ | now apply hwf].
   destruct oktest as [[] hb];
     repeat eexists; econstructor; exact hb.
 - inversion hk; subst; clear hk.
   + now left; split; firstorder.
   + now right; repeat eexists; econstructor.
   + right.
-    apply ty_bool with (state := state) in H; [ | now apply hwf ].
+    apply ty_bool with (state := RawState state) in H; [ | now apply hwf ].
     destruct H as [[] hb];
       repeat eexists; econstructor; exact hb.
   + now right; repeat eexists; econstructor.
   + now left; split; firstorder.
 - now right; repeat eexists; econstructor.
 - right.
-  apply ty_bool with (state := state) in hok; [ | now apply hwf ].
+  apply ty_bool with (state := RawState state) in hok; [ | now apply hwf ].
   destruct hok as [[] hb]; now repeat eexists; econstructor.
 - right.
   assert (hlen: List.length arguments = List.length (parameters function_def))
     by now apply check_arguments_length in hcheck. 
-  apply check_arguments_eval with (state := state) in hcheck; [ | now apply hwf].
+  apply check_arguments_eval with (state := RawState state) in hcheck; [ | now apply hwf].
   destruct hcheck as [vs hvs].
   assert (hlen2: List.length arguments = List.length vs) by
     now apply eval_list_length in hvs;
         rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
-  destruct (prepare_call_state_same_length Empty0 vs (parameters function_def))
+  destruct (prepare_call_state_same_length Eval.Empty vs (parameters function_def))
     as [ after hafter ]; [now rewrite hlen2 in hlen | ].
   repeat eexists.
   econstructor; [| now apply hvs| now apply hafter].
@@ -1236,12 +1243,12 @@ destruct 1 as [
 - right.
   assert (hlen: List.length arguments = List.length (parameters function_def))
     by now apply check_arguments_length in hcheck. 
-  apply check_arguments_eval with (state := state) in hcheck; [ | now apply hwf].
+  apply check_arguments_eval with (state := RawState state) in hcheck; [ | now apply hwf].
   destruct hcheck as [vs hvs].
   assert (hlen2: List.length arguments = List.length vs) by
     now apply eval_list_length in hvs;
         rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
-  destruct (prepare_call_state_same_length Empty0 vs (parameters function_def))
+  destruct (prepare_call_state_same_length Eval.Empty vs (parameters function_def))
     as [ after hafter ]; [ now rewrite hlen2 in hlen | ].
   repeat eexists.
   econstructor; [| now apply hvs| now apply hafter].
@@ -1257,7 +1264,7 @@ destruct 1 as [
     now econstructor.
   + right; repeat eexists.
     now econstructor.
-  + apply eval_ok with (state := state) in hok as [v [hv1 hv2]];
+  + apply eval_ok with (state := RawState state) in hok as [v [hv1 hv2]];
      [ | now apply hwf ].
     right; exists (set saved_state target v); exists Statement.Pass; exists k0.
     now constructor.
@@ -1268,7 +1275,8 @@ Module Test.
 
 (* Creating a test context with no type information on variable, and
 the same function information that Eval.Test.test_state *)
-Definition test_context: Context := Empty (info Eval.Test.test_state).
+Definition test_context: Context :=
+  mkState _ (SMap.empty _) (FuncState Eval.Test.test_state).
 
 (* Final typing context, with y:int as only type information *)
 Definition final_context : Context :=
@@ -1283,34 +1291,38 @@ Proof.
 intro return_type.
 unfold Test.Prog, final_context, Test.YID.
 apply typCallFun with (function_def := Test.int_id).
-- reflexivity.
+- apply SMap.find_1; apply SMap.add_1.
+  reflexivity.
 - reflexivity.
 - simpl; split; [| exact I].
   now constructor.
 Qed.
 
-Definition test_context2 : Context := Empty (info Eval.Test.test_state2).
+Definition test_context2 : Context :=
+  mkState _ (SMap.empty _) (FuncState Eval.Test.test_state2).
 
 Lemma Typing_Prog2: forall return_type,
   typ test_context2 return_type Eval.Test.Prog2 test_context2.
 Proof.
 intro return_type.
 apply typCallProc with (function_def := Test.expect_int).
-- reflexivity.
+- apply SMap.find_1; apply SMap.add_1.
+  reflexivity.
 - reflexivity.
 - simpl; split; [| exact I].
   now constructor.
 Qed.
 
 (* Some well-formed proofs *)
-Lemma well_formed_int_id : well_formed_function (info test_context) Test.int_id.
+Lemma well_formed_int_id : well_formed_function (FuncState test_context) Test.int_id.
 Proof.
 unfold well_formed_function.
-exists (mkContext (prepare_call_context Empty0 (parameters Test.int_id))
-       (info test_context)).
+exists (mkContext (prepare_call_context Empty (parameters Test.int_id))
+       (FuncState test_context)).
 constructor.
 econstructor.
 simpl.
+apply SMap.find_1; apply SMap.add_1.
 reflexivity.
 Qed.
 
@@ -1319,16 +1331,13 @@ Proof.
 split; [| split; [ reflexivity | intros fname fdef ]].
 - intros id T.
   unfold test_context; simpl.
-  unfold get0; simpl.
-  unfold get_map; simpl.
   intros b h; discriminate h.
 - unfold get_info; simpl.
-  rewrite get_set_map.
+  rewrite find_add_smap.
   case_eq (fname =? "int_id")%string; intro heq.
   + intro h; injection h; clear h; intro h; subst.
     exact well_formed_int_id.
-  + unfold get_map; simpl.
-    intro h; discriminate h.
+  + intro h; discriminate h.
 Qed.
 
 (* Successive valid assignement mixing weak and strong update *)
@@ -1341,26 +1350,33 @@ Definition Prog_Assign_good :=
     Statement.Assign Eval.Test.XID (Some Typ.Boolean) Expression.False_ ::
     nil).
 
+Definition EmptyContext : Context :=
+  mkState _ (SMap.empty _) (SMap.empty _).
+
 Lemma Prog_Assign_good_typed: forall return_type,
-  typ (Empty empty) return_type Prog_Assign_good
+  typ EmptyContext return_type Prog_Assign_good
     (* resulting context. It's content is not really relevant *)
     (set (set (set (set
-      (set (Empty empty) "x" (false, Typ.Integer))
+      (set EmptyContext  "x" (false, Typ.Integer))
         "x" (false, Typ.Boolean))
         "x" (true, Typ.Integer))
         "x" (true, Typ.Integer))
         "x" (true, Typ.Boolean)).
 Proof.
+unfold EmptyContext.
 intros return_type.
 econstructor; [ | econstructor; [ | econstructor; [ | econstructor ]]].
 - apply typAssignIdNone; [ reflexivity | ].
   now constructor.
-- apply typAssignIdNoneWeak with (Tid := Typ.Integer); [ reflexivity | ].
-  now constructor.
+- unfold set; simpl.
+  apply typAssignIdNoneWeak with (Tid := Typ.Integer); [ | now constructor ].
+  apply SMap.find_1; apply SMap.add_1.
+  reflexivity.
 - apply typAssignIdAnnot.
   now constructor.
-- apply typAssignIdNoneStrong; [ reflexivity | ].
-  now constructor.
+- apply typAssignIdNoneStrong; [ | now constructor ].
+  apply SMap.find_1; apply SMap.add_1.
+  reflexivity.
 - apply typAssignIdAnnot.
   now constructor.
 Qed.
@@ -1391,10 +1407,10 @@ intros context return_type return_context h.
 inversion h; subst; clear h.
 inversion H3; subst; clear H3.
 inversion H5; subst; clear H5.
-- now rewrite get_set, String.eqb_refl in H3.
-- rewrite get_set, String.eqb_refl in H3.
+- now rewrite find_add, String.eqb_refl in H3.
+- rewrite find_add, String.eqb_refl in H3.
   now injection H3.
-- rewrite get_set, String.eqb_refl in H3.
+- rewrite find_add, String.eqb_refl in H3.
   injection H3; clear H3; intro hT.
   rewrite <- hT in H6.
   now inversion H6.

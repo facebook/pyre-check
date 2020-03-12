@@ -75,7 +75,8 @@ Qed.
 (* end hide *)
 
 (** Map from identifiers to values. Used during <<Expression.t>> evaluation *)
-Definition EState := @RawState0 Value.t.
+Definition EState := SMap.t Value.t.
+Definition Empty : EState := SMap.empty _.
 
 (** * Evaluation of expressions
   Evaluates the expression <<expr>> using the state <<now>>. Returns some
@@ -102,7 +103,7 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             | Some vl => Some (Value.Sequence vl)
             | None => None
             end
-    | Expression.Id id => get0 now id
+    | Expression.Id id => SMap.find id now
     | Expression.None => Some Value.None
     | Expression.String s => Some (Value.String s)
     | Expression.Ternary target test alternative =>
@@ -150,33 +151,17 @@ intro now; induction l as [ | e es hi]; intros vs' h; simpl in *.
   + discriminate h.
 Qed.
 
-(** * Information about function definitions
-
-We store in here all relevant information about known functions:
-- their <<name>>.
-- their signature, as a list of <<parameters>> and a <<return annotation>>.
-- the actual <<body>> statement of the function.
-*)
-Record func : Set := mkFun {
-    (* TODO(T53097965): support dotted access for methods *)
-    name: string;
-    (* TODO(T53097965): support more parameter kinds *)
-    parameters: list (string * Typ.t);
-    (* decorators: Expression.t list; *)
-    return_annotation: Typ.t; (* no option, set to TNone if need be *)
-    (* async: bool; *)
-    (* parent: Reference.t option; (1* The class owning the method. *1) *)
-    body: Statement.t;
-}.
-
 (** Global state for the statement operational semantic. It is made of
 the state for expression evaluation, along with information about know
 functions. *)
-Definition State := @RawState Value.t func.
+Definition State := @Map.State Value.t.
+Definition EState_of_State (state : State) : EState := RawState state.
+Coercion EState_of_State : State >-> EState.
 
 (* Creates an empty state, keeping the function information around. It is
 used to create the initial state for a sub-function call. *)
-Definition reset_local (now: State) : State := Empty (info now).
+Definition reset_local (now: State) : State := 
+  mkState _ Empty (FuncState now).
 
 Fixpoint prepare_call_state (now: EState)
     (arguments: list Value.t)
@@ -184,7 +169,7 @@ Fixpoint prepare_call_state (now: EState)
     match (arguments, parameters) with
     | (nil, nil) => Some now 
     | (v :: arguments, ((name, _) :: parameters)) =>
-        prepare_call_state (set0 now name v) arguments parameters
+        prepare_call_state (SMap.add name v now) arguments parameters
     | (_, _) => None
 end.
 
@@ -212,8 +197,6 @@ induction arguments as [ | arg arguments hi]; intros now [ | [name ?] params]
   now exists after; exact h.
 Qed.
 
-Definition mkState state info : State := mkRawState state info.
-
 (** * Continuations
 
 Type of continuation, to deal with the execution flow.
@@ -230,7 +213,7 @@ Type of continuation, to deal with the execution flow.
   the <<target>> identifier (if any).
   execution then resumes using the <<k>> continuation.
 *)
-Inductive Cont : Set :=
+Inductive Cont :=
   | KStop: Cont
   | KSeq: Statement.t -> Cont -> Cont
   | KWhile: forall (test: Expression.t) (body orelse: Statement.t) (k: Cont),
@@ -256,29 +239,30 @@ Inductive sss: State -> Statement.t -> Cont ->
             (set state id v) Statement.Pass k
     (* executing a function call yield a fresh new state (and the current
        one is stored in the <<KCall>> continuation *)
-    | sssCallFun: forall state id annotation callee arguments func k
+    | sssCallFun: forall (state: State) id annotation callee arguments func k
         (vargs: Value.tlist) call_state,
         get_info state callee = Some func ->
         eval_list state (from_list (List.map snd arguments)) = Some vargs ->
-        prepare_call_state Empty0 vargs (parameters func) = Some call_state ->
+        prepare_call_state Empty vargs (parameters func) = Some call_state ->
         sss
           state
           (Statement.Call (Some (id, annotation)) (Expression.Id callee) arguments)
           k
-          (mkState call_state (info state))
+          (mkState _ call_state (FuncState state))
           (body func)
           (KCall state (Some (id, return_annotation func)) k)
     (* executing a procedure call yield a fresh new state (and the current
        one is stored in the <<KCall>> continuation *)
-    | sssCallProc: forall state callee arguments func k (vargs: Value.tlist) call_state,
+    | sssCallProc: forall (state: State) callee arguments func k
+        (vargs: Value.tlist) call_state,
         get_info state callee = Some func ->
         eval_list state (from_list (List.map snd arguments)) = Some vargs ->
-        prepare_call_state Empty0 vargs (parameters func) = Some call_state ->
+        prepare_call_state Empty vargs (parameters func) = Some call_state ->
         sss
           state
           (Statement.Call None (Expression.Id callee) arguments)
           k
-          (mkState call_state (info state))
+          (mkState _ call_state (FuncState state))
           (body func)
           (KCall state None k)
     | sssReturnFun: forall (state call_state: State) ret id annotation k vret,
@@ -386,7 +370,8 @@ Definition int_id : func := mkFun "int_id"%string
 Definition Int z : Expression.t := Expression.Integer z.
 
 (* Empty value state, with a single function defined: int_id *)
-Definition test_state : State := Empty (set_map empty "int_id"%string int_id).
+Definition test_state : State :=
+  mkState _ Empty (SMap.add "int_id"%string int_id (SMap.empty _)).
 (* Value state has a single binding: y |-> 42. Function information
    is the same as test_state *)
 Definition final_state : State := set test_state "y"%string (Value.Integer 42).
@@ -405,8 +390,9 @@ Proof.
 unfold Prog.
 eapply sss_trans.
   apply sssCallFun with (vargs := (Value.Cons (Value.Integer 42) Value.Nil)). 
-  simpl; unfold set_map; simpl.
-  now reflexivity.
+  unfold get_info, test_state; simpl.
+  apply SMap.find_1.
+  apply SMap.add_1; reflexivity.
 
   simpl; now reflexivity.
 
@@ -414,7 +400,10 @@ eapply sss_trans.
 
 simpl.
 eapply sss_trans.
-  now constructor.
+  constructor.
+  simpl.
+  apply SMap.find_1.
+  apply SMap.add_1; reflexivity.
 now apply sss_refl.
 Qed.
 
@@ -426,7 +415,8 @@ Definition expect_int : func := mkFun "expect_int"%string
 
 (* New test state: Empty value state and a single function definition:
  expect_int *)
-Definition test_state2 : State := Empty (set_map empty "expect_int"%string expect_int).
+Definition test_state2 : State :=
+  mkState _ Empty (SMap.add "expect_int"%string expect_int (SMap.empty _)).
 
 (* Function call `expect_int(1664)` *)
 Definition Prog2 :=
@@ -442,8 +432,8 @@ Proof.
 unfold Prog2.
 eapply sss_trans.
   apply sssCallProc with (vargs := Value.Cons (Value.Integer 1664) Value.Nil).
-  simpl; unfold set_map; simpl.
-  now reflexivity.
+  apply SMap.find_1.
+  apply SMap.add_1; reflexivity.
 
   simpl; now reflexivity.
 
