@@ -304,6 +304,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.approximate_complex_access_paths",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.get_data",
     "sources": [],
     "sinks": [],

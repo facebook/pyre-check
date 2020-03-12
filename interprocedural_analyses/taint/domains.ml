@@ -529,10 +529,21 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let essential_for_constructor tree =
-    (* We special case access paths of length 1 to support some precision without blowing the
-       analysis up. *)
     let essential_complex_features set = set in
     compute_essential_features ~essential_complex_features tree
+
+
+  let approximate_complex_access_paths
+      ?(cutoff_at = Configuration.analysis_model_constraints.maximum_complex_access_path_length)
+      tree
+    =
+    let cut_off features =
+      if List.length features > cutoff_at then
+        [Features.Complex.ReturnAccessPath []]
+      else
+        features
+    in
+    transform Taint.complex_feature_set (Abstract.Domain.Map cut_off) tree
 
 
   let filter_by_leaf ~leaf taint_tree =

@@ -56,4 +56,60 @@ let test_partition_call_map _ =
   assert_equal ~msg:"matches must be equal to original" ~printer:ForwardTaint.show matches joined
 
 
-let () = "test_taint_domain" >::: ["partition_call_map" >:: test_partition_call_map] |> Test.run
+let test_approximate_complex_access_paths _ =
+  let assert_approximate_complex_access_paths ~expected ~cutoff_at tree =
+    let compare left right =
+      ForwardState.Tree.less_or_equal ~left ~right
+      && ForwardState.Tree.less_or_equal ~left:right ~right:left
+    in
+    assert_equal
+      ~cmp:compare
+      ~printer:ForwardState.Tree.show
+      expected
+      (ForwardState.Tree.approximate_complex_access_paths ~cutoff_at tree)
+  in
+  let create ~features =
+    ForwardState.Tree.create_leaf (ForwardTaint.singleton Sources.Demo)
+    |> ForwardState.Tree.transform
+         ForwardTaint.complex_feature_set
+         (Abstract.Domain.Map (fun _ -> features))
+  in
+  assert_approximate_complex_access_paths
+    ~expected:
+      (create ~features:[Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "a"]])
+    ~cutoff_at:2
+    (create ~features:[Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "a"]]);
+  assert_approximate_complex_access_paths
+    ~expected:
+      (create
+         ~features:
+           [
+             Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "a"];
+             Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "b"];
+           ])
+    ~cutoff_at:2
+    (create
+       ~features:
+         [
+           Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "a"];
+           Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "b"];
+         ]);
+  assert_approximate_complex_access_paths
+    ~expected:(create ~features:[Features.Complex.ReturnAccessPath []])
+    ~cutoff_at:2
+    (create
+       ~features:
+         [
+           Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "a"];
+           Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "b"];
+           Features.Complex.ReturnAccessPath [Abstract.TreeDomain.Label.Field "c"];
+         ])
+
+
+let () =
+  "test_taint_domain"
+  >::: [
+         "partition_call_map" >:: test_partition_call_map;
+         "approximate_complex_access_paths" >:: test_approximate_complex_access_paths;
+       ]
+  |> Test.run

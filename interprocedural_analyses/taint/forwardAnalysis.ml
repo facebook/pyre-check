@@ -1106,6 +1106,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
          Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution return_annotation))
     |> ForwardState.Tree.limit_to
          ~width:Configuration.analysis_model_constraints.maximum_model_width
+    |> ForwardState.Tree.approximate_complex_access_paths
   in
   let attach_features taint =
     if not (List.is_empty features_to_attach) then

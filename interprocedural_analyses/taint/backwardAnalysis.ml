@@ -942,6 +942,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
          Abstract.Domain.(Map (Features.add_type_breadcrumb ~resolution annotation))
     |> BackwardState.Tree.limit_to
          ~width:Configuration.analysis_model_constraints.maximum_model_width
+    |> BackwardState.Tree.approximate_complex_access_paths
   in
 
   let split_and_simplify model (parameter, name, original) =
