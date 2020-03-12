@@ -29,31 +29,43 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 PYRE_FIRE = """
-                              .
-                             ,,,
-                            .,,,,
-                           ,,,,,,,,
-                          ,,,*/*,,,,.
-                         ,,,*///*,,,,,
-                       ,,,,*/////*,,,,,
-                      ,,,,////////*,,,,,
-                     ,,,*/////(/////*,,, ,
-                    ,,,**/////(((//*/*,,.,.
-                   ,,,*/////((((((////,,,,*
-                ,,.,,,/////((((((((//***/,,,
-               .,,,,/*////((((((((((/////*,,.
-               ,,,,*//////((((((((((/////*,,,
-               ,,,,*/////((((((((((((////*,,,,,
-               ,,,,,//////((((((((((/////,,,,,*
-               .,,,,,*/////(((((((/////*,,,,,*.
-            ##, *,,,,,,*//////////////,,,,,,**
-           .,*###(/**,,,*,,,,,,,,,,,,,,,*,**/
-/(##################(****///***,**,*****//*(#############//
-///#####%%%%%%%%#############((####(########%%##########*//
-///#%%#,     /**/((#########%#######. ############%%%%##/*/
-             //*/*//#####%%..#((#(###   *######////*   ////
-             ,/**///#%%#.   ,////////*    .%##/*/*//,
-               .///*        .///*////*       #/*////,
+                                                    ',
+                                                   ,c:
+                                ',                ;cc:
+                              ,:l;             ';:lll:
+                            'cllc'            'clllll:
+                           ;loooc'           'cllllllc'
+                          ;looool,           :llllllll,       :,
+                         'looooool'         ;lollllllo:      ;ll;
+                         ;ooooooool,       'loooooloool;    ,clll:
+                         cdoddoooooo;      ;oooooooooool:  ;loooll:
+                         cddddddddodo;     cooooooooooooolloooooool;
+                         ;ddddddddddo;    'loooooooooooooooooooooooc'
+                          cdddddddddc     'ldddddooooooooooooooooooo,
+                           ,coodolc;       cddddddddddoooooooooooooo;
+                               '           ,oddddddddddddddddodooooo;
+                          ,::::::::::::,    :ddddddddddddddddddddddl'
+                          'lddddddddddxd:    :ddddddddddddddddddddd:
+                            ;odddddddddddl,   ;oxdddddddddddddddddl'
+                             'ldddddddddddo:   ,:ldxddxddddddddddl'
+                               :ddddddddddddl'    cdxxxxxxxdddddl'
+                                ,ldddddddddddo;    ,oxxxxxxxxxdc
+                                  :ddddddddddddc;'  'cdxxxxxxo;
+                                   ,ldddddddddddxo;   ;dxxxo:
+                                     cdddddddddddddc   'lo:
+                                      ;oddddddddddddo,
+                                       'cddddddddddddd:
+                                        ;odddddddddddddl,
+                                       :ddddddddddddddddd:
+                                     ,ldddddddddddddddddddl,
+                                    :odddddddddddddddddddddo:
+                                  'ldddddddddddddddddddddddddl'
+                                 ;odddddddddddl, ,ldddddddddddo;
+                               'cdddddddddddd:     :ddddddddddddc'
+                              ;odddddddddddo,       ,odddddddddddo;
+                             cddddddddddddc           cddddddddddddc
+                           ;oxddxddxddddo;             ;odxxxxddddxxo,
+                           ;:::::::::::;'               ';:::::::::::;
 """
 
 
