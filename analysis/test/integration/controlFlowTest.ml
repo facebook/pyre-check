@@ -166,6 +166,20 @@ let test_check_ternary context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from typing import Optional
+      def foo(x: Optional[int]) -> int:
+        if x > 42:
+          return 0
+        else:
+          return 1
+    |}
+    [
+      "Undefined attribute [16]: `Optional` has no attribute `__gt__`.";
+      (* TODO: We might want to get rid of this in the future *)
+      "Undefined attribute [16]: `Optional` has no attribute `__le__`.";
+    ];
+  assert_type_errors
+    {|
       def foo() -> int:
         x: typing.Optional[int]
         y: int
@@ -310,9 +324,9 @@ let test_check_unbound_variables context =
         return unknown
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
        flow path that doesn't define `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|

@@ -4165,15 +4165,21 @@ module State (Context : Context) = struct
                 in
                 let left = update state left in
                 let right = update { state with resolution } right in
-                join
-                  {
-                    state with
-                    resolution = Resolution.with_annotation_store resolution ~annotation_store:left;
-                  }
-                  {
-                    state with
-                    resolution = Resolution.with_annotation_store resolution ~annotation_store:right;
-                  } )
+                let { errors; _ } = state in
+                let state =
+                  join
+                    {
+                      state with
+                      resolution =
+                        Resolution.with_annotation_store resolution ~annotation_store:left;
+                    }
+                    {
+                      state with
+                      resolution =
+                        Resolution.with_annotation_store resolution ~annotation_store:right;
+                    }
+                in
+                { state with errors } )
         | ComparisonOperator
             {
               ComparisonOperator.left;
