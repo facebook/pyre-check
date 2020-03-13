@@ -26,7 +26,13 @@ from .codemods import (
     run_missing_global_annotations,
     run_missing_overridden_return_annotations,
 )
-from .errors import errors_from_stdin, filter_errors, json_to_errors, sort_errors
+from .errors import (
+    errors_from_stdin,
+    filter_errors,
+    fix_file,
+    json_to_errors,
+    sort_errors,
+)
 from .postprocess import apply_lint, get_lint_status
 
 
@@ -244,120 +250,6 @@ def errors_from_run(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
         return filter_errors(_arguments, errors)
 
 
-def remove_comment_preamble(lines: List[str]) -> None:
-    # Deprecated: leaving remove logic until live old-style comments are cleaned up.
-    while lines:
-        old_line = lines.pop()
-        new_line = re.sub(r"# pyre: .*$", "", old_line).rstrip()
-        if old_line == "" or new_line != "":
-            # The preamble has ended.
-            lines.append(new_line)
-            return
-
-
-def _split_across_lines(
-    comment: str, indent: int, max_line_length: Optional[int]
-) -> List[str]:
-    if not max_line_length or len(comment) <= max_line_length:
-        return [comment]
-
-    comment = comment.lstrip()
-    available_columns = max_line_length - indent - len("#  ")
-
-    buffered_line = ""
-    result = []
-    prefix = " " * indent
-    for token in comment.split():
-        if buffered_line and (
-            len(buffered_line) + len(token) + len(" ") > available_columns
-        ):
-            # This new token would make the line exceed the limit,
-            # hence terminate what we have accumulated.
-            result.append(("{}{}".format(prefix, buffered_line)).rstrip())
-            # The first line already has a comment token on it, so don't prefix #. For
-            # the rest, we need to add the comment symbol manually.
-            prefix = "{}#  ".format(" " * indent)
-            buffered_line = ""
-
-        buffered_line = buffered_line + token + " "
-
-    result.append(("{}{}".format(prefix, buffered_line)).rstrip())
-    return result
-
-
-@verify_stable_ast
-def fix_file(
-    arguments: argparse.Namespace,
-    filename: str,
-    errors: Dict[int, List[Dict[str, str]]],
-) -> None:
-    custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
-    max_line_length = (
-        arguments.max_line_length if arguments.max_line_length > 0 else None
-    )
-    path = Path(filename)
-    text = path.read_text()
-    if "@" "generated" in text:
-        LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
-        return
-    lines = text.split("\n")  # type: List[str]
-
-    # Replace lines in file.
-    new_lines = []
-    removing_pyre_comments = False
-    for index, line in enumerate(lines):
-        if removing_pyre_comments:
-            stripped = line.lstrip()
-            if line.startswith("#") and not re.match(
-                r"# *pyre-(ignore|fixme).*$", stripped
-            ):
-                continue
-            else:
-                removing_pyre_comments = False
-        number = index + 1
-        if number not in errors:
-            new_lines.append(line)
-            continue
-        if errors[number][0]["code"] == "0":
-            # Handle unused ignores.
-            removing_pyre_comments = True
-            replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
-            if replacement == "":
-                remove_comment_preamble(new_lines)
-            else:
-                new_lines.append(replacement)
-            continue
-
-        comments = []
-        for error in errors[number]:
-            indent = len(line) - len(line.lstrip(" "))
-            description = custom_comment if custom_comment else error["description"]
-            comment = "{}# pyre-fixme[{}]: {}".format(
-                " " * indent, error["code"], description
-            )
-
-            if not max_line_length or len(comment) <= max_line_length:
-                comments.append(comment)
-            else:
-                if arguments.truncate:
-                    comments.append(comment[: (max_line_length - 3)] + "...")
-                else:
-                    comments.extend(
-                        _split_across_lines(comment, indent, max_line_length)
-                    )
-
-        LOG.info(
-            "Adding comment%s on line %d: %s",
-            "s" if len(comments) > 1 else "",
-            number,
-            " \n".join(comments),
-        )
-        new_lines.extend(comments)
-        new_lines.append(line)
-    new_text = "\n".join(new_lines)
-    path.write_text(new_text)
-
-
 # Exposed for testing.
 def _upgrade_project(
     arguments: argparse.Namespace,
@@ -414,13 +306,15 @@ def fix(
                 error_map[error["line"]].append(
                     {"code": match.group(1), "description": match.group(2)}
                 )
-        fix_file(arguments, path, error_map)
+        custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
+        max_line_length = (
+            arguments.max_line_length if arguments.max_line_length > 0 else None
+        )
+        fix_file(path, error_map, custom_comment, max_line_length, arguments.truncate)
 
 
 @verify_stable_ast
-def add_local_mode(
-    arguments: argparse.Namespace, filename: str, mode: LocalMode
-) -> None:
+def add_local_mode(filename: str, mode: LocalMode) -> None:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
     text = path.read_text()
@@ -548,7 +442,7 @@ def run_strict_default(
         if len(errors) > 0:
             result = sort_errors(errors)
             for filename, _ in result:
-                add_local_mode(arguments, filename, LocalMode.UNSAFE)
+                add_local_mode(filename, LocalMode.UNSAFE)
 
             if arguments.lint:
                 lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)

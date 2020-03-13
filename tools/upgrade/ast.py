@@ -24,7 +24,7 @@ LOG: Logger = logging.getLogger(__name__)
 # pyre-fixme[11]: Annotation `Ts` is not defined as a type.
 def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:
     # pyre-fixme[2]: Missing parameter annotation for *args
-    def wrapper(arguments: argparse.Namespace, filename: str, *args) -> None:
+    def wrapper(filename: str, *args, **kwargs) -> None:
         # AST before changes
         path = pathlib.Path(filename)
         try:
@@ -32,7 +32,7 @@ def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], Non
             ast_before = ast.parse(text)
 
             # AST after changes
-            file_modifier(arguments, filename, *args)
+            file_modifier(filename, *args, **kwargs)
             new_text = path.read_text()
             try:
                 ast_after = ast.parse(new_text)

@@ -370,9 +370,6 @@ class FixmeAllTest(unittest.TestCase):
         )
 
     def test_preserve_ast(self) -> None:
-        mock_arguments = argparse.Namespace()
-        mock_arguments.max_line_length = 88
-        mock_arguments.truncate = True
         error_map = {7: [{"code": "6", "description": "Foo"}]}
         with tempfile.NamedTemporaryFile(delete=False) as file:
             contents = """
@@ -387,7 +384,13 @@ class FixmeAllTest(unittest.TestCase):
                 """
             contents = textwrap.dedent(contents)
             file.write(contents.encode())
-            upgrade_core.fix_file(mock_arguments, file.name, error_map)
+            errors.fix_file(
+                file.name,
+                error_map,
+                custom_comment=None,
+                max_line_length=88,
+                truncate=True,
+            )
 
             file.seek(0)
             updated_contents = file.read().decode()
@@ -407,7 +410,7 @@ class FixmeAllTest(unittest.TestCase):
                 """
             contents = textwrap.dedent(contents)
             file.write(contents.encode())
-            upgrade_core.fix_file(mock_arguments, file.name, error_map)
+            errors.fix_file(file.name, error_map)
 
             file.seek(0)
             updated_contents = file.read().decode()
@@ -1809,50 +1812,36 @@ class FilterErrorTest(unittest.TestCase):
 class DefaultStrictTest(unittest.TestCase):
     @patch.object(Path, "read_text")
     def test_add_local_mode(self, read_text) -> None:
-        arguments = MagicMock()
-        arguments.sandcastle = None
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.UNSAFE)
             path_write_text.assert_called_once_with("# pyre-unsafe\n1\n2")
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# comment\n1"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.UNSAFE)
             path_write_text.assert_called_once_with(
                 "# comment\n# comment\n\n# pyre-unsafe\n1"
             )
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-strict\n1"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.UNSAFE)
             path_write_text.assert_not_called()
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-ignore-all-errors\n1"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.UNSAFE
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.UNSAFE)
             path_write_text.assert_not_called()
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.STRICT
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.STRICT)
             path_write_text.assert_called_once_with("# pyre-strict\n1\n2")
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade_core.add_local_mode(
-                arguments, "local.py", upgrade_core.LocalMode.IGNORE
-            )
+            upgrade_core.add_local_mode("local.py", upgrade_core.LocalMode.IGNORE)
             path_write_text.assert_called_once_with("# pyre-ignore-all-errors\n1\n2")
 
     @patch.object(
