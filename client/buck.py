@@ -14,7 +14,7 @@ from json.decoder import JSONDecodeError
 from logging import Logger
 from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
-from .filesystem import BuckBuilder, find_root
+from .filesystem import find_root
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -27,6 +27,15 @@ class BuckOut(NamedTuple):
 
 class BuckException(Exception):
     pass
+
+
+class BuckBuilder:
+    def build(self, targets: Iterable[str]) -> Iterable[str]:
+        """
+            Build the given targets, and return a list of output directories
+            containing the target output.
+        """
+        raise NotImplementedError
 
 
 class FastBuckBuilder(BuckBuilder):

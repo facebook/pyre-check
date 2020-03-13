@@ -751,7 +751,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
             Path(project_directory, "existing.py").touch()
 
-            def build_buck_directory(argument: filesystem.BuckBuilder) -> List[str]:
+            def build_buck_directory(argument: buck.BuckBuilder) -> List[str]:
                 Path(buck_output_directory, "existing.py").symlink_to(
                     Path(Path(project_directory, "existing.py"))
                 )
@@ -792,7 +792,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             Path(project_directory, "existing.py").touch()
             Path(project_directory, "to_be_deleted.py").touch()
 
-            def build_buck_directory(argument: filesystem.BuckBuilder) -> List[str]:
+            def build_buck_directory(argument: buck.BuckBuilder) -> List[str]:
                 Path(buck_output_directory, "existing.py").symlink_to(
                     Path(project_directory, "existing.py")
                 )

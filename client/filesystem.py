@@ -19,15 +19,6 @@ from .exceptions import EnvironmentException
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class BuckBuilder:
-    def build(self, targets: Iterable[str]) -> Iterable[str]:
-        """
-            Build the given targets, and return a list of output directories
-            containing the target output.
-        """
-        raise NotImplementedError
-
-
 def translate_path(root: str, path: str) -> str:
     if os.path.isabs(path):
         return path

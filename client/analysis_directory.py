@@ -16,10 +16,10 @@ from time import time
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import _resolve_filter_paths, buck, filesystem, json_rpc, log
+from .buck import BuckBuilder
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import (
-    BuckBuilder,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
     acquire_lock_if_needed,
