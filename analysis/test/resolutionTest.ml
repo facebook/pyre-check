@@ -954,9 +954,10 @@ let test_class_definitions context =
 (* We don't reverse order when returning the classes. *)
 
 let test_source_is_unit_test context =
-  let assert_is_unit_test ?(expected = true) source =
+  let assert_is_unit_test ?(expected = true) ?(extra_sources = []) source =
     let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      ScratchProject.setup ~context (["test.py", source] @ extra_sources)
+      |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
     let source =
@@ -978,6 +979,13 @@ let test_source_is_unit_test context =
     class C:
       def foo():
         class Nested(unittest.case.TestCase): ...
+  |};
+  assert_not_unit_test
+    ~extra_sources:["placeholder.py", "# pyre-placeholder-stub"]
+    {|
+    import placeholder
+    class C(placeholder.Missing):
+      ...
   |}
 
 

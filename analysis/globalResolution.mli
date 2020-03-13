@@ -176,7 +176,12 @@ val is_consistent_with
   expression:Ast.Expression.t option ->
   bool
 
-val is_transitive_successor : t -> predecessor:string -> successor:string -> bool
+val is_transitive_successor
+  :  ?placeholder_subclass_extends_all:bool ->
+  t ->
+  predecessor:string ->
+  successor:string ->
+  bool
 
 val attributes
   :  resolution:t ->

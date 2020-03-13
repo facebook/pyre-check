@@ -269,17 +269,6 @@ let is_invariance_mismatch resolution ~left ~right =
   | _ -> false
 
 
-(* There isn't a great way of testing whether a file only contains tests in Python. Due to the
-   difficulty of handling nested classes within test cases, etc., we use the heuristic that a class
-   which inherits from unittest.TestCase indicates that the entire file is a test file. *)
-let source_is_unit_test resolution ~source =
-  let is_unittest { Node.value = { Class.name = { Node.value = name; _ }; _ }; _ } =
-    let annotation = parse_reference resolution name in
-    less_or_equal resolution ~left:annotation ~right:(Type.Primitive "unittest.case.TestCase")
-  in
-  List.exists (Preprocessing.classes source) ~f:is_unittest
-
-
 let global ({ dependency; _ } as resolution) reference =
   (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic for
      module and for class *)
@@ -403,9 +392,27 @@ let constructor ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constructor ?dependency (attribute_resolution resolution)
 
 
-let is_transitive_successor resolution ~predecessor ~successor =
+let is_transitive_successor ?placeholder_subclass_extends_all resolution ~predecessor ~successor =
   let class_hierarchy = class_hierarchy resolution in
-  ClassHierarchy.is_transitive_successor class_hierarchy ~source:predecessor ~target:successor
+  ClassHierarchy.is_transitive_successor
+    ?placeholder_subclass_extends_all
+    class_hierarchy
+    ~source:predecessor
+    ~target:successor
+
+
+(* There isn't a great way of testing whether a file only contains tests in Python. Due to the
+   difficulty of handling nested classes within test cases, etc., we use the heuristic that a class
+   which inherits from unittest.TestCase indicates that the entire file is a test file. *)
+let source_is_unit_test resolution ~source =
+  let is_unittest { Node.value = { Class.name = { Node.value = name; _ }; _ }; _ } =
+    is_transitive_successor
+      ~placeholder_subclass_extends_all:false
+      resolution
+      ~predecessor:(Reference.show name)
+      ~successor:"unittest.case.TestCase"
+  in
+  List.exists (Preprocessing.classes source) ~f:is_unittest
 
 
 let constraints ~resolution:({ dependency; _ } as resolution) =
