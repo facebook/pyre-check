@@ -690,6 +690,7 @@ class Command(CommandParser, ABC):
     ) -> None:
         try:
             with SocketConnection(self._log_directory) as socket_connection:
+                self._call_client_terminated = False
                 socket_connection.perform_handshake(version_hash)
                 socket_connection.send(request)
                 stderr_reader = threading.Thread(
@@ -698,6 +699,7 @@ class Command(CommandParser, ABC):
                 stderr_reader.daemon = True
                 stderr_reader.start()
                 response = socket_connection.read()
+                self._call_client_terminated = True
                 result = _convert_json_response_to_result(response)
                 result.check()
                 self._socket_result_handler(result)
