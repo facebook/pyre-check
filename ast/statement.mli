@@ -430,8 +430,6 @@ and Statement : sig
 
   val assume : ?origin:Assert.Origin.t -> Expression.t -> t
 
-  val terminates : t list -> bool
-
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 end
 

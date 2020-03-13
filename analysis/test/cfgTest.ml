@@ -790,18 +790,7 @@ let test_while _ =
            ])
         [8]
         [9];
-      node
-        12
-        (Node.Block
-           [
-             Statement.assume
-               ~origin:
-                 (Assert.Origin.If { statement = +Statement.If conditional; true_branch = false })
-               (+Expression.False);
-             !!"body";
-           ])
-        [9]
-        [5];
+      node 12 (Node.Block [!!"body"]) [9] [5];
       node 13 (Node.Block [!!"orelse"]) [5] [6];
     ];
 

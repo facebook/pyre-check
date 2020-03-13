@@ -2109,8 +2109,6 @@ and Statement : sig
 
   val assume : ?origin:Assert.Origin.t -> Expression.t -> t
 
-  val terminates : t list -> bool
-
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 
   val location_insensitive_compare : t -> t -> int
@@ -2193,18 +2191,6 @@ end = struct
 
   let assume ?(origin = Assert.Origin.Assertion) ({ Node.location; _ } as test) =
     { Node.location; value = Assert { Assert.test; message = None; origin } }
-
-
-  (* Naive assumptions *)
-  let terminates body =
-    let find_terminator = function
-      | { Node.value = Return _; _ }
-      | { Node.value = Raise _; _ }
-      | { Node.value = Continue; _ } ->
-          true
-      | _ -> false
-    in
-    Option.is_some (List.find ~f:find_terminator body)
 
 
   let generator_assignment

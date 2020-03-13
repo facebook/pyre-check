@@ -840,28 +840,6 @@ let test_assume _ =
         { Assert.test = +Expression.True; message = None; origin = Assert.Origin.Assertion })
 
 
-let test_terminates _ =
-  assert_true
-    ( parse {|
-        x = 1
-        return x
-     |}
-    |> fun source -> Statement.terminates source.Source.statements );
-  assert_true
-    ( parse {|
-       x = 1
-       raise
-    |}
-    |> fun source -> Statement.terminates source.Source.statements );
-  assert_false
-    ( parse {|
-         if x:
-          return x
-         x = 1
-     |}
-    |> fun source -> Statement.terminates source.Source.statements )
-
-
 let test_pp _ =
   let assert_pretty_print ~expected source =
     let pretty_print_expected =
@@ -1047,10 +1025,5 @@ let () =
   |> Test.run;
 
   "statement"
-  >::: [
-         "assume" >:: test_assume;
-         "preamble" >:: test_preamble;
-         "terminates" >:: test_terminates;
-         "pp" >:: test_pp;
-       ]
+  >::: ["assume" >:: test_assume; "preamble" >:: test_preamble; "pp" >:: test_pp]
   |> Test.run

@@ -257,19 +257,7 @@ let create define =
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
-        let post_statements =
-          let test =
-            Expression.negate test
-            |> Expression.normalize
-            |> fun test -> { test with location = test_location }
-          in
-          if Statement.terminates body then
-            Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
-            :: statements
-          else
-            statements
-        in
-        create post_statements jumps join
+        create statements jumps join
     | { Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block); _ } :: statements
       ->
         (* We need to replicate the "finally" block three times because that block is always
