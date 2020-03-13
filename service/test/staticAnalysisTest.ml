@@ -50,7 +50,15 @@ let test_callables context =
         `Function "test.$toplevel";
         `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "$class_toplevel" };
         `Method { Interprocedural.Callable.class_name = "test.C"; method_name = "foo" };
-      ]
+      ];
+  assert_callables
+    {|
+      import unittest
+      class C(unittest.case.TestCase):
+        def foo() -> int:
+          ...
+    |}
+    ~expected:[]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

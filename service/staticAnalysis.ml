@@ -40,7 +40,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
     | None ->
         (* Only record top-level definitions. *)
         Some (Callable.create_function name, definition)
-    | Some class_name -> (
+    | Some class_name ->
         let class_annotation = Type.Primitive (Reference.show class_name) in
         let class_exists =
           GlobalResolution.class_definition resolution class_annotation |> Option.is_some
@@ -52,22 +52,10 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
             class_name
             Reference.pp
             name;
-        try
-          let is_test_function =
-            GlobalResolution.is_transitive_successor
-              ~placeholder_subclass_extends_all:false
-              resolution
-              ~predecessor:(Reference.show class_name)
-              ~successor:"unittest.case.TestCase"
-          in
-          if is_test_function then
-            None
-          else if Define.is_property_setter (Node.value definition) then
-            Some (Callable.create_property_setter name, definition)
-          else
-            Some (Callable.create_method name, definition)
-        with
-        | ClassHierarchy.Untracked _ -> None )
+        if Define.is_property_setter (Node.value definition) then
+          Some (Callable.create_property_setter name, definition)
+        else
+          Some (Callable.create_method name, definition)
   in
   List.filter_map ~f:record_toplevel_definition defines
 
