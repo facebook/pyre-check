@@ -151,11 +151,11 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     ) -> None:
         if ProjectFilesMonitor.is_alive(configuration):
             return
-        LOG.info("File monitor is not running.")
+        LOG.debug("File monitor is not running.")
         try:
             ProjectFilesMonitor(
                 configuration, current_directory, analysis_directory
             ).daemonize()
-            LOG.info("Restarted file monitor.")
+            LOG.debug("Restarted file monitor.")
         except MonitorException as exception:
             LOG.warning("Failed to restart file monitor: %s", exception)

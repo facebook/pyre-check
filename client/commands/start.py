@@ -121,7 +121,7 @@ class Start(Reporting):
                                 self._analysis_directory,
                             )
                             file_monitor.daemonize()
-                            LOG.info("Initialized file monitor.")
+                            LOG.debug("Initialized file monitor.")
                         except project_files_monitor.MonitorException as error:
                             LOG.warning("Failed to initialize file monitor: %s", error)
 
