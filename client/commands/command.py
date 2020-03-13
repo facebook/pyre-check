@@ -589,24 +589,11 @@ class Command(CommandParser, ABC):
             self._buffer.append(line)
 
     def _read_stderr(self, stream: Iterable[str]) -> None:
-        buffer = None
-        log_pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)")
         try:
             for line in stream:
                 if self._call_client_terminated:
                     return
-                line = line.rstrip()
-                match = log_pattern.match(line)
-                if match:
-                    if buffer:
-                        buffer.flush()
-                    buffer = log.Buffer(
-                        section=match.groups()[0], data=[match.groups()[1]]
-                    )
-                elif buffer:
-                    buffer.append(line)
-            if buffer:
-                buffer.flush()
+                log.log_server_stderr_message(line)
         except Exception:
             pass
 

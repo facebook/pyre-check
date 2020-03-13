@@ -12,7 +12,7 @@ import re
 import sys
 import threading
 import time
-from typing import List, Optional, Sequence
+from typing import List, Optional, Pattern, Sequence
 
 
 PERFORMANCE: int = 15
@@ -210,48 +210,33 @@ def cleanup() -> None:
         sys.stdout.write(output + "\n")
 
 
-class Buffer:
-    THRESHOLD: float = 0.1
+_server_log_pattern: Pattern[str] = re.compile(
+    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)"
+)
 
-    _flushed: bool = False
 
-    def __init__(self, section: str, data: List[str]) -> None:
-        self._section: str = section
-        self._data: List[str] = data
-        self._lock: threading.RLock = threading.RLock()
-        thread = threading.Thread(target=self._thread)
-        thread.daemon = True
-        thread.start()
-
-    def append(self, line: str) -> None:
-        self._data.append(line)
-
-    def flush(self) -> None:
-        with self._lock:
-            if self._flushed is True:
-                return
-            self._flushed = True
-        message = "\n".join(self._data)
-        if self._section == "ERROR":
+def log_server_stderr_message(server_message: str) -> None:
+    line = server_message.rstrip()
+    match = _server_log_pattern.match(line)
+    if match:
+        section = match.groups()[0]
+        message = match.groups()[1]
+        if section == "ERROR":
             LOG.error(message)
-        elif self._section == "INFO":
+        elif section == "INFO":
             LOG.info(message)
-        elif self._section == "DUMP":
+        elif section == "DUMP":
             LOG.warning(message)
-        elif self._section == "WARNING":
+        elif section == "WARNING":
             LOG.warning(message)
-        elif self._section == "PROGRESS":
+        elif section == "PROGRESS":
             LOG.info(message)
-        elif self._section == "PARSER":
+        elif section == "PARSER":
             LOG.error(message)
         else:
-            LOG.debug("[%s] %s", self._section, message)
-
-    def _thread(self) -> None:
-        time.sleep(self.THRESHOLD)
-        with self._lock:
-            if not self._flushed:
-                self.flush()
+            LOG.debug("[%s] %s", section, message)
+    else:
+        LOG.debug(line)
 
 
 def get_yes_no_input(prompt: str) -> bool:
