@@ -42,7 +42,11 @@ class RestartTest(unittest.TestCase):
             arguments, original_directory, configuration, analysis_directory
         )._run()
         commands_Stop.assert_called_with(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration,
+            analysis_directory,
+            from_restart=True,
         )
         commands_Incremental.assert_called_with(
             arguments, original_directory, configuration, analysis_directory
@@ -56,7 +60,11 @@ class RestartTest(unittest.TestCase):
             arguments, original_directory, configuration, analysis_directory
         )._run()
         commands_Stop.assert_called_with(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration,
+            analysis_directory,
+            from_restart=True,
         )
         commands_Incremental.assert_not_called()
         commands_Start.assert_not_called()

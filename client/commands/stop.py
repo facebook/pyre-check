@@ -31,10 +31,12 @@ class Stop(Command):
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        from_restart: bool = False,
     ) -> None:
         super(Stop, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
+        self.from_restart = from_restart
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -59,7 +61,10 @@ class Stop(Command):
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
-            LOG.warning("No server running.")
+            if self.from_restart:
+                LOG.info("No server running.")
+            else:
+                LOG.warning("No server running.")
         else:
             pid_to_poll = self._pid_file()
             try:

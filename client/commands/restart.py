@@ -75,6 +75,7 @@ class Restart(Command):
                 self._original_directory,
                 self._configuration,
                 self._analysis_directory,
+                from_restart=True,
             )
             .run()
             .exit_code()
