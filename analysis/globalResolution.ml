@@ -406,11 +406,14 @@ let is_transitive_successor ?placeholder_subclass_extends_all resolution ~predec
    which inherits from unittest.TestCase indicates that the entire file is a test file. *)
 let source_is_unit_test resolution ~source =
   let is_unittest { Node.value = { Class.name = { Node.value = name; _ }; _ }; _ } =
-    is_transitive_successor
-      ~placeholder_subclass_extends_all:false
-      resolution
-      ~predecessor:(Reference.show name)
-      ~successor:"unittest.case.TestCase"
+    try
+      is_transitive_successor
+        ~placeholder_subclass_extends_all:false
+        resolution
+        ~predecessor:(Reference.show name)
+        ~successor:"unittest.case.TestCase"
+    with
+    | ClassHierarchy.Untracked _ -> false
   in
   List.exists (Preprocessing.classes source) ~f:is_unittest
 

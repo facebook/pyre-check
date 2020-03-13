@@ -3,6 +3,7 @@
   ignoreTest
   memoryTest
   schedulerTest
+  staticAnalysisTest
   typeCheckTest)
  (preprocess
   (pps ppx_sexp_message ppx_hash))
