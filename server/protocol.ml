@@ -93,6 +93,7 @@ module TypeQuery = struct
     name: string;
     annotation: Type.t;
     kind: attribute_kind;
+    final: bool;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -299,7 +300,7 @@ module TypeQuery = struct
     | Help string -> `Assoc ["help", `String string]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
-        let attribute_to_yojson { name; annotation; kind } =
+        let attribute_to_yojson { name; annotation; kind; final } =
           let kind =
             match kind with
             | Regular -> "regular"
@@ -307,7 +308,12 @@ module TypeQuery = struct
           in
 
           `Assoc
-            ["name", `String name; "annotation", Type.to_yojson annotation; "kind", `String kind]
+            [
+              "name", `String name;
+              "annotation", Type.to_yojson annotation;
+              "kind", `String kind;
+              "final", `Bool final;
+            ]
         in
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
     | FoundDefines defines ->

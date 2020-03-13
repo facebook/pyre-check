@@ -1000,16 +1000,19 @@ let test_query context =
                     implicit = Some { implicit_annotation = Type.Primitive "C"; name = "self" };
                   };
               kind = Protocol.TypeQuery.Regular;
+              final = false;
             };
             {
               Protocol.TypeQuery.name = "x";
               annotation = Type.integer;
               kind = Protocol.TypeQuery.Regular;
+              final = false;
             };
             {
               Protocol.TypeQuery.name = "y";
               annotation = Type.string;
               kind = Protocol.TypeQuery.Regular;
+              final = false;
             };
           ]));
   ();
@@ -1029,6 +1032,7 @@ let test_query context =
               Protocol.TypeQuery.name = "foo";
               annotation = Type.integer;
               kind = Protocol.TypeQuery.Property;
+              final = false;
             };
           ]));
   ();

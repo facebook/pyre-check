@@ -92,6 +92,7 @@ module TypeQuery : sig
     name: string;
     annotation: Type.t;
     kind: attribute_kind;
+    final: bool;
   }
   [@@deriving eq, show, to_yojson]
 

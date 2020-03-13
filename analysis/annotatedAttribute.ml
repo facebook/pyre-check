@@ -151,6 +151,12 @@ let property { property; _ } = property
 
 let visibility { visibility; _ } = visibility
 
+let is_final { visibility; _ } =
+  match visibility with
+  | ReadOnly (Refinable _) -> true
+  | _ -> false
+
+
 let instantiate attribute ~annotation ~original_annotation =
   { attribute with payload = { annotation; original_annotation } }
 

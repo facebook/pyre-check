@@ -19,12 +19,14 @@ let test_type_query_json _ =
   assert_serializes (Error "message") {|{"error": "message"}|};
   assert_serializes
     (Response
-       (FoundAttributes [{ name = "name"; annotation = Analysis.Type.integer; kind = Regular }]))
-    {|{"response": {"attributes": [{"name": "name", "annotation": "int", "kind": "regular"}]}}|};
+       (FoundAttributes
+          [{ name = "name"; annotation = Analysis.Type.integer; kind = Regular; final = true }]))
+    {|{"response": {"attributes": [{"name": "name", "annotation": "int", "kind": "regular", "final": true}]}}|};
   assert_serializes
     (Response
-       (FoundAttributes [{ name = "name"; annotation = Analysis.Type.integer; kind = Property }]))
-    {|{"response": {"attributes": [{"name": "name", "annotation": "int", "kind": "property"}]}}|};
+       (FoundAttributes
+          [{ name = "name"; annotation = Analysis.Type.integer; kind = Property; final = false }]))
+    {|{"response": {"attributes": [{"name": "name", "annotation": "int", "kind": "property", "final": false}]}}|};
   assert_serializes
     (Response
        (FoundMethods
