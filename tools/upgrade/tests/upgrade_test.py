@@ -642,7 +642,7 @@ class FixmeTest(unittest.TestCase):
                     ]
                 ),
             ]
-            subprocess.assert_has_calls(calls)
+            subprocess.assert_has_calls(calls, any_order=True)
         arguments.run = False
         arguments.lint = False
 

@@ -27,6 +27,18 @@ def get_lint_status(skip: List[str]) -> int:
             "none",
         ]
     )
+    if lint_status.returncode == 1:
+        lint_status = subprocess.run(
+            [
+                "arc",
+                "lint",
+                "--never-apply-patches",
+                "--skip",
+                ",".join(skip),
+                "--output",
+                "none",
+            ]
+        )
     return lint_status.returncode
 
 
