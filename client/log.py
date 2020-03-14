@@ -12,7 +12,8 @@ import re
 import sys
 import threading
 import time
-from typing import List, Optional, Pattern, Sequence
+from types import TracebackType
+from typing import Iterable, List, Optional, Pattern, Sequence
 
 
 PERFORMANCE: int = 15
@@ -210,33 +211,64 @@ def cleanup() -> None:
         sys.stdout.write(output + "\n")
 
 
-_server_log_pattern: Pattern[str] = re.compile(
-    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)"
-)
+class StreamLogger:
+    _should_stop_reading_stream = False
 
+    _server_log_pattern: Pattern[str] = re.compile(
+        r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)"
+    )
 
-def log_server_stderr_message(server_message: str) -> None:
-    line = server_message.rstrip()
-    match = _server_log_pattern.match(line)
-    if match:
-        section = match.groups()[0]
-        message = match.groups()[1]
-        if section == "ERROR":
-            LOG.error(message)
-        elif section == "INFO":
-            LOG.info(message)
-        elif section == "DUMP":
-            LOG.warning(message)
-        elif section == "WARNING":
-            LOG.warning(message)
-        elif section == "PROGRESS":
-            LOG.info(message)
-        elif section == "PARSER":
-            LOG.error(message)
+    def __init__(self, stream: Iterable[str]) -> None:
+        self._reader = threading.Thread(target=self._read_stream, args=(stream,))
+        self._reader.daemon = True
+
+    def join(self) -> None:
+        self._reader.join()
+
+    def _log_server_stderr_message(self, server_message: str) -> None:
+        line = server_message.rstrip()
+        match = self._server_log_pattern.match(line)
+        if match:
+            section = match.groups()[0]
+            message = match.groups()[1]
+            if section == "ERROR":
+                LOG.error(message)
+            elif section == "INFO":
+                LOG.info(message)
+            elif section == "DUMP":
+                LOG.warning(message)
+            elif section == "WARNING":
+                LOG.warning(message)
+            elif section == "PROGRESS":
+                LOG.info(message)
+            elif section == "PARSER":
+                LOG.error(message)
+            else:
+                LOG.debug("[%s] %s", section, message)
         else:
-            LOG.debug("[%s] %s", section, message)
-    else:
-        LOG.debug(line)
+            LOG.debug(line)
+
+    def _read_stream(self, stream: Iterable[str]) -> None:
+        try:
+            for line in stream:
+                if self._should_stop_reading_stream:
+                    return
+                self._log_server_stderr_message(line)
+        except Exception:
+            pass
+
+    def __enter__(self) -> "StreamLogger":
+        self._should_stop_reading_stream = False
+        self._reader.start()
+        return self
+
+    def __exit__(
+        self,
+        _type: Optional[BaseException],
+        _value: Optional[BaseException],
+        _traceback: Optional[TracebackType],
+    ) -> None:
+        self._should_stop_reading_stream = True
 
 
 def get_yes_no_input(prompt: str) -> bool:

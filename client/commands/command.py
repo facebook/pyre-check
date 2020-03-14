@@ -33,6 +33,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import remove_if_exists, translate_path
+from ..log import StreamLogger
 from ..process import register_non_unique_process
 from ..socket_connection import SocketConnection, SocketException
 
@@ -438,7 +439,6 @@ class CommandParser(ABC):
 
 class Command(CommandParser, ABC):
     _buffer: List[str] = []
-    _call_client_terminated: bool = False
 
     _local_root: str = ""
 
@@ -588,15 +588,6 @@ class Command(CommandParser, ABC):
         for line in stdout:
             self._buffer.append(line)
 
-    def _read_stderr(self, stream: Iterable[str]) -> None:
-        try:
-            for line in stream:
-                if self._call_client_terminated:
-                    return
-                log.log_server_stderr_message(line)
-        except Exception:
-            pass
-
     def _call_client(
         self,
         command: str,
@@ -642,23 +633,16 @@ class Command(CommandParser, ABC):
                 stdout_reader.start()
 
             # Read the error output and print it.
-            self._call_client_terminated = False
-            stderr_reader = threading.Thread(
-                target=self._read_stderr, args=(process.stderr,)
-            )
-            stderr_reader.daemon = True
-            stderr_reader.start()
+            with StreamLogger(process.stderr) as stream_logger:
+                with register_non_unique_process(
+                    process.pid, self.NAME, self.log_directory
+                ):
+                    # Wait for the process to finish and clean up.
+                    process.wait()
+                # In the exceptional case, make sure that we don't stop early
+                if process.returncode != 0:
+                    stream_logger.join()
 
-            with register_non_unique_process(
-                process.pid, self.NAME, self.log_directory
-            ):
-                # Wait for the process to finish and clean up.
-                process.wait()
-
-            # In the exceptional case, make sure that we print the error messages.
-            if process.returncode != 0:
-                stderr_reader.join()
-            self._call_client_terminated = True
             if capture_output:
                 # pyre-fixme: stdout_reader is not always declared!
                 stdout_reader.join()
@@ -686,20 +670,14 @@ class Command(CommandParser, ABC):
 
     # will open a socket, send a request, read the response and close the socket.
     def _send_and_handle_socket_request(
-        self, request: json_rpc.Request, version_hash: str
+        self, request: json_rpc.Request, version_hash: str, stream_to_log: Iterable[str]
     ) -> None:
         try:
             with SocketConnection(self._log_directory) as socket_connection:
-                self._call_client_terminated = False
                 socket_connection.perform_handshake(version_hash)
-                socket_connection.send(request)
-                stderr_reader = threading.Thread(
-                    target=self._read_stderr, args=(sys.stderr,)
-                )
-                stderr_reader.daemon = True
-                stderr_reader.start()
-                response = socket_connection.read()
-                self._call_client_terminated = True
+                with StreamLogger(stream_to_log):
+                    socket_connection.send(request)
+                    response = socket_connection.read()
                 result = _convert_json_response_to_result(response)
                 result.check()
                 self._socket_result_handler(result)

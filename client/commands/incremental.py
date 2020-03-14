@@ -117,7 +117,19 @@ class Incremental(Reporting):
             LOG.info("Waiting for server...")
 
         request = json_rpc.Request(method="displayTypeErrors", parameters={"files": []})
-        self._send_and_handle_socket_request(request, self._version_hash)
+        stderr_file = os.path.join(self._log_directory, "server/server.stdout")
+        with subprocess.Popen(
+            ["tail", "--follow", "--lines=0", stderr_file],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ) as stderr_tail:
+            try:
+                self._send_and_handle_socket_request(
+                    request, self._version_hash, stderr_tail.stdout
+                )
+            finally:
+                stderr_tail.terminate()
 
     def _socket_result_handler(self, result: Result) -> None:
         errors = self._get_errors(result)
@@ -147,17 +159,6 @@ class Incremental(Reporting):
             flags.append("-nonblocking")
 
         return flags
-
-    def _read_stderr(self, _stream) -> None:
-        stderr_file = os.path.join(self._log_directory, "server/server.stdout")
-        with subprocess.Popen(
-            ["tail", "--follow", "--lines=0", stderr_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        ) as stderr_tail:
-            atexit.register(stderr_tail.terminate)
-            super(Incremental, self)._read_stderr(stderr_tail.stdout)
 
     def _restart_file_monitor_if_needed(self) -> None:
         if self._no_watchman:

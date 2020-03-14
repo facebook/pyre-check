@@ -25,6 +25,7 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch.object(subprocess, "Popen")
     @patch.object(
         command,
         "_convert_json_response_to_result",
@@ -56,6 +57,7 @@ class IncrementalTest(unittest.TestCase):
         read_response,
         write,
         _convert_to_result,
+        popen,
     ) -> None:
         state = MagicMock()
         state.running = ["running"]
@@ -99,6 +101,12 @@ class IncrementalTest(unittest.TestCase):
             test_command.run()
             connect.assert_called_once()
             restart_file_monitor_if_needed.assert_called_once()
+            popen.assert_called_once_with(
+                ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
 
         restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
@@ -286,26 +294,6 @@ class IncrementalTest(unittest.TestCase):
             test_command.run()
             connect.assert_not_called()
             self.assertEqual(test_command._exit_code, commands.ExitCode.FAILURE)
-
-    def test_read_stderr(self) -> None:
-        with patch("subprocess.Popen") as popen:
-            original_directory = "/original/directory"
-            arguments = mock_arguments()
-
-            configuration = mock_configuration()
-            configuration.version_hash = "hash"
-            analysis_directory = AnalysisDirectory("/root")
-            test_command = incremental.Incremental(
-                arguments, original_directory, configuration, analysis_directory
-            )
-            stream = MagicMock()
-            test_command._read_stderr(stream)
-            popen.assert_called_once_with(
-                ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-            )
 
     @patch.object(incremental.Incremental, "_send_and_handle_socket_request")
     @patch.object(commands.Command, "_state")
