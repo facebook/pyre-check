@@ -117,19 +117,7 @@ class Incremental(Reporting):
             LOG.info("Waiting for server...")
 
         request = json_rpc.Request(method="displayTypeErrors", parameters={"files": []})
-        stderr_file = os.path.join(self._log_directory, "server/server.stdout")
-        with subprocess.Popen(
-            ["tail", "--follow", "--lines=0", stderr_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        ) as stderr_tail:
-            try:
-                self._send_and_handle_socket_request(
-                    request, self._version_hash, stderr_tail.stdout
-                )
-            finally:
-                stderr_tail.terminate()
+        self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
         errors = self._get_errors(result)

@@ -9,7 +9,6 @@ import json
 import logging
 import os
 import re
-import sys
 from logging import Logger
 from typing import Dict, List, Optional
 
@@ -80,7 +79,7 @@ class Query(Command):
 
     def _run(self) -> None:
         request = json_rpc.Request(method="typeQuery", parameters={"query": self.query})
-        self._send_and_handle_socket_request(request, self._version_hash, sys.stderr)
+        self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
         if self.query == "help":

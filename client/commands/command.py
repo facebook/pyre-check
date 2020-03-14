@@ -670,17 +670,27 @@ class Command(CommandParser, ABC):
 
     # will open a socket, send a request, read the response and close the socket.
     def _send_and_handle_socket_request(
-        self, request: json_rpc.Request, version_hash: str, stream_to_log: Iterable[str]
+        self, request: json_rpc.Request, version_hash: str
     ) -> None:
         try:
-            with SocketConnection(self._log_directory) as socket_connection:
-                socket_connection.perform_handshake(version_hash)
-                with StreamLogger(stream_to_log):
-                    socket_connection.send(request)
-                    response = socket_connection.read()
-                result = _convert_json_response_to_result(response)
-                result.check()
-                self._socket_result_handler(result)
+            stderr_file = os.path.join(self._log_directory, "server/server.stdout")
+            with subprocess.Popen(
+                ["tail", "--follow", "--lines=0", stderr_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ) as stderr_tail:
+                try:
+                    with SocketConnection(self._log_directory) as socket_connection:
+                        socket_connection.perform_handshake(version_hash)
+                        with StreamLogger(stderr_tail.stdout):
+                            socket_connection.send(request)
+                            response = socket_connection.read()
+                        result = _convert_json_response_to_result(response)
+                        result.check()
+                        self._socket_result_handler(result)
+                finally:
+                    stderr_tail.terminate()
         except (
             SocketException,
             ResourceWarning,
