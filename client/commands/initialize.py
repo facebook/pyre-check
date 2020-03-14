@@ -106,7 +106,8 @@ class Initialize(CommandParser):
         using_targets = log.get_yes_no_input("Is your project built with Buck?")
         if using_targets:
             targets = log.get_input(
-                "Which buck target(s) should pyre analyze? (//target:a, //target/b/...)\n"
+                "Which buck target(s) should pyre analyze? \
+                (`//target:a`, `//target/b/...`)\n"
             )
             configuration["targets"] = [target.strip() for target in targets.split(",")]
         else:
