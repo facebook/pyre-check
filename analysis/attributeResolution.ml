@@ -2063,8 +2063,10 @@ module Implementation = struct
             annotation, annotation
           else
             annotation, original_annotation
-      | Attribute { annotation; original_annotation; is_property = false } ->
-          annotation, original_annotation
+      | Attribute { annotation; original_annotation; is_property = false } -> (
+          match instantiated, class_name, attribute_name with
+          | Type.Callable _, "typing.Callable", "__call__" -> instantiated, instantiated
+          | _ -> annotation, original_annotation )
     in
     let annotation, original =
       match instantiated with

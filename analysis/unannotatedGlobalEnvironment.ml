@@ -387,6 +387,23 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     [Type.parametric "typing.Generic" [Single (Variable (Type.Variable.Unary.create "typing._T"))]]
   in
   let catch_all_generic = [Type.parametric "typing.Generic" [Group Any]] in
+  let callable_body =
+    [
+      Statement.Assign
+        {
+          target =
+            Node.create_with_default_location
+              (Expression.Name
+                 (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
+          annotation = Some (Type.expression Type.object_primitive);
+          value =
+            Node.create_with_default_location
+              (Expression.Name (Ast.Expression.create_name ~location:Location.any "None"));
+          parent = Some (Reference.create "typing.Callable");
+        };
+    ]
+    |> List.map ~f:Node.create_with_default_location
+  in
   let typing_classes =
     [
       make "typing.Optional" ~bases:single_unary_generic;
@@ -394,7 +411,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing.NoReturn";
       make "typing.Annotated" ~bases:catch_all_generic;
       make "typing.Protocol" ~bases:catch_all_generic;
-      make "typing.Callable" ~bases:catch_all_generic;
+      make "typing.Callable" ~bases:catch_all_generic ~body:callable_body;
       make "typing.FrozenSet" ~bases:single_unary_generic;
       make "typing.ClassVar" ~bases:single_unary_generic;
       make "typing.Final" ~bases:catch_all_generic;
