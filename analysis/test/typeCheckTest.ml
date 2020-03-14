@@ -269,17 +269,9 @@ let test_check_annotation context =
     let resolution =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
-    let create =
-      let module Create = Create (DefaultContext) in
-      Create.create ~resolution
-    in
     let module State = State (DefaultContext) in
-    let state = create [] in
     let errors =
-      State.parse_and_check_annotation ~state !expression
-      |> fst
-      |> State.local_errors
-      |> AnalysisError.deduplicate
+      State.parse_and_check_annotation ~resolution !expression |> fst |> AnalysisError.deduplicate
     in
     let errors = List.map ~f:(description ~resolution) errors in
     assert_equal

@@ -51,7 +51,11 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  val parse_and_check_annotation : ?bind_variables:bool -> state:t -> Expression.t -> t * Type.t
+  val parse_and_check_annotation
+    :  ?bind_variables:bool ->
+    resolution:Resolution.t ->
+    Expression.t ->
+    Error.t list * Type.t
 
   include Fixpoint.State with type t := t
 end
@@ -153,17 +157,17 @@ module State (Context : Context) = struct
     :: errors
 
 
-  let add_invalid_type_parameters_errors ~resolution ~location ~state annotation =
+  let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
     let mismatches, annotation =
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
-    let add_error state mismatch =
-      legacy_emit_error ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
+    let add_error errors mismatch =
+      emit_error ~errors ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in
-    List.fold mismatches ~f:add_error ~init:state, annotation
+    List.fold mismatches ~f:add_error ~init:errors, annotation
 
 
-  let add_untracked_annotation_errors ~resolution ~location ~state annotation =
+  let add_untracked_annotation_errors ~resolution ~location ~errors annotation =
     let is_untracked_name class_name =
       match class_name with
       | "..." -> false
@@ -171,19 +175,19 @@ module State (Context : Context) = struct
     in
     let untracked = List.filter (Type.elements annotation) ~f:is_untracked_name in
     let errors =
-      List.fold untracked ~init:state ~f:(fun state name ->
-          legacy_emit_error ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
+      List.fold untracked ~init:errors ~f:(fun errors name ->
+          emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     errors, List.is_empty untracked
 
 
   let parse_and_check_annotation
       ?(bind_variables = true)
-      ~state:({ resolution; _ } as state)
+      ~resolution
       ({ Node.location; _ } as expression)
     =
     let global_resolution = Resolution.global_resolution resolution in
-    let check_and_correct_annotation ~resolution ~location ~annotation state =
+    let check_and_correct_annotation ~resolution ~location ~annotation errors =
       let check_invalid_variables resolution variable =
         if not (Resolution.type_variable_exists resolution ~variable) then
           let origin =
@@ -211,39 +215,43 @@ module State (Context : Context) = struct
               ~init:resolution
         | _ -> resolution
       in
-      let all_primitives_and_variables_are_valid, state =
-        let state, no_untracked =
-          add_untracked_annotation_errors ~resolution:global_resolution ~location ~state annotation
+      let all_primitives_and_variables_are_valid, errors =
+        let errors, no_untracked =
+          add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors annotation
         in
         let invalid_variable_error_kinds =
           Type.Variable.all_free_variables annotation
           |> List.filter_map ~f:(check_invalid_variables resolution)
         in
         ( no_untracked && List.is_empty invalid_variable_error_kinds,
-          List.fold invalid_variable_error_kinds ~init:state ~f:(fun state kind ->
-              legacy_emit_error ~state ~location ~kind) )
+          List.fold invalid_variable_error_kinds ~init:errors ~f:(fun errors kind ->
+              emit_error ~errors ~location ~kind) )
       in
       if all_primitives_and_variables_are_valid then
-        add_invalid_type_parameters_errors annotation ~resolution:global_resolution ~location ~state
+        add_invalid_type_parameters_errors
+          annotation
+          ~resolution:global_resolution
+          ~location
+          ~errors
       else
-        state, Type.Top
+        errors, Type.Top
     in
     let annotation =
       GlobalResolution.parse_annotation ~validation:NoValidation global_resolution expression
     in
-    let state =
+    let errors =
       match annotation with
       | Type.Top ->
-          legacy_emit_error
-            ~state
+          emit_error
+            ~errors:[]
             ~location
             ~kind:
               (Error.InvalidType
                  (InvalidType
                     { annotation = Type.Primitive (Expression.show expression); expected = "" }))
       | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
-          legacy_emit_error
-            ~state
+          emit_error
+            ~errors:[]
             ~location
             ~kind:
               (Error.InvalidType
@@ -252,13 +260,15 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
-      | _ -> state
+      | _ -> []
     in
-    let state, annotation = check_and_correct_annotation state ~resolution ~location ~annotation in
+    let errors, annotation =
+      check_and_correct_annotation errors ~resolution ~location ~annotation
+    in
     let annotation =
       if bind_variables then Type.Variable.mark_all_variables_as_bound annotation else annotation
     in
-    state, annotation
+    errors, annotation
 
 
   let resolution { resolution; _ } = resolution
@@ -505,17 +515,17 @@ module State (Context : Context) = struct
         ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
         location
     in
-    let check_decorators state =
-      let check_final_decorator state =
+    let check_decorators state errors =
+      let check_final_decorator errors =
         if Option.is_none parent && Define.is_final_method define then
-          legacy_emit_error
-            ~state
+          emit_error
+            ~errors
             ~location
             ~kind:(Error.InvalidInheritance (NonMethodFunction "typing.final"))
         else
-          state
+          errors
       in
-      let check_decorator state decorator =
+      let check_decorator errors decorator =
         let is_whitelisted decorator =
           let has_suffix { Node.value; _ } suffix =
             match value with
@@ -537,15 +547,17 @@ module State (Context : Context) = struct
           || is_attr_validator decorator
         in
         if is_whitelisted decorator then
-          state
+          errors
         else
-          let { state; _ } = forward_expression ~state ~expression:decorator in
-          state
+          let { state = { errors = decorator_errors; _ }; _ } =
+            forward_expression ~state:{ state with errors = [] } ~expression:decorator
+          in
+          List.append decorator_errors errors
       in
-      List.fold decorators ~init:state ~f:check_decorator |> check_final_decorator
+      List.fold decorators ~init:errors ~f:check_decorator |> check_final_decorator
     in
-    let check_return_annotation state =
-      let add_missing_return_error ~state annotation =
+    let check_return_annotation state errors =
+      let add_missing_return_error ~errors annotation =
         let return_annotation =
           let annotation =
             let parser = GlobalResolution.annotation_parser global_resolution in
@@ -566,8 +578,8 @@ module State (Context : Context) = struct
           && not (Option.is_some annotation)
           || contains_literal_any
         then
-          legacy_emit_error
-            ~state
+          emit_error
+            ~errors
             ~location
             ~kind:
               (Error.MissingReturnAnnotation
@@ -580,28 +592,28 @@ module State (Context : Context) = struct
                    thrown_at_source = true;
                  })
         else
-          state
+          errors
       in
-      let add_variance_error (state, annotation) =
-        let state =
-          match annotation with
-          | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
-              legacy_emit_error
-                ~state
-                ~location
-                ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
-          | _ -> state
-        in
-        state, annotation
+      let add_variance_error errors annotation =
+        match annotation with
+        | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
+        | _ -> errors
       in
-      let state = add_missing_return_error ~state return_annotation in
-      return_annotation
-      >>| parse_and_check_annotation ~state
-      >>| add_variance_error
-      >>| fst
-      |> Option.value ~default:state
+      let errors = add_missing_return_error ~errors return_annotation in
+      match return_annotation with
+      | None -> errors
+      | Some return_annotation ->
+          let annotation_errors, annotation =
+            parse_and_check_annotation ~resolution:state.resolution return_annotation
+          in
+          let errors = List.append annotation_errors errors in
+          add_variance_error errors annotation
     in
-    let add_capture_annotations state =
+    let add_capture_annotations state errors =
       let process_signature ({ Define.Signature.name = { Node.value = name; _ }; _ } as signature) =
         if Reference.is_local name then
           type_of_signature ~resolution signature
@@ -612,21 +624,27 @@ module State (Context : Context) = struct
         else
           state
       in
-      let process_capture state { Define.Capture.name; kind } =
-        let state, annotation =
+      let process_capture (state, errors) { Define.Capture.name; kind } =
+        let state, errors, annotation =
           match kind with
           | Define.Capture.Kind.Annotation None ->
-              ( legacy_emit_error ~state ~location ~kind:(Error.MissingCaptureAnnotation name),
+              ( state,
+                emit_error ~errors ~location ~kind:(Error.MissingCaptureAnnotation name),
                 Type.Any )
           | Define.Capture.Kind.Annotation (Some annotation_expression) ->
-              parse_and_check_annotation ~state annotation_expression
+              let annotation_errors, annotation =
+                parse_and_check_annotation ~resolution:state.resolution annotation_expression
+              in
+              state, List.append annotation_errors errors, annotation
           | Define.Capture.Kind.DefineSignature signature ->
               ( state,
+                errors,
                 type_of_signature ~resolution signature
                 |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables )
-          | Define.Capture.Kind.Self parent -> state, type_of_parent ~global_resolution parent
+          | Define.Capture.Kind.Self parent ->
+              state, errors, type_of_parent ~global_resolution parent
           | Define.Capture.Kind.ClassSelf parent ->
-              state, type_of_parent ~global_resolution parent |> Type.meta
+              state, errors, type_of_parent ~global_resolution parent |> Type.meta
         in
         let annotation = Annotation.create_immutable annotation in
         let resolution =
@@ -634,22 +652,22 @@ module State (Context : Context) = struct
           let reference = Reference.create name in
           Resolution.set_local resolution ~reference ~annotation
         in
-        { state with resolution }
+        { state with resolution }, errors
       in
       let state = process_signature signature in
-      List.fold captures ~init:state ~f:process_capture
+      List.fold captures ~init:(state, errors) ~f:process_capture
     in
-    let check_parameter_annotations ({ resolution; _ } as state) =
-      let state, annotation_store =
+    let check_parameter_annotations ({ resolution; _ } as state) errors =
+      let errors, annotation_store =
         let make_parameter_name name =
           name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
         in
         let check_parameter
             index
-            (state, annotation_store)
+            (errors, annotation_store)
             { Node.location; value = { Parameter.name; value; annotation } }
           =
-          let add_incompatible_variable_error ~state annotation default =
+          let add_incompatible_variable_error ~errors annotation default =
             if
               Type.is_any default
               || GlobalResolution.less_or_equal global_resolution ~left:default ~right:annotation
@@ -658,10 +676,10 @@ module State (Context : Context) = struct
                    ~left:default
                    ~right:annotation
             then
-              state
+              errors
             else
-              legacy_emit_error
-                ~state
+              emit_error
+                ~errors
                 ~location
                 ~kind:
                   (Error.IncompatibleVariableType
@@ -679,7 +697,7 @@ module State (Context : Context) = struct
                        declare_location = instantiate location;
                      })
           in
-          let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
+          let add_missing_parameter_annotation_error ~errors ~given_annotation annotation =
             let name = name |> Identifier.sanitized in
             let is_dunder_new_method_for_named_tuple =
               Define.is_method define
@@ -699,10 +717,10 @@ module State (Context : Context) = struct
               || is_dunder_new_method_for_named_tuple
               || String.equal name "/"
             then
-              state
+              errors
             else
-              legacy_emit_error
-                ~state
+              emit_error
+                ~errors
                 ~location
                 ~kind:
                   (Error.MissingParameterAnnotation
@@ -714,25 +732,22 @@ module State (Context : Context) = struct
                        thrown_at_source = true;
                      })
           in
-          let add_final_parameter_annotation_error ~state =
-            legacy_emit_error ~state ~location ~kind:(Error.InvalidType (FinalParameter name))
+          let add_final_parameter_annotation_error ~errors =
+            emit_error ~errors ~location ~kind:(Error.InvalidType (FinalParameter name))
           in
-          let add_variance_error (state, annotation) =
-            let state =
-              match annotation with
-              | Type.Variable variable
-                when (not (Define.is_constructor define))
-                     && Type.Variable.Unary.is_covariant variable ->
-                  legacy_emit_error
-                    ~state
-                    ~location
-                    ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
-              | _ -> state
-            in
-            state, annotation
+          let add_variance_error errors annotation =
+            match annotation with
+            | Type.Variable variable
+              when (not (Define.is_constructor define)) && Type.Variable.Unary.is_covariant variable
+              ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
+            | _ -> errors
           in
           let parse_as_unary () =
-            let state, { Annotation.annotation; mutability } =
+            let errors, { Annotation.annotation; mutability } =
               match index, parent with
               | 0, Some parent
               (* __new__ does not require an annotation for __cls__, even though it is a static
@@ -751,8 +766,14 @@ module State (Context : Context) = struct
                   in
                   match annotation with
                   | Some annotation ->
-                      let state, annotation =
-                        parse_and_check_annotation ~state ~bind_variables:false annotation
+                      let errors, annotation =
+                        let annotation_errors, annotation =
+                          parse_and_check_annotation
+                            ~resolution:state.resolution
+                            ~bind_variables:false
+                            annotation
+                        in
+                        List.append annotation_errors errors, annotation
                       in
                       let compatible =
                         GlobalResolution.constraints_solution_exists
@@ -760,7 +781,7 @@ module State (Context : Context) = struct
                           ~left:resolved
                           ~right:annotation
                       in
-                      let state =
+                      let errors =
                         let name = Identifier.sanitized name in
                         let kind =
                           if compatible then
@@ -781,18 +802,25 @@ module State (Context : Context) = struct
                                  })
                         in
                         match kind with
-                        | Some kind -> legacy_emit_error ~state ~location ~kind
-                        | None -> state
+                        | Some kind -> emit_error ~errors ~location ~kind
+                        | None -> errors
                       in
-                      state, Annotation.create annotation
-                  | None -> state, Annotation.create resolved )
+                      errors, Annotation.create annotation
+                  | None -> errors, Annotation.create resolved )
               | _ -> (
-                  let state, parsed_annotation =
-                    annotation
-                    >>| parse_and_check_annotation ~state ~bind_variables:false
-                    >>| add_variance_error
-                    >>| (fun (state, annotation) -> state, Some annotation)
-                    |> Option.value ~default:(state, None)
+                  let errors, parsed_annotation =
+                    match annotation with
+                    | None -> errors, None
+                    | Some annotation ->
+                        let anntation_errors, annotation =
+                          parse_and_check_annotation
+                            ~resolution:state.resolution
+                            ~bind_variables:false
+                            annotation
+                        in
+                        let errors = List.append anntation_errors errors in
+                        let errors = add_variance_error errors annotation in
+                        errors, Some annotation
                   in
                   let contains_prohibited_any parsed_annotation =
                     let contains_literal_any =
@@ -802,44 +830,45 @@ module State (Context : Context) = struct
                   in
                   let value_annotation =
                     value
-                    >>| (fun expression -> forward_expression ~state ~expression)
+                    >>| (fun expression ->
+                          forward_expression ~state:{ state with errors = [] } ~expression)
                     >>| fun { resolved; _ } -> resolved
                   in
-                  let state =
+                  let errors =
                     match parsed_annotation, value_annotation with
                     | Some annotation, Some value_annotation ->
-                        add_incompatible_variable_error ~state annotation value_annotation
-                    | _ -> state
+                        add_incompatible_variable_error ~errors annotation value_annotation
+                    | _ -> errors
                   in
                   match parsed_annotation, value_annotation with
                   | Some annotation, Some _ when Type.contains_final annotation ->
-                      ( add_final_parameter_annotation_error ~state,
+                      ( add_final_parameter_annotation_error ~errors,
                         Annotation.create_immutable annotation )
                   | Some annotation, Some value_annotation when contains_prohibited_any annotation
                     ->
                       ( add_missing_parameter_annotation_error
-                          ~state
+                          ~errors
                           ~given_annotation:(Some annotation)
                           (Some value_annotation),
                         Annotation.create_immutable annotation )
                   | Some annotation, _ when Type.contains_final annotation ->
-                      ( add_final_parameter_annotation_error ~state,
+                      ( add_final_parameter_annotation_error ~errors,
                         Annotation.create_immutable annotation )
                   | Some annotation, None when contains_prohibited_any annotation ->
                       ( add_missing_parameter_annotation_error
-                          ~state
+                          ~errors
                           ~given_annotation:(Some annotation)
                           None,
                         Annotation.create_immutable annotation )
-                  | Some annotation, _ -> state, Annotation.create_immutable annotation
+                  | Some annotation, _ -> errors, Annotation.create_immutable annotation
                   | None, Some value_annotation ->
                       ( add_missing_parameter_annotation_error
-                          ~state
+                          ~errors
                           ~given_annotation:None
                           (Some value_annotation),
                         Annotation.create Type.Any )
                   | None, None ->
-                      ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
+                      ( add_missing_parameter_annotation_error ~errors ~given_annotation:None None,
                         Annotation.create Type.Any ) )
             in
             let apply_starred_annotations annotation =
@@ -862,9 +891,9 @@ module State (Context : Context) = struct
                   Annotation.Immutable { Annotation.original; final }
               | _ -> mutability
             in
-            state, { Annotation.annotation; mutability }
+            errors, { Annotation.annotation; mutability }
           in
-          let state, { Annotation.annotation; mutability } =
+          let errors, { Annotation.annotation; mutability } =
             if String.is_prefix ~prefix:"**" name then
               parse_as_unary ()
             else if String.is_prefix ~prefix:"*" name then
@@ -872,7 +901,7 @@ module State (Context : Context) = struct
                 Type.Tuple (Bounded bounded)
                 |> Type.Variable.mark_all_variables_as_bound
                 |> Annotation.create
-                |> fun annotation -> state, annotation
+                |> fun annotation -> errors, annotation
               in
               let parsed_as_concatenation () =
                 annotation
@@ -885,7 +914,7 @@ module State (Context : Context) = struct
             else
               parse_as_unary ()
           in
-          ( state,
+          ( errors,
             Map.set
               annotation_store
               ~key:(make_parameter_name name)
@@ -894,19 +923,19 @@ module State (Context : Context) = struct
         let number_of_stars name = Identifier.split_star name |> fst |> String.length in
         match List.rev parameters, parent with
         | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define) ->
-            let state =
+            let errors =
               let name =
                 if Define.is_class_method define || Define.is_class_property define then
                   "cls"
                 else
                   "self"
               in
-              legacy_emit_error
-                ~state
+              emit_error
+                ~errors
                 ~location
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
-            state, Resolution.annotation_store resolution
+            errors, Resolution.annotation_store resolution
         | ( {
               Node.value = { name = second_name; value = None; annotation = Some second_annotation };
               _;
@@ -948,9 +977,10 @@ module State (Context : Context) = struct
                     |> Type.Variable.Variadic.Parameters.decompose
                     |> add_annotations
                   in
-                  List.rev reversed_head |> List.foldi ~init:(state, annotations) ~f:check_parameter
+                  List.rev reversed_head
+                  |> List.foldi ~init:(errors, annotations) ~f:check_parameter
                 else
-                  let state =
+                  let errors =
                     let origin =
                       if Define.is_toplevel (Node.value Context.define) then
                         Error.Toplevel
@@ -959,38 +989,41 @@ module State (Context : Context) = struct
                       else
                         Error.Define
                     in
-                    legacy_emit_error
-                      ~state
+                    emit_error
+                      ~errors
                       ~location
                       ~kind:
                         (Error.InvalidTypeVariable
                            { annotation = ParameterVariadic variable; origin })
                   in
-                  state, add_annotations { positional_component = Top; keyword_component = Top }
+                  errors, add_annotations { positional_component = Top; keyword_component = Top }
             | None ->
                 List.foldi
-                  ~init:(state, Resolution.annotation_store resolution)
+                  ~init:(errors, Resolution.annotation_store resolution)
                   ~f:check_parameter
                   parameters )
         | _ ->
             List.foldi
-              ~init:(state, Resolution.annotation_store resolution)
+              ~init:(errors, Resolution.annotation_store resolution)
               ~f:check_parameter
               parameters
       in
       let resolution = Resolution.with_annotation_store resolution ~annotation_store in
-      { state with resolution }
+      { state with resolution }, errors
     in
-    let check_base_annotations state =
+    let check_base_annotations state errors =
       if Define.is_class_toplevel define then
         let open Annotated in
-        let check_base state ({ ExpressionCall.Argument.value; _ } as base) =
-          let state_with_errors, parsed = parse_and_check_annotation ~state value in
+        let check_base old_errors ({ ExpressionCall.Argument.value; _ } as base) =
+          let annotation_errors, parsed =
+            parse_and_check_annotation ~resolution:state.resolution value
+          in
+          let errors = List.append annotation_errors old_errors in
           match parsed with
           | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
               (* Inheriting from type makes you a metaclass, and we don't want to
                * suggest that instead you need to use typing.Type[Something] *)
-              state
+              old_errors
           | Primitive base_name ->
               let is_subclass_typed_dictionary =
                 define.signature.parent
@@ -1009,24 +1042,23 @@ module State (Context : Context) = struct
                          (Primitive base_name)
                      || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name )
               then
-                legacy_emit_error
-                  ~state:state_with_errors
+                emit_error
+                  ~errors
                   ~location:(Node.location value)
                   ~kind:
                     (InvalidInheritance
                        (UninheritableType
                           { annotation = parsed; is_parent_class_typed_dictionary = true }))
               else
-                state_with_errors
+                errors
           | Top
           (* There's some other problem we already errored on *)
           | Parametric _ ->
-              state_with_errors
-          | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base ->
-              state_with_errors
+              errors
+          | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base -> errors
           | annotation ->
-              legacy_emit_error
-                ~state:state_with_errors
+              emit_error
+                ~errors
                 ~location:(Node.location value)
                 ~kind:
                   (InvalidInheritance
@@ -1040,18 +1072,18 @@ module State (Context : Context) = struct
           >>| ClassSummary.bases
           |> Option.value ~default:[]
         in
-        List.fold ~init:state ~f:check_base bases
+        List.fold ~init:errors ~f:check_base bases
       else
-        state
+        errors
     in
-    let check_behavioral_subtyping state =
+    let check_behavioral_subtyping state errors =
       try
         if
           Define.is_constructor define
           || Define.is_class_method define
           || Define.is_dunder_method define
         then
-          state
+          errors
         else
           let open Annotated in
           begin
@@ -1062,17 +1094,17 @@ module State (Context : Context) = struct
                   ~resolution:global_resolution
                   ~name:(StatementDefine.unqualified_name define)
                 >>| fun overridden_attribute ->
-                let state =
+                let errors =
                   match AnnotatedAttribute.visibility overridden_attribute with
                   | ReadOnly (Refinable { overridable = false }) ->
                       let parent = overridden_attribute |> Attribute.parent in
-                      legacy_emit_error
-                        ~state
+                      emit_error
+                        ~errors
                         ~location
                         ~kind:(Error.InvalidOverride { parent; decorator = Final })
-                  | _ -> state
+                  | _ -> errors
                 in
-                let state =
+                let errors =
                   if
                     not
                       (Bool.equal
@@ -1086,12 +1118,9 @@ module State (Context : Context) = struct
                       else
                         Error.StaticOverride
                     in
-                    legacy_emit_error
-                      ~state
-                      ~location
-                      ~kind:(Error.InvalidOverride { parent; decorator })
+                    emit_error ~errors ~location ~kind:(Error.InvalidOverride { parent; decorator })
                   else
-                    state
+                    errors
                 in
                 (* Check strengthening of postcondition. *)
                 match Annotation.annotation (Attribute.annotation overridden_attribute) with
@@ -1105,7 +1134,7 @@ module State (Context : Context) = struct
                           original_implementation
                       | annotation -> raise (ClassHierarchy.Untracked annotation)
                     in
-                    let state =
+                    let errors =
                       let expected = Type.Callable.Overload.return_annotation implementation in
                       let actual =
                         Type.Callable.Overload.return_annotation original_implementation
@@ -1118,8 +1147,8 @@ module State (Context : Context) = struct
                                 ~left:actual
                                 ~right:expected)
                       then
-                        legacy_emit_error
-                          ~state
+                        emit_error
+                          ~errors
                           ~location
                           ~kind:
                             (Error.InconsistentOverride
@@ -1136,7 +1165,7 @@ module State (Context : Context) = struct
                                         ~covariant:false);
                                })
                       else
-                        state
+                        errors
                     in
                     (* Check weakening of precondition. *)
                     let overriding_parameters =
@@ -1160,7 +1189,7 @@ module State (Context : Context) = struct
                              { Type.Callable.Parameter.name; annotation; default = false })
                       |> Type.Callable.Parameter.create
                     in
-                    let check_parameter state overridden_parameter =
+                    let check_parameter errors overridden_parameter =
                       let validate_match ~expected = function
                         | Some actual -> (
                             let is_compatible =
@@ -1172,8 +1201,8 @@ module State (Context : Context) = struct
                             in
                             try
                               if (not (Type.is_top expected)) && not is_compatible then
-                                legacy_emit_error
-                                  ~state
+                                emit_error
+                                  ~errors
                                   ~location
                                   ~kind:
                                     (Error.InconsistentOverride
@@ -1192,11 +1221,11 @@ module State (Context : Context) = struct
                                                    ~covariant:false));
                                        })
                               else
-                                state
+                                errors
                             with
                             | ClassHierarchy.Untracked _ ->
                                 (* TODO(T27409168): Error here. *)
-                                state )
+                                errors )
                         | None ->
                             let has_keyword_and_anonymous_starred_parameters =
                               List.exists overriding_parameters ~f:(function
@@ -1207,10 +1236,10 @@ module State (Context : Context) = struct
                                      | _ -> false)
                             in
                             if has_keyword_and_anonymous_starred_parameters then
-                              state
+                              errors
                             else
-                              legacy_emit_error
-                                ~state
+                              emit_error
+                                ~errors
                                 ~location
                                 ~kind:
                                   (Error.InconsistentOverride
@@ -1267,21 +1296,21 @@ module State (Context : Context) = struct
                           (* TODO(T44178876): There is no reasonable way to compare either of these
                              alone, which is the central issue with this comparison strategy. For
                              now, let's just ignore this *)
-                          state
+                          errors
                     in
                     Type.Callable.Overload.parameters implementation
                     |> Option.value ~default:[]
-                    |> List.fold ~init:state ~f:check_parameter
-                | _ -> state )
+                    |> List.fold ~init:errors ~f:check_parameter
+                | _ -> errors )
             | _ -> None
           end
-          |> Option.value ~default:state
+          |> Option.value ~default:errors
       with
-      | ClassHierarchy.Untracked _ -> state
+      | ClassHierarchy.Untracked _ -> errors
     in
-    let check_constructor_return state =
+    let check_constructor_return errors =
       if not (Define.is_constructor define) then
-        state
+        errors
       else
         match return_annotation with
         | Some ({ Node.location; _ } as annotation) -> (
@@ -1290,36 +1319,39 @@ module State (Context : Context) = struct
               when String.equal (Reference.last name) "__new__" ->
                 (* TODO(T45018328): Error here. `__new__` is a special undecorated static method,
                    and we really ought to be checking its return type against typing.Type[Cls]. *)
-                state
+                errors
             | _ ->
                 let annotation = GlobalResolution.parse_annotation global_resolution annotation in
                 if Type.is_none annotation then
-                  state
+                  errors
                 else
-                  legacy_emit_error
-                    ~state
+                  emit_error
+                    ~errors
                     ~location
                     ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
-        | _ -> state
+        | _ -> errors
     in
-    let state =
-      create ~resolution:(Resolution.with_parent resolution ~parent) ()
-      |> check_return_annotation
-      |> add_capture_annotations
-      |> check_decorators
-      |> check_parameter_annotations
-      |> check_base_annotations
-      |> check_behavioral_subtyping
-      |> check_constructor_return
+    let state, errors =
+      let state = create ~resolution:(Resolution.with_parent resolution ~parent) () in
+      let state, errors = add_capture_annotations state [] in
+      let state, errors = check_parameter_annotations state errors in
+      let errors =
+        check_return_annotation state errors
+        |> check_decorators state
+        |> check_base_annotations state
+        |> check_behavioral_subtyping state
+        |> check_constructor_return
+      in
+      state, errors
     in
     let () =
-      let { resolution; resolution_fixpoint; errors; error_map; _ } = state in
+      let { resolution; resolution_fixpoint; error_map; _ } = state in
       let postcondition = Resolution.annotation_store resolution in
       let key = [%hash: int * int] (Cfg.entry_index, 0) in
       LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition;
       LocalErrorMap.set error_map ~key ~errors
     in
-    state
+    { state with errors }
 
 
   and forward_expression ~state:({ resolution; _ } as state) ~expression:{ Node.location; value } =
@@ -1981,7 +2013,12 @@ module State (Context : Context) = struct
                 (name_to_reference name)
                 (Some (Reference.create "pyre_extensions.safe_cast")) ->
         let contains_literal_any = Type.expression_contains_any cast_annotation in
-        let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
+        let state, cast_annotation =
+          let annotation_errors, annotation =
+            parse_and_check_annotation ~resolution:state.resolution cast_annotation
+          in
+          { state with errors = List.append annotation_errors state.errors }, annotation
+        in
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
           if contains_literal_any then
@@ -2961,10 +2998,13 @@ module State (Context : Context) = struct
     match value with
     | Assign { Assign.target; annotation; value; parent } ->
         let state, original_annotation =
-          annotation
-          >>| parse_and_check_annotation ~state
-          >>| (fun (state, annotation) -> state, Some annotation)
-          |> Option.value ~default:(state, None)
+          match annotation with
+          | None -> state, None
+          | Some annotation ->
+              let annotation_errors, annotation =
+                parse_and_check_annotation ~resolution:state.resolution annotation
+              in
+              { state with errors = List.append annotation_errors state.errors }, Some annotation
         in
         let is_final = original_annotation >>| Type.is_final |> Option.value ~default:false in
         let original_annotation =
@@ -3015,15 +3055,22 @@ module State (Context : Context) = struct
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
           if is_type_alias then
             let add_annotation_errors state =
-              add_invalid_type_parameters_errors
-                ~resolution:global_resolution
-                ~location
-                ~state
-                parsed
-              |> fst
-              |> fun state ->
-              add_untracked_annotation_errors ~resolution:global_resolution ~location ~state parsed
-              |> fst
+              let errors =
+                add_invalid_type_parameters_errors
+                  ~resolution:global_resolution
+                  ~location
+                  ~errors:state.errors
+                  parsed
+                |> fst
+                |> fun errors ->
+                add_untracked_annotation_errors
+                  ~resolution:global_resolution
+                  ~location
+                  ~errors
+                  parsed
+                |> fst
+              in
+              { state with errors }
             in
             let add_type_variable_errors state =
               let kind =
@@ -3845,7 +3892,7 @@ module State (Context : Context) = struct
         in
         let parse_refinement_annotation annotation =
           let parse_meta annotation =
-            match parse_and_check_annotation ~state annotation |> snd with
+            match parse_and_check_annotation ~resolution:state.resolution annotation |> snd with
             | Type.Top -> (
                 (* Try to resolve meta-types given as expressions. *)
                 match resolve_expression_type ~state annotation with
@@ -5069,7 +5116,7 @@ let exit_state ~resolution (module Context : Context) =
   let global_resolution = Resolution.global_resolution resolution in
   if Define.is_stub define then
     let { State.resolution; _ } = initial in
-    let errors_sofar = State.local_errors initial |> Error.deduplicate in
+    let errors_sofar = State.all_errors initial |> Error.deduplicate in
     ( emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
       |> filter_errors (module Context) ~global_resolution,
       None,

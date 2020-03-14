@@ -31,7 +31,11 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  val parse_and_check_annotation : ?bind_variables:bool -> state:t -> Expression.t -> t * Type.t
+  val parse_and_check_annotation
+    :  ?bind_variables:bool ->
+    resolution:Resolution.t ->
+    Expression.t ->
+    Error.t list * Type.t
 
   include Fixpoint.State with type t := t
 end
