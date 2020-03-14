@@ -148,6 +148,15 @@ let test_callable_attribute_access context =
       "Revealed type [-1]: Revealed type for `b` is `str`.";
       "Revealed type [-1]: Revealed type for `c` is `typing.Callable(object.__str__)[[], str]`.";
     ];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        pass
+      def bar() -> None:
+        foo.nonsense = 1
+    |}
+    ["Undefined attribute [16]: Callable `foo` has no attribute `nonsense`."];
   ()
 
 

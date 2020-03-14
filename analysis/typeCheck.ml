@@ -3090,12 +3090,7 @@ module State (Context : Context) = struct
                       else
                         resolved, false
                     in
-                    let parent_class_name =
-                      match parent with
-                      (* TODO(T64004572): Remove this special case *)
-                      | Type.Callable _ -> None
-                      | _ -> Type.split parent |> fst |> Type.primitive_name
-                    in
+                    let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
                     let reference =
                       match base with
                       | { Node.value = Name name; _ } when is_simple_name name ->
