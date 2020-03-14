@@ -333,6 +333,11 @@ class Configuration:
 
             typeshed_subdirectories = os.listdir(self.typeshed)
             if "stdlib" not in typeshed_subdirectories:
+                LOG.warning(
+                    "Typeshed at `%s` contains subdirectories:\n%s",
+                    self.typeshed,
+                    typeshed_subdirectories,
+                )
                 raise InvalidConfiguration(
                     "`typeshed` location must contain a `stdlib` directory."
                 )
