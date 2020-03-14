@@ -2549,6 +2549,7 @@ let split annotation =
   | TypedDictionary { fields; _ } ->
       Primitive (typed_dictionary_class_name ~total:(are_fields_total fields)), []
   | Literal _ as literal -> weaken_literals literal, []
+  | Callable _ -> Primitive "typing.Callable", []
   | annotation -> annotation, []
 
 
