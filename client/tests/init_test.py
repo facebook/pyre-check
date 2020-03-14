@@ -5,20 +5,24 @@
 
 # pyre-unsafe
 
-import os
 import unittest
+from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import (
-    EnvironmentException,
     __name__ as client_name,
     _resolve_filter_paths,
     find_local_root,
     find_log_directory,
     find_project_root,
-    get_binary_version_from_file,
+    get_binary_version,
 )
 from ..filesystem import __name__ as filesystem_name
+
+
+class MockCompletedProcess(NamedTuple):
+    returncode: int
+    stdout: str
 
 
 class InitTest(unittest.TestCase):
@@ -122,62 +126,23 @@ class InitTest(unittest.TestCase):
         )
         self.assertEqual(filter_paths, {"/project/local"})
 
-    @patch.object(os, "getenv", return_value=None)
-    @patch("builtins.open")
-    @patch("json.loads")
-    def test_get_binary_version_from_file(
-        self, json_load, open, os_environment
-    ) -> None:
-        # No local configuration
-        json_load.side_effect = [
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-                "version": "VERSION",
-            },
-            {},
-        ]
-        self.assertEqual("VERSION", get_binary_version_from_file(None))
+    def test_get_binary_version(self) -> None:
+        configuration: MagicMock = MagicMock()
+        configuration.binary = ""
 
-        json_load.side_effect = [
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-            },
-            {},
-        ]
-        self.assertEqual("No version set", get_binary_version_from_file(None))
+        def assert_version(
+            returncode: int, stdout: str, expected: Optional[str]
+        ) -> None:
+            with patch(
+                "subprocess.run",
+                return_value=MockCompletedProcess(returncode, stdout=stdout),
+            ):
+                self.assertEqual(expected, get_binary_version(configuration))
 
-        # With local configuration
-        json_load.side_effect = [
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-                "version": "LOCAL_VERSION",
-            },
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-                "version": "MASTER_VERSION",
-            },
-        ]
-        self.assertEqual("LOCAL_VERSION", get_binary_version_from_file("local"))
-
-        json_load.side_effect = [
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-            },
-            {
-                "source_directories": ["a"],
-                "logger": "/usr/logger",
-                "ignore_all_errors": ["buck-out/dev/gen"],
-                "version": "MASTER_VERSION",
-            },
-        ]
-        self.assertEqual("MASTER_VERSION", get_binary_version_from_file("local"))
+        assert_version(
+            returncode=0, stdout="facefacefaceb00", expected="facefacefaceb00"
+        )
+        assert_version(
+            returncode=0, stdout=" facefacefaceb00\n", expected="facefacefaceb00"
+        )
+        assert_version(returncode=1, stdout="facefacefaceb00", expected=None)

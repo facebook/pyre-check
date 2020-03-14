@@ -64,42 +64,14 @@ def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
     return terminal not in ["dumb", "emacs"]
 
 
-def get_binary_version(configuration: "Configuration") -> str:
-    override = os.getenv("PYRE_BINARY")
-    if override:
-        return "override: {}".format(override)
-
-    configured = configuration.version_hash
-    if configured:
-        return configured
-
-    return "No version set"
-
-
-def get_binary_version_from_file(local_path: Optional[str]) -> str:
-    override = os.getenv("PYRE_BINARY")
-    if override:
-        return "override: {}".format(override)
-
-    def read_version(configuration_path: str) -> Optional[str]:
-        with open(configuration_path) as file:
-            configuration_contents = file.read()
-            return json.loads(configuration_contents).pop("version", None)
-
-    version: Optional[str] = None
-    try:
-        # Get local configuration version
-        if local_path:
-            local_configuration = os.path.join(local_path, LOCAL_CONFIGURATION_FILE)
-            version = read_version(local_configuration)
-
-        # Get configuration version
-        if not version:
-            version = read_version(CONFIGURATION_FILE)
-    except Exception:
-        pass
-    # pyre-fixme[7]: Expected `str` but got `Optional[str]`.
-    return "No version set" if not version else version
+def get_binary_version(configuration: "Configuration") -> Optional[str]:
+    status = subprocess.run(
+        [configuration.binary, "-version"], stdout=subprocess.PIPE, text=True
+    )
+    if status.returncode == 0:
+        return status.stdout.strip()
+    else:
+        return None
 
 
 def find_project_root(original_directory: str) -> str:

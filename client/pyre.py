@@ -13,14 +13,7 @@ import time
 import traceback
 from typing import Optional
 
-from . import (
-    buck,
-    commands,
-    find_project_root,
-    get_binary_version_from_file,
-    log,
-    log_statistics,
-)
+from . import buck, commands, find_project_root, get_binary_version, log, log_statistics
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
@@ -83,18 +76,26 @@ def main() -> int:
         original_directory = os.getcwd()
         # TODO(T57959968): Stop changing the directory in the client
         os.chdir(find_project_root(original_directory))
+        command = arguments.command(arguments, original_directory)
+
         if arguments.version:
-            binary_version = get_binary_version_from_file(arguments.local_configuration)
+            configuration = command.configuration
+            if configuration:
+                binary_version = (
+                    get_binary_version(configuration)
+                    or "Cannot get version from binary"
+                )
+            else:
+                binary_version = "Cannot find Pyre binary"
             log.stdout.write(
                 "Binary version: {}\nClient version: {}".format(
                     binary_version, __version__
                 )
             )
-            return ExitCode.SUCCESS
-        command: CommandParser = arguments.command(arguments, original_directory)
-
-        log.initialize(command.noninteractive, command.log_directory)
-        exit_code = command.run().exit_code()
+            exit_code = ExitCode.SUCCESS
+        else:
+            log.initialize(command.noninteractive, command.log_directory)
+            exit_code = command.run().exit_code()
     except buck.BuckException as error:
         client_exception_message = str(error)
         if arguments.command == commands.Persistent:

@@ -45,10 +45,13 @@ class RageTest(unittest.TestCase):
         self.assertEqual(lines[3], "<SERVER RAGE>")
 
     @patch("sys.stdout", new_callable=io.StringIO)
+    @patch("subprocess.run")
     @patch.object(
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
-    def test_terminal_output(self, call_client: MagicMock, stdout: MagicMock) -> None:
+    def test_terminal_output(
+        self, call_client: MagicMock, run: MagicMock, stdout: MagicMock
+    ) -> None:
         arguments = mock_arguments()
         arguments.output_path = None
         configuration = mock_configuration()
@@ -63,10 +66,11 @@ class RageTest(unittest.TestCase):
         )
         self.assert_output(stdout)
 
+    @patch("subprocess.run")
     @patch.object(
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
-    def test_file_output(self, call_client: MagicMock) -> None:
+    def test_file_output(self, call_client: MagicMock, run: MagicMock) -> None:
         arguments = mock_arguments()
         arguments.output_path = "/output"
         configuration = mock_configuration()

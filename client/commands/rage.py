@@ -72,7 +72,7 @@ class Rage(Command):
         print("Binary path:", self._configuration.binary, file=output_file, flush=True)
         print(
             "Configured binary version:",
-            get_binary_version(self._configuration),
+            get_binary_version(self._configuration) or "Cannot get version from binary",
             file=output_file,
             flush=True,
         )
