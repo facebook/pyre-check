@@ -2485,45 +2485,7 @@ module State (Context : Context) = struct
             state, resolved_base
         in
         let { state = updated_state; resolved; resolved_annotation; _ } =
-          if Type.is_undeclared resolved_base then
-            let state =
-              reference
-              >>| (fun reference -> Error.UndefinedName reference)
-              >>| (fun kind -> emit_error ~state ~location ~kind)
-              |> Option.value ~default:state
-            in
-            { state; resolved = resolved_base; resolved_annotation = None; base = None }
-          else if Type.equal resolved_base Type.Top then (* Global or local. *)
-            reference
-            >>| forward_reference ~state
-            |> Option.value
-                 ~default:{ state; resolved = Type.Top; resolved_annotation = None; base = None }
-          else if Type.is_callable resolved_base then (* Nested function. *)
-            let resolved =
-              reference >>= fun reference -> Resolution.get_local resolution ~reference
-            in
-            match resolved with
-            | Some annotation ->
-                {
-                  state;
-                  resolved = Annotation.annotation annotation;
-                  resolved_annotation = Some annotation;
-                  base = None;
-                }
-            | None ->
-                let state =
-                  let name =
-                    match resolved_base with
-                    | Type.Callable { Type.Callable.kind = Named name; _ } -> Some name
-                    | _ -> None
-                  in
-                  emit_error
-                    ~state
-                    ~location
-                    ~kind:(Error.UndefinedAttribute { attribute; origin = Error.Callable name })
-                in
-                { state; resolved = Type.Top; resolved_annotation = None; base = None }
-          else (* Attribute access. *)
+          let access_as_attribute () =
             let find_attribute ({ Type.instantiated; class_attributes; class_name } as resolved) =
               let name = attribute in
               match
@@ -2698,6 +2660,38 @@ module State (Context : Context) = struct
                   resolved_annotation = Some resolved;
                   base = None;
                 }
+          in
+          if Type.is_undeclared resolved_base then
+            let state =
+              reference
+              >>| (fun reference -> Error.UndefinedName reference)
+              >>| (fun kind -> emit_error ~state ~location ~kind)
+              |> Option.value ~default:state
+            in
+            { state; resolved = resolved_base; resolved_annotation = None; base = None }
+          else if Type.equal resolved_base Type.Top then (* Global or local. *)
+            reference
+            >>| forward_reference ~state
+            |> Option.value
+                 ~default:{ state; resolved = Type.Top; resolved_annotation = None; base = None }
+          (* TODO(T63892020): We need to fix up qualification so nested classes and functions are
+             just normal locals rather than attributes of the enclosing function, which they really
+             are not *)
+          else if Type.is_callable resolved_base then
+            let resolved =
+              reference >>= fun reference -> Resolution.get_local resolution ~reference
+            in
+            match resolved with
+            | Some annotation ->
+                {
+                  state;
+                  resolved = Annotation.annotation annotation;
+                  resolved_annotation = Some annotation;
+                  base = None;
+                }
+            | None -> access_as_attribute ()
+          else (* Attribute access. *)
+            access_as_attribute ()
         in
         let base =
           match super_base with

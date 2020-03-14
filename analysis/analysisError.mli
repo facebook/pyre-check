@@ -30,7 +30,6 @@ type invalid_class_instantiation =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Callable of Reference.t option
   | Class of {
       annotation: Type.t;
       class_attribute: bool;

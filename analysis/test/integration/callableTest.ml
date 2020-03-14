@@ -128,7 +128,27 @@ let test_callable_attribute_access context =
           x.assert_not_called()
           x.assert_called_once()
     |}
-    []
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        pass
+      def bar() -> None:
+        a = foo.__ne__
+        b = foo.__module__
+        c = foo.__str__
+        reveal_type(a)
+        reveal_type(b)
+        reveal_type(c)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `typing.Callable(object.__ne__)[[Named(o, \
+       object)], bool]`.";
+      "Revealed type [-1]: Revealed type for `b` is `str`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Callable(object.__str__)[[], str]`.";
+    ];
+  ()
 
 
 let test_position_only_parameters context =

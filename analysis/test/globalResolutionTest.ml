@@ -647,6 +647,7 @@ let test_typed_dictionary_attributes context =
            "__getattribute__", "object";
            "__hash__", "object";
            "__init__", "object";
+           "__module__", "object";
            "__ne__", "object";
            "__new__", "object";
            "__reduce__", "object";
@@ -684,6 +685,7 @@ let test_typed_dictionary_attributes context =
            "__format__", "object";
            "__getattribute__", "object";
            "__hash__", "object";
+           "__module__", "object";
            "__ne__", "object";
            "__new__", "object";
            "__reduce__", "object";

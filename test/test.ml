@@ -466,6 +466,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class object():
           __doc__: str
+          __module__: str
           @property
           def __class__(self: _T) -> Type[_T]: ...
           def __init__(self) -> None: ...

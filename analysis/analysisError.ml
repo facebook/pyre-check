@@ -39,7 +39,6 @@ type invalid_class_instantiation =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Callable of Reference.t option
   | Class of {
       annotation: Type.t;
       class_attribute: bool;
@@ -1713,8 +1712,9 @@ let messages ~concise ~signature location kind =
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
-        | Callable None -> "Anonymous callable"
-        | Callable (Some name) -> Format.asprintf "Callable `%a`" pp_reference name
+        | Class { annotation = Callable { kind = Anonymous; _ }; _ } -> "Anonymous callable"
+        | Class { annotation = Callable { kind = Named name; _ }; _ } ->
+            Format.asprintf "Callable `%a`" pp_reference name
         | Class { annotation; _ } ->
             let annotation, _ = Type.split annotation in
             let name =
@@ -2018,6 +2018,8 @@ let due_to_analysis_limitations { kind; _ } =
       || Type.is_type_alias actual
       || Type.is_undeclared actual
   | Top -> true
+  (* TODO(T64004384): Remove this special case *)
+  | UndefinedAttribute { origin = Class { annotation = Callable _; _ }; _ } -> false
   | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
   | DeadStore _
@@ -2233,6 +2235,8 @@ let less_or_equal ~resolution left right =
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
+      (* TODO(T64004384): Remove this special case *)
+      | Class { annotation = Callable _; _ }, Class { annotation = Callable _; _ } -> false
       | Class left, Class right when Bool.equal left.class_attribute right.class_attribute ->
           GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
       | Module left, Module right -> Reference.equal_sanitized left right
@@ -2696,6 +2700,9 @@ let join_at_define ~resolution errors =
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
         add_error_to_map (Reference.show_sanitized name)
+    (* TODO(T64004384): Remove this special case *)
+    | { kind = UndefinedAttribute { origin = Class { annotation = Callable _; _ }; _ }; _ } ->
+        error :: errors
     | { kind = UndefinedAttribute { attribute; origin = Class { annotation; _ } }; _ } ->
         (* Only error once per define on accesses or assigns to an undefined class attribute. *)
         add_error_to_map (attribute ^ Type.show annotation)
@@ -2746,6 +2753,7 @@ let filter ~resolution errors =
   let should_filter ({ location; _ } as error) =
     let is_mock_error { kind; _ } =
       match kind with
+      | UndefinedAttribute { origin = Class { annotation = Callable _; _ }; _ } -> false
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | IncompatibleAwaitableType actual
       | IncompatibleParameterType { mismatch = { actual; _ }; _ }
@@ -2830,17 +2838,21 @@ let filter ~resolution errors =
     let is_callable_attribute_error { kind; _ } =
       (* TODO(T53616545): Remove once our decorators are more expressive. *)
       match kind with
-      | UndefinedAttribute { origin = Callable _; attribute = "command" } -> true
+      | UndefinedAttribute { origin = Class { annotation = Callable _; _ }; attribute = "command" }
+        ->
+          true
       (* We also need to filter errors for common mocking patterns. *)
       | UndefinedAttribute
           {
-            origin = Callable _;
+            origin = Class { annotation = Callable _; _ };
             attribute =
               ( "assert_not_called" | "assert_called_once" | "assert_called_once_with"
               | "reset_mock" | "assert_has_calls" | "assert_any_call" );
           } ->
           true
-      | UndefinedAttribute { origin = Callable (Some name); _ } -> Reference.last name = "patch"
+      | UndefinedAttribute
+          { origin = Class { annotation = Callable { kind = Named name; _ }; _ }; _ } ->
+          Reference.last name = "patch"
       | _ -> false
     in
     let is_stub_error { kind; location = { Location.WithModule.path; _ }; _ } =
@@ -3212,7 +3224,6 @@ let dequalify
                   dequalify annotation
               in
               Class { annotation; class_attribute }
-          | Callable callable -> Callable (callable >>| dequalify_reference)
           | Module module_name -> Module (dequalify_reference module_name)
         in
         UndefinedAttribute { attribute; origin }
