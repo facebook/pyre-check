@@ -747,7 +747,13 @@ let test_filter context =
   assert_filtered (abstract_class_instantiation "int");
   assert_filtered (abstract_class_instantiation "float");
   assert_filtered (abstract_class_instantiation "bool");
-  assert_unfiltered (abstract_class_instantiation "str")
+  assert_unfiltered (abstract_class_instantiation "str");
+
+  assert_unfiltered (undefined_attribute (Type.Callable.create ~annotation:Type.integer ()));
+  assert_filtered
+    (undefined_attribute (Type.Callable.create ~annotation:(Type.Primitive "test.MockChild") ()));
+
+  ()
 
 
 let test_suppress _ =
@@ -835,6 +841,13 @@ let test_suppress _ =
          method_name = "__setitem__";
          mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
        });
+
+  assert_not_suppressed
+    Source.Strict
+    (undefined_attribute (Type.Callable.create ~annotation:Type.integer ()));
+  assert_suppressed
+    Source.Strict
+    (undefined_attribute (Type.Callable.create ~annotation:Type.Top ()));
   ()
 
 
