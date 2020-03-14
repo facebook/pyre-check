@@ -47,8 +47,6 @@ class InitializeTest(unittest.TestCase):
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
-        arguments.local = True
-
         def exists(path):
             return False
 
@@ -58,6 +56,8 @@ class InitializeTest(unittest.TestCase):
             commands.Command, "_call_client"
         ), patch.object(
             initialize.Initialize, "_get_local_configuration", return_value={}
+        ), patch.object(
+            initialize.Initialize, "_is_local", return_value=True
         ):
             initialize.Initialize(arguments, original_directory).run()
             file().write.assert_has_calls([call("{}"), call("\n")])

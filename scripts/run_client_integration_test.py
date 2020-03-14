@@ -810,12 +810,12 @@ class InitializeTest(TestCommand):
             )
 
     def test_initialize_local_configuration(self) -> None:
+        self.create_project_configuration()
         self.create_directory("local_project")
         # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
         with _watch_directory(self.directory):
             result = self.run_pyre(
                 "init",
-                "--local",
                 working_directory="local_project",
                 prompts=["Y", "//example:target", "Y", "Y", "Y"],
             )

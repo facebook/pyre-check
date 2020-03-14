@@ -16,6 +16,7 @@ from typing import Any, Dict
 from .. import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    find_project_root,
     find_taint_models_directory,
     find_typeshed,
     log,
@@ -41,7 +42,8 @@ class Initialize(CommandParser):
         initialize.add_argument(
             "--local",
             action="store_true",
-            help="Initializes a local configuration in a project subdirectory.",
+            help="[DEPRECATED] Initializes a local configuration \
+            in a project subdirectory.",
         )
 
     def _get_configuration(self) -> Dict[str, Any]:
@@ -129,7 +131,12 @@ class Initialize(CommandParser):
                 configuration["differential"] = False
         return configuration
 
+    def _is_local(self) -> bool:
+        project_root = find_project_root(self._original_directory)
+        return project_root != self._original_directory
+
     def _run(self) -> None:
+        self._local = self._is_local()
         configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
             if self._local:
