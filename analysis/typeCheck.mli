@@ -24,9 +24,6 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  (* Expose for testing *)
-  val local_errors : t -> Error.t list
-
   val all_errors : t -> Error.t list
 
   val initial : resolution:Resolution.t -> t
