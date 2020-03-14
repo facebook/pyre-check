@@ -388,6 +388,18 @@ let test_check_method_parameters context =
     ];
   assert_type_errors
     {|
+      from typing import Optional
+      def bar(x: int) -> int: ...
+      def baz(x: int, y: int) -> None: ...
+      def foo(x: Optional[int]) -> None:
+        baz(bar("derp"), x if x else 0)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `bar` but got `str`.";
+    ];
+  assert_type_errors
+    {|
       def foo(input: str) -> str:
         return input.substr('asdf')
     |}

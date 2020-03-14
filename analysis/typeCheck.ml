@@ -2757,6 +2757,7 @@ module State (Context : Context) = struct
            until the parser gets full support of them. *)
         { state; resolved = Type.string; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
+        let { errors = original_errors; _ } = state in
         let ({ state = { errors = target_errors; _ }; _ } as target) =
           forward_statement ~state:{ state with errors = [] } ~statement:(Statement.assume test)
           |> fun state -> forward_expression ~state ~expression:target
@@ -2768,7 +2769,7 @@ module State (Context : Context) = struct
           |> fun state -> forward_expression ~state ~expression:alternative
         in
         let { state; resolved; _ } = join_resolved target alternative in
-        let errors = List.append target_errors alternative_errors in
+        let errors = List.concat [target_errors; alternative_errors; original_errors] in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
         {
           state = { state with resolution; errors };
