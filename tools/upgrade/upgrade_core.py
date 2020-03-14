@@ -526,7 +526,11 @@ def run_fixme_targets_file(
     def get_errors(
         path: str, targets: List[str], check_alternate_names: bool = True
     ) -> Optional[List[Dict[str, Any]]]:
-        buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
+        buck_test_command = (
+            ["buck", "test", "--show-full-json-output"]
+            + targets
+            + ["--", "--run-disabled"]
+        )
         buck_test = subprocess.run(
             buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
