@@ -134,15 +134,23 @@ module State (Context : Context) = struct
     }
 
 
-  let emit_error ~state ~location ~kind =
-    let emit_raw_error ~state:({ errors; _ } as state) error =
+  let legacy_emit_error ~state ~location ~kind =
+    let legacy_emit_raw_error ~state:({ errors; _ } as state) error =
       { state with errors = error :: errors }
     in
     Error.create
       ~location:(Location.with_module ~qualifier:Context.qualifier location)
       ~kind
       ~define:Context.define
-    |> emit_raw_error ~state
+    |> legacy_emit_raw_error ~state
+
+
+  let emit_error ~errors ~location ~kind =
+    Error.create
+      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~kind
+      ~define:Context.define
+    :: errors
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~state annotation =
@@ -150,7 +158,7 @@ module State (Context : Context) = struct
       GlobalResolution.check_invalid_type_parameters resolution annotation
     in
     let add_error state mismatch =
-      emit_error ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
+      legacy_emit_error ~state ~location ~kind:(Error.InvalidTypeParameters mismatch)
     in
     List.fold mismatches ~f:add_error ~init:state, annotation
 
@@ -164,7 +172,7 @@ module State (Context : Context) = struct
     let untracked = List.filter (Type.elements annotation) ~f:is_untracked_name in
     let errors =
       List.fold untracked ~init:state ~f:(fun state name ->
-          emit_error ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
+          legacy_emit_error ~state ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     errors, List.is_empty untracked
 
@@ -213,7 +221,7 @@ module State (Context : Context) = struct
         in
         ( no_untracked && List.is_empty invalid_variable_error_kinds,
           List.fold invalid_variable_error_kinds ~init:state ~f:(fun state kind ->
-              emit_error ~state ~location ~kind) )
+              legacy_emit_error ~state ~location ~kind) )
       in
       if all_primitives_and_variables_are_valid then
         add_invalid_type_parameters_errors annotation ~resolution:global_resolution ~location ~state
@@ -226,7 +234,7 @@ module State (Context : Context) = struct
     let state =
       match annotation with
       | Type.Top ->
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:
@@ -234,7 +242,7 @@ module State (Context : Context) = struct
                  (InvalidType
                     { annotation = Type.Primitive (Expression.show expression); expected = "" }))
       | Type.Callable { implementation = { annotation = Type.Top; _ }; _ } ->
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:
@@ -500,7 +508,7 @@ module State (Context : Context) = struct
     let check_decorators state =
       let check_final_decorator state =
         if Option.is_none parent && Define.is_final_method define then
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:(Error.InvalidInheritance (NonMethodFunction "typing.final"))
@@ -558,7 +566,7 @@ module State (Context : Context) = struct
           && not (Option.is_some annotation)
           || contains_literal_any
         then
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:
@@ -578,7 +586,7 @@ module State (Context : Context) = struct
         let state =
           match annotation with
           | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
-              emit_error
+              legacy_emit_error
                 ~state
                 ~location
                 ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
@@ -608,7 +616,8 @@ module State (Context : Context) = struct
         let state, annotation =
           match kind with
           | Define.Capture.Kind.Annotation None ->
-              emit_error ~state ~location ~kind:(Error.MissingCaptureAnnotation name), Type.Any
+              ( legacy_emit_error ~state ~location ~kind:(Error.MissingCaptureAnnotation name),
+                Type.Any )
           | Define.Capture.Kind.Annotation (Some annotation_expression) ->
               parse_and_check_annotation ~state annotation_expression
           | Define.Capture.Kind.DefineSignature signature ->
@@ -651,7 +660,7 @@ module State (Context : Context) = struct
             then
               state
             else
-              emit_error
+              legacy_emit_error
                 ~state
                 ~location
                 ~kind:
@@ -692,7 +701,7 @@ module State (Context : Context) = struct
             then
               state
             else
-              emit_error
+              legacy_emit_error
                 ~state
                 ~location
                 ~kind:
@@ -706,7 +715,7 @@ module State (Context : Context) = struct
                      })
           in
           let add_final_parameter_annotation_error ~state =
-            emit_error ~state ~location ~kind:(Error.InvalidType (FinalParameter name))
+            legacy_emit_error ~state ~location ~kind:(Error.InvalidType (FinalParameter name))
           in
           let add_variance_error (state, annotation) =
             let state =
@@ -714,7 +723,7 @@ module State (Context : Context) = struct
               | Type.Variable variable
                 when (not (Define.is_constructor define))
                      && Type.Variable.Unary.is_covariant variable ->
-                  emit_error
+                  legacy_emit_error
                     ~state
                     ~location
                     ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
@@ -772,7 +781,7 @@ module State (Context : Context) = struct
                                  })
                         in
                         match kind with
-                        | Some kind -> emit_error ~state ~location ~kind
+                        | Some kind -> legacy_emit_error ~state ~location ~kind
                         | None -> state
                       in
                       state, Annotation.create annotation
@@ -892,7 +901,7 @@ module State (Context : Context) = struct
                 else
                   "self"
               in
-              emit_error
+              legacy_emit_error
                 ~state
                 ~location
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
@@ -950,7 +959,7 @@ module State (Context : Context) = struct
                       else
                         Error.Define
                     in
-                    emit_error
+                    legacy_emit_error
                       ~state
                       ~location
                       ~kind:
@@ -1000,7 +1009,7 @@ module State (Context : Context) = struct
                          (Primitive base_name)
                      || Type.TypedDictionary.is_builtin_typed_dictionary_class base_name )
               then
-                emit_error
+                legacy_emit_error
                   ~state:state_with_errors
                   ~location:(Node.location value)
                   ~kind:
@@ -1016,7 +1025,7 @@ module State (Context : Context) = struct
           | Any when GlobalResolution.base_is_from_placeholder_stub global_resolution base ->
               state_with_errors
           | annotation ->
-              emit_error
+              legacy_emit_error
                 ~state:state_with_errors
                 ~location:(Node.location value)
                 ~kind:
@@ -1057,7 +1066,7 @@ module State (Context : Context) = struct
                   match AnnotatedAttribute.visibility overridden_attribute with
                   | ReadOnly (Refinable { overridable = false }) ->
                       let parent = overridden_attribute |> Attribute.parent in
-                      emit_error
+                      legacy_emit_error
                         ~state
                         ~location
                         ~kind:(Error.InvalidOverride { parent; decorator = Final })
@@ -1077,7 +1086,10 @@ module State (Context : Context) = struct
                       else
                         Error.StaticOverride
                     in
-                    emit_error ~state ~location ~kind:(Error.InvalidOverride { parent; decorator })
+                    legacy_emit_error
+                      ~state
+                      ~location
+                      ~kind:(Error.InvalidOverride { parent; decorator })
                   else
                     state
                 in
@@ -1106,7 +1118,7 @@ module State (Context : Context) = struct
                                 ~left:actual
                                 ~right:expected)
                       then
-                        emit_error
+                        legacy_emit_error
                           ~state
                           ~location
                           ~kind:
@@ -1160,7 +1172,7 @@ module State (Context : Context) = struct
                             in
                             try
                               if (not (Type.is_top expected)) && not is_compatible then
-                                emit_error
+                                legacy_emit_error
                                   ~state
                                   ~location
                                   ~kind:
@@ -1197,7 +1209,7 @@ module State (Context : Context) = struct
                             if has_keyword_and_anonymous_starred_parameters then
                               state
                             else
-                              emit_error
+                              legacy_emit_error
                                 ~state
                                 ~location
                                 ~kind:
@@ -1284,7 +1296,7 @@ module State (Context : Context) = struct
                 if Type.is_none annotation then
                   state
                 else
-                  emit_error
+                  legacy_emit_error
                     ~state
                     ~location
                     ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
@@ -1453,7 +1465,7 @@ module State (Context : Context) = struct
       match annotation with
       | Some annotation when Type.is_undeclared (Annotation.annotation annotation) ->
           let state =
-            Error.UndefinedName reference |> fun kind -> emit_error ~state ~location ~kind
+            Error.UndefinedName reference |> fun kind -> legacy_emit_error ~state ~location ~kind
           in
           {
             state;
@@ -1475,7 +1487,7 @@ module State (Context : Context) = struct
                 match Reference.prefix reference with
                 | Some qualifier when not (Reference.is_empty qualifier) ->
                     if GlobalResolution.module_exists global_resolution qualifier then
-                      emit_error
+                      legacy_emit_error
                         ~state
                         ~location
                         ~kind:
@@ -1486,7 +1498,7 @@ module State (Context : Context) = struct
                              })
                     else
                       state
-                | _ -> emit_error ~state ~location ~kind:(Error.UndefinedName reference)
+                | _ -> legacy_emit_error ~state ~location ~kind:(Error.UndefinedName reference)
               in
               { state; resolved = Type.Top; resolved_annotation = None; base = None }
           | _ -> { state; resolved = Type.Top; resolved_annotation = None; base = None } )
@@ -1784,7 +1796,7 @@ module State (Context : Context) = struct
                 location, Error.TooManyArguments { callee; expected; provided }
             | UnexpectedKeyword name -> location, Error.UnexpectedKeyword { callee; name }
           in
-          emit_error ~state ~location:error_location ~kind:error_kind
+          legacy_emit_error ~state ~location:error_location ~kind:error_kind
         in
         { state; resolved = annotation; resolved_annotation = None; base = None }
       in
@@ -1811,11 +1823,11 @@ module State (Context : Context) = struct
       | _ ->
           let state =
             match resolved, potential_missing_operator_error with
-            | Type.Top, Some kind -> emit_error ~state ~location ~kind
+            | Type.Top, Some kind -> legacy_emit_error ~state ~location ~kind
             | Type.Any, _
             | Type.Top, _ ->
                 state
-            | _ -> emit_error ~state ~location ~kind:(Error.NotCallable resolved)
+            | _ -> legacy_emit_error ~state ~location ~kind:(Error.NotCallable resolved)
           in
           { state; resolved = Type.Top; resolved_annotation = None; base = None }
     in
@@ -1846,7 +1858,7 @@ module State (Context : Context) = struct
               ~right:(Type.awaitable Type.Top)
           in
           if not is_awaitable then
-            emit_error ~state ~location ~kind:(Error.IncompatibleAwaitableType resolved)
+            legacy_emit_error ~state ~location ~kind:(Error.IncompatibleAwaitableType resolved)
           else
             state
         in
@@ -1949,7 +1961,10 @@ module State (Context : Context) = struct
             annotation
         in
         let state =
-          emit_error ~state ~location ~kind:(Error.RevealedType { expression = value; annotation })
+          legacy_emit_error
+            ~state
+            ~location
+            ~kind:(Error.RevealedType { expression = value; annotation })
         in
         { state; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
@@ -1970,7 +1985,7 @@ module State (Context : Context) = struct
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
           if contains_literal_any then
-            emit_error
+            legacy_emit_error
               ~state
               ~location
               ~kind:
@@ -1987,7 +2002,7 @@ module State (Context : Context) = struct
                      is_type_alias = false;
                    })
           else if Type.equal cast_annotation resolved then
-            emit_error ~state ~location ~kind:(Error.RedundantCast resolved)
+            legacy_emit_error ~state ~location ~kind:(Error.RedundantCast resolved)
           else if
             Reference.equal
               (name_to_reference_exn name)
@@ -1997,7 +2012,7 @@ module State (Context : Context) = struct
                  ~left:cast_annotation
                  ~right:resolved
           then
-            emit_error
+            legacy_emit_error
               ~state
               ~location
               ~kind:(Error.UnsafeCast { expression = value; annotation = resolved })
@@ -2056,7 +2071,7 @@ module State (Context : Context) = struct
             collect_types (state, []) annotations
           in
           let add_incompatible_non_meta_error state (non_meta, location) =
-            emit_error
+            legacy_emit_error
               ~state
               ~location
               ~kind:
@@ -2469,7 +2484,7 @@ module State (Context : Context) = struct
         let state, resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
             let state =
-              emit_error
+              legacy_emit_error
                 ~state
                 ~location
                 ~kind:
@@ -2524,7 +2539,7 @@ module State (Context : Context) = struct
             with
             | None ->
                 let state =
-                  emit_error
+                  legacy_emit_error
                     ~state
                     ~location
                     ~kind:
@@ -2569,14 +2584,14 @@ module State (Context : Context) = struct
                   in
                   match reference, definition with
                   | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
-                      emit_error ~state ~location ~kind:(Error.UndefinedName reference)
+                      legacy_emit_error ~state ~location ~kind:(Error.UndefinedName reference)
                   | _, (attribute, Some target) ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
                         state
                       else
-                        emit_error
+                        legacy_emit_error
                           ~state
                           ~location
                           ~kind:
@@ -2613,7 +2628,7 @@ module State (Context : Context) = struct
                           enclosing_class_reference
                       in
                       if is_private_attribute attribute && not is_accessed_in_base_class then
-                        emit_error
+                        legacy_emit_error
                           ~state
                           ~location
                           ~kind:
@@ -2665,7 +2680,7 @@ module State (Context : Context) = struct
             let state =
               reference
               >>| (fun reference -> Error.UndefinedName reference)
-              >>| (fun kind -> emit_error ~state ~location ~kind)
+              >>| (fun kind -> legacy_emit_error ~state ~location ~kind)
               |> Option.value ~default:state
             in
             { state; resolved = resolved_base; resolved_annotation = None; base = None }
@@ -2894,7 +2909,7 @@ module State (Context : Context) = struct
                 check_unimplemented tail
             | _ -> false
           in
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:
@@ -2926,7 +2941,7 @@ module State (Context : Context) = struct
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
           in
-          emit_error
+          legacy_emit_error
             ~state
             ~location:define_location
             ~kind:
@@ -3022,7 +3037,7 @@ module State (Context : Context) = struct
                 | _ -> None
               in
               kind
-              >>| (fun kind -> emit_error ~state ~location ~kind)
+              >>| (fun kind -> legacy_emit_error ~state ~location ~kind)
               |> Option.value ~default:state
             in
             let state = add_annotation_errors state |> add_type_variable_errors in
@@ -3166,7 +3181,7 @@ module State (Context : Context) = struct
                 | Some reference ->
                     let check_final_reassignment state =
                       let error () =
-                        emit_error
+                        legacy_emit_error
                           ~state
                           ~location
                           ~kind:(Error.InvalidAssignment (FinalAttribute reference))
@@ -3197,7 +3212,7 @@ module State (Context : Context) = struct
                       with
                       | Some parent, Some true, Some class_variable
                         when Option.is_none original_annotation && not (Type.is_meta parent) ->
-                          emit_error
+                          legacy_emit_error
                             ~state
                             ~location
                             ~kind:
@@ -3209,7 +3224,7 @@ module State (Context : Context) = struct
                       original_annotation
                       >>| (fun annotation ->
                             if Type.contains_final annotation then
-                              emit_error
+                              legacy_emit_error
                                 ~state
                                 ~location
                                 ~kind:(Error.InvalidType (FinalNested annotation))
@@ -3223,7 +3238,7 @@ module State (Context : Context) = struct
                           attribute >>| fst >>| Annotated.Attribute.property )
                       with
                       | Some (ReadOnly _), Some true when Option.is_none original_annotation ->
-                          emit_error
+                          legacy_emit_error
                             ~state
                             ~location
                             ~kind:(Error.InvalidAssignment (ReadOnly reference))
@@ -3245,7 +3260,7 @@ module State (Context : Context) = struct
                                from the TypedDictionary. *)
                             state
                           else if is_undefined_attribute parent then
-                            emit_error
+                            legacy_emit_error
                               ~state
                               ~location
                               ~kind:
@@ -3267,7 +3282,7 @@ module State (Context : Context) = struct
                       match name, original_annotation with
                       | Name.Identifier identifier, Some annotation
                         when Type.is_type_alias annotation && not (Define.is_toplevel define) ->
-                          emit_error
+                          legacy_emit_error
                             ~state
                             ~location
                             ~kind:(Error.InvalidType (NestedAlias identifier))
@@ -3366,7 +3381,7 @@ module State (Context : Context) = struct
                                 ~covariant:true;
                           };
                       }
-                    |> fun kind -> emit_error ~state ~location ~kind
+                    |> fun kind -> legacy_emit_error ~state ~location ~kind
                 | _, Some reference when is_incompatible ->
                     Error.IncompatibleVariableType
                       {
@@ -3382,7 +3397,7 @@ module State (Context : Context) = struct
                           };
                         declare_location = instantiate location;
                       }
-                    |> fun kind -> emit_error ~state ~location ~kind
+                    |> fun kind -> legacy_emit_error ~state ~location ~kind
                 | _ -> state
               in
               (* Check for missing annotations. *)
@@ -3460,7 +3475,7 @@ module State (Context : Context) = struct
                         |> GlobalResolution.global_location global_resolution
                         |> Option.value ~default:location
                       in
-                      ( emit_error
+                      ( legacy_emit_error
                           ~state
                           ~location:global_location
                           ~kind:
@@ -3474,7 +3489,7 @@ module State (Context : Context) = struct
                                }),
                         true )
                     else if explicit && insufficiently_annotated then
-                      ( emit_error
+                      ( legacy_emit_error
                           ~state
                           ~location
                           ~kind:
@@ -3497,7 +3512,7 @@ module State (Context : Context) = struct
                       in
                       let state =
                         if Type.contains_prohibited_any value_annotation then
-                          emit_error
+                          legacy_emit_error
                             ~state
                             ~location
                             ~kind:
@@ -3528,7 +3543,7 @@ module State (Context : Context) = struct
                       && (not is_type_alias)
                       && not (GlobalResolution.module_exists global_resolution reference)
                     then
-                      ( emit_error
+                      ( legacy_emit_error
                           ~state
                           ~location
                           ~kind:
@@ -3564,11 +3579,14 @@ module State (Context : Context) = struct
                     | Some attribute ->
                         if is_illegal_attribute_annotation attribute then
                           (* Non-self attributes may not be annotated. *)
-                          ( emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target),
+                          ( legacy_emit_error
+                              ~state
+                              ~location
+                              ~kind:(Error.IllegalAnnotationTarget target),
                             false )
                         else if Annotated.Attribute.defined attribute && insufficiently_annotated
                         then
-                          ( emit_error
+                          ( legacy_emit_error
                               ~state
                               ~location
                               ~kind:
@@ -3586,7 +3604,7 @@ module State (Context : Context) = struct
                                    }),
                             true )
                         else if insufficiently_annotated && explicit && not is_type_alias then
-                          ( emit_error
+                          ( legacy_emit_error
                               ~state
                               ~location
                               ~kind:
@@ -3612,7 +3630,7 @@ module State (Context : Context) = struct
                                ~resolution:global_resolution
                                (Type.Primitive class_name)
                         then
-                          ( emit_error
+                          ( legacy_emit_error
                               ~state
                               ~location
                               ~kind:
@@ -3633,7 +3651,10 @@ module State (Context : Context) = struct
                           state, true )
                 | _ ->
                     if explicit then
-                      ( emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target),
+                      ( legacy_emit_error
+                          ~state
+                          ~location
+                          ~kind:(Error.IllegalAnnotationTarget target),
                         false )
                     else
                       state, true
@@ -3686,7 +3707,8 @@ module State (Context : Context) = struct
                         Type.Variable.convert_all_escaped_free_variables_to_anys
                           (Annotation.annotation annotation)
                       in
-                      emit_error ~state ~location ~kind, { annotation with annotation = converted }
+                      ( legacy_emit_error ~state ~location ~kind,
+                        { annotation with annotation = converted } )
                     else
                       state, annotation
                   in
@@ -3756,7 +3778,7 @@ module State (Context : Context) = struct
                     match nonuniform_sequence_parameters guide with
                     | None ->
                         let state =
-                          emit_error
+                          legacy_emit_error
                             ~state
                             ~location
                             ~kind:
@@ -3793,7 +3815,7 @@ module State (Context : Context) = struct
                         in
                         if List.length annotations <> List.length assignees then
                           let state =
-                            emit_error
+                            legacy_emit_error
                               ~state
                               ~location
                               ~kind:
@@ -3812,7 +3834,7 @@ module State (Context : Context) = struct
                      forward_assign ~state ~target ~guide ~resolved:guide ~expression:None)
           | _ ->
               if Option.is_some annotation then
-                emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target)
+                legacy_emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target)
               else
                 state
         in
@@ -4045,7 +4067,7 @@ module State (Context : Context) = struct
             in
             match contradiction, value with
             | Some (location, kind), _ ->
-                emit_error ~state:{ state with bottom = true } ~location ~kind
+                legacy_emit_error ~state:{ state with bottom = true } ~location ~kind
             | _, { Node.value = Name name; _ } when is_simple_name name ->
                 { state with resolution = resolve ~name }
             | _ -> state )
@@ -4117,7 +4139,7 @@ module State (Context : Context) = struct
         | Name name when is_simple_name name -> (
             match refinable_annotation name with
             | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
-                emit_error
+                legacy_emit_error
                   ~state:{ state with bottom = true }
                   ~location:(Node.location test)
                   ~kind:
@@ -4319,7 +4341,7 @@ module State (Context : Context) = struct
         if GlobalResolution.less_or_equal global_resolution ~left:actual ~right:expected then
           state
         else
-          emit_error
+          legacy_emit_error
             ~state
             ~location
             ~kind:(Error.InvalidException { expression; annotation = resolved })
@@ -4406,7 +4428,7 @@ module State (Context : Context) = struct
                   check_import name)
         in
         List.fold undefined_imports ~init:state ~f:(fun state reference ->
-            emit_error ~state ~location ~kind:(Error.UndefinedImport reference))
+            legacy_emit_error ~state ~location ~kind:(Error.UndefinedImport reference))
     | Class { Class.bases; _ } when bases <> [] ->
         (* Check that variance isn't widened on inheritence *)
         let check_base state { Call.Argument.value = base; _ } =
@@ -4419,7 +4441,7 @@ module State (Context : Context) = struct
                 | Type.Variable.Contravariant, Type.Variable.Invariant
                 | Type.Variable.Covariant, Type.Variable.Contravariant
                 | Type.Variable.Contravariant, Type.Variable.Covariant ->
-                    emit_error
+                    legacy_emit_error
                       ~state
                       ~location
                       ~kind:
