@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
-from .. import LOG_DIRECTORY, find_project_root, log
+from .. import log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from .command import JSON, Command
@@ -77,11 +77,6 @@ class Servers(Command):
         subparsers.add_parser("stop", help="Stop all running servers.")
 
     @staticmethod
-    @functools.lru_cache()
-    def _dot_pyre_root() -> Path:
-        return Path(find_project_root(str(Path.cwd())), LOG_DIRECTORY)
-
-    @staticmethod
     def _print_server_details(
         all_server_details: List[ServerDetails], output_format: str
     ) -> None:
@@ -101,9 +96,8 @@ class Servers(Command):
                     )
                 )
 
-    @staticmethod
-    def _find_servers() -> List[Path]:
-        return list(Servers._dot_pyre_root().glob("**/server.pid"))
+    def _find_servers(self) -> List[Path]:
+        return list(self._dot_pyre_directory.glob("**/server.pid"))
 
     def _stop_servers(self, servers: List[ServerDetails]) -> None:
         for server in servers:
@@ -111,14 +105,14 @@ class Servers(Command):
             Stop(
                 arguments=self._arguments,
                 original_directory=str(
-                    self._dot_pyre_root().parent / server.local_root
+                    self._dot_pyre_directory.parent / server.local_root
                 ),
             ).run()
 
     def _run(self) -> None:
         all_server_details = sorted(
             (
-                ServerDetails._from_server_path(server_path, self._dot_pyre_root())
+                ServerDetails._from_server_path(server_path, self._dot_pyre_directory)
                 for server_path in self._find_servers()
             ),
             key=lambda details: details.local_root,

@@ -106,7 +106,9 @@ class KillTest(unittest.TestCase):
             ]
         )
 
-    @patch.object(subprocess, "check_output", return_value=b"/root/pyre\n")
+    @patch.object(
+        subprocess, "check_output", return_value=b"/some/scratch/directory/pyre\n"
+    )
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(
@@ -114,10 +116,14 @@ class KillTest(unittest.TestCase):
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._current_directory = "/root"
-        kill_command._log_directory = "/root/.pyre/foo"
+        kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
+        kill_command._log_directory = "/some/log/directory/.pyre/foo"
         kill_command._delete_caches()
         remove_tree.assert_has_calls(
-            [call("/root/.pyre/resource_cache"), call("/root/pyre/.buck_builder_cache")]
+            [
+                call("/some/log/directory/.pyre/resource_cache"),
+                call("/some/scratch/directory/pyre/.buck_builder_cache"),
+            ]
         )
 
     @patch.object(subprocess, "check_output")
@@ -128,10 +134,11 @@ class KillTest(unittest.TestCase):
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._current_directory = "/root"
-        kill_command._log_directory = "/root/.pyre/foo"
+        kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
+        kill_command._log_directory = "/some/log/directory/.pyre/foo"
         check_output.side_effect = Exception
         kill_command._delete_caches()
-        remove_tree.assert_has_calls([call("/root/.pyre/resource_cache")])
+        remove_tree.assert_has_calls([call("/some/log/directory/.pyre/resource_cache")])
 
     @patch.object(os, "remove")
     @patch.object(os, "unlink")
@@ -158,22 +165,13 @@ class KillTest(unittest.TestCase):
         kill_processes_by_name.assert_called_with("foo.exe")
 
     @patch.object(Kill, "_delete_linked_path")
-    @patch.object(kill, "Path")
+    @patch.object(Path, "glob", return_value=["a.sock", "b.sock"])
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_server_files(
-        self, kill_init: MagicMock, path_class: MagicMock, delete_linked_path: MagicMock
+        self, kill_init: MagicMock, glob: MagicMock, delete_linked_path: MagicMock
     ) -> None:
-        def path_constructor(*subpaths: str) -> Mock:
-            if "/".join(subpaths).endswith(".pyre"):
-                # The project root has two local server sockets under it.
-                return Mock(glob=Mock(return_value=["a.sock", "b.sock"]))
-            else:
-                # The local server has just one socket under it.
-                return Mock(glob=Mock(return_value=["a.sock"]))
-
-        path_class.side_effect = path_constructor
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
-        kill_command._current_directory = "/root/.pyre"
+        kill_command._dot_pyre_directory = Path("/root/.pyre")
         kill_command._delete_server_files()
         self.assertEqual(delete_linked_path.call_count, 6)
 

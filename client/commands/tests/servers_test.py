@@ -6,7 +6,7 @@
 import json
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import MagicMock, call, patch
 
 from ... import commands, log
 from ...analysis_directory import AnalysisDirectory
@@ -17,10 +17,6 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class ServersCommandTest(unittest.TestCase):
-    @patch.object(commands.servers, "find_project_root", return_value="/root")
-    def test_dot_pyre_root(self, find_project_root: MagicMock) -> None:
-        self.assertEqual(Servers._dot_pyre_root(), Path("/root/.pyre"))
-
     @patch.object(log.stdout, "write")
     def test_print_server_details(self, log_stdout: MagicMock) -> None:
         commands.Servers._print_server_details(
@@ -83,13 +79,10 @@ class ServersCommandTest(unittest.TestCase):
             )
         )
 
-    @patch.object(Servers, "_dot_pyre_root", return_value=Path("/root/.pyre"))
     @patch.object(servers, "Stop")
-    def test_stop_servers(
-        self, stop_class: MagicMock, dot_pyre_root: MagicMock
-    ) -> None:
+    def test_stop_servers(self, stop_class: MagicMock) -> None:
         servers = Servers(
-            arguments=mock_arguments(),
+            arguments=mock_arguments(dot_pyre_directory=Path("/root/.pyre")),
             original_directory="/",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),

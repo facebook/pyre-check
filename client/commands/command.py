@@ -16,11 +16,13 @@ import subprocess
 import sys
 import threading
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import IO, Iterable, List, Optional
 
 from typing_extensions import Final
 
 from .. import (
+    find_dot_pyre_directory,
     find_local_root,
     find_log_directory,
     find_project_root,
@@ -190,6 +192,7 @@ class CommandParser(ABC):
         ] = arguments.load_initial_state_from
         self._changed_files_path: Final[Optional[str]] = arguments.changed_files_path
         self._saved_state_project: Final[Optional[str]] = arguments.saved_state_project
+        dot_pyre_directory: Final[Optional[Path]] = arguments.dot_pyre_directory
 
         # Derived arguments
         self._capable_terminal: bool = is_capable_terminal()
@@ -198,9 +201,16 @@ class CommandParser(ABC):
         self._local_configuration = find_local_root(
             self._original_directory, self._local_configuration
         )
-        self._log_directory: str = find_log_directory(
-            self._log_directory, self._current_directory, self._local_configuration
+        self._dot_pyre_directory: Path = find_dot_pyre_directory(
+            dot_pyre_directory, self._current_directory
         )
+        self._log_directory: str = find_log_directory(
+            self._log_directory,
+            self._current_directory,
+            self._local_configuration,
+            str(self._dot_pyre_directory),
+        )
+
         logger = self._logger
         if logger:
             self._logger = translate_path(self._original_directory, logger)
@@ -264,10 +274,16 @@ class CommandParser(ABC):
             default="",
             help=argparse.SUPPRESS,  # Add given identifier to logged samples.
         )
+
+        # Log directory for the current local or global project.
+        # This overrides the log directory computed using `--dot-pyre-directory`.
         parser.add_argument(
             "--log-directory",
             help=argparse.SUPPRESS,  # Override default location for logs
         )
+
+        # Directory where Pyre places its log files and artifacts.
+        parser.add_argument("--dot-pyre-directory", type=Path, help=argparse.SUPPRESS)
         parser.add_argument(
             "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
         )

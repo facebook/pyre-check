@@ -16,7 +16,7 @@ from typing import Optional
 
 import psutil
 
-from .. import BINARY_NAME, CLIENT_NAME, LOG_DIRECTORY, configuration_monitor
+from .. import BINARY_NAME, CLIENT_NAME, configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
@@ -108,10 +108,9 @@ class Kill(Command):
             pass
 
     def _delete_caches(self) -> None:
-        root_log_directory = Path(self._current_directory, LOG_DIRECTORY)
         # If a resource cache exists, delete it to remove corrupted artifacts.
         try:
-            shutil.rmtree(str(root_log_directory / "resource_cache"))
+            shutil.rmtree(str(self._dot_pyre_directory / "resource_cache"))
         except OSError:
             pass
 
@@ -186,11 +185,10 @@ class Kill(Command):
         self._kill_processes_by_name(binary_name)
 
     def _delete_server_files(self) -> None:
-        root_log_directory = Path(self._current_directory, LOG_DIRECTORY)
-        LOG.info("Deleting server files under %s", root_log_directory)
-        socket_paths = root_log_directory.glob("**/server.sock")
-        json_server_paths = root_log_directory.glob("**/json_server.sock")
-        pid_paths = root_log_directory.glob("**/server.pid")
+        LOG.info("Deleting server files under %s", self._dot_pyre_directory)
+        socket_paths = self._dot_pyre_directory.glob("**/server.sock")
+        json_server_paths = self._dot_pyre_directory.glob("**/json_server.sock")
+        pid_paths = self._dot_pyre_directory.glob("**/server.pid")
         for path in chain(socket_paths, json_server_paths, pid_paths):
             self._delete_linked_path(path)
 

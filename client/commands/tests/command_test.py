@@ -7,7 +7,8 @@
 
 import io
 import unittest
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands
@@ -30,6 +31,7 @@ def mock_arguments(
     store_type_check_resolution=False,
     targets=None,
     terminal=False,
+    dot_pyre_directory: Optional[Path] = None,
 ) -> MagicMock:
     arguments = MagicMock()
     arguments.additional_check = []
@@ -57,6 +59,7 @@ def mock_arguments(
     arguments.no_watchman = no_watchman
     arguments.nonblocking = False
     arguments.output = output
+    arguments.dot_pyre_directory = dot_pyre_directory or Path(".pyre")
     arguments.save_initial_state_to = save_initial_state_to
     arguments.save_results_to = None
     arguments.saved_state_project = saved_state_project

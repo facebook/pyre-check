@@ -115,14 +115,21 @@ def check_nested_configurations(local_root: Optional[str]) -> None:
             )
 
 
+def find_dot_pyre_directory(
+    dot_pyre_directory: Optional[Path], current_directory: str
+) -> Path:
+    return dot_pyre_directory or Path(current_directory, LOG_DIRECTORY)
+
+
 def find_log_directory(
     log_directory: Optional[str],
     current_directory: str,
     local_configuration: Optional[str],
+    dot_pyre_directory: str,
 ) -> str:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
     if not log_directory:
-        log_directory = os.path.join(current_directory, LOG_DIRECTORY)
+        log_directory = dot_pyre_directory
         if local_configuration:
             # `log_directory` will never escape `.pyre/` because in `switch_root` we have
             # guaranteed that configurations are never deeper than local configurations
