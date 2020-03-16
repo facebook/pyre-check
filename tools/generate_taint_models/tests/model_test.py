@@ -196,10 +196,23 @@ class ModelTest(unittest.TestCase):
         )
 
     def test_assignment_model(self) -> None:
-        self.assertEqual(
-            str(model.AssignmentModel(annotation="TaintSink[Test]", target="name")),
-            "name: TaintSink[Test] = ...",
+        model_1 = model.AssignmentModel(
+            annotation="TaintSink[A]", target="fully.qualified.name"
         )
+        model_2 = model.AssignmentModel(
+            annotation="TaintSink[B]", target="fully.qualified.name"
+        )
+
+        self.assertEqual(str(model_1), "fully.qualified.name: TaintSink[A] = ...")
+
+        self.assertEqual(model_1, model_2)
+
+        test_set = set()
+        test_set.add(model_1)
+        # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
+        # are testing the effectiveness of the hash equivalence
+        self.assertIn(model_2, test_set)
+
         with self.assertRaises(ValueError):
             model.AssignmentModel(
                 annotation="TaintSink[Test]", target="do-not-generate"
@@ -246,6 +259,23 @@ class ModelTest(unittest.TestCase):
             ),
             "def qualified.C.name(self, **kwargs: TaintSource[UC]): ...",
         )
+
+        model_1 = model.RawCallableModel(
+            callable_name="qualified.C.name",
+            parameters=[model.RawCallableModel.Parameter("self", "TaintSource[A]")],
+        )
+        model_2 = model.RawCallableModel(
+            callable_name="qualified.C.name",
+            parameters=[model.RawCallableModel.Parameter("self", "TaintSource[B]")],
+        )
+        self.assertEqual(model_1, model_2)
+
+        test_set = set()
+        test_set.add(model_1)
+        # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
+        # are testing the effectiveness of the hash equivalence
+        self.assertIn(model_2, test_set)
+
         with self.assertRaises(ValueError):
             model.RawCallableModel(
                 callable_name="my-qualifier.C.name",
@@ -255,11 +285,19 @@ class ModelTest(unittest.TestCase):
                 ],
             )
 
-        self.assertEqual(
-            str(
-                model.ClassModel(
-                    class_name="qualified.C.name", annotation="TaintSource[UC]"
-                )
-            ),
-            "class qualified.C.name(TaintSource[UC]): ...",
+    def test_class_model(self) -> None:
+        model_1 = model.ClassModel(
+            class_name="qualified.C.name", annotation="TaintSource[A]"
         )
+        model_2 = model.ClassModel(
+            class_name="qualified.C.name", annotation="TaintSource[B]"
+        )
+        self.assertEqual(str(model_1), "class qualified.C.name(TaintSource[A]): ...")
+
+        self.assertEqual(model_1, model_2)
+
+        test_set = set()
+        test_set.add(model_1)
+        # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
+        # are testing the effectiveness of the hash equivalence
+        self.assertIn(model_2, test_set)

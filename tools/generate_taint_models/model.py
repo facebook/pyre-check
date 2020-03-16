@@ -5,6 +5,7 @@
 
 # pyre-strict
 
+import abc
 import ast
 import inspect
 import logging
@@ -22,12 +23,17 @@ FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class Model:
+class Model(abc.ABC):
     def __lt__(self, other: "Model") -> bool:
         return str(self) < str(other)
 
+    @abc.abstractmethod
+    def __eq__(self) -> int:
+        ...
+
+    @abc.abstractmethod
     def __hash__(self) -> int:
-        return hash(str(self))
+        ...
 
 
 class RawCallableModel(Model):
@@ -75,12 +81,11 @@ class RawCallableModel(Model):
             f"{return_annotation}: ..."
         )
 
-    def __eq__(self, other: "RawCallableModel") -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, RawCallableModel):
             return False
         return (
             self.callable_name == other.callable_name
-            and self.returns == other.returns
             and self.parameters == other.parameters
         )
 
@@ -89,7 +94,7 @@ class RawCallableModel(Model):
         parameter_names_string = ",".join(
             map(lambda parameter: parameter.name, self.parameters)
         )
-        return hash((self.callable_name, self.returns, parameter_names_string))
+        return hash((self.callable_name, parameter_names_string))
 
 
 class CallableModel(RawCallableModel):
@@ -226,6 +231,14 @@ class AssignmentModel(Model):
     def __str__(self) -> str:
         return f"{self.target}: {self.annotation} = ..."
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AssignmentModel):
+            return False
+        return self.target == other.target
+
+    def __hash__(self) -> int:
+        return hash(self.target)
+
 
 class ClassModel(Model):
     class_name: str
@@ -237,3 +250,11 @@ class ClassModel(Model):
 
     def __str__(self) -> str:
         return f"class {self.class_name}({self.annotation}): ..."
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ClassModel):
+            return False
+        return self.class_name == other.class_name
+
+    def __hash__(self) -> int:
+        return hash(self.class_name)
