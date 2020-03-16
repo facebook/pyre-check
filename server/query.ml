@@ -39,8 +39,7 @@ let help () =
           "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
            elides type variables."
     | DumpMemoryToSqlite _ -> None
-    | IsCompatibleWith _ ->
-        Some "is_compatible_with(T1, T2): Returns whether T2 can be used in place of T1."
+    | IsCompatibleWith _ -> None
     | Join _ -> Some "join(T1, T2): Returns the least common supertype of T1 and T2."
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
     | Meet _ -> Some "meet(T1, T2): Returns the greatest common subtype of T1 and T2."
