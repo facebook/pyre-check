@@ -8,6 +8,7 @@
 import ast
 import textwrap
 import unittest
+from unittest.mock import patch
 
 from .. import model
 
@@ -26,16 +27,6 @@ class ModelTest(unittest.TestCase):
                 )
             ),
             f"def {name}(argument: TaintSource[tainted], *variable, **keyword): ...",
-        )
-        self.assertEqual(
-            str(
-                model.CallableModel(
-                    callable_object=test_function,
-                    arg="TaintSource[tainted]",
-                    whitelisted_parameters=["str"],
-                )
-            ),
-            f"def {name}(argument, *variable, **keyword): ...",
         )
         self.assertEqual(
             str(
@@ -85,6 +76,9 @@ class ModelTest(unittest.TestCase):
         parsed_function: model.FunctionDefinition
 
         self.assertEqual(
+            # pyre-ignore[6]: Expected `typing.Optional[typing.Set[str]]` for
+            # 2nd positional only parameter to call
+            # `model.FunctionDefinitionModel.__init__` but got `str`.
             str(model.FunctionDefinitionModel(definition=parsed_function, **kwargs)),
             expected,
         )
@@ -218,72 +212,130 @@ class ModelTest(unittest.TestCase):
                 annotation="TaintSink[Test]", target="do-not-generate"
             )
 
+    @patch.object(model.RawCallableModel, "__abstractmethods__", set())
     def test_raw_callable_model(self) -> None:
-        self.assertEqual(
-            str(
-                model.RawCallableModel(
-                    callable_name="qualified.C.name",
-                    parameters=[
-                        model.RawCallableModel.Parameter(
-                            "self", "TaintSource[UserControlled]"
-                        ),
-                        model.RawCallableModel.Parameter("a", None),
-                        model.RawCallableModel.Parameter("b", "TaintSource[Foo]"),
-                    ],
-                )
-            ),
-            "def qualified.C.name(self: TaintSource[UserControlled], a, "
-            "b: TaintSource[Foo]): ...",
-        )
-        self.assertEqual(
-            str(
-                model.RawCallableModel(
-                    callable_name="qualified.C.name",
-                    parameters=[
-                        model.RawCallableModel.Parameter("self", None),
-                        model.RawCallableModel.Parameter("*args", "TaintSource[Var]"),
-                    ],
-                )
-            ),
-            "def qualified.C.name(self, *args: TaintSource[Var]): ...",
-        )
-        self.assertEqual(
-            str(
-                model.RawCallableModel(
-                    callable_name="qualified.C.name",
-                    parameters=[
-                        model.RawCallableModel.Parameter("self", None),
-                        model.RawCallableModel.Parameter("**kwargs", "TaintSource[UC]"),
-                    ],
-                )
-            ),
-            "def qualified.C.name(self, **kwargs: TaintSource[UC]): ...",
-        )
 
-        model_1 = model.RawCallableModel(
-            callable_name="qualified.C.name",
-            parameters=[model.RawCallableModel.Parameter("self", "TaintSource[A]")],
-        )
-        model_2 = model.RawCallableModel(
-            callable_name="qualified.C.name",
-            parameters=[model.RawCallableModel.Parameter("self", "TaintSource[B]")],
-        )
-        self.assertEqual(model_1, model_2)
-
-        test_set = set()
-        test_set.add(model_1)
-        # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
-        # are testing the effectiveness of the hash equivalence
-        self.assertIn(model_2, test_set)
-
-        with self.assertRaises(ValueError):
-            model.RawCallableModel(
-                callable_name="my-qualifier.C.name",
-                parameters=[
-                    model.RawCallableModel.Parameter("self", None),
-                    model.RawCallableModel.Parameter("**kwargs", "TaintSource[UC]"),
+        with patch.object(
+            model.RawCallableModel,
+            "_get_fully_qualified_callable_name",
+            return_value="qualified.C.name",
+        ):
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("self", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", None, model.ArgumentKind.ARG),
                 ],
-            )
+            ):
+                self.assertEqual(
+                    # pyre-ignore[45]: Cannot instantiate abstract class
+                    str(model.RawCallableModel(arg="TaintSource[UserControlled]")),
+                    "def qualified.C.name(self: TaintSource[UserControlled], "
+                    "a: TaintSource[UserControlled]): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("self", None, model.ArgumentKind.ARG),
+                    model.Parameter("*args", None, model.ArgumentKind.VARARG),
+                ],
+            ):
+                self.assertEqual(
+                    # pyre-ignore[45]: Cannot instantiate abstract class
+                    str(model.RawCallableModel(vararg="TaintSource[Var]")),
+                    "def qualified.C.name(self, *args: TaintSource[Var]): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("self", None, model.ArgumentKind.ARG),
+                    model.Parameter("**kwargs", None, model.ArgumentKind.KWARG),
+                ],
+            ):
+                self.assertEqual(
+                    # pyre-ignore[45]: Cannot instantiate abstract class
+                    str(model.RawCallableModel(kwarg="TaintSource[UC]")),
+                    "def qualified.C.name(self, **kwargs: TaintSource[UC]): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", "int", model.ArgumentKind.ARG),
+                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                self.assertEqual(
+                    str(
+                        # pyre-ignore[45]: Cannot instantiate abstract class
+                        model.RawCallableModel(
+                            arg="TaintSource[UC]", parameter_type_whitelist=["int"]
+                        )
+                    ),
+                    "def qualified.C.name(a, b: TaintSource[UC]): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", None, model.ArgumentKind.ARG),
+                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                self.assertEqual(
+                    str(
+                        # pyre-ignore[45]: Cannot instantiate abstract class
+                        model.RawCallableModel(
+                            arg="TaintSource[UC]", parameter_name_whitelist={"b"}
+                        )
+                    ),
+                    "def qualified.C.name(a: TaintSource[UC], b): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", None, model.ArgumentKind.ARG),
+                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                # pyre-ignore[45]: Cannot instantiate abstract class
+                model_1 = model.RawCallableModel(
+                    arg="TaintSource[A]",
+                    vararg="TaintSource[A]",
+                    kwarg="TaintSource[A]",
+                    returns="TaintSource[A]",
+                )
+                # pyre-ignore[45]: Cannot instantiate abstract class
+                model_2 = model.RawCallableModel(
+                    arg="TaintSource[B]",
+                    vararg="TaintSource[B]",
+                    kwarg="TaintSource[B]",
+                    returns="TaintSource[B]",
+                )
+                self.assertEqual(model_1, model_2)
+
+                test_set = set()
+                test_set.add(model_1)
+                # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
+                # are testing the effectiveness of the hash equivalence
+                self.assertIn(model_2, test_set)
+
+        with self.assertRaises(ValueError), patch.object(
+            model.RawCallableModel,
+            "_get_fully_qualified_callable_name",
+            return_value="my-qualifier.C.name",
+        ):
+            # pyre-ignore[45]: Cannot instantiate abstract class
+            model.RawCallableModel()
 
     def test_class_model(self) -> None:
         model_1 = model.ClassModel(

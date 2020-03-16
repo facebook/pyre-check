@@ -10,9 +10,11 @@ import ast
 import inspect
 import logging
 import types
+from enum import Enum, auto
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
 
 import _ast
+from tools.pyre.client import query_api
 from typing_extensions import Final
 
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
@@ -36,40 +38,91 @@ class Model(abc.ABC):
         ...
 
 
+class ArgumentKind(Enum):
+    ARG = auto()
+    VARARG = auto()
+    KWARG = auto()
+
+
+class Parameter(NamedTuple):
+    name: str
+    annotation: Optional[str]
+    kind: ArgumentKind
+
+    def __eq__(self, other: "Parameter") -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name
+
+
 class RawCallableModel(Model):
-    class Parameter(NamedTuple):
-        name: str
-        taint: Optional[str]
-
-        def __eq__(self, other: "RawCallableModel.Parameter") -> bool:
-            if not isinstance(other, self.__class__):
-                return False
-            return self.name == other.name
-
     callable_name: str
     parameters: List[Parameter]
+    parameter_type_whitelist: Optional[Iterable[str]]
+    parameter_name_whitelist: Optional[Set[str]]
     returns: Optional[str] = None
 
     def __init__(
         self,
-        callable_name: Optional[str],
-        parameters: List[Parameter],
+        arg: Optional[str] = None,
+        vararg: Optional[str] = None,
+        kwarg: Optional[str] = None,
         returns: Optional[str] = None,
+        parameter_type_whitelist: Optional[Iterable[str]] = None,
+        parameter_name_whitelist: Optional[Set[str]] = None,
     ) -> None:
+        self.arg = arg
+        self.vararg = vararg
+        self.kwarg = kwarg
+        self.returns = returns
+
+        self.parameter_type_whitelist = parameter_type_whitelist
+        self.parameter_name_whitelist = parameter_name_whitelist
+
+        callable_name = self._get_fully_qualified_callable_name()
         # Object construction should fail if any child class passes in a None.
         if not callable_name or "-" in callable_name:
             raise ValueError("The callable is not supported")
+
         self.callable_name = callable_name
-        self.parameters = parameters
-        self.returns = returns
+        self.parameters = self._generate_parameters()
+
+    @abc.abstractmethod
+    def _generate_parameters(self) -> List["Parameter"]:
+        ...
+
+    @abc.abstractmethod
+    def _get_fully_qualified_callable_name(self) -> Optional[str]:
+        ...
 
     def __str__(self) -> str:
         serialized_parameters = []
-        for parameter_name, taint in self.parameters:
+
+        name_whitelist = self.parameter_name_whitelist
+        type_whitelist = self.parameter_type_whitelist
+        for parameter_name, annotation, kind in self.parameters:
+            should_annotate = True
+            if name_whitelist is not None and parameter_name in name_whitelist:
+                should_annotate = False
+
+            if type_whitelist is not None and annotation in type_whitelist:
+                should_annotate = False
+
+            if should_annotate:
+                if kind == ArgumentKind.KWARG:
+                    taint = self.kwarg
+                elif kind == ArgumentKind.VARARG:
+                    taint = self.vararg
+                else:  # kind == ArgumentKind.ARG:
+                    taint = self.arg
+            else:
+                taint = None
+
             if taint:
                 serialized_parameters.append(f"{parameter_name}: {taint}")
             else:
                 serialized_parameters.append(parameter_name)
+
         returns = self.returns
         if returns:
             return_annotation = f" -> {returns}"
@@ -99,8 +152,6 @@ class RawCallableModel(Model):
 
 class CallableModel(RawCallableModel):
     callable_object: Callable[..., object]
-    whitelisted_parameters: Final[Optional[Iterable[str]]]
-    parameter_name_whitelist: Final[Optional[Set[str]]]
 
     def __init__(
         self,
@@ -109,61 +160,45 @@ class CallableModel(RawCallableModel):
         vararg: Optional[str] = None,
         kwarg: Optional[str] = None,
         returns: Optional[str] = None,
-        whitelisted_parameters: Optional[Iterable[str]] = None,
+        parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
     ) -> None:
         self.callable_object = callable_object
-        self.arg = arg
-        self.vararg = vararg
-        self.kwarg = kwarg
-        self.whitelisted_parameters = whitelisted_parameters
-        self.parameter_name_whitelist = parameter_name_whitelist
-        view_parameters = CallableModel._get_view_parameters(callable_object)
         super().__init__(
-            callable_name=extract_qualified_name(callable_object),
-            parameters=self._generate_parameters(view_parameters),
+            arg=arg,
+            vararg=vararg,
+            kwarg=kwarg,
             returns=returns,
+            parameter_type_whitelist=parameter_type_whitelist,
+            parameter_name_whitelist=parameter_name_whitelist,
         )
 
-    @staticmethod
-    def _get_view_parameters(
-        callable_object: Callable[..., object]
-    ) -> Mapping[str, inspect.Parameter]:
+    def _generate_parameters(self) -> List[Parameter]:
         view_parameters: Mapping[str, inspect.Parameter] = {}
+        callable_object = self.callable_object
         if isinstance(callable_object, types.FunctionType):
             view_parameters = inspect.signature(callable_object).parameters
         elif isinstance(callable_object, types.MethodType):
             # pyre-ignore: Too dynamic
             view_parameters = inspect.signature(callable_object.__func__).parameters
-        return view_parameters
 
-    def _generate_parameters(
-        self, view_parameters: Mapping[str, inspect.Parameter]
-    ) -> List[RawCallableModel.Parameter]:
-        parameters: List[RawCallableModel.Parameter] = []
-        name_whitelist = self.parameter_name_whitelist
-
-        for parameter_name in view_parameters:
-            parameter = view_parameters[parameter_name]
-            whitelist = self.whitelisted_parameters
-            should_annotate = True
-            if name_whitelist is not None and parameter_name in name_whitelist:
-                should_annotate = False
-            if whitelist is not None and extract_annotation(parameter) in whitelist:
-                should_annotate = False
-            if should_annotate:
-                if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                    taint = self.kwarg
-                elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                    taint = self.vararg
-                else:
-                    taint = self.arg
+        parameters: List[Parameter] = []
+        for parameter in view_parameters.values():
+            if parameter.kind == inspect.Parameter.VAR_KEYWORD:
+                kind = ArgumentKind.KWARG
+            elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+                kind = ArgumentKind.VARARG
             else:
-                taint = None
+                kind = ArgumentKind.ARG
+
             parameters.append(
-                RawCallableModel.Parameter(extract_name(parameter), taint)
+                Parameter(extract_name(parameter), extract_annotation(parameter), kind)
             )
+
         return parameters
+
+    def _get_fully_qualified_callable_name(self) -> Optional[str]:
+        return extract_qualified_name(self.callable_object)
 
 
 class FunctionDefinitionModel(RawCallableModel):
@@ -173,49 +208,117 @@ class FunctionDefinitionModel(RawCallableModel):
     def __init__(
         self,
         definition: FunctionDefinition,
+        qualifier: Optional[str] = None,
         arg: Optional[str] = None,
         vararg: Optional[str] = None,
         kwarg: Optional[str] = None,
         returns: Optional[str] = None,
-        qualifier: Optional[str] = None,
+        parameter_type_whitelist: Optional[Iterable[str]] = None,
+        parameter_name_whitelist: Optional[Set[str]] = None,
     ) -> None:
         self.definition = definition
         self.qualifier = qualifier
-        self.arg = arg
-        self.vararg = vararg
-        self.kwarg = kwarg
-        self.returns = returns
         super().__init__(
-            callable_name=self._get_fully_qualified_callable_name(),
-            parameters=self._generate_parameters(),
+            arg=arg,
+            vararg=vararg,
+            kwarg=kwarg,
             returns=returns,
+            parameter_type_whitelist=parameter_type_whitelist,
+            parameter_name_whitelist=parameter_name_whitelist,
         )
 
-    def _generate_parameters(self) -> List[RawCallableModel.Parameter]:
-        parameters: List[RawCallableModel.Parameter] = []
+    @staticmethod
+    def _get_annotation(ast_arg: ast.arg) -> Optional[str]:
+        annotation = ast_arg.annotation
+        if annotation and isinstance(annotation, _ast.Name):
+            return annotation.id
+        else:
+            return None
+
+    def _generate_parameters(self) -> List[Parameter]:
+        parameters: List[Parameter] = []
         function_arguments = self.definition.args
 
         for ast_arg in function_arguments.args:
-            parameters.append(RawCallableModel.Parameter(ast_arg.arg, self.arg))
+            parameters.append(
+                Parameter(
+                    ast_arg.arg,
+                    FunctionDefinitionModel._get_annotation(ast_arg),
+                    ArgumentKind.ARG,
+                )
+            )
 
         vararg_parameters = function_arguments.vararg
         if isinstance(vararg_parameters, ast.arg):
             parameters.append(
-                RawCallableModel.Parameter(f"*{vararg_parameters.arg}", self.vararg)
+                Parameter(
+                    f"*{vararg_parameters.arg}",
+                    FunctionDefinitionModel._get_annotation(vararg_parameters),
+                    ArgumentKind.VARARG,
+                )
             )
 
         kwarg_parameters = function_arguments.kwarg
         if isinstance(kwarg_parameters, ast.arg):
             parameters.append(
-                RawCallableModel.Parameter(f"**{kwarg_parameters.arg}", self.kwarg)
+                Parameter(
+                    f"**{kwarg_parameters.arg}",
+                    FunctionDefinitionModel._get_annotation(kwarg_parameters),
+                    ArgumentKind.KWARG,
+                )
             )
 
         return parameters
 
-    def _get_fully_qualified_callable_name(self) -> str:
+    def _get_fully_qualified_callable_name(self) -> Optional[str]:
         qualifier = f"{self.qualifier}." if self.qualifier else ""
         fn_name = self.definition.name
         return qualifier + fn_name
+
+
+class PyreFunctionDefinitionModel(RawCallableModel):
+    definition: query_api.Define
+
+    def __init__(
+        self,
+        definition: query_api.Define,
+        arg: Optional[str] = None,
+        vararg: Optional[str] = None,
+        kwarg: Optional[str] = None,
+        returns: Optional[str] = None,
+        parameter_type_whitelist: Optional[Iterable[str]] = None,
+        parameter_name_whitelist: Optional[Set[str]] = None,
+    ) -> None:
+        self.definition = definition
+        super().__init__(
+            arg=arg,
+            vararg=vararg,
+            kwarg=kwarg,
+            returns=returns,
+            parameter_type_whitelist=parameter_type_whitelist,
+            parameter_name_whitelist=parameter_name_whitelist,
+        )
+
+    def _generate_parameters(self) -> List[Parameter]:
+        parameters: List[Parameter] = []
+
+        for parameter in self.definition.parameters:
+            if "**" in parameter.name:
+                kind = ArgumentKind.KWARG
+            elif "*" in parameter.name:
+                kind = ArgumentKind.VARARG
+            else:
+                kind = ArgumentKind.ARG
+            parameters.append(
+                Parameter(
+                    name=parameter.name, annotation=parameter.annotation, kind=kind
+                )
+            )
+
+        return parameters
+
+    def _get_fully_qualified_callable_name(self) -> Optional[str]:
+        return self.definition.name
 
 
 class AssignmentModel(Model):

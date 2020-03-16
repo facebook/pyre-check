@@ -32,7 +32,7 @@ def taint_functions(
                 arg=taint_annotation,
                 vararg=taint_annotation,
                 kwarg=taint_annotation,
-                whitelisted_parameters=whitelisted_classes,
+                parameter_type_whitelist=whitelisted_classes,
                 parameter_name_whitelist=parameter_name_whitelist,
             )
             entry_points.add(model)
