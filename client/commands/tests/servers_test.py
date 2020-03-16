@@ -79,8 +79,11 @@ class ServersCommandTest(unittest.TestCase):
             )
         )
 
+    @patch.object(Path, "mkdir")
     @patch.object(servers, "Stop")
-    def test_stop_servers(self, stop_class: MagicMock) -> None:
+    def test_stop_servers(
+        self, stop_class: MagicMock, make_directory: MagicMock
+    ) -> None:
         servers = Servers(
             arguments=mock_arguments(dot_pyre_directory=Path("/root/.pyre")),
             original_directory="/",

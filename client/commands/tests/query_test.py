@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from ... import commands
@@ -16,7 +17,7 @@ from .command_test import mock_arguments, mock_configuration
 class QueryTest(unittest.TestCase):
     def test_query(self) -> None:
         original_directory = "/original/directory"
-        arguments = mock_arguments()
+        arguments = mock_arguments(dot_pyre_directory=Path("/tmp/foo"))
         arguments.query = ""
         configuration = mock_configuration()
 
@@ -30,7 +31,6 @@ class QueryTest(unittest.TestCase):
             ).run()
             connect.assert_called_once()
 
-        arguments.log_directory = "/tmp/foo"
         arguments.query = "query"
         self.assertEqual(
             commands.Query(

@@ -28,7 +28,6 @@ class MonitorTest(unittest.TestCase):
         self, find_root, perform_handshake, _socket_connection
     ) -> None:
         find_root.return_value = "/ROOT"
-        arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = MagicMock()
         analysis_directory.get_root.return_value = "/ROOT"
@@ -85,8 +84,8 @@ class MonitorTest(unittest.TestCase):
         self.assertRaises(
             MonitorException,
             ProjectFilesMonitor,
-            arguments,
             configuration,
+            ".",
             analysis_directory,
         )
 

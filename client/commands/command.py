@@ -162,7 +162,6 @@ class CommandParser(ABC):
         self._hide_parse_errors: bool = arguments.hide_parse_errors
         self._logging_sections: str = arguments.logging_sections
         self._log_identifier: str = arguments.log_identifier
-        self._log_directory: str = arguments.log_directory
         self._logger: str = arguments.logger
         self._formatter: List[str] = arguments.formatter
 
@@ -205,7 +204,6 @@ class CommandParser(ABC):
             dot_pyre_directory, self._current_directory
         )
         self._log_directory: str = find_log_directory(
-            self._log_directory,
             self._current_directory,
             self._local_configuration,
             str(self._dot_pyre_directory),
@@ -273,13 +271,6 @@ class CommandParser(ABC):
             "--log-identifier",
             default="",
             help=argparse.SUPPRESS,  # Add given identifier to logged samples.
-        )
-
-        # Log directory for the current local or global project.
-        # This overrides the log directory computed using `--dot-pyre-directory`.
-        parser.add_argument(
-            "--log-directory",
-            help=argparse.SUPPRESS,  # Override default location for logs
         )
 
         # Directory where Pyre places its log files and artifacts.

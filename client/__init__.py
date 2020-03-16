@@ -122,19 +122,15 @@ def find_dot_pyre_directory(
 
 
 def find_log_directory(
-    log_directory: Optional[str],
-    current_directory: str,
-    local_configuration: Optional[str],
-    dot_pyre_directory: str,
+    current_directory: str, local_configuration: Optional[str], dot_pyre_directory: str
 ) -> str:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
-    if not log_directory:
-        log_directory = dot_pyre_directory
-        if local_configuration:
-            # `log_directory` will never escape `.pyre/` because in `switch_root` we have
-            # guaranteed that configurations are never deeper than local configurations
-            relative = os.path.relpath(local_configuration, current_directory)
-            log_directory = os.path.join(log_directory, relative)
+    log_directory = dot_pyre_directory
+    if local_configuration:
+        # `log_directory` will never escape `.pyre/` because in `switch_root` we have
+        # guaranteed that configurations are never deeper than local configurations
+        relative = os.path.relpath(local_configuration, current_directory)
+        log_directory = os.path.join(log_directory, relative)
     Path(log_directory).mkdir(parents=True, exist_ok=True)
     return log_directory
 

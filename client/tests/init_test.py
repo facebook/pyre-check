@@ -73,57 +73,16 @@ class InitTest(unittest.TestCase):
         local_configuration = None
         current_directory = "project"
         log_directory = find_log_directory(
-            None,
-            current_directory,
-            local_configuration,
-            dot_pyre_directory="project/.pyre",
+            current_directory, local_configuration, dot_pyre_directory="project/.pyre"
         )
         self.assertEqual(log_directory, "project/.pyre")
 
         local_configuration = "/project/subdirectory"
         current_directory = "/project"
         log_directory = find_log_directory(
-            None, current_directory, local_configuration, "/project/.pyre"
+            current_directory, local_configuration, "/project/.pyre"
         )
         self.assertEqual(log_directory, "/project/.pyre/subdirectory")
-
-        log_directory = find_log_directory(
-            "something",
-            current_directory,
-            local_configuration,
-            dot_pyre_directory="/project/.pyre",
-        )
-        self.assertEqual(log_directory, "something")
-
-    @patch.object(Path, "mkdir")
-    def test_find_log_directory_given_dot_pyre_directory(
-        self, make_directory: MagicMock
-    ) -> None:
-        self.assertEqual(
-            find_log_directory(
-                None,
-                current_directory="/root",
-                local_configuration=None,
-                dot_pyre_directory="/some/log/directory/.pyre",
-            ),
-            "/some/log/directory/.pyre",
-        )
-        make_directory.assert_called_once()
-
-    @patch.object(Path, "mkdir")
-    def test_find_log_directory_given_dot_pyre_directory__local_root(
-        self, make_directory: MagicMock
-    ) -> None:
-        self.assertEqual(
-            find_log_directory(
-                None,
-                current_directory="/root",
-                local_configuration="/root/some/local/project",
-                dot_pyre_directory="/some/log/directory/.pyre",
-            ),
-            "/some/log/directory/.pyre/some/local/project",
-        )
-        make_directory.assert_called_once()
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()
