@@ -41,7 +41,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
         return paths
 
     def _annotate_functions(
-        self, annotation_specification: DecoratorAnnotationSpecification, path: str
+        self, specification: DecoratorAnnotationSpecification, path: str
     ) -> Iterable[Model]:
 
         module = load_module(path)
@@ -67,7 +67,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                 # tree once we see a class definition
                 pass
 
-        visitor = FreeFunctionVisitor(annotation_specification.decorator)
+        visitor = FreeFunctionVisitor(specification.decorator)
         visitor.visit(module)
 
         module_qualifier = qualifier(self.root, path)
@@ -78,10 +78,12 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                 function_definition_model = FunctionDefinitionModel(
                     qualifier=module_qualifier,
                     definition=found_function,
-                    arg=annotation_specification.arg_annotation,
-                    vararg=annotation_specification.vararg_annotation,
-                    kwarg=annotation_specification.kwarg_annotation,
-                    returns=annotation_specification.return_annotation,
+                    arg=specification.arg_annotation,
+                    vararg=specification.vararg_annotation,
+                    kwarg=specification.kwarg_annotation,
+                    returns=specification.return_annotation,
+                    parameter_type_whitelist=specification.parameter_type_whitelist,
+                    parameter_name_whitelist=specification.parameter_name_whitelist,
                 )
                 models.add(function_definition_model)
             except ValueError:

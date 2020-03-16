@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Set
 
 
 class DecoratorAnnotationSpecification(NamedTuple):
@@ -14,3 +14,5 @@ class DecoratorAnnotationSpecification(NamedTuple):
     vararg_annotation: Optional[str] = None
     kwarg_annotation: Optional[str] = None
     return_annotation: Optional[str] = None
+    parameter_type_whitelist: Optional[Set[str]] = None
+    parameter_name_whitelist: Optional[Set[str]] = None
