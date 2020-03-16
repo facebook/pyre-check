@@ -118,7 +118,7 @@ def fix_file(
     for index, line in enumerate(lines):
         if removing_pyre_comments:
             stripped = line.lstrip()
-            if line.startswith("#") and not re.match(
+            if stripped.startswith("#") and not re.match(
                 r"# *pyre-(ignore|fixme).*$", stripped
             ):
                 continue

@@ -897,7 +897,7 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = (
-                "  # pyre-ignore[0]: [1, 2, 3]\n#  continuation comment\n2"
+                "  # pyre-ignore[0]: [1, 2, 3]\n  #  continuation comment\n2"
             )
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
             arguments.comment = None
@@ -917,7 +917,7 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = (
-                "  # pyre-ignore[0]: [1, 2, 3]\n# assumed continuation\n2"
+                "  # pyre-ignore[0]: [1, 2, 3]\n  # assumed continuation\n2"
             )
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
             arguments.comment = None
@@ -937,7 +937,7 @@ class FixmeTest(unittest.TestCase):
             stdin_errors.return_value = pyre_errors
             run_errors.return_value = pyre_errors
             path_read_text.return_value = (
-                "  # pyre-ignore[0]:\n#  comment that doesn't fit on one line\n"
+                "  # pyre-ignore[0]:\n  #  comment that doesn't fit on one line\n"
                 "# pyre-ignore[1]:\n2"
             )
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
