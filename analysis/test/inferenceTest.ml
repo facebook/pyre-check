@@ -109,6 +109,68 @@ let test_backward context =
     []
     "nested_tuple_to_int(((x, y), z))"
     ["x", Type.string; "y", Type.float; "z", Type.float];
+  assert_backward
+    [
+      ( "cb",
+        Type.Callable.create
+          ~parameters:(Defined [Named { name = "arg"; annotation = Type.integer; default = false }])
+          ~annotation:Type.none
+          () );
+    ]
+    "cb(x)"
+    [
+      ( "cb",
+        Type.Callable.create
+          ~parameters:(Defined [Named { name = "arg"; annotation = Type.integer; default = false }])
+          ~annotation:Type.none
+          () );
+      "x", Type.integer;
+    ];
+  assert_backward
+    [
+      ( "cb",
+        Type.Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (Type.Callable.create
+                     ~parameters:
+                       (Defined
+                          [
+                            Named { name = "self"; annotation = Type.string; default = false };
+                            Named { name = "arg"; annotation = Type.integer; default = false };
+                          ])
+                     ~annotation:Type.none
+                     ());
+                Single Type.string;
+              ];
+          } );
+    ]
+    "cb(x)"
+    [
+      ( "cb",
+        Type.Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (Type.Callable.create
+                     ~parameters:
+                       (Defined
+                          [
+                            Named { name = "self"; annotation = Type.string; default = false };
+                            Named { name = "arg"; annotation = Type.integer; default = false };
+                          ])
+                     ~annotation:Type.none
+                     ());
+                Single Type.string;
+              ];
+          } );
+      "x", Type.integer;
+    ];
 
   (* TODO(T25072735): Extend implementation to pass starred and unstarred tests *)
   assert_backward [] "str_float_to_int(*(x, y))" [];

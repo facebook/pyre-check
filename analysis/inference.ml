@@ -621,8 +621,23 @@ module State (Context : Context) = struct
     let annotate_call_accesses statement resolution =
       let propagate resolution { Call.callee; arguments } =
         let resolved = forward_expression ~state ~expression:callee in
-        match resolved with
-        | Type.Callable
+        let callable =
+          match resolved with
+          | Type.Callable callable -> Some callable
+          | Type.Parametric { name = "BoundMethod"; _ } -> (
+              GlobalResolution.attribute_from_annotation
+                (Resolution.global_resolution resolution)
+                ~parent:resolved
+                ~name:"__call__"
+              >>| Annotated.Attribute.annotation
+              >>| Annotation.annotation
+              >>= function
+              | Type.Callable callable -> Some callable
+              | _ -> None )
+          | _ -> None
+        in
+        match callable with
+        | Some
             {
               Type.Callable.implementation =
                 { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
