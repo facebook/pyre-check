@@ -753,6 +753,69 @@ let test_filter context =
   assert_filtered
     (undefined_attribute (Type.Callable.create ~annotation:(Type.Primitive "test.MockChild") ()));
 
+  assert_unfiltered
+    (UndefinedAttribute
+       {
+         attribute = "something";
+         origin =
+           Class
+             {
+               annotation = Type.Callable.create ~annotation:Type.integer ();
+               class_attribute = false;
+             };
+       });
+  assert_filtered
+    (UndefinedAttribute
+       {
+         attribute = "assert_not_called";
+         origin =
+           Class
+             {
+               annotation = Type.Callable.create ~annotation:Type.integer ();
+               class_attribute = false;
+             };
+       });
+  assert_unfiltered
+    (UndefinedAttribute
+       {
+         attribute = "something";
+         origin =
+           Class
+             {
+               annotation =
+                 Type.Parametric
+                   {
+                     name = "BoundMethod";
+                     parameters =
+                       [
+                         Single (Type.Callable.create ~annotation:Type.integer ());
+                         Single Type.integer;
+                       ];
+                   };
+               class_attribute = false;
+             };
+       });
+  assert_filtered
+    (UndefinedAttribute
+       {
+         attribute = "assert_not_called";
+         origin =
+           Class
+             {
+               annotation =
+                 Type.Parametric
+                   {
+                     name = "BoundMethod";
+                     parameters =
+                       [
+                         Single (Type.Callable.create ~annotation:Type.integer ());
+                         Single Type.integer;
+                       ];
+                   };
+               class_attribute = false;
+             };
+       });
+
   ()
 
 

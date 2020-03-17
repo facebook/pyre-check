@@ -2846,7 +2846,7 @@ let filter ~resolution errors =
       (* We also need to filter errors for common mocking patterns. *)
       | UndefinedAttribute
           {
-            origin = Class { annotation = Callable _; _ };
+            origin = Class { annotation = Callable _ | Parametric { name = "BoundMethod"; _ }; _ };
             attribute =
               ( "assert_not_called" | "assert_called_once" | "assert_called_once_with"
               | "reset_mock" | "assert_has_calls" | "assert_any_call" );
