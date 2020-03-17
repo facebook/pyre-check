@@ -354,6 +354,19 @@ let test_check_unbounded_variables context =
       "Invalid type parameters [24]: Type parameter `List[Variable[T]]` violates constraints on \
        `Variable[T_bound_int (bound to int)]` in generic type `G`.";
     ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, List, Generic
+      T_Con = TypeVar('T_Con', contravariant=True)
+      class G(Generic[T_Con]):
+        pass
+      def foo(a: G[str], b: G[int]) -> None:
+        l: List[G[object]] = [a, b]
+    |}
+    [
+      "Incompatible variable type [9]: l is declared to have type `List[G[object]]` but is used as \
+       type `List[typing.Union[G[int], G[str]]]`.";
+    ];
   ()
 
 

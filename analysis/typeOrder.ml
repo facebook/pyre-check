@@ -1087,8 +1087,10 @@ module OrderImplementation = struct
                       Some Type.Top
                   | Single left, Single right, Unary { variance = Covariant; _ } ->
                       Some (join order left right)
-                  | Single left, Single right, Unary { variance = Contravariant; _ } ->
-                      Some (meet order left right)
+                  | Single left, Single right, Unary { variance = Contravariant; _ } -> (
+                      match meet order left right with
+                      | Type.Bottom -> None
+                      | not_bottom -> Some not_bottom )
                   | Single left, Single right, Unary { variance = Invariant; _ } ->
                       if
                         always_less_or_equal order ~left ~right

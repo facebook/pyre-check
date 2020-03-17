@@ -2303,6 +2303,13 @@ let test_join context =
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
     (Type.parametric "LinkedList" ![Type.integer]);
+  (* Contravariant *)
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "Sink" ![Type.integer])
+       (Type.parametric "Sink" ![Type.string]))
+    (Type.Union [Type.parametric "Sink" ![Type.integer]; Type.parametric "Sink" ![Type.string]]);
   let variance_aliases =
     Identifier.Table.of_alist_exn
       [
