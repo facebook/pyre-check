@@ -3198,6 +3198,18 @@ let test_solve_less_or_equal context =
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
     [["T1", "int"]];
+  let attributes annotation ~assumptions:_ =
+    match annotation with
+    | Type.Primitive "HasBoundMethodCall" ->
+        Some
+          (parse_attributes
+             ~parse_annotation
+             ~class_name:"HasBoundMethodCall"
+             ["__call__", "BoundMethod[typing.Callable[[int, str], bool], int]"])
+    | _ -> None
+  in
+  assert_solve ~attributes ~left:"HasBoundMethodCall" ~right:"typing.Callable[[str], bool]" [[]];
+  assert_solve ~attributes ~left:"HasBoundMethodCall" ~right:"typing.Callable[[int], bool]" [];
 
   (* Multiple options *)
   assert_solve

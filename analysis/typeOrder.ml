@@ -89,7 +89,11 @@ module OrderImplementation = struct
           let find_call attribute =
             if String.equal (AnnotatedAttribute.name attribute) "__call__" then
               let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
-              Option.some_if (Type.is_callable annotation) annotation
+              match annotation with
+              | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
+              | Callable _ ->
+                  Some annotation
+              | _ -> None
             else
               None
           in
