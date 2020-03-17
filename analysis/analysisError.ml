@@ -1712,9 +1712,19 @@ let messages ~concise ~signature location kind =
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
-        | Class { annotation = Callable { kind = Anonymous; _ }; _ } -> "Anonymous callable"
-        | Class { annotation = Callable { kind = Named name; _ }; _ } ->
-            Format.asprintf "Callable `%a`" pp_reference name
+        | Class
+            {
+              annotation =
+                ( Callable { kind; _ }
+                (* TODO(T64161566): Don't pretend these are just Callables *)
+                | Parametric
+                    { name = "BoundMethod"; parameters = [Single (Callable { kind; _ }); Single _] }
+                  );
+              _;
+            } -> (
+            match kind with
+            | Anonymous -> "Anonymous callable"
+            | Named name -> Format.asprintf "Callable `%a`" pp_reference name )
         | Class { annotation; _ } ->
             let annotation, _ = Type.split annotation in
             let name =

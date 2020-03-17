@@ -868,6 +868,101 @@ let test_namespace_insensitive_set _ =
   assert_true (Error.Set.mem set_containing_error_1 error_2)
 
 
+let test_description _ =
+  let assert_messages error expected =
+    let actual =
+      Error.instantiate
+        ~lookup:(fun _ -> None)
+        {
+          kind = error;
+          location = Location.WithModule.any;
+          signature =
+            Node.create_with_default_location
+              (Ast.Statement.Define.Signature.create_toplevel ~qualifier:None);
+        }
+      |> Error.Instantiated.description ~show_error_traces:false
+    in
+    assert_equal ~printer:Fn.id expected actual
+  in
+  assert_messages
+    (UndefinedAttribute
+       { attribute = "at"; origin = Class { annotation = Type.integer; class_attribute = false } })
+    "Undefined attribute [16]: `int` has no attribute `at`.";
+  assert_messages
+    (UndefinedAttribute
+       {
+         attribute = "at";
+         origin =
+           Class
+             {
+               annotation = Type.Callable.create ~annotation:Type.integer ();
+               class_attribute = false;
+             };
+       })
+    "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
+  assert_messages
+    (UndefinedAttribute
+       {
+         attribute = "at";
+         origin =
+           Class
+             {
+               annotation =
+                 Type.Callable.create ~name:(Reference.create "named") ~annotation:Type.integer ();
+               class_attribute = false;
+             };
+       })
+    "Undefined attribute [16]: Callable `named` has no attribute `at`.";
+  (* TODO(T64161566): Don't pretend these are just Callables *)
+  assert_messages
+    (UndefinedAttribute
+       {
+         attribute = "at";
+         origin =
+           Class
+             {
+               annotation =
+                 Type.Parametric
+                   {
+                     name = "BoundMethod";
+                     parameters =
+                       [
+                         Single (Type.Callable.create ~annotation:Type.integer ());
+                         Single Type.integer;
+                       ];
+                   };
+               class_attribute = false;
+             };
+       })
+    "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
+  assert_messages
+    (UndefinedAttribute
+       {
+         attribute = "at";
+         origin =
+           Class
+             {
+               annotation =
+                 Type.Parametric
+                   {
+                     name = "BoundMethod";
+                     parameters =
+                       [
+                         Single
+                           (Type.Callable.create
+                              ~name:(Reference.create "named")
+                              ~annotation:Type.integer
+                              ());
+                         Single Type.integer;
+                       ];
+                   };
+               class_attribute = false;
+             };
+       })
+    "Undefined attribute [16]: Callable `named` has no attribute `at`.";
+  ()
+
+
 let () =
   "error"
   >::: [
@@ -877,5 +972,6 @@ let () =
          "filter" >:: test_filter;
          "suppress" >:: test_suppress;
          "namespace_insensitive_set" >:: test_namespace_insensitive_set;
+         "messages" >:: test_description;
        ]
   |> Test.run
