@@ -1079,9 +1079,9 @@ module Implementation = struct
             ~assumptions
             ~class_metadata_environment
             ~transitive:false
-            ~class_attributes:false
+            ~class_attributes:true
             ~include_generated_attributes:true
-            ~instantiated:annotation
+            ~instantiated:(Type.meta annotation)
             ?dependency
             ~special_method:false
             ~attribute_name:"__init__"
@@ -1470,7 +1470,7 @@ module Implementation = struct
           ~uninstantiated_annotation
           ~abstract:false
           ~async:false
-          ~class_attribute:false
+          ~class_attribute:class_attributes
           ~defined:true
           ~initialized:Implicitly
           ~name:"__init__"
@@ -1855,42 +1855,12 @@ module Implementation = struct
       let instantiated = if accessed_via_metaclass then Type.meta instantiated else instantiated in
       match annotation with
       | Method { callable; is_class_method } ->
-          let callable =
-            if
-              ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
-                class_metadata_environment
-                ?dependency
-                class_name
-            then
-              callable
-            else if String.equal attribute_name "__new__" then
-              callable
-            else if is_class_method then
-              partial_apply_self callable ~self_type:(Type.meta instantiated)
-            else if AnnotatedAttribute.static attribute then
-              callable
-            else if default_class_attribute then
-              (* Keep first argument around when calling instance methods from class attributes. *)
-              callable
-            else
-              let applied = partial_apply_self callable ~self_type:instantiated in
-              let instantiated_is_protocol =
-                Type.split instantiated
-                |> fst
-                |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
-                     (unannotated_global_environment class_metadata_environment)
-                     ?dependency
-              in
-              if (not (String.equal class_name "object")) && instantiated_is_protocol then
-                (* We don't have a way of tracing taint through protocols, so maintaining a name and
-                   implicit for methods of protocols isn't valuable. It also will complicate things
-                   down the line with BoundMethods *)
-                { applied with kind = Anonymous; implicit = None }
-              else
-                applied
-          in
           (* Special cases *)
           let callable =
+            let self_parameter =
+              Type.Callable.Parameter.Named
+                { name = "self"; annotation = Type.Top; default = false }
+            in
             match instantiated, attribute_name, callable with
             | Type.TypedDictionary { fields; _ }, method_name, callable ->
                 Type.TypedDictionary.special_overloads ~class_name ~fields ~method_name
@@ -1909,6 +1879,7 @@ module Implementation = struct
                     parameters =
                       Defined
                         [
+                          self_parameter;
                           Named
                             { name = "x"; annotation = Type.literal_integer index; default = false };
                         ];
@@ -1948,7 +1919,8 @@ module Implementation = struct
                   | "typing.Optional" ->
                       ( {
                           Type.Callable.annotation = Type.meta (Type.Optional synthetic);
-                          parameters = Defined [create_parameter (Type.meta synthetic)];
+                          parameters =
+                            Defined [self_parameter; create_parameter (Type.meta synthetic)];
                         },
                         [] )
                   | "typing.Callable" ->
@@ -1958,6 +1930,7 @@ module Implementation = struct
                           parameters =
                             Defined
                               [
+                                self_parameter;
                                 create_parameter
                                   (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
                               ];
@@ -1969,7 +1942,7 @@ module Implementation = struct
                         {
                           Type.Callable.annotation =
                             Type.meta (Type.Parametric { name; parameters = generics });
-                          parameters = Defined [parameter];
+                          parameters = Defined [self_parameter; parameter];
                         }
                       in
                       match generics with
@@ -2016,12 +1989,43 @@ module Implementation = struct
                               Type.Callable.annotation =
                                 Type.meta (Type.Parametric { name; parameters = return_parameters });
                               parameters =
-                                Defined [create_parameter (Type.tuple parameter_parameters)];
+                                Defined
+                                  [
+                                    self_parameter;
+                                    create_parameter (Type.tuple parameter_parameters);
+                                  ];
                             },
                             [] ) )
                 in
                 { callable with implementation; overloads }
             | _ -> callable
+          in
+          let callable =
+            if String.equal attribute_name "__new__" then
+              callable
+            else if is_class_method then
+              partial_apply_self callable ~self_type:(Type.meta instantiated)
+            else if AnnotatedAttribute.static attribute then
+              callable
+            else if default_class_attribute then
+              (* Keep first argument around when calling instance methods from class attributes. *)
+              callable
+            else
+              let applied = partial_apply_self callable ~self_type:instantiated in
+              let instantiated_is_protocol =
+                Type.split instantiated
+                |> fst
+                |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
+                     (unannotated_global_environment class_metadata_environment)
+                     ?dependency
+              in
+              if (not (String.equal class_name "object")) && instantiated_is_protocol then
+                (* We don't have a way of tracing taint through protocols, so maintaining a name and
+                   implicit for methods of protocols isn't valuable. It also will complicate things
+                   down the line with BoundMethods *)
+                { applied with kind = Anonymous; implicit = None }
+              else
+                applied
           in
           Type.Callable callable, Type.Callable callable
       | Attribute { annotation; original_annotation; is_property = true } ->

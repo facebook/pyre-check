@@ -949,7 +949,7 @@ let test_typed_dictionary_individual_attributes context =
                           ];
                     };
                   ];
-                implicit = None;
+                implicit = Some { name = "self"; implicit_annotation = Primitive "test.Movie" };
               }));
   assert_attribute
     ~parent_name:"test.ChildMovie"
@@ -1009,7 +1009,7 @@ let test_typed_dictionary_individual_attributes context =
                           ];
                     };
                   ];
-                implicit = None;
+                implicit = Some { name = "self"; implicit_annotation = Primitive "test.ChildMovie" };
               }));
   assert_attribute
     ~parent_name:"test.NonTotalMovie"
@@ -1063,7 +1063,8 @@ let test_typed_dictionary_individual_attributes context =
                           ];
                     };
                   ];
-                implicit = None;
+                implicit =
+                  Some { name = "self"; implicit_annotation = Primitive "test.NonTotalMovie" };
               }));
   assert_attribute
     ~parent_name:"test.EmptyNonTotalMovie"
@@ -1102,7 +1103,8 @@ let test_typed_dictionary_individual_attributes context =
                           ];
                     };
                   ];
-                implicit = None;
+                implicit =
+                  Some { name = "self"; implicit_annotation = Primitive "test.EmptyNonTotalMovie" };
               }));
   assert_attribute
     ~parent_name:"test.Movie"

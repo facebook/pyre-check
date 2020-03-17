@@ -3713,6 +3713,8 @@ module TypedDictionary = struct
     List.exists right_fields ~f:found_collision
 
 
+  let self_parameter = CallableParameter.Named { name = "self"; annotation = Top; default = false }
+
   let field_named_parameters ?(all_default = false) fields =
     let field_to_argument { name; annotation; required } =
       Record.Callable.RecordParameter.KeywordOnly
@@ -3722,7 +3724,7 @@ module TypedDictionary = struct
           default = all_default || not required;
         }
     in
-    List.map ~f:field_to_argument fields |> fun parameters -> Defined parameters
+    List.map ~f:field_to_argument fields |> fun parameters -> Defined (self_parameter :: parameters)
 
 
   let constructor ~name ~fields =
@@ -3738,6 +3740,7 @@ module TypedDictionary = struct
             parameters =
               Defined
                 [
+                  self_parameter;
                   Record.Callable.RecordParameter.PositionalOnly
                     { index = 0; annotation; default = false };
                 ];
@@ -3748,7 +3751,11 @@ module TypedDictionary = struct
 
 
   let fields_from_constructor = function
-    | { Callable.kind = Named name; overloads = [{ parameters = Defined parameters; _ }; _]; _ }
+    | {
+        Callable.kind = Named name;
+        overloads = [{ parameters = Defined (_self :: parameters); _ }; _];
+        _;
+      }
       when String.equal (Reference.show name) "__init__" ->
         let parameter_to_field = function
           | Record.Callable.RecordParameter.KeywordOnly { name; annotation; default } ->
@@ -3777,7 +3784,7 @@ module TypedDictionary = struct
   let common_special_methods ~class_name =
     let getitem_overloads =
       let overload { name; annotation; _ } =
-        { annotation; parameters = Defined [key_parameter name] }
+        { annotation; parameters = Defined [self_parameter; key_parameter name] }
       in
       List.map ~f:overload
     in
@@ -3786,7 +3793,10 @@ module TypedDictionary = struct
         {
           annotation = none;
           parameters =
-            Defined [key_parameter name; Named { name = "v"; annotation; default = false }];
+            Defined
+              [
+                self_parameter; key_parameter name; Named { name = "v"; annotation; default = false };
+              ];
         }
       in
       List.map ~f:overload
@@ -3794,12 +3804,16 @@ module TypedDictionary = struct
     let get_overloads =
       let overloads { name; annotation; _ } =
         [
-          { annotation = Optional annotation; parameters = Defined [key_parameter name] };
+          {
+            annotation = Optional annotation;
+            parameters = Defined [self_parameter; key_parameter name];
+          };
           {
             annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
                 [
+                  self_parameter;
                   key_parameter name;
                   Named
                     {
@@ -3818,7 +3832,12 @@ module TypedDictionary = struct
         {
           annotation;
           parameters =
-            Defined [key_parameter name; Named { name = "default"; annotation; default = false }];
+            Defined
+              [
+                self_parameter;
+                key_parameter name;
+                Named { name = "default"; annotation; default = false };
+              ];
         }
       in
       List.map ~f:overload
@@ -3831,6 +3850,7 @@ module TypedDictionary = struct
           parameters =
             Defined
               [
+                self_parameter;
                 Record.Callable.RecordParameter.PositionalOnly
                   { index = 0; annotation = Primitive class_name; default = false };
               ];
@@ -3853,12 +3873,13 @@ module TypedDictionary = struct
           []
         else
           [
-            { annotation; parameters = Defined [key_parameter name] };
+            { annotation; parameters = Defined [self_parameter; key_parameter name] };
             {
               annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
               parameters =
                 Defined
                   [
+                    self_parameter;
                     key_parameter name;
                     Named
                       {
@@ -3876,7 +3897,7 @@ module TypedDictionary = struct
       let overload { name; annotation = _; required } =
         Option.some_if
           (not required)
-          { annotation = none; parameters = Defined [key_parameter name] }
+          { annotation = none; parameters = Defined [self_parameter; key_parameter name] }
       in
       List.filter_map ~f:overload fields
     in

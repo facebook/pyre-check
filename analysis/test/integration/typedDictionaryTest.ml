@@ -350,7 +350,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Revealed type [-1]: Revealed type for `Movie.__init__` is `typing.Callable(__init__)[..., \
-       unknown][[[KeywordOnly(name, str), KeywordOnly(year, int)], Movie][[Movie], Movie]]`.";
+       unknown][[[Named(self, unknown), KeywordOnly(name, str), KeywordOnly(year, int)], \
+       Movie][[Named(self, unknown), Movie], Movie]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1615,11 +1616,12 @@ let test_check_typed_dictionary_inheritance context =
       "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
        dictionary. Expected a typed dictionary.";
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[KeywordOnly(baz, str), KeywordOnly(foo, int)], \
-       Child][[Child], Child]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(baz, str), \
+       KeywordOnly(foo, int)], Child][[Named(self, unknown), Child], Child]]`.";
       "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[KeywordOnly(non_total_baz, str, default), \
-       KeywordOnly(foo, int)], NonTotalChild][[NonTotalChild], NonTotalChild]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(non_total_baz, \
+       str, default), KeywordOnly(foo, int)], NonTotalChild][[Named(self, unknown), \
+       NonTotalChild], NonTotalChild]]`.";
     ];
   ()
 
