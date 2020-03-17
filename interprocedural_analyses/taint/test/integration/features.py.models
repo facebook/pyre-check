@@ -58,6 +58,12 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-type": "bool" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -116,6 +122,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-type": "bool" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
     ]
   }
 }
@@ -179,6 +192,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-type": "bool" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" }
     ]
   }
 }

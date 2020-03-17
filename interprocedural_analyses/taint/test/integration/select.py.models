@@ -212,6 +212,11 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-has": "first-index" },
+      { "always-first-index": "payload" }
     ]
   }
 }
@@ -303,6 +308,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-has": "first-field" },
+      { "always-first-field": "payload" }
     ]
   }
 }
@@ -397,6 +406,11 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-has": "first-index" },
+      { "always-first-index": "payload" }
     ]
   }
 }
@@ -490,6 +504,12 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-has": "first-index" },
+      { "always-has": "first-field" },
+      { "always-first-index": "payload" },
+      { "always-first-field": "GET" }
     ]
   }
 }

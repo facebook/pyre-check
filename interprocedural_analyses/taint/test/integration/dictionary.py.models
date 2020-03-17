@@ -49,6 +49,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -106,6 +110,12 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-index" },
+      { "always-first-index": "a" }
     ]
   }
 }
@@ -168,6 +178,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" }
     ]
   }
 }
@@ -226,6 +240,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" },
+      { "always-has": "first-index" },
+      { "always-first-index": "without_feature" }
     ]
   }
 }
@@ -284,6 +305,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" },
+      { "always-has": "first-index" },
+      { "always-first-index": "with_feature" }
     ]
   }
 }
@@ -337,6 +365,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -390,6 +422,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }
@@ -448,6 +484,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure" },
+      { "always-has": "first-index" },
+      { "always-first-index": "<numeric>" }
     ]
   }
 }
@@ -508,6 +551,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" }
     ]
   }
 }
@@ -1077,6 +1124,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }

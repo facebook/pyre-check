@@ -189,7 +189,10 @@ class Parser(BaseParser):
         issue["postconditions"], issue[
             "initial_sources"
         ], fw_features = self._parse_issue_traces(json["traces"], "forward", "source")
-        issue["features"] = bw_features + fw_features
+        if "features" in json:
+            issue["features"] = json["features"]
+        else:
+            issue["features"] = bw_features + fw_features  # legacy
         yield issue
 
     def _generate_issue_master_handle(self, issue):

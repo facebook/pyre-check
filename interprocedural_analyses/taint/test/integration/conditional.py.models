@@ -46,7 +46,8 @@
           }
         ]
       }
-    ]
+    ],
+    "features": [ { "always-via-value": "my-data" } ]
   }
 }
 {
@@ -96,7 +97,8 @@
           }
         ]
       }
-    ]
+    ],
+    "features": [ { "always-via-value": "other" } ]
   }
 }
 {

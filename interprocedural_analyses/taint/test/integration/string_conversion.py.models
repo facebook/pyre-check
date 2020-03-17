@@ -61,6 +61,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-has": "first-index" },
+      { "always-first-index": "tainted" }
     ]
   }
 }
@@ -126,6 +130,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-has": "first-index" },
+      { "always-first-index": "tainted" }
     ]
   }
 }
@@ -191,6 +199,10 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-has": "first-index" },
+      { "always-first-index": "tainted" }
     ]
   }
 }

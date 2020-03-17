@@ -30,6 +30,8 @@ module type S = sig
   val of_approximation : element approximation list -> t
 
   val add_set : t -> to_add:t -> t
+
+  val sequence_join : t -> t -> t
 end
 
 module Make (Element : AbstractSetDomain.ELEMENT) = struct
@@ -348,4 +350,17 @@ module Make (Element : AbstractSetDomain.ELEMENT) = struct
 
 
   let add element set = add set element
+
+  let sequence_join left right =
+    if left == right then
+      left
+    else
+      match left, right with
+      | Bottom, _ -> right
+      | _, Bottom -> left
+      | ( BiSet { over = left_over; under = left_under },
+          BiSet { over = right_over; under = right_under } ) ->
+          let over = Set.union left_over right_over in
+          let under = Set.union left_under right_under in
+          make ~old:left ~over ~under
 end

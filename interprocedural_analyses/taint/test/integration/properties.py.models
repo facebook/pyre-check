@@ -56,6 +56,11 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
     ]
   }
 }

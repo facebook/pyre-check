@@ -59,6 +59,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-field" },
+      { "always-first-field": "bad" }
     ]
   }
 }
@@ -122,6 +129,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-field" },
+      { "always-first-field": "bad" }
     ]
   }
 }
@@ -185,6 +199,13 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-field" },
+      { "always-first-field": "bad" }
     ]
   }
 }

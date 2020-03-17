@@ -80,6 +80,14 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "via": "tito" },
+      { "via": "split" },
+      { "via": "d_feature" },
+      { "via": "c_feature" },
+      { "via": "b_feature" },
+      { "always-via": "a_feature" }
     ]
   }
 }
@@ -168,6 +176,14 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "via": "split" },
+      { "via": "d_feature" },
+      { "via": "c_feature" },
+      { "via": "b_feature" },
+      { "always-via": "a_feature" }
     ]
   }
 }

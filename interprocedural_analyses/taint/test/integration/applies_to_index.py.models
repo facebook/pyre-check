@@ -52,6 +52,11 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-has": "first-index" },
+      { "always-first-index": "a" }
     ]
   }
 }
@@ -104,7 +109,8 @@
           }
         ]
       }
-    ]
+    ],
+    "features": [ { "always-via": "special_sink" } ]
   }
 }
 {
@@ -156,7 +162,8 @@
           }
         ]
       }
-    ]
+    ],
+    "features": [ { "always-via": "special_sink" } ]
   }
 }
 {
@@ -212,6 +219,11 @@
           }
         ]
       }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-has": "first-field" },
+      { "always-first-field": "a" }
     ]
   }
 }
@@ -294,7 +306,8 @@
           }
         ]
       }
-    ]
+    ],
+    "features": [ { "always-via": "special_sink" } ]
   }
 }
 {

@@ -26,6 +26,11 @@ module type S = sig
   val of_approximation : element approximation list -> t
 
   val add_set : t -> to_add:t -> t
+
+  (* Normal join models an either/or outcome, e.g. two distinct paths, where as sequence_join models
+     a composition where if an element is in the under approximation on either side, it will be also
+     in the result *)
+  val sequence_join : t -> t -> t
 end
 
 module Make (Element : AbstractSetDomain.ELEMENT) : sig

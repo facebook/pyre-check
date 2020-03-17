@@ -24,6 +24,7 @@ type candidate = {
 type issue = {
   code: int;
   flow: flow;
+  features: Features.SimpleSet.t;
   issue_location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
@@ -118,6 +119,24 @@ let partition_flows ?sources ?sinks flows =
   List.fold flows ~init:{ matched = []; rest = [] } ~f:accumulate_matches
 
 
+let get_issue_features { source_taint; sink_taint } =
+  let source_features =
+    ForwardTaint.fold
+      Features.SimpleSet.Self
+      ~f:Features.SimpleSet.join
+      ~init:Features.SimpleSet.bottom
+      source_taint
+  in
+  let sink_features =
+    BackwardTaint.fold
+      Features.SimpleSet.Self
+      ~f:Features.SimpleSet.join
+      ~init:Features.SimpleSet.bottom
+      sink_taint
+  in
+  Features.SimpleSet.sequence_join source_features sink_features
+
+
 let generate_issues ~define { location; flows } =
   let apply_rule (issues, remaining_flows) { sources; sinks; code; _ } =
     let any_sources source_list source = List.exists ~f:(( = ) source) source_list in
@@ -143,7 +162,8 @@ let generate_issues ~define { location; flows } =
           }
         in
         let flow = join_flows matched in
-        let issue = { code; flow; issue_location = location; define } in
+        let features = get_issue_features flow in
+        let issue = { code; flow; features; issue_location = location; define } in
         issue :: issues, rest
   in
   let configuration = Configuration.get () in
@@ -195,6 +215,21 @@ let to_json ~filename_lookup callable issue =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
   in
   let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
+  let features =
+    let get_feature_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
+      let open Features.Simple in
+      match element with
+      | Breadcrumb breadcrumb ->
+          let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
+          breadcrumb_json :: breadcrumbs
+      | _ -> breadcrumbs
+    in
+    Features.SimpleSet.fold
+      Features.SimpleSet.ElementAndUnder
+      ~f:get_feature_json
+      ~init:[]
+      issue.features
+  in
   let traces =
     `List
       [
@@ -222,6 +257,7 @@ let to_json ~filename_lookup callable issue =
       "filename", `String path;
       "message", `String message;
       "traces", traces;
+      "features", `List features;
     ]
 
 
