@@ -3287,6 +3287,8 @@ module State (Context : Context) = struct
                     reference, attribute, Some resolved
               in
               let is_undefined_attribute parent =
+                (* TODO(T64156088): This ought to be done in a much more principled way, by running
+                   signature select against the particular type *)
                 (* Check if __setattr__ method is defined to accept value of type `Any` *)
                 let is_setattr_any_defined =
                   let attribute =
@@ -3304,14 +3306,24 @@ module State (Context : Context) = struct
                   match attribute with
                   | Some attribute when Annotated.Attribute.defined attribute -> (
                       match Annotated.Attribute.annotation attribute |> Annotation.annotation with
+                      | Type.Parametric
+                          {
+                            name = "BoundMethod";
+                            parameters =
+                              [
+                                Single
+                                  (Type.Callable
+                                    {
+                                      implementation =
+                                        { parameters = Defined (_ :: _ :: value_parameter :: _); _ };
+                                      _;
+                                    });
+                                _;
+                              ];
+                          }
                       | Type.Callable
                           {
-                            implementation =
-                              {
-                                Type.Callable.parameters =
-                                  Type.Callable.Defined (_ :: value_parameter :: _);
-                                _;
-                              };
+                            implementation = { parameters = Defined (_ :: value_parameter :: _); _ };
                             _;
                           } ->
                           Type.Callable.Parameter.annotation value_parameter

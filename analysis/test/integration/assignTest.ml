@@ -272,7 +272,7 @@ let test_check_assign context =
 
   assert_default_type_errors
     {|
-       from typing import Any
+       from typing import Any, Callable
        class A:
          pass
        class B:
@@ -281,17 +281,32 @@ let test_check_assign context =
          def __setattr__(self, name: str, value: Any) -> None: ...
        class D(C):
          pass
-     
-       def derp(a: A, b: B, c: C, d: D) -> None:
+       class E:
+         def __setattr__(self, name: str, value: int) -> None: ...
+       class F:
+         # pyre-ignore: this isnt consistent with object.__setattr__
+         __setattr__: BoundMethod[Callable[[E, str, Any], None], E]
+       class G:
+         # pyre-ignore: this isnt consistent with object.__setattr__
+         __setattr__: BoundMethod[Callable[[E, str, int], None], E]
+
+       def derp(a: A, b: B, c: C, d: D, e: E, f: F, g: G) -> None:
          a.foo = 42
          b.foo = 43
          c.foo = 44
          d.foo = 45
+         e.foo = 45
+         f.foo = 45
+         g.foo = 45
     |}
     [
       "Undefined attribute [16]: `A` has no attribute `foo`.";
       "Undefined attribute [16]: `B` has no attribute `foo`.";
       "Undefined attribute [16]: `D` has no attribute `foo`.";
+      (* TODO(T64156088): This should be accepted *)
+      "Undefined attribute [16]: `E` has no attribute `foo`.";
+      (* TODO(T64156088): This should be accepted *)
+      "Undefined attribute [16]: `G` has no attribute `foo`.";
     ];
   ()
 
