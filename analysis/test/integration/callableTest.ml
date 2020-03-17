@@ -204,6 +204,28 @@ let test_position_only_parameters context =
     []
 
 
+let test_bound_method context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Callable
+      def foo(bm: BoundMethod[Callable[[int, str], bool], int]) -> None:
+          c = bm.__call__
+          reveal_type(c)
+    |}
+    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."];
+  assert_type_errors
+    {|
+      from typing import Callable
+      # This type is invalid, but we strip the first argument anyway
+      def foo(bm: BoundMethod[Callable[[int, str], bool], str]) -> None:
+          c = bm.__call__
+          reveal_type(c)
+    |}
+    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."];
+  ()
+
+
 let () =
   "callable"
   >::: [
@@ -211,5 +233,6 @@ let () =
          "union_of_callables" >:: test_union_of_callables;
          "callable_attribute_access" >:: test_callable_attribute_access;
          "position_only_parameters" >:: test_position_only_parameters;
+         "bound_method" >:: test_bound_method;
        ]
   |> Test.run

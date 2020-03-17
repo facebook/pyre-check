@@ -439,6 +439,17 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
         ~bases:[Type.parametric "typing.Mapping" [Single Type.string; Single Type.object_primitive]]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:false)
         (Type.TypedDictionary.class_name ~total:false);
+      (* I think this may be actually covariant, covariant, but I don't think there's any value in
+         going out on that limb yet *)
+      make
+        ~bases:
+          [
+            Type.parametric
+              "typing.Generic"
+              [Single (Type.variable "typing._T"); Single (Type.variable "typing._S")];
+            Type.Primitive "typing.Callable";
+          ]
+        "BoundMethod";
     ]
   in
   builtin_classes, typing_classes, typing_extension_classes
