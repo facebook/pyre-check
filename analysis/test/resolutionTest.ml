@@ -1017,16 +1017,12 @@ let test_fallback_attribute context =
       |> Reference.show
       |> Resolution.fallback_attribute ~resolution ~name
     in
-    match annotation with
-    | None -> assert_is_none attribute
-    | Some annotation ->
-        assert_is_some attribute;
-        let attribute = Option.value_exn attribute in
-        assert_equal
-          ~cmp:Type.equal
-          ~printer:Type.show
-          annotation
-          (Annotated.Attribute.annotation attribute |> Annotation.annotation)
+    let printer optional_type = optional_type >>| Type.show |> Option.value ~default:"None" in
+    assert_equal
+      ~cmp:(Option.equal Type.equal)
+      ~printer
+      annotation
+      (attribute >>| Annotated.Attribute.annotation >>| Annotation.annotation)
   in
   assert_fallback_attribute ~name:"attribute" {|
       class Foo:
@@ -1125,6 +1121,20 @@ let test_fallback_attribute context =
       class Foo:
         @overload
         def Foo.__getattr__(self: Foo, attribute: str) -> int: ...
+    |}
+    (Some Type.integer);
+  assert_fallback_attribute
+    ~name:"baz"
+    {|
+      class Foo:
+        __getattr__: typing.Callable[[str], int]
+    |}
+    (Some Type.integer);
+  assert_fallback_attribute
+    ~name:"baz"
+    {|
+      class Foo:
+        __getattr__: BoundMethod[typing.Callable[[Foo, str], int], Foo]
     |}
     (Some Type.integer);
   ()
