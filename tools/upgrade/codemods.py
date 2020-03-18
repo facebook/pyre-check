@@ -18,7 +18,7 @@ LOG: Logger = logging.getLogger(__name__)
 def run_missing_overridden_return_annotations(
     arguments: argparse.Namespace, _version_control
 ) -> None:
-    errors = sort_errors(errors_from_stdin(arguments))
+    errors = sort_errors(errors_from_stdin(arguments.only_fix_error_code))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`.", path)
         errors = sorted(errors, key=lambda error: error["line"], reverse=True)
@@ -53,7 +53,7 @@ def run_missing_overridden_return_annotations(
 def run_missing_global_annotations(
     arguments: argparse.Namespace, _version_control
 ) -> None:
-    errors = sort_errors(errors_from_stdin(arguments))
+    errors = sort_errors(errors_from_stdin(arguments.only_fix_error_code))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`", path)
         errors = sorted(errors, key=lambda error: error["line"], reverse=True)

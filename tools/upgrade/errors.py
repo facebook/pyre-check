@@ -42,18 +42,19 @@ def sort_errors(
 
 
 def filter_errors(
-    arguments: argparse.Namespace, errors: List[Dict[str, Any]]
+    errors: List[Dict[str, Any]], only_fix_error_code: Optional[int] = None
 ) -> List[Dict[str, Any]]:
-    only_fix_error_code: Optional[int] = arguments.only_fix_error_code
     if only_fix_error_code is not None:
         errors = [error for error in errors if error["code"] == only_fix_error_code]
     return errors
 
 
-def errors_from_stdin(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
+def errors_from_stdin(
+    only_fix_error_code: Optional[int] = None
+) -> List[Dict[str, Any]]:
     input = sys.stdin.read()
     errors = json_to_errors(input)
-    return filter_errors(_arguments, errors)
+    return filter_errors(errors, only_fix_error_code)
 
 
 def _remove_comment_preamble(lines: List[str]) -> None:

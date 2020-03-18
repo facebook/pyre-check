@@ -1782,9 +1782,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
 
 class FilterErrorTest(unittest.TestCase):
     def test_filter_errors(self) -> None:
-        arguments = MagicMock()
-        arguments.sandcastle = None
-        arguments.only_fix_error_code = 44
         error7 = {
             "line": 2,
             "column": 4,
@@ -1808,16 +1805,13 @@ class FilterErrorTest(unittest.TestCase):
             "external_to_global_root": False,
         }
         pyre_errors = [error7, error0]
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [])
+        self.assertEqual(errors.filter_errors(pyre_errors, 44), [])
 
-        arguments.only_fix_error_code = 7
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error7])
+        self.assertEqual(errors.filter_errors(pyre_errors, 7), [error7])
 
-        arguments.only_fix_error_code = 0
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error0])
+        self.assertEqual(errors.filter_errors(pyre_errors, 0), [error0])
 
-        arguments.only_fix_error_code = None
-        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [error7, error0])
+        self.assertEqual(errors.filter_errors(pyre_errors, None), [error7, error0])
 
 
 class DefaultStrictTest(unittest.TestCase):

@@ -232,7 +232,7 @@ class Configuration:
             return []
 
 
-def errors_from_run(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
+def errors_from_run(only_fix_error_code: Optional[int] = None) -> List[Dict[str, Any]]:
     configuration_path = Configuration.find_project_configuration()
     if not configuration_path:
         LOG.warning("Could not find pyre configuration.")
@@ -240,7 +240,7 @@ def errors_from_run(_arguments: argparse.Namespace) -> List[Dict[str, Any]]:
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         errors = configuration.get_errors()
-        return filter_errors(_arguments, errors)
+        return filter_errors(errors, only_fix_error_code)
 
 
 # Exposed for testing.
@@ -255,7 +255,7 @@ def _upgrade_project(
         return
     configuration.remove_version()
     errors = (
-        errors_from_stdin(arguments)
+        errors_from_stdin(arguments.only_fix_error_code)
         if arguments.from_stdin
         else configuration.get_errors()
     )
@@ -405,17 +405,17 @@ def run_strict_default(
 
 def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
     if arguments.run:
-        errors = errors_from_run(arguments)
+        errors = errors_from_run(arguments.only_fix_error_code)
         fix(arguments, sort_errors(errors))
 
         if arguments.lint:
             lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
-                errors = errors_from_run(arguments)
+                errors = errors_from_run(arguments.only_fix_error_code)
                 fix(arguments, sort_errors(errors))
     else:
-        errors = errors_from_stdin(arguments)
+        errors = errors_from_stdin(arguments.only_fix_error_code)
         fix(arguments, sort_errors(errors))
 
 
