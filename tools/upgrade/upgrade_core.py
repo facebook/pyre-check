@@ -16,7 +16,7 @@ import traceback
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence
 
 from ...client.commands import ExitCode
 from .codemods import (
@@ -24,11 +24,11 @@ from .codemods import (
     run_missing_overridden_return_annotations,
 )
 from .errors import (
+    Errors,
     errors_from_stdin,
-    filter_errors,
+    errors_from_targets,
     fix_file,
     json_to_errors,
-    sort_errors,
 )
 from .filesystem import (
     LocalMode,
@@ -196,7 +196,9 @@ class Configuration:
             self.targets = targets
         self.write()
 
-    def get_errors(self, should_clean: bool = True) -> List[Dict[str, Any]]:
+    def get_errors(
+        self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
+    ) -> Errors:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
         if self.targets and should_clean:
             try:
@@ -205,10 +207,10 @@ class Configuration:
                 subprocess.call(["buck", "clean"], timeout=200)
             except subprocess.TimeoutExpired:
                 LOG.warning("Buck timed out. Try running `buck kill` before retrying.")
-                return []
+                return Errors.empty()
             except subprocess.CalledProcessError as error:
                 LOG.warning("Error calling `buck clean`: %s", str(error))
-                return []
+                return Errors.empty()
         try:
             LOG.info("Checking `%s`...", self.root)
             if self.is_local:
@@ -224,23 +226,22 @@ class Configuration:
                     stderr=subprocess.PIPE,
                 )
             json_string = process.stdout.decode().strip()
-            errors = json_to_errors(json_string)
+            errors = json_to_errors(json_string, only_fix_error_code)
             LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
             return errors
         except subprocess.CalledProcessError as error:
             LOG.warning("Error calling pyre: %s", str(error))
-            return []
+            return Errors.empty()
 
 
-def errors_from_run(only_fix_error_code: Optional[int] = None) -> List[Dict[str, Any]]:
+def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
     configuration_path = Configuration.find_project_configuration()
     if not configuration_path:
         LOG.warning("Could not find pyre configuration.")
-        return []
+        return Errors.empty()
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
-        errors = configuration.get_errors()
-        return filter_errors(errors, only_fix_error_code)
+        return configuration.get_errors(only_fix_error_code)
 
 
 # Exposed for testing.
@@ -260,7 +261,7 @@ def _upgrade_project(
         else configuration.get_errors()
     )
     if len(errors) > 0:
-        fix(arguments, sort_errors(errors))
+        fix(arguments, errors)
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
@@ -268,7 +269,7 @@ def _upgrade_project(
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = configuration.get_errors(should_clean=False)
-                fix(arguments, sort_errors(errors))
+                fix(arguments, errors)
     try:
         project_root = root.resolve()
         local_root = configuration.get_directory().resolve()
@@ -280,10 +281,7 @@ def _upgrade_project(
         LOG.info("Error while running hg.")
 
 
-def fix(
-    arguments: argparse.Namespace,
-    result: Iterator[Tuple[str, Iterator[Dict[str, Any]]]],
-) -> None:
+def fix(arguments: argparse.Namespace, result: Errors) -> None:
     for path, errors in result:
         LOG.info("Processing `%s`", path)
 
@@ -393,8 +391,7 @@ def run_strict_default(
         errors = configuration.get_errors()
 
         if len(errors) > 0:
-            result = sort_errors(errors)
-            for filename, _ in result:
+            for filename, _ in errors:
                 add_local_mode(filename, LocalMode.UNSAFE)
 
             if arguments.lint:
@@ -406,17 +403,17 @@ def run_strict_default(
 def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
     if arguments.run:
         errors = errors_from_run(arguments.only_fix_error_code)
-        fix(arguments, sort_errors(errors))
+        fix(arguments, errors)
 
         if arguments.lint:
             lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = errors_from_run(arguments.only_fix_error_code)
-                fix(arguments, sort_errors(errors))
+                fix(arguments, errors)
     else:
         errors = errors_from_stdin(arguments.only_fix_error_code)
-        fix(arguments, sort_errors(errors))
+        fix(arguments, errors)
 
 
 def run_fixme_single(
@@ -475,99 +472,25 @@ def run_fixme_targets_file(
     version_control: VersionControl,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
-
-    def get_errors(
-        path: str, targets: List[str], check_alternate_names: bool = True
-    ) -> Optional[List[Dict[str, Any]]]:
-        buck_test_command = (
-            ["buck", "test", "--show-full-json-output"]
-            + targets
-            + ["--", "--run-disabled"]
-        )
-        buck_test = subprocess.run(
-            buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        errors = None
-        if buck_test.returncode == 0:
-            # Successful run with no type errors
-            LOG.info("No errors in %s/TARGETS...", path)
-        elif buck_test.returncode == 32:
-            buck_test_output = buck_test.stdout.decode().split("\n")
-            pyre_error_pattern = re.compile(
-                r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)"
-            )
-            errors = {}
-            for output_line in buck_test_output:
-                matched = pyre_error_pattern.match(output_line)
-                if matched:
-                    path = matched.group(1)
-                    line = int(matched.group(2))
-                    column = int(matched.group(3))
-                    description = matched.group(4)
-                    code = matched.group(5)
-                    error = {
-                        "line": line,
-                        "column": column,
-                        "path": project_directory / path,
-                        "code": code,
-                        "description": description,
-                        "concise_description": description,
-                    }
-                    errors[(line, column, path, code)] = error
-            errors = list(errors.values())
-        elif check_alternate_names and buck_test.returncode == 5:
-            # Generated type check target was not named as expected.
-            LOG.warning("Could not find buck test targets: %s", targets)
-            LOG.info("Looking for similar targets...")
-            targets_to_retry = []
-            for target in targets:
-                query_command = ["buck", "query", target]
-                similar_targets = subprocess.run(
-                    query_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                output = similar_targets.stdout.decode()
-                error_output = similar_targets.stderr.decode()
-                if output:
-                    targets_to_retry.append(output)
-                elif error_output:
-                    typecheck_targets = [
-                        target.strip()
-                        for target in error_output.split("\n")
-                        if target.strip().endswith("-pyre-typecheck")
-                    ]
-                    targets_to_retry += typecheck_targets
-            if targets_to_retry:
-                LOG.info("Retrying similar targets: %s", targets_to_retry)
-                errors = get_errors(path, targets_to_retry, check_alternate_names=False)
-            else:
-                LOG.error("No similar targets to retry.")
-        else:
-            LOG.error(
-                "Failed to run buck test command:\n\t%s\n\n%s",
-                " ".join(buck_test_command),
-                buck_test.stderr.decode(),
-            )
-        return errors
-
     targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
-    errors = get_errors(path, targets)
+    errors = errors_from_targets(project_directory, path, targets)
     if not errors:
         return
     LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
     if not errors:
         return
-    fix(arguments, sort_errors(errors))
+    fix(arguments, errors)
     if not arguments.lint:
         return
     lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
     if lint_status:
         apply_lint(version_control.LINTERS_TO_SKIP)
-        errors = get_errors(path, targets)
+        errors = errors_from_targets(project_directory, path, targets)
         if not errors:
             LOG.info("Errors unchanged after linting.")
             return
         LOG.info("Found %d type errors after linting.", len(errors))
-        fix(arguments, sort_errors(errors))
+        fix(arguments, errors)
 
 
 def run_fixme_targets(
