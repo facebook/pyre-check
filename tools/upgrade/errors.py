@@ -15,35 +15,33 @@ from .ast import verify_stable_ast
 from .postprocess import LOG
 
 
+def error_path(error: Dict[str, Any]) -> str:
+    return error["path"]
+
+
 class Errors:
-    def __init__(
-        self,
-        errors_iterable: Iterator[Tuple[str, Iterator[Dict[str, Any]]]],
-        length: int,
-    ) -> None:
-        self.errors: Iterator[Tuple[str, Iterator[Dict[str, Any]]]] = errors_iterable
-        self.length: int = length
+    def __init__(self, errors: List[Dict[str, Any]]) -> None:
+        self.errors: List[Dict[str, Any]] = errors
+        self.error_iterator: Iterator[
+            Tuple[str, Iterator[Dict[str, Any]]]
+        ] = itertools.groupby(sorted(errors, key=error_path), error_path)
+        self.length: int = len(errors)
 
     def __iter__(self) -> Iterator[Tuple[str, Iterator[Dict[str, Any]]]]:
-        return self.errors.__iter__()
+        return self.error_iterator.__iter__()
 
     def __next__(self) -> Tuple[str, Iterator[Dict[str, Any]]]:
-        return self.errors.__next__()
+        return self.error_iterator.__next__()
 
     def __len__(self) -> int:
         return self.length
 
+    def __eq__(self, other: "Errors") -> bool:
+        return self.errors == other.errors
+
     @classmethod
     def empty(cls) -> "Errors":
-        return cls(iter([]), 0)
-
-
-def _sort_errors(errors: List[Dict[str, Any]]) -> Errors:
-    def error_path(error: Dict[str, Any]) -> str:
-        return error["path"]
-
-    errors_iterable = itertools.groupby(sorted(errors, key=error_path), error_path)
-    return Errors(errors_iterable, len(errors))
+        return cls([])
 
 
 def _filter_errors(
@@ -60,7 +58,7 @@ def json_to_errors(
     if json_string:
         try:
             errors = json.loads(json_string)
-            return _sort_errors(_filter_errors(errors, only_fix_error_code))
+            return Errors(_filter_errors(errors, only_fix_error_code))
         except json.decoder.JSONDecodeError:
             LOG.error(
                 "Recevied invalid JSON as input."
@@ -116,7 +114,7 @@ def errors_from_targets(
                     "concise_description": description,
                 }
                 errors[(line, column, path, code)] = error
-        errors = _sort_errors(list(errors.values()))
+        errors = Errors(list(errors.values()))
     elif check_alternate_names and buck_test.returncode == 5:
         # Generated type check target was not named as expected.
         LOG.warning("Could not find buck test targets: %s", targets)

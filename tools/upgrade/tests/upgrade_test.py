@@ -567,10 +567,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -587,10 +587,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# @" "generated\n1\n2\n"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -607,10 +607,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             version_control_with_linters = ExternalVersionControl()
@@ -660,8 +660,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
-            run_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
+            run_errors.return_value = errors.Errors(pyre_errors)
             path_read_text.return_value = "1\n2"
             arguments.comment = "T1234"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -678,10 +678,10 @@ class FixmeTest(unittest.TestCase):
                 }
             ]
             arguments.comment = None
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# existing comment\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -709,10 +709,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: description",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -736,10 +736,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [11]: Description two.",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -773,10 +773,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [4]: Description four.",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -803,10 +803,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: Too many characters.",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -843,10 +843,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [4]: Description four.",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -877,10 +877,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: description",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -900,10 +900,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "  # pyre-ignore[0]: [1, 2, 3]\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -920,10 +920,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [0]: extraneous",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  #  continuation comment\n2"
@@ -943,10 +943,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [0]: extraneous",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  # assumed continuation\n2"
@@ -966,10 +966,10 @@ class FixmeTest(unittest.TestCase):
                     "quite long",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = (
                 "  # pyre-ignore[0]:\n  #  comment that doesn't fit on one line\n"
@@ -988,10 +988,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# pyre-fixme[1]\n# pyre-fixme[2]\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -1007,10 +1007,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -1038,10 +1038,10 @@ class FixmeTest(unittest.TestCase):
                     "even-when-facing-adversities",
                 },
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "line = 1\nline = 2\nline = 3"
             upgrade_core.run_fixme(arguments_short, VERSION_CONTROL)
@@ -1067,10 +1067,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -1088,10 +1088,10 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error[1]: Concise.",
                 }
             ]
-            stdin_errors.return_value = errors._sort_errors(pyre_errors)
+            stdin_errors.return_value = errors.Errors(pyre_errors)
             run_errors.side_effect = [
-                errors._sort_errors(pyre_errors),
-                errors._sort_errors(pyre_errors),
+                errors.Errors(pyre_errors),
+                errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
             upgrade_core.run_fixme(arguments, VERSION_CONTROL)
@@ -1171,8 +1171,7 @@ class FixmeTargetsTest(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("%s.fix" % upgrade_core.__name__)
-    @patch("%s._sort_errors" % errors.__name__)
-    def test_run_fixme_targets_file(self, sort_errors, fix, subprocess) -> None:
+    def test_run_fixme_targets_file(self, fix, subprocess) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
@@ -1184,8 +1183,6 @@ class FixmeTargetsTest(unittest.TestCase):
         upgrade_core.run_fixme_targets_file(
             arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
-        sort_errors_return = MagicMock()
-        sort_errors.return_value = sort_errors_return
         subprocess.assert_called_once_with(
             [
                 "buck",
@@ -1239,48 +1236,49 @@ class FixmeTargetsTest(unittest.TestCase):
             + b"parameter to call `merp` but got `Optional[str]`.",
         )
         subprocess.return_value = buck_return
-        expected_errors = [
-            {
-                "line": 278,
-                "column": 28,
-                "path": Path("a/b/x.py"),
-                "code": "16",
-                "description": "Undefined attribute [16]: `Optional` has no "
-                + "attribute `derp`.",
-                "concise_description": "Undefined attribute [16]: `Optional` has "
-                + "no attribute `derp`.",
-            },
-            {
-                "line": 325,
-                "column": 41,
-                "path": Path("a/b/x.py"),
-                "code": "16",
-                "description": "Undefined attribute [16]: `Optional` has no "
-                + "attribute `herp`.",
-                "concise_description": "Undefined attribute [16]: `Optional` has "
-                + "no attribute `herp`.",
-            },
-            {
-                "line": 86,
-                "column": 26,
-                "path": Path("a/b/y.py"),
-                "code": "6",
-                "description": "Incompatible parameter type [6]: Expected `str` "
-                + "for 1st positional only parameter to call `merp` but got `Optional[str]`.",
-                "concise_description": "Incompatible parameter type [6]: Expected "
-                + "`str` for 1st positional only parameter to call `merp` but got "
-                + "`Optional[str]`.",
-            },
-        ]
+        expected_errors = errors.Errors(
+            [
+                {
+                    "line": 278,
+                    "column": 28,
+                    "path": Path("a/b/x.py"),
+                    "code": "16",
+                    "description": "Undefined attribute [16]: `Optional` has no "
+                    + "attribute `derp`.",
+                    "concise_description": "Undefined attribute [16]: `Optional` has "
+                    + "no attribute `derp`.",
+                },
+                {
+                    "line": 325,
+                    "column": 41,
+                    "path": Path("a/b/x.py"),
+                    "code": "16",
+                    "description": "Undefined attribute [16]: `Optional` has no "
+                    + "attribute `herp`.",
+                    "concise_description": "Undefined attribute [16]: `Optional` has "
+                    + "no attribute `herp`.",
+                },
+                {
+                    "line": 86,
+                    "column": 26,
+                    "path": Path("a/b/y.py"),
+                    "code": "6",
+                    "description": "Incompatible parameter type [6]: Expected `str` "
+                    + "for 1st positional only parameter to call `merp` but got "
+                    + "`Optional[str]`.",
+                    "concise_description": "Incompatible parameter type [6]: Expected "
+                    + "`str` for 1st positional only parameter to call `merp` but got "
+                    + "`Optional[str]`.",
+                },
+            ]
+        )
         upgrade_core.run_fixme_targets_file(
             arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
-        sort_errors.assert_called_once_with(expected_errors)
-        fix.assert_called_once_with(arguments, sort_errors_return)
+        fix.assert_called_once_with(arguments, expected_errors)
 
         # Test fallback to type check targets with modified names
         subprocess.reset_mock()
-        sort_errors.reset_mock()
         fix.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
@@ -1322,11 +1320,9 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        sort_errors.assert_called_once_with(expected_errors)
-        fix.assert_called_once_with(arguments, sort_errors_return)
+        fix.assert_called_once_with(arguments, expected_errors)
 
         subprocess.reset_mock()
-        sort_errors.reset_mock()
         fix.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
@@ -1378,8 +1374,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        sort_errors.assert_called_once_with(expected_errors)
-        fix.assert_called_once_with(arguments, sort_errors_return)
+        fix.assert_called_once_with(arguments, expected_errors)
 
 
 class MigrateTest(unittest.TestCase):
@@ -1677,23 +1672,26 @@ class TargetsToConfigurationTest(unittest.TestCase):
 
 
 class DecodeTest(unittest.TestCase):
-    @patch("%s._sort_errors" % errors.__name__, side_effect=lambda errors: errors)
-    def test_json_to_errors(self, sort_errors) -> None:
+    def test_json_to_errors(self) -> None:
         with patch.object(postprocess.LOG, "error") as mock_error:
             self.assertEqual(
-                errors.json_to_errors('[{ "key": "value" }]'), [{"key": "value"}]
+                errors.json_to_errors('[{ "path": "test.py", "key": "value" }]'),
+                errors.Errors([{"path": "test.py", "key": "value"}]),
             )
             mock_error.assert_not_called()
             mock_error.reset_mock()
 
-            self.assertEqual(list(errors.json_to_errors(None)), [])
+            self.assertEqual(errors.json_to_errors(None), errors.Errors([]))
             mock_error.assert_called_once_with(
                 "Recevied no input."
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
             mock_error.reset_mock()
 
-            self.assertEqual(list(errors.json_to_errors('[{ "key": "value" }')), [])
+            self.assertEqual(
+                errors.json_to_errors('[{ "path": "test.py", "key": "value" }'),
+                errors.Errors([]),
+            )
             mock_error.assert_called_once_with(
                 "Recevied invalid JSON as input."
                 "If piping from `pyre check` be sure to use `--output=json`."
@@ -1949,7 +1947,7 @@ class DefaultStrictTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors._sort_errors(pyre_errors)
+        get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_strict_default(arguments, VERSION_CONTROL)
@@ -1972,7 +1970,7 @@ class DefaultStrictTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors._sort_errors(pyre_errors)
+        get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_strict_default(arguments, VERSION_CONTROL)
