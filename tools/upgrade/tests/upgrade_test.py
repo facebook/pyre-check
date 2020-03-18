@@ -5,7 +5,6 @@
 
 # pyre-unsafe
 
-import argparse
 import json
 import subprocess
 import tempfile
@@ -1392,10 +1391,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
     @patch("%s.find_targets" % upgrade_core.__name__)
     @patch("%s.get_filesystem" % upgrade_core.__name__)
+    @patch("%s.remove_non_pyre_ignores" % upgrade_core.__name__)
     @patch("%s.run_fixme_single" % upgrade_core.__name__)
     def test_run_targets_to_configuration(
         self,
         run_fixme_single,
+        remove_non_pyre_ignores,
         get_filesystem,
         find_targets,
         find_local_configuration,
