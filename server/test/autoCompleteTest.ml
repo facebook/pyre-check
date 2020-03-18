@@ -164,6 +164,33 @@ let test_get_completion_items context =
         ~detail:"bool"
         ~new_text:"foo";
     ];
+  assert_completion_items
+    ~cursor_position
+    ~source:
+      (trim_extra_indentation
+         {|
+      class A:
+        foo: bool
+        bar: BoundMethod[typing.Callable[[A, int], str], A]
+
+      def main() -> None:
+        a = A()
+        a.
+    |})
+    [
+      create_completion_item
+        ~cursor_position
+        ~label:"bar(int) -> str"
+        ~kind:Types.CompletionItems.Kind.Function
+        ~detail:"(int) -> str"
+        ~new_text:"bar()";
+      create_completion_item
+        ~cursor_position
+        ~label:"foo"
+        ~kind:Types.CompletionItems.Kind.Variable
+        ~detail:"bool"
+        ~new_text:"foo";
+    ];
 
   (* Module members completion *)
   let cursor_position = { Location.line = 4; column = 7 } in

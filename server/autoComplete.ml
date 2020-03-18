@@ -59,29 +59,41 @@ let get_exported_imports ~ast_environment module_reference =
   |> Option.value ~default:Reference.Set.empty
 
 
-let get_completion_item ~range ~item_name ~item_type =
+let get_completion_item ~range ~item_name ~item_type ~global_resolution =
   (* Filter away special functions like __len__() *)
   if String.is_prefix ~prefix:"__" item_name then
     None
   else
     let type_string = Type.show_concise item_type in
-    let kind =
+    let kind, display_text, new_text, detail =
       let open LanguageServer.Types.CompletionItems.Kind in
+      let handle_callable callable =
+        let type_string = Type.show_concise (Callable callable) in
+        ( Function,
+          Format.sprintf "%s%s" item_name type_string,
+          Format.sprintf "%s()" item_name,
+          type_string )
+      in
       match item_type with
-      | Callable _ -> Function
-      | _ -> Variable
-    in
-    let display_text, new_text =
-      match item_type with
-      | Type.Callable _ ->
-          Format.sprintf "%s%s" item_name type_string, Format.sprintf "%s()" item_name
-      | _ -> item_name, item_name
+      | Callable callable -> handle_callable callable
+      | Parametric { name = "BoundMethod"; _ } ->
+          GlobalResolution.attribute_from_annotation
+            global_resolution
+            ~parent:item_type
+            ~name:"__call__"
+          >>| Annotated.Attribute.annotation
+          >>| Annotation.annotation
+          >>= (function
+                | Type.Callable callable -> Some (handle_callable callable)
+                | _ -> None)
+          |> Option.value ~default:(Variable, item_name, item_name, type_string)
+      | _ -> Variable, item_name, item_name, type_string
     in
     Some
       {
         LanguageServer.Types.CompletionItems.label = display_text;
         kind;
-        detail = type_string;
+        detail;
         textEdit = { range; newText = new_text };
       }
 
@@ -98,7 +110,7 @@ let get_class_attributes_list ~resolution ~cursor_position:{ Location.line; colu
       |> Annotated.Attribute.annotation
       |> Annotation.annotation
     in
-    get_completion_item ~range:text_edit_range ~item_name ~item_type
+    get_completion_item ~range:text_edit_range ~item_name ~item_type ~global_resolution:resolution
   in
   let get_attributes_name_and_type { Type.class_name; _ } =
     let attributes = GlobalResolution.attributes class_name ~resolution in
@@ -111,9 +123,8 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
   let open LanguageServer.Types in
   let position = Position.from_pyre_position ~line ~column in
   let text_edit_range = { Range.start = position; end_ = position } in
-  let ast_environment =
-    Resolution.global_resolution resolution |> GlobalResolution.ast_environment
-  in
+  let global_resolution = Resolution.global_resolution resolution in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
   let exported_imports = get_exported_imports ~ast_environment module_reference in
   let get_member_name_and_type member_reference =
     (* We remove members which are exported by importing some other modules. They should not show up
@@ -126,6 +137,7 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
         ~range:text_edit_range
         ~item_name:(Reference.last member_reference)
         ~item_type:(Resolution.resolve_reference resolution fully_qualified_member_reference)
+        ~global_resolution
   in
   AstEnvironment.ReadOnly.get_wildcard_exports ast_environment module_reference
   >>= fun wildcard_exports -> Some (List.filter_map wildcard_exports ~f:get_member_name_and_type)
