@@ -1546,20 +1546,27 @@ module State (Context : Context) = struct
         List.fold arguments ~f:forward_argument ~init:(state, errors)
       in
       let find_method ~parent ~name =
-        Type.split parent
-        |> fst
-        |> Type.primitive_name
-        >>= GlobalResolution.attribute_from_class_name
-              ~resolution:global_resolution
-              ~name
-              ~instantiated:parent
-              ~transitive:true
-        >>= fun attribute ->
-        Option.some_if (Annotated.Attribute.defined attribute) attribute
-        >>| Annotated.Attribute.annotation
-        >>| Annotation.annotation
+        let attribute_of_annotation instantiated ~name =
+          Type.split instantiated
+          |> fst
+          |> Type.primitive_name
+          >>= GlobalResolution.attribute_from_class_name
+                ~resolution:global_resolution
+                ~name
+                ~instantiated
+                ~transitive:true
+          >>= fun attribute ->
+          Option.some_if (Annotated.Attribute.defined attribute) attribute
+          >>| Annotated.Attribute.annotation
+          >>| Annotation.annotation
+        in
+        attribute_of_annotation parent ~name
         >>= function
         | Type.Callable callable -> Some callable
+        | Parametric { name = "BoundMethod"; _ } as parent -> (
+            match attribute_of_annotation parent ~name:"__call__" with
+            | Some (Type.Callable callable) -> Some callable
+            | _ -> None )
         | _ -> None
       in
       (* When an operator does not exist on the left operand but its inverse exists on the right
@@ -1608,7 +1615,7 @@ module State (Context : Context) = struct
                           ~resolution:global_resolution
                     >>= function
                     | Type.Callable callable -> Some callable
-                    | _ -> None ) )
+                    | other -> find_method ~parent:other ~name:"__call__" ) )
             | Type.Callable callable -> Some callable
             | resolved -> find_method ~parent:resolved ~name:"__call__"
           in

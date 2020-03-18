@@ -223,6 +223,23 @@ let test_bound_method context =
           reveal_type(c)
     |}
     ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."];
+  assert_type_errors
+    {|
+      from typing import Callable
+      # pyre-ignore[13]: __call__ not initialized
+      class Bar:
+        # pyre-ignore[15]: inconsistent with type.__call__
+        __call__: BoundMethod[Callable[[Bar, str], bool], Bar]
+      def foo(bar: Bar) -> None:
+          c = bar("A")
+          reveal_type(c)
+          bar(1)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c` is `bool`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
+       anonymous call but got `int`.";
+    ];
   ()
 
 
