@@ -188,6 +188,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.sandcastle = None
         arguments.lint = False
         arguments.from_stdin = False
+        arguments.upgrade_version = True
         gather.return_value = []
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
         fix.assert_not_called()
@@ -315,6 +316,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = False
         arguments.sandcastle = None
         arguments.from_stdin = False
+        arguments.upgrade_version = True
         gather.return_value = [
             upgrade_core.Configuration(
                 Path("local/.pyre_configuration.local"), {"version": 123}
@@ -366,7 +368,22 @@ class FixmeAllTest(unittest.TestCase):
         fix.assert_not_called()
         submit_changes.assert_not_called()
 
+        arguments.upgrade_version = False
+        fix.reset_mock()
+        submit_changes.reset_mock()
+        upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
+        fix.assert_called_once_with(
+            pyre_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
+        submit_changes.assert_called_once_with(
+            False, VERSION_CONTROL.commit_message("local")
+        )
+
         # Test with given hash
+        arguments.upgrade_version = True
         fix.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [

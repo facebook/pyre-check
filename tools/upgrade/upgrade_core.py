@@ -339,12 +339,11 @@ def _upgrade_project(
     configuration: Configuration,
     root: Path,
     version_control: VersionControl,
-    remove_version_override: bool = True,
 ) -> None:
     LOG.info("Processing %s", configuration.get_directory())
     if not configuration.is_local:
         return
-    if remove_version_override:
+    if arguments.upgrade_version:
         if configuration.version:
             configuration.remove_version()
         else:
@@ -736,6 +735,11 @@ def run(version_control: VersionControl) -> None:
         "path", help="Path to project root with local configuration", type=path_exists
     )
     fixme_single.add_argument(
+        "--upgrade-version",
+        action="store_true",
+        help="Upgrade and clean project if a version override set.",
+    )
+    fixme_single.add_argument(
         "--from-stdin", action="store_true", help=argparse.SUPPRESS
     )
     fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
@@ -748,6 +752,11 @@ def run(version_control: VersionControl) -> None:
         "-c", "--comment", help="Custom comment after fixme comments"
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
+    fixme_all.add_argument(
+        "--upgrade-version",
+        action="store_true",
+        help="Upgrade and clean projects with a version override set.",
+    )
     fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument(
