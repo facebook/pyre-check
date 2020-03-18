@@ -26,9 +26,6 @@ class FixmeAllTest(unittest.TestCase):
     )
     def test_gather_local_configurations(self, _find_project_configuration) -> None:
         process = MagicMock()
-        arguments = MagicMock()
-        arguments.sandcastle = None
-        arguments.push_blocking_only = None
 
         def configuration_lists_equal(
             expected_configurations, actual_configurations
@@ -78,7 +75,7 @@ class FixmeAllTest(unittest.TestCase):
         process.stdout = configurations_string.encode()
         with patch("subprocess.run", return_value=process):
             configurations = upgrade_core.Configuration.gather_local_configurations(
-                arguments
+                push_blocking_only=False
             )
             self.assertEqual([], configurations)
 
@@ -94,7 +91,7 @@ class FixmeAllTest(unittest.TestCase):
         with patch("subprocess.run", return_value=process) as subprocess_run:
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
                 configurations = upgrade_core.Configuration.gather_local_configurations(
-                    arguments
+                    push_blocking_only=False
                 )
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
@@ -122,13 +119,12 @@ class FixmeAllTest(unittest.TestCase):
         with patch("subprocess.run", return_value=process):
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
                 configurations = upgrade_core.Configuration.gather_local_configurations(
-                    arguments
+                    push_blocking_only=False
                 )
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
                 )
 
-        arguments.push_blocking_only = True
         configurations_string = (
             "a/.pyre_configuration.local\nb/.pyre_configuration.local\n"
         )
@@ -145,7 +141,7 @@ class FixmeAllTest(unittest.TestCase):
         with patch("subprocess.run", return_value=process):
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
                 configurations = upgrade_core.Configuration.gather_local_configurations(
-                    arguments
+                    push_blocking_only=True
                 )
                 self.assertEqual([], configurations)
 

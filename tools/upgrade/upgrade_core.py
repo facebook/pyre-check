@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 
 import argparse
 import json
@@ -52,13 +50,13 @@ class VersionControl:
 
 class Configuration:
     def __init__(self, path: Path, json_contents: Dict[str, Any]) -> None:
-        self._path = path
+        self._path: Path = path
         if path.name == ".pyre_configuration.local":
-            self.is_local = True
+            self.is_local: bool = True
         else:
-            self.is_local = False
-        self.root = str(path.parent)
-        self.original_contents = json_contents
+            self.is_local: bool = False
+        self.root: str = str(path.parent)
+        self.original_contents: Dict[str, Any] = json_contents
 
         # Configuration fields
         self.strict: bool = bool(json_contents.get("strict"))
@@ -70,7 +68,7 @@ class Configuration:
         self.version: Optional[str] = json_contents.get("version")
 
     def get_contents(self) -> Dict[str, Any]:
-        contents = self.original_contents
+        contents: Dict[str, Any] = self.original_contents
 
         def update_contents(key: str) -> None:
             attribute = getattr(self, key)
@@ -120,7 +118,9 @@ class Configuration:
         ]
 
     @staticmethod
-    def gather_local_configurations(arguments) -> List["Configuration"]:
+    def gather_local_configurations(
+        *, push_blocking_only: bool = False
+    ) -> List["Configuration"]:
         LOG.info("Finding configurations...")
         configuration_paths = Configuration.gather_local_configuration_paths(".")
         if not configuration_paths:
@@ -138,9 +138,7 @@ class Configuration:
                     configuration = Configuration(
                         configuration_path, json.load(configuration_file)
                     )
-                    if configuration.push_blocking or (
-                        not arguments.push_blocking_only
-                    ):
+                    if configuration.push_blocking or (not push_blocking_only):
                         configurations.append(configuration)
                 except json.decoder.JSONDecodeError:
                     LOG.error(
@@ -150,7 +148,7 @@ class Configuration:
         LOG.info(
             "Found %d %sconfiguration%s",
             len(configurations),
-            "push-blocking " if arguments.push_blocking_only else "",
+            "push-blocking " if push_blocking_only else "",
             "s" if len(configurations) != 1 else "",
         )
         return configurations
@@ -298,7 +296,9 @@ def run_global_version_update(
         if paths
         else [
             configuration.get_path()
-            for configuration in Configuration.gather_local_configurations(arguments)
+            for configuration in Configuration.gather_local_configurations(
+                push_blocking_only=arguments.push_blocking_only
+            )
             if configuration.is_local
         ]
     )
@@ -422,7 +422,9 @@ def run_fixme_all(
 ) -> None:
     # Create sandcastle command.
     if arguments.sandcastle:
-        configurations = Configuration.gather_local_configurations(arguments)
+        configurations = Configuration.gather_local_configurations(
+            push_blocking_only=arguments.push_blocking_only
+        )
         paths = [str(configuration.get_directory()) for configuration in configurations]
         with open(arguments.sandcastle) as sandcastle_file:
             sandcastle_command = json.load(sandcastle_file)
@@ -443,7 +445,9 @@ def run_fixme_all(
         LOG.info("No project configuration found for the current directory.")
         return
 
-    configurations = Configuration.gather_local_configurations(arguments)
+    configurations = Configuration.gather_local_configurations(
+        push_blocking_only=arguments.push_blocking_only
+    )
     for configuration in configurations:
         _upgrade_project(
             arguments, configuration, project_configuration.parent, version_control
