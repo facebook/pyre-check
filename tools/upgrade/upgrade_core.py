@@ -236,46 +236,33 @@ def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
         return configuration.get_errors(only_fix_error_code)
 
 
-# Exposed for testing.
-def _upgrade_project(
-    arguments: argparse.Namespace,
-    configuration: Configuration,
-    root: Path,
-    version_control: VersionControl,
+def run_strict_default(
+    arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
-    LOG.info("Processing %s", configuration.get_directory())
-    if not configuration.is_local or not configuration.version:
+    project_configuration = Configuration.find_project_configuration()
+    if project_configuration is None:
+        LOG.info("No project configuration found for the given directory.")
         return
-    configuration.remove_version()
-    errors = (
-        errors_from_stdin(arguments.only_fix_error_code)
-        if arguments.from_stdin
-        else configuration.get_errors()
-    )
-    if len(errors) > 0:
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
+    local_configuration = arguments.local_configuration
+    if local_configuration:
+        configuration_path = local_configuration / ".pyre_configuration.local"
+    else:
+        configuration_path = project_configuration
+    with open(configuration_path) as configuration_file:
+        configuration = Configuration(configuration_path, json.load(configuration_file))
+        LOG.info("Processing %s", configuration.get_directory())
+        configuration.add_strict()
+        errors = configuration.get_errors()
 
-        # Lint and re-run pyre once to resolve most formatting issues
+        if len(errors) == 0:
+            return
+        for filename, _ in errors:
+            add_local_mode(filename, LocalMode.UNSAFE)
+
         if arguments.lint:
             lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
-                errors = configuration.get_errors(should_clean=False)
-                fix(
-                    errors,
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
-                )
-    try:
-        project_root = root.resolve()
-        local_root = configuration.get_directory().resolve()
-        version_control.submit_changes(
-            arguments.submit,
-            version_control.commit_message(str(local_root.relative_to(project_root))),
-        )
-    except subprocess.CalledProcessError:
-        LOG.info("Error while running hg.")
 
 
 def run_global_version_update(
@@ -346,35 +333,55 @@ def run_global_version_update(
         LOG.info("Error while running hg.")
 
 
-def run_strict_default(
-    arguments: argparse.Namespace, version_control: VersionControl
+# Exposed for testing.
+def _upgrade_project(
+    arguments: argparse.Namespace,
+    configuration: Configuration,
+    root: Path,
+    version_control: VersionControl,
+    remove_version_override: bool = True,
 ) -> None:
-    project_configuration = Configuration.find_project_configuration()
-    if project_configuration is None:
-        LOG.info("No project configuration found for the given directory.")
+    LOG.info("Processing %s", configuration.get_directory())
+    if not configuration.is_local:
         return
-    local_configuration = arguments.local_configuration
-    if local_configuration:
-        configuration_path = local_configuration / ".pyre_configuration.local"
-    else:
-        configuration_path = project_configuration
-    with open(configuration_path) as configuration_file:
-        configuration = Configuration(configuration_path, json.load(configuration_file))
-        LOG.info("Processing %s", configuration.get_directory())
-        configuration.add_strict()
-        errors = configuration.get_errors()
+    if remove_version_override:
+        if configuration.version:
+            configuration.remove_version()
+        else:
+            return
+    errors = (
+        errors_from_stdin(arguments.only_fix_error_code)
+        if arguments.from_stdin
+        else configuration.get_errors()
+    )
+    if len(errors) > 0:
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
-        if len(errors) > 0:
-            for filename, _ in errors:
-                add_local_mode(filename, LocalMode.UNSAFE)
-
-            if arguments.lint:
-                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
-                if lint_status:
-                    apply_lint(version_control.LINTERS_TO_SKIP)
+        # Lint and re-run pyre once to resolve most formatting issues
+        if arguments.lint:
+            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+            if lint_status:
+                apply_lint(version_control.LINTERS_TO_SKIP)
+                errors = configuration.get_errors(should_clean=False)
+                fix(
+                    errors,
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
+    try:
+        project_root = root.resolve()
+        local_root = configuration.get_directory().resolve()
+        version_control.submit_changes(
+            arguments.submit,
+            version_control.commit_message(str(local_root.relative_to(project_root))),
+        )
+    except subprocess.CalledProcessError:
+        LOG.info("Error while running hg.")
 
 
 def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
+    # Suppress errors in project with no local configurations.
     if arguments.run:
         errors = errors_from_run(arguments.only_fix_error_code)
         fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
