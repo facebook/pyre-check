@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 
 MODULE_NAME = "pyre_check"
-RUNTIME_DEPENDENCIES = ["typeshed", "pywatchman", "psutil", "libcst", "pyre_extensions"]
+RUNTIME_DEPENDENCIES = ["pywatchman", "psutil", "libcst", "pyre_extensions"]
 
 SCRIPTS_DIRECTORY: Path = Path(__file__).resolve().parent
 PYRE_CHECK_DIRECTORY: Path = SCRIPTS_DIRECTORY.parent
@@ -123,10 +123,17 @@ def sync_stubs(build_root: Path) -> None:
     )
 
 
-def sync_typeshed(build_root: Path, typeshed_path: str) -> None:
+def sync_typeshed(build_root: Path, typeshed_path: Path) -> None:
+    typeshed_target = build_root / "typeshed"
+    rsync_files(
+        ["+ */", "-! *.pyi"], typeshed_path / "stdlib", typeshed_target, ["-avm"]
+    )
+    rsync_files(
+        ["+ */", "-! *.pyi"], typeshed_path / "third_party", typeshed_target, ["-avm"]
+    )
     rsync_files(
         [],
-        build_root / "typeshed",
+        typeshed_target,
         build_root,
         [
             "--recursive",
@@ -229,7 +236,7 @@ def main() -> None:
 
     arguments = parser.parse_args()
     version = arguments.version
-    typeshed_path = arguments.typeshed_path
+    typeshed_path = Path(arguments.typeshed_path)
 
     if not binary_exists():
         raise ValueError(
@@ -247,10 +254,10 @@ def main() -> None:
         sync_pysa_stubs(build_path)
         sync_stubs(build_path)
         sync_sapp_files(build_path)
+        sync_typeshed(build_path, typeshed_path)
         sync_binary(build_path)
         sync_documentation_files(build_path)
         sync_stubs(build_path)
-        sync_typeshed(build_path, typeshed_path)
 
         build_distribution(build_path)
         create_dist_directory()
