@@ -3540,9 +3540,16 @@ module Implementation = struct
       else
         constructor_signature
     in
+    let with_return = Type.Callable.with_return_annotation ~annotation:return_annotation in
     match signature with
-    | Type.Callable callable ->
-        Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
+    | Type.Callable callable -> Type.Callable (with_return callable)
+    | Parametric
+        { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] } ->
+        Parametric
+          {
+            name = "BoundMethod";
+            parameters = [Single (Callable (with_return callable)); Single self_type];
+          }
     | _ -> signature
 end
 

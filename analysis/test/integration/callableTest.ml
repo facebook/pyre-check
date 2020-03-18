@@ -240,6 +240,22 @@ let test_bound_method context =
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
        anonymous call but got `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      class Bar:
+        # pyre-ignore[15]: inconsistent with object.__init__
+        __init__: BoundMethod[Callable[[Bar, str], None], Bar]
+      def foo() -> None:
+          c = Bar("A")
+          reveal_type(c)
+          Bar(1)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c` is `Bar`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
+       anonymous call but got `int`.";
+    ];
   ()
 
 
