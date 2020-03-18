@@ -8,6 +8,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
@@ -194,7 +195,7 @@ def _split_across_lines(
 
 
 @verify_stable_ast
-def fix_file(
+def _fix_file(
     filename: str,
     errors: Dict[int, List[Dict[str, str]]],
     custom_comment: Optional[str] = None,
@@ -262,3 +263,34 @@ def fix_file(
         new_lines.append(line)
     new_text = "\n".join(new_lines)
     path.write_text(new_text)
+
+
+def _build_error_map(
+    errors: Iterator[Dict[str, Any]]
+) -> Dict[int, List[Dict[str, str]]]:
+    error_map = defaultdict(lambda: [])
+    for error in errors:
+        if error["concise_description"]:
+            description = error["concise_description"]
+        else:
+            description = error["description"]
+        match = re.search(r"\[(\d+)\]: (.*)", description)
+        if match:
+            error_map[error["line"]].append(
+                {"code": match.group(1), "description": match.group(2)}
+            )
+    return error_map
+
+
+def fix(
+    errors: Errors, comment: str = "", max_line_length: int = 0, truncate: bool = False
+) -> None:
+    for path, errors in errors:
+        LOG.info("Processing `%s`", path)
+        _fix_file(
+            path,
+            _build_error_map(errors),
+            comment,
+            max_line_length if max_line_length > 0 else None,
+            truncate,
+        )

@@ -9,11 +9,9 @@
 import argparse
 import json
 import logging
-import re
 import subprocess
 import sys
 import traceback
-from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -23,13 +21,7 @@ from .codemods import (
     run_missing_global_annotations,
     run_missing_overridden_return_annotations,
 )
-from .errors import (
-    Errors,
-    errors_from_stdin,
-    errors_from_targets,
-    fix_file,
-    json_to_errors,
-)
+from .errors import Errors, errors_from_stdin, errors_from_targets, fix, json_to_errors
 from .filesystem import (
     LocalMode,
     add_local_mode,
@@ -261,7 +253,7 @@ def _upgrade_project(
         else configuration.get_errors()
     )
     if len(errors) > 0:
-        fix(arguments, errors)
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
@@ -269,7 +261,12 @@ def _upgrade_project(
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = configuration.get_errors(should_clean=False)
-                fix(arguments, errors)
+                fix(
+                    errors,
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
     try:
         project_root = root.resolve()
         local_root = configuration.get_directory().resolve()
@@ -279,29 +276,6 @@ def _upgrade_project(
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
-
-
-def fix(arguments: argparse.Namespace, result: Errors) -> None:
-    for path, errors in result:
-        LOG.info("Processing `%s`", path)
-
-        # Build map from line to error codes.
-        error_map = defaultdict(lambda: [])
-        for error in errors:
-            if error["concise_description"]:
-                description = error["concise_description"]
-            else:
-                description = error["description"]
-            match = re.search(r"\[(\d+)\]: (.*)", description)
-            if match:
-                error_map[error["line"]].append(
-                    {"code": match.group(1), "description": match.group(2)}
-                )
-        custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
-        max_line_length = (
-            arguments.max_line_length if arguments.max_line_length > 0 else None
-        )
-        fix_file(path, error_map, custom_comment, max_line_length, arguments.truncate)
 
 
 def run_global_version_update(
@@ -403,17 +377,22 @@ def run_strict_default(
 def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
     if arguments.run:
         errors = errors_from_run(arguments.only_fix_error_code)
-        fix(arguments, errors)
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
         if arguments.lint:
             lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
             if lint_status:
                 apply_lint(version_control.LINTERS_TO_SKIP)
                 errors = errors_from_run(arguments.only_fix_error_code)
-                fix(arguments, errors)
+                fix(
+                    errors,
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
     else:
         errors = errors_from_stdin(arguments.only_fix_error_code)
-        fix(arguments, errors)
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
 
 def run_fixme_single(
@@ -479,7 +458,7 @@ def run_fixme_targets_file(
     LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
     if not errors:
         return
-    fix(arguments, errors)
+    fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
     if not arguments.lint:
         return
     lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
@@ -490,7 +469,7 @@ def run_fixme_targets_file(
             LOG.info("Errors unchanged after linting.")
             return
         LOG.info("Found %d type errors after linting.", len(errors))
-        fix(arguments, errors)
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
 
 def run_fixme_targets(
@@ -835,6 +814,8 @@ def run(version_control: VersionControl) -> None:
         arguments.paths = None
     if not hasattr(arguments, "from_stdin"):
         arguments.from_stdin = None
+    if not hasattr(arguments, "comment"):
+        arguments.comment = None
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",

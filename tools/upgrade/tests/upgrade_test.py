@@ -219,7 +219,12 @@ class FixmeAllTest(unittest.TestCase):
             arguments, configuration, Path("/root"), VERSION_CONTROL
         )
         run_global_version_update.assert_not_called()
-        fix.assert_called_once_with(arguments, pyre_errors)
+        fix.assert_called_once_with(
+            pyre_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
         submit_changes.assert_called_once_with(
             False, VERSION_CONTROL.commit_message("local")
         )
@@ -234,7 +239,20 @@ class FixmeAllTest(unittest.TestCase):
         )
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
-        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        calls = [
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+        ]
         fix.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             False, VERSION_CONTROL.commit_message("local")
@@ -256,7 +274,20 @@ class FixmeAllTest(unittest.TestCase):
         # Called in the second round to get new errors after applying lint.
         get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
-        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        calls = [
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+        ]
         fix.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             False, VERSION_CONTROL.commit_message("local")
@@ -319,7 +350,12 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
         run_global_version_update.assert_not_called()
-        fix.assert_called_once_with(arguments, pyre_errors)
+        fix.assert_called_once_with(
+            pyre_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
         submit_changes.assert_called_once_with(
             False, VERSION_CONTROL.commit_message("local")
         )
@@ -346,7 +382,12 @@ class FixmeAllTest(unittest.TestCase):
         arguments.submit = True
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
         run_global_version_update.assert_called_once_with(arguments, VERSION_CONTROL)
-        fix.assert_called_once_with(arguments, pyre_errors)
+        fix.assert_called_once_with(
+            pyre_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
         submit_changes.assert_called_once_with(
             True, VERSION_CONTROL.commit_message("local")
         )
@@ -358,7 +399,20 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
         run_global_version_update.assert_called_once_with(arguments, VERSION_CONTROL)
-        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        calls = [
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+            call(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            ),
+        ]
         fix.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             True, VERSION_CONTROL.commit_message("local")
@@ -379,7 +433,7 @@ class FixmeAllTest(unittest.TestCase):
                 """
             contents = textwrap.dedent(contents)
             file.write(contents.encode())
-            errors.fix_file(
+            errors._fix_file(
                 file.name,
                 error_map,
                 custom_comment=None,
@@ -405,7 +459,7 @@ class FixmeAllTest(unittest.TestCase):
                 """
             contents = textwrap.dedent(contents)
             file.write(contents.encode())
-            errors.fix_file(file.name, error_map)
+            errors._fix_file(file.name, error_map)
 
             file.seek(0)
             updated_contents = file.read().decode()
@@ -532,7 +586,12 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade_core.run_fixme_single(arguments, VERSION_CONTROL)
-            fix.assert_called_once_with(arguments, pyre_errors)
+            fix.assert_called_once_with(
+                pyre_errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            )
             submit_changes.assert_called_once_with(
                 True, VERSION_CONTROL.commit_message("local")
             )
@@ -1275,7 +1334,12 @@ class FixmeTargetsTest(unittest.TestCase):
         upgrade_core.run_fixme_targets_file(
             arguments, Path("."), "a/b", ["derp", "herp"], VERSION_CONTROL
         )
-        fix.assert_called_once_with(arguments, expected_errors)
+        fix.assert_called_once_with(
+            expected_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
 
         # Test fallback to type check targets with modified names
         subprocess.reset_mock()
@@ -1320,7 +1384,12 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        fix.assert_called_once_with(arguments, expected_errors)
+        fix.assert_called_once_with(
+            expected_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
 
         subprocess.reset_mock()
         fix.reset_mock()
@@ -1374,7 +1443,12 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        fix.assert_called_once_with(arguments, expected_errors)
+        fix.assert_called_once_with(
+            expected_errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+        )
 
 
 class MigrateTest(unittest.TestCase):
