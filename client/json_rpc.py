@@ -5,9 +5,10 @@
 
 
 import json
+from abc import abstractmethod
 from enum import Enum
 from json.decoder import JSONDecodeError
-from typing import Any, BinaryIO, Dict, Optional
+from typing import Any, BinaryIO, Dict, Optional, Union
 
 
 JSON = Dict[str, Any]
@@ -24,7 +25,25 @@ class JSONRPCException(Exception):
     pass
 
 
-class Request(object):
+class JSONRPC(object):
+    @abstractmethod
+    def json(self) -> str:
+        pass
+
+    def write(self, file: BinaryIO) -> bool:
+        try:
+            payload = self.json()
+            length = len(payload.encode("utf-8"))
+
+            response = ("Content-Length: {}\r\n\r\n{}").format(length, payload)
+            file.write(response.encode("utf-8"))
+            file.flush()
+            return True
+        except (ValueError, OSError):
+            return False
+
+
+class Request(JSONRPC):
     def __init__(
         self, method: str, id: Optional[str] = None, parameters: Optional[JSON] = None
     ) -> None:
@@ -44,24 +63,12 @@ class Request(object):
     def validate_payload(payload: JSON) -> bool:
         return payload.get("jsonrpc") == "2.0" and payload.get("method") is not None
 
-    def write(self, file: BinaryIO) -> bool:
-        try:
-            payload = self.json()
-            length = len(payload.encode("utf-8"))
 
-            response = ("Content-Length: {}\r\n\r\n{}").format(length, payload)
-            file.write(response.encode("utf-8"))
-            file.flush()
-            return True
-        except (ValueError, OSError):
-            return False
-
-
-class Response(object):
+class Response(JSONRPC):
     def __init__(
         self,
         result: Optional[JSON] = None,
-        id: Optional[str] = None,
+        id: Optional[Union[str, int]] = None,
         error: Optional[JSON] = None,
     ) -> None:
         self.result = result
@@ -75,6 +82,9 @@ class Response(object):
             and "result" in payload
             and "error" in payload
         )
+
+    def json(self) -> str:
+        return json.dumps({"jsonrpc": "2.0", "id": self.id, "result": self.result})
 
 
 def parse_content_length(line: bytes) -> Optional[int]:
