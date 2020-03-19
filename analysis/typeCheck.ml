@@ -4667,20 +4667,18 @@ module State (Context : Context) = struct
 
 
   let forward ~key ({ bottom; resolution; _ } as state) ~statement =
-    let state, errors =
-      if bottom then
-        state, []
-      else
-        forward_statement ~state ~statement
-    in
-    let () =
-      let { resolution = post_resolution; _ } = state in
-      let precondition = Resolution.annotation_store resolution in
-      let postcondition = Resolution.annotation_store post_resolution in
-      LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition;
-      LocalErrorMap.set state.error_map ~key ~errors
-    in
-    state
+    if bottom then
+      state
+    else
+      let new_state, errors = forward_statement ~state ~statement in
+      let () =
+        let { resolution = post_resolution; _ } = new_state in
+        let precondition = Resolution.annotation_store resolution in
+        let postcondition = Resolution.annotation_store post_resolution in
+        LocalAnnotationMap.set state.resolution_fixpoint ~key ~precondition ~postcondition;
+        LocalErrorMap.set state.error_map ~key ~errors
+      in
+      new_state
 
 
   let backward ~key:_ state ~statement:_ = state
