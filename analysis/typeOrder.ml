@@ -1400,6 +1400,7 @@ module OrderImplementation = struct
     and instantiate_protocol_parameters
         ( {
             all_attributes;
+            attribute;
             class_hierarchy = { variables; _ };
             assumptions = { protocol_assumptions; _ } as assumptions;
             _;
@@ -1447,6 +1448,7 @@ module OrderImplementation = struct
                   ~protocol
                   ~protocol_parameters:(Option.value protocol_generic_parameters ~default:[])
               in
+              let assumptions = { assumptions with protocol_assumptions = new_assumptions } in
               let protocol_attributes =
                 let is_not_object_or_generic_method attribute =
                   let parent = AnnotatedAttribute.parent attribute in
@@ -1456,32 +1458,12 @@ module OrderImplementation = struct
                 protocol_generic_parameters
                 >>| Type.parametric protocol
                 |> Option.value ~default:(Type.Primitive protocol)
-                |> all_attributes
-                     ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
+                |> all_attributes ~assumptions
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
-              let candidate_attributes, desanitize_map =
+              let candidate, desanitize_map =
                 match candidate with
-                | Type.Callable _ as callable ->
-                    let attributes =
-                      [
-                        AnnotatedAttribute.create
-                          ~annotation:callable
-                          ~original_annotation:callable
-                          ~abstract:false
-                          ~async:false
-                          ~class_attribute:false
-                          ~defined:true
-                          ~initialized:Implicitly
-                          ~name:"__call__"
-                          ~parent:"typing.Callable"
-                          ~static:false
-                          ~visibility:ReadWrite
-                          ~property:false;
-                      ]
-                      |> Option.some
-                    in
-                    attributes, []
+                | Type.Callable _ -> candidate, []
                 | _ ->
                     (* We don't return constraints for the candidate's free variables, so we must
                        underapproximate and determine conformance in the worst case *)
@@ -1514,46 +1496,31 @@ module OrderImplementation = struct
                       in
                       SanitizeTransform.visit [] candidate
                     in
-                    ( all_attributes
-                        ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
-                        sanitized_candidate,
-                      desanitize_map )
+                    sanitized_candidate, desanitize_map
               in
-              match candidate_attributes, protocol_attributes with
-              | Some all_candidate_attributes, Some all_protocol_attributes ->
-                  let build_attribute_map =
-                    let add_to_map map data =
-                      match Identifier.Map.add map ~key:(AnnotatedAttribute.name data) ~data with
-                      | `Ok x -> x
-                      (* Attributes are listed in resolution order *)
-                      | `Duplicate -> map
-                    in
-                    List.fold ~f:add_to_map ~init:Identifier.Map.empty
-                  in
-                  let merge_attributes ~key:_ = function
-                    | `Both pair -> Some (`Found pair)
-                    (* In candidate but not protocol *)
-                    | `Left _ -> None
-                    (* In protocol but not candidate *)
-                    | `Right _ -> Some `Missing
-                  in
-                  let order_with_new_assumption =
-                    let assumptions = { assumptions with protocol_assumptions = new_assumptions } in
-                    { order with assumptions }
-                  in
-                  let attribute_implements ~key:_ ~data constraints_set =
-                    match data with
-                    | `Found (candidate_attribute, protocol_attribute) ->
+              match protocol_attributes with
+              | Some all_protocol_attributes ->
+                  let order_with_new_assumption = { order with assumptions } in
+                  let attribute_implements constraints_set protocol_attribute =
+                    match constraints_set with
+                    | [] -> []
+                    | _ ->
                         let attribute_annotation attribute =
                           AnnotatedAttribute.annotation attribute |> Annotation.annotation
                         in
-                        List.concat_map constraints_set ~f:(fun constraints ->
-                            solve_less_or_equal
-                              order_with_new_assumption
-                              ~left:(attribute_annotation candidate_attribute)
-                              ~right:(attribute_annotation protocol_attribute)
-                              ~constraints)
-                    | `Missing -> []
+                        attribute
+                          ~assumptions
+                          candidate
+                          ~name:(AnnotatedAttribute.name protocol_attribute)
+                        >>| attribute_annotation
+                        >>| (fun left ->
+                              List.concat_map constraints_set ~f:(fun constraints ->
+                                  solve_less_or_equal
+                                    order_with_new_assumption
+                                    ~left
+                                    ~right:(attribute_annotation protocol_attribute)
+                                    ~constraints))
+                        |> Option.value ~default:[]
                   in
                   let instantiate_protocol_generics solution =
                     let desanitize =
@@ -1608,11 +1575,10 @@ module OrderImplementation = struct
                     >>| desanitize
                     |> Option.value ~default:[]
                   in
-                  Identifier.Map.merge
-                    (build_attribute_map all_candidate_attributes)
-                    (build_attribute_map all_protocol_attributes)
-                    ~f:merge_attributes
-                  |> Identifier.Map.fold ~init:[TypeConstraints.empty] ~f:attribute_implements
+                  List.fold
+                    ~init:[TypeConstraints.empty]
+                    ~f:attribute_implements
+                    all_protocol_attributes
                   |> List.filter_map ~f:(OrderedConstraints.solve ~order:order_with_new_assumption)
                   |> List.hd
                   >>| instantiate_protocol_generics

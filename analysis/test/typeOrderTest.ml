@@ -33,9 +33,8 @@ let concrete_connect ?parameters =
   MockClassHierarchyHandler.connect ?parameters
 
 
-let parse_attributes ~parse_annotation ~class_name =
+let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
-    let annotation = parse_annotation annotation in
     Attribute.create
       ~annotation
       ~original_annotation:annotation
@@ -51,6 +50,11 @@ let parse_attributes ~parse_annotation ~class_name =
       ~name
   in
   List.map ~f:parse_attribute
+
+
+let parse_attributes ~class_name ~parse_annotation attributes =
+  List.map attributes ~f:(fun (name, annotation) -> name, parse_annotation annotation)
+  |> make_attributes ~class_name
 
 
 let get_typed_dictionary _ = None
@@ -1188,6 +1192,8 @@ let test_less_or_equal context =
              ~parse_annotation
              ~class_name:"B"
              ["__call__", "typing.Callable[[_T], str]"])
+    | Type.Callable _ ->
+        Some (make_attributes ~class_name:"typing.Callable" ["__call__", annotation])
     | _ -> failwith "getting attributes for wrong class"
   in
   assert_true
@@ -3203,6 +3209,8 @@ let test_solve_less_or_equal context =
              ~parse_annotation
              ~class_name:"B"
              ["__call__", "typing.Callable[[T], str]"])
+    | Type.Callable _ ->
+        Some (make_attributes ~class_name:"typing.Callable" ["__call__", annotation])
     | _ -> failwith "getting attributes for wrong class"
   in
   assert_solve
