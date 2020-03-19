@@ -62,8 +62,6 @@ module DependencyTrackedTableWithCache
 
   val mem : ?dependency:DependencyKey.t -> key -> bool
 
-  val add_dependency : kind:DependencyKind.t -> key -> DependencyKey.t -> unit
-
   val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.KeySet.t
 
   val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
@@ -90,8 +88,6 @@ module DependencyTrackedTableNoCache
        and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
-
-  val add_dependency : kind:DependencyKind.t -> key -> DependencyKey.t -> unit
 
   val get : ?dependency:DependencyKey.t -> key -> t option
 

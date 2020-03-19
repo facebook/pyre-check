@@ -64,16 +64,16 @@ let test_dependency_table _ =
   let function_2 = "function_2" in
   let function_3 = "function_3" in
   let function_4 = "function_4" in
-  TableA.add_dependency ~kind:Get "Foo" function_1;
-  TableA.add_dependency ~kind:Get "Bar" function_1;
-  TableA.add_dependency ~kind:Get "Foo" function_2;
-  TableA.add_dependency ~kind:Get "Foo" function_3;
+  let _value : string option = TableA.get "Foo" ~dependency:function_1 in
+  let _value : string option = TableA.get "Bar" ~dependency:function_1 in
+  let _value : string option = TableA.get "Foo" ~dependency:function_2 in
+  let _value : string option = TableA.get "Foo" ~dependency:function_3 in
 
   assert_dependency
     ~expected:[function_3; function_2; function_1]
     (TableA.get_dependents ~kind:Get "Foo");
   assert_dependency ~expected:[function_1] (TableA.get_dependents ~kind:Get "Bar");
-  TableB.add_dependency "Foo" ~kind:Get function_4;
+  let _value : string option = TableB.get "Foo" ~dependency:function_4 in
 
   (* Ensure that different tables' same keys are encoded differently *)
   assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
@@ -82,7 +82,7 @@ let test_dependency_table _ =
   Memory.reset_shared_memory ();
   assert_dependency ~expected:[] (TableA.get_dependents ~kind:Get "Foo");
   assert_dependency ~expected:[] (TableB.get_dependents ~kind:Get "Foo");
-  TableB.add_dependency ~kind:Get "Foo" function_4;
+  let _value : string option = TableB.get "Foo" ~dependency:function_4 in
   assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
 
   (* Ensure that the `get` interface also adds the corresponding dependencies *)
@@ -114,8 +114,13 @@ module UpdateDependencyTest = struct
     let open Core in
     let setup_old_state { key; old_value; get_dependencies; mem_dependencies; _ } =
       Option.iter old_value ~f:(TableA.add key);
-      List.iter get_dependencies ~f:(TableA.add_dependency ~kind:Get key);
-      List.iter mem_dependencies ~f:(TableA.add_dependency ~kind:Mem key)
+      let _values : string option list =
+        List.map get_dependencies ~f:(fun dependency -> TableA.get key ~dependency)
+      in
+      let _values : bool list =
+        List.map mem_dependencies ~f:(fun dependency -> TableA.mem key ~dependency)
+      in
+      ()
     in
     List.iter specification ~f:setup_old_state;
     let setup_new_state { key; new_value; _ } = Option.iter new_value ~f:(TableA.add key) in
