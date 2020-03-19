@@ -62,11 +62,14 @@ let assert_annotation_store ~expected actual =
 module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false) ?(immutables = []) ~resolution annotations =
     let module State = State (Context) in
-    let resolution =
-      let annotation_store = create_annotation_store ~immutables annotations in
-      Resolution.with_annotation_store resolution ~annotation_store
-    in
-    State.create ~bottom ~resolution ()
+    if bottom then
+      State.create_unreachable ()
+    else
+      let resolution =
+        let annotation_store = create_annotation_store ~immutables annotations in
+        Resolution.with_annotation_store resolution ~annotation_store
+      in
+      State.create ~resolution ()
 end
 
 let description ~resolution error =

@@ -20,9 +20,9 @@ end
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create : ?bottom:bool -> resolution:Resolution.t -> unit -> t
+  val create : resolution:Resolution.t -> unit -> t
 
-  val resolution : t -> Resolution.t
+  val create_unreachable : unit -> t
 
   val all_errors : t -> Error.t list
 
