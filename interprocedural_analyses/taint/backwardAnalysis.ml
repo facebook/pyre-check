@@ -17,6 +17,8 @@ module type FixpointState = sig
 
   include Fixpoint.State with type t := t
 
+  val join : t -> t -> t
+
   val create : unit -> t
 end
 

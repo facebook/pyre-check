@@ -205,40 +205,6 @@ let test_less_or_equal context =
     (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["y", Type.integer]))
 
 
-let test_join context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  let create =
-    let module Create = Create (DefaultContext) in
-    Create.create ~resolution
-  in
-  let module State = State (DefaultContext) in
-  let assert_state_equal =
-    assert_equal
-      ~cmp:State.equal
-      ~printer:(Format.asprintf "%a" State.pp)
-      ~pp_diff:(diff ~print:State.pp)
-  in
-  (* <= *)
-  assert_state_equal (State.join (create []) (create [])) (create []);
-  assert_state_equal (State.join (create []) (create ["x", Type.integer])) (create ["x", Type.Top]);
-  assert_state_equal (State.join (create []) (create ["x", Type.Top])) (create ["x", Type.Top]);
-  assert_state_equal
-    (State.join (create ["x", Type.integer]) (create ["x", Type.integer; "y", Type.integer]))
-    (create ["x", Type.integer; "y", Type.Top]);
-
-  (* > *)
-  assert_state_equal (State.join (create ["x", Type.integer]) (create [])) (create ["x", Type.Top]);
-  assert_state_equal (State.join (create ["x", Type.Top]) (create [])) (create ["x", Type.Top]);
-
-  (* partial order *)
-  assert_state_equal
-    (State.join (create ["x", Type.integer]) (create ["x", Type.string]))
-    (create ["x", Type.union [Type.string; Type.integer]]);
-  assert_state_equal
-    (State.join (create ["x", Type.integer]) (create ["y", Type.integer]))
-    (create ["x", Type.Top; "y", Type.Top])
-
-
 let test_widen context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   let create =
@@ -1922,7 +1888,6 @@ let () =
   >::: [
          "initial" >:: test_initial;
          "less_or_equal" >:: test_less_or_equal;
-         "join" >:: test_join;
          "widen" >:: test_widen;
          "check_annotation" >:: test_check_annotation;
          "forward_expression" >:: test_forward_expression;

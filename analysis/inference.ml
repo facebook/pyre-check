@@ -176,42 +176,6 @@ module State (Context : Context) = struct
            (Resolution.annotation_store left.resolution)
 
 
-  let join left right =
-    if left.bottom then
-      right
-    else if right.bottom then
-      left
-    else
-      let join_resolutions left_resolution right_resolution =
-        let merge_annotation_stores ~key:_ = function
-          | `Both (left, right) ->
-              Some
-                (RefinementUnit.join
-                   ~global_resolution:(Resolution.global_resolution left_resolution)
-                   left
-                   right)
-          | `Left _
-          | `Right _ ->
-              Some (RefinementUnit.create ~base:(Annotation.create Type.Top) ())
-        in
-        let annotation_store =
-          Map.merge
-            ~f:merge_annotation_stores
-            (Resolution.annotation_store left_resolution)
-            (Resolution.annotation_store right_resolution)
-        in
-        Resolution.with_annotation_store left_resolution ~annotation_store
-      in
-      let combine_errors ~key:_ left_error right_error =
-        Error.join ~resolution:(Resolution.global_resolution left.resolution) left_error right_error
-      in
-      {
-        left with
-        errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
-        resolution = join_resolutions left.resolution right.resolution;
-      }
-
-
   let widening_threshold = 10
 
   let widen ~previous:({ resolution; _ } as previous) ~next ~iteration =
