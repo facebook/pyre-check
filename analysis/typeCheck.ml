@@ -1910,33 +1910,34 @@ module State (Context : Context) = struct
       | _ -> false
     in
     match value with
-    | Await expression ->
+    | Await expression -> (
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution ~expression
         in
-        let errors =
-          let is_awaitable =
-            GlobalResolution.less_or_equal
-              global_resolution
-              ~left:resolved
-              ~right:(Type.awaitable Type.Top)
-          in
-          if not is_awaitable then
-            emit_error ~errors ~location ~kind:(Error.IncompatibleAwaitableType resolved)
-          else
-            errors
-        in
-        let resolved =
-          match
-            GlobalResolution.extract_type_parameters
-              global_resolution
-              ~target:"typing.Awaitable"
-              ~source:resolved
-          with
-          | Some [awaited_type] -> awaited_type
-          | _ -> Type.Any
-        in
-        { resolution; resolved; errors; resolved_annotation = None; base = None }
+        match resolved with
+        | Type.Any ->
+            { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
+        | _ -> (
+            match
+              GlobalResolution.extract_type_parameters
+                global_resolution
+                ~target:"typing.Awaitable"
+                ~source:resolved
+            with
+            | Some [awaited_type] ->
+                {
+                  resolution;
+                  resolved = awaited_type;
+                  errors;
+                  resolved_annotation = None;
+                  base = None;
+                }
+            | _ ->
+                let errors =
+                  emit_error ~errors ~location ~kind:(Error.IncompatibleAwaitableType resolved)
+                in
+                { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
+            ) )
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         let assume =
           let assume =
