@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import errors, postprocess, upgrade, upgrade_core
+from .. import errors, filesystem, postprocess, upgrade, upgrade_core
 from ..upgrade import ExternalVersionControl
 
 
@@ -1529,10 +1529,16 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.find_targets" % upgrade_core.__name__)
     @patch("%s.get_filesystem" % upgrade_core.__name__)
     @patch("%s.remove_non_pyre_ignores" % upgrade_core.__name__)
-    @patch("%s.run_fixme_single" % upgrade_core.__name__)
+    @patch("%s.Configuration.get_errors" % upgrade_core.__name__)
+    @patch("%s.add_local_mode" % upgrade_core.__name__)
+    @patch("%s.fix" % upgrade_core.__name__)
+    @patch("%s.get_lint_status" % upgrade_core.__name__)
     def test_run_targets_to_configuration(
         self,
-        run_fixme_single,
+        get_lint_status,
+        fix,
+        add_local_mode,
+        get_errors,
         remove_non_pyre_ignores,
         get_filesystem,
         find_targets,
@@ -1542,14 +1548,33 @@ class TargetsToConfigurationTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
+        arguments.lint = True
+        arguments.glob = False
+        arguments.fixme_threshold = None
         find_targets.return_value = {
             "subdirectory/a": ["target_one"],
             "subdirectory/b/c": ["target_two", "target_three"],
         }
-
         filesystem_list = MagicMock()
         filesystem_list.return_value = []
         get_filesystem.list = filesystem_list
+        pyre_errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
 
         # Do not attempt to create a configuration when no existing project-level
         # configuration is found.
@@ -1557,7 +1582,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_local_configuration.return_value = None
         upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
         open_mock.assert_not_called()
-        run_fixme_single.assert_not_called()
+        fix.assert_not_called()
+        add_local_mode.assert_not_called()
 
         # Add to existing project configuration if it lives at given subdirectory
         find_project_configuration.return_value = Path(
@@ -1591,13 +1617,34 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-            run_fixme_single.assert_called_once_with(arguments, VERSION_CONTROL)
+            fix.assert_has_calls(
+                [
+                    call(
+                        errors.Errors(pyre_errors),
+                        arguments.comment,
+                        arguments.max_line_length,
+                        arguments.truncate,
+                    ),
+                    call(
+                        errors.Errors(pyre_errors),
+                        arguments.comment,
+                        arguments.max_line_length,
+                        arguments.truncate,
+                    ),
+                ]
+            )
+            add_local_mode.assert_not_called()
 
         # Create local project configuration
+        fix.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
-        run_fixme_single.reset_mock()
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
         find_project_configuration.return_value = Path(".pyre_configuration")
+        arguments.lint = False
         with patch("json.dump") as dump_mock:
             mocks = [
                 mock_open(read_data=configuration_contents).return_value,
@@ -1623,11 +1670,26 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-            run_fixme_single.assert_called_once_with(arguments, VERSION_CONTROL)
+            fix.assert_has_calls(
+                [
+                    call(
+                        errors.Errors(pyre_errors),
+                        arguments.comment,
+                        arguments.max_line_length,
+                        arguments.truncate,
+                    )
+                ]
+            )
+            add_local_mode.assert_not_called()
 
         # Add to existing local project configuration
+        fix.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
         find_project_configuration.return_value = Path(".pyre_configuration")
         find_local_configuration.return_value = Path(
             "subdirectory/.pyre_configuration.local"
@@ -1657,11 +1719,27 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
+        fix.assert_has_calls(
+            [
+                call(
+                    errors.Errors(pyre_errors),
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
+            ]
+        )
+        add_local_mode.assert_not_called()
 
         # Refuse to nest local configurations
         arguments.subdirectory = "nested/subdirectory"
+        fix.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
         find_project_configuration.return_value = Path(".pyre_configuration")
         find_local_configuration.return_value = Path(
             "subdirectory/.pyre_configuration.local"
@@ -1690,6 +1768,84 @@ class TargetsToConfigurationTest(unittest.TestCase):
             )
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+        fix.assert_has_calls(
+            [
+                call(
+                    errors.Errors(pyre_errors),
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
+            ]
+        )
+        add_local_mode.assert_not_called()
+
+        # Glob target with error threshold set
+        fix.reset_mock()
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        pyre_errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            },
+            {
+                "line": 3,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            },
+        ]
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
+        find_local_configuration.return_value = None
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        configuration_contents = json.dumps(
+            {"version": "abc", "search_path": ["stubs"]}
+        )
+        arguments.subdirectory = "subdirectory"
+        arguments.lint = False
+        arguments.glob = True
+        arguments.fixme_threshold = 1
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            expected_configuration_contents = {
+                "targets": ["//subdirectory/..."],
+                "push_blocking": True,
+                "strict": True,
+            }
+            open_mock.assert_has_calls(
+                [
+                    call(Path(".pyre_configuration")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
+                ]
+            )
+            dump_mock.assert_called_once_with(
+                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+            )
+            fix.assert_not_called()
+            add_local_mode.assert_called_once_with(
+                "local.py", filesystem.LocalMode.IGNORE
             )
 
     @patch("subprocess.run")
@@ -1698,10 +1854,16 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch("%s.Configuration.find_local_configuration" % upgrade_core.__name__)
     @patch("%s.find_targets" % upgrade_core.__name__)
     @patch("%s.get_filesystem" % upgrade_core.__name__)
-    @patch("%s.run_fixme_single" % upgrade_core.__name__)
+    @patch("%s.Configuration.get_errors" % upgrade_core.__name__)
+    @patch("%s.add_local_mode" % upgrade_core.__name__)
+    @patch("%s.fix" % upgrade_core.__name__)
+    @patch("%s.get_lint_status" % upgrade_core.__name__)
     def test_targets_file_cleanup(
         self,
-        run_fixme_single,
+        get_lint_status,
+        fix,
+        add_local_mode,
+        get_errors,
         get_filesystem,
         find_targets,
         find_local_configuration,
@@ -1729,7 +1891,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         ]
         open_mock.side_effect = mocks
 
-        # Do not modify TAREGTS when no existing project-level configuration is found.
+        # Do not modify TARGETS when no existing project-level configuration is found.
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
         upgrade_core.run_targets_to_configuration(arguments, VERSION_CONTROL)

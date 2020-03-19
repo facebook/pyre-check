@@ -544,8 +544,6 @@ def run_targets_to_configuration(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
     # TODO(T62926437): Basic integration testing.
-    # TODO(T62926437): Support glob target with file-level suppression of files
-    # excluded from original targets.
     # TODO(T62926437): Dedup additional targets with existing glob targets.
     subdirectory = arguments.subdirectory
     subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
@@ -553,7 +551,6 @@ def run_targets_to_configuration(
 
     # Create or amend to existing pyre configuration
     all_targets = find_targets(subdirectory)
-    new_targets = []
     if not all_targets:
         LOG.warning("No configuration created because no targets found.")
         return
@@ -561,8 +558,12 @@ def run_targets_to_configuration(
         str(subdirectory / path)
         for path in get_filesystem().list(str(subdirectory), patterns=[r"**/TARGETS"])
     ]
-    for path, target_names in all_targets.items():
-        new_targets += [path + ":" + name for name in target_names]
+    if arguments.glob:
+        new_targets = ["//" + str(subdirectory) + "/..."]
+    else:
+        new_targets = []
+        for path, target_names in all_targets.items():
+            new_targets += [path + ":" + name for name in target_names]
     project_configuration = Configuration.find_project_configuration(subdirectory)
     local_configuration = Configuration.find_local_configuration(subdirectory)
     if local_configuration:
@@ -639,8 +640,37 @@ def run_targets_to_configuration(
     subprocess.run(remove_typing_fields_command)
 
     remove_non_pyre_ignores(subdirectory)
-    arguments.path = subdirectory
-    run_fixme_single(arguments, version_control)
+
+    all_errors = configuration.get_errors()
+    error_threshold = arguments.fixme_threshold
+    if len(all_errors) == 0:
+        return
+
+    for path, errors in all_errors:
+        errors = list(errors)
+        error_count = len(errors)
+        if error_threshold and error_count > error_threshold:
+            LOG.info(
+                "%d errors found in `%s`. Adding file-level ignore.", error_count, path
+            )
+            add_local_mode(path, LocalMode.IGNORE)
+        else:
+            fix(
+                Errors(errors),
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+            )
+
+    # Lint and re-run pyre once to resolve most formatting issues
+    if arguments.lint:
+        lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+        if lint_status:
+            apply_lint(version_control.LINTERS_TO_SKIP)
+            errors = configuration.get_errors(should_clean=False)
+            fix(
+                errors, arguments.comment, arguments.max_line_length, arguments.truncate
+            )
 
 
 def run(version_control: VersionControl) -> None:
@@ -821,6 +851,12 @@ def run(version_control: VersionControl) -> None:
         "--glob",
         action="store_true",
         help="Use a toplevel glob target and suppress unchecked files.",
+    )
+    targets_to_configuration.add_argument(
+        "--fixme-threshold",
+        action="store_true",
+        help="Ignore all errors in a file if fixme count exceeds threshold.",
+        default=None,
     )
 
     # Initialize default values.
