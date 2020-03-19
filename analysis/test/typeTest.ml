@@ -30,7 +30,7 @@ let test_create _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~aliases (parse_single_expression source))
+      (Type.create ~aliases (parse_single_expression ~preprocess:true source))
   in
   assert_create "foo" (Type.Primitive "foo");
   assert_create "foo.bar" (Type.Primitive "foo.bar");

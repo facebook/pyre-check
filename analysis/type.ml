@@ -1835,6 +1835,10 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
       in
       let kind =
         match modifiers with
+        | Some ({ Call.Argument.value = { Node.value = Expression.Name name; _ }; _ } :: _) ->
+            Ast.Expression.name_to_reference name
+            >>| (fun name -> Named name)
+            |> Option.value ~default:Anonymous
         | Some
             ({
                Call.Argument.value =
