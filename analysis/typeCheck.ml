@@ -498,7 +498,7 @@ module State (Context : Context) = struct
         ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
         location
     in
-    let check_decorators state errors =
+    let check_decorators resolution errors =
       let check_final_decorator errors =
         if Option.is_none parent && Define.is_final_method define then
           emit_error
@@ -532,12 +532,13 @@ module State (Context : Context) = struct
         if is_whitelisted decorator then
           errors
         else
+          let state = create ~resolution () in
           let { errors = decorator_errors; _ } = forward_expression ~state ~expression:decorator in
           List.append decorator_errors errors
       in
       List.fold decorators ~init:errors ~f:check_decorator |> check_final_decorator
     in
-    let check_return_annotation state errors =
+    let check_return_annotation resolution errors =
       let add_missing_return_error ~errors annotation =
         let return_annotation =
           let annotation =
@@ -589,56 +590,54 @@ module State (Context : Context) = struct
       | None -> errors
       | Some return_annotation ->
           let annotation_errors, annotation =
-            parse_and_check_annotation ~resolution:state.resolution return_annotation
+            parse_and_check_annotation ~resolution return_annotation
           in
           let errors = List.append annotation_errors errors in
           add_variance_error errors annotation
     in
-    let add_capture_annotations state errors =
+    let add_capture_annotations resolution errors =
       let process_signature ({ Define.Signature.name = { Node.value = name; _ }; _ } as signature) =
         if Reference.is_local name then
           type_of_signature ~resolution signature
           |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables
           |> Annotation.create
-          |> (fun annotation -> Resolution.set_local resolution ~reference:name ~annotation)
-          |> fun resolution -> { state with resolution }
+          |> fun annotation -> Resolution.set_local resolution ~reference:name ~annotation
         else
-          state
+          resolution
       in
-      let process_capture (state, errors) { Define.Capture.name; kind } =
-        let state, errors, annotation =
+      let process_capture (resolution, errors) { Define.Capture.name; kind } =
+        let resolution, errors, annotation =
           match kind with
           | Define.Capture.Kind.Annotation None ->
-              ( state,
+              ( resolution,
                 emit_error ~errors ~location ~kind:(Error.MissingCaptureAnnotation name),
                 Type.Any )
           | Define.Capture.Kind.Annotation (Some annotation_expression) ->
               let annotation_errors, annotation =
-                parse_and_check_annotation ~resolution:state.resolution annotation_expression
+                parse_and_check_annotation ~resolution annotation_expression
               in
-              state, List.append annotation_errors errors, annotation
+              resolution, List.append annotation_errors errors, annotation
           | Define.Capture.Kind.DefineSignature signature ->
-              ( state,
+              ( resolution,
                 errors,
                 type_of_signature ~resolution signature
                 |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_variables )
           | Define.Capture.Kind.Self parent ->
-              state, errors, type_of_parent ~global_resolution parent
+              resolution, errors, type_of_parent ~global_resolution parent
           | Define.Capture.Kind.ClassSelf parent ->
-              state, errors, type_of_parent ~global_resolution parent |> Type.meta
+              resolution, errors, type_of_parent ~global_resolution parent |> Type.meta
         in
         let annotation = Annotation.create_immutable annotation in
         let resolution =
-          let { resolution; _ } = state in
           let reference = Reference.create name in
           Resolution.set_local resolution ~reference ~annotation
         in
-        { state with resolution }, errors
+        resolution, errors
       in
-      let state = process_signature signature in
-      List.fold captures ~init:(state, errors) ~f:process_capture
+      let resolution = process_signature signature in
+      List.fold captures ~init:(resolution, errors) ~f:process_capture
     in
-    let check_parameter_annotations ({ resolution; _ } as state) errors =
+    let check_parameter_annotations resolution errors =
       let errors, annotation_store =
         let make_parameter_name name =
           name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
@@ -749,10 +748,7 @@ module State (Context : Context) = struct
                   | Some annotation ->
                       let errors, annotation =
                         let annotation_errors, annotation =
-                          parse_and_check_annotation
-                            ~resolution:state.resolution
-                            ~bind_variables:false
-                            annotation
+                          parse_and_check_annotation ~resolution ~bind_variables:false annotation
                         in
                         List.append annotation_errors errors, annotation
                       in
@@ -794,10 +790,7 @@ module State (Context : Context) = struct
                     | None -> errors, None
                     | Some annotation ->
                         let anntation_errors, annotation =
-                          parse_and_check_annotation
-                            ~resolution:state.resolution
-                            ~bind_variables:false
-                            annotation
+                          parse_and_check_annotation ~resolution ~bind_variables:false annotation
                         in
                         let errors = List.append anntation_errors errors in
                         let errors = add_variance_error errors annotation in
@@ -811,7 +804,9 @@ module State (Context : Context) = struct
                   in
                   let value_annotation =
                     value
-                    >>| (fun expression -> forward_expression ~state ~expression)
+                    >>| (fun expression ->
+                          let state = create ~resolution () in
+                          forward_expression ~state ~expression)
                     >>| fun { resolved; _ } -> resolved
                   in
                   let errors =
@@ -988,16 +983,13 @@ module State (Context : Context) = struct
               ~f:check_parameter
               parameters
       in
-      let resolution = Resolution.with_annotation_store resolution ~annotation_store in
-      { state with resolution }, errors
+      Resolution.with_annotation_store resolution ~annotation_store, errors
     in
-    let check_base_annotations state errors =
+    let check_base_annotations resolution errors =
       if Define.is_class_toplevel define then
         let open Annotated in
         let check_base old_errors ({ ExpressionCall.Argument.value; _ } as base) =
-          let annotation_errors, parsed =
-            parse_and_check_annotation ~resolution:state.resolution value
-          in
+          let annotation_errors, parsed = parse_and_check_annotation ~resolution value in
           let errors = List.append annotation_errors old_errors in
           match parsed with
           | Type.Parametric { name = "type"; parameters = [Single Type.Any] } ->
@@ -1056,7 +1048,7 @@ module State (Context : Context) = struct
       else
         errors
     in
-    let check_behavioral_subtyping state errors =
+    let check_behavioral_subtyping resolution errors =
       try
         if
           Define.is_constructor define
@@ -1107,7 +1099,7 @@ module State (Context : Context) = struct
                 | Type.Callable { Type.Callable.implementation; _ }
                   when not (StatementDefine.is_static_method define) ->
                     let original_implementation =
-                      resolve_reference_type ~state:{ state with resolution } (Node.value name)
+                      resolve_reference_type ~state:(create ~resolution ()) (Node.value name)
                       |> function
                       | Type.Callable { Type.Callable.implementation = original_implementation; _ }
                         ->
@@ -1311,25 +1303,27 @@ module State (Context : Context) = struct
                     ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
         | _ -> errors
     in
-    let state, errors =
-      let state = create ~resolution:(Resolution.with_parent resolution ~parent) () in
-      let state, errors = add_capture_annotations state [] in
-      let state, errors = check_parameter_annotations state errors in
+    let resolution, errors =
+      let resolution = Resolution.with_parent resolution ~parent in
+      let resolution, errors = add_capture_annotations resolution [] in
+      let resolution, errors = check_parameter_annotations resolution errors in
       let errors =
-        check_return_annotation state errors
-        |> check_decorators state
-        |> check_base_annotations state
-        |> check_behavioral_subtyping state
+        check_return_annotation resolution errors
+        |> check_decorators resolution
+        |> check_base_annotations resolution
+        |> check_behavioral_subtyping resolution
         |> check_constructor_return
       in
-      state, errors
+      resolution, errors
     in
-    let () =
-      let { resolution; resolution_fixpoint; error_map; _ } = state in
+    let state =
+      let resolution_fixpoint = LocalAnnotationMap.empty () in
+      let error_map = LocalErrorMap.empty () in
       let postcondition = Resolution.annotation_store resolution in
       let key = [%hash: int * int] (Cfg.entry_index, 0) in
       LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition;
-      LocalErrorMap.set error_map ~key ~errors
+      LocalErrorMap.set error_map ~key ~errors;
+      { resolution; bottom = false; resolution_fixpoint; error_map }
     in
     state
 
