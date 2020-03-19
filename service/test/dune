@@ -1,5 +1,6 @@
 (tests
  (names
+  dependencyTrackedMemoryTest
   ignoreTest
   memoryTest
   schedulerTest

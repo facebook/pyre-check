@@ -123,10 +123,9 @@ module UpdateDependencyTest = struct
     let keys = List.map specification ~f:(fun { key; _ } -> key) |> TableB.KeySet.of_list in
     let _, actual =
       StringDependencyKey.Transaction.empty
-      |> TableA.add_to_transaction
-           ~keys
-           ~scheduler:(Test.mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
+        ~scheduler:(Test.mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+      |> TableA.add_to_transaction ~keys
       |> StringDependencyKey.Transaction.execute ~update
     in
     assert_dependency ~expected actual;
