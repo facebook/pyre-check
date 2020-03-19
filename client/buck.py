@@ -117,7 +117,8 @@ class FastBuckBuilder(BuckBuilder):
             # Java's logging conflicts with Python's logging, we capture the
             # logs and re-log them with python's logger.
             log_processor = threading.Thread(
-                target=self._read_stderr, args=(buck_builder_process.stderr,)
+                target=self._read_stderr,
+                args=(buck_builder_process.stderr, logging.DEBUG),
             )
             log_processor.daemon = True
             log_processor.start()
@@ -136,7 +137,9 @@ class FastBuckBuilder(BuckBuilder):
                     "Could not build targets. Check the paths or run `buck clean`."
                 )
 
-    def _read_stderr(self, stream: Iterable[str]) -> None:
+    def _read_stderr(
+        self, stream: Iterable[str], default_logging_section: int = logging.ERROR
+    ) -> None:
         for line in stream:
             line = line.rstrip()
             if line.startswith("INFO: "):
@@ -149,7 +152,7 @@ class FastBuckBuilder(BuckBuilder):
                 # Filter away thrift warnings.
                 pass
             else:
-                LOG.error(line)
+                LOG.log(default_logging_section, line)
 
 
 class SimpleBuckBuilder(BuckBuilder):
