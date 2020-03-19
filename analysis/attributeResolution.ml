@@ -1710,8 +1710,78 @@ module Implementation = struct
     >>| handle
 
 
+  let partial_apply_self
+      ({ Type.Callable.implementation; overloads; _ } as callable)
+      ~order
+      ~self_type
+    =
+    let open Type.Callable in
+    let { Type.Callable.kind; implementation; overloads; implicit } =
+      match implementation, overloads with
+      | { Type.Callable.parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
+          let callable =
+            let implicit = { implicit_annotation = self_type; name } in
+            { callable with implicit = Some implicit }
+          in
+          let solution =
+            try
+              TypeOrder.solve_less_or_equal
+                order
+                ~left:self_type
+                ~right:annotation
+                ~constraints:TypeConstraints.empty
+              |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+              |> List.hd
+              |> Option.value ~default:TypeConstraints.Solution.empty
+            with
+            | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
+          in
+          let instantiated =
+            TypeConstraints.Solution.instantiate solution (Type.Callable callable)
+          in
+          match instantiated with
+          | Type.Callable callable -> callable
+          | _ -> callable )
+      (* We also need to set the implicit up correctly for overload-only methods. *)
+      | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
+          let implicit = { implicit_annotation = self_type; name } in
+          { callable with implicit = Some implicit }
+      | _ -> callable
+    in
+    let drop_self { Type.Callable.annotation; parameters } =
+      let parameters =
+        match parameters with
+        | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
+        | ParameterVariadicTypeVariable { head = _ :: head; variable } ->
+            ParameterVariadicTypeVariable { head; variable }
+        | _ -> parameters
+      in
+      { Type.Callable.annotation; parameters }
+    in
+    {
+      Type.Callable.kind;
+      implementation = drop_self implementation;
+      overloads = List.map overloads ~f:drop_self;
+      implicit;
+    }
+
+
+  let callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order =
+    match instantiated, class_name, attribute_name with
+    | Some (Type.Callable _), "typing.Callable", "__call__" -> instantiated
+    | ( Some
+          (Parametric
+            { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] }),
+        "typing.Callable",
+        "__call__" ) ->
+        let order = order () in
+        partial_apply_self callable ~order ~self_type
+        |> fun callable -> Type.Callable callable |> Option.some
+    | _ -> None
+
+
   let attribute
-      { instantiate_attribute; uninstantiated_attribute_tables; _ }
+      { instantiate_attribute; uninstantiated_attribute_tables; full_order; _ }
       ~assumptions
       ~class_metadata_environment
       ~transitive
@@ -1723,18 +1793,36 @@ module Implementation = struct
       ~attribute_name
       class_name
     =
-    uninstantiated_attribute_tables
-      ~assumptions
-      ~class_metadata_environment
-      ~transitive
-      ~class_attributes
-      ~include_generated_attributes
-      ~special_method
-      ?dependency
-      class_name
-    >>= Sequence.find_map ~f:(fun table ->
-            UninstantiatedAttributeTable.lookup_name table attribute_name)
-    >>| instantiate_attribute ~assumptions ~class_metadata_environment ?instantiated ?dependency
+    let order () = full_order ?dependency class_metadata_environment ~assumptions in
+    match callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order with
+    | Some callable ->
+        AnnotatedAttribute.create
+          ~annotation:callable
+          ~original_annotation:callable
+          ~visibility:ReadWrite
+          ~abstract:false
+          ~async:false
+          ~class_attribute:class_attributes
+          ~defined:true
+          ~initialized:Explicitly
+          ~name:"__call__"
+          ~parent:"typing.Callable"
+          ~static:false
+          ~property:false
+        |> Option.some
+    | None ->
+        uninstantiated_attribute_tables
+          ~assumptions
+          ~class_metadata_environment
+          ~transitive
+          ~class_attributes
+          ~include_generated_attributes
+          ~special_method
+          ?dependency
+          class_name
+        >>= Sequence.find_map ~f:(fun table ->
+                UninstantiatedAttributeTable.lookup_name table attribute_name)
+        >>| instantiate_attribute ~assumptions ~class_metadata_environment ?instantiated ?dependency
 
 
   let all_attributes
@@ -1821,59 +1909,6 @@ module Implementation = struct
       AnnotatedAttribute.uninstantiated_annotation attribute
     in
     let annotation, original =
-      let partial_apply_self ({ Type.Callable.implementation; overloads; _ } as callable) ~self_type
-        =
-        let open Type.Callable in
-        let { Type.Callable.kind; implementation; overloads; implicit } =
-          match implementation, overloads with
-          | { Type.Callable.parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
-              let callable =
-                let implicit = { implicit_annotation = self_type; name } in
-                { callable with implicit = Some implicit }
-              in
-              let order = full_order ?dependency class_metadata_environment ~assumptions in
-              let solution =
-                try
-                  TypeOrder.solve_less_or_equal
-                    order
-                    ~left:self_type
-                    ~right:annotation
-                    ~constraints:TypeConstraints.empty
-                  |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-                  |> List.hd
-                  |> Option.value ~default:TypeConstraints.Solution.empty
-                with
-                | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
-              in
-              let instantiated =
-                TypeConstraints.Solution.instantiate solution (Type.Callable callable)
-              in
-              match instantiated with
-              | Type.Callable callable -> callable
-              | _ -> callable )
-          (* We also need to set the implicit up correctly for overload-only methods. *)
-          | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
-              let implicit = { implicit_annotation = self_type; name } in
-              { callable with implicit = Some implicit }
-          | _ -> callable
-        in
-        let drop_self { Type.Callable.annotation; parameters } =
-          let parameters =
-            match parameters with
-            | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
-            | ParameterVariadicTypeVariable { head = _ :: head; variable } ->
-                ParameterVariadicTypeVariable { head; variable }
-            | _ -> parameters
-          in
-          { Type.Callable.annotation; parameters }
-        in
-        {
-          Type.Callable.kind;
-          implementation = drop_self implementation;
-          overloads = List.map overloads ~f:drop_self;
-          implicit;
-        }
-      in
       let instantiated =
         match instantiated with
         | Some instantiated -> instantiated
@@ -2031,14 +2066,16 @@ module Implementation = struct
             if String.equal attribute_name "__new__" then
               callable
             else if is_class_method then
-              partial_apply_self callable ~self_type:(Type.meta instantiated)
+              let order = full_order ?dependency class_metadata_environment ~assumptions in
+              partial_apply_self callable ~order ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
               callable
             else if default_class_attribute then
               (* Keep first argument around when calling instance methods from class attributes. *)
               callable
             else
-              let applied = partial_apply_self callable ~self_type:instantiated in
+              let order = full_order ?dependency class_metadata_environment ~assumptions in
+              let applied = partial_apply_self callable ~order ~self_type:instantiated in
               let instantiated_is_protocol =
                 Type.split instantiated
                 |> fst
@@ -2092,21 +2129,15 @@ module Implementation = struct
             annotation, annotation
           else
             annotation, original_annotation
-      | Attribute { annotation; original_annotation; is_property = false } -> (
-          match instantiated, class_name, attribute_name with
-          | Type.Callable _, "typing.Callable", "__call__" -> instantiated, instantiated
-          | ( Parametric
-                {
-                  name = "BoundMethod";
-                  parameters = [Single (Callable callable); Single self_type];
-                },
-              "typing.Callable",
-              "__call__" ) ->
-              let callable =
-                partial_apply_self callable ~self_type |> fun callable -> Type.Callable callable
-              in
-              callable, callable
-          | _ -> annotation, original_annotation )
+      | Attribute { annotation; original_annotation; is_property = false } ->
+          let order () = full_order ?dependency class_metadata_environment ~assumptions in
+          callable_call_special_cases
+            ~instantiated:(Some instantiated)
+            ~class_name
+            ~attribute_name
+            ~order
+          >>| (fun callable -> callable, callable)
+          |> Option.value ~default:(annotation, original_annotation)
     in
     let annotation, original =
       match instantiated with
