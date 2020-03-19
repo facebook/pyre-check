@@ -4151,3 +4151,12 @@ let resolve_class annotation =
         | None -> None )
   in
   extract ~meta:false annotation
+
+
+let callable_name = function
+  | Callable { kind = Named name; _ } -> Some name
+  | Parametric
+      { name = "BoundMethod"; parameters = [Single (Callable { kind = Named name; _ }); Single _] }
+    ->
+      Some name
+  | _ -> None

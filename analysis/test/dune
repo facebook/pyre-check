@@ -11,6 +11,7 @@
   astEnvironmentTest
   attrsTest
   awaitableCheckTest
+  callgraphTest
   cfgTest
   classHierarchyTest
   classHierarchyEnvironmentTest

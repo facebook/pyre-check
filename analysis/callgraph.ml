@@ -142,9 +142,9 @@ module DefaultBuilder : Builder = struct
   let add_callee ~global_resolution ~target ~callables ~arguments:_ ~dynamic ~qualifier ~callee =
     (* Store callees. *)
     let callees =
-      let method_callee ?(is_optional_class_attribute = false) annotation callable =
-        match callable with
-        | { Type.Callable.kind = Named direct_target; _ } ->
+      let method_callee ?(is_optional_class_attribute = false) annotation callable_kind =
+        match callable_kind with
+        | Type.Callable.Named direct_target ->
             let class_name =
               if Type.is_meta annotation then
                 Type.single_parameter annotation
@@ -162,7 +162,8 @@ module DefaultBuilder : Builder = struct
             ]
         | _ -> []
       in
-      match target, callables with
+      let callable_kinds = callables >>| List.map ~f:(fun { Type.Callable.kind; _ } -> kind) in
+      match target, callable_kinds with
       | Some (Type.Union elements), Some callables when List.length elements = List.length callables
         ->
           List.map2_exn elements callables ~f:method_callee |> List.concat
@@ -176,15 +177,14 @@ module DefaultBuilder : Builder = struct
                 ~name:attribute
               >>| AnnotatedAttribute.annotation
               >>| Annotation.annotation
-              >>= (function
-                    | Type.Callable callable -> Some callable
-                    | _ -> None)
-              >>| method_callee ~is_optional_class_attribute:true annotation
+              >>= Type.callable_name
+              >>| (fun name ->
+                    method_callee ~is_optional_class_attribute:true annotation (Named name))
               |> function
               | None -> []
               | Some list -> list )
           | _ -> [] )
-      | None, Some [{ Type.Callable.kind = Named define; _ }] -> [Function define]
+      | None, Some [Named define] -> [Function define]
       | _ -> []
     in
     let key = Location.with_module ~qualifier (Node.location callee) in

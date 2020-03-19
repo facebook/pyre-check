@@ -868,3 +868,6 @@ val contains_prohibited_any : t -> bool
 val to_yojson : t -> Yojson.Safe.json
 
 val resolve_class : t -> class_data list option
+
+(* Gives the name of either a Callable or BoundMethod[Callable, X] type *)
+val callable_name : t -> Reference.t option
