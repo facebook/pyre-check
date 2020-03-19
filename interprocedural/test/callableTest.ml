@@ -61,5 +61,44 @@ let test_get_module_and_definition context =
            ] ))
 
 
+let test_resolve_method context =
+  let assert_get_resolve_method ~source ~class_type ~method_name expected =
+    let resolution =
+      Test.ScratchProject.setup ~context ["test.py", source]
+      |> Test.ScratchProject.build_global_resolution
+    in
+    assert_equal
+      ~printer:(show_optional Interprocedural.Callable.show_method_target)
+      expected
+      (Interprocedural.Callable.resolve_method ~resolution ~class_type ~method_name)
+  in
+  assert_get_resolve_method
+    ~source:
+      {|
+      from typing import Callable
+      class Foo:
+        method: Callable(cls.named)[[int], str]
+     |}
+    ~class_type:(Primitive "test.Foo")
+    ~method_name:"method"
+    (Some (`Method { class_name = "cls"; method_name = "named" }));
+  assert_get_resolve_method
+    ~source:
+      {|
+      from typing import Callable
+      class Foo:
+        method: BoundMethod[Callable(cls.named)[[int], str], Foo]
+     |}
+    ~class_type:(Primitive "test.Foo")
+    ~method_name:"method"
+    (Some (`Method { class_name = "cls"; method_name = "named" }));
+  ()
+
+
 let () =
-  "callable" >::: ["get_module_and_definition" >:: test_get_module_and_definition] |> Test.run
+  "callable"
+  >::: [
+         "get_module_and_definition" >:: test_get_module_and_definition;
+         "resolve_method" >:: test_resolve_method;
+       ]
+  |> Test.run

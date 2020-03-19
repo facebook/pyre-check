@@ -199,6 +199,8 @@ let map_printer ~key_pp ~data_pp map =
   Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
+let show_optional show optional = optional >>| show |> Option.value ~default:"None"
+
 let collect_nodes_as_strings source =
   let module Collector = Visit.NodeCollector (struct
     type t = string * Location.t

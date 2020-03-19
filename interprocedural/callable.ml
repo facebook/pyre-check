@@ -185,12 +185,11 @@ let resolve_method ~resolution ~class_type ~method_name =
           ~instantiated:class_type
   in
   match callable_implementation with
-  | Some callable when Annotated.Attribute.defined callable -> (
+  | Some callable when Annotated.Attribute.defined callable ->
       Annotated.Attribute.annotation callable
       |> Annotation.annotation
-      |> function
-      | Type.Callable { Type.Callable.kind = Named name; _ } -> Some (create_method name)
-      | _ -> None )
+      |> Type.callable_name
+      >>| create_method
   | _ -> None
 
 
