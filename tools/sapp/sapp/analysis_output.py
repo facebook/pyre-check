@@ -8,6 +8,7 @@
 import json
 import os
 from glob import glob
+from pathlib import Path
 from typing import IO, Any, Dict, Iterable, NamedTuple, Optional
 
 from .sharded_files import ShardedFile
@@ -43,7 +44,16 @@ class AnalysisOutputError(Exception):
 
 class AnalysisOutput(object):
     """Represents one of various ways the analysis output can be specified.
-    A file name, a file handle, or a sharded file pattern.
+
+    Use "filename_spec" to represent either:
+      A file name, a file handle, or a sharded file pattern.
+
+    Use "filename_glob" to specify a set of filename patterns instead. This
+    assumes the output lives in the given directory. Avoid patterns like '*'
+    which will include the metadata.json file in the directory.
+
+    Note that "filename_spec" has precedence over "filename_glob".
+
     Access to the output is provided via generators that provide file handles
     to the diagnostics json (issues), or the summary json (pre and post).
     """
@@ -53,12 +63,14 @@ class AnalysisOutput(object):
         *,
         directory: Optional[str] = None,
         filename_spec: Optional[str] = None,
+        filename_glob: Optional[str] = None,
         file_handle: Optional[IO[str]] = None,
         metadata: Optional[Metadata] = None,
         tool: Optional[str] = None,
     ) -> None:
         self.directory = directory
         self.filename_spec = filename_spec
+        self.filename_glob = filename_glob
         self.file_handle = file_handle
         self.metadata = metadata
         self.tool = tool
@@ -92,10 +104,21 @@ class AnalysisOutput(object):
             with open(file) as f:
                 metadata.update(json.load(f))
 
+        # Note: filename_spec takes precedence over filename_glob.
+        filename_spec = None
+        filename_glob = None
         if "filename_spec" in metadata:
             filename_spec = os.path.join(
                 directory, os.path.basename(metadata["filename_spec"])
             )
+        elif "filename_glob" in metadata:
+            filename_glob = metadata["filename_glob"]
+            if not filename_glob:
+                raise AnalysisOutputError(
+                    f"Empty 'filename_glob' not allowed. In {METADATA_GLOB}, "
+                    "Use either 'filename_spec' or specify something in "
+                    "'filename_glob'."
+                )
         else:
             # Legacy
             filename_spec = os.path.join(
@@ -110,6 +133,7 @@ class AnalysisOutput(object):
         return cls(
             directory=directory,
             filename_spec=filename_spec,
+            filename_glob=filename_glob,
             metadata=Metadata(
                 analysis_tool_version=metadata["version"],
                 commit_hash=metadata.get("commit"),
@@ -155,12 +179,19 @@ class AnalysisOutput(object):
     def file_names(self) -> Iterable[str]:
         """Generates all file names that are used to generate file_handles.
         """
+        filename_spec = self.filename_spec
+        filename_glob = self.filename_glob
         if self.is_sharded():
             yield from ShardedFile(self.filename_spec).get_filenames()
-        elif self.filename_spec:
-            # pyre-fixme[7]: Expected `Iterable[str]` but got
-            #  `Generator[Optional[str], None, None]`.
-            yield self.filename_spec
+        elif filename_glob is not None:
+            directory = self.directory
+            assert directory is not None
+            # str() cast to convert the returned Path to string for a
+            # consistent return type.
+            for path in Path(directory).glob(filename_glob):
+                yield str(path)
+        elif filename_spec:
+            yield filename_spec
 
     def is_sharded(self) -> bool:
         if self.filename_spec:
