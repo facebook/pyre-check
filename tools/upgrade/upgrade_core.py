@@ -333,6 +333,23 @@ def run_global_version_update(
         LOG.info("Error while running hg.")
 
 
+def run_upgrade_all(
+    arguments: argparse.Namespace, version_control: VersionControl
+) -> None:
+    configurations = Configuration.gather_local_configurations(
+        push_blocking_only=arguments.push_blocking_only
+    )
+    paths = [str(configuration.get_directory()) for configuration in configurations]
+    with open(arguments.sandcastle) as sandcastle_file:
+        sandcastle_command = json.load(sandcastle_file)
+    if arguments.hash:
+        sandcastle_command["args"]["hash"] = arguments.hash
+    sandcastle_command["args"]["paths"] = paths
+    sandcastle_command["args"]["push_blocking_only"] = arguments.push_blocking_only
+    command = ["scutil", "create"]
+    subprocess.run(command, input=json.dumps(sandcastle_command).encode())
+
+
 # Exposed for testing.
 def _upgrade_project(
     arguments: argparse.Namespace,
@@ -419,26 +436,6 @@ def run_fixme_single(
 def run_fixme_all(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
-    # Create sandcastle command.
-    if arguments.sandcastle:
-        configurations = Configuration.gather_local_configurations(
-            push_blocking_only=arguments.push_blocking_only
-        )
-        paths = [str(configuration.get_directory()) for configuration in configurations]
-        with open(arguments.sandcastle) as sandcastle_file:
-            sandcastle_command = json.load(sandcastle_file)
-        if arguments.hash:
-            sandcastle_command["args"]["hash"] = arguments.hash
-        sandcastle_command["args"]["paths"] = paths
-        sandcastle_command["args"]["push_blocking_only"] = arguments.push_blocking_only
-        command = ["scutil", "create"]
-        subprocess.run(command, input=json.dumps(sandcastle_command).encode())
-        return
-
-    # Run locally.
-    if arguments.hash and isinstance(arguments.hash, str):
-        run_global_version_update(arguments, version_control)
-
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
         LOG.info("No project configuration found for the current directory.")
@@ -702,6 +699,19 @@ def run(version_control: VersionControl) -> None:
     )
     strict_default.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
+    # Subcommand: Set global configuration to given hash, then upgrade and suppress
+    # errors in all local configurations.
+    upgrade_all = commands.add_parser("upgrade-all")
+    upgrade_all.set_defaults(function=run_upgrade_all)
+    upgrade_all.add_argument("hash", help="Hash of new Pyre version")
+    upgrade_all.add_argument("-p", "--push-blocking-only", action="store_true")
+    upgrade_all.add_argument(
+        "-s",
+        "--sandcastle",
+        help="Create upgrade stack on sandcastle.",
+        type=path_exists,
+    )
+
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
@@ -759,15 +769,6 @@ def run(version_control: VersionControl) -> None:
     )
     fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
-    fixme_all.add_argument(
-        "-s",
-        "--sandcastle",
-        help="Create upgrade stack on sandcastle.",
-        type=path_exists,
-    )
-    fixme_all.add_argument(
-        "hash", nargs="?", default=None, help="Hash of new Pyre version"
-    )
 
     # Subcommand: Fixme all errors in targets running type checking
     fixme_targets = commands.add_parser("fixme-targets")

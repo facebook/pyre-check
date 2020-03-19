@@ -20,6 +20,69 @@ from ..upgrade import ExternalVersionControl
 VERSION_CONTROL = ExternalVersionControl()
 
 
+class UpgradeAllTest(unittest.TestCase):
+    @patch("subprocess.run")
+    @patch.object(upgrade_core.Configuration, "gather_local_configurations")
+    @patch.object(upgrade_core.Configuration, "find_project_configuration")
+    def test_run_upgrade_all(self, find_configuration, gather, run) -> None:
+        command_json = """
+        {
+            "command": "CommandName",
+            "args": {"hash": null, "paths": null, "push_blocking_only": null},
+            "hash": "repository/hash",
+            "priority": 0,
+            "user": "unixname",
+            "alias": "pyre-upgrade",
+            "capabilities": {"type": "type", "vcs": "vcs"},
+            "timeout": 18000,
+            "oncall": "pyre"
+        }
+        """
+
+        def generate_sandcastle_command(binary_hash, paths, push_blocking) -> bytes:
+            command = json.loads(command_json)
+            if binary_hash:
+                command["args"]["hash"] = binary_hash
+            command["args"]["paths"] = paths
+            command["args"]["push_blocking_only"] = push_blocking
+            return json.dumps(command).encode()
+
+        arguments = MagicMock()
+        arguments.sandcastle = Path("sandcastle.json")
+        arguments.push_blocking_only = False
+        with patch("builtins.open", mock_open(read_data=command_json)):
+            arguments.hash = "abc"
+            gather.return_value = [
+                upgrade_core.Configuration(
+                    Path("a/.pyre_configuration.local"), {"version": 123}
+                ),
+                upgrade_core.Configuration(
+                    Path("b/.pyre_configuration.local"), {"version": 123}
+                ),
+            ]
+            upgrade_core.run_upgrade_all(arguments, VERSION_CONTROL)
+            find_configuration.assert_not_called()
+            run.assert_called_once_with(
+                ["scutil", "create"],
+                input=generate_sandcastle_command("abc", ["a", "b"], False),
+            )
+
+        run.reset_mock()
+        with patch("builtins.open", mock_open(read_data=command_json)):
+            arguments.hash = None
+            gather.return_value = [
+                upgrade_core.Configuration(
+                    Path("local/.pyre_configuration.local"), {"version": 123}
+                )
+            ]
+            upgrade_core.run_upgrade_all(arguments, VERSION_CONTROL)
+            find_configuration.assert_not_called()
+            run.assert_called_once_with(
+                ["scutil", "create"],
+                input=generate_sandcastle_command(None, ["local"], False),
+            )
+
+
 class FixmeAllTest(unittest.TestCase):
     @patch.object(
         upgrade_core.Configuration, "find_project_configuration", return_value=None
@@ -185,7 +248,6 @@ class FixmeAllTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.submit = False
-        arguments.sandcastle = None
         arguments.lint = False
         arguments.from_stdin = False
         arguments.upgrade_version = True
@@ -314,7 +376,6 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.submit = False
         arguments.lint = False
-        arguments.sandcastle = None
         arguments.from_stdin = False
         arguments.upgrade_version = True
         gather.return_value = [
@@ -394,7 +455,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.hash = "abc"
         arguments.submit = True
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
-        run_global_version_update.assert_called_once_with(arguments, VERSION_CONTROL)
+        run_global_version_update.assert_not_called()
         fix.assert_called_once_with(
             pyre_errors,
             arguments.comment,
@@ -408,10 +469,9 @@ class FixmeAllTest(unittest.TestCase):
         # Test with linting
         fix.reset_mock()
         submit_changes.reset_mock()
-        run_global_version_update.reset_mock()
         arguments.lint = True
         upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
-        run_global_version_update.assert_called_once_with(arguments, VERSION_CONTROL)
+        run_global_version_update.assert_not_called()
         calls = [
             call(
                 pyre_errors,
@@ -479,67 +539,6 @@ class FixmeAllTest(unittest.TestCase):
             file.close()
             self.assertEqual(updated_contents, contents)
 
-    @patch("subprocess.run")
-    @patch.object(upgrade_core.Configuration, "gather_local_configurations")
-    @patch.object(upgrade_core.Configuration, "find_project_configuration")
-    def test_run_fixme_all_sandcastle(self, find_configuration, gather, run) -> None:
-        command_json = """
-        {
-            "command": "CommandName",
-            "args": {"hash": null, "paths": null, "push_blocking_only": null},
-            "hash": "repository/hash",
-            "priority": 0,
-            "user": "unixname",
-            "alias": "pyre-upgrade",
-            "capabilities": {"type": "type", "vcs": "vcs"},
-            "timeout": 18000,
-            "oncall": "pyre"
-        }
-        """
-
-        def generate_sandcastle_command(binary_hash, paths, push_blocking) -> bytes:
-            command = json.loads(command_json)
-            if binary_hash:
-                command["args"]["hash"] = binary_hash
-            command["args"]["paths"] = paths
-            command["args"]["push_blocking_only"] = push_blocking
-            return json.dumps(command).encode()
-
-        arguments = MagicMock()
-        arguments.sandcastle = Path("sandcastle.json")
-        arguments.push_blocking_only = False
-        with patch("builtins.open", mock_open(read_data=command_json)):
-            arguments.hash = "abc"
-            gather.return_value = [
-                upgrade_core.Configuration(
-                    Path("a/.pyre_configuration.local"), {"version": 123}
-                ),
-                upgrade_core.Configuration(
-                    Path("b/.pyre_configuration.local"), {"version": 123}
-                ),
-            ]
-            upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
-            find_configuration.assert_not_called()
-            run.assert_called_once_with(
-                ["scutil", "create"],
-                input=generate_sandcastle_command("abc", ["a", "b"], False),
-            )
-
-        run.reset_mock()
-        with patch("builtins.open", mock_open(read_data=command_json)):
-            arguments.hash = None
-            gather.return_value = [
-                upgrade_core.Configuration(
-                    Path("local/.pyre_configuration.local"), {"version": 123}
-                )
-            ]
-            upgrade_core.run_fixme_all(arguments, VERSION_CONTROL)
-            find_configuration.assert_not_called()
-            run.assert_called_once_with(
-                ["scutil", "create"],
-                input=generate_sandcastle_command(None, ["local"], False),
-            )
-
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("subprocess.run")
@@ -561,7 +560,6 @@ class FixmeSingleTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.submit = False
-        arguments.sandcastle = None
         arguments.submit = True
         arguments.path = Path("local")
         arguments.from_stdin = False
@@ -620,7 +618,6 @@ class FixmeTest(unittest.TestCase):
         self, submit_changes, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
         arguments = MagicMock()
-        arguments.sandcastle = None
         arguments.comment = None
         arguments.max_line_length = 88
         arguments.run = False
@@ -1815,7 +1812,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.submit = False
-        arguments.sandcastle = None
         arguments.hash = "abcd"
         arguments.paths = []
         arguments.push_blocking_only = False
@@ -2011,7 +2007,6 @@ class DefaultStrictTest(unittest.TestCase):
         find_configuration,
     ) -> None:
         arguments = MagicMock()
-        arguments.sandcastle = None
         arguments.local_configuration = Path("local")
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
