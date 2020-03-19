@@ -1097,7 +1097,8 @@ module Implementation = struct
 
 
   let full_order
-      ({ constructor; all_attributes; instantiate_attribute; metaclass; _ } as open_recurser)
+      ( { constructor; attribute; all_attributes; metaclass; instantiate_attribute; _ } as
+      open_recurser )
       ~assumptions
       ?dependency
       class_metadata_environment
@@ -1114,27 +1115,11 @@ module Implementation = struct
 
       instantiated |> Type.primitive_name >>| constructor { assumptions with protocol_assumptions }
     in
-    let attributes class_type ~assumptions =
+    let resolve class_type =
       match Type.resolve_class class_type with
       | None -> None
       | Some [] -> None
-      | Some [{ instantiated; class_attributes; class_name }] ->
-          all_attributes
-            ~assumptions
-            ~transitive:true
-            ~class_attributes
-            ~include_generated_attributes:true
-            ?special_method:None
-            ?dependency
-            class_name
-            ~class_metadata_environment
-          >>| List.map
-                ~f:
-                  (instantiate_attribute
-                     ?dependency
-                     ~assumptions
-                     ~class_metadata_environment
-                     ~instantiated)
+      | Some [resolved] -> Some resolved
       | Some (_ :: _) ->
           (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
              indirectly by breaking apart the union before doing the
@@ -1142,6 +1127,42 @@ module Implementation = struct
              attributes together here *)
           None
     in
+    let attribute class_type ~assumptions ~name =
+      resolve class_type
+      >>= fun { instantiated; class_attributes; class_name } ->
+      attribute
+        ~assumptions
+        ~class_metadata_environment
+        ~transitive:true
+        ~class_attributes
+        ~include_generated_attributes:true
+        ?special_method:None
+        ?dependency
+        ~attribute_name:name
+        ~instantiated
+        class_name
+    in
+    let all_attributes class_type ~assumptions =
+      resolve class_type
+      >>= fun { instantiated; class_attributes; class_name } ->
+      all_attributes
+        ~assumptions
+        ~class_metadata_environment
+        ~transitive:true
+        ~class_attributes
+        ~include_generated_attributes:true
+        ?special_method:None
+        ?dependency
+        class_name
+      >>| List.map
+            ~f:
+              (instantiate_attribute
+                 ?dependency
+                 ~assumptions
+                 ~class_metadata_environment
+                 ~instantiated)
+    in
+
     let is_protocol annotation ~protocol_assumptions:_ =
       UnannotatedGlobalEnvironment.ReadOnly.is_protocol
         (unannotated_global_environment class_metadata_environment)
@@ -1171,7 +1192,8 @@ module Implementation = struct
           least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
         };
       constructor;
-      attributes;
+      attribute;
+      all_attributes;
       is_protocol;
       assumptions;
       get_typed_dictionary =

@@ -17,7 +17,13 @@ type class_hierarchy = {
 type order = {
   class_hierarchy: class_hierarchy;
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
-  attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+  all_attributes:
+    Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+  attribute:
+    Type.t ->
+    assumptions:Assumptions.t ->
+    name:Ast.Identifier.t ->
+    AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
   metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;

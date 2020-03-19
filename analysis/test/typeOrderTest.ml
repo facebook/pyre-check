@@ -65,6 +65,14 @@ let hierarchy class_hierarchy_handler =
   }
 
 
+let attribute_from_attributes attributes =
+  let attribute annotation ~assumptions ~name =
+    let find attribute = String.equal (Annotated.Attribute.name attribute) name in
+    attributes annotation ~assumptions >>= List.find ~f:find
+  in
+  attribute
+
+
 let less_or_equal
     ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     ?(attributes = fun _ ~assumptions:_ -> None)
@@ -76,7 +84,8 @@ let less_or_equal
     {
       class_hierarchy;
       constructor;
-      attributes;
+      all_attributes = attributes;
+      attribute = attribute_from_attributes attributes;
       is_protocol;
       assumptions =
         {
@@ -94,7 +103,8 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
     {
       class_hierarchy;
       constructor;
-      attributes = (fun _ ~assumptions:_ -> None);
+      all_attributes = (fun _ ~assumptions:_ -> None);
+      attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =
         {
@@ -116,7 +126,8 @@ let join
     {
       class_hierarchy;
       constructor;
-      attributes;
+      all_attributes = attributes;
+      attribute = attribute_from_attributes attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =
         {
@@ -134,7 +145,8 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
     {
       class_hierarchy;
       constructor;
-      attributes = (fun _ ~assumptions:_ -> None);
+      all_attributes = (fun _ ~assumptions:_ -> None);
+      attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =
         {
@@ -2827,7 +2839,8 @@ let test_solve_less_or_equal context =
         {
           class_hierarchy;
           constructor;
-          attributes;
+          all_attributes = attributes;
+          attribute = attribute_from_attributes attributes;
           is_protocol;
           assumptions =
             {
@@ -2852,7 +2865,7 @@ let test_solve_less_or_equal context =
                 >>| List.map ~f:(GlobalResolution.instantiate_attribute ~resolution ~instantiated)
             | _ -> None )
       in
-      { order with attributes }
+      { order with all_attributes = attributes; attribute = attribute_from_attributes attributes }
     in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
     let parse_annotation annotation =
@@ -3544,7 +3557,8 @@ let test_instantiate_protocol_parameters context =
       {
         class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
-        attributes;
+        all_attributes = attributes;
+        attribute = attribute_from_attributes attributes;
         is_protocol;
         assumptions =
           {
@@ -3728,7 +3742,8 @@ let test_mark_escaped_as_escaped context =
       {
         class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
-        attributes = (fun _ ~assumptions:_ -> None);
+        all_attributes = (fun _ ~assumptions:_ -> None);
+        attribute = (fun _ ~assumptions:_ ~name:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         assumptions =
           {

@@ -19,7 +19,13 @@ type class_hierarchy = {
 type order = {
   class_hierarchy: class_hierarchy;
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
-  attributes: Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+  all_attributes:
+    Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
+  attribute:
+    Type.t ->
+    assumptions:Assumptions.t ->
+    name:Ast.Identifier.t ->
+    AnnotatedAttribute.instantiated option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
   metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
@@ -68,14 +74,14 @@ module OrderImplementation = struct
 
     let resolve_callable_protocol
         ~assumption
-        ~order:{ attributes; assumptions = { protocol_assumptions; callable_assumptions }; _ }
+        ~order:{ attribute; assumptions = { protocol_assumptions; callable_assumptions }; _ }
         annotation
       =
       match
         CallableAssumptions.find_assumed_callable_type ~candidate:annotation callable_assumptions
       with
       | Some assumption -> Some assumption
-      | None ->
+      | None -> (
           let new_assumptions =
             {
               protocol_assumptions;
@@ -86,18 +92,16 @@ module OrderImplementation = struct
                   callable_assumptions;
             }
           in
-          let find_call attribute =
-            if String.equal (AnnotatedAttribute.name attribute) "__call__" then
-              let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
-              match annotation with
-              | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
-              | Callable _ ->
-                  Some annotation
-              | _ -> None
-            else
-              None
-          in
-          attributes annotation ~assumptions:new_assumptions >>= List.find_map ~f:find_call
+
+          attribute annotation ~assumptions:new_assumptions ~name:"__call__"
+          >>| AnnotatedAttribute.annotation
+          >>| Annotation.annotation
+          >>= fun annotation ->
+          match annotation with
+          | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single _] }
+          | Callable _ ->
+              Some annotation
+          | _ -> None )
 
 
     (* TODO(T40105833): merge this with actual signature select *)
@@ -1395,7 +1399,7 @@ module OrderImplementation = struct
 
     and instantiate_protocol_parameters
         ( {
-            attributes;
+            all_attributes;
             class_hierarchy = { variables; _ };
             assumptions = { protocol_assumptions; _ } as assumptions;
             _;
@@ -1452,7 +1456,7 @@ module OrderImplementation = struct
                 protocol_generic_parameters
                 >>| Type.parametric protocol
                 |> Option.value ~default:(Type.Primitive protocol)
-                |> attributes
+                |> all_attributes
                      ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
@@ -1510,7 +1514,7 @@ module OrderImplementation = struct
                       in
                       SanitizeTransform.visit [] candidate
                     in
-                    ( attributes
+                    ( all_attributes
                         ~assumptions:{ assumptions with protocol_assumptions = new_assumptions }
                         sanitized_candidate,
                       desanitize_map )
