@@ -1129,7 +1129,12 @@ module Implementation = struct
             class_name
             ~class_metadata_environment
           >>| List.map
-                ~f:(instantiate_attribute ~assumptions ~class_metadata_environment ~instantiated)
+                ~f:
+                  (instantiate_attribute
+                     ?dependency
+                     ~assumptions
+                     ~class_metadata_environment
+                     ~instantiated)
       | Some (_ :: _) ->
           (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
              indirectly by breaking apart the union before doing the
@@ -1707,7 +1712,7 @@ module Implementation = struct
       class_name
     >>= Sequence.find_map ~f:(fun table ->
             UninstantiatedAttributeTable.lookup_name table attribute_name)
-    >>| instantiate_attribute ~assumptions ~class_metadata_environment ?instantiated
+    >>| instantiate_attribute ~assumptions ~class_metadata_environment ?instantiated ?dependency
 
 
   let all_attributes
