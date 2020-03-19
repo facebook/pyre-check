@@ -60,10 +60,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   module rec FixpointState : FixpointState = struct
     type t = { taint: ForwardState.t } [@@deriving show { with_path = false }]
 
-    let initial_taint = ForwardState.empty
-
-    let empty_state = { taint = initial_taint }
-
     let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
       ForwardState.less_or_equal ~left ~right
 
@@ -149,7 +145,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution ~callee call_location arguments state call_targets =
-      let apply_call_target (call_target, _implicit) =
+      let apply_call_target state argument_taint (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let { TaintResult.forward; backward; _ } = taint_model.model in
         let sink_argument_matches =
@@ -159,7 +155,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.roots backward.taint_in_taint_out
           |> AccessPath.match_actuals_to_formals arguments
         in
-        let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
+        let combined_matches =
+          List.zip_exn sink_argument_matches tito_argument_matches |> List.zip_exn argument_taint
+        in
         let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
           BackwardState.read ~root ~path:[] backward.sink_taint
           |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
@@ -180,14 +178,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
         in
-        let analyze_argument_and_compute_tito_effect
+        let compute_argument_tito_effect
             (tito_effects, state)
-            ((argument, sink_matches), (_dup, tito_matches))
+            (argument_taint, ((argument, sink_matches), (_dup, tito_matches)))
           =
           let location =
             Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
           in
-          let argument_taint, state = analyze_unstarred_expression ~resolution argument state in
           let tito =
             let convert_tito_path
                 kind
@@ -293,10 +290,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           tito, state
         in
         let tito_effects, state =
-          List.fold
-            ~f:analyze_argument_and_compute_tito_effect
-            combined_matches
-            ~init:(Map.Poly.empty, state)
+          List.fold ~f:compute_argument_tito_effect combined_matches ~init:(Map.Poly.empty, state)
         in
         let result_taint =
           ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
@@ -373,9 +367,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ForwardTaint.simple_feature
                 Abstract.Domain.(Add Features.obscure)
       | call_targets ->
-          List.map call_targets ~f:apply_call_target
+          let argument_taint, state =
+            let compute_argument_taint (argument_taint, state) argument =
+              let taint, state =
+                analyze_unstarred_expression ~resolution argument.Call.Argument.value state
+              in
+              taint :: argument_taint, state
+            in
+            List.rev arguments |> List.fold ~init:([], state) ~f:compute_argument_taint
+          in
+          List.map call_targets ~f:(apply_call_target state argument_taint)
           |> List.fold
-               ~init:(ForwardState.Tree.empty, empty_state)
+               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
                ~f:(fun (taint, state) (new_taint, new_state) ->
                  ForwardState.Tree.join taint new_taint, join state new_state)
 

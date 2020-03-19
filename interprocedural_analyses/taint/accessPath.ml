@@ -209,7 +209,7 @@ let match_actuals_to_formals arguments roots =
   in
 
   let _, result = List.fold arguments ~f:(match_actual matched_names) ~init:(`Precise 0, []) in
-  result
+  List.rev result
 
 
 type t = {

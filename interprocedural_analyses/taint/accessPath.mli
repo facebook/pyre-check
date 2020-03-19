@@ -53,6 +53,7 @@ type argument_match = {
 }
 [@@deriving compare, show]
 
+(* Will preserve the order in which the arguments were matched to formals. *)
 val match_actuals_to_formals
   :  Call.Argument.t list ->
   Root.t list ->
