@@ -21,8 +21,10 @@ let redirect_special_calls
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] -> (
       let string_callee = callee value "__str__" in
-      match Resolution.resolve_expression_to_type resolution string_callee with
-      | Type.Callable { Type.Callable.kind = Named name; _ } ->
+      match
+        Resolution.resolve_expression_to_type resolution string_callee |> Type.callable_name
+      with
+      | Some name ->
           let callee =
             if Reference.equal name (Reference.create "object.__str__") then
               callee value "__repr__"
