@@ -977,14 +977,14 @@ let test_typed_dictionary_individual_attributes context =
                           [
                             Type.Record.Callable.RecordParameter.KeywordOnly
                               {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$rating";
-                                annotation = Type.integer;
+                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
+                                annotation = Type.string;
                                 default = false;
                               };
                             Type.Record.Callable.RecordParameter.KeywordOnly
                               {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
-                                annotation = Type.string;
+                                Type.Record.Callable.RecordParameter.name = "$parameter$rating";
+                                annotation = Type.integer;
                                 default = false;
                               };
                             Type.Record.Callable.RecordParameter.KeywordOnly

@@ -1011,8 +1011,6 @@ let test_check_typed_dictionaries context =
       class Bar(mypy_extensions.TypedDict):
         items: typing.List[int]
         foo: int
-      class Child(Bar):
-        foo: str
     |}
     [];
   assert_test_typed_dictionary
@@ -1555,22 +1553,76 @@ let test_check_typed_dictionary_inheritance context =
       "Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`.";
       "Revealed type [-1]: Revealed type for `d` is `Child`.";
     ];
+
   (* Key collision between Child and Base. *)
+
+  (* No error when they have the same annotation, as per PEP 589. However, [foo: int] must show up
+     only once in the constructor. *)
   assert_test_typed_dictionary
     {|
         import mypy_extensions
         class Base(mypy_extensions.TypedDict):
           foo: int
         class Child(Base):
-          foo: str
-        d: Child
-        reveal_type(d)
+          foo: int
+        reveal_type(Child.__init__)
     |}
-    (* TODO(T61662929): Key collision should raise a TypedDict-specific error. *)
     [
-      (* "Inconsistent override [15]: `foo` overrides attribute defined in `Base` inconsistently. \
-         Type `str` is not a subtype of the overridden attribute `int`."; *)
-      "Revealed type [-1]: Revealed type for `d` is `Child`.";
+      "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
+       Child][[Named(self, unknown), Child], Child]]`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class Base1(mypy_extensions.TypedDict):
+          foo: int
+        class Base2(mypy_extensions.TypedDict):
+          foo: int
+        class Child(Base1, Base2):
+          foo: int
+        reveal_type(Child.__init__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
+       Child][[Named(self, unknown), Child], Child]]`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class Base(mypy_extensions.TypedDict):
+          foo: int
+        class Base2(mypy_extensions.TypedDict):
+          bar: str
+        class Child(Base, Base2):
+          foo: str
+          bar: int
+        reveal_type(Child.__init__)
+    |}
+    [
+      "Inconsistent override [15]: `bar` overrides attribute defined in `Base2` inconsistently. \
+       Type `int` is not a subtype of the overridden attribute `str`.";
+      "Inconsistent override [15]: `foo` overrides attribute defined in `Base` inconsistently. \
+       Type `str` is not a subtype of the overridden attribute `int`.";
+      (* Only the shadowing field shows up in the constructor. *)
+      "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(bar, int), \
+       KeywordOnly(foo, str)], Child][[Named(self, unknown), Child], Child]]`.";
+    ];
+  (* Error when one field is required and the other is not. *)
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class Base(mypy_extensions.TypedDict):
+          foo: int
+        class Child(Base, total=False):
+          foo: int
+    |}
+    (* TODO(T61662929): This should say that one is required and the other is not. *)
+    [
+      "Inconsistent override [15]: `foo` overrides attribute defined in `Base` inconsistently. \
+       Type `int` is not a subtype of the overridden attribute `int`.";
     ];
   (* Key collision between superclasses. *)
   assert_test_typed_dictionary
@@ -1591,6 +1643,19 @@ let test_check_typed_dictionary_inheritance context =
     (* TODO(T61662929): Key collision should raise an error. Should a common key with compatible
        types also raise an error? *)
     ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class Base1(mypy_extensions.TypedDict):
+          foo: int
+        class Base2(mypy_extensions.TypedDict):
+          foo: str
+        class Child(Base1, Base2):
+          foo: str
+    |}
+    (* TODO(T61662929): We will report this as a collision among superclass fields rather than an
+       override error. *)
+    [];
   (* Superclass must be a TypedDict. *)
   assert_test_typed_dictionary
     {|
@@ -1619,8 +1684,8 @@ let test_check_typed_dictionary_inheritance context =
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(baz, str), \
        KeywordOnly(foo, int)], Child][[Named(self, unknown), Child], Child]]`.";
       "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(non_total_baz, \
-       str, default), KeywordOnly(foo, int)], NonTotalChild][[Named(self, unknown), \
+       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int), \
+       KeywordOnly(non_total_baz, str, default)], NonTotalChild][[Named(self, unknown), \
        NonTotalChild], NonTotalChild]]`.";
     ];
   ()

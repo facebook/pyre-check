@@ -1451,11 +1451,20 @@ module Implementation = struct
                  ~required)
         | _ -> None
       in
+      let keep_last_declarations fields =
+        List.map
+          fields
+          ~f:(fun (field : Type.t Type.Record.TypedDictionary.typed_dictionary_field) ->
+            field.name, field)
+        |> Map.of_alist_multi (module String)
+        |> Map.to_alist
+        |> List.map ~f:(fun (_, fields) -> List.last_exn fields)
+      in
       let fields =
-        List.concat_map
-          typed_dictionary_definitions
-          ~f:(get_field_attributes ~include_generated_attributes:false)
+        List.rev typed_dictionary_definitions
+        |> List.concat_map ~f:(get_field_attributes ~include_generated_attributes:false)
         |> List.filter_map ~f:attribute_to_typed_dictionary_field
+        |> keep_last_declarations
       in
       let overload_method (attribute, _) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with

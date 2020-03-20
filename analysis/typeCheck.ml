@@ -5106,79 +5106,153 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           Ast.Statement.Class.attributes ~include_generated_attributes:true attribute_components
         in
 
+        let override_errors_for_typed_dictionary class_name =
+          let open Type.Record.TypedDictionary in
+          let get_typed_dictionary_fields class_name =
+            GlobalResolution.get_typed_dictionary
+              ~resolution:global_resolution
+              (Type.Primitive class_name)
+            >>| (fun typed_dictionary -> typed_dictionary.fields)
+            |> Option.value ~default:[]
+          in
+          let field_name_to_successor_fields_map =
+            let get_successor_map_entries successor_name =
+              get_typed_dictionary_fields successor_name
+              |> List.map ~f:(fun (field : Type.t typed_dictionary_field) ->
+                     field.name, (successor_name, field))
+            in
+            GlobalResolution.successors ~resolution:global_resolution class_name
+            |> List.concat_map ~f:get_successor_map_entries
+            |> Map.of_alist_multi (module String)
+          in
+          let colliding_successor_fields (field : Type.t typed_dictionary_field) =
+            let matching_successors =
+              Map.find_multi field_name_to_successor_fields_map field.name
+            in
+            let is_inherited_field =
+              List.exists matching_successors ~f:(fun (_, successor_field) ->
+                  [%equal: Type.t typed_dictionary_field] field successor_field)
+            in
+            if is_inherited_field then
+              []
+            else
+              List.map matching_successors ~f:(fun (successor_name, successor_field) ->
+                  field, (successor_name, successor_field))
+          in
+          let wrongly_overriding_fields =
+            get_typed_dictionary_fields class_name |> List.concat_map ~f:colliding_successor_fields
+          in
+          let create_override_error
+              ((field : Type.t typed_dictionary_field), (successor_name, successor_field))
+            =
+            let kind =
+              Error.InconsistentOverride
+                {
+                  overridden_method = field.name;
+                  parent = Reference.create successor_name;
+                  override_kind = Attribute;
+                  override =
+                    Error.WeakenedPostcondition
+                      {
+                        actual = field.annotation;
+                        expected = successor_field.annotation;
+                        due_to_invariance = false;
+                      };
+                }
+            in
+            let location =
+              Identifier.SerializableMap.find_opt class_name components
+              >>| Node.location
+              |> Option.value ~default:location
+            in
+            Error.create
+              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~kind
+              ~define:Context.define
+          in
+          List.map wrongly_overriding_fields ~f:create_override_error
+        in
         let override_errors =
           let open Annotated in
-          GlobalResolution.attributes
-            ~include_generated_attributes:false
-            ~resolution:global_resolution
-            (Reference.show (ClassSummary.name definition))
-          >>| List.filter_map ~f:(fun attribute ->
-                  let annotation =
-                    GlobalResolution.instantiate_attribute
-                      ~resolution:global_resolution
-                      ?instantiated:None
-                      attribute
-                    |> Annotated.Attribute.annotation
-                    |> Annotation.annotation
-                  in
-                  let name = Annotated.Attribute.name attribute in
-                  let actual = annotation in
-                  let check_override overridden_attribute =
+          let class_name = Reference.show class_name in
+          if
+            GlobalResolution.is_typed_dictionary
+              ~resolution:global_resolution
+              (Type.Primitive class_name)
+          then
+            override_errors_for_typed_dictionary class_name
+          else
+            GlobalResolution.attributes
+              ~include_generated_attributes:false
+              ~resolution:global_resolution
+              (Reference.show (ClassSummary.name definition))
+            >>| List.filter_map ~f:(fun attribute ->
                     let annotation =
-                      Annotated.Attribute.annotation overridden_attribute |> Annotation.annotation
+                      GlobalResolution.instantiate_attribute
+                        ~resolution:global_resolution
+                        ?instantiated:None
+                        attribute
+                      |> Annotated.Attribute.annotation
+                      |> Annotation.annotation
                     in
-                    let name = Annotated.Attribute.name overridden_attribute in
-                    let visibility = Annotated.Attribute.visibility overridden_attribute in
-                    let expected = annotation in
-                    let overridable =
-                      match visibility with
-                      | ReadOnly (Refinable { overridable }) -> overridable
-                      | _ -> true
+                    let name = Annotated.Attribute.name attribute in
+                    let actual = annotation in
+                    let check_override overridden_attribute =
+                      let annotation =
+                        Annotated.Attribute.annotation overridden_attribute |> Annotation.annotation
+                      in
+                      let name = Annotated.Attribute.name overridden_attribute in
+                      let visibility = Annotated.Attribute.visibility overridden_attribute in
+                      let expected = annotation in
+                      let overridable =
+                        match visibility with
+                        | ReadOnly (Refinable { overridable }) -> overridable
+                        | _ -> true
+                      in
+                      if
+                        ( GlobalResolution.less_or_equal
+                            global_resolution
+                            ~left:actual
+                            ~right:expected
+                        || Type.is_top actual
+                        || Type.contains_variable actual )
+                        && overridable
+                      then (* TODO(T53997072): Support type variable instantiation for overrides. *)
+                        None
+                      else
+                        let kind =
+                          if not overridable then
+                            Error.InvalidAssignment (FinalAttribute (Reference.create name))
+                          else
+                            Error.InconsistentOverride
+                              {
+                                overridden_method = name;
+                                parent = Attribute.parent overridden_attribute |> Reference.create;
+                                override_kind = Attribute;
+                                override =
+                                  Error.WeakenedPostcondition
+                                    (Error.create_mismatch
+                                       ~resolution:global_resolution
+                                       ~actual
+                                       ~expected
+                                       ~covariant:false);
+                              }
+                        in
+                        let location =
+                          Identifier.SerializableMap.find_opt name components
+                          >>| Node.location
+                          |> Option.value ~default:location
+                        in
+                        Some
+                          (Error.create
+                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~kind
+                             ~define:Context.define)
                     in
-                    if
-                      ( GlobalResolution.less_or_equal global_resolution ~left:actual ~right:expected
-                      || Type.is_top actual
-                      || Type.contains_variable actual )
-                      && overridable
-                    then (* TODO(T53997072): Support type variable instantiation for overrides. *)
-                      None
-                    else
-                      let kind =
-                        if not overridable then
-                          Error.InvalidAssignment (FinalAttribute (Reference.create name))
-                        else
-                          Error.InconsistentOverride
-                            {
-                              overridden_method = name;
-                              parent = Attribute.parent overridden_attribute |> Reference.create;
-                              override_kind = Attribute;
-                              override =
-                                Error.WeakenedPostcondition
-                                  (Error.create_mismatch
-                                     ~resolution:global_resolution
-                                     ~actual
-                                     ~expected
-                                     ~covariant:false);
-                            }
-                      in
-                      let location =
-                        Identifier.SerializableMap.find_opt name components
-                        >>| Node.location
-                        |> Option.value ~default:location
-                      in
-                      Some
-                        (Error.create
-                           ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                           ~kind
-                           ~define:Context.define)
-                  in
-                  GlobalResolution.overrides
-                    ~resolution:global_resolution
-                    ~name
-                    (Reference.show class_name)
-                  >>| check_override
-                  |> Option.value ~default:None)
-          |> Option.value ~default:[]
+                    GlobalResolution.overrides ~resolution:global_resolution ~name class_name
+                    >>| check_override
+                    |> Option.value ~default:None)
+            |> Option.value ~default:[]
         in
         override_errors @ errors
       in

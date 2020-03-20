@@ -802,14 +802,10 @@ let test_get_typed_dictionary context =
          name = "test.Child";
          fields =
            [
+             { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
              {
                Type.Record.TypedDictionary.name = "rating";
                annotation = Type.integer;
-               required = true;
-             };
-             {
-               Type.Record.TypedDictionary.name = "name";
-               annotation = Type.string;
                required = true;
              };
              {
