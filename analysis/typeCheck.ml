@@ -3757,9 +3757,8 @@ module State (Context : Context) = struct
                   && not (Type.equal parent_annotation (Primitive attribute_parent))
                 in
                 let parent_class =
-                  match name with
-                  | Name.Attribute { base; _ } ->
-                      resolve_expression_type ~resolution base |> Type.resolve_class
+                  match resolved_base with
+                  | Some base_type -> Type.resolve_class base_type
                   | _ -> None
                 in
                 match name, parent_class with
