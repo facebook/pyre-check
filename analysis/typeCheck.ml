@@ -3286,25 +3286,31 @@ module State (Context : Context) = struct
                 ~location
                 ~errors
                 parsed
-              |> fst
-              |> fun errors ->
-              add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors parsed
-              |> fst
+              |> fun (errors, _) ->
+              let errors, _ =
+                add_untracked_annotation_errors
+                  ~resolution:global_resolution
+                  ~location
+                  ~errors
+                  parsed
+              in
+              errors
             in
             let add_type_variable_errors errors =
-              let kind =
-                match parsed with
-                | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
-                    Some
+              match parsed with
+              | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
                       (AnalysisError.InvalidType
                          (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)))
-                | Variable { constraints = Explicit [explicit]; _ } ->
-                    Some (AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
-                | _ -> None
-              in
-              kind
-              >>| (fun kind -> emit_error ~errors ~location ~kind)
-              |> Option.value ~default:errors
+              | Variable { constraints = Explicit [explicit]; _ } ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
+              | _ -> errors
             in
             let errors = add_annotation_errors errors |> add_type_variable_errors in
             resolution, errors, resolved
