@@ -1745,8 +1745,7 @@ module State (Context : Context) = struct
       in
       let error_from_not_found
           ~callable:
-            ( { Type.Callable.implementation = { annotation; parameters }; kind; implicit; _ } as
-            callable )
+            ({ Type.Callable.implementation = { annotation; parameters }; kind; _ } as callable)
           ~reason
         =
         let errors =
@@ -1837,12 +1836,10 @@ module State (Context : Context) = struct
                             { typed_dictionary_name; field_name; method_name; mismatch }
                       | _ -> normal
                   in
-                  match implicit, callee >>| Reference.as_list with
-                  | ( Some { implicit_annotation = Type.TypedDictionary typed_dictionary; _ },
-                      Some [_; method_name] ) ->
+                  match target, callee >>| Reference.as_list with
+                  | Some (Type.TypedDictionary typed_dictionary), Some [_; method_name] ->
                       typed_dictionary_error ~method_name ~position typed_dictionary
-                  | ( Some { implicit_annotation = Type.Primitive _ as annotation; _ },
-                      Some [_; method_name] ) ->
+                  | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
                       GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
                       >>| typed_dictionary_error ~method_name ~position
                       |> Option.value ~default:normal
