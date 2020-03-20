@@ -21,13 +21,13 @@ public final class BuckQuery {
     if (targets.isEmpty()) {
       throw new BuilderException("Targets should not be empty.");
     }
-    SimpleLogger.info("Querying targets' information...");
+    SimpleLogger.info("Querying target information...");
     long start = System.currentTimeMillis();
     ImmutableList<String> buildCommand = getBuildCommand(targets, mode);
     try (InputStream commandLineOutput = CommandLine.getCommandLineOutput(buildCommand)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
       long buckQueryTime = System.currentTimeMillis() - start;
-      SimpleLogger.info("Found targets' information in " + buckQueryTime + "ms.");
+      SimpleLogger.info("Found target information in " + buckQueryTime + "ms.");
       if (!parsedJson.isJsonObject()) {
         throw new BuilderException(
             String.format(

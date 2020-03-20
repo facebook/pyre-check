@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 public class BuildTargetTest {
 
   /**
-   * Python targets' build strategy is simply creating symbolic link for all the source files to a
+   * Python target build strategy is simply creating symbolic link for all the source files to a
    * path in output directory. We test whether we created all symbolic links in the right place in a
    * temporary folder.
    */
