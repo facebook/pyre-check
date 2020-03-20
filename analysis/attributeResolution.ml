@@ -1484,7 +1484,6 @@ module Implementation = struct
                 callable with
                 Type.Callable.implementation = { annotation = Type.Top; parameters = Undefined };
                 overloads;
-                implicit = None;
               }
             in
             Type.TypedDictionary.special_overloads
@@ -1723,19 +1722,11 @@ module Implementation = struct
     >>| handle
 
 
-  let partial_apply_self
-      ({ Type.Callable.implementation; overloads; _ } as callable)
-      ~order
-      ~self_type
-    =
+  let partial_apply_self { Type.Callable.kind; implementation; overloads; _ } ~order ~self_type =
     let open Type.Callable in
-    let { Type.Callable.kind; implementation; overloads; implicit } =
+    let implementation, overloads =
       match implementation, overloads with
-      | { Type.Callable.parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
-          let callable =
-            let implicit = { implicit_annotation = self_type; name } in
-            { callable with implicit = Some implicit }
-          in
+      | { Type.Callable.parameters = Defined (Named { annotation; _ } :: _); _ }, _ -> (
           let solution =
             try
               TypeOrder.solve_less_or_equal
@@ -1750,16 +1741,14 @@ module Implementation = struct
             | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
           in
           let instantiated =
-            TypeConstraints.Solution.instantiate solution (Type.Callable callable)
+            TypeConstraints.Solution.instantiate
+              solution
+              (Type.Callable { kind = Anonymous; implementation; overloads })
           in
           match instantiated with
-          | Type.Callable callable -> callable
-          | _ -> callable )
-      (* We also need to set the implicit up correctly for overload-only methods. *)
-      | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
-          let implicit = { implicit_annotation = self_type; name } in
-          { callable with implicit = Some implicit }
-      | _ -> callable
+          | Type.Callable { implementation; overloads; _ } -> implementation, overloads
+          | _ -> implementation, overloads )
+      | _ -> implementation, overloads
     in
     let drop_self { Type.Callable.annotation; parameters } =
       let parameters =
@@ -1775,7 +1764,6 @@ module Implementation = struct
       Type.Callable.kind;
       implementation = drop_self implementation;
       overloads = List.map overloads ~f:drop_self;
-      implicit;
     }
 
 
@@ -2105,7 +2093,7 @@ module Implementation = struct
                    implicit for methods of protocols isn't valuable. *)
                 let order = full_order ?dependency class_metadata_environment ~assumptions in
                 partial_apply_self callable ~order ~self_type:instantiated
-                |> fun callable -> Type.Callable { callable with kind = Anonymous; implicit = None }
+                |> fun callable -> Type.Callable { callable with kind = Anonymous }
               else
                 bound_method ~self_type:instantiated
           in
@@ -2309,7 +2297,7 @@ module Implementation = struct
                     ~f:to_signature
                     overloads
                 in
-                let callable = { kind = Named name; implementation; overloads; implicit = None } in
+                let callable = { kind = Named name; implementation; overloads } in
                 let is_class_method = Define.Signature.is_class_method define in
                 UninstantiatedAnnotation.Method { callable; is_class_method }
             | [] -> failwith "impossible"
@@ -2752,12 +2740,7 @@ module Implementation = struct
                         resolved
                     in
                     let callable =
-                      {
-                        Type.Callable.kind = Anonymous;
-                        implementation = signature;
-                        overloads = [];
-                        implicit = None;
-                      }
+                      { Type.Callable.kind = Anonymous; implementation = signature; overloads = [] }
                     in
                     match
                       signature_select
@@ -3591,7 +3574,7 @@ module Implementation = struct
     let new_signature, new_index =
       let new_signature, new_index = signature_and_index ~name:"__new__" in
       let drop_class_parameter = function
-        | Type.Callable { Type.Callable.kind; implementation; overloads; implicit } ->
+        | Type.Callable { Type.Callable.kind; implementation; overloads } ->
             let drop_parameter { Type.Callable.annotation; parameters } =
               let parameters =
                 match parameters with
@@ -3605,7 +3588,6 @@ module Implementation = struct
                 kind;
                 implementation = drop_parameter implementation;
                 overloads = List.map overloads ~f:drop_parameter;
-                implicit;
               }
         | annotation -> annotation
       in

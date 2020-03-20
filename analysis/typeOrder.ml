@@ -296,12 +296,7 @@ module OrderImplementation = struct
         let namespace = Type.Variable.Namespace.create_fresh () in
         let namespaced_variables =
           Type.Callable
-            {
-              Type.Callable.kind = Anonymous;
-              implementation = overload;
-              overloads = [];
-              implicit = None;
-            }
+            { Type.Callable.kind = Anonymous; implementation = overload; overloads = [] }
           |> Type.Variable.all_free_variables
           |> List.map ~f:(Type.Variable.namespace ~namespace)
         in
@@ -647,21 +642,15 @@ module OrderImplementation = struct
               Callable.kind = Callable.Anonymous;
               implementation = left_implementation;
               overloads = left_overloads;
-              implicit = left_implicit;
             },
           Type.Callable
             {
               Callable.kind = Callable.Named _;
               implementation = right_implementation;
               overloads = right_overloads;
-              implicit = right_implicit;
             } )
         when Callable.equal_overload Type.equal left_implementation right_implementation
-             && List.equal (Callable.equal_overload Type.equal) left_overloads right_overloads
-             && Option.equal
-                  (Callable.equal_implicit_record Type.equal)
-                  left_implicit
-                  right_implicit ->
+             && List.equal (Callable.equal_overload Type.equal) left_overloads right_overloads ->
           []
       | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
           let fold_overload sofar called_as =

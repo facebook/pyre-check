@@ -115,11 +115,6 @@ module Record : sig
       | Anonymous
       | Named of Reference.t
 
-    and 'annotation implicit_record = {
-      implicit_annotation: 'annotation;
-      name: Identifier.t;
-    }
-
     and 'annotation parameter_variadic_type_variable = {
       head: 'annotation list;
       variable: 'annotation Variable.RecordVariadic.RecordParameters.record;
@@ -140,7 +135,6 @@ module Record : sig
       kind: kind;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
-      implicit: 'annotation implicit_record option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -365,8 +359,6 @@ module Callable : sig
     include Record.Callable
   end
 
-  type implicit = type_t Record.Callable.implicit_record [@@deriving compare, eq, sexp, show, hash]
-
   type t = type_t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
 
   type parameters = type_t Record.Callable.record_parameters
@@ -394,7 +386,6 @@ module Callable : sig
     :  ?name:Reference.t ->
     ?overloads:type_t overload list ->
     ?parameters:parameters ->
-    ?implicit:implicit ->
     annotation:type_t ->
     unit ->
     type_t

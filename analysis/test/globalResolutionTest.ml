@@ -902,7 +902,6 @@ let test_typed_dictionary_individual_attributes context =
                              Type.Record.Callable.Named
                                (Reference.create_from_list
                                   [Type.TypedDictionary.class_name ~total:true; "__getitem__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -971,7 +970,6 @@ let test_typed_dictionary_individual_attributes context =
                          {
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1048,7 +1046,6 @@ let test_typed_dictionary_individual_attributes context =
                          {
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1132,7 +1129,6 @@ let test_typed_dictionary_individual_attributes context =
                          {
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1211,7 +1207,6 @@ let test_typed_dictionary_individual_attributes context =
                          {
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1277,7 +1272,6 @@ let test_typed_dictionary_individual_attributes context =
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named
                                (Reference.create_from_list ["TypedDictionary"; "update"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1355,7 +1349,6 @@ let test_typed_dictionary_individual_attributes context =
                            Type.Record.Callable.kind =
                              Type.Record.Callable.Named
                                (Reference.create_from_list ["NonTotalTypedDictionary"; "pop"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;
@@ -1435,7 +1428,6 @@ let test_typed_dictionary_individual_attributes context =
                              Type.Record.Callable.Named
                                (Reference.create_from_list
                                   ["NonTotalTypedDictionary"; "__delitem__"]);
-                           implicit = None;
                            implementation =
                              {
                                Type.Record.Callable.annotation = Type.Top;

@@ -1745,7 +1745,7 @@ module State (Context : Context) = struct
       in
       let error_from_not_found
           ~callable:
-            ({ Type.Callable.implementation = { annotation; parameters }; kind; _ } as callable)
+            ({ Type.Callable.implementation = { annotation; parameters; _ }; kind; _ } as callable)
           ~reason
         =
         let errors =
@@ -5331,7 +5331,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           implementation = { overload with annotation = Type.Any };
           kind = Anonymous;
           overloads = [];
-          implicit = None;
         }
     in
     let check_implementation_exists errors =

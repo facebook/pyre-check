@@ -80,15 +80,9 @@ let produce_global_annotation attribute_resolution name ~track_dependencies =
               Type.Callable.kind = Named name;
               implementation = { annotation = Type.Top; parameters = Undefined };
               overloads = [overload];
-              implicit = None;
             }
           else
-            {
-              Type.Callable.kind = Named name;
-              implementation = overload;
-              overloads = [];
-              implicit = None;
-            }
+            { Type.Callable.kind = Named name; implementation = overload; overloads = [] }
         in
 
         List.map defines ~f:create_overload

@@ -320,17 +320,11 @@ let test_create _ =
          kind = Type.Callable.Named !&"name";
          implementation = { default_overload with annotation = Type.integer };
          overloads = [];
-         implicit = None;
        });
   assert_create
     "typing.Callable('foo')[..., $unknown]"
     (Type.Callable
-       {
-         kind = Type.Callable.Named !&"foo";
-         implementation = default_overload;
-         overloads = [];
-         implicit = None;
-       });
+       { kind = Type.Callable.Named !&"foo"; implementation = default_overload; overloads = [] });
   assert_create "typing.Other('name')[..., int]" Type.Top;
   assert_create
     "typing.Callable[[int, str], int]"
@@ -348,7 +342,6 @@ let test_create _ =
                  ];
            };
          overloads = [];
-         implicit = None;
        });
   assert_create
     "typing.Callable[[int, Named(a, int), Variable(), Keywords()], int]"
@@ -368,7 +361,6 @@ let test_create _ =
                  ];
            };
          overloads = [];
-         implicit = None;
        });
   assert_create
     "typing.Callable[[int, Variable(int), Keywords(str)], int]"
@@ -387,7 +379,6 @@ let test_create _ =
                  ];
            };
          overloads = [];
-         implicit = None;
        });
   assert_create
     "typing.Callable[[Named(a, int, default)], int]"
@@ -401,7 +392,6 @@ let test_create _ =
                Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }];
            };
          overloads = [];
-         implicit = None;
        });
   assert_create "typing.Callable[int]" (Type.Callable.create ~annotation:Type.Top ());
   assert_create "function" (Type.Callable.create ~annotation:Type.Any ());

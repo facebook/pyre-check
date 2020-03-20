@@ -605,7 +605,6 @@ let test_query context =
                                  ];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    3, 2, 3, 3, Type.literal_integer 42;
                    2, 8, 2, 9, Type.integer;
@@ -654,7 +653,6 @@ let test_query context =
                                  ];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    3, 5, 3, 6, Type.literal_integer 4;
                    3, 1, 3, 2, Type.integer;
@@ -720,7 +718,6 @@ let test_query context =
                              parameters = Type.Callable.Defined [];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    3, 5, 3, 9, Type.Literal (Boolean true);
                    4, 3, 4, 4, Type.literal_integer 1;
@@ -757,7 +754,6 @@ let test_query context =
                              parameters = Type.Callable.Defined [];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    3, 15, 3, 16, Type.literal_integer 2;
                    3, 6, 3, 7, Type.integer;
@@ -800,7 +796,6 @@ let test_query context =
                              parameters = Type.Callable.Defined [];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    6, 4, 6, 5, Type.literal_integer 2;
                    4, 8, 4, 9, Type.literal_integer 1;
@@ -884,7 +879,6 @@ let test_query context =
                                  [Named { name = "x"; annotation = Type.integer; default = false }];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    3, 21, 3, 24, parse_annotation "typing.Type[str]";
                    3, 13, 3, 16, parse_annotation "typing.Type[int]";
@@ -934,7 +928,6 @@ let test_query context =
                                  ];
                            };
                          overloads = [];
-                         implicit = None;
                        } );
                    2, 32, 2, 36, Type.none;
                    2, 8, 2, 9, Type.list Type.integer;
@@ -1003,7 +996,6 @@ let test_query context =
                                    parameters = Type.Callable.Defined [];
                                  };
                                overloads = [];
-                               implicit = None;
                              });
                         Single (Primitive "test.C");
                       ];

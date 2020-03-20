@@ -328,11 +328,6 @@ module Record = struct
       | Anonymous
       | Named of Reference.t
 
-    and 'annotation implicit_record = {
-      implicit_annotation: 'annotation;
-      name: Identifier.t;
-    }
-
     and 'annotation parameter_variadic_type_variable = {
       head: 'annotation list;
       variable: 'annotation Variable.RecordVariadic.RecordParameters.record;
@@ -352,7 +347,6 @@ module Record = struct
       kind: kind;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
-      implicit: 'annotation implicit_record option;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -1479,8 +1473,6 @@ module Callable = struct
 
   include Record.Callable
 
-  type implicit = type_t Record.Callable.implicit_record [@@deriving compare, eq, sexp, show, hash]
-
   type t = type_t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
 
   type parameters = type_t Record.Callable.record_parameters
@@ -1508,9 +1500,9 @@ module Callable = struct
     | ({ kind = Named _; _ } as initial) :: overloads ->
         let fold sofar signature =
           match sofar, signature with
-          | Some sofar, { kind; implementation; overloads; implicit } ->
+          | Some sofar, { kind; implementation; overloads } ->
               if equal_kind kind sofar.kind then
-                Some { kind; implementation; overloads = sofar.overloads @ overloads; implicit }
+                Some { kind; implementation; overloads = sofar.overloads @ overloads }
               else
                 None
           | _ -> None
@@ -1528,7 +1520,7 @@ module Callable = struct
 
 
   let map_implementation implementation ~f =
-    map { kind = Anonymous; implementation; overloads = []; implicit = None } ~f
+    map { kind = Anonymous; implementation; overloads = [] } ~f
     |> function
     | Some { implementation; _ } -> implementation
     | _ -> failwith "f did not return a callable"
@@ -1554,9 +1546,9 @@ module Callable = struct
     }
 
 
-  let create ?name ?(overloads = []) ?(parameters = Undefined) ?implicit ~annotation () =
+  let create ?name ?(overloads = []) ?(parameters = Undefined) ~annotation () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-    Callable { kind; implementation = { annotation; parameters }; overloads; implicit }
+    Callable { kind; implementation = { annotation; parameters }; overloads }
 
 
   let create_from_implementation implementation =
@@ -1586,7 +1578,6 @@ let lambda ~parameters ~return_annotation =
       kind = Anonymous;
       implementation = { annotation = return_annotation; parameters = Defined parameters };
       overloads = [];
-      implicit = None;
     }
 
 
@@ -1964,7 +1955,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         | Some signatures -> List.rev (parse_overloads (Node.value signatures))
         | None -> []
       in
-      Callable { kind; implementation; overloads; implicit = None }
+      Callable { kind; implementation; overloads }
     in
     match expression with
     | Call
@@ -3750,7 +3741,6 @@ module TypedDictionary = struct
                 ];
           };
         ];
-      implicit = None;
     }
 
 
@@ -3872,7 +3862,7 @@ module TypedDictionary = struct
 
   let non_total_special_methods =
     let pop_overloads =
-      let overloads { name; annotation; required } =
+      let overloads { name; annotation; required; _ } =
         if required then
           []
         else

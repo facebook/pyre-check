@@ -619,12 +619,7 @@ let messages ~concise ~signature location kind =
               (Location.line unmatched_location)
               (Type.show_concise
                  (Type.Callable
-                    {
-                      implementation = matching_overload;
-                      kind = Anonymous;
-                      overloads = [];
-                      implicit = None;
-                    }));
+                    { implementation = matching_overload; kind = Anonymous; overloads = [] }));
           ]
       | Parameters { name; location } ->
           [
