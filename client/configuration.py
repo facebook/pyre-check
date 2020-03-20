@@ -145,6 +145,7 @@ class _ConfigurationFile:
             "pyre_client",
             "saved_state",
             "taint_models_path",
+            "oncall",
         }
 
 
