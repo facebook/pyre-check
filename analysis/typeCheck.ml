@@ -3276,8 +3276,6 @@ module State (Context : Context) = struct
               || Type.is_meta annotation
                  && Type.is_typed_dictionary (Type.single_parameter annotation)
         in
-        (* Ensure that we actually visit the target and resolve any property calls. *)
-        let _ = forward_expression ~resolution ~expression:target in
         let resolution, errors, resolved =
           let { Resolved.resolution; errors = new_errors; resolved; _ } =
             forward_expression ~resolution ~expression:value
