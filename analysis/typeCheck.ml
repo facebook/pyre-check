@@ -3228,21 +3228,19 @@ module State (Context : Context) = struct
     in
     match value with
     | Assign { Assign.target; annotation; value; parent } ->
-        let errors, original_annotation =
+        let errors, is_final, original_annotation =
           match annotation with
-          | None -> [], None
+          | None -> [], false, None
           | Some annotation ->
-              let annotation_errors, annotation =
+              let annotation_errors, parsed_annotation =
                 parse_and_check_annotation ~resolution annotation
               in
-              annotation_errors, Some annotation
-        in
-        let is_final = original_annotation >>| Type.is_final |> Option.value ~default:false in
-        let original_annotation =
-          original_annotation
-          >>| (fun annotation -> Type.final_value annotation |> Option.value ~default:annotation)
-          >>| fun annotation ->
-          Type.class_variable_value annotation |> Option.value ~default:annotation
+              let unwrap ~f annotation = f annotation |> Option.value ~default:annotation in
+              ( annotation_errors,
+                Type.is_final parsed_annotation,
+                unwrap parsed_annotation ~f:Type.final_value
+                |> unwrap ~f:Type.class_variable_value
+                |> Option.some )
         in
         let parsed =
           GlobalResolution.parse_annotation ~validation:NoValidation global_resolution value
