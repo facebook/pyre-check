@@ -3366,10 +3366,16 @@ module State (Context : Context) = struct
           in
           match target_value with
           | Expression.Name name ->
-              let target_annotation = resolve_expression ~resolution target in
-              let reference, attribute, resolved_base =
+              let reference, attribute, resolved_base, target_annotation =
                 match name with
-                | Name.Identifier identifier -> Some (Reference.create identifier), None, None
+                | Name.Identifier identifier ->
+                    let reference = Reference.create identifier in
+
+                    ( Some reference,
+                      None,
+                      None,
+                      from_reference ~location:Location.any reference
+                      |> resolve_expression ~resolution )
                 | Name.Attribute { base; attribute; _ } ->
                     let name = attribute in
                     let resolved = resolve_expression_type ~resolution base in
@@ -3399,6 +3405,15 @@ module State (Context : Context) = struct
                             ~class_attributes
                       >>| fun annotated -> annotated, attribute
                     in
+                    let target_annotation =
+                      match attribute with
+                      | Some (attribute, _) -> AnnotatedAttribute.annotation attribute
+                      | _ ->
+                          (* The reason why we need to do resolve_expression on the entire target
+                             again is to deal with imported globals. To fix it, we ought to stop
+                             representing imported globals as `Expression.Name.Attribute`. *)
+                          resolve_expression ~resolution target
+                    in
                     begin
                       match attribute with
                       | Some (attribute, _)
@@ -3412,7 +3427,7 @@ module State (Context : Context) = struct
                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
                       | _ -> ()
                     end;
-                    reference, attribute, Some resolved
+                    reference, attribute, Some resolved, target_annotation
               in
               let is_undefined_attribute parent =
                 (* TODO(T64156088): This ought to be done in a much more principled way, by running
