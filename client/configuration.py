@@ -139,7 +139,6 @@ class _ConfigurationFile:
             "buck_builder_binary",
             "buck_mode",
             "continuous",
-            "coverage",
             "differential",
             "push_blocking",
             "pyre_client",
