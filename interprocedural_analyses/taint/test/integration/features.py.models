@@ -2,6 +2,74 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "features.async_issue_bools",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 89,
+    "start": 16,
+    "end": 17,
+    "filename": "features.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "features.py",
+                "line": 88,
+                "start": 17,
+                "end": 39
+              },
+              "resolves_to": [ "features.async_tuple_of_bools" ],
+              "port": "result[0]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 89,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-type": "scalar" },
+      { "always-type": "bool" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "features.issue_from_tuple",
     "callable_line": 71,
     "code": 5002,
@@ -200,6 +268,66 @@
       { "always-via": "special_sink" },
       { "always-via": "obscure" }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.async_tuple_of_bools",
+    "sources": [
+      {
+        "port": "result[0]",
+        "taint": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 84,
+              "start": 11,
+              "end": 26
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "result[1]",
+        "taint": [
+          {
+            "root": {
+              "filename": "features.py",
+              "line": 84,
+              "start": 28,
+              "end": 43
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-type": "bool" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {

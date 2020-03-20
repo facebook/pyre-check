@@ -78,3 +78,12 @@ def tito_with_tuple(o: Any, b: bool) -> Tuple[bool, bool]:
         return min(o, "abc"), min(o, "abc")
     else:
         return o, o
+
+
+async def async_tuple_of_bools() -> Tuple[bool, bool]:
+    return __test_source(), __test_source()
+
+
+async def async_issue_bools() -> None:
+    x, y = await async_tuple_of_bools()
+    __test_sink(x)
