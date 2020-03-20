@@ -145,6 +145,27 @@ def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution], bufsize
                  restore_signals, start_new_session,
                  pass_fds, *, encoding, errors): ...
 
+async def asyncio.subprocess.create_subprocess_exec(
+    program: TaintSink[RemoteCodeExecution],
+    *args: TaintSink[RemoteCodeExecution],
+    stdin = ...,
+    stdout = ...,
+    stderr = ...,
+    loop = ...,
+    limit = ...,
+    **kwds
+): ...
+
+async def asyncio.subprocess.create_subprocess_shell(
+    *Args: TaintSink[RemoteCodeExecution],
+    stdin = ...,
+    stdout = ...,
+    stderr = ...,
+    loop = ...,
+    limit = ...,
+    **kwds
+): ...
+
 # os module
 def os.execl(file: TaintSink[RemoteCodeExecution], __arg0, *args: TaintSink[RemoteCodeExecution]): ...
 def os.execle(file: TaintSink[RemoteCodeExecution], __arg0, *args): ...
