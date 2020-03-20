@@ -7,7 +7,7 @@ open Ast
 open Analysis
 open Expression
 
-type target = Callable.t * Type.Callable.implicit option
+type target = Callable.t * Type.t option
 
 val is_local : Identifier.t -> bool
 

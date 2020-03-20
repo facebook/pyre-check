@@ -143,10 +143,13 @@ let test_callable_attribute_access context =
         reveal_type(c)
     |}
     [
-      "Revealed type [-1]: Revealed type for `a` is `typing.Callable(object.__ne__)[[Named(o, \
-       object)], bool]`.";
+      "Revealed type [-1]: Revealed type for `a` is \
+       `BoundMethod[typing.Callable(object.__ne__)[[Named(self, object), Named(o, object)], bool], \
+       typing.Callable(foo)[[], None]]`.";
       "Revealed type [-1]: Revealed type for `b` is `str`.";
-      "Revealed type [-1]: Revealed type for `c` is `typing.Callable(object.__str__)[[], str]`.";
+      "Revealed type [-1]: Revealed type for `c` is \
+       `BoundMethod[typing.Callable(object.__str__)[[Named(self, object)], str], \
+       typing.Callable(foo)[[], None]]`.";
     ];
   assert_type_errors
     ~context

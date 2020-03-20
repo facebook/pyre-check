@@ -659,20 +659,29 @@ module Implementation = struct
         in
         let make_callable ~parameters ~annotation ~attribute_name =
           let parameters =
-            if class_attributes then
-              { Type.Callable.Parameter.name = "self"; annotation = Type.Top; default = false }
-              :: parameters
-            else
-              parameters
+            {
+              Type.Callable.Parameter.name = "$parameter$self";
+              annotation = Type.Primitive (Reference.show name);
+              default = false;
+            }
+            :: parameters
           in
-          ( attribute_name,
+          let callable =
             Type.Callable.create
-              ~implicit:
-                { implicit_annotation = Primitive (Reference.show name); name = "$parameter$self" }
               ~name:(Reference.combine name (Reference.create attribute_name))
               ~parameters:(Defined (Type.Callable.Parameter.create parameters))
               ~annotation
-              () )
+              ()
+          in
+          ( attribute_name,
+            if class_attributes then
+              callable
+            else
+              Type.Parametric
+                {
+                  name = "BoundMethod";
+                  parameters = [Single callable; Single (Primitive (Reference.show name))];
+                } )
         in
         match options definition with
         | None -> []
@@ -1475,12 +1484,7 @@ module Implementation = struct
                 callable with
                 Type.Callable.implementation = { annotation = Type.Top; parameters = Undefined };
                 overloads;
-                implicit =
-                  Some
-                    {
-                      Type.Record.Callable.implicit_annotation = Type.Primitive class_name;
-                      name = "self";
-                    };
+                implicit = None;
               }
             in
             Type.TypedDictionary.special_overloads
@@ -2072,19 +2076,23 @@ module Implementation = struct
             | _ -> callable
           in
           let callable =
+            let bound_method ~self_type =
+              Type.Parametric
+                {
+                  name = "BoundMethod";
+                  parameters = [Single (Callable callable); Single self_type];
+                }
+            in
             if String.equal attribute_name "__new__" then
-              callable
+              Type.Callable callable
             else if is_class_method then
-              let order = full_order ?dependency class_metadata_environment ~assumptions in
-              partial_apply_self callable ~order ~self_type:(Type.meta instantiated)
+              bound_method ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
-              callable
+              Type.Callable callable
             else if default_class_attribute then
               (* Keep first argument around when calling instance methods from class attributes. *)
-              callable
+              Type.Callable callable
             else
-              let order = full_order ?dependency class_metadata_environment ~assumptions in
-              let applied = partial_apply_self callable ~order ~self_type:instantiated in
               let instantiated_is_protocol =
                 Type.split instantiated
                 |> fst
@@ -2094,13 +2102,15 @@ module Implementation = struct
               in
               if (not (String.equal class_name "object")) && instantiated_is_protocol then
                 (* We don't have a way of tracing taint through protocols, so maintaining a name and
-                   implicit for methods of protocols isn't valuable. It also will complicate things
-                   down the line with BoundMethods *)
-                { applied with kind = Anonymous; implicit = None }
+                   implicit for methods of protocols isn't valuable. *)
+                let order = full_order ?dependency class_metadata_environment ~assumptions in
+                partial_apply_self callable ~order ~self_type:instantiated
+                |> fun callable -> Type.Callable { callable with kind = Anonymous; implicit = None }
               else
-                applied
+                bound_method ~self_type:instantiated
           in
-          Type.Callable callable, Type.Callable callable
+
+          callable, callable
       | Attribute { annotation; original_annotation; is_property = true } ->
           (* Special case properties with type variables. *)
           (* TODO(T44676629): handle this correctly *)

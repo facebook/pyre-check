@@ -480,12 +480,12 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.name = "bar";
-              parameters = [Type.Primitive "self"; Type.integer];
+              parameters = [Type.Primitive "test.C"; Type.integer];
               return_annotation = Type.string;
             };
             {
               Protocol.TypeQuery.name = "foo";
-              parameters = [Type.Primitive "self"];
+              parameters = [Type.Primitive "test.C"];
               return_annotation = Type.integer;
             };
           ]));
@@ -988,16 +988,25 @@ let test_query context =
             {
               Protocol.TypeQuery.name = "foo";
               annotation =
-                Type.Callable
+                Type.Parametric
                   {
-                    Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
-                    implementation =
-                      {
-                        Type.Callable.annotation = Type.integer;
-                        parameters = Type.Callable.Defined [];
-                      };
-                    overloads = [];
-                    implicit = Some { implicit_annotation = Type.Primitive "C"; name = "self" };
+                    name = "BoundMethod";
+                    parameters =
+                      [
+                        Single
+                          (Type.Callable
+                             {
+                               Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
+                               implementation =
+                                 {
+                                   Type.Callable.annotation = Type.integer;
+                                   parameters = Type.Callable.Defined [];
+                                 };
+                               overloads = [];
+                               implicit = None;
+                             });
+                        Single (Primitive "test.C");
+                      ];
                   };
               kind = Protocol.TypeQuery.Regular;
               final = false;

@@ -1055,7 +1055,19 @@ let test_fallback_attribute context =
         def Foo.__add__(self, other: Foo) -> int:
           pass
     |}
-    (Some (parse_callable "typing.Callable('test.Foo.__add__')[[Named(other, test.Foo)], int]"));
+    (Some
+       (Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (parse_callable
+                     "typing.Callable('test.Foo.__add__')[[Named(self, test.Foo), Named(other, \
+                      test.Foo)], int]");
+                Single (Primitive "test.Foo");
+              ];
+          }));
   assert_fallback_attribute ~name:"__iadd__" {|
       class Foo:
         pass

@@ -173,6 +173,15 @@ let parse_callable ?name ?(aliases = fun _ -> None) callable =
   match name, callable with
   | Some name, Type.Callable callable ->
       Type.Callable { callable with Type.Callable.kind = Named name }
+  | ( Some name,
+      Type.Parametric
+        { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] } ) ->
+      Type.Parametric
+        {
+          name = "BoundMethod";
+          parameters =
+            [Single (Callable { callable with Type.Callable.kind = Named name }); Single self_type];
+        }
   | _ -> callable
 
 

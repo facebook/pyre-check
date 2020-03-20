@@ -352,7 +352,7 @@ let test_process_type_query_request context =
           {
             "name": "foo",
             "parameters": [
-              "self",
+              "classy.C[typing.Any]",
               "typing.Any"
             ],
             "return_annotation": "None"

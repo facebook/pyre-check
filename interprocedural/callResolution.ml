@@ -167,31 +167,38 @@ let resolve_target ~resolution ?receiver_type callee =
   in
   let is_all_names = is_all_names (Node.value callee) in
   let rec resolve_type callable_type =
-    match callable_type, receiver_type, global with
-    | Type.Callable { implicit; kind = Named name; _ }, _, Some _ ->
-        [Callable.create_function name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, _, _ when is_super_call ->
-        [Callable.create_method name, implicit]
-    | Type.Callable { implicit = None; kind = Named name; _ }, None, _ when is_all_names ->
+    let underlying_callable, self_argument =
+      match callable_type with
+      | Type.Callable underlying_callable -> Some underlying_callable, None
+      | Parametric
+          {
+            name = "BoundMethod";
+            parameters = [Single (Callable underlying_callable); Single self_argument];
+          } ->
+          Some underlying_callable, Some self_argument
+      | _ -> None, None
+    in
+    match underlying_callable, self_argument, callable_type, receiver_type, global with
+    | Some { kind = Named name; _ }, self_argument, _, _, Some _ ->
+        [Callable.create_function name, self_argument]
+    | Some { kind = Named name; _ }, self_argument, _, _, _ when is_super_call ->
+        [Callable.create_method name, self_argument]
+    | Some { kind = Named name; _ }, None, _, None, _ when is_all_names ->
         [Callable.create_function name, None]
-    | Type.Callable { implicit; kind = Named name; _ }, _, _ when is_all_names ->
-        [Callable.create_method name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class, _ ->
+    | Some { kind = Named name; _ }, self_argument, _, _, _ when is_all_names ->
+        [Callable.create_method name, self_argument]
+    | Some { kind = Named name; _ }, self_argument, _, Some type_or_class, _ ->
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
-        |> List.map ~f:(fun target -> target, implicit)
-    | Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
-    | Type.Optional annotation, _, _ -> resolve_type annotation
-    | _, _, _ when Type.is_meta callable_type -> (
+        |> List.map ~f:(fun target -> target, self_argument)
+    | _, _, Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
+    | _, _, Type.Optional annotation, _, _ -> resolve_type annotation
+    | _, _, _, _, _ when Type.is_meta callable_type -> (
         let class_type = Type.single_parameter callable_type in
         match Type.primitive_name class_type with
         | Some class_name when class_name <> "super" ->
             let resolution = Resolution.global_resolution resolution in
             Callable.resolve_method ~resolution ~class_type ~method_name:"__init__"
-            >>| (fun callable ->
-                  [
-                    ( callable,
-                      Some { Type.Callable.implicit_annotation = callable_type; name = "self" } );
-                  ])
+            >>| (fun callable -> [callable, Some callable_type])
             |> Option.value ~default:[]
         | _ -> [] )
     | _ -> []
@@ -261,7 +268,7 @@ let resolve_call_targets ~resolution call =
   | _ -> resolve_target ~resolution callee
 
 
-type target = Callable.t * Type.Callable.implicit option
+type target = Callable.t * Type.t option
 
 type constructor_targets = {
   new_targets: target list;

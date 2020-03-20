@@ -498,7 +498,7 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `test.Foo.foo` is "
       ^ "`typing.Callable(Foo.foo)[[Named(self, Foo)], None]`.";
       "Revealed type [-1]: Revealed type for `test.Foo().foo` is "
-      ^ "`typing.Callable(Foo.foo)[[], None]`.";
+      ^ "`BoundMethod[typing.Callable(Foo.foo)[[Named(self, Foo)], None], Foo]`.";
     ];
   assert_strict_type_errors
     {|
@@ -1459,7 +1459,8 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got "
-      ^ "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
+      ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, typing.Type[Foo]), Named(x, int)], \
+         str], typing.Type[Foo]]`.";
     ];
   assert_type_errors
     {|

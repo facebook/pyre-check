@@ -2878,51 +2878,55 @@ module State (Context : Context) = struct
                   base = None;
                 }
           in
-          if Type.is_undeclared resolved_base then
-            let errors =
+          match resolved_base with
+          | _ when Type.is_undeclared resolved_base ->
+              let errors =
+                reference
+                >>| (fun reference -> Error.UndefinedName reference)
+                >>| (fun kind -> emit_error ~errors ~location ~kind)
+                |> Option.value ~default:errors
+              in
+              {
+                resolution;
+                errors;
+                resolved = resolved_base;
+                resolved_annotation = None;
+                base = None;
+              }
+          (* Global or local. *)
+          | Type.Top ->
               reference
-              >>| (fun reference -> Error.UndefinedName reference)
-              >>| (fun kind -> emit_error ~errors ~location ~kind)
-              |> Option.value ~default:errors
-            in
-            {
-              resolution;
-              errors;
-              resolved = resolved_base;
-              resolved_annotation = None;
-              base = None;
-            }
-          else if Type.equal resolved_base Type.Top then (* Global or local. *)
-            reference
-            >>| forward_reference ~resolution ~errors
-            |> Option.value
-                 ~default:
-                   {
-                     Resolved.resolution;
-                     errors;
-                     resolved = Type.Top;
-                     resolved_annotation = None;
-                     base = None;
-                   }
+              >>| forward_reference ~resolution ~errors
+              |> Option.value
+                   ~default:
+                     {
+                       Resolved.resolution;
+                       errors;
+                       resolved = Type.Top;
+                       resolved_annotation = None;
+                       base = None;
+                     }
           (* TODO(T63892020): We need to fix up qualification so nested classes and functions are
              just normal locals rather than attributes of the enclosing function, which they really
              are not *)
-          else if Type.is_callable resolved_base then
-            let resolved =
-              reference >>= fun reference -> Resolution.get_local resolution ~reference
-            in
-            match resolved with
-            | Some annotation ->
-                {
-                  resolution;
-                  errors;
-                  resolved = Annotation.annotation annotation;
-                  resolved_annotation = Some annotation;
-                  base = None;
-                }
-            | None -> access_as_attribute ()
-          else (* Attribute access. *)
-            access_as_attribute ()
+          | Type.Parametric { name = "BoundMethod"; _ }
+          | Type.Callable _ -> (
+              let resolved =
+                reference >>= fun reference -> Resolution.get_local resolution ~reference
+              in
+              match resolved with
+              | Some annotation ->
+                  {
+                    resolution;
+                    errors;
+                    resolved = Annotation.annotation annotation;
+                    resolved_annotation = Some annotation;
+                    base = None;
+                  }
+              | None -> access_as_attribute () )
+          | _ ->
+              (* Attribute access. *)
+              access_as_attribute ()
         in
         let base =
           match super_base with

@@ -200,7 +200,6 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
       ( {
           Type.Callable.implementation =
             { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          implicit;
           kind;
           _;
         } as callable ) -> (
@@ -214,19 +213,9 @@ let verify_signature ~normalized_model_parameters ~name callable_annotation =
                  actual_name)
         | _ ->
             let model_compatibility_errors =
-              (* Make self as an explicit parameter in type's parameter list *)
-              let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
-                let name = demangle_class_attribute name in
-                let open Type.Callable.RecordParameter in
-                Named { name; annotation = implicit_annotation; default = false }
-              in
-              let type_parameters =
-                implicit
-                >>| implicit_to_explicit_self
-                >>| (fun explicit_self -> explicit_self :: implementation_parameters)
-                |> Option.value ~default:implementation_parameters
-              in
-              model_compatible ~type_parameters ~normalized_model_parameters
+              model_compatible
+                ~type_parameters:implementation_parameters
+                ~normalized_model_parameters
             in
             if List.is_empty model_compatibility_errors then
               None

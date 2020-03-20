@@ -201,7 +201,10 @@ let test_constructors context =
         let callable =
           constructors
           >>| (fun constructors ->
-                GlobalResolution.parse_annotation resolution (parse_single_expression constructors))
+                GlobalResolution.parse_annotation
+                  ~validation:NoValidation
+                  resolution
+                  (parse_single_expression constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -216,11 +219,13 @@ let test_constructors context =
   assert_constructor
     "class Foo: pass"
     "Foo"
-    (Some "typing.Callable('object.__init__')[[], test.Foo]");
+    (Some
+       "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], test.Foo]");
   assert_constructor
     "class Foo: ..."
     "Foo"
-    (Some "typing.Callable('object.__init__')[[], test.Foo]");
+    (Some
+       "BoundMethod[typing.Callable('object.__init__')[[Named(self, object)], test.Foo], test.Foo]");
 
   (* Statement.Defined constructors. *)
   assert_constructor
@@ -229,7 +234,9 @@ let test_constructors context =
         def __init__(self, a: int) -> None: pass
     |}
     "Foo"
-    (Some "typing.Callable('test.Foo.__init__')[[Named(a, int)], test.Foo]");
+    (Some
+       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
+        test.Foo], test.Foo]");
   assert_constructor
     {|
       class Foo:
@@ -239,8 +246,9 @@ let test_constructors context =
     |}
     "Foo"
     (Some
-       ( "typing.Callable('test.Foo.__init__')[[Named(a, int)], test.Foo]"
-       ^ "[[[Named(b, str)], test.Foo]]" ));
+       ( "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo), Named(a, int)], \
+          test.Foo]"
+       ^ "[[[Named(self, test.Foo), Named(b, str)], test.Foo]], test.Foo]" ));
 
   (* Generic classes. *)
   assert_constructor
@@ -252,7 +260,9 @@ let test_constructors context =
     |}
     "Foo"
     (Some
-       "typing.Callable('test.Foo.__init__')[[], \
+       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, \
+        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')])], \
+        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]], \
         test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]");
   assert_constructor
     {|
@@ -262,7 +272,9 @@ let test_constructors context =
         def __init__(self, x:_K, y:_V) -> None: pass
     |}
     "Foo[int, str]"
-    (Some "typing.Callable('test.Foo.__init__')[[Named(x, int), Named(y, str)], test.Foo[int, str]]");
+    (Some
+       "BoundMethod[typing.Callable('test.Foo.__init__')[[Named(self, test.Foo[int, str]), \
+        Named(x, int), Named(y, str)], test.Foo[int, str]], test.Foo[int, str]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor
@@ -274,7 +286,9 @@ let test_constructors context =
         pass
     |}
     "C"
-    (Some "typing.Callable('test.Parent.__init__')[[Named(x, int)], test.C]");
+    (Some
+       "BoundMethod[typing.Callable('test.Parent.__init__')[[Named(self, test.Parent), Named(x, \
+        int)], test.C], test.C]");
   assert_constructor
     {|
       class Parent:
@@ -292,7 +306,9 @@ let test_constructors context =
         def __init__(self, x: int) -> None: pass
     |}
     "T"
-    (Some "typing.Callable('test.C.__init__')[[Named(x, int)], test.T]");
+    (Some
+       "BoundMethod[typing.Callable('test.C.__init__')[[Named(self, test.C), Named(x, int)], \
+        test.T], test.T]");
   assert_constructor
     {|
       from dataclasses import dataclass
@@ -301,7 +317,9 @@ let test_constructors context =
           foo:int = 1
     |}
     "A"
-    (Some "typing.Callable('test.A.__init__')[[Named(foo, int, default)], test.A]");
+    (Some
+       "BoundMethod[typing.Callable('test.A.__init__')[[Named(self, test.A), Named(foo, int, \
+        default)], test.A], test.A]");
   ()
 
 
@@ -400,12 +418,28 @@ let test_class_attributes context =
       attributes
   in
   let constructor =
-    Type.Callable.create
-      ~name:(Reference.create "test.foo.__init__")
-      ~parameters:(Defined [])
-      ~annotation:Any
-      ()
+    Type.parametric
+      "BoundMethod"
+      [
+        Single
+          (Type.Callable.create
+             ~name:(Reference.create "test.foo.__init__")
+             ~parameters:
+               (Defined
+                  [
+                    Named
+                      {
+                        annotation = Primitive "test.foo";
+                        default = false;
+                        name = "$parameter$self";
+                      };
+                  ])
+             ~annotation:Any
+             ());
+        Single (Primitive "test.foo");
+      ]
   in
+
   assert_attributes
     "test.foo"
     [
@@ -515,30 +549,35 @@ let test_class_attributes context =
   in
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.Primitive "Attributes")
+    ~parent_instantiated_type:(Type.Primitive "test.Attributes")
     ~attribute_name:"bar"
     ~expected_attribute:
-      (create_expected_attribute "bar" "typing.Callable('test.Attributes.bar')[[], int]");
+      (create_expected_attribute
+         "bar"
+         "BoundMethod[typing.Callable('test.Attributes.bar')[[Named(self, test.Attributes)], int], \
+          test.Attributes]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.Primitive "Attributes")
+    ~parent_instantiated_type:(Type.Primitive "test.Attributes")
     ~attribute_name:"baz"
     ~expected_attribute:
       (create_expected_attribute
          "baz"
-         "typing.Callable('test.Attributes.baz')[[Named(x, int)], int]");
+         "BoundMethod[typing.Callable('test.Attributes.baz')[[Named(self, test.Attributes), \
+          Named(x, int)], int], test.Attributes]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
+    ~parent_instantiated_type:(Type.meta (Type.Primitive "test.Attributes"))
     ~attribute_name:"implicit"
     ~expected_attribute:
       (create_expected_attribute
          ~parent:"test.Metaclass"
          "implicit"
-         "typing.Callable('test.Metaclass.implicit')[[], int]");
+         "BoundMethod[typing.Callable('test.Metaclass.implicit')[[Named(cls, test.Metaclass)], \
+          int], typing.Type[test.Attributes]]");
   assert_attribute
     ~parent:"test.Attributes"
-    ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
+    ~parent_instantiated_type:(Type.meta (Type.Primitive "test.Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
       (create_expected_attribute ~property:true ~visibility:(ReadOnly Unrefinable) "property" "str");
@@ -606,7 +645,8 @@ let test_class_attributes context =
          ~initialized:Implicitly
          ~callable_name:(Reference.create "test.Prot.method")
          "method"
-         "typing.Callable[[Named(x, int)], str]");
+         "BoundMethod[typing.Callable[[Named(self, test.Prot), Named(x, int)], str], \
+          test.ExplicitProtChild]");
   let tself = Type.variable "TSelf" in
   assert_attribute
     ~parent:"BoundMethod"
@@ -850,52 +890,68 @@ let test_typed_dictionary_individual_attributes context =
          "__getitem__"
          ~parent:"test.Movie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named
-                    (Reference.create_from_list
-                       [Type.TypedDictionary.class_name ~total:true; "__getitem__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.string;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                Type.Record.Callable.RecordParameter.name = "k";
-                                annotation = Type.Literal (Type.String "name");
-                                default = false;
-                              };
-                          ];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.integer;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                Type.Record.Callable.RecordParameter.name = "k";
-                                annotation = Type.Literal (Type.String "year");
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named
+                               (Reference.create_from_list
+                                  [Type.TypedDictionary.class_name ~total:true; "__getitem__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation = Type.string;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "k";
+                                           annotation = Type.Literal (Type.String "name");
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation = Type.integer;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "k";
+                                           annotation = Type.Literal (Type.String "year");
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.Movie");
                   ];
-                implicit =
-                  Some
-                    {
-                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.Movie";
-                      name = "self";
-                    };
               }));
   assert_attribute
     ~parent_name:"test.Movie"
@@ -905,51 +961,74 @@ let test_typed_dictionary_individual_attributes context =
          "__init__"
          ~parent:"test.Movie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.Movie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
-                                annotation = Type.string;
-                                default = false;
-                              };
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
-                                annotation = Type.integer;
-                                default = false;
-                              };
-                          ];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.Movie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.PositionalOnly
-                              {
-                                index = 0;
-                                annotation = Type.Primitive "test.Movie";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$name";
+                                           annotation = Type.string;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$year";
+                                           annotation = Type.integer;
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.PositionalOnly
+                                         {
+                                           index = 0;
+                                           annotation = Type.Primitive "test.Movie";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.Movie");
                   ];
-                implicit = Some { name = "self"; implicit_annotation = Primitive "test.Movie" };
               }));
   assert_attribute
     ~parent_name:"test.ChildMovie"
@@ -959,57 +1038,81 @@ let test_typed_dictionary_individual_attributes context =
          "__init__"
          ~parent:"test.ChildMovie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
-                                annotation = Type.string;
-                                default = false;
-                              };
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$rating";
-                                annotation = Type.integer;
-                                default = false;
-                              };
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
-                                annotation = Type.integer;
-                                default = false;
-                              };
-                          ];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.PositionalOnly
-                              {
-                                index = 0;
-                                annotation = Type.Primitive "test.ChildMovie";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$name";
+                                           annotation = Type.string;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$rating";
+                                           annotation = Type.integer;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$year";
+                                           annotation = Type.integer;
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.PositionalOnly
+                                         {
+                                           index = 0;
+                                           annotation = Type.Primitive "test.ChildMovie";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.ChildMovie");
                   ];
-                implicit = Some { name = "self"; implicit_annotation = Primitive "test.ChildMovie" };
               }));
   assert_attribute
     ~parent_name:"test.NonTotalMovie"
@@ -1019,52 +1122,76 @@ let test_typed_dictionary_individual_attributes context =
          "__init__"
          ~parent:"test.NonTotalMovie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
-                                annotation = Type.string;
-                                default = true;
-                              };
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
-                                annotation = Type.integer;
-                                default = true;
-                              };
-                          ];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.PositionalOnly
-                              {
-                                index = 0;
-                                annotation = Type.Primitive "test.NonTotalMovie";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation =
+                                   Type.Primitive "test.NonTotalMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$name";
+                                           annotation = Type.string;
+                                           default = true;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$year";
+                                           annotation = Type.integer;
+                                           default = true;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation =
+                                   Type.Primitive "test.NonTotalMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.PositionalOnly
+                                         {
+                                           index = 0;
+                                           annotation = Type.Primitive "test.NonTotalMovie";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.NonTotalMovie");
                   ];
-                implicit =
-                  Some { name = "self"; implicit_annotation = Primitive "test.NonTotalMovie" };
               }));
   assert_attribute
     ~parent_name:"test.EmptyNonTotalMovie"
@@ -1074,37 +1201,62 @@ let test_typed_dictionary_individual_attributes context =
          "__init__"
          ~parent:"test.EmptyNonTotalMovie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
-                      parameters = Type.Record.Callable.Defined [];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.PositionalOnly
-                              {
-                                index = 0;
-                                annotation = Type.Primitive "test.EmptyNonTotalMovie";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named (Reference.create_from_list ["__init__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation =
+                                   Type.Primitive "test.EmptyNonTotalMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation =
+                                   Type.Primitive "test.EmptyNonTotalMovie";
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.PositionalOnly
+                                         {
+                                           index = 0;
+                                           annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.EmptyNonTotalMovie");
                   ];
-                implicit =
-                  Some { name = "self"; implicit_annotation = Primitive "test.EmptyNonTotalMovie" };
               }));
   assert_attribute
     ~parent_name:"test.Movie"
@@ -1114,52 +1266,75 @@ let test_typed_dictionary_individual_attributes context =
          "update"
          ~parent:"test.Movie"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named
-                    (Reference.create_from_list ["TypedDictionary"; "update"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      Type.Record.Callable.annotation = Type.none;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$name";
-                                annotation = Type.string;
-                                default = true;
-                              };
-                            Type.Record.Callable.RecordParameter.KeywordOnly
-                              {
-                                Type.Record.Callable.RecordParameter.name = "$parameter$year";
-                                annotation = Type.integer;
-                                default = true;
-                              };
-                          ];
-                    };
-                    {
-                      Type.Record.Callable.annotation = Type.none;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.PositionalOnly
-                              {
-                                index = 0;
-                                annotation = Type.Primitive "test.Movie";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named
+                               (Reference.create_from_list ["TypedDictionary"; "update"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 Type.Record.Callable.annotation = Type.none;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$name";
+                                           annotation = Type.string;
+                                           default = true;
+                                         };
+                                       Type.Record.Callable.RecordParameter.KeywordOnly
+                                         {
+                                           Type.Record.Callable.RecordParameter.name =
+                                             "$parameter$year";
+                                           annotation = Type.integer;
+                                           default = true;
+                                         };
+                                     ];
+                               };
+                               {
+                                 Type.Record.Callable.annotation = Type.none;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.PositionalOnly
+                                         {
+                                           index = 0;
+                                           annotation = Type.Primitive "test.Movie";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.Movie");
                   ];
-                implicit = Some { implicit_annotation = Type.Primitive "test.Movie"; name = "self" };
               }));
   assert_attribute
     ~parent_name:"test.NonTotalChild"
@@ -1169,58 +1344,76 @@ let test_typed_dictionary_individual_attributes context =
          "pop"
          ~parent:"test.NonTotalChild"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named
-                    (Reference.create_from_list ["NonTotalTypedDictionary"; "pop"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      annotation = Type.string;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                name = "k";
-                                annotation = Type.literal_string "non_required";
-                                default = false;
-                              };
-                          ];
-                    };
-                    {
-                      annotation =
-                        Union [Type.string; Type.Variable (Type.Variable.Unary.create "_T")];
-                      parameters =
-                        Defined
-                          [
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                name = "k";
-                                annotation = Type.literal_string "non_required";
-                                default = false;
-                              };
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                name = "default";
-                                annotation = Type.Variable (Type.Variable.Unary.create "_T");
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named
+                               (Reference.create_from_list ["NonTotalTypedDictionary"; "pop"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 annotation = Type.string;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           name = "k";
+                                           annotation = Type.literal_string "non_required";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                               {
+                                 annotation =
+                                   Union
+                                     [Type.string; Type.Variable (Type.Variable.Unary.create "_T")];
+                                 parameters =
+                                   Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           name = "k";
+                                           annotation = Type.literal_string "non_required";
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           name = "default";
+                                           annotation =
+                                             Type.Variable (Type.Variable.Unary.create "_T");
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.NonTotalChild");
                   ];
-                implicit =
-                  Some
-                    {
-                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.NonTotalChild";
-                      name = "self";
-                    };
               }));
   assert_attribute
     ~parent_name:"test.NonTotalChild"
@@ -1230,38 +1423,49 @@ let test_typed_dictionary_individual_attributes context =
          "__delitem__"
          ~parent:"test.NonTotalChild"
          ~annotation:
-           (Type.Callable
+           (Type.Parametric
               {
-                Type.Record.Callable.kind =
-                  Type.Record.Callable.Named
-                    (Reference.create_from_list ["NonTotalTypedDictionary"; "__delitem__"]);
-                implementation =
-                  {
-                    Type.Record.Callable.annotation = Type.Top;
-                    parameters = Type.Record.Callable.Undefined;
-                  };
-                overloads =
+                name = "BoundMethod";
+                parameters =
                   [
-                    {
-                      annotation = Type.none;
-                      parameters =
-                        Type.Record.Callable.Defined
-                          [
-                            Type.Record.Callable.RecordParameter.Named
-                              {
-                                name = "k";
-                                annotation = Type.literal_string "non_required";
-                                default = false;
-                              };
-                          ];
-                    };
+                    Single
+                      (Type.Callable
+                         {
+                           Type.Record.Callable.kind =
+                             Type.Record.Callable.Named
+                               (Reference.create_from_list
+                                  ["NonTotalTypedDictionary"; "__delitem__"]);
+                           implicit = None;
+                           implementation =
+                             {
+                               Type.Record.Callable.annotation = Type.Top;
+                               parameters = Type.Record.Callable.Undefined;
+                             };
+                           overloads =
+                             [
+                               {
+                                 annotation = Type.none;
+                                 parameters =
+                                   Type.Record.Callable.Defined
+                                     [
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           Type.Record.Callable.RecordParameter.name = "self";
+                                           annotation = Type.Top;
+                                           default = false;
+                                         };
+                                       Type.Record.Callable.RecordParameter.Named
+                                         {
+                                           name = "k";
+                                           annotation = Type.literal_string "non_required";
+                                           default = false;
+                                         };
+                                     ];
+                               };
+                             ];
+                         });
+                    Single (Primitive "test.NonTotalChild");
                   ];
-                implicit =
-                  Some
-                    {
-                      Type.Record.Callable.implicit_annotation = Type.Primitive "test.NonTotalChild";
-                      name = "self";
-                    };
               }));
   ()
 

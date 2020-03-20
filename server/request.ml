@@ -568,16 +568,29 @@ let process_type_query_request
             |> Annotated.Attribute.annotation
             |> Annotation.annotation
           with
-          | Callable
+          | Type.Parametric
+              {
+                name = "BoundMethod";
+                parameters =
+                  [
+                    Single
+                      (Type.Callable
+                        {
+                          implementation = { annotation; parameters = Defined parameters; _ };
+                          kind = Named name;
+                          _;
+                        });
+                    _;
+                  ];
+              }
+          | Type.Callable
               {
                 implementation = { annotation; parameters = Defined parameters; _ };
                 kind = Named name;
                 _;
               } ->
               let parameters =
-                parameters
-                |> List.filter_map ~f:Type.Callable.Parameter.annotation
-                |> fun parameters -> Type.Primitive "self" :: parameters
+                parameters |> List.filter_map ~f:Type.Callable.Parameter.annotation
               in
               let return_annotation = annotation in
               Some { TypeQuery.name = Reference.last name; parameters; return_annotation }

@@ -1610,12 +1610,14 @@ let test_user_defined_variadics context =
     [
       "Revealed type [-1]: Revealed type for `f.x` is `Tuple[int, str, bool]`.";
       "Revealed type [-1]: Revealed type for `f.y` is `Tuple[List[int], List[str], List[bool]]`.";
-      "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
-       int), int, str, bool], bool]`.";
+      "Revealed type [-1]: Revealed type for `f.meth` is \
+       `BoundMethod[typing.Callable(Foo.meth)[[Named(self, Foo[int, str, bool]), Named(x, int), \
+       int, str, bool], bool], Foo[int, str, bool]]`.";
       "Revealed type [-1]: Revealed type for `f.x` is `Tuple[bool, int, float]`.";
       "Revealed type [-1]: Revealed type for `f.y` is `Tuple[List[bool], List[int], List[float]]`.";
-      "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
-       int), bool, int, float], bool]`.";
+      "Revealed type [-1]: Revealed type for `f.meth` is \
+       `BoundMethod[typing.Callable(Foo.meth)[[Named(self, Foo[bool, int, float]), Named(x, int), \
+       bool, int, float], bool], Foo[bool, int, float]]`.";
     ];
 
   assert_type_errors
@@ -1970,8 +1972,9 @@ let test_user_defined_parameter_specification_classes context =
     [
       (* Note that this isn't working because we don't support decorators that return anything but
          an actual callable type. It should be returning int. *)
-      "Revealed type [-1]: Revealed type for `m` is `typing.Callable(TestCommand.method)[[Named(x, \
-       int)], None]`.";
+      "Revealed type [-1]: Revealed type for `m` is \
+       `BoundMethod[typing.Callable(TestCommand.method)[[Named(self, TestCommand), Named(x, int)], \
+       None], TestCommand]`.";
     ];
   assert_type_errors
     {|
@@ -2004,8 +2007,9 @@ let test_user_defined_parameter_specification_classes context =
 
     |}
     [
-      "Revealed type [-1]: Revealed type for `m` is `typing.Callable(TestCommand.method)[[Named(x, \
-       int)], int]`.";
+      "Revealed type [-1]: Revealed type for `m` is \
+       `BoundMethod[typing.Callable(TestCommand.method)[[TestCommand, Named(x, int)], int], \
+       TestCommand]`.";
     ];
   assert_type_errors
     {|
