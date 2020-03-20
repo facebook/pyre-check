@@ -463,6 +463,8 @@ let test_class_attributes context =
   let resolution =
     setup
       {|
+        from placeholder_stub import StubParent
+
         class Metaclass:
           def implicit(cls) -> int:
             return 0
@@ -496,6 +498,9 @@ let test_class_attributes context =
 
         class ExplicitProtChild(Prot):
           def other(self, x: int) -> str: ...
+
+        class ChildOfPlaceholderStub(StubParent):
+          pass
       |}
   in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
@@ -677,6 +682,17 @@ let test_class_attributes context =
          ~initialized:Explicitly
          "__call__"
          "typing.Callable[[Named(x, str)], int]");
+  assert_attribute
+    ~parent:"test.ChildOfPlaceholderStub"
+    ~parent_instantiated_type:(Type.Primitive "test.ChildOfPlaceholderStub")
+    ~attribute_name:"__getattr__"
+    ~expected_attribute:
+      (create_expected_attribute
+         ~parent:"test.ChildOfPlaceholderStub"
+         ~visibility:ReadWrite
+         ~initialized:Implicitly
+         "__getattr__"
+         "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
   ()
 
 

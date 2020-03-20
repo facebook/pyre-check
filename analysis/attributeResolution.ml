@@ -1568,8 +1568,16 @@ module Implementation = struct
                    {
                      UninstantiatedAnnotation.accessed_via_metaclass;
                      kind =
-                       Attribute
-                         { annotation; original_annotation = annotation; is_property = false };
+                       Method
+                         {
+                           callable =
+                             {
+                               kind = Anonymous;
+                               implementation = { annotation; parameters = Undefined };
+                               overloads = [];
+                             };
+                           is_class_method = false;
+                         };
                    }
                  ~abstract:false
                  ~async:false
@@ -1579,17 +1587,13 @@ module Implementation = struct
                  ~name:attribute_name
                  ~parent:class_name
                  ~visibility:ReadWrite
-                 ~static:true
+                 ~static:false
                  ~property:false)
           else
             ()
         in
-        add_if_missing
-          ~attribute_name:"__init__"
-          ~annotation:(Type.Callable.create ~annotation:Type.none ());
-        add_if_missing
-          ~attribute_name:"__getattr__"
-          ~annotation:(Type.Callable.create ~annotation:Type.Any ())
+        add_if_missing ~attribute_name:"__init__" ~annotation:Type.none;
+        add_if_missing ~attribute_name:"__getattr__" ~annotation:Type.Any
       in
       add_actual ();
       if
