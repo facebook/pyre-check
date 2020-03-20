@@ -2765,17 +2765,19 @@ let filter ~resolution errors =
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
             try
-              (not (Type.is_unbound annotation))
-              && (not (Type.is_any annotation))
-              && ( GlobalResolution.less_or_equal
-                     resolution
-                     ~left:annotation
-                     ~right:(Type.Primitive "unittest.mock.Base")
-                 || (* Special-case mypy's workaround for mocks. *)
-                 GlobalResolution.less_or_equal
-                   resolution
-                   ~left:annotation
-                   ~right:(Type.Primitive "unittest.mock.NonCallableMock") )
+              match annotation with
+              | Type.Primitive predecessor
+              | Type.Parametric { name = predecessor; _ } ->
+                  let is_transitive_successor =
+                    GlobalResolution.is_transitive_successor
+                      ~placeholder_subclass_extends_all:false
+                      resolution
+                      ~predecessor
+                  in
+                  is_transitive_successor ~successor:"unittest.mock.Base"
+                  || (* Special-case mypy's workaround for mocks. *)
+                  is_transitive_successor ~successor:"unittest.mock.NonCallableMock"
+              | _ -> false
             with
             | ClassHierarchy.Untracked _ -> false
           in
