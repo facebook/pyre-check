@@ -14,6 +14,12 @@ class Define(NamedTuple):
     parameters: List[DefineParameter]
     return_annotation: str
 
+    def get_class_name(self) -> str:
+        return ".".join(self.name.split(".")[:-1])
+
+    def get_method_name(self) -> str:
+        return self.name.split(".")[-1]
+
 
 class Position(NamedTuple):
     line: int
