@@ -1727,7 +1727,7 @@ module Implementation = struct
     >>| handle
 
 
-  let partial_apply_self { Type.Callable.kind; implementation; overloads; _ } ~order ~self_type =
+  let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~self_type =
     let open Type.Callable in
     let implementation, overloads =
       match implementation, overloads with
@@ -1766,7 +1766,7 @@ module Implementation = struct
       { Type.Callable.annotation; parameters }
     in
     {
-      Type.Callable.kind;
+      Type.Callable.kind = Anonymous;
       implementation = drop_self implementation;
       overloads = List.map overloads ~f:drop_self;
     }

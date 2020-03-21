@@ -663,6 +663,7 @@ let test_class_attributes context =
              [
                Single
                  (Type.Callable.create
+                    ~name:(Reference.create "was_named")
                     ~parameters:
                       (Defined
                          [
