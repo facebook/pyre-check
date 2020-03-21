@@ -170,7 +170,7 @@ let test_register_aliases context =
       "qualifier.B", "qualifier.D";
       "qualifier.A", "qualifier.D";
     ];
-  assert_resolved ["test.py", "X = None"] ["test.X", "None"];
+  assert_resolved ["test.py", "X = None"] [];
 
   (* Imports *)
   assert_resolved

@@ -54,6 +54,9 @@ let test_simple_registration context =
     Y = X
     Z = Y
   |} "test.Z" None;
+  assert_registers {|
+    x = None
+  |} "test.x" None;
   ()
 
 
