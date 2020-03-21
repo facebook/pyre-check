@@ -224,6 +224,7 @@ val signature_select
   resolve:(Expression.expression Node.t -> Type.t) ->
   arguments:Expression.Call.Argument.t list ->
   callable:Type.Callable.t ->
+  self_argument:Type.t option ->
   AttributeResolution.sig_t
 
 val create_overload : resolution:t -> Define.Signature.t -> Type.t Type.Callable.overload

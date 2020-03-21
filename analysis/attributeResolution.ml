@@ -1030,7 +1030,8 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       resolve:(Expression.expression Node.t -> Type.t) ->
       arguments:Expression.Call.Argument.t list ->
-      callable:Type.t Type.Callable.record ->
+      callable:Type.Callable.t ->
+      self_argument:Type.t option ->
       SignatureSelectionTypes.sig_t;
     resolve_mutable_literals:
       assumptions:Assumptions.t ->
@@ -2754,6 +2755,7 @@ module Implementation = struct
                         ~resolve
                         ~arguments
                         ~callable
+                        ~self_argument:None
                     with
                     | SignatureSelectionTypes.Found
                         {
@@ -2868,6 +2870,7 @@ module Implementation = struct
       ~resolve
       ~arguments
       ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
+      ~self_argument
     =
     let open SignatureSelectionTypes in
     let order = full_order ~assumptions ?dependency class_metadata_environment in
@@ -2907,11 +2910,18 @@ module Implementation = struct
                 - List.length unreachable_parameters
                 - List.length matched_keyword_arguments
               in
+              let self_argument_adjustment =
+                if Option.is_some self_argument then
+                  1
+                else
+                  0
+              in
               let error =
                 TooManyArguments
                   {
-                    expected = positional_parameter_count;
-                    provided = positional_parameter_count + List.length arguments;
+                    expected = positional_parameter_count - self_argument_adjustment;
+                    provided =
+                      positional_parameter_count + List.length arguments - self_argument_adjustment;
                   }
               in
               { reasons with arity = error :: arity }
@@ -3048,7 +3058,19 @@ module Implementation = struct
         let labeled_arguments, unlabeled_arguments =
           arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
         in
-        labeled_arguments @ unlabeled_arguments
+        let self_argument =
+          self_argument
+          >>| (fun resolved ->
+                {
+                  Argument.position = 0;
+                  expression = Node.create_with_default_location Expression.Ellipsis;
+                  full_expression = Node.create_with_default_location Expression.Ellipsis;
+                  kind = Positional;
+                  resolved;
+                })
+          |> Option.to_list
+        in
+        self_argument @ labeled_arguments @ unlabeled_arguments
       in
       match all_parameters with
       | Defined parameters ->
@@ -3424,7 +3446,18 @@ module Implementation = struct
           | Some callable -> callable
           | _ -> failwith "Instantiate did not return a callable"
         in
-        match List.rev arity, List.rev annotation with
+        let rev_filter_out_self_argument_errors =
+          let is_not_self_argument = function
+            | Mismatch { Node.value = { position; _ }; _ } -> not (Int.equal position 0)
+            (* These would come from methods lacking a self argument called on an instance *)
+            | TooManyArguments { expected; _ } -> not (Int.equal expected (-1))
+            | _ -> true
+          in
+          List.rev_filter ~f:is_not_self_argument
+        in
+        match
+          rev_filter_out_self_argument_errors arity, rev_filter_out_self_argument_errors annotation
+        with
         | [], [] -> Found callable
         | reason :: reasons, _
         | [], reason :: reasons ->

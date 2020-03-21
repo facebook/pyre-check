@@ -18,6 +18,11 @@ type class_name_and_is_abstract_and_is_protocol = {
   is_protocol: bool;
 }
 
+type unpacked_callable_and_self_argument = {
+  callable: Type.Callable.t;
+  self_argument: Type.t option;
+}
+
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
 
@@ -1566,29 +1571,31 @@ module State (Context : Context) = struct
         in
         List.fold arguments ~f:forward_argument ~init:(resolution, errors)
       in
-      let find_method ~parent ~name =
-        let attribute_of_annotation instantiated ~name =
-          Type.split instantiated
-          |> fst
-          |> Type.primitive_name
-          >>= GlobalResolution.attribute_from_class_name
-                ~resolution:global_resolution
-                ~name
-                ~instantiated
-                ~transitive:true
-          >>= fun attribute ->
-          Option.some_if (Annotated.Attribute.defined attribute) attribute
-          >>| Annotated.Attribute.annotation
-          >>| Annotation.annotation
-        in
-        attribute_of_annotation parent ~name
-        >>= function
-        | Type.Callable callable -> Some callable
-        | Parametric { name = "BoundMethod"; _ } as parent -> (
-            match attribute_of_annotation parent ~name:"__call__" with
-            | Some (Type.Callable callable) -> Some callable
-            | _ -> None )
+      let unpack_callable_and_self_argument = function
+        | Type.Callable callable -> Some { callable; self_argument = None }
+        | Parametric
+            {
+              name = "BoundMethod";
+              parameters = [Single (Callable callable); Single self_argument];
+            } ->
+            Some { callable; self_argument = Some self_argument }
         | _ -> None
+      in
+
+      let find_method ~parent ~name =
+        Type.split parent
+        |> fst
+        |> Type.primitive_name
+        >>= GlobalResolution.attribute_from_class_name
+              ~resolution:global_resolution
+              ~name
+              ~instantiated:parent
+              ~transitive:true
+        >>= fun attribute ->
+        Option.some_if (Annotated.Attribute.defined attribute) attribute
+        >>| Annotated.Attribute.annotation
+        >>| Annotation.annotation
+        >>= unpack_callable_and_self_argument
       in
       (* When an operator does not exist on the left operand but its inverse exists on the right
          operand, the missing attribute error would not have been thrown for the original operator.
@@ -1613,14 +1620,18 @@ module State (Context : Context) = struct
             | meta when Type.is_meta meta -> (
                 let backup = find_method ~parent:meta ~name:"__call__" in
                 match Type.single_parameter meta with
-                | TypedDictionary { name; fields } ->
-                    Type.TypedDictionary.constructor ~name ~fields |> Option.some
+                | TypedDictionary { name; fields } as parent ->
+                    Some
+                      {
+                        callable = Type.TypedDictionary.constructor ~name ~fields;
+                        self_argument = Some parent;
+                      }
                 | Variable { constraints = Type.Variable.Unconstrained; _ } -> backup
                 | Variable { constraints = Type.Variable.Explicit constraints; _ }
                   when List.length constraints > 1 ->
                     backup
                 | Any -> backup
-                | meta_parameter -> (
+                | meta_parameter ->
                     let parent =
                       match meta_parameter with
                       | Variable { constraints = Type.Variable.Explicit [parent]; _ } -> parent
@@ -1634,11 +1645,11 @@ module State (Context : Context) = struct
                     >>| GlobalResolution.constructor
                           ~instantiated:meta_parameter
                           ~resolution:global_resolution
-                    >>= function
-                    | Type.Callable callable -> Some callable
-                    | other -> find_method ~parent:other ~name:"__call__" ) )
-            | Type.Callable callable -> Some callable
-            | resolved -> find_method ~parent:resolved ~name:"__call__"
+                    >>= unpack_callable_and_self_argument )
+            | resolved -> (
+                match unpack_callable_and_self_argument resolved with
+                | Some unpacked -> Some unpacked
+                | _ -> find_method ~parent:resolved ~name:"__call__" )
           in
           let rec get_callables = function
             | Type.Union annotations ->
@@ -1670,18 +1681,19 @@ module State (Context : Context) = struct
         Context.Builder.add_callee
           ~global_resolution
           ~target
-          ~callables
+          ~callables:(callables >>| List.map ~f:(fun { callable; _ } -> callable))
           ~arguments
           ~dynamic
           ~qualifier:Context.qualifier
           ~callee;
-        let signature callable =
+        let signature { callable; self_argument } =
           let signature =
             GlobalResolution.signature_select
               ~arguments
               ~global_resolution
               ~resolve:(resolve_expression_type ~resolution)
               ~callable
+              ~self_argument
           in
           match signature with
           | AttributeResolution.NotFound _ -> (
@@ -1694,12 +1706,13 @@ module State (Context : Context) = struct
                   inverse_operator (Reference.last name)
                   >>= (fun name ->
                         find_method ~parent:(resolve_expression_type ~resolution value) ~name)
-                  >>| (fun callable ->
+                  >>| (fun { callable; self_argument } ->
                         GlobalResolution.signature_select
                           ~arguments
                           ~global_resolution:(Resolution.global_resolution resolution)
                           ~resolve:(resolve_expression_type ~resolution)
-                          ~callable)
+                          ~callable
+                          ~self_argument)
                   |> Option.value ~default:signature
               | _ -> signature )
           | AttributeResolution.Found
@@ -1741,12 +1754,15 @@ module State (Context : Context) = struct
               |> Option.value ~default:signature
           | _ -> signature
         in
-        callables >>| List.map ~f:signature
+        callables
+        >>| List.map ~f:(fun ({ self_argument; _ } as callable) ->
+                signature callable, self_argument)
       in
       let error_from_not_found
           ~callable:
             ({ Type.Callable.implementation = { annotation; parameters; _ }; kind; _ } as callable)
           ~reason
+          ~self_argument
         =
         let errors =
           let error_location, error_kind =
@@ -1821,6 +1837,7 @@ module State (Context : Context) = struct
                             match parameters with
                             | Type.Record.Callable.Defined
                                 [
+                                  _self_parameter;
                                   Type.Record.Callable.RecordParameter.Named
                                     {
                                       name = "k";
@@ -1836,7 +1853,7 @@ module State (Context : Context) = struct
                             { typed_dictionary_name; field_name; method_name; mismatch }
                       | _ -> normal
                   in
-                  match target, callee >>| Reference.as_list with
+                  match self_argument, callee >>| Reference.as_list with
                   | Some (Type.TypedDictionary typed_dictionary), Some [_; method_name] ->
                       typed_dictionary_error ~method_name ~position typed_dictionary
                   | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
@@ -1869,17 +1886,20 @@ module State (Context : Context) = struct
       in
 
       let not_found = function
-        | AttributeResolution.NotFound _ -> true
+        | AttributeResolution.NotFound _, _ -> true
         | _ -> false
       in
       match signatures >>| List.partition_tf ~f:not_found with
       (* Prioritize missing signatures for union type checking. *)
-      | Some (AttributeResolution.NotFound { callable; reason = Some reason } :: _, _) ->
-          error_from_not_found ~callable ~reason
+      | Some
+          ((AttributeResolution.NotFound { callable; reason = Some reason }, self_argument) :: _, _)
+        ->
+          error_from_not_found ~callable ~reason ~self_argument
       | Some ([], head :: tail) ->
           let resolved =
             let extract = function
-              | AttributeResolution.Found { Type.Callable.implementation = { annotation; _ }; _ } ->
+              | AttributeResolution.Found { Type.Callable.implementation = { annotation; _ }; _ }, _
+                ->
                   annotation
               | _ -> failwith "Not all signatures were found."
             in

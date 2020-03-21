@@ -220,9 +220,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal['breed']` for 1st \
-       positional only parameter to call `TypedDictionary.__getitem__` but got \
-       `typing_extensions.Literal['year']`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `test.Cat` has no key `year`.";
     ];
   assert_test_typed_dictionary
     {|

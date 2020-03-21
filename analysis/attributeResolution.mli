@@ -225,7 +225,8 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     resolve:(Expression.expression Node.t -> Type.t) ->
     arguments:Expression.Call.Argument.t list ->
-    callable:Type.t Type.Callable.record ->
+    callable:Type.Callable.t ->
+    self_argument:Type.t option ->
     sig_t
 
   val resolve_mutable_literals

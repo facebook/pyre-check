@@ -5,7 +5,6 @@
 
 open Core
 open Ast
-open Pyre
 
 type t = {
   global_resolution: GlobalResolution.t;
@@ -271,23 +270,14 @@ let fallback_attribute ~resolution ~name class_name =
     in
     match fallback with
     | Some fallback when AnnotatedAttribute.defined fallback -> (
-        let annotation =
-          match fallback |> AnnotatedAttribute.annotation |> Annotation.annotation with
-          | Callable callable -> Some callable
-          | other -> (
-              match
-                GlobalResolution.attribute_from_annotation
-                  global_resolution
-                  ~parent:other
-                  ~name:"__call__"
-                >>| AnnotatedAttribute.annotation
-                >>| Annotation.annotation
-              with
-              | Some (Callable callable) -> Some callable
-              | _ -> None )
-        in
+        let annotation = fallback |> AnnotatedAttribute.annotation |> Annotation.annotation in
         match annotation with
-        | Some ({ implementation; _ } as callable) ->
+        | Parametric
+            {
+              name = "BoundMethod";
+              parameters =
+                [Single (Callable ({ implementation; _ } as callable)); Single self_argument];
+            } ->
             let arguments =
               let name_argument =
                 {
@@ -308,6 +298,7 @@ let fallback_attribute ~resolution ~name class_name =
                   ~resolve:(resolve_expression_to_type resolution)
                   ~arguments
                   ~callable
+                  ~self_argument:(Some self_argument)
               with
               | AttributeResolution.Found { Type.Callable.implementation; _ } -> implementation
               | AttributeResolution.NotFound _ -> implementation

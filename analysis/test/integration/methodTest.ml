@@ -1632,6 +1632,35 @@ let test_check_self context =
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.verbose(1).outer()` is `int`.";
     ];
+  assert_type_errors
+    {|
+      import typing
+      TSelf = typing.TypeVar('TSelf', bound="C")
+      class C:
+        flip: bool = True
+        def flipflop(self: TSelf, other: TSelf) -> TSelf:
+          self.flip = not self.flip
+          if self.flip:
+           return other
+          else:
+           return self
+      class A(C):
+        pass
+      class B(C):
+        pass
+      def foo() -> None:
+        x = A().flipflop(A())
+        reveal_type(x)
+        x = B().flipflop(B())
+        reveal_type(x)
+        x = A().flipflop(B())
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `A`.";
+      "Revealed type [-1]: Revealed type for `x` is `B`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[A, B]`.";
+    ];
   ()
 
 

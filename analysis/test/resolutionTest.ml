@@ -1131,13 +1131,14 @@ let test_fallback_attribute context =
         def Foo.__getattr__(self: Foo, attribute: str) -> int: ...
     |}
     (Some Type.integer);
+  (* Callables on the instance do not get picked up by the runtime. Who knew? *)
   assert_fallback_attribute
     ~name:"baz"
     {|
       class Foo:
         __getattr__: typing.Callable[[str], int]
     |}
-    (Some Type.integer);
+    None;
   assert_fallback_attribute
     ~name:"baz"
     {|
