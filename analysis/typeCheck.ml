@@ -3268,33 +3268,11 @@ module State (Context : Context) = struct
         in
         let is_type_alias =
           match target.value with
-          | Expression.Name (Name.Identifier _) -> (
-              match original_annotation with
-              | None -> (
-                  (* Consider non-locals with a RHS that is a type to be an alias. *)
-                  let is_type_value = function
-                    | Type.Top ->
-                        Option.is_some
-                          (Type.Variable.parse_declaration value ~target:(Reference.create ""))
-                    | Type.Optional Type.Bottom -> false
-                    | annotation ->
-                        not (GlobalResolution.contains_untracked global_resolution annotation)
-                  in
-                  match Node.value value with
-                  | Expression.String _ -> false
-                  | Expression.Name name when is_simple_name name ->
-                      let local =
-                        Resolution.get_local
-                          ~global_fallback:false
-                          ~reference:(name_to_reference_exn name)
-                          resolution
-                      in
-                      is_type_value parsed && not (Option.is_some local)
-                  | _ -> is_type_value parsed )
-              | Some annotation ->
-                  (Type.is_type_alias annotation && Define.is_toplevel define)
-                  || Type.is_meta annotation
-                     && Type.is_typed_dictionary (Type.single_parameter annotation) )
+          | Expression.Name (Name.Identifier _) ->
+              delocalize target
+              |> Expression.show
+              |> GlobalResolution.aliases global_resolution
+              |> Option.is_some
           | _ -> false
         in
         let resolution, errors, resolved =

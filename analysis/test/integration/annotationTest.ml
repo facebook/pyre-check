@@ -1299,20 +1299,25 @@ let test_check_aliases context =
       "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
        control flow path that doesn't define `UndefinedName`.";
     ];
+  (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
     ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
     |}
-    ["Undefined or invalid type [11]: Annotation `UndefinedName` is not defined as a type."];
+    [
+      "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
+       control flow path that doesn't define `UndefinedName`.";
+    ];
+  (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
     ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, "UndefinedName"]
     |}
-    ["Undefined or invalid type [11]: Annotation `UndefinedName` is not defined as a type."];
+    [];
 
   (* Aliases to invalid types *)
   assert_type_errors
