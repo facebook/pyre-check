@@ -328,6 +328,13 @@ let test_check_invalid_type context =
     ["Undefined or invalid type [11]: Annotation `foo.MyType` is not defined as a type."];
   assert_type_errors
     {|
+      class Foo:
+        X = int
+      x: Foo.X = ...
+    |}
+    ["Undefined or invalid type [11]: Annotation `Foo.X` is not defined as a type."];
+  assert_type_errors
+    {|
         def foo() -> None:
           MyType: typing.TypeAlias = int
           x: MyType = 1
@@ -426,6 +433,19 @@ let test_check_invalid_type context =
       def foo() -> Foo[garbage]: ...
     |}
     ["Undefined or invalid type [11]: Annotation `garbage` is not defined as a type."];
+
+  (* Malformed alias assignment *)
+  assert_type_errors
+    {|
+      X, Y = int
+      x: X = ...
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `X` has no type specified.";
+      "Unable to unpack [23]: Unable to unpack `typing.Type[int]` into 2 values.";
+      "Missing global annotation [5]: Globally accessible variable `Y` has no type specified.";
+      "Undefined or invalid type [11]: Annotation `X` is not defined as a type.";
+    ];
   ()
 
 
