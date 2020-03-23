@@ -188,6 +188,18 @@ class ModelTest(unittest.TestCase):
             returns="Return",
             qualifier="qualifier",
         )
+        self.assert_modeled(
+            """
+            def test_fn(x, *, keyword_only):
+                pass
+            """,
+            "def qualifier.test_fn(x: Arg, *, keyword_only: Arg) -> Return: ...",
+            arg="Arg",
+            vararg="Vararg",
+            kwarg="Kwarg",
+            returns="Return",
+            qualifier="qualifier",
+        )
 
     def test_assignment_model(self) -> None:
         model_1 = model.AssignmentModel(
@@ -328,6 +340,25 @@ class ModelTest(unittest.TestCase):
                 # Checking for 'model_2' despite putting in 'model_1' is deliberate; we
                 # are testing the effectiveness of the hash equivalence
                 self.assertIn(model_2, test_set)
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", None, model.ArgumentKind.ARG),
+                    model.Parameter("*", None, model.ArgumentKind.ARG),
+                    model.Parameter("keyword_only", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                self.assertEqual(
+                    str(
+                        # pyre-ignore[45]: Cannot instantiate abstract class
+                        model.RawCallableModel(
+                            arg="TaintSource[A]", returns="TaintSource[A]"
+                        )
+                    ),
+                    "def qualified.C.name(a: TaintSource[A], *, keyword_only: TaintSource[A]) -> TaintSource[A]: ...",
+                )
 
         with self.assertRaises(ValueError), patch.object(
             model.RawCallableModel,

@@ -118,7 +118,9 @@ class RawCallableModel(Model):
             else:
                 taint = None
 
-            if taint:
+            # * parameters indicate kwargs after the parameter position, and can't be
+            # tainted. Example: `def foo(x, *, y): ...`
+            if parameter_name != "*" and taint:
                 serialized_parameters.append(f"{parameter_name}: {taint}")
             else:
                 serialized_parameters.append(parameter_name)
@@ -247,6 +249,20 @@ class FunctionDefinitionModel(RawCallableModel):
                     ArgumentKind.ARG,
                 )
             )
+
+        keyword_only_parameters = function_arguments.kwonlyargs
+        if len(keyword_only_parameters) > 0:
+            parameters.append(
+                Parameter(name="*", annotation=None, kind=ArgumentKind.ARG)
+            )
+            for parameter in keyword_only_parameters:
+                parameters.append(
+                    Parameter(
+                        parameter.arg,
+                        FunctionDefinitionModel._get_annotation(parameter),
+                        ArgumentKind.ARG,
+                    )
+                )
 
         vararg_parameters = function_arguments.vararg
         if isinstance(vararg_parameters, ast.arg):
