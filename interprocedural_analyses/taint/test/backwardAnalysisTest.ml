@@ -178,6 +178,24 @@ let test_tito_sink context =
     ]
 
 
+let test_asyncio_gather context =
+  assert_taint
+    ~context
+    {|
+      import asyncio
+      def sink_through_gather(arg):
+          (_, result, _) = await asyncio.gather(1, arg, "foo")
+          return result
+      def benign_through_gather(arg):
+          (_, _, result) = await asyncio.gather(1, arg, "foo")
+          return result
+    |}
+    [
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.sink_through_gather";
+      outcome ~kind:`Function ~tito_parameters:[] "qualifier.benign_through_gather";
+    ]
+
+
 let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
@@ -1489,5 +1507,6 @@ let () =
     "assignment", test_assignment;
     "access_paths", test_access_paths;
     "for_loops", test_for_loops;
+    "asyncio_gather", test_asyncio_gather;
   ]
   |> TestHelper.run_with_taint_models ~name:"backwardsTaint"

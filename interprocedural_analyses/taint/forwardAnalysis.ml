@@ -771,6 +771,32 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let default_taint, state = analyze_expression ~resolution ~state ~expression:default in
           ForwardState.Tree.join attribute_taint default_taint, state
+      | Call
+          {
+            Call.callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier "asyncio"); _ };
+                        attribute = "gather";
+                        _;
+                      });
+                _;
+              };
+            arguments;
+          } ->
+          analyze_expression
+            ~resolution
+            ~state
+            ~expression:
+              {
+                Node.location = Node.location expression;
+                value =
+                  Expression.Tuple
+                    (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
+              }
       (* dictionary .keys() and .values() functions are special, as they require handling of
          DictionaryKeys taint. *)
       | Call

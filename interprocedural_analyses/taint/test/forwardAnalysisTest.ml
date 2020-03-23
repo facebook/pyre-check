@@ -684,6 +684,25 @@ let test_tuple context =
     ]
 
 
+let test_asyncio_gather context =
+  assert_taint
+    ~context
+    {|
+      import asyncio
+      def benign_through_asyncio():
+        a, b = asyncio.gather(0, __test_source())
+        return a
+
+      def source_through_asyncio():
+        a, b = asyncio.gather(0, __test_source())
+        return b
+    |}
+    [
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_through_asyncio";
+      outcome ~kind:`Function ~returns:[] "qualifier.benign_through_asyncio";
+    ]
+
+
 let test_lambda context =
   assert_taint
     ~context
@@ -955,6 +974,7 @@ let test_tito_side_effects context =
 
 let () =
   [
+    "asyncio_gather", test_asyncio_gather;
     "no_model", test_no_model;
     "simple", test_simple_source;
     "hardcoded", test_hardcoded_source;

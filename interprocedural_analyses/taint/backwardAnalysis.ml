@@ -638,6 +638,33 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
           in
           analyze_expression ~resolution ~taint ~state ~expression:base
+      | Call
+          {
+            Call.callee =
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Expression.Name (Name.Identifier "asyncio"); _ };
+                        attribute = "gather";
+                        _;
+                      });
+                _;
+              };
+            arguments;
+          } ->
+          analyze_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:
+              {
+                Node.location;
+                value =
+                  Expression.Tuple
+                    (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
+              }
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state
