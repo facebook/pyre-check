@@ -949,6 +949,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
+      | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
         -> (
           match target_value with
