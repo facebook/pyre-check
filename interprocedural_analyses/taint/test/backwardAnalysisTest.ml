@@ -809,7 +809,16 @@ let test_tuple context =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_unknown_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_pattern_same_index";
       outcome ~kind:`Function "qualifier.tuple_pattern_different_index";
-    ]
+    ];
+  assert_taint
+    ~context
+    {|
+      def clear_taint_in_tuple(arg):
+        result = arg
+        x, result = 1, 2
+        return result
+    |}
+    [outcome ~kind:`Function ~sink_parameters:[] "qualifier.clear_taint_in_tuple"]
 
 
 let test_lambda context =

@@ -828,17 +828,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         compute_assignment_taint ~resolution target state |> fst |> BackwardState.Tree.read fields
       in
       let state =
-        match of_expression ~resolution target with
-        | Some { root; path } ->
-            {
-              taint =
-                BackwardState.assign
-                  ~root
-                  ~path:(path @ fields)
-                  BackwardState.Tree.empty
-                  state.taint;
-            }
-        | None -> state
+        let rec clear_taint state target =
+          match Node.value target with
+          | Expression.Tuple items -> List.fold items ~f:clear_taint ~init:state
+          | _ -> (
+              match of_expression ~resolution target with
+              | Some { root; path } ->
+                  {
+                    taint =
+                      BackwardState.assign
+                        ~root
+                        ~path:(path @ fields)
+                        BackwardState.Tree.empty
+                        state.taint;
+                  }
+              | None -> state )
+        in
+        clear_taint state target
       in
       analyze_expression ~resolution ~taint ~state ~expression:value
 
