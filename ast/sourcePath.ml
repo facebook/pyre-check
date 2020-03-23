@@ -171,3 +171,6 @@ let same_module_compare
           | false, true -> -1
           | _, _ -> extension_priority () )
       | _ as result -> result )
+
+
+let is_stub { is_stub; _ } = is_stub

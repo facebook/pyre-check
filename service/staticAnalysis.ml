@@ -63,6 +63,10 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
 let callables ~resolution ~source =
   if GlobalResolution.source_is_unit_test resolution ~source then
     []
+  else if Ast.SourcePath.is_stub source.source_path then
+    let callables = unfiltered_callables ~resolution ~source in
+    List.filter callables ~f:(fun (_, { Node.value = define; _ }) ->
+        not (Define.is_toplevel define || Define.is_class_toplevel define))
   else
     unfiltered_callables ~resolution ~source
 

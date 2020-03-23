@@ -7,9 +7,9 @@ open OUnit2
 open Core
 
 let test_callables context =
-  let assert_callables ?(additional_sources = []) source ~expected =
+  let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
     let resolution =
-      Test.ScratchProject.setup ~context (("test.py", source) :: additional_sources)
+      Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
       |> Test.ScratchProject.build_global_resolution
     in
     let source =
@@ -58,7 +58,32 @@ let test_callables context =
         def foo() -> int:
           ...
     |}
-    ~expected:[]
+    ~expected:[];
+  assert_callables
+    "pass"
+    ~additional_sources:
+      [
+        ( "stub.pyi",
+          {|
+            class Toplevel:
+              some_field: int
+              def foo() -> int:
+                ...
+          |}
+        );
+      ]
+    ~expected:[`Function "test.$toplevel"];
+
+  assert_callables
+    ~source_filename:"test.pyi"
+    {|
+      class Toplevel:
+        some_field: int
+        def foo() -> int:
+          ...
+    |}
+    ~expected:
+      [`Method { Interprocedural.Callable.class_name = "test.Toplevel"; method_name = "foo" }]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

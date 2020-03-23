@@ -27,3 +27,5 @@ val full_path : configuration:Configuration.Analysis.t -> t -> Path.t
 
 (* Expose for testing *)
 val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> int
+
+val is_stub : t -> bool
