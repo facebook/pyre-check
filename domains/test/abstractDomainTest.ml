@@ -2104,7 +2104,15 @@ module TreeOfStringSets = struct
     assert_limit_to
       ~expected:(create [Part (Path, ([], StringSet.of_list ["a"; "b"]))])
       ~width:1
-      (parse_tree ["a", ["a"]; "b", ["b"]])
+      (parse_tree ["a", ["a"]; "b", ["b"]]);
+    (* Weak assignment with bottom. *)
+    assert_equal
+      (parse_tree ["a", ["item"]])
+      (assign
+         ~weak:true
+         ~tree:(parse_tree ["a", ["item"]])
+         [AbstractTreeDomain.Label.Field "b"]
+         ~subtree:bottom)
 end
 
 module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)

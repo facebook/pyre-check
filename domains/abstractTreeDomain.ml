@@ -647,7 +647,10 @@ module Make (Config : CONFIG) (Element : AbstractDomainCore.S) () = struct
         (Label.show_path path)
         (show tree)
     in
-    join_path ~ancestors:Element.bottom ~tree path ~subtree |> option_node_tree ~message
+    if is_bottom subtree then
+      tree
+    else
+      join_path ~ancestors:Element.bottom ~tree path ~subtree |> option_node_tree ~message
 
 
   let assign ?(weak = false) ~tree path ~subtree =
