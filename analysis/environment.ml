@@ -251,7 +251,7 @@ module EnvironmentTable = struct
 
 
     let update_only_this_environment ~scheduler ~configuration upstream_update =
-      Log.info "Updating %s Environment" In.Value.description;
+      Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
       let update ~names_to_update ~track_dependencies () =
         let register =
           let set name =

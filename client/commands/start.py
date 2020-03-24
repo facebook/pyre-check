@@ -48,6 +48,8 @@ class Start(Reporting):
             self._load_initial_state_from: Final[Optional[str]] = None
             self._saved_state_project: Final[Optional[str]] = None
 
+        self._enable_logging_section("environment")
+
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         start = parser.add_parser(cls.NAME, epilog="Starts a pyre server as a daemon.")

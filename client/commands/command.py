@@ -548,10 +548,7 @@ class Command(CommandParser, ABC):
         if self._verbose:
             flags.append("-verbose")
         if not self._hide_parse_errors:
-            if self._logging_sections:
-                self._logging_sections = self._logging_sections + ",parser"
-            else:
-                self._logging_sections = "parser"
+            self._enable_logging_section("parser")
         if not self._capable_terminal:
             # Disable progress reporting for non-capable terminals.
             # This helps in reducing clutter.
@@ -724,3 +721,9 @@ class Command(CommandParser, ABC):
     @property
     def configuration(self) -> Optional[Configuration]:
         return self._configuration
+
+    def _enable_logging_section(self, section: str) -> None:
+        if self._logging_sections:
+            self._logging_sections = self._logging_sections + "," + section
+        else:
+            self._logging_sections = section
