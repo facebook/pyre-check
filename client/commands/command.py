@@ -208,6 +208,7 @@ class CommandParser(ABC):
             self._local_configuration,
             str(self._dot_pyre_directory),
         )
+        Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
         logger = self._logger
         if logger:

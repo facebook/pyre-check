@@ -66,10 +66,7 @@ class InitTest(unittest.TestCase):
             find_local_root(original_directory)
             warning.assert_called_once()
 
-    @patch("{}.Path".format(client_name))
-    @patch("{}.Path.mkdir".format(client_name))
-    @patch("os.makedirs")
-    def test_find_log_directory(self, mkdirs, path_mkdir, path) -> None:
+    def test_find_log_directory(self) -> None:
         local_configuration = None
         current_directory = "project"
         log_directory = find_log_directory(

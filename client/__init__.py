@@ -133,7 +133,6 @@ def find_log_directory(
         # guaranteed that configurations are never deeper than local configurations
         relative = os.path.relpath(local_configuration, current_directory)
         log_directory = os.path.join(log_directory, relative)
-    Path(log_directory).mkdir(parents=True, exist_ok=True)
     return log_directory
 
 
