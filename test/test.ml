@@ -717,6 +717,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         def eval(arg: str) -> None: ...
 
+        @overload
+        def filter(__function: None,
+                   __iterable: Iterable[Optional[_T]]
+        ) -> Iterator[_T]: ...
+
+        @overload
+        def filter(__function: Callable[[_T], Any],
+                   __iterable: Iterable[_T]
+        ) -> Iterator[_T]: ...
+
         def getattr(
           o: object,
           name: str,
@@ -730,50 +740,54 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T4 = TypeVar("_T4")
         _T5 = TypeVar("_T5")
         @overload
-        def map(func: Callable[[_T1], _S], iter1: Iterable[_T1]) -> Iterator[_S]:
-            ...
-        @overload
-        def map(
-            func: Callable[[_T1, _T2], _S], iter1: Iterable[_T1], iter2: Iterable[_T2]
+        def map(__func: Callable[[_T1], _S],
+                __iter1: Iterable[_T1]
         ) -> Iterator[_S]:
             ...
         @overload
         def map(
-            func: Callable[[_T1, _T2, _T3], _S],
-            iter1: Iterable[_T1],
-            iter2: Iterable[_T2],
-            iter3: Iterable[_T3],
+            __func: Callable[[_T1, _T2], _S],
+            __iter1: Iterable[_T1],
+            __iter2: Iterable[_T2]
         ) -> Iterator[_S]:
             ...
         @overload
         def map(
-            func: Callable[[_T1, _T2, _T3, _T4], _S],
-            iter1: Iterable[_T1],
-            iter2: Iterable[_T2],
-            iter3: Iterable[_T3],
-            iter4: Iterable[_T4],
+            __func: Callable[[_T1, _T2, _T3], _S],
+            __iter1: Iterable[_T1],
+            __iter2: Iterable[_T2],
+            __iter3: Iterable[_T3],
         ) -> Iterator[_S]:
             ...
         @overload
         def map(
-            func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
-            iter1: Iterable[_T1],
-            iter2: Iterable[_T2],
-            iter3: Iterable[_T3],
-            iter4: Iterable[_T4],
-            iter5: Iterable[_T5],
+            __func: Callable[[_T1, _T2, _T3, _T4], _S],
+            __iter1: Iterable[_T1],
+            __iter2: Iterable[_T2],
+            __iter3: Iterable[_T3],
+            __iter4: Iterable[_T4],
         ) -> Iterator[_S]:
             ...
         @overload
         def map(
-            func: Callable[..., _S],
-            iter1: Iterable[Any],
-            iter2: Iterable[Any],
-            iter3: Iterable[Any],
-            iter4: Iterable[Any],
-            iter5: Iterable[Any],
-            iter6: Iterable[Any],
-            *iterables: Iterable[Any],
+            __func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
+            __iter1: Iterable[_T1],
+            __iter2: Iterable[_T2],
+            __iter3: Iterable[_T3],
+            __iter4: Iterable[_T4],
+            __iter5: Iterable[_T5],
+        ) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            __func: Callable[..., _S],
+            __iter1: Iterable[Any],
+            __iter2: Iterable[Any],
+            __iter3: Iterable[Any],
+            __iter4: Iterable[Any],
+            __iter5: Iterable[Any],
+            __iter6: Iterable[Any],
+            *__iterables: Iterable[Any],
         ) -> Iterator[_S]:
             ...
 
@@ -1004,6 +1018,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from typing import TypeVar, Generic, Callable, Tuple, Any, Dict
         _T = TypeVar("_T")
+        _S = TypeVar("_S")
+
+        @overload
+        def reduce(function: Callable[[_T, _S], _T],
+                   sequence: Iterable[_S], initial: _T) -> _T: ...
+
+        @overload
+        def reduce(function: Callable[[_T, _T], _T],
+                   sequence: Iterable[_T]) -> _T: ...
 
         class partial(Generic[_T]):
             func: Callable[..., _T]

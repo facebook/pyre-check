@@ -223,7 +223,8 @@ module AttributeReadOnly : sig
   val signature_select
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->
-    resolve:(Expression.expression Node.t -> Type.t) ->
+    resolve_with_locals:
+      (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
     arguments:Expression.Call.Argument.t list ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->

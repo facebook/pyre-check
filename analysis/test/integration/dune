@@ -41,6 +41,7 @@
   importTest
   inferTest
   isinstanceTest
+  lambdaTest
   literalTest
   methodTest
   modeTest

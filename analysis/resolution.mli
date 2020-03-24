@@ -27,6 +27,12 @@ val resolve_expression : t -> Expression.t -> t * Type.t
 
 val resolve_expression_to_type : t -> Expression.t -> Type.t
 
+val resolve_expression_to_type_with_locals
+  :  t ->
+  locals:(Reference.t * Annotation.t) list ->
+  Expression.t ->
+  Type.t
+
 val resolve_expression_to_annotation : t -> Expression.t -> Annotation.t
 
 val resolve_reference : t -> Reference.t -> Type.t

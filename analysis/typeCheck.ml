@@ -1691,7 +1691,7 @@ module State (Context : Context) = struct
             GlobalResolution.signature_select
               ~arguments
               ~global_resolution
-              ~resolve:(resolve_expression_type ~resolution)
+              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
               ~callable
               ~self_argument
           in
@@ -1710,7 +1710,7 @@ module State (Context : Context) = struct
                         GlobalResolution.signature_select
                           ~arguments
                           ~global_resolution:(Resolution.global_resolution resolution)
-                          ~resolve:(resolve_expression_type ~resolution)
+                          ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                           ~callable
                           ~self_argument)
                   |> Option.value ~default:signature
@@ -4848,6 +4848,14 @@ module State (Context : Context) = struct
 
   and resolve_expression_type ~resolution expression =
     resolve_expression ~resolution expression |> Annotation.annotation
+
+
+  and resolve_expression_type_with_locals ~resolution ~locals expression =
+    let add_local resolution (reference, annotation) =
+      Resolution.set_local resolution ~reference ~annotation
+    in
+    let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
+    resolve_expression ~resolution:resolution_with_locals expression |> Annotation.annotation
 
 
   and resolve_reference_type ~resolution reference =

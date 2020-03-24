@@ -198,6 +198,16 @@ let resolve_attribute_access resolution ~base_type ~attribute =
   resolve_expression_to_type resolution expression_to_analyze
 
 
+let resolve_expression_to_type_with_locals
+    ({ resolve_expression; _ } as resolution)
+    ~locals
+    expression
+  =
+  let add_local resolution (reference, annotation) = set_local resolution ~reference ~annotation in
+  let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
+  resolve_expression ~resolution:resolution_with_locals expression |> snd |> Annotation.annotation
+
+
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
   { resolution with type_variables = Type.Variable.Set.add type_variables variable }
 
@@ -295,7 +305,7 @@ let fallback_attribute ~resolution ~name class_name =
               match
                 GlobalResolution.signature_select
                   ~global_resolution
-                  ~resolve:(resolve_expression_to_type resolution)
+                  ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
                   ~arguments
                   ~callable
                   ~self_argument:(Some self_argument)

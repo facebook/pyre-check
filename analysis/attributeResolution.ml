@@ -1028,7 +1028,8 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
       ?dependency:SharedMemoryKeys.dependency ->
-      resolve:(Expression.expression Node.t -> Type.t) ->
+      resolve_with_locals:
+        (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
       arguments:Expression.Call.Argument.t list ->
       callable:Type.Callable.t ->
       self_argument:Type.t option ->
@@ -2731,7 +2732,7 @@ module Implementation = struct
                     arguments )
                 with
                 | Some signature, Some arguments -> (
-                    let resolve expression =
+                    let resolve_with_locals ~locals:_ expression =
                       let resolved =
                         resolve_literal
                           ?dependency
@@ -2752,7 +2753,7 @@ module Implementation = struct
                         ?dependency
                         ~class_metadata_environment
                         ~assumptions
-                        ~resolve
+                        ~resolve_with_locals
                         ~arguments
                         ~callable
                         ~self_argument:None
@@ -2867,7 +2868,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ?dependency
-      ~resolve
+      ~resolve_with_locals
       ~arguments
       ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
       ~self_argument
@@ -3048,7 +3049,7 @@ module Implementation = struct
             | expression, Some name -> expression, Named name
             | expression, None -> expression, Positional
           in
-          let resolved = resolve expression in
+          let resolved = resolve_with_locals ~locals:[] expression in
           { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
         in
         let is_labeled = function
@@ -3099,6 +3100,60 @@ module Implementation = struct
               } )
     in
     let check_annotations ({ argument_mapping; _ } as signature_match) =
+      (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
+       * and the argument is `lambda parameter: body` *)
+      let is_generic_lambda parameter arguments =
+        match parameter, arguments with
+        | ( Parameter.PositionalOnly
+              {
+                annotation =
+                  Type.Callable
+                    {
+                      kind = Anonymous;
+                      implementation =
+                        {
+                          annotation = Type.Variable _;
+                          parameters =
+                            Defined
+                              [
+                                Parameter.PositionalOnly
+                                  {
+                                    index = 0;
+                                    annotation = Type.Variable parameter_variable;
+                                    default = false;
+                                  };
+                              ];
+                        };
+                      overloads = [];
+                    } as annotation;
+                _;
+              },
+            [
+              SignatureSelectionTypes.Argument
+                {
+                  expression =
+                    {
+                      value =
+                        Lambda
+                          {
+                            body = lambda_body;
+                            parameters =
+                              [
+                                {
+                                  value =
+                                    { name = lambda_parameter; value = None; annotation = None };
+                                  _;
+                                };
+                              ];
+                          };
+                      _;
+                    };
+                  _;
+                };
+            ] ) ->
+            Some (annotation, parameter_variable, lambda_parameter, lambda_body)
+        | _ -> None
+      in
       let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
         let bind_arguments_to_variadic ~expected ~arguments =
           let extract arguments =
@@ -3191,7 +3246,7 @@ module Implementation = struct
         | KeywordOnly { annotation = parameter_annotation; _ }, arguments
         | Named { annotation = parameter_annotation; _ }, arguments
         | Variable (Concrete parameter_annotation), arguments
-        | Keywords parameter_annotation, arguments ->
+        | Keywords parameter_annotation, arguments -> (
             let set_constraints_and_reasons
                 ~position
                 ~argument
@@ -3308,7 +3363,7 @@ module Implementation = struct
                             ~assumptions
                             ~class_metadata_environment
                             ?dependency
-                            ~resolve
+                            ~resolve:(resolve_with_locals ~locals:[])
                             ~expression:(Some expression)
                             ~resolved
                             ~expected:parameter_annotation
@@ -3326,7 +3381,9 @@ module Implementation = struct
                       else
                         argument_annotation |> set_constraints_and_reasons )
             in
-            List.rev arguments |> check signature_match
+            match is_generic_lambda key arguments with
+            | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
+            | None -> List.rev arguments |> check signature_match )
       in
       let check_if_solution_exists
           ( { constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
@@ -3384,8 +3441,61 @@ module Implementation = struct
               { signature_match with constraints_set = updated_constraints }
         | _ -> signature_match
       in
+      let special_case_lambda_parameter ({ callable; argument_mapping; _ } as signature_match) =
+        (* Special case: `Callable[[ParamVar], ReturnVar]` with `lambda parameter: body` *)
+        let update ~key ~data ({ constraints_set; _ } as signature_match) =
+          match is_generic_lambda key data with
+          | None -> signature_match
+          | Some (annotation, parameter_variable, lambda_parameter, lambda_body) ->
+              (* Infer the parameter type using existing constraints. *)
+              let solution =
+                let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+                List.filter_map
+                  constraints_set
+                  ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+                |> List.map ~f:snd
+                |> List.hd
+                |> Option.value ~default:TypeConstraints.Solution.empty
+              in
+              let parameter_type =
+                TypeConstraints.Solution.instantiate_single_variable solution parameter_variable
+                |> Option.value ~default:Type.Top
+              in
+              (* Infer the return type by resolving the lambda body with the parameter type *)
+              let return_type =
+                resolve_with_locals
+                  ~locals:[Reference.create lambda_parameter, Annotation.create parameter_type]
+                  lambda_body
+              in
+              let return_type = Type.weaken_literals return_type in
+              let parameters =
+                Type.Callable.Parameter.create
+                  [
+                    {
+                      Type.Callable.Parameter.name = lambda_parameter;
+                      annotation = parameter_type;
+                      default = false;
+                    };
+                  ]
+              in
+              let resolved =
+                Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
+              in
+              let updated_constraints =
+                List.concat_map constraints_set ~f:(fun constraints ->
+                    TypeOrder.solve_less_or_equal
+                      order
+                      ~constraints
+                      ~left:resolved
+                      ~right:annotation)
+              in
+              { signature_match with constraints_set = updated_constraints }
+        in
+        Map.fold ~init:signature_match ~f:update argument_mapping
+      in
       Map.fold ~init:signature_match ~f:update argument_mapping
       |> special_case_dictionary_constructor
+      |> special_case_lambda_parameter
       |> check_if_solution_exists
     in
     let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
