@@ -105,7 +105,8 @@ class FastBuckBuilder(BuckBuilder):
         buck_mode = self._buck_mode
         if buck_mode:
             command.extend(["--mode", buck_mode])
-        LOG.info("Buck builder command: `{}`".format(" ".join(command)))
+        LOG.info("Building buck targets...")
+        LOG.debug("Buck builder command: `{}`".format(" ".join(command)))
         with subprocess.Popen(
             command,
             stdin=subprocess.DEVNULL,
@@ -134,7 +135,7 @@ class FastBuckBuilder(BuckBuilder):
                 return [self._output_directory]
             else:
                 raise BuckException(
-                    "Could not build targets. Check the paths or run `buck clean`."
+                    f"Failed to build targets with:\n`{' '.join(command)}`"
                 )
 
     def _read_stderr(
