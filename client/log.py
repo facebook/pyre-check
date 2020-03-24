@@ -75,7 +75,6 @@ class TimedStreamHandler(logging.StreamHandler):
         self.setLevel(logging.INFO)
 
         self._record: Optional[logging.LogRecord] = None
-        self._last_record: Optional[logging.LogRecord] = None
         self._active_lines: int = 0
 
         # Preamble preparing terminal.
@@ -101,7 +100,6 @@ class TimedStreamHandler(logging.StreamHandler):
         )
 
     def emit(self, record: logging.LogRecord, age: Optional[float] = None) -> None:
-        self._last_record = record
         suffix = ""
         color = ""
         active_lines = record.msg.count("\n") + 1
