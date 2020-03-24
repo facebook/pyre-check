@@ -283,6 +283,7 @@ public final class BuildTargetsBuilder {
   }
 
   public DebugOutput buildTargets(String buckRoot) throws BuilderException, IOException {
+    SimpleLogger.info("Buliding...");
     this.buildThriftLibraries();
     this.buildSwigLibraries();
     this.buildAntlr4Libraries();

@@ -3,6 +3,7 @@ package com.facebook.buck_project_builder.targets;
 import com.facebook.buck_project_builder.BuckCells;
 import com.facebook.buck_project_builder.BuckQuery;
 import com.facebook.buck_project_builder.BuilderException;
+import com.facebook.buck_project_builder.SimpleLogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -123,6 +124,7 @@ public final class BuildTargetsCollector {
   void collectBuildTargets(ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap)
       throws IOException {
     // The first pass collects python_library that refers to a remote python_file
+    SimpleLogger.info("Finding targets to build...");
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
       addRemotePythonFiles(targetJsonObject, targetJsonMap);
