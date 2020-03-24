@@ -137,7 +137,7 @@ class TimedStreamHandler(logging.StreamHandler):
 
         timed_record = copy.copy(record)
         timed_record.msg = (
-            "{clear_line}{color} {cursor}{clear} " "{truncate}{message}{suffix}"
+            "{clear_line}{color} {cursor}{clear} {truncate}{message}{suffix}"
         ).format(
             clear_line=self.clear_lines(),
             color=color,
