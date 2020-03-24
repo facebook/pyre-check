@@ -105,7 +105,7 @@ class IncrementalTest(unittest.TestCase):
                 ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-                text=True,
+                universal_newlines=True,
             )
 
         restart_file_monitor_if_needed.reset_mock()

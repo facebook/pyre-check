@@ -111,7 +111,7 @@ class FastBuckBuilder(BuckBuilder):
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            universal_newlines=True,
             env={**os.environ, "NO_BUCKD": "1"},
         ) as buck_builder_process:
             # Java's logging conflicts with Python's logging, we capture the

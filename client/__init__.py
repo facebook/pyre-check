@@ -66,7 +66,9 @@ def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
 
 def get_binary_version(configuration: "Configuration") -> Optional[str]:
     status = subprocess.run(
-        [configuration.binary, "-version"], stdout=subprocess.PIPE, text=True
+        [configuration.binary, "-version"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
     )
     if status.returncode == 0:
         return status.stdout.strip()

@@ -628,7 +628,7 @@ class Command(CommandParser, ABC):
             stdout=stdout,
             stderr=subprocess.PIPE,
             preexec_fn=limit_memory_usage,
-            text=True,
+            universal_newlines=True,
         ) as process:
 
             # Read stdout output
@@ -685,7 +685,7 @@ class Command(CommandParser, ABC):
                 ["tail", "--follow", "--lines=0", stderr_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-                text=True,
+                universal_newlines=True,
             ) as stderr_tail:
                 try:
                     with SocketConnection(self._log_directory) as socket_connection:
