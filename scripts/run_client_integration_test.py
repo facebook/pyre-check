@@ -416,6 +416,12 @@ class TestCommand(unittest.TestCase, ABC):
         self.assertEqual(self.get_servers(), [], self.get_context(result))
 
 
+class BaseCommandTest(TestCommand):
+    def test_pyre_version(self) -> None:
+        result = self.run_pyre("--version")
+        self.assert_output_matches(result, re.compile(r"Client version:.*"))
+
+
 class AnalyzeTest(TestCommand):
     def initial_filesystem(self) -> None:
         self.create_project_configuration()

@@ -76,24 +76,23 @@ def main() -> int:
         original_directory = os.getcwd()
         # TODO(T57959968): Stop changing the directory in the client
         os.chdir(find_project_root(original_directory))
-        command = arguments.command(arguments, original_directory)
 
         if arguments.version:
-            configuration = command.configuration
-            if configuration:
-                binary_version = (
-                    get_binary_version(configuration)
-                    or "Cannot get version from binary"
-                )
-            else:
-                binary_version = "Cannot find Pyre binary"
-            log.stdout.write(
-                "Binary version: {}\nClient version: {}".format(
-                    binary_version, __version__
-                )
-            )
+            try:
+                # TODO(T64512953): Decouple configuration creation with command creation
+                configuration = arguments.command(
+                    arguments, original_directory
+                ).configuration
+                if configuration:
+                    binary_version = get_binary_version(configuration)
+                    if binary_version:
+                        log.stdout.write(f"Binary version: {binary_version}\n")
+            except Exception:
+                pass
+            log.stdout.write(f"Client version: {__version__}\n")
             exit_code = ExitCode.SUCCESS
         else:
+            command = arguments.command(arguments, original_directory)
             log.initialize(command.noninteractive, command.log_directory)
             exit_code = command.run().exit_code()
     except buck.BuckException as error:
