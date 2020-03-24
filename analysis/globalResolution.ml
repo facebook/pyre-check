@@ -426,6 +426,8 @@ let successors ~resolution:({ dependency; _ } as resolution) =
   ClassMetadataEnvironment.ReadOnly.successors ?dependency (class_metadata_environment resolution)
 
 
+let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
+
 let attributes
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)

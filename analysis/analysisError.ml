@@ -51,6 +51,23 @@ and mismatch = {
   due_to_invariance: bool;
 }
 
+and annotation_and_parent = {
+  parent: Identifier.t;
+  annotation: Type.t;
+}
+
+and typed_dictionary_field_mismatch =
+  | RequirednessMismatch of {
+      required_field_class: Identifier.t;
+      non_required_field_class: Identifier.t;
+      field_name: Identifier.t;
+    }
+  | TypeMismatch of {
+      field_name: Identifier.t;
+      annotation_and_parent1: annotation_and_parent;
+      annotation_and_parent2: annotation_and_parent;
+    }
+
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
@@ -108,6 +125,7 @@ and invalid_inheritance =
       annotation: Type.t;
       is_parent_class_typed_dictionary: bool;
     }
+  | TypedDictionarySuperclassCollision of typed_dictionary_field_mismatch
 
 and invalid_override_kind =
   | Final
@@ -1099,7 +1117,35 @@ let messages ~concise ~signature location kind =
                   " for a typed dictionary. Expected a typed dictionary"
               else
                 "" );
-          ] )
+          ]
+      | TypedDictionarySuperclassCollision mismatch -> (
+          match mismatch with
+          | RequirednessMismatch { required_field_class; non_required_field_class; field_name } ->
+              [
+                Format.asprintf
+                  "`%s` is a required field in base class `%s` and a non-required field in base \
+                   class `%s` (because of `total=False`)."
+                  field_name
+                  required_field_class
+                  non_required_field_class;
+              ]
+          | TypeMismatch
+              {
+                field_name;
+                annotation_and_parent1 = { annotation = annotation1; parent = parent1 };
+                annotation_and_parent2 = { annotation = annotation2; parent = parent2 };
+              } ->
+              [
+                Format.asprintf
+                  "Field `%s` has type `%a` in base class `%s` and type `%a` in base class `%s`."
+                  field_name
+                  pp_type
+                  annotation1
+                  parent1
+                  pp_type
+                  annotation2
+                  parent2;
+              ] ) )
   | InvalidOverride { parent; decorator } ->
       let preamble, message =
         match decorator with
@@ -2995,6 +3041,30 @@ let dequalify
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
     | UninheritableType { annotation; is_parent_class_typed_dictionary } ->
         UninheritableType { annotation = dequalify annotation; is_parent_class_typed_dictionary }
+    | TypedDictionarySuperclassCollision mismatch ->
+        TypedDictionarySuperclassCollision
+          ( match mismatch with
+          | RequirednessMismatch { required_field_class; non_required_field_class; field_name } ->
+              RequirednessMismatch
+                {
+                  required_field_class = dequalify_identifier required_field_class;
+                  non_required_field_class = dequalify_identifier non_required_field_class;
+                  field_name = dequalify_identifier field_name;
+                }
+          | TypeMismatch
+              {
+                field_name;
+                annotation_and_parent1 = { annotation = annotation1; parent = parent1 };
+                annotation_and_parent2 = { annotation = annotation2; parent = parent2 };
+              } ->
+              TypeMismatch
+                {
+                  field_name = dequalify_identifier field_name;
+                  annotation_and_parent1 =
+                    { annotation = dequalify annotation1; parent = dequalify_identifier parent1 };
+                  annotation_and_parent2 =
+                    { annotation = dequalify annotation2; parent = dequalify_identifier parent2 };
+                } )
   in
   let dequalify_invalid_assignment = function
     | FinalAttribute attribute -> FinalAttribute (dequalify_reference attribute)

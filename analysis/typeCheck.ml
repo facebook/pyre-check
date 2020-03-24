@@ -1005,6 +1005,15 @@ module State (Context : Context) = struct
       Resolution.with_annotation_store resolution ~annotation_store, errors
     in
     let check_base_annotations resolution errors =
+      let current_class_name = parent >>| Reference.show in
+      let is_current_class_typed_dictionary =
+        current_class_name
+        >>| (fun class_name ->
+              GlobalResolution.is_typed_dictionary
+                ~resolution:global_resolution
+                (Primitive class_name))
+        |> Option.value ~default:false
+      in
       if Define.is_class_toplevel define then
         let open Annotated in
         let check_base old_errors ({ ExpressionCall.Argument.value; _ } as base) =
@@ -1016,17 +1025,8 @@ module State (Context : Context) = struct
                * suggest that instead you need to use typing.Type[Something] *)
               old_errors
           | Primitive base_name ->
-              let is_subclass_typed_dictionary =
-                define.signature.parent
-                >>| Reference.show
-                >>| (fun subclass_name ->
-                      GlobalResolution.is_typed_dictionary
-                        ~resolution:global_resolution
-                        (Primitive subclass_name))
-                |> Option.value ~default:false
-              in
               if
-                is_subclass_typed_dictionary
+                is_current_class_typed_dictionary
                 && not
                      ( GlobalResolution.is_typed_dictionary
                          ~resolution:global_resolution
@@ -1063,7 +1063,96 @@ module State (Context : Context) = struct
           >>| ClassSummary.bases
           |> Option.value ~default:[]
         in
-        List.fold ~init:errors ~f:check_base bases
+        let errors = List.fold ~init:errors ~f:check_base bases in
+        if is_current_class_typed_dictionary then
+          let open Type.Record.TypedDictionary in
+          let superclass_pairs_with_same_field_name =
+            let field_name_to_successor_fields_map =
+              let get_typed_dictionary_fields class_name =
+                GlobalResolution.get_typed_dictionary
+                  ~resolution:global_resolution
+                  (Type.Primitive class_name)
+                >>| (fun { fields; _ } -> fields)
+                |> Option.value ~default:[]
+              in
+              let get_successor_map_entries successor_name =
+                get_typed_dictionary_fields successor_name
+                |> List.map ~f:(fun ({ name; annotation = _; _ } as field) ->
+                       name, (successor_name, field))
+              in
+              let base_classes =
+                current_class_name
+                >>| GlobalResolution.immediate_parents ~resolution:global_resolution
+                |> Option.value ~default:[]
+              in
+              List.concat_map base_classes ~f:get_successor_map_entries
+              |> Map.of_alist_multi (module String)
+            in
+            let all_pairs items =
+              List.cartesian_product items items
+              |> List.filter ~f:(fun ((class_name1, _), (class_name2, _)) ->
+                     String.compare class_name1 class_name2 < 0)
+            in
+            Map.data field_name_to_successor_fields_map |> List.concat_map ~f:all_pairs
+          in
+          let emit_requiredness_error
+              errors
+              ((class_name1, { name; required = required1; _ }), (class_name2, _))
+            =
+            let mismatch =
+              if required1 then
+                Error.RequirednessMismatch
+                  {
+                    required_field_class = class_name1;
+                    non_required_field_class = class_name2;
+                    field_name = name;
+                  }
+              else
+                Error.RequirednessMismatch
+                  {
+                    required_field_class = class_name2;
+                    non_required_field_class = class_name1;
+                    field_name = name;
+                  }
+            in
+            emit_error
+              ~errors
+              ~location
+              ~kind:(InvalidInheritance (TypedDictionarySuperclassCollision mismatch))
+          in
+          let emit_type_mismatch_error
+              errors
+              ( (class_name1, { name = field_name; annotation = annotation1; _ }),
+                (class_name2, { annotation = annotation2; _ }) )
+            =
+            emit_error
+              ~errors
+              ~location
+              ~kind:
+                (InvalidInheritance
+                   (TypedDictionarySuperclassCollision
+                      (Error.TypeMismatch
+                         {
+                           field_name;
+                           annotation_and_parent1 =
+                             { annotation = annotation1; parent = class_name1 };
+                           annotation_and_parent2 =
+                             { annotation = annotation2; parent = class_name2 };
+                         })))
+          in
+          let errors =
+            List.filter superclass_pairs_with_same_field_name ~f:(fun ((_, field1), (_, field2)) ->
+                Type.TypedDictionary.same_name_different_requiredness field1 field2)
+            |> List.fold ~init:errors ~f:emit_requiredness_error
+          in
+          let errors =
+            List.filter superclass_pairs_with_same_field_name ~f:(fun ((_, field1), (_, field2)) ->
+                Type.TypedDictionary.same_name_different_annotation field1 field2)
+            |> List.fold ~init:errors ~f:emit_type_mismatch_error
+          in
+          errors
+        else
+          errors
       else
         errors
     in

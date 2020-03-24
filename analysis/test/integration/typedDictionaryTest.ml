@@ -1632,7 +1632,7 @@ let test_check_typed_dictionary_inheritance context =
           foo: int
           bar: str
         class Base2(mypy_extensions.TypedDict):
-          foo: int
+          foo: str
           bar: int
         class Child(Base1, Base2):
           baz: str
@@ -1640,9 +1640,27 @@ let test_check_typed_dictionary_inheritance context =
         x: int = d["bar"]
         y: str = d["bar"]
     |}
-    (* TODO(T61662929): Key collision should raise an error. Should a common key with compatible
-       types also raise an error? *)
-    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
+    [
+      "Invalid inheritance [39]: Field `bar` has type `str` in base class `Base1` and type `int` \
+       in base class `Base2`.";
+      "Invalid inheritance [39]: Field `foo` has type `int` in base class `Base1` and type `str` \
+       in base class `Base2`.";
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`.";
+    ];
+  assert_test_typed_dictionary
+    {|
+        import mypy_extensions
+        class Base1(mypy_extensions.TypedDict):
+          foo: int
+        class Base2(mypy_extensions.TypedDict, total=False):
+          foo: int
+        class Child(Base1, Base2):
+          baz: str
+    |}
+    [
+      "Invalid inheritance [39]: `foo` is a required field in base class `Base1` and a \
+       non-required field in base class `Base2` (because of `total=False`).";
+    ];
   assert_test_typed_dictionary
     {|
         import mypy_extensions
@@ -1653,9 +1671,10 @@ let test_check_typed_dictionary_inheritance context =
         class Child(Base1, Base2):
           foo: str
     |}
-    (* TODO(T61662929): We will report this as a collision among superclass fields rather than an
-       override error. *)
-    [];
+    [
+      "Invalid inheritance [39]: Field `foo` has type `int` in base class `Base1` and type `str` \
+       in base class `Base2`.";
+    ];
   (* Superclass must be a TypedDict. *)
   assert_test_typed_dictionary
     {|

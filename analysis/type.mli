@@ -217,6 +217,12 @@ module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
+val pp_typed_dictionary_field
+  :  pp_type:(Format.formatter -> type_t -> unit) ->
+  Format.formatter ->
+  t Record.TypedDictionary.typed_dictionary_field ->
+  unit
+
 val pp_concise : Format.formatter -> t -> unit
 
 module Parameter : sig
@@ -820,6 +826,13 @@ module TypedDictionary : sig
   val create_field : name:string -> annotation:t -> required:bool -> t typed_dictionary_field
 
   val are_fields_total : t typed_dictionary_field list -> bool
+
+  val same_name_different_requiredness
+    :  t typed_dictionary_field ->
+    t typed_dictionary_field ->
+    bool
+
+  val same_name_different_annotation : t typed_dictionary_field -> t typed_dictionary_field -> bool
 
   val fields_have_colliding_keys
     :  t typed_dictionary_field list ->

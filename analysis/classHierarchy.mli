@@ -78,6 +78,8 @@ val method_resolution_order_linearize
 
 val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
+val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
+
 val variables
   :  ?default:Type.Variable.t list option ->
   (module Handler) ->

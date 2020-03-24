@@ -164,6 +164,13 @@ let successors (module Handler : Handler) annotation =
   | [] -> []
 
 
+let immediate_parents (module Handler : Handler) class_name =
+  index_of class_name
+  |> Handler.edges
+  >>| List.map ~f:(fun target -> Target.target target |> IndexTracker.annotation)
+  |> Option.value ~default:[]
+
+
 let clean not_clean =
   let open Type.OrderedTypes.Concatenation in
   List.map not_clean ~f:(function

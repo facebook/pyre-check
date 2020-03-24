@@ -42,6 +42,23 @@ and mismatch = {
   due_to_invariance: bool;
 }
 
+and annotation_and_parent = {
+  parent: Identifier.t;
+  annotation: Type.t;
+}
+
+and typed_dictionary_field_mismatch =
+  | RequirednessMismatch of {
+      required_field_class: Identifier.t;
+      non_required_field_class: Identifier.t;
+      field_name: Identifier.t;
+    }
+  | TypeMismatch of {
+      field_name: Identifier.t;
+      annotation_and_parent1: annotation_and_parent;
+      annotation_and_parent2: annotation_and_parent;
+    }
+
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
@@ -99,6 +116,7 @@ and invalid_inheritance =
       annotation: Type.t;
       is_parent_class_typed_dictionary: bool;
     }
+  | TypedDictionarySuperclassCollision of typed_dictionary_field_mismatch
 
 and invalid_override_kind =
   | Final

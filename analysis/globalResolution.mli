@@ -211,6 +211,8 @@ val attribute_from_class_name
 
 val successors : resolution:t -> Type.Primitive.t -> string list
 
+val immediate_parents : resolution:t -> Type.Primitive.t -> string list
+
 val constraints
   :  resolution:t ->
   target:Type.Primitive.t ->

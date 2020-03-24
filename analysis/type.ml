@@ -659,6 +659,10 @@ let pp_parameters ~pp_type format = function
       Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") s format parameters
 
 
+let pp_typed_dictionary_field ~pp_type format { Record.TypedDictionary.name; annotation; required } =
+  Format.fprintf format "%s%s: %a" name (if required then "" else "?") pp_type annotation
+
+
 let rec pp format annotation =
   match annotation with
   | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp annotation
@@ -706,8 +710,7 @@ let rec pp format annotation =
   | TypedDictionary { Record.TypedDictionary.name; fields } ->
       let fields =
         fields
-        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation; required } ->
-               Format.asprintf "%s%s: %a" name (if required then "" else "?") pp annotation)
+        |> List.map ~f:(Format.asprintf "%a" (pp_typed_dictionary_field ~pp_type:pp))
         |> String.concat ~sep:", "
       in
       let name =
@@ -804,8 +807,7 @@ let rec pp_concise format annotation =
   | TypedDictionary { name = "$anonymous"; fields; _ } ->
       let fields =
         fields
-        |> List.map ~f:(fun { Record.TypedDictionary.name; annotation; required } ->
-               Format.asprintf "%s%s: %a" name (if required then "" else "?") pp_concise annotation)
+        |> List.map ~f:(Format.asprintf "%a" (pp_typed_dictionary_field ~pp_type:pp))
         |> String.concat ~sep:", "
       in
       Format.fprintf format "TypedDict(%s)" fields
@@ -3694,6 +3696,20 @@ module TypedDictionary = struct
   let create_field ~name ~annotation ~required = { name; annotation; required }
 
   let are_fields_total = are_fields_total
+
+  let same_name_different_requiredness
+      { name = left_name; required = left_required; _ }
+      { name = right_name; required = right_required; _ }
+    =
+    String.equal left_name right_name && not (Bool.equal left_required right_required)
+
+
+  let same_name_different_annotation
+      { name = left_name; annotation = left_annotation; _ }
+      { name = right_name; annotation = right_annotation; _ }
+    =
+    String.equal left_name right_name && not (equal left_annotation right_annotation)
+
 
   let fields_have_colliding_keys left_fields right_fields =
     let found_collision

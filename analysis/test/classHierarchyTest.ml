@@ -126,6 +126,16 @@ let test_successors _ =
   assert_equal (successors order "bottom") ["4"; "2"; "1"; "0"; "3"]
 
 
+let test_immediate_parents _ =
+  assert_equal (immediate_parents butterfly "3") [];
+  assert_equal (immediate_parents butterfly "0") ["3"; "2"];
+
+  assert_equal (immediate_parents order "3") [];
+  assert_equal (immediate_parents order "0") ["3"];
+  assert_equal (immediate_parents order "bottom") ["4"; "2"; "1"; "0"];
+  ()
+
+
 let test_is_transitive_successor _ =
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
@@ -683,6 +693,7 @@ let () =
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
          "successors" >:: test_successors;
+         "immediate_parents" >:: test_immediate_parents;
          "is_transitive_successor" >:: test_is_transitive_successor;
          "to_dot" >:: test_to_dot;
          "to_json" >:: test_to_json;
