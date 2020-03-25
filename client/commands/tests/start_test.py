@@ -168,6 +168,21 @@ class StartTest(unittest.TestCase):
     def test_start_flags(
         self, get_directories_to_analyze, find_local_root, find_project_root
     ) -> None:
+        flags = [
+            "-logging-sections",
+            "environment,parser,-progress",
+            "-project-root",
+            ".",
+            "-log-directory",
+            ".pyre",
+            "-workers",
+            "5",
+            "-expected-binary-version",
+            "hash",
+            "-search-path",
+            "path1,path2,path3",
+        ]
+
         # Check start with watchman.
         original_directory = "/original/directory"
         arguments = mock_arguments()
@@ -175,47 +190,14 @@ class StartTest(unittest.TestCase):
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
+        self.assertEqual(command._flags(), flags)
 
         arguments = mock_arguments(no_watchman=True, terminal=True)
         configuration = mock_configuration(version_hash="hash")
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-terminal",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
+        self.assertEqual(set(command._flags()), {*flags, "-terminal"})
 
         # Check filter directories.
         arguments = mock_arguments(no_watchman=True)
@@ -226,23 +208,7 @@ class StartTest(unittest.TestCase):
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
             self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-filter-directories",
-                    "a;b",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
+                set(command._flags()), {*flags, "-filter-directories", "a;b"}
             )
 
         # Check configuration-file-hash.
@@ -254,25 +220,14 @@ class StartTest(unittest.TestCase):
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
             self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
+                set(command._flags()),
+                {
+                    *flags,
                     "-filter-directories",
                     "a;b",
                     "-configuration-file-hash",
                     "ABCD",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
+                },
             )
 
         # Check save-initial-state-to.
@@ -282,26 +237,10 @@ class StartTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-save-initial-state-to",
-                "/tmp",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()), {*flags, "-save-initial-state-to", "/tmp"}
         )
 
-        # Check load-initial-state-from.
+        # Test saved state options.
         arguments = mock_arguments(
             load_initial_state_from="/tmp/pyre_shared_memory",
             changed_files_path="/tmp/changed_files",
@@ -310,117 +249,31 @@ class StartTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
+            set(command._flags()),
+            {
+                *flags,
                 "-load-state-from",
                 "/tmp/pyre_shared_memory",
                 "-changed-files-path",
                 "/tmp/changed_files",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            },
         )
+
         arguments = mock_arguments(load_initial_state_from="/tmp/pyre_shared_memory")
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-load-state-from",
-                "/tmp/pyre_shared_memory",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()),
+            {*flags, "-load-state-from", "/tmp/pyre_shared_memory"},
         )
-        arguments = mock_arguments(changed_files_path="/tmp/changed_files")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
-        # Check --saved-state-project.
+
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-saved-state-project",
-                "pyre/saved_state",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
-        # Check --no-saved-state.
-        arguments = mock_arguments(
-            saved_state_project="pyre/saved_state", no_saved_state=True
-        )
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()), {*flags, "-saved-state-project", "pyre/saved_state"}
         )
 
         arguments = mock_arguments(no_saved_state=True)
@@ -430,45 +283,7 @@ class StartTest(unittest.TestCase):
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
-        arguments = mock_arguments(store_type_check_resolution=True)
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-store-type-check-resolution",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
+        self.assertEqual(set(command._flags()), {*flags})
 
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
         configuration = mock_configuration()
@@ -480,26 +295,26 @@ class StartTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
+            set(command._flags()),
+            {
+                *flags,
                 "-saved-state-project",
                 "pyre/saved_state",
                 "-saved-state-metadata",
                 "first$second",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            },
         )
+
+        # Store type check resolution.
+        arguments = mock_arguments(store_type_check_resolution=True)
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
+        self.assertEqual(
+            set(command._flags()), {*flags, "-store-type-check-resolution"}
+        )
+
+        # Test ignore all errors.
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
@@ -507,75 +322,19 @@ class StartTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-ignore-all-errors",
-                "/absolute/a;/root/b",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
         )
-        arguments = mock_arguments()
-        arguments.incremental_style = commands.IncrementalStyle.FINE_GRAINED
-        configuration = mock_configuration(version_hash="hash")
-        configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-ignore-all-errors",
-                "/absolute/a;/root/b",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-                "-new-incremental-check",
-            ],
-        )
+
+        # Test autocomplete.
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.autocomplete = True
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-                "-autocomplete",
-            ],
-        )
+        self.assertEqual(set(command._flags()), {*flags, "-autocomplete"})
+
+        # Test profiling options.
         arguments = mock_arguments()
         arguments.enable_profiling = True
         configuration = mock_configuration(version_hash="hash")
@@ -583,100 +342,18 @@ class StartTest(unittest.TestCase):
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-profiling-output",
-                ".pyre/profiling.log",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
-        arguments = mock_arguments()
-        arguments.enable_memory_profiling = True
-        configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-memory-profiling-output",
-                ".pyre/profiling.log",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
-        )
-        arguments = mock_arguments()
-        arguments.enable_profiling = True
-        arguments.enable_memory_profiling = True
-        configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
-        self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-profiling-output",
-                ".pyre/profiling.log",
-                "-memory-profiling-output",
-                ".pyre/profiling.log",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()), {*flags, "-profiling-output", ".pyre/profiling.log"}
         )
 
         arguments = mock_arguments()
-        arguments.incremental_style = commands.IncrementalStyle.SHALLOW
+        arguments.enable_memory_profiling = True
         configuration = mock_configuration(version_hash="hash")
         command = commands.Start(
             arguments, original_directory, configuration, AnalysisDirectory(".")
         )
         self.assertEqual(
-            command._flags(),
-            [
-                "-logging-sections",
-                "environment,parser,-progress",
-                "-project-root",
-                ".",
-                "-log-directory",
-                ".pyre",
-                "-workers",
-                "5",
-                "-expected-binary-version",
-                "hash",
-                "-search-path",
-                "path1,path2,path3",
-            ],
+            set(command._flags()),
+            {*flags, "-memory-profiling-output", ".pyre/profiling.log"},
         )
 
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
