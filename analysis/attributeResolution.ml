@@ -3112,7 +3112,7 @@ module Implementation = struct
                       kind = Anonymous;
                       implementation =
                         {
-                          annotation = Type.Variable _;
+                          annotation = Type.Variable return_variable;
                           parameters =
                             Defined
                               [
@@ -3150,8 +3150,10 @@ module Implementation = struct
                     };
                   _;
                 };
-            ] ) ->
-            Some (annotation, parameter_variable, lambda_parameter, lambda_body)
+            ] )
+          when Type.Variable.Unary.is_free parameter_variable
+               && Type.Variable.Unary.is_free return_variable ->
+            Some (annotation, parameter_variable, return_variable, lambda_parameter, lambda_body)
         | _ -> None
       in
       let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
@@ -3441,55 +3443,54 @@ module Implementation = struct
               { signature_match with constraints_set = updated_constraints }
         | _ -> signature_match
       in
-      let special_case_lambda_parameter ({ callable; argument_mapping; _ } as signature_match) =
+      let special_case_lambda_parameter ({ argument_mapping; _ } as signature_match) =
         (* Special case: `Callable[[ParamVar], ReturnVar]` with `lambda parameter: body` *)
         let update ~key ~data ({ constraints_set; _ } as signature_match) =
           match is_generic_lambda key data with
           | None -> signature_match
-          | Some (annotation, parameter_variable, lambda_parameter, lambda_body) ->
+          | Some (annotation, parameter_variable, _, lambda_parameter, lambda_body) -> (
               (* Infer the parameter type using existing constraints. *)
-              let solution =
-                let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+              let solutions =
+                let variables = [Type.Record.Variable.Unary parameter_variable] in
                 List.filter_map
                   constraints_set
                   ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
-                |> List.map ~f:snd
-                |> List.hd
-                |> Option.value ~default:TypeConstraints.Solution.empty
               in
-              let parameter_type =
-                TypeConstraints.Solution.instantiate_single_variable solution parameter_variable
-                |> Option.value ~default:Type.Top
-              in
-              (* Infer the return type by resolving the lambda body with the parameter type *)
-              let return_type =
-                resolve_with_locals
-                  ~locals:[Reference.create lambda_parameter, Annotation.create parameter_type]
-                  lambda_body
-              in
-              let return_type = Type.weaken_literals return_type in
-              let parameters =
-                Type.Callable.Parameter.create
-                  [
-                    {
-                      Type.Callable.Parameter.name = lambda_parameter;
-                      annotation = parameter_type;
-                      default = false;
-                    };
-                  ]
-              in
-              let resolved =
-                Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
-              in
-              let updated_constraints =
-                List.concat_map constraints_set ~f:(fun constraints ->
+              match solutions with
+              | [] -> signature_match
+              | (remaining_constraints, solution) :: _ ->
+                  let parameter_type =
+                    TypeConstraints.Solution.instantiate_single_variable solution parameter_variable
+                    |> Option.value ~default:Type.Top
+                  in
+                  (* Infer the return type by resolving the lambda body with the parameter type *)
+                  let return_type =
+                    resolve_with_locals
+                      ~locals:[Reference.create lambda_parameter, Annotation.create parameter_type]
+                      lambda_body
+                  in
+                  let return_type = Type.weaken_literals return_type in
+                  let parameters =
+                    Type.Callable.Parameter.create
+                      [
+                        {
+                          Type.Callable.Parameter.name = lambda_parameter;
+                          annotation = parameter_type;
+                          default = false;
+                        };
+                      ]
+                  in
+                  let resolved =
+                    Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
+                  in
+                  let updated_constraints =
                     TypeOrder.solve_less_or_equal
                       order
-                      ~constraints
+                      ~constraints:remaining_constraints
                       ~left:resolved
-                      ~right:annotation)
-              in
-              { signature_match with constraints_set = updated_constraints }
+                      ~right:annotation
+                  in
+                  { signature_match with constraints_set = updated_constraints } )
         in
         Map.fold ~init:signature_match ~f:update argument_mapping
       in
