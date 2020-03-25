@@ -43,72 +43,34 @@ class StartTest(unittest.TestCase):
         configuration.version_hash = "hash"
         configuration.number_of_workers = 5
 
-        analysis_directory = AnalysisDirectory(".")
         # Check start without watchman.
+        analysis_directory = AnalysisDirectory(".")
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(
+            commands.Start(
                 arguments, original_directory, configuration, analysis_directory
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
+            ).run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
             Monitor.assert_not_called()
 
-        analysis_directory = AnalysisDirectory(".")
         # Check start with watchman.
+        analysis_directory = AnalysisDirectory(".")
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = False
-            command = commands.Start(
+            commands.Start(
                 arguments, original_directory, configuration, analysis_directory
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
+            ).run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
             Monitor.assert_called_once_with(configuration, ".", analysis_directory)
             Monitor.return_value.daemonize.assert_called_once_with()
-
-            analysis_directory = AnalysisDirectory(".")
 
         # This magic is necessary to test, because the inner call to ping a server is
         # always non-blocking.
@@ -127,27 +89,9 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(
+            commands.Start(
                 arguments, original_directory, configuration, analysis_directory
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
+            ).run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
             Monitor.assert_not_called()
 
@@ -157,6 +101,7 @@ class StartTest(unittest.TestCase):
             raise OSError(errno.ENOTCONN)
 
         lock_file.side_effect = raise_mount_error
+
         # Check that the command errors on OS errors other than EAGAIN.
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
@@ -164,28 +109,10 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(
-                arguments, original_directory, configuration, analysis_directory
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
             with self.assertRaises(OSError):
-                command.run()
+                commands.Start(
+                    arguments, original_directory, configuration, analysis_directory
+                ).run()
             call_client.assert_not_called()
             Monitor.assert_not_called()
 
@@ -203,27 +130,9 @@ class StartTest(unittest.TestCase):
         ) as Monitor:
             arguments = mock_arguments(no_watchman=True)
             configuration = mock_configuration(version_hash="hash")
-            command = commands.Start(
+            commands.Start(
                 arguments, original_directory, configuration, shared_analysis_directory
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "environment,parser,-progress",
-                    "-project-root",
-                    ".",
-                    "-log-directory",
-                    ".pyre",
-                    "-workers",
-                    "5",
-                    "-expected-binary-version",
-                    "hash",
-                    "-search-path",
-                    "path1,path2,path3",
-                ],
-            )
-            command.run()
+            ).run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
@@ -250,7 +159,6 @@ class StartTest(unittest.TestCase):
                 arguments, original_directory, configuration, analysis_directory
             )
             command.run()
-            print(command._exit_code)
             self.assertEqual(command._exit_code, ExitCode.SUCCESS)
 
     @patch("{}.find_project_root".format(client_name), return_value=".")
