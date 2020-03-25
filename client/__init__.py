@@ -45,18 +45,6 @@ def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
     return terminal not in ["dumb", "emacs"]
 
 
-def get_binary_version(configuration: "Configuration") -> Optional[str]:
-    status = subprocess.run(
-        [configuration.binary, "-version"],
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    )
-    if status.returncode == 0:
-        return status.stdout.strip()
-    else:
-        return None
-
-
 def find_project_root(original_directory: str) -> str:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""

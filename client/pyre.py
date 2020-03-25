@@ -13,7 +13,7 @@ import time
 import traceback
 from typing import Optional
 
-from . import buck, commands, find_project_root, get_binary_version, log, log_statistics
+from . import buck, commands, find_project_root, log, log_statistics
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
@@ -86,7 +86,7 @@ def main() -> int:
                     arguments, original_directory
                 ).configuration
                 if configuration:
-                    binary_version = get_binary_version(configuration)
+                    binary_version = configuration.get_binary_version()
                     if binary_version:
                         log.stdout.write(f"Binary version: {binary_version}\n")
             except Exception:

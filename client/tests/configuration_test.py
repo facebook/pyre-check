@@ -9,12 +9,17 @@ import os
 import site
 import sys
 import unittest
-from typing import Any, Optional, cast
+from typing import Any, NamedTuple, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
 from .. import CONFIGURATION_FILE, number_of_workers
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
+
+
+class MockCompletedProcess(NamedTuple):
+    returncode: int
+    stdout: str
 
 
 class ConfigurationTest(unittest.TestCase):
@@ -731,3 +736,25 @@ class ConfigurationTest(unittest.TestCase):
         ):
             configuration = Configuration()
             self.assertEqual(configuration._binary, None)
+
+    @patch.object(Configuration, "_validate")
+    def test_get_binary_version(self, _validate):
+        configuration = Configuration()
+        configuration._binary = "<binary>"
+
+        def assert_version(
+            returncode: int, stdout: str, expected: Optional[str]
+        ) -> None:
+            with patch(
+                "subprocess.run",
+                return_value=MockCompletedProcess(returncode, stdout=stdout),
+            ):
+                self.assertEqual(expected, configuration.get_binary_version())
+
+        assert_version(
+            returncode=0, stdout="facefacefaceb00", expected="facefacefaceb00"
+        )
+        assert_version(
+            returncode=0, stdout=" facefacefaceb00\n", expected="facefacefaceb00"
+        )
+        assert_version(returncode=1, stdout="facefacefaceb00", expected=None)

@@ -10,7 +10,6 @@ from typing import IO, List, Optional
 
 from typing_extensions import Final
 
-from .. import get_binary_version
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
@@ -106,7 +105,8 @@ class Rage(Command):
         print("Binary path:", self._configuration.binary, file=output_file, flush=True)
         print(
             "Configured binary version:",
-            get_binary_version(self._configuration) or "Cannot get version from binary",
+            self._configuration.get_binary_version()
+            or "Cannot get version from binary",
             file=output_file,
             flush=True,
         )

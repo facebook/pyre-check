@@ -7,7 +7,6 @@
 
 import unittest
 from pathlib import Path
-from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import (
@@ -16,14 +15,8 @@ from .. import (
     find_local_root,
     find_log_directory,
     find_project_root,
-    get_binary_version,
 )
 from ..filesystem import __name__ as filesystem_name
-
-
-class MockCompletedProcess(NamedTuple):
-    returncode: int
-    stdout: str
 
 
 class InitTest(unittest.TestCase):
@@ -122,24 +115,3 @@ class InitTest(unittest.TestCase):
             arguments, configuration, original_directory
         )
         self.assertEqual(filter_paths, {"/project/local"})
-
-    def test_get_binary_version(self) -> None:
-        configuration: MagicMock = MagicMock()
-        configuration.binary = ""
-
-        def assert_version(
-            returncode: int, stdout: str, expected: Optional[str]
-        ) -> None:
-            with patch(
-                "subprocess.run",
-                return_value=MockCompletedProcess(returncode, stdout=stdout),
-            ):
-                self.assertEqual(expected, get_binary_version(configuration))
-
-        assert_version(
-            returncode=0, stdout="facefacefaceb00", expected="facefacefaceb00"
-        )
-        assert_version(
-            returncode=0, stdout=" facefacefaceb00\n", expected="facefacefaceb00"
-        )
-        assert_version(returncode=1, stdout="facefacefaceb00", expected=None)

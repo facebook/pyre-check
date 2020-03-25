@@ -11,6 +11,7 @@ import logging
 import os
 import shutil
 import site
+import subprocess
 import sys
 from logging import Logger
 from typing import Dict, List, Optional, Union
@@ -419,6 +420,15 @@ class Configuration:
         if not log_directory:
             raise InvalidConfiguration("Configuration was not validated")
         return log_directory
+
+    def get_binary_version(self) -> Optional[str]:
+        status = subprocess.run(
+            [self.binary, "-version"], stdout=subprocess.PIPE, universal_newlines=True
+        )
+        if status.returncode == 0:
+            return status.stdout.strip()
+        else:
+            return None
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
