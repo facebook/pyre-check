@@ -26,7 +26,12 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists, translate_path
-from ..find_directories import find_local_root, find_log_directory, find_project_root
+from ..find_directories import (
+    LOCAL_CONFIGURATION_FILE,
+    find_local_root,
+    find_log_directory,
+    find_project_root,
+)
 from ..log import StreamLogger
 from ..process import register_non_unique_process
 from ..socket_connection import SocketConnection, SocketException
@@ -140,7 +145,14 @@ class CommandParser(ABC):
 
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         self._arguments = arguments
-        self._local_configuration: Final[Optional[str]] = arguments.local_configuration
+
+        local_configuration = arguments.local_configuration
+        if local_configuration and local_configuration.endswith(
+            LOCAL_CONFIGURATION_FILE
+        ):
+            local_configuration = local_configuration[: -len(LOCAL_CONFIGURATION_FILE)]
+        self._local_configuration: Final[Optional[str]] = local_configuration
+
         self._version: bool = arguments.version
         self._debug: bool = arguments.debug
         self._sequential: bool = arguments.sequential
