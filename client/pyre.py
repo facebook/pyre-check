@@ -50,6 +50,8 @@ def main() -> int:
 
     arguments = parser.parse_args()
 
+    log.initialize(arguments.noninteractive)
+
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
             arguments.command = commands.Incremental
@@ -93,7 +95,9 @@ def main() -> int:
             exit_code = ExitCode.SUCCESS
         else:
             command = arguments.command(arguments, original_directory)
-            log.initialize(command.noninteractive, command.log_directory)
+            log.start_logging_to_directory(
+                arguments.noninteractive, command.log_directory
+            )
             exit_code = command.run().exit_code()
     except buck.BuckException as error:
         client_exception_message = str(error)
