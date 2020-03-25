@@ -7,7 +7,7 @@
 import sys
 from typing import Any, Dict
 
-from . import is_capable_terminal
+from . import terminal
 from .log import Color, Format
 
 
@@ -34,7 +34,7 @@ class Error:
         self.external_to_global_root: bool = external_to_global_root
 
     def __repr__(self) -> str:
-        if is_capable_terminal(file=sys.stdout):
+        if terminal.is_capable(file=sys.stdout):
             key = self._key_with_color()
         else:
             key = self.__key()

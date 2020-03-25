@@ -27,13 +27,13 @@ class ErrorTest(unittest.TestCase):
     def test_repr(self) -> None:
         error = Error(self.fake_error)
 
-        with patch("{}.error.is_capable_terminal".format(client), return_value=True):
+        with patch("{}.terminal.is_capable".format(client), return_value=True):
             self.assertEqual(
                 repr(error),
                 "\x1b[31mc.py\x1b[0m:\x1b[33m4\x1b[0m:\x1b[33m11\x1b[0m Fake error",
             )
 
-        with patch("{}.error.is_capable_terminal".format(client), return_value=False):
+        with patch("{}.terminal.is_capable".format(client), return_value=False):
             self.assertEqual(repr(error), "c.py:4:11 Fake error")
 
     def test_key_with_color(self) -> None:

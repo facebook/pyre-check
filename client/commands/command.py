@@ -26,9 +26,9 @@ from .. import (
     find_local_root,
     find_log_directory,
     find_project_root,
-    is_capable_terminal,
     json_rpc,
     log,
+    terminal,
 )
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
@@ -193,7 +193,7 @@ class CommandParser(ABC):
         dot_pyre_directory: Final[Optional[Path]] = arguments.dot_pyre_directory
 
         # Derived arguments
-        self._capable_terminal: bool = is_capable_terminal()
+        self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
         self._current_directory: str = find_project_root(self._original_directory)
         self._local_configuration = find_local_root(

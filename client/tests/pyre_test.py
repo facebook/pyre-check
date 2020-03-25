@@ -18,7 +18,6 @@ from .. import (
     buck,
     commands,
     configuration,
-    is_capable_terminal,
     pyre,
 )
 
@@ -106,13 +105,3 @@ class PyreTest(unittest.TestCase):
             with patch.object(sys, "argv", ["pyre", "--noninteractive", "start"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_not_called()
-
-    def test_is_capable_terminal(self) -> None:
-        with patch("os.isatty", side_effect=lambda x: x), patch(
-            "os.getenv", return_value="vim"
-        ):
-            file = MagicMock()
-            file.fileno = lambda: True
-            self.assertEqual(is_capable_terminal(file), True)
-            file.fileno = lambda: False
-            self.assertEqual(is_capable_terminal(file), False)

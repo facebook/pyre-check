@@ -34,17 +34,6 @@ if TYPE_CHECKING:
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
-    """
-    Determine whether we are connected to a capable terminal.
-    """
-    if not os.isatty(file.fileno()):
-        return False
-    terminal = os.getenv("TERM", "dumb")
-    # Hardcoded list of non-capable terminals.
-    return terminal not in ["dumb", "emacs"]
-
-
 def find_project_root(original_directory: str) -> str:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
