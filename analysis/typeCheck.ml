@@ -1848,8 +1848,7 @@ module State (Context : Context) = struct
                 signature callable, self_argument)
       in
       let error_from_not_found
-          ~callable:
-            ({ Type.Callable.implementation = { annotation; parameters; _ }; kind; _ } as callable)
+          ~callable:({ Type.Callable.implementation = { annotation; _ }; kind; _ } as callable)
           ~reason
           ~self_argument
         =
@@ -1920,24 +1919,14 @@ module State (Context : Context) = struct
                             (List.map fields ~f:(fun { name; _ } -> name))
                       | _ -> normal
                     else
-                      match method_name with
-                      | "__setitem__" ->
-                          let field_name =
-                            match parameters with
-                            | Type.Record.Callable.Defined
-                                [
-                                  _self_parameter;
-                                  Type.Record.Callable.RecordParameter.Named
-                                    {
-                                      name = "k";
-                                      annotation = Type.Literal (Type.String field_name);
-                                      _;
-                                    };
-                                  _;
-                                ] ->
-                                field_name
-                            | _ -> failwith "Expected __setitem__ callable to have a key parameter"
-                          in
+                      match method_name, arguments with
+                      | ( "__setitem__",
+                          {
+                            Call.Argument.value =
+                              { Node.value = String { value = field_name; _ }; _ };
+                            _;
+                          }
+                          :: _ ) ->
                           Error.TypedDictionaryInvalidOperation
                             { typed_dictionary_name; field_name; method_name; mismatch }
                       | _ -> normal
