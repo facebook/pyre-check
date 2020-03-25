@@ -60,6 +60,14 @@ def translate_path(root: str, path: str) -> str:
     return path
 
 
+def expand_relative_path(root: str, path: str) -> str:
+    path = os.path.expanduser(path)
+    if os.path.isabs(path):
+        return path
+    else:
+        return os.path.join(root, path)
+
+
 def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
     current_directory = os.getcwd()
     if not original_directory.startswith(current_directory):

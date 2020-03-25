@@ -25,7 +25,7 @@ from . import (
     number_of_workers,
 )
 from .exceptions import EnvironmentException
-from .filesystem import assert_readable_directory
+from .filesystem import assert_readable_directory, expand_relative_path
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -148,14 +148,6 @@ class _ConfigurationFile:
             "taint_models_path",
             "oncall",
         }
-
-
-def expand_relative_path(root: str, path: str) -> str:
-    path = os.path.expanduser(path)
-    if os.path.isabs(path):
-        return path
-    else:
-        return os.path.join(root, path)
 
 
 class Configuration:
