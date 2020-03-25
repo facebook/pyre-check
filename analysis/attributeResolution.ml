@@ -372,6 +372,50 @@ let rec weaken_mutable_literals
       Type.Parametric { name = "set"; parameters = [Single expected_parameter] } )
     when comparator ~left:actual ~right:expected_parameter ->
       expected
+  | ( Some { Node.value = Expression.Tuple items; _ },
+      Type.Tuple (Bounded (Concrete actual_item_types)),
+      Type.Tuple (Bounded (Concrete expected_item_types)) )
+    when List.length actual_item_types = List.length expected_item_types ->
+      let weakened_item_types =
+        List.map3_exn
+          ~f:(fun item actual_item_type expected_item_type ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression:(Some item)
+              ~resolved:actual_item_type
+              ~expected:expected_item_type
+              ~comparator)
+          items
+          actual_item_types
+          expected_item_types
+      in
+      let weakened_type = Type.Tuple (Bounded (Concrete weakened_item_types)) in
+      if comparator ~left:weakened_type ~right:expected then
+        expected
+      else
+        weakened_type
+  | ( Some { Node.value = Expression.Tuple items; _ },
+      Type.Tuple (Bounded (Concrete actual_item_types)),
+      Type.Tuple (Unbounded expected_item_type) ) ->
+      let weakened_item_type =
+        Type.union
+          (List.map2_exn
+             ~f:(fun item actual_item_type ->
+               weaken_mutable_literals
+                 ~get_typed_dictionary
+                 resolve
+                 ~expression:(Some item)
+                 ~resolved:actual_item_type
+                 ~expected:expected_item_type
+                 ~comparator)
+             items
+             actual_item_types)
+      in
+      if comparator ~left:weakened_item_type ~right:expected_item_type then
+        expected
+      else
+        resolved
   | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ }, _, Type.Primitive _
     -> (
       let open Type.Record.TypedDictionary in

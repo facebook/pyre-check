@@ -978,7 +978,7 @@ let test_forward_statement context =
     ~postcondition_immutables:["x", Type.tuple [Type.Any; Type.Any]]
     []
     "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
-    ["x", Type.tuple [Type.literal_integer 1; Type.literal_integer 2]];
+    ["x", Type.tuple [Type.Any; Type.Any]];
   assert_forward
     ["z", Type.tuple [Type.integer; Type.string]]
     "x, y = z"

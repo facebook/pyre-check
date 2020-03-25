@@ -251,8 +251,8 @@ let test_check_missing_return context =
         return (1, 2)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Tuple[int, int]` but "
-      ^ "return type must be specified as type that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`.";
     ];
   assert_type_errors
     {|

@@ -146,8 +146,8 @@ let test_check_tuple context =
         return ()
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Tuple[]` but return type "
-      ^ "must be specified as type that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as "
+      ^ "type that does not contain `Any`.";
     ];
   assert_type_errors {|
       def foo() -> typing.Tuple[()]:
