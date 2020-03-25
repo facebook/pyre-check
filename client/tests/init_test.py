@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch
 
 from .. import (
     __name__ as client_name,
-    _resolve_filter_paths,
     find_local_root,
     find_log_directory,
     find_project_root,
@@ -73,45 +72,3 @@ class InitTest(unittest.TestCase):
             current_directory, local_configuration, "/project/.pyre"
         )
         self.assertEqual(log_directory, "/project/.pyre/subdirectory")
-
-    def test_resolve_filter_paths(self) -> None:
-        arguments = MagicMock()
-        configuration = MagicMock()
-        original_directory = "/project"
-        arguments.source_directories = []
-        arguments.targets = []
-        configuration.local_configuration_root = None
-
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
-        self.assertEqual(filter_paths, set())
-
-        arguments.source_directories = ["/project/a"]
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
-        self.assertEqual(filter_paths, {"/project/a"})
-
-        arguments.source_directories = ["/project/a"]
-        arguments.targets = ["//x/y/..."]
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
-        self.assertEqual(filter_paths, {"/project/a", "x/y"})
-
-        arguments.source_directories = ["/project/local/a"]
-        arguments.targets = ["//x/y:z"]
-        configuration.local_configuration_root = "project/local"
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
-        self.assertEqual(filter_paths, {"/project/local/a", "x/y"})
-
-        arguments.source_directories = []
-        arguments.targets = []
-        configuration.local_configuration_root = "/project/local"
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
-        self.assertEqual(filter_paths, {"/project/local"})

@@ -94,24 +94,6 @@ def find_log_directory(
     return log_directory
 
 
-def _resolve_filter_paths(
-    arguments: Namespace, configuration: "Configuration", original_directory: str
-) -> Set[str]:
-    filter_paths = set()
-    if arguments.source_directories or arguments.targets:
-        if arguments.source_directories:
-            filter_paths.update(arguments.source_directories)
-        if arguments.targets:
-            filter_paths.update(
-                [buck.presumed_target_root(target) for target in arguments.targets]
-            )
-    else:
-        local_configuration_root = configuration.local_configuration_root
-        if local_configuration_root:
-            filter_paths = {local_configuration_root}
-    return translate_paths(filter_paths, original_directory)
-
-
 def log_statistics(
     category: str,
     arguments: Optional[Namespace] = None,

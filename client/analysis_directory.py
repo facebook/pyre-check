@@ -15,7 +15,7 @@ from pathlib import Path
 from time import time
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
-from . import _resolve_filter_paths, buck, filesystem, json_rpc, log
+from . import buck, json_rpc, log
 from .buck import BuckBuilder
 from .configuration import Configuration
 from .exceptions import EnvironmentException
@@ -50,6 +50,26 @@ REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 50
 
 
 DONT_CARE_PROGRESS_VALUE = 1
+
+
+def _resolve_filter_paths(
+    arguments: argparse.Namespace,
+    configuration: "Configuration",
+    original_directory: str,
+) -> Set[str]:
+    filter_paths = set()
+    if arguments.source_directories or arguments.targets:
+        if arguments.source_directories:
+            filter_paths.update(arguments.source_directories)
+        if arguments.targets:
+            filter_paths.update(
+                [buck.presumed_target_root(target) for target in arguments.targets]
+            )
+    else:
+        local_configuration_root = configuration.local_configuration_root
+        if local_configuration_root:
+            filter_paths = {local_configuration_root}
+    return translate_paths(filter_paths, original_directory)
 
 
 class UpdatedPaths(NamedTuple):
