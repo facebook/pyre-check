@@ -110,7 +110,7 @@ def check_nested_configurations(local_root: Optional[str]) -> None:
         if parent_local_root:
             LOG.warning(
                 "Local configuration is nested under another local configuration at "
-                "`{}`.\nPlease combine the sources into a single configuration or "
+                "`{}`.\n   Please combine the sources into a single configuration or "
                 "split the parent configuration to avoid inconsistent errors.".format(
                     parent_local_root
                 )
