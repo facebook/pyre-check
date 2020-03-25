@@ -40,6 +40,35 @@ class SearchPathElement:
         self.root = os.path.expanduser(root)
         self.subdirectory = subdirectory
 
+    @staticmethod
+    def expand(path: Union[Dict[str, str], str]) -> "SearchPathElement":
+        if isinstance(path, str):
+            return SearchPathElement(path)
+        else:
+            if "root" in path and "subdirectory" in path:
+                root = path["root"]
+                subdirectory = path["subdirectory"]
+                return SearchPathElement(root, subdirectory)
+            elif "site-package" in path:
+                site_root = site.getsitepackages()
+                subdirectory = path["site-package"]
+
+                found_element = None
+                for root in site_root:
+                    site_package_element = SearchPathElement(root, subdirectory)
+                    if os.path.isdir(site_package_element.path()):
+                        found_element = site_package_element
+                if found_element is None:
+                    raise InvalidConfiguration(
+                        "Cannot find site package '{}'".format(subdirectory)
+                    )
+                return found_element
+            else:
+                raise InvalidConfiguration(
+                    "Search path elements must have `root` and `subdirectory` "
+                    "specified."
+                )
+
     def path(self) -> str:
         subdirectory = self.subdirectory
         if subdirectory is not None:
@@ -60,34 +89,6 @@ class SearchPathElement:
             return self.path() == other
         else:
             return self.root == other.root and self.subdirectory == other.subdirectory
-
-
-def expand_search_path(path: Union[Dict[str, str], str]) -> SearchPathElement:
-    if isinstance(path, str):
-        return SearchPathElement(path)
-    else:
-        if "root" in path and "subdirectory" in path:
-            root = path["root"]
-            subdirectory = path["subdirectory"]
-            return SearchPathElement(root, subdirectory)
-        elif "site-package" in path:
-            site_root = site.getsitepackages()
-            subdirectory = path["site-package"]
-
-            found_element = None
-            for root in site_root:
-                site_package_element = SearchPathElement(root, subdirectory)
-                if os.path.isdir(site_package_element.path()):
-                    found_element = site_package_element
-            if found_element is None:
-                raise InvalidConfiguration(
-                    "Cannot find site package '{}'".format(subdirectory)
-                )
-            return found_element
-        else:
-            raise InvalidConfiguration(
-                "Search path elements must have `root` and `subdirectory` specified."
-            )
 
 
 class _ConfigurationFile:
@@ -210,7 +211,9 @@ class Configuration:
             ]
             self._search_path.extend(sys_path)
         if search_path:
-            search_path_elements = [expand_search_path(path) for path in search_path]
+            search_path_elements = [
+                SearchPathElement.expand(path) for path in search_path
+            ]
             self._search_path.extend(search_path_elements)
         # We will extend the search path further, with the config file
         # items, inside _read().
@@ -539,7 +542,10 @@ class Configuration:
 
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
-                        [expand_search_path(path) for path in additional_search_path]
+                        [
+                            SearchPathElement.expand(path)
+                            for path in additional_search_path
+                        ]
                     )
                 else:
                     self._search_path.append(SearchPathElement(additional_search_path))
