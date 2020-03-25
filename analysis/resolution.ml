@@ -301,7 +301,7 @@ let fallback_attribute ~resolution ~name class_name =
               in
               [name_argument]
             in
-            let implementation =
+            let return_annotation =
               match
                 GlobalResolution.signature_select
                   ~global_resolution
@@ -310,10 +310,11 @@ let fallback_attribute ~resolution ~name class_name =
                   ~callable
                   ~self_argument:(Some self_argument)
               with
-              | AttributeResolution.Found { Type.Callable.implementation; _ } -> implementation
-              | AttributeResolution.NotFound _ -> implementation
+              | AttributeResolution.Found { selected_return_annotation } ->
+                  selected_return_annotation
+              | AttributeResolution.NotFound _ ->
+                  Type.Callable.Overload.return_annotation implementation
             in
-            let return_annotation = Type.Callable.Overload.return_annotation implementation in
             Some
               (AnnotatedAttribute.create
                  ~annotation:return_annotation

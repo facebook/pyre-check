@@ -130,7 +130,7 @@ module SignatureSelectionTypes = struct
     name: Identifier.t option;
     position: int;
   }
-  [@@deriving eq, show, compare]
+  [@@deriving eq, show, compare, sexp]
 
   type invalid_argument = {
     expression: Expression.t;
@@ -170,24 +170,24 @@ module SignatureSelectionTypes = struct
         provided: int;
       }
     | UnexpectedKeyword of Identifier.t
-  [@@deriving eq, show, compare]
+  [@@deriving eq, show, compare, sexp]
 
   type closest = {
-    callable: Type.Callable.t;
+    closest_return_annotation: Type.t;
     reason: reason option;
   }
-  [@@deriving show]
+  [@@deriving show, sexp]
 
   let equal_closest (left : closest) (right : closest) =
     (* Ignore rank. *)
-    Type.Callable.equal left.callable right.callable
+    Type.equal left.closest_return_annotation right.closest_return_annotation
     && Option.equal equal_reason left.reason right.reason
 
 
   type sig_t =
-    | Found of Type.Callable.t
+    | Found of { selected_return_annotation: Type.t }
     | NotFound of closest
-  [@@deriving eq, show]
+  [@@deriving eq, show, sexp]
 
   module Argument = struct
     type kind =
@@ -2759,10 +2759,7 @@ module Implementation = struct
                         ~self_argument:None
                     with
                     | SignatureSelectionTypes.Found
-                        {
-                          implementation = { annotation = Type.Callable { implementation; _ }; _ };
-                          _;
-                        } ->
+                        { selected_return_annotation = Type.Callable { implementation; _ }; _ } ->
                         Some implementation
                     | _ -> None )
                 | Some signature, None -> Some signature
@@ -3534,7 +3531,7 @@ module Implementation = struct
               get_best_rank ~best_matches ~best_rank ~getter tail
       in
       let determine_reason { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
-        let callable =
+        let { implementation = { annotation = instantiated_annotation; _ }; _ } =
           let instantiate annotation =
             let solution =
               let variables = Type.Variable.all_free_variables (Type.Callable callable) in
@@ -3569,7 +3566,7 @@ module Implementation = struct
         match
           rev_filter_out_self_argument_errors arity, rev_filter_out_self_argument_errors annotation
         with
-        | [], [] -> Found callable
+        | [], [] -> Found { selected_return_annotation = instantiated_annotation }
         | reason :: reasons, _
         | [], reason :: reasons ->
             let importance = function
@@ -3592,8 +3589,9 @@ module Implementation = struct
                 best_reason
             in
             let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
-            NotFound { callable; reason }
+            NotFound { closest_return_annotation = instantiated_annotation; reason }
       in
+      let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
       signature_matches
       |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
       |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
@@ -3603,7 +3601,9 @@ module Implementation = struct
       |> List.rev
       |> List.hd
       >>| determine_reason
-      |> Option.value ~default:(NotFound { callable; reason = None })
+      |> Option.value
+           ~default:
+             (NotFound { closest_return_annotation = default_return_annotation; reason = None })
     in
     let get_match signatures =
       signatures

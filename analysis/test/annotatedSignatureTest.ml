@@ -12,16 +12,64 @@ open Pyre
 open Test
 module Resolution = Analysis.Resolution
 
+let make_normal_and_escaped_variable ?constraints name =
+  Type.Variable.Namespace.reset ();
+  let variable = Type.variable ?constraints name in
+  let escaped_variable = Type.Variable.mark_all_free_variables_as_escaped variable in
+  variable, escaped_variable
+
+
+let variable_t, escaped_variable_t = make_normal_and_escaped_variable "_T"
+
+let variable_s, escaped_variable_s = make_normal_and_escaped_variable "_S"
+
+let variable_r, escaped_variable_r =
+  make_normal_and_escaped_variable ~constraints:(Explicit [Type.integer; Type.float]) "_R"
+
+
 let test_select context =
+  let cmp left right =
+    let default = AttributeResolution.equal_sig_t left right in
+    match left, right with
+    | ( AttributeResolution.NotFound
+          { reason = Some left_reason; closest_return_annotation = left_closest },
+        AttributeResolution.NotFound
+          { reason = Some right_reason; closest_return_annotation = right_closest } )
+      when Type.equal left_closest right_closest -> (
+        let equal_invalid_argument left right =
+          Expression.location_insensitive_compare
+            left.AttributeResolution.expression
+            right.AttributeResolution.expression
+          = 0
+          && Type.equal left.annotation right.annotation
+        in
+        let equal_mismatch_with_list_variadic_type_variable left right =
+          match left, right with
+          | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right ->
+              equal_invalid_argument left right
+          | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
+        in
+        match left_reason, right_reason with
+        | InvalidKeywordArgument left, InvalidKeywordArgument right
+        | InvalidVariableArgument left, InvalidVariableArgument right ->
+            equal_invalid_argument left.value right.value
+        | Mismatch left, Mismatch right -> AttributeResolution.equal_mismatch left.value right.value
+        | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
+            Type.OrderedTypes.equal left.variable right.variable
+            && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
+        | _ -> default )
+    | _ -> default
+  in
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
+    let replace_specials name =
+      name
+      |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
+      |> String.substr_replace_all
+           ~pattern:"$literal_string"
+           ~with_:"typing_extensions.Literal[\"string\"]"
+    in
     let parse_callable_and_signature ~callable ~arguments =
-      let callable =
-        callable
-        |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
-        |> String.substr_replace_all
-             ~pattern:"$literal_string"
-             ~with_:"typing_extensions.Literal[\"string\"]"
-      in
+      let callable = replace_specials callable in
       let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
         ScratchProject.setup
           ~context
@@ -122,59 +170,65 @@ let test_select context =
     in
     let callable, signature = parse_callable_and_signature ~callable ~arguments in
     let callable = { callable with Type.Callable.overloads = [] } in
-    let parse_callable callable =
-      let callable, _ = parse_callable_and_signature ~callable ~arguments:"()" in
-      Type.Variable.Namespace.reset ();
-      callable
-      |> Type.Callable.map ~f:Type.Variable.mark_all_free_variables_as_escaped
-      |> fun callable -> Option.value_exn callable
+    let implementation_annotation { Type.Callable.implementation = { annotation; _ }; _ } =
+      annotation
+    in
+    let closest_return_annotation = implementation_annotation callable in
+    let parse_return return =
+      replace_specials return |> parse_single_expression |> Type.create ~aliases:(fun _ -> None)
     in
     let expected =
       let open AttributeResolution in
       match expected with
-      | `Found expected -> Found (parse_callable expected)
-      | `NotFoundNoReason -> NotFound { callable; reason = None }
+      | `Found expected -> Found { selected_return_annotation = parse_return expected }
+      | `NotFoundNoReason -> NotFound { closest_return_annotation; reason = None }
       | `NotFoundInvalidKeywordArgument (expression, annotation) ->
           let reason =
             { expression; annotation }
             |> Node.create_with_default_location
             |> fun invalid_argument -> Some (InvalidKeywordArgument invalid_argument)
           in
-          NotFound { callable; reason }
+          NotFound { closest_return_annotation; reason }
       | `NotFoundInvalidVariableArgument (expression, annotation) ->
           let reason =
             { expression; annotation }
             |> Node.create_with_default_location
             |> fun invalid_argument -> Some (InvalidVariableArgument invalid_argument)
           in
-          NotFound { callable; reason }
+          NotFound { closest_return_annotation; reason }
       | `NotFoundMissingArgument name ->
-          NotFound { callable; reason = Some (MissingArgument (Named name)) }
+          NotFound { closest_return_annotation; reason = Some (MissingArgument (Named name)) }
       | `NotFoundMissingAnonymousArgument index ->
-          NotFound { callable; reason = Some (MissingArgument (PositionalOnly index)) }
+          NotFound
+            { closest_return_annotation; reason = Some (MissingArgument (PositionalOnly index)) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
           NotFound
-            { callable = parse_callable closest; reason = Some (MissingArgument (Named name)) }
+            {
+              closest_return_annotation = parse_return closest;
+              reason = Some (MissingArgument (Named name));
+            }
       | `NotFoundMissingAnonymousArgumentWithClosest (closest, index) ->
           NotFound
             {
-              callable = parse_callable closest;
+              closest_return_annotation = parse_return closest;
               reason = Some (MissingArgument (PositionalOnly index));
             }
       | `NotFoundTooManyArguments (expected, provided) ->
-          NotFound { callable; reason = Some (TooManyArguments { expected; provided }) }
+          NotFound
+            { closest_return_annotation; reason = Some (TooManyArguments { expected; provided }) }
       | `NotFoundTooManyArgumentsWithClosest (closest, expected, provided) ->
           NotFound
             {
-              callable = parse_callable closest;
+              closest_return_annotation = parse_return closest;
               reason = Some (TooManyArguments { expected; provided });
             }
       | `NotFoundUnexpectedKeyword name ->
-          NotFound { callable; reason = Some (UnexpectedKeyword ("$parameter$" ^ name)) }
+          NotFound
+            { closest_return_annotation; reason = Some (UnexpectedKeyword ("$parameter$" ^ name)) }
       | `NotFoundUnexpectedKeywordWithClosest (closest, name) ->
           NotFound
             {
-              callable = parse_callable closest;
+              closest_return_annotation = parse_return closest;
               reason = Some (UnexpectedKeyword ("$parameter$" ^ name));
             }
       | `NotFoundMismatch (actual, expected, name, position) ->
@@ -183,80 +237,60 @@ let test_select context =
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
-          NotFound { callable; reason }
+          NotFound { closest_return_annotation; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
           let reason =
             { actual; expected; name; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
-          NotFound { callable = parse_callable closest; reason }
-      | `NotFound (closest, reason) -> NotFound { callable = parse_callable closest; reason }
-    in
-    let cmp left right =
-      let default = AttributeResolution.equal_sig_t left right in
-      match left, right with
-      | ( AttributeResolution.NotFound { reason = Some left_reason; callable = left_callable },
-          AttributeResolution.NotFound { reason = Some right_reason; callable = right_callable } )
-        when Type.Callable.equal left_callable right_callable -> (
-          let equal_invalid_argument left right =
-            Expression.location_insensitive_compare
-              left.AttributeResolution.expression
-              right.AttributeResolution.expression
-            = 0
-            && Type.equal left.annotation right.annotation
-          in
-          let equal_mismatch_with_list_variadic_type_variable left right =
-            match left, right with
-            | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right
-              ->
-                equal_invalid_argument left right
-            | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
-          in
-          match left_reason, right_reason with
-          | InvalidKeywordArgument left, InvalidKeywordArgument right
-          | InvalidVariableArgument left, InvalidVariableArgument right ->
-              equal_invalid_argument left.value right.value
-          | Mismatch left, Mismatch right ->
-              AttributeResolution.equal_mismatch left.value right.value
-          | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
-              Type.OrderedTypes.equal left.variable right.variable
-              && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
-          | _ -> default )
-      | _ -> default
+          NotFound { closest_return_annotation = parse_return closest; reason }
+      | `NotFound (closest, reason) ->
+          NotFound { closest_return_annotation = parse_return closest; reason }
     in
     assert_equal ~printer:AttributeResolution.show_sig_t ~cmp expected signature
   in
+  let assert_select_direct ~arguments ~callable expected =
+    Type.Variable.Namespace.reset ();
+    let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+    let global_resolution = Resolution.global_resolution resolution in
+    let signature =
+      GlobalResolution.signature_select
+        ~arguments
+        ~global_resolution
+        ~callable
+        ~self_argument:None
+        ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
+    in
+    let printer x = AttributeResolution.sexp_of_sig_t x |> Sexp.to_string_hum in
+    assert_equal ~cmp ~printer expected signature
+  in
   (* Undefined callables always match. *)
-  assert_select ~allow_undefined:true "[..., int]" "()" (`Found "[..., int]");
-  assert_select ~allow_undefined:true "[..., int]" "(a, b)" (`Found "[..., int]");
+  assert_select ~allow_undefined:true "[..., int]" "()" (`Found "int");
+  assert_select ~allow_undefined:true "[..., int]" "(a, b)" (`Found "int");
   assert_select
     ~allow_undefined:true
     "[..., int]"
     "(a, b='depr', *variable, **keywords)"
-    (`Found "[..., int]");
-  assert_select
-    ~allow_undefined:true
-    "[..., unknown][[..., int][[int], int]]"
-    "(1)"
-    (`Found "[..., int]");
+    (`Found "int");
+  assert_select ~allow_undefined:true "[..., unknown][[..., int][[int], int]]" "(1)" (`Found "int");
 
   (* Traverse anonymous arguments. *)
-  assert_select "[[], int]" "()" (`Found "[[], int]");
+  assert_select "[[], int]" "()" (`Found "int");
   assert_select "[[int], int]" "()" (`NotFoundMissingAnonymousArgument 0);
   assert_select "[[], int]" "(1)" (`NotFoundTooManyArguments (0, 1));
-  assert_select "[[int], int]" "(1)" (`Found "[[int], int]");
-  assert_select "[[Named(i, int)], int]" "(1)" (`Found "[[Named(i, int)], int]");
-  assert_select "[[typing.Any], int]" "(unknown)" (`Found "[[typing.Any], int]");
+  assert_select "[[int], int]" "(1)" (`Found "int");
+  assert_select "[[Named(i, int)], int]" "(1)" (`Found "int");
+  assert_select "[[typing.Any], int]" "(unknown)" (`Found "int");
   assert_select
     "[[int], int]"
     "('string')"
     (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
   assert_select "[[int], int]" "(name='string')" (`NotFoundUnexpectedKeyword "name");
-  assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
+  assert_select "[[int], int]" "(*[1])" (`Found "int");
   assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
   assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
-  assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
+  assert_select "[[object], None]" "(union)" (`Found "None");
   assert_select
     "[[int], None]"
     "(union)"
@@ -264,9 +298,9 @@ let test_select context =
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
-  assert_select "[[Variable()], int]" "()" (`Found "[[Variable()], int]");
-  assert_select "[[Variable()], int]" "(1, 2)" (`Found "[[Variable()], int]");
-  assert_select "[[Variable(int)], int]" "(1, 2)" (`Found "[[Variable(int)], int]");
+  assert_select "[[Variable()], int]" "()" (`Found "int");
+  assert_select "[[Variable()], int]" "(1, 2)" (`Found "int");
+  assert_select "[[Variable(int)], int]" "(1, 2)" (`Found "int");
   assert_select
     "[[Variable(str)], int]"
     "(1, 2)"
@@ -275,45 +309,30 @@ let test_select context =
     "[[Variable(str)], int]"
     "('string', 2)"
     (`NotFoundMismatch (Type.literal_integer 2, Type.string, None, 2));
-  assert_select "[[Variable(int)], int]" "(*[1, 2], 3)" (`Found "[[Variable(int)], int]");
-  assert_select
-    "[[Variable(int), Named(a, str)], int]"
-    "(*[1, 2], a='string')"
-    (`Found "[[Variable(int), Named(a, str)], int]");
+  assert_select "[[Variable(int)], int]" "(*[1, 2], 3)" (`Found "int");
+  assert_select "[[Variable(int), Named(a, str)], int]" "(*[1, 2], a='string')" (`Found "int");
   assert_select
     "[[Variable(int), Named(a, str)], int]"
     "(*[1, 2], *[3, 4], a='string')"
-    (`Found "[[Variable(int), Named(a, str)], int]");
+    (`Found "int");
   assert_select
     "[[Variable(int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
 
   (* KeywordOnly *)
-  assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "[[KeywordOnly(i, int)], int]");
+  assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "int");
   assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 1));
-  assert_select
-    "[[KeywordOnly(i, int)], int]"
-    "(**{'A': 7})"
-    (`Found "[[KeywordOnly(i, int)], int]");
+  assert_select "[[KeywordOnly(i, int)], int]" "(**{'A': 7})" (`Found "int");
   assert_select
     "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
     "(*['a', 'b'])"
-    (`Found "[[Named(x, str), KeywordOnly(i, bool, default)], int]");
+    (`Found "int");
 
   (* Named arguments. *)
-  assert_select
-    "[[Named(i, int), Named(j, int)], int]"
-    "(i=1, j=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
-  assert_select
-    "[[Named(i, int), Named(j, int, default)], int]"
-    "(i=1)"
-    (`Found "[[Named(i, int), Named(j, int, default)], int]");
-  assert_select
-    "[[Named(i, int), Named(j, int)], int]"
-    "(j=1, i=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(i=1, j=2)" (`Found "int");
+  assert_select "[[Named(i, int), Named(j, int, default)], int]" "(i=1)" (`Found "int");
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(j=1, i=2)" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, q=2)"
@@ -341,17 +360,14 @@ let test_select context =
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
     (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "$parameter$j", 2));
-  assert_select
-    "[[Named(i, int), Named(j, int)], int]"
-    "(**{'j': 1, 'i': 2})"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(**{'j': 1, 'i': 2})" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 'string', 'i': 'string'})"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
 
   (* Test iterable and mapping expansions. *)
-  assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
+  assert_select "[[int], int]" "(*[1])" (`Found "int");
   assert_select
     "[[int], int]"
     "(*a)"
@@ -366,36 +382,24 @@ let test_select context =
     (`NotFoundInvalidKeywordArgument
       ( +Expression.Name (Name.Identifier "$local_test$int_to_int_dictionary"),
         Type.dictionary ~key:Type.integer ~value:Type.integer ));
-  assert_select
-    "[[int, Named(i, int)], int]"
-    "(1, **{'a': 1})"
-    (`Found "[[int, Named(i, int)], int]");
-  assert_select
-    "[[Named(i, int), Named(j, int)], int]"
-    "(**{'i': 1}, j=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select "[[int, Named(i, int)], int]" "(1, **{'a': 1})" (`Found "int");
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(**{'i': 1}, j=2)" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**(ExtendsDictStrInt()), j=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+    (`Found "int");
   assert_select
     "[[Named(i, str)], int]"
     "(**(ExtendsDictStrInt()))"
     (`NotFoundMismatch (Type.integer, Type.string, None, 1));
-  assert_select
-    "[[Named(i, int), Named(j, int)], int]"
-    "(**({}), j=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select "[[Named(i, int), Named(j, int)], int]" "(**({}), j=2)" (`Found "int");
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**({} if optional is None else {'i': optional}), j=2)"
-    (`Found "[[Named(i, int), Named(j, int)], int]");
+    (`Found "int");
 
   (* Constructor resolution. *)
-  assert_select
-    "[[typing.Callable[[typing.Any], int]], int]"
-    "(int)"
-    (`Found "[[typing.Callable[[typing.Any], int]], int]");
+  assert_select "[[typing.Callable[[typing.Any], int]], int]" "(int)" (`Found "int");
   assert_select
     "[[typing.Callable[[typing.Any], int]], int]"
     "(str)"
@@ -414,13 +418,13 @@ let test_select context =
         1 ));
 
   (* Keywords. *)
-  assert_select "[[Keywords()], int]" "()" (`Found "[[Keywords()], int]");
-  assert_select "[[Keywords()], int]" "(a=1, b=2)" (`Found "[[Keywords()], int]");
-  assert_select "[[Keywords(int)], int]" "(a=1, b=2)" (`Found "[[Keywords(int)], int]");
+  assert_select "[[Keywords()], int]" "()" (`Found "int");
+  assert_select "[[Keywords()], int]" "(a=1, b=2)" (`Found "int");
+  assert_select "[[Keywords(int)], int]" "(a=1, b=2)" (`Found "int");
   assert_select
     "[[Named(a, int), Named(c, int), Keywords(int)], int]"
     "(a=1, b=2, c=3)"
-    (`Found "[[Named(a, int), Named(c, int), Keywords(int)], int]");
+    (`Found "int");
   assert_select
     "[[Keywords(str)], int]"
     "(a=1, b=2)"
@@ -431,99 +435,128 @@ let test_select context =
     (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "$parameter$b", 2));
 
   (* Constraint resolution. *)
-  assert_select "[[_T], _T]" "(1)" (`Found "[[$literal_one], $literal_one]");
-  assert_select
-    "[[typing.Callable[[], _T]], _T]"
-    "(lambda: 1)"
-    (`Found "[[typing.Callable[[], int]], int]");
-  assert_select
-    "[[_T, _S], _T]"
-    "(1, 'string')"
-    (`Found "[[$literal_one, $literal_string], $literal_one]");
-  assert_select
-    "[[_T, _T], int]"
-    "(1, 'string')"
-    (`Found "[[typing.Union[int, str], typing.Union[int, str]], int]");
-  assert_select
-    "[[_T], typing.Union[str, _T]]"
-    "(1)"
-    (`Found "[[$literal_one], typing.Union[str, $literal_one]]");
-  assert_select
-    "[[typing.Union[int, typing.List[_T]]], _T]"
-    "([1])"
-    (`Found "[[typing.Union[int, typing.List[int]]], int]");
-  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], _S]");
-  assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
-  assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
-  assert_select "[[typing.List[C]], int]" "([B()])" (`Found "[[typing.List[C]], int]");
-  assert_select
-    "[[typing.List[C]], int]"
-    "([B() for x in range(3)])"
-    (`Found "[[typing.List[C]], int]");
-  assert_select "[[typing.Set[C]], int]" "({ B(), B() })" (`Found "[[typing.Set[C]], int]");
-  assert_select
-    "[[typing.Set[C]], int]"
-    "({ B() for x in range(3) })"
-    (`Found "[[typing.Set[C]], int]");
-  assert_select
-    "[[typing.Dict[int, C]], int]"
-    "({ 7: B() })"
-    (`Found "[[typing.Dict[int, C]], int]");
-  assert_select
-    "[[typing.Dict[int, C]], int]"
-    "({n: B() for n in range(5)})"
-    (`Found "[[typing.Dict[int, C]], int]");
+  assert_select "[[_T], _T]" "(1)" (`Found "$literal_one");
+  assert_select "[[typing.Callable[[], _T]], _T]" "(lambda: 1)" (`Found "int");
+  assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "$literal_one");
+  assert_select "[[_T, _T], int]" "(1, 'string')" (`Found "int");
+  assert_select "[[_T], typing.Union[str, _T]]" "(1)" (`Found "typing.Union[str, $literal_one]");
+  assert_select "[[typing.Union[int, typing.List[_T]]], _T]" "([1])" (`Found "int");
+
+  assert_select_direct
+    ~arguments:[{ name = None; value = parse_single_expression "1" }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = variable_s;
+            parameters =
+              Defined
+                [PositionalOnly { index = 0; annotation = Type.variable "_T"; default = false }];
+          };
+        overloads = [];
+      }
+    (Found { selected_return_annotation = escaped_variable_s });
+
+  assert_select "[[typing.List[_T]], int]" "([1])" (`Found "int");
+  assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "int");
+  assert_select "[[typing.List[C]], int]" "([B()])" (`Found "int");
+  assert_select "[[typing.List[C]], int]" "([B() for x in range(3)])" (`Found "int");
+  assert_select "[[typing.Set[C]], int]" "({ B(), B() })" (`Found "int");
+  assert_select "[[typing.Set[C]], int]" "({ B() for x in range(3) })" (`Found "int");
+  assert_select "[[typing.Dict[int, C]], int]" "({ 7: B() })" (`Found "int");
+  assert_select "[[typing.Dict[int, C]], int]" "({n: B() for n in range(5)})" (`Found "int");
   assert_select
     "[[typing.Iterable[typing.Tuple[_T, _S]]], typing.Dict[_T, _S]]"
     "([('a', 1), ('b', 2)])"
-    (`Found "[[typing.Iterable[typing.Tuple[str, int]]], typing.Dict[str, int]]");
+    (`Found "typing.Dict[str, int]");
   assert_select
     "[[typing.Sequence[_T]], int]"
     "(1)"
     (`NotFoundMismatchWithClosest
-      ( "[[typing.Sequence[_T]], int]",
+      ( "int",
         Type.literal_integer 1,
         Type.parametric "typing.Sequence" [Single (Type.variable "test._T")],
         None,
         1 ));
-  assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
-  assert_select
-    "[[_R], _R]"
-    "('string')"
-    (`NotFoundMismatchWithClosest
-      ( "[[_R], _R]",
-        Type.literal_string "string",
-        Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "test._R",
-        None,
-        1 ));
-  assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
-  assert_select
-    "[[typing.List[_R]], _R]"
-    "(['string'])"
-    (`NotFoundMismatchWithClosest
-      ( "[[typing.List[_R]], _R]",
-        Type.list Type.string,
-        Type.list
-          (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "test._R"),
-        None,
-        1 ));
-  assert_select "[[], _R]" "()" (`Found "[[], _R]");
-  assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
-  assert_select
-    "[[typing.Type[typing.List[_T]]], _T]"
-    "(meta)"
-    (`Found "[[typing.Type[typing.List[int]]], int]");
-  assert_select
-    "[[typing.Type[_T]], _T]"
-    "(typing.List[str])"
-    (`Found "[[typing.Type[typing.List[str]]], typing.List[str]]");
-  assert_select "[[Variable(_T)], int]" "(1, 2)" (`Found "[[Variable(int)], int]");
-  assert_select "[[Keywords(_T)], int]" "(a=1, b=2)" (`Found "[[Keywords(int)], int]");
+  assert_select "[[_R], _R]" "(1)" (`Found "int");
+  assert_select_direct
+    ~arguments:[{ name = None; value = parse_single_expression "'string'" }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = variable_r;
+            parameters =
+              Defined [PositionalOnly { index = 0; annotation = variable_r; default = false }];
+          };
+        overloads = [];
+      }
+    (NotFound
+       {
+         closest_return_annotation = escaped_variable_r;
+         reason =
+           Some
+             (Mismatch
+                (Node.create_with_default_location
+                   {
+                     AttributeResolution.actual = Type.literal_string "string";
+                     expected = variable_r;
+                     name = None;
+                     position = 1;
+                   }));
+       });
+  assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "int");
+
+  assert_select_direct
+    ~arguments:[{ name = None; value = parse_single_expression "['string']" }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = variable_r;
+            parameters =
+              Defined
+                [PositionalOnly { index = 0; annotation = Type.list variable_r; default = false }];
+          };
+        overloads = [];
+      }
+    (NotFound
+       {
+         closest_return_annotation = escaped_variable_r;
+         reason =
+           Some
+             (Mismatch
+                (Node.create_with_default_location
+                   {
+                     AttributeResolution.actual = Type.list Type.string;
+                     expected = Type.list variable_r;
+                     name = None;
+                     position = 1;
+                   }));
+       });
+  assert_select_direct
+    ~arguments:[]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation = { annotation = variable_r; parameters = Defined [] };
+        overloads = [];
+      }
+    (Found { selected_return_annotation = escaped_variable_r });
+
+  assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "int");
+  assert_select "[[typing.Type[typing.List[_T]]], _T]" "(meta)" (`Found "int");
+  assert_select "[[typing.Type[_T]], _T]" "(typing.List[str])" (`Found "typing.List[str]");
+  assert_select "[[Variable(_T)], int]" "(1, 2)" (`Found "int");
+  assert_select "[[Keywords(_T)], int]" "(a=1, b=2)" (`Found "int");
   assert_select
     "[[_T_float_or_str], None]"
     "(union)"
     (`NotFoundMismatchWithClosest
-      ( "[[_T_float_or_str], None]",
+      ( "None",
         Type.union [Type.integer; Type.string],
         Type.variable
           "test._T_float_or_str"
@@ -533,23 +566,48 @@ let test_select context =
   assert_select
     "[[_T_float_str_or_union], _T_float_str_or_union]"
     "(union)"
-    (`Found "[[typing.Union[float, str]], typing.Union[float, str]]");
+    (`Found "typing.Union[float, str]");
   assert_select
     "[[_T_bound_by_float_str_union], _T_bound_by_float_str_union]"
     "(union)"
-    (`Found "[[typing.Union[int, str]], typing.Union[int, str]]");
-  assert_select "[[int], _T]" "(5)" (`Found "[[int], _T]");
-  assert_select "[[int], _T_float_or_str]" "(5)" (`Found "[[int], _T_float_or_str]");
-  assert_select
-    "[[int], _T_bound_by_float_str_union]"
-    "(5)"
-    (`Found "[[int], _T_bound_by_float_str_union]");
-  assert_select "[[], _T]" "()" (`Found "[[], _T]");
-  assert_select "[[], _T_float_or_str]" "()" (`Found "[[], _T_float_or_str]");
-  assert_select
-    "[[], _T_bound_by_float_str_union]"
-    "()"
-    (`Found "[[], _T_bound_by_float_str_union]");
+    (`Found "typing.Union[int, str]");
+
+  let assert_marks_as_escaped_with_argument ~constraints =
+    let variable, escaped_variable = make_normal_and_escaped_variable ~constraints "_S" in
+    assert_select_direct
+      ~arguments:[{ name = None; value = parse_single_expression "5" }]
+      ~callable:
+        {
+          kind = Anonymous;
+          implementation =
+            {
+              annotation = variable;
+              parameters =
+                Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }];
+            };
+          overloads = [];
+        }
+      (Found { selected_return_annotation = escaped_variable })
+  in
+  assert_marks_as_escaped_with_argument ~constraints:Unconstrained;
+  assert_marks_as_escaped_with_argument ~constraints:(Explicit [Type.float; Type.string]);
+  assert_marks_as_escaped_with_argument ~constraints:(Bound (Union [Type.float; Type.string]));
+
+  let assert_marks_as_escaped_with_no_arguments ~constraints =
+    let variable, escaped_variable = make_normal_and_escaped_variable ~constraints "_S" in
+    assert_select_direct
+      ~arguments:[]
+      ~callable:
+        {
+          kind = Anonymous;
+          implementation = { annotation = variable; parameters = Defined [] };
+          overloads = [];
+        }
+      (Found { selected_return_annotation = escaped_variable })
+  in
+  assert_marks_as_escaped_with_no_arguments ~constraints:Unconstrained;
+  assert_marks_as_escaped_with_no_arguments ~constraints:(Explicit [Type.float; Type.string]);
+  assert_marks_as_escaped_with_no_arguments ~constraints:(Bound (Union [Type.float; Type.string]));
 
   (* Ranking. *)
   assert_select
@@ -557,123 +615,139 @@ let test_select context =
     "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0)"
     (* Ambiguous, pick the first one. *)
-    (`NotFoundMissingAnonymousArgumentWithClosest ("[[int, int, str], int]", 1));
+    (`NotFoundMissingAnonymousArgumentWithClosest ("int", 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str], str][[int, str], int]]"
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
-    (`NotFoundMismatchWithClosest ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
+    (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, Keywords()], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
-    (`NotFoundMismatchWithClosest
-      ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+    (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str], str][[], str]]"
     "(1)"
-    (`NotFoundMismatchWithClosest ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
+    (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str, Keywords()], int][[Keywords()], int]]"
     "(1)" (* Prefer arity matches. *)
-    (`NotFoundMismatchWithClosest
-      ("[[str, Keywords()], int]", Type.literal_integer 1, Type.string, None, 1));
+    (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0, 'string')"
     (* Clear winner. *)
-    (`NotFoundMissingAnonymousArgumentWithClosest ("[[int, str, str], int]", 2));
+    (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
-    (`NotFoundMissingAnonymousArgumentWithClosest ("[[int, str, bool], int]", 2));
+    (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
 
   (* Match not found in overloads: intentionally do not consider the implementation. *)
   assert_select
     "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatchWithClosest ("[[str], str]", Type.Top, Type.string, None, 1));
+    (`NotFoundMismatchWithClosest ("str", Type.Top, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
     "(i=1, d=2)"
-    (`NotFoundUnexpectedKeywordWithClosest ("[[Named(c, int), Named(d, int)], int]", "i"));
+    (`NotFoundUnexpectedKeywordWithClosest ("int", "i"));
 
   (* Prefer the overload where the mismatch comes latest *)
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, str], int][[str, int], str]]"
     "(1, 1)"
-    (`NotFoundMismatchWithClosest
-      ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+    (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str, int], str][[int, str], int]]"
     "(1, 1)"
-    (`NotFoundMismatchWithClosest
-      ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+    (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
 
   (* Void functions. *)
-  assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");
-  assert_select "[[int], None]" "(1)" (`Found "[[int], None]");
+  assert_select ~allow_undefined:true "[..., None]" "()" (`Found "None");
+  assert_select "[[int], None]" "(1)" (`Found "None");
   assert_select
     "[[int], None]"
     "('string')"
     (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
-  assert_select
-    "[[typing.Callable[[_T], bool]], _T]"
-    "(g)"
-    (`Found "[[typing.Callable[[int], bool]], int]");
-  assert_select
-    "[[typing.Callable[[_T], typing.List[bool]]], _T]"
-    "(f)"
-    (`Found "[[typing.Callable[[int], typing.List[bool]]], int]");
+  assert_select "[[typing.Callable[[_T], bool]], _T]" "(g)" (`Found "int");
+  assert_select "[[typing.Callable[[_T], typing.List[bool]]], _T]" "(f)" (`Found "int");
 
   (* Special dictionary constructor *)
   assert_select
     ~name:"dict.__init__"
     "[[Keywords(_S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords($literal_one)], dict[str, $literal_one]]");
+    (`Found "dict[str, $literal_one]");
 
   (* TODO(T41074174): Error here rather than defaulting back to the initial signature *)
   assert_select
     ~name:"dict.__init__"
     "[[Named(map, typing.Mapping[_T, _S]), Keywords(_S)], dict[_T, _S]]"
     "({1: 1}, a=1)"
-    (`Found ("[[Named(map, typing.Mapping[int, int]), Keywords(int)], " ^ "dict[int, int]]"));
-  assert_select
-    ~name:"dict.__init__"
-    "[[Keywords(_S)], dict[_T, _S]]"
-    "()"
-    (`Found "[[Keywords(_S)], dict[_T, _S]]");
-  assert_select
-    "[[Keywords(_S)], dict[_T, _S]]"
-    "(a=1)"
-    (`Found "[[Keywords($literal_one)], dict[_T, $literal_one]]");
+    (`Found "dict[int, int]");
+
+  assert_select_direct
+    ~arguments:[]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.dictionary ~key:variable_t ~value:variable_s;
+            parameters = Defined [Keywords variable_s];
+          };
+        overloads = [];
+      }
+    (Found
+       {
+         selected_return_annotation =
+           Type.dictionary ~key:escaped_variable_t ~value:escaped_variable_s;
+       });
+
+  assert_select_direct
+    ~arguments:
+      [{ name = Some (Node.create_with_default_location "a"); value = parse_single_expression "1" }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.dictionary ~key:variable_t ~value:variable_s;
+            parameters = Defined [Keywords variable_s];
+          };
+        overloads = [];
+      }
+    (Found
+       {
+         selected_return_annotation =
+           Type.dictionary ~key:escaped_variable_t ~value:(Type.literal_integer 1);
+       });
+
   assert_select
     "[Tparams, int]"
     "(a=1)"
-    (`NotFound ("[Tparams, int]", Some AttributeResolution.CallingParameterVariadicTypeVariable));
-  assert_select
-    "[Ts, int]"
-    "(1, 'string', 1, 'string')"
-    (`Found "[[$literal_one, $literal_string, $literal_one, $literal_string], int]");
-  assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "[[int], int]");
+    (`NotFound ("int", Some AttributeResolution.CallingParameterVariadicTypeVariable));
+  assert_select "[Ts, int]" "(1, 'string', 1, 'string')" (`Found "int");
+  assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "int");
   assert_select
     "[[Variable(Ts)], int]"
     "(1, *int_string_tuple, *int_string_tuple, 1)"
-    (`Found "[[$literal_one, int, str, int, str, $literal_one], int]");
+    (`Found "int");
   assert_select
     "[[Variable(Ts)], int]"
     "(1, *unbounded_tuple)"
     (`NotFound
-      ( "[[Variable(Ts)], int]",
+      ( "int",
         Some
           (AttributeResolution.MismatchWithListVariadicTypeVariable
              {
@@ -693,7 +767,7 @@ let test_select context =
     "[[typing.Tuple[Ts], Variable(Ts)], int]"
     "((1, 'string'), 1.1)"
     (`NotFound
-      ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
+      ( "int",
         Some
           (AttributeResolution.MismatchWithListVariadicTypeVariable
              {
@@ -707,17 +781,16 @@ let test_select context =
   assert_select
     "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], int]"
     "([1,2,3], ['string', 'string'])"
-    (`Found "[[typing.List[int], typing.List[str]], int]");
+    (`Found "int");
   assert_select
     "[pyre_extensions.type_variable_operators.Map[typing.List, Ts], \
      typing.Tuple[pyre_extensions.type_variable_operators.Map[typing.Type, Ts]]]"
     "([1,2,3], ['string', 'string'])"
-    (`Found
-      "[[typing.List[int], typing.List[str]], typing.Tuple[typing.Type[int], typing.Type[str]]]");
+    (`Found "typing.Tuple[typing.Type[int], typing.Type[str]]");
   assert_select
     "[[bool, Variable(pyre_extensions.type_variable_operators.Map[typing.List, Ts])], int]"
     "(True, [1,2,3], ['string', 'string'])"
-    (`Found "[[bool, typing.List[int], typing.List[str]], int]");
+    (`Found "int");
   ()
 
 

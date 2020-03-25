@@ -1775,7 +1775,9 @@ module State (Context : Context) = struct
           ~dynamic
           ~qualifier:Context.qualifier
           ~callee;
-        let signature { callable; self_argument } =
+        let signature_with_unpacked_callable_and_self_argument
+            ({ callable; self_argument } as unpacked_callable_and_self_argument)
+          =
           let signature =
             GlobalResolution.signature_select
               ~arguments
@@ -1784,8 +1786,8 @@ module State (Context : Context) = struct
               ~callable
               ~self_argument
           in
-          match signature with
-          | AttributeResolution.NotFound _ -> (
+          match signature, callable with
+          | AttributeResolution.NotFound _, _ -> (
               match Node.value callee, callable, arguments with
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
@@ -1795,19 +1797,20 @@ module State (Context : Context) = struct
                   inverse_operator (Reference.last name)
                   >>= (fun name ->
                         find_method ~parent:(resolve_expression_type ~resolution value) ~name)
-                  >>| (fun { callable; self_argument } ->
-                        GlobalResolution.signature_select
-                          ~arguments
-                          ~global_resolution:(Resolution.global_resolution resolution)
-                          ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                          ~callable
-                          ~self_argument)
-                  |> Option.value ~default:signature
-              | _ -> signature )
-          | AttributeResolution.Found
-              ({ kind = Type.Callable.Named access; implementation; _ } as callable)
+                  >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
+                        ( GlobalResolution.signature_select
+                            ~arguments
+                            ~global_resolution:(Resolution.global_resolution resolution)
+                            ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                            ~callable
+                            ~self_argument,
+                          (* Make sure we emit errors against the inverse function, not the original *)
+                          unpacked_callable_and_self_argument ))
+                  |> Option.value ~default:(signature, unpacked_callable_and_self_argument)
+              | _ -> signature, unpacked_callable_and_self_argument )
+          | AttributeResolution.Found { selected_return_annotation; _ }, { kind = Named access; _ }
             when String.equal "__init__" (Reference.last access) ->
-              Type.split implementation.annotation
+              Type.split selected_return_annotation
               |> fst
               |> Type.primitive_name
               >>| (function
@@ -1824,7 +1827,7 @@ module State (Context : Context) = struct
                         if not (List.is_empty abstract_methods) then
                           AttributeResolution.NotFound
                             {
-                              callable;
+                              closest_return_annotation = selected_return_annotation;
                               reason =
                                 Some
                                   (AbstractClassInstantiation
@@ -1835,132 +1838,109 @@ module State (Context : Context) = struct
                         then
                           AttributeResolution.NotFound
                             {
-                              callable;
+                              closest_return_annotation = selected_return_annotation;
                               reason = Some (ProtocolInstantiation (Reference.create class_name));
                             }
                         else
                           signature)
               |> Option.value ~default:signature
-          | _ -> signature
+              |> fun signature -> signature, unpacked_callable_and_self_argument
+          | _ -> signature, unpacked_callable_and_self_argument
         in
-        callables
-        >>| List.map ~f:(fun ({ self_argument; _ } as callable) ->
-                signature callable, self_argument)
+        callables >>| List.map ~f:signature_with_unpacked_callable_and_self_argument
       in
       let error_from_not_found
-          ~callable:({ Type.Callable.implementation = { annotation; _ }; kind; _ } as callable)
+          ~unpacked_callable_and_self_argument:
+            { callable = { Type.Callable.kind; _ } as callable; self_argument }
           ~reason
-          ~self_argument
         =
-        let errors =
-          let error_location, error_kind =
-            let callee =
-              match kind with
-              | Type.Callable.Named callable -> Some callable
-              | _ -> None
-            in
-            match reason with
-            | AttributeResolution.AbstractClassInstantiation { class_name; abstract_methods } ->
-                ( location,
-                  Error.InvalidClassInstantiation
-                    (Error.AbstractClassInstantiation { class_name; abstract_methods }) )
-            | CallingParameterVariadicTypeVariable ->
-                location, Error.NotCallable (Type.Callable callable)
-            | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
-                location, Error.InvalidArgument (Error.Keyword { expression; annotation })
-            | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-                location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
-            | Mismatch mismatch ->
-                let { AttributeResolution.actual; expected; name; position } =
-                  Node.value mismatch
-                in
-                let mismatch, name, position, location =
-                  ( Error.create_mismatch
-                      ~resolution:global_resolution
-                      ~actual
-                      ~expected
-                      ~covariant:true,
-                    name,
-                    position,
-                    Node.location mismatch )
-                in
-                let kind =
-                  let normal =
-                    Error.IncompatibleParameterType { name; position; callee; mismatch }
-                  in
-                  let typed_dictionary_error
-                      ~method_name
-                      ~position
-                      { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
-                    =
-                    if
-                      Type.TypedDictionary.is_special_mismatch
-                        ~class_name:typed_dictionary_name
-                        ~method_name
-                        ~position
-                        ~total:(Type.TypedDictionary.are_fields_total fields)
-                    then
-                      match actual with
-                      | Type.Literal (Type.String field_name) ->
-                          let required_field_exists =
-                            List.exists
-                              ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
-                                String.equal name field_name && required)
-                              fields
-                          in
-                          if required_field_exists then
-                            Error.TypedDictionaryInvalidOperation
-                              { typed_dictionary_name; field_name; method_name; mismatch }
-                          else
-                            Error.TypedDictionaryKeyNotFound
-                              { typed_dictionary_name; missing_key = field_name }
-                      | Type.Primitive "str" ->
-                          Error.TypedDictionaryAccessWithNonLiteral
-                            (List.map fields ~f:(fun { name; _ } -> name))
-                      | _ -> normal
-                    else
-                      match method_name, arguments with
-                      | ( "__setitem__",
-                          {
-                            Call.Argument.value =
-                              { Node.value = String { value = field_name; _ }; _ };
-                            _;
-                          }
-                          :: _ ) ->
-                          Error.TypedDictionaryInvalidOperation
-                            { typed_dictionary_name; field_name; method_name; mismatch }
-                      | _ -> normal
-                  in
-                  match self_argument, callee >>| Reference.as_list with
-                  | Some (Type.TypedDictionary typed_dictionary), Some [_; method_name] ->
-                      typed_dictionary_error ~method_name ~position typed_dictionary
-                  | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
-                      GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
-                      >>| typed_dictionary_error ~method_name ~position
-                      |> Option.value ~default:normal
-                  | _ -> normal
-                in
-                location, kind
-            | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
-                location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })
-            | MissingArgument parameter -> location, Error.MissingArgument { callee; parameter }
-            | MutuallyRecursiveTypeVariables ->
-                location, Error.MutuallyRecursiveTypeVariables callee
-            | ProtocolInstantiation class_name ->
-                location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)
-            | TooManyArguments { expected; provided } ->
-                location, Error.TooManyArguments { callee; expected; provided }
-            | UnexpectedKeyword name -> location, Error.UnexpectedKeyword { callee; name }
-          in
-          emit_error ~errors ~location:error_location ~kind:error_kind
+        let callee =
+          match kind with
+          | Type.Callable.Named callable -> Some callable
+          | _ -> None
         in
-        {
-          Resolved.resolution;
-          errors;
-          resolved = annotation;
-          resolved_annotation = None;
-          base = None;
-        }
+        match reason with
+        | AttributeResolution.AbstractClassInstantiation { class_name; abstract_methods } ->
+            ( location,
+              Error.InvalidClassInstantiation
+                (Error.AbstractClassInstantiation { class_name; abstract_methods }) )
+        | CallingParameterVariadicTypeVariable ->
+            location, Error.NotCallable (Type.Callable callable)
+        | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
+            location, Error.InvalidArgument (Error.Keyword { expression; annotation })
+        | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
+            location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
+        | Mismatch mismatch ->
+            let { AttributeResolution.actual; expected; name; position } = Node.value mismatch in
+            let mismatch, name, position, location =
+              ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
+                name,
+                position,
+                Node.location mismatch )
+            in
+            let kind =
+              let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
+              let typed_dictionary_error
+                  ~method_name
+                  ~position
+                  { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
+                =
+                if
+                  Type.TypedDictionary.is_special_mismatch
+                    ~class_name:typed_dictionary_name
+                    ~method_name
+                    ~position
+                    ~total:(Type.TypedDictionary.are_fields_total fields)
+                then
+                  match actual with
+                  | Type.Literal (Type.String field_name) ->
+                      let required_field_exists =
+                        List.exists
+                          ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
+                            String.equal name field_name && required)
+                          fields
+                      in
+                      if required_field_exists then
+                        Error.TypedDictionaryInvalidOperation
+                          { typed_dictionary_name; field_name; method_name; mismatch }
+                      else
+                        Error.TypedDictionaryKeyNotFound
+                          { typed_dictionary_name; missing_key = field_name }
+                  | Type.Primitive "str" ->
+                      Error.TypedDictionaryAccessWithNonLiteral
+                        (List.map fields ~f:(fun { name; _ } -> name))
+                  | _ -> normal
+                else
+                  match method_name, arguments with
+                  | ( "__setitem__",
+                      {
+                        Call.Argument.value = { Node.value = String { value = field_name; _ }; _ };
+                        _;
+                      }
+                      :: _ ) ->
+                      Error.TypedDictionaryInvalidOperation
+                        { typed_dictionary_name; field_name; method_name; mismatch }
+                  | _ -> normal
+              in
+              match self_argument, callee >>| Reference.as_list with
+              | Some (Type.TypedDictionary typed_dictionary), Some [_; method_name] ->
+                  typed_dictionary_error ~method_name ~position typed_dictionary
+              | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
+                  GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
+                  >>| typed_dictionary_error ~method_name ~position
+                  |> Option.value ~default:normal
+              | _ -> normal
+            in
+            location, kind
+        | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
+            location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })
+        | MissingArgument parameter -> location, Error.MissingArgument { callee; parameter }
+        | MutuallyRecursiveTypeVariables -> location, Error.MutuallyRecursiveTypeVariables callee
+        | ProtocolInstantiation class_name ->
+            location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)
+        | TooManyArguments { expected; provided } ->
+            location, Error.TooManyArguments { callee; expected; provided }
+        | UnexpectedKeyword name -> location, Error.UnexpectedKeyword { callee; name }
       in
 
       let not_found = function
@@ -1970,15 +1950,28 @@ module State (Context : Context) = struct
       match signatures >>| List.partition_tf ~f:not_found with
       (* Prioritize missing signatures for union type checking. *)
       | Some
-          ((AttributeResolution.NotFound { callable; reason = Some reason }, self_argument) :: _, _)
-        ->
-          error_from_not_found ~callable ~reason ~self_argument
+          ( ( AttributeResolution.NotFound { closest_return_annotation; reason = Some reason },
+              unpacked_callable_and_self_argument )
+            :: _,
+            _ ) ->
+          let errors =
+            let error_location, error_kind =
+              error_from_not_found ~reason ~unpacked_callable_and_self_argument
+            in
+            emit_error ~errors ~location:error_location ~kind:error_kind
+          in
+          {
+            Resolved.resolution;
+            errors;
+            resolved = closest_return_annotation;
+            resolved_annotation = None;
+            base = None;
+          }
       | Some ([], head :: tail) ->
           let resolved =
             let extract = function
-              | AttributeResolution.Found { Type.Callable.implementation = { annotation; _ }; _ }, _
-                ->
-                  annotation
+              | AttributeResolution.Found { selected_return_annotation }, _ ->
+                  selected_return_annotation
               | _ -> failwith "Not all signatures were found."
             in
             List.map tail ~f:extract

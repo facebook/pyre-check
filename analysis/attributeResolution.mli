@@ -77,15 +77,15 @@ type reason =
 [@@deriving eq, show, compare]
 
 type closest = {
-  callable: Type.Callable.t;
+  closest_return_annotation: Type.t;
   reason: reason option;
 }
 [@@deriving show]
 
 type sig_t =
-  | Found of Type.Callable.t
+  | Found of { selected_return_annotation: Type.t }
   | NotFound of closest
-[@@deriving eq, show]
+[@@deriving eq, show, sexp]
 
 module Argument : sig
   type kind =
