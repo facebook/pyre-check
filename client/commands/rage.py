@@ -15,6 +15,10 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
 from .command import Command
+from .servers import Servers
+
+
+RAGE_DELIMITER: Final[str] = "=" * 50
 
 
 class Rage(Command):
@@ -31,6 +35,7 @@ class Rage(Command):
             arguments, original_directory, configuration, analysis_directory
         )
         self._output_path: Final[Optional[str]] = arguments.output_path
+        self._log_directory_for_binary: str = self.log_directory
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -52,11 +57,7 @@ class Rage(Command):
         )
 
     def _flags(self) -> List[str]:
-        log_directory = self._log_directory
-        if log_directory:
-            return ["-log-directory", log_directory]
-        else:
-            return []
+        return ["-log-directory", self._log_directory_for_binary]
 
     def _run(self) -> None:
         output_path = self._output_path
@@ -65,6 +66,39 @@ class Rage(Command):
                 self._rage(output_file)
         else:
             self._rage(sys.stdout)
+
+    def _call_client_for_root_project(self, output_file: IO[str]) -> None:
+        self._arguments.servers_subcommand = "list"
+        all_servers = Servers(
+            self._arguments,
+            self._original_directory,
+            self._configuration,
+            self._analysis_directory,
+        )._all_server_details()
+        if any(server.is_root() for server in all_servers):
+            self._call_client(
+                command=self.NAME, capture_output=False, stdout=output_file
+            ).check()
+        else:
+            # We need to pass in an analysis directory because the default
+            # analysis directory for a project root without a server is an
+            # invalid link tree, which means `_call_client` will fail.
+            self._analysis_directory = AnalysisDirectory(".")
+            print(
+                f"No server running for {self._original_directory}."
+                " Printing rage for all running servers.",
+                file=output_file,
+                flush=True,
+            )
+            print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
+            for server in all_servers:
+                self._log_directory_for_binary = str(
+                    self._dot_pyre_directory / server.local_root
+                )
+                self._call_client(
+                    command=self.NAME, capture_output=False, stdout=output_file
+                ).check()
+                print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
 
     def _rage(self, output_file: IO[str]) -> None:
         # Do not use logging. Logging goes to stderr.
@@ -76,6 +110,9 @@ class Rage(Command):
             file=output_file,
             flush=True,
         )
-        self._call_client(
-            command=self.NAME, capture_output=False, stdout=output_file
-        ).check()
+        if self.local_configuration is not None:
+            self._call_client(
+                command=self.NAME, capture_output=False, stdout=output_file
+            ).check()
+        else:
+            self._call_client_for_root_project(output_file)

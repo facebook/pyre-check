@@ -931,12 +931,11 @@ class RageTest(TestCommand):
 
     def test_rage_no_servers(self) -> None:
         result = self.run_pyre("rage")
-        self.assert_failed(result)
+        self.assert_succeeded(result)
 
-        # TODO(T61745598): Add testing for proper prompting when implemented.
         self.create_local_configuration("local_one", {"source_directories": ["."]})
         result = self.run_pyre("rage")
-        self.assert_failed(result)
+        self.assert_succeeded(result)
 
         # TODO(T62047832): Better defined behavior for rage after a killed or stopped
         # server, vs. non-existent server or logs

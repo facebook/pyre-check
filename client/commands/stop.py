@@ -16,7 +16,6 @@ from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
 from ..watchman_subscriber import WatchmanSubscriber
 from .command import ClientException, Command, State
-from .kill import Kill
 
 
 LOG: Logger = logging.getLogger(__name__)

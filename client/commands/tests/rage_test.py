@@ -6,12 +6,14 @@
 import io
 import sys
 import unittest
-from typing import IO, Optional
+from pathlib import Path
+from typing import IO, List, Optional
 from unittest.mock import MagicMock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ...commands.command import Result
+from ...commands.servers import ServerDetails
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -54,6 +56,7 @@ class RageTest(unittest.TestCase):
     ) -> None:
         arguments = mock_arguments()
         arguments.output_path = None
+        arguments.local_configuration = "foo/bar"
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
@@ -73,6 +76,7 @@ class RageTest(unittest.TestCase):
     def test_file_output(self, call_client: MagicMock, run: MagicMock) -> None:
         arguments = mock_arguments()
         arguments.output_path = "/output"
+        arguments.local_configuration = "foo/bar"
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
@@ -94,3 +98,56 @@ class RageTest(unittest.TestCase):
                 command=commands.Rage.NAME, capture_output=False, stdout=output_file
             )
             self.assert_output(output_content)
+
+    @patch.object(commands.Servers, "_all_server_details")
+    @patch.object(commands.Command, "_call_client")
+    def test_call_client_for_root_project__server_exists(
+        self, call_client: MagicMock, all_server_details: MagicMock
+    ) -> None:
+        arguments = mock_arguments()
+        arguments.output_path = None
+        configuration = mock_configuration()
+        original_directory = "/original/directory"
+        analysis_directory = AnalysisDirectory(".")
+        rage_command = commands.Rage(
+            arguments, original_directory, configuration, analysis_directory
+        )
+        rage_command._log_directory_for_binary = "/some-log-directory"
+        all_server_details.return_value = [
+            ServerDetails(pid=1, local_root=".", server_pid_path=Path("something")),
+            ServerDetails(pid=1, local_root="bar", server_pid_path=Path("something")),
+        ]
+        rage_command._call_client_for_root_project(sys.stdout)
+        call_client.assert_called_once()
+
+    @patch.object(commands.Servers, "_all_server_details")
+    @patch.object(commands.Command, "_call_client", autospec=True)
+    def test_call_client_for_root_project__server_does_not_exist(
+        self, call_client: MagicMock, all_server_details: MagicMock
+    ) -> None:
+        arguments = mock_arguments()
+        arguments.output_path = None
+        configuration = mock_configuration()
+        original_directory = "/original/directory"
+        analysis_directory = AnalysisDirectory(".")
+        rage_command = commands.Rage(
+            arguments, original_directory, configuration, analysis_directory
+        )
+
+        all_server_details.return_value = [
+            ServerDetails(pid=1, local_root="foo", server_pid_path=Path("something")),
+            ServerDetails(pid=1, local_root="bar", server_pid_path=Path("something")),
+        ]
+
+        log_directories: List[str] = []
+
+        def mock_call_client(_object: commands.Rage, **kwargs: object) -> MagicMock:
+            """Capture the log directory that will be passed to the binary."""
+            log_directories.append(_object._log_directory_for_binary)
+            return MagicMock()
+
+        call_client.side_effect = mock_call_client
+        rage_command._call_client_for_root_project(sys.stdout)
+
+        self.assertEqual(call_client.call_count, 2)
+        self.assertEqual(log_directories, [".pyre/foo", ".pyre/bar"])

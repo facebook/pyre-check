@@ -183,3 +183,15 @@ class ServerDetailsTest(unittest.TestCase):
                 server_pid_path=Path("/root/.pyre/server/server.pid"),
             ),
         )
+
+    def test_is_root(self) -> None:
+        self.assertTrue(
+            ServerDetails(
+                pid=1, local_root=".", server_pid_path=Path("something")
+            ).is_root()
+        )
+        self.assertFalse(
+            ServerDetails(
+                pid=1, local_root="foo/bar", server_pid_path=Path("something")
+            ).is_root()
+        )

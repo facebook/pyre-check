@@ -39,9 +39,12 @@ class ServerDetails(NamedTuple):
             local_root=str(server_pid_path.relative_to(dot_pyre_root).parent.parent),
         )
 
+    def is_root(self) -> bool:
+        return self.local_root == "."
+
     @property
     def name(self) -> str:
-        if self.local_root == ".":
+        if self.is_root():
             return ROOT_PLACEHOLDER_NAME
         else:
             return self.local_root
@@ -99,6 +102,15 @@ class Servers(Command):
     def _find_servers(self) -> List[Path]:
         return list(self._dot_pyre_directory.glob("**/server.pid"))
 
+    def _all_server_details(self) -> List[ServerDetails]:
+        return sorted(
+            (
+                ServerDetails._from_server_path(server_path, self._dot_pyre_directory)
+                for server_path in self._find_servers()
+            ),
+            key=lambda details: details.local_root,
+        )
+
     def _stop_servers(self, servers: List[ServerDetails]) -> None:
         for server in servers:
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
@@ -110,13 +122,7 @@ class Servers(Command):
             ).run()
 
     def _run(self) -> None:
-        all_server_details = sorted(
-            (
-                ServerDetails._from_server_path(server_path, self._dot_pyre_directory)
-                for server_path in self._find_servers()
-            ),
-            key=lambda details: details.local_root,
-        )
+        all_server_details = self._all_server_details()
 
         subcommand = self._subcommand
         if subcommand == "list" or subcommand is None:
