@@ -25,7 +25,6 @@ CONFIGURATION_FILE: str = ".pyre_configuration"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 BINARY_NAME: str = "pyre.bin"
 CLIENT_NAME: str = "pyre-client"
-LOG_DIRECTORY: str = ".pyre"
 
 if TYPE_CHECKING:
     from .configuration import Configuration
@@ -73,12 +72,6 @@ def check_nested_configurations(local_root: Optional[str]) -> None:
                     parent_local_root
                 )
             )
-
-
-def find_dot_pyre_directory(
-    dot_pyre_directory: Optional[Path], current_directory: str
-) -> Path:
-    return dot_pyre_directory or Path(current_directory, LOG_DIRECTORY)
 
 
 def find_log_directory(

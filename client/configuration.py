@@ -17,13 +17,7 @@ import sys
 from logging import Logger
 from typing import Dict, List, Optional, Union
 
-from . import (
-    BINARY_NAME,
-    CONFIGURATION_FILE,
-    LOCAL_CONFIGURATION_FILE,
-    LOG_DIRECTORY,
-    find_typeshed,
-)
+from . import BINARY_NAME, CONFIGURATION_FILE, find_typeshed
 from .exceptions import EnvironmentException
 from .filesystem import assert_readable_directory, expand_relative_path
 

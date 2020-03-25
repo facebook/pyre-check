@@ -22,7 +22,6 @@ from typing import IO, Iterable, List, Optional
 from typing_extensions import Final
 
 from .. import (
-    find_dot_pyre_directory,
     find_local_root,
     find_log_directory,
     find_project_root,
@@ -42,6 +41,7 @@ from ..socket_connection import SocketConnection, SocketException
 TEXT: str = "text"
 JSON: str = "json"
 
+LOG_DIRECTORY: str = ".pyre"
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -199,8 +199,8 @@ class CommandParser(ABC):
         self._local_configuration = find_local_root(
             self._original_directory, self._local_configuration
         )
-        self._dot_pyre_directory: Path = find_dot_pyre_directory(
-            dot_pyre_directory, self._current_directory
+        self._dot_pyre_directory: Path = dot_pyre_directory or Path(
+            self._current_directory, LOG_DIRECTORY
         )
         self._log_directory: str = find_log_directory(
             self._current_directory,
