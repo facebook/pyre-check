@@ -20,11 +20,11 @@ from . import (
     CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
-    assert_readable_directory,
     find_typeshed,
     number_of_workers,
 )
 from .exceptions import EnvironmentException
+from .filesystem import assert_readable_directory
 
 
 LOG: Logger = logging.getLogger(__name__)

@@ -29,12 +29,11 @@ from .. import (
     is_capable_terminal,
     json_rpc,
     log,
-    readable_directory,
 )
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
-from ..filesystem import remove_if_exists, translate_path
+from ..filesystem import readable_directory, remove_if_exists, translate_path
 from ..log import StreamLogger
 from ..process import register_non_unique_process
 from ..socket_connection import SocketConnection, SocketException

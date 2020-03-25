@@ -10,21 +10,11 @@ from typing import List, Optional
 
 from typing_extensions import Final
 
-from .. import assert_writable_directory, log, readable_directory
+from .. import log
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
+from ..filesystem import readable_directory, writable_directory
 from .check import Check
-
-
-def writable_directory(path: str) -> str:
-    # Create the directory if it does not exist.
-    try:
-        os.makedirs(path)
-    except FileExistsError:
-        pass
-    path = os.path.abspath(path)
-    assert_writable_directory(path)
-    return path
 
 
 class Analyze(Check):

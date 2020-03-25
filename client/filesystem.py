@@ -19,6 +19,36 @@ from .exceptions import EnvironmentException
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+def assert_readable_directory(directory: str) -> None:
+    if not os.path.isdir(directory):
+        raise EnvironmentException("{} is not a valid directory.".format(directory))
+    if not os.access(directory, os.R_OK):
+        raise EnvironmentException("{} is not a readable directory.".format(directory))
+
+
+def readable_directory(directory: str) -> str:
+    assert_readable_directory(directory)
+    return directory
+
+
+def assert_writable_directory(directory: str) -> None:
+    if not os.path.isdir(directory):
+        raise EnvironmentException("{} is not a valid directory.".format(directory))
+    if not os.access(directory, os.W_OK):
+        raise EnvironmentException("{} is not a writable directory.".format(directory))
+
+
+def writable_directory(path: str) -> str:
+    # Create the directory if it does not exist.
+    try:
+        os.makedirs(path)
+    except FileExistsError:
+        pass
+    path = os.path.abspath(path)
+    assert_writable_directory(path)
+    return path
+
+
 def translate_path(root: str, path: str) -> str:
     if os.path.isabs(path):
         return path
