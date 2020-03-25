@@ -160,6 +160,8 @@ and Name : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val last : t -> string
 end
 
 and Parameter : sig

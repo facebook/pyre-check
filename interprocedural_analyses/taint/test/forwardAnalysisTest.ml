@@ -700,6 +700,23 @@ let test_asyncio_gather context =
     [
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_through_asyncio";
       outcome ~kind:`Function ~returns:[] "qualifier.benign_through_asyncio";
+    ];
+  (* We also support asyncio.gather imported from other modules. *)
+  assert_taint
+    ~context
+    {|
+      import foo
+      def benign_through_asyncio():
+        a, b = foo.asyncio.gather(0, __test_source())
+        return a
+
+      def source_through_asyncio():
+        a, b = foo.asyncio.gather(0, __test_source())
+        return b
+    |}
+    [
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_through_asyncio";
+      outcome ~kind:`Function ~returns:[] "qualifier.benign_through_asyncio";
     ]
 
 

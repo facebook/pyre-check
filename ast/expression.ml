@@ -395,6 +395,8 @@ and Name : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val last : t -> string
 end = struct
   module Attribute = struct
     type t = {
@@ -424,6 +426,11 @@ end = struct
     | Identifier left, Identifier right -> [%compare: Identifier.t] left right
     | Attribute _, Identifier _ -> -1
     | Identifier _, Attribute _ -> 1
+
+
+  let last = function
+    | Identifier name -> name
+    | Attribute { attribute; _ } -> attribute
 end
 
 and Parameter : sig

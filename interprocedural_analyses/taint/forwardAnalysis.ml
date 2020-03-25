@@ -778,15 +778,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 Node.value =
                   Name
                     (Name.Attribute
-                      {
-                        base = { Node.value = Expression.Name (Name.Identifier "asyncio"); _ };
-                        attribute = "gather";
-                        _;
-                      });
+                      { base = { Node.value = Expression.Name name; _ }; attribute = "gather"; _ });
                 _;
               };
             arguments;
-          } ->
+          }
+        when String.equal "asyncio" (Name.last name) ->
           analyze_expression
             ~resolution
             ~state
