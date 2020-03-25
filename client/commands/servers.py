@@ -105,7 +105,7 @@ class Servers(Command):
             Stop(
                 arguments=self._arguments,
                 original_directory=str(
-                    self._dot_pyre_directory.parent / server.local_root
+                    Path(self._current_directory, server.local_root)
                 ),
             ).run()
 
