@@ -107,7 +107,7 @@ let test_approximate_complex_access_paths _ =
 
 
 let () =
-  "test_taint_domain"
+  "taint_domain"
   >::: [
          "partition_call_map" >:: test_partition_call_map;
          "approximate_complex_access_paths" >:: test_approximate_complex_access_paths;

@@ -1006,9 +1006,9 @@ let () =
          "taint_in_taint_out_models_alternate" >:: test_taint_in_taint_out_models_alternate;
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
-         "test_source_breadcrumbs" >:: test_source_breadcrumbs;
-         "test_sink_breadcrumbs" >:: test_sink_breadcrumbs;
-         "test_tito_breadcrumbs" >:: test_tito_breadcrumbs;
+         "source_breadcrumbs" >:: test_source_breadcrumbs;
+         "sink_breadcrumbs" >:: test_sink_breadcrumbs;
+         "tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "invalid_models" >:: test_invalid_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
          "filter_by_rules" >:: test_filter_by_rules;

@@ -50,5 +50,4 @@ let test_simple_analysis _ =
       ()
 
 
-let () =
-  "interproceduralRegistration" >::: ["test_simple_analysis" >:: test_simple_analysis] |> Test.run
+let () = "interproceduralRegistration" >::: ["simple_analysis" >:: test_simple_analysis] |> Test.run

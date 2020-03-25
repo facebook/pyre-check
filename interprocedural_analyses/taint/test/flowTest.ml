@@ -200,13 +200,13 @@ let test_errors _ =
 
 
 let () =
-  "test_taint_flow"
+  "taint_flow"
   >::: [
          "partition_match_all" >:: test_partition_match_all;
          "partition_match_some_sources" >:: test_partition_match_some_sources;
          "partition_match_some_sinks" >:: test_partition_match_some_sinks;
          "partition_match_some_sinks_and_sources" >:: test_partition_match_some_sinks_and_sources;
-         "test_no_errors" >:: test_no_errors;
-         "test_errors" >:: test_errors;
+         "no_errors" >:: test_no_errors;
+         "errors" >:: test_errors;
        ]
   |> Test.run
