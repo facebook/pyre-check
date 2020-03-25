@@ -1478,35 +1478,35 @@ let test_for_loops context =
 
 let () =
   [
-    "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
-    "concatenate_taint_in_taint_out", test_concatenate_taint_in_taint_out;
-    "rce_sink", test_rce_sink;
-    "sink", test_sink;
-    "rce_and_test_sink", test_rce_and_test_sink;
-    "call_tito", test_call_taint_in_taint_out;
-    "tito_sink", test_tito_sink;
-    "tito_via_receiver", test_tito_via_receiver;
+    "access_paths", test_access_paths;
+    "actual_parameter_matching", test_actual_parameter_matching;
     "apply_method_model_at_call_site", test_apply_method_model_at_call_site;
-    "seqential_call_path", test_sequential_call_path;
+    "assignment", test_assignment;
+    "asyncio_gather", test_asyncio_gather;
+    "call_tito", test_call_taint_in_taint_out;
     "chained_call_path", test_chained_call_path;
-    "dictionary", test_dictionary;
     "comprehensions", test_comprehensions;
-    "list", test_list;
+    "concatenate_taint_in_taint_out", test_concatenate_taint_in_taint_out;
+    "constructor_argument_tito", test_constructor_argument_tito;
+    "decorator", test_decorator;
+    "dictionary", test_dictionary;
+    "for_loops", test_for_loops;
     "lambda", test_lambda;
+    "list", test_list;
+    "named_arguments", test_named_arguments;
+    "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
+    "rce_and_test_sink", test_rce_and_test_sink;
+    "rce_sink", test_rce_sink;
+    "seqential_call_path", test_sequential_call_path;
     "set", test_set;
+    "sink", test_sink;
     "starred", test_starred;
     "ternary", test_ternary;
+    "tito_sink", test_tito_sink;
+    "tito_via_receiver", test_tito_via_receiver;
     "tuple", test_tuple;
     "unary", test_unary;
     "walrus", test_walrus;
     "yield", test_yield;
-    "named_arguments", test_named_arguments;
-    "actual_parameter_matching", test_actual_parameter_matching;
-    "constructor_argument_tito", test_constructor_argument_tito;
-    "decorator", test_decorator;
-    "assignment", test_assignment;
-    "access_paths", test_access_paths;
-    "for_loops", test_for_loops;
-    "asyncio_gather", test_asyncio_gather;
   ]
   |> TestHelper.run_with_taint_models ~name:"backwardsTaint"

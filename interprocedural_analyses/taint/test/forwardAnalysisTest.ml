@@ -991,32 +991,32 @@ let test_tito_side_effects context =
 
 let () =
   [
-    "asyncio_gather", test_asyncio_gather;
-    "no_model", test_no_model;
-    "simple", test_simple_source;
-    "hardcoded", test_hardcoded_source;
-    "copy", test_local_copy;
     "access_paths", test_access_paths;
-    "class_model", test_class_model;
     "apply_method_model_at_call_site", test_apply_method_model_at_call_site;
-    "taint_in_taint_out_application", test_taint_in_taint_out_application;
-    "union", test_taint_in_taint_out_application;
-    "dictionary", test_dictionary;
+    "asyncio_gather", test_asyncio_gather;
+    "class_model", test_class_model;
+    "composed_models", test_composed_models;
     "comprehensions", test_comprehensions;
-    "list", test_list;
+    "construction", test_construction;
+    "copy", test_local_copy;
+    "dictionary", test_dictionary;
+    "global_taint", test_global_taint;
+    "hardcoded", test_hardcoded_source;
     "lambda", test_lambda;
+    "list", test_list;
+    "no_model", test_no_model;
+    "parameter_default_values", test_parameter_default_values;
     "set", test_set;
+    "simple", test_simple_source;
     "starred", test_starred;
     "string", test_string;
+    "taint_in_taint_out_application", test_taint_in_taint_out_application;
     "ternary", test_ternary;
+    "tito_side_effects", test_tito_side_effects;
     "tuple", test_tuple;
     "unary", test_unary;
-    "parameter_default_values", test_parameter_default_values;
+    "union", test_taint_in_taint_out_application;
     "walrus", test_walrus;
     "yield", test_yield;
-    "construction", test_construction;
-    "composed_models", test_composed_models;
-    "tito_side_effects", test_tito_side_effects;
-    "global_taint", test_global_taint;
   ]
   |> TestHelper.run_with_taint_models ~name:"forwardTaint"
