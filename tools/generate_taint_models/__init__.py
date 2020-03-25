@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 from typing_extensions import Final
 
-from ...client import log_statistics
+from ...client import statistics
 from .generator_specifications import DecoratorAnnotationSpecification
 from .get_annotated_free_functions_with_decorator import (  # noqa
     AnnotatedFreeFunctionWithDecoratorGenerator,
@@ -118,7 +118,7 @@ def run_generators(
 
         if logger_executable is not None:
             elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
-            log_statistics(
+            statistics.log(
                 "perfpipe_pyre_performance",
                 integers={"time": elapsed_time_milliseconds},
                 normals={"name": "model generation", "model kind": mode},

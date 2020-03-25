@@ -22,7 +22,6 @@ from typing import (
     Union,
 )
 
-from ...client import log_statistics
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import CallableModel, Model
 

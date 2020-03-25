@@ -15,7 +15,7 @@ import libcst as cst
 from libcst._exceptions import ParserSyntaxError
 from libcst.metadata import MetadataWrapper
 
-from .. import log, log_statistics
+from .. import log, statistics
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..statistics_collectors import (
@@ -213,7 +213,7 @@ class Statistics(Command):
     def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
             root = str(_pyre_configuration_directory(self._local_configuration))
-            log_statistics(
+            statistics.log(
                 "perfpipe_pyre_annotation_counts",
                 configuration=self._configuration,
                 integers=data["annotations"],
@@ -221,7 +221,7 @@ class Statistics(Command):
             )
             self._log_fixmes("fixme", data["fixmes"], root)
             self._log_fixmes("ignore", data["ignores"], root)
-            log_statistics(
+            statistics.log(
                 "perfpipe_pyre_strict_adoption",
                 configuration=self._configuration,
                 integers=data["strict"],
@@ -230,7 +230,7 @@ class Statistics(Command):
 
     def _log_fixmes(self, fixme_type: str, data: Dict[str, int], root: str) -> None:
         for error_code, count in data.items():
-            log_statistics(
+            statistics.log(
                 "perfpipe_pyre_fixme_counts",
                 configuration=self._configuration,
                 integers={"count": count},

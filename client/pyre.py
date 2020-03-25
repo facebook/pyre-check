@@ -13,7 +13,7 @@ import time
 import traceback
 from typing import Optional
 
-from . import buck, commands, find_project_root, log, log_statistics
+from . import buck, commands, find_project_root, log, statistics
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .version import __version__
@@ -127,7 +127,7 @@ def main() -> int:
             command.cleanup()
             configuration = command.configuration
             if configuration and configuration.logger:
-                log_statistics(
+                statistics.log(
                     "perfpipe_pyre_usage",
                     arguments=arguments,
                     configuration=configuration,
