@@ -58,7 +58,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -90,7 +90,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -134,7 +134,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -171,7 +171,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -210,7 +210,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -271,7 +271,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -294,7 +294,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -321,7 +321,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -349,7 +349,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser,-progress",
+                    "environment,parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -377,7 +377,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -405,7 +405,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -430,7 +430,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -453,7 +453,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -475,7 +475,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -501,7 +501,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -526,7 +526,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -547,7 +547,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -575,7 +575,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -602,7 +602,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -628,7 +628,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -654,7 +654,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -678,7 +678,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-profiling-output",
                 ".pyre/profiling.log",
                 "-project-root",
@@ -703,7 +703,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-memory-profiling-output",
                 ".pyre/profiling.log",
                 "-project-root",
@@ -729,7 +729,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-profiling-output",
                 ".pyre/profiling.log",
                 "-memory-profiling-output",
@@ -757,7 +757,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser,-progress",
+                "environment,parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
