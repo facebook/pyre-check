@@ -44,13 +44,13 @@ def find_local_root(
     original_directory: str, local_root: Optional[str] = None
 ) -> Optional[str]:
     if local_root:
-        check_nested_configurations(local_root)
+        _check_nested_configurations(local_root)
         return local_root
 
     global_root = find_root(original_directory, CONFIGURATION_FILE)
     local_root = find_root(original_directory, LOCAL_CONFIGURATION_FILE)
     # Check for illegal nested local configuration.
-    check_nested_configurations(local_root)
+    _check_nested_configurations(local_root)
 
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):
@@ -59,7 +59,7 @@ def find_local_root(
         return local_root
 
 
-def check_nested_configurations(local_root: Optional[str]) -> None:
+def _check_nested_configurations(local_root: Optional[str]) -> None:
     if local_root:
         parent_local_root = find_root(
             os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
