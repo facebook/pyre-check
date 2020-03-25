@@ -10,10 +10,10 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from . import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 from .analysis_directory import AnalysisDirectory
 from .commands import stop
 from .configuration import Configuration
+from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 

@@ -13,15 +13,15 @@ import sys
 from logging import Logger
 from typing import Any, Dict
 
-from .. import (
+from .. import log
+from ..exceptions import EnvironmentException
+from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     find_project_root,
     find_taint_models_directory,
     find_typeshed,
-    log,
 )
-from ..exceptions import EnvironmentException
 from .command import CommandParser
 
 

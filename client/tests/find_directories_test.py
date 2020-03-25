@@ -9,13 +9,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from .. import (
-    __name__ as client_name,
-    find_local_root,
-    find_log_directory,
-    find_project_root,
-)
+from .. import __name__ as client_name
 from ..filesystem import __name__ as filesystem_name
+from ..find_directories import find_local_root, find_log_directory, find_project_root
 
 
 class InitTest(unittest.TestCase):
@@ -36,7 +32,7 @@ class InitTest(unittest.TestCase):
             directory = find_project_root(original_directory)
             self.assertEqual(directory, "/a/b")
 
-    @patch("{}.LOG.warning".format(client_name))
+    @patch("{}.find_directories.LOG.warning".format(client_name))
     def test_find_local_root(self, warning) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(

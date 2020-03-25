@@ -21,18 +21,12 @@ from typing import IO, Iterable, List, Optional
 
 from typing_extensions import Final
 
-from .. import (
-    find_local_root,
-    find_log_directory,
-    find_project_root,
-    json_rpc,
-    log,
-    terminal,
-)
+from .. import json_rpc, log, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import readable_directory, remove_if_exists, translate_path
+from ..find_directories import find_local_root, find_log_directory, find_project_root
 from ..log import StreamLogger
 from ..process import register_non_unique_process
 from ..socket_connection import SocketConnection, SocketException

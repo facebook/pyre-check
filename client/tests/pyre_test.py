@@ -12,14 +12,8 @@ import sys
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from .. import (
-    EnvironmentException,
-    analysis_directory,
-    buck,
-    commands,
-    configuration,
-    pyre,
-)
+from .. import analysis_directory, buck, commands, configuration, pyre
+from ..exceptions import EnvironmentException
 
 
 class PyreTest(unittest.TestCase):

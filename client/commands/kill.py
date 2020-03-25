@@ -16,9 +16,10 @@ from typing import Optional
 
 import psutil
 
-from .. import BINARY_NAME, CLIENT_NAME, configuration_monitor
+from .. import configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
+from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
 from ..watchman_subscriber import WatchmanSubscriber
 from .command import Command

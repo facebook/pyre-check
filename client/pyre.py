@@ -13,9 +13,10 @@ import time
 import traceback
 from typing import Optional
 
-from . import buck, commands, find_project_root, log, statistics
+from . import buck, commands, log, statistics
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
+from .find_directories import find_project_root
 from .version import __version__
 
 

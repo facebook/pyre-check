@@ -10,8 +10,9 @@ import sys
 import unittest
 from unittest.mock import call, mock_open, patch
 
-from ... import EnvironmentException, commands, log
+from ... import commands, log
 from ...commands import initialize
+from ...exceptions import EnvironmentException
 from .command_test import mock_arguments
 
 

@@ -12,9 +12,9 @@ import unittest
 from typing import Any, NamedTuple, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
-from .. import CONFIGURATION_FILE
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
+from ..find_directories import CONFIGURATION_FILE
 
 
 class MockCompletedProcess(NamedTuple):

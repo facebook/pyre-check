@@ -8,6 +8,7 @@
 import errno
 import fcntl
 import os
+import pathlib  # noqa
 import subprocess
 import tempfile
 import unittest
@@ -354,8 +355,8 @@ class FilesystemTest(unittest.TestCase):
             merge.assert_has_calls([call()])
             clear.assert_has_calls([call()])
 
-    @patch("{}.Path".format(client_name))
-    @patch("{}.Path.mkdir".format(client_name))
+    @patch("{}.Path".format(command_name))
+    @patch("{}.Path.mkdir".format(command_name))
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)

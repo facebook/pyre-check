@@ -17,9 +17,9 @@ import sys
 from logging import Logger
 from typing import Dict, List, Optional, Union
 
-from . import BINARY_NAME, CONFIGURATION_FILE, find_typeshed
 from .exceptions import EnvironmentException
 from .filesystem import assert_readable_directory, expand_relative_path
+from .find_directories import BINARY_NAME, CONFIGURATION_FILE, find_typeshed
 
 
 LOG: Logger = logging.getLogger(__name__)
