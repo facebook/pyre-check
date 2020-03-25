@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import traceback
-from typing import Optional
+from typing import List, Optional
 
 from . import buck, commands, log, statistics
 from .commands import CommandParser, ExitCode, IncrementalStyle
@@ -23,7 +23,7 @@ from .version import __version__
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def main() -> int:
+def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -49,7 +49,7 @@ def main() -> int:
     for command in commands.COMMANDS:
         command.add_subparser(parsed_commands)
 
-    arguments = parser.parse_args()
+    arguments = parser.parse_args(argv)
 
     log.initialize(arguments.noninteractive)
 
@@ -157,4 +157,4 @@ if __name__ == "__main__":
             "Has it been removed?\nExiting."
         )
         sys.exit(ExitCode.FAILURE)
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
