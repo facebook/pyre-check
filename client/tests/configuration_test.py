@@ -12,7 +12,7 @@ import unittest
 from typing import Any, NamedTuple, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
-from .. import CONFIGURATION_FILE, number_of_workers
+from .. import CONFIGURATION_FILE
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
 
@@ -105,7 +105,6 @@ class ConfigurationTest(unittest.TestCase):
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPESHED/")
-        self.assertEqual(configuration.number_of_workers, number_of_workers())
         self.assertEqual(configuration.file_hash, None)
 
         with patch.object(os.path, "isdir", return_value=False):
@@ -469,7 +468,6 @@ class ConfigurationTest(unittest.TestCase):
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "/TYPESHED/")
-        self.assertEqual(configuration.number_of_workers, number_of_workers())
 
         # Test excludes
         json_load.side_effect = [{"exclude": "regexp"}, {}]

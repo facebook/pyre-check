@@ -112,13 +112,6 @@ def _resolve_filter_paths(
     return translate_paths(filter_paths, original_directory)
 
 
-def number_of_workers() -> int:
-    try:
-        return max(multiprocessing.cpu_count() - 4, 1)
-    except NotImplementedError:
-        return 4
-
-
 def log_statistics(
     category: str,
     arguments: Optional[Namespace] = None,

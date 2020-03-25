@@ -8,6 +8,7 @@
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import shutil
 import site
@@ -22,7 +23,6 @@ from . import (
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
     find_typeshed,
-    number_of_workers,
 )
 from .exceptions import EnvironmentException
 from .filesystem import assert_readable_directory, expand_relative_path
@@ -647,7 +647,10 @@ class Configuration:
                 LOG.info("Found: `%s`", self._binary)
 
         if self.number_of_workers == 0:
-            self.number_of_workers = number_of_workers()
+            try:
+                self.number_of_workers = max(multiprocessing.cpu_count() - 4, 1)
+            except NotImplementedError:
+                self.number_of_workers = 4
 
         if not self._typeshed:
             LOG.info("No typeshed specified, looking for it")
