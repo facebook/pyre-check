@@ -3530,29 +3530,32 @@ module Implementation = struct
             else
               get_best_rank ~best_matches ~best_rank ~getter tail
       in
-      let determine_reason { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
-        let { implementation = { annotation = instantiated_annotation; _ }; _ } =
-          let instantiate annotation =
-            let solution =
-              let variables = Type.Variable.all_free_variables (Type.Callable callable) in
-              List.filter_map
-                constraints_set
-                ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
-              |> List.map ~f:snd
-              |> List.hd
-              |> Option.value ~default:TypeConstraints.Solution.empty
-            in
-            TypeConstraints.Solution.instantiate solution annotation
-            |> Type.Variable.mark_all_free_variables_as_escaped
-            (* We need to do transformations of the form Union[T_escaped, int] => int in order to
-               properly handle some typeshed stubs which only sometimes bind type variables and
-               expect them to fall out in this way (see Mapping.get) *)
-            |> Type.Variable.collapse_all_escaped_variable_unions
+      let determine_reason
+          {
+            callable =
+              { implementation = { annotation = uninstantiated_return_annotation; _ }; _ } as
+              callable;
+            constraints_set;
+            reasons = { arity; annotation; _ };
+            _;
+          }
+        =
+        let instantiated_return_annotation =
+          let solution =
+            let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+            List.filter_map
+              constraints_set
+              ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+            |> List.map ~f:snd
+            |> List.hd
+            |> Option.value ~default:TypeConstraints.Solution.empty
           in
-          Type.Callable.map ~f:instantiate callable
-          |> function
-          | Some callable -> callable
-          | _ -> failwith "Instantiate did not return a callable"
+          TypeConstraints.Solution.instantiate solution uninstantiated_return_annotation
+          |> Type.Variable.mark_all_free_variables_as_escaped
+          (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+             properly handle some typeshed stubs which only sometimes bind type variables and expect
+             them to fall out in this way (see Mapping.get) *)
+          |> Type.Variable.collapse_all_escaped_variable_unions
         in
         let rev_filter_out_self_argument_errors =
           let is_not_self_argument = function
@@ -3566,7 +3569,7 @@ module Implementation = struct
         match
           rev_filter_out_self_argument_errors arity, rev_filter_out_self_argument_errors annotation
         with
-        | [], [] -> Found { selected_return_annotation = instantiated_annotation }
+        | [], [] -> Found { selected_return_annotation = instantiated_return_annotation }
         | reason :: reasons, _
         | [], reason :: reasons ->
             let importance = function
@@ -3589,7 +3592,7 @@ module Implementation = struct
                 best_reason
             in
             let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
-            NotFound { closest_return_annotation = instantiated_annotation; reason }
+            NotFound { closest_return_annotation = instantiated_return_annotation; reason }
       in
       let { implementation = { annotation = default_return_annotation; _ }; _ } = callable in
       signature_matches
