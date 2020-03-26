@@ -4,9 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import logging
 import os
-from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -14,10 +12,7 @@ from .analysis_directory import AnalysisDirectory
 from .commands import stop
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
-from .watchman_subscriber import Subscription, WatchmanSubscriber
-
-
-LOG: Logger = logging.getLogger(__name__)
+from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
 
 
 class ConfigurationMonitor(WatchmanSubscriber):

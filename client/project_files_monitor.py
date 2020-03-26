@@ -5,7 +5,6 @@
 
 
 import functools
-import logging
 import os
 from typing import Any, Dict, List, Set
 
@@ -14,10 +13,7 @@ from .analysis_directory import AnalysisDirectory
 from .configuration import Configuration
 from .filesystem import find_root
 from .socket_connection import SocketConnection
-from .watchman_subscriber import Subscription, WatchmanSubscriber
-
-
-LOG: logging.Logger = logging.getLogger(__name__)
+from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
 
 
 class MonitorException(Exception):
