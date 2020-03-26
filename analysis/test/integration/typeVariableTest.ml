@@ -1130,14 +1130,148 @@ let test_callable_parameter_variadics context =
     [];
   assert_type_errors
     {|
-  from typing import Callable
-  from pyre_extensions import ParameterSpecification
+     from typing import Callable
+     from pyre_extensions import ParameterSpecification
 
-  TParams = ParameterSpecification("TParams")
-  def eek(x: Callable[TParams, int]) -> Callable[TParams, float]:
-      return x
-  |}
+     TParams = ParameterSpecification("TParams")
+     def eek(x: Callable[TParams, int]) -> Callable[TParams, float]:
+         return x
+    |}
     [];
+  assert_type_errors
+    {|
+      from typing import Protocol, Callable, TypeVar
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+        return __f( *args, **kwargs)
+      def int_to_string(i: int) -> str:
+        return "A"
+      def foo() -> None:
+        x = call_this_function(int_to_string, 1)
+        reveal_type(x)
+        y = call_this_function(int_to_string, i=1)
+        reveal_type(y)
+        call_this_function(int_to_string, "A")
+        call_this_function(int_to_string, i="A")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
+       `call_this_function` but got `str`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd parameter `i` to call \
+       `call_this_function` but got `str`.";
+    ];
+  (* Interaction with overloads *)
+  assert_type_errors
+    {|
+      from typing import Protocol, Callable, TypeVar, overload, Union
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+        return __f( *args, **kwargs)
+
+      @overload
+      def overloaded(x: int) -> str:...
+      @overload
+      def overloaded(x: str) -> int:...
+      def overloaded(x: Union[int, str]) -> Union[int, str]:
+        if isinstance(x, int):
+          return "A"
+        else:
+          return 1
+
+      def foo() -> None:
+        x = call_this_function(overloaded, 1)
+        reveal_type(x)
+        y = call_this_function(overloaded, "A")
+        reveal_type(y)
+        call_this_function(overloaded, 1.0)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
+       `call_this_function` but got `float`.";
+    ];
+  (* Example from PEP *)
+  assert_type_errors
+    {|
+      from typing import Protocol, Callable, TypeVar
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      def call_n_times(
+          __f: Callable[TParams, None],
+          __n: int,
+          *args: TParams.args,
+          **kwargs: TParams.kwargs,
+      ) -> None:
+          for x in range(__n):
+              __f( *args, **kwargs)
+      def valid(x: int, y: str) -> None: ...
+      def invalid(x: int, y: str) -> int: ...
+      def foo() -> None:
+        call_n_times(valid, 75, 1, "A")
+        call_n_times(valid, 75, y="A", 1)
+        # invalid first argument
+        call_n_times(invalid, 75, 1, "A")
+        # missing second argument
+        call_n_times(valid, y="A", x=1)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[test.TParams, None]` for 1st \
+       positional only parameter to call `call_n_times` but got \
+       `typing.Callable(invalid)[[Named(x, int), Named(y, str)], int]`.";
+      "Missing argument [20]: Call `call_n_times` expects argument in position 1.";
+    ];
+  (* PyTorch style delegation pattern *)
+  assert_type_errors
+    {|
+      from abc import ABCMeta
+      from typing import Protocol, Callable, TypeVar
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+      class HasForward(Protocol[TParams, TReturn]):
+        forward: Callable[TParams, TReturn]
+
+      class Model(metaclass=ABCMeta):
+        forward: Callable[..., object]
+
+        def __call__(__self: HasForward[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+          # do some common stuff
+          return_value = __self.forward( *args, **kwargs)
+          # do some more stuff
+          return return_value
+
+      class AModel(Model):
+         def forward(self, x: int, y: str) -> bool:
+           ...
+
+      class BModel(Model):
+         def forward(self, x: bool, *args: int) -> str:
+           ...
+
+      def foo() -> None:
+        # Correct usages
+        x = AModel()(1, "A")
+        reveal_type(x)
+        y = AModel()(y="A", x=5)
+        reveal_type(y)
+        # Incorrect second argument
+        AModel()(1, 1)
+
+        # Different model
+        z = BModel()(True, 1, 4, 5)
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `bool`.";
+      "Revealed type [-1]: Revealed type for `y` is `bool`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
+       `Model.__call__` but got `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `str`.";
+    ];
   ()
 
 

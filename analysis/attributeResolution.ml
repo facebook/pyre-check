@@ -2918,17 +2918,8 @@ module Implementation = struct
     let order = full_order ~assumptions ?dependency class_metadata_environment in
     let open Expression in
     let open Type.Callable in
-    let match_arity ({ parameters = all_parameters; _ } as implementation) =
-      let all_arguments = arguments in
-      let base_signature_match =
-        {
-          callable = { callable with Type.Callable.implementation; overloads = [] };
-          argument_mapping = Parameter.Map.empty;
-          constraints_set = [TypeConstraints.empty];
-          ranks = { arity = 0; annotation = 0; position = 0 };
-          reasons = { arity = []; annotation = [] };
-        }
-      in
+    let all_arguments = arguments in
+    let match_arity ~all_parameters =
       let rec consume
           ({ argument_mapping; reasons = { arity; _ } as reasons; _ } as signature_match)
           ~arguments
@@ -3080,65 +3071,7 @@ module Implementation = struct
               ~parameters:parameters_tail
               { signature_match with argument_mapping }
       in
-      let ordered_arguments () =
-        let create_argument index { Call.Argument.name; value } =
-          let expression, kind =
-            match value, name with
-            | { Node.value = Starred (Starred.Once expression); _ }, _ ->
-                expression, Argument.SingleStar
-            | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
-            | expression, Some name -> expression, Named name
-            | expression, None -> expression, Positional
-          in
-          let resolved = resolve_with_locals ~locals:[] expression in
-          { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
-        in
-        let is_labeled = function
-          | { Argument.kind = Named _; _ } -> true
-          | _ -> false
-        in
-        let labeled_arguments, unlabeled_arguments =
-          arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
-        in
-        let self_argument =
-          self_argument
-          >>| (fun resolved ->
-                {
-                  Argument.position = 0;
-                  expression = Node.create_with_default_location Expression.Ellipsis;
-                  full_expression = Node.create_with_default_location Expression.Ellipsis;
-                  kind = Positional;
-                  resolved;
-                })
-          |> Option.to_list
-        in
-        self_argument @ labeled_arguments @ unlabeled_arguments
-      in
-      match all_parameters with
-      | Defined parameters ->
-          consume base_signature_match ~arguments:(ordered_arguments ()) ~parameters
-      | Undefined -> base_signature_match
-      | ParameterVariadicTypeVariable { head; variable } -> (
-          let combines_into_variable ~positional_component ~keyword_component =
-            Type.Variable.Variadic.Parameters.Components.combine
-              { positional_component; keyword_component }
-            >>| Type.Variable.Variadic.Parameters.equal variable
-            |> Option.value ~default:false
-          in
-          match List.rev (ordered_arguments ()) with
-          | { kind = DoubleStar; resolved = keyword_component; _ }
-            :: { kind = SingleStar; resolved = positional_component; _ } :: reversed_arguments_head
-            when combines_into_variable ~positional_component ~keyword_component ->
-              let arguments = List.rev reversed_arguments_head in
-              consume
-                base_signature_match
-                ~arguments
-                ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
-          | _ ->
-              {
-                base_signature_match with
-                reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
-              } )
+      consume
     in
     let check_annotations ({ argument_mapping; _ } as signature_match) =
       (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
@@ -3652,10 +3585,140 @@ module Implementation = struct
            ~default:
              (NotFound { closest_return_annotation = default_return_annotation; reason = None })
     in
+    let rec check_arity_and_annotations implementation ~arguments =
+      let base_signature_match =
+        {
+          callable = { callable with Type.Callable.implementation; overloads = [] };
+          argument_mapping = Parameter.Map.empty;
+          constraints_set = [TypeConstraints.empty];
+          ranks = { arity = 0; annotation = 0; position = 0 };
+          reasons = { arity = []; annotation = [] };
+        }
+      in
+      let { parameters = all_parameters; _ } = implementation in
+      match all_parameters with
+      | Defined parameters ->
+          match_arity base_signature_match ~arguments ~parameters ~all_parameters
+          |> check_annotations
+          |> fun signature_match -> [signature_match]
+      | Undefined -> [base_signature_match]
+      | ParameterVariadicTypeVariable { head; variable }
+        when Type.Variable.Variadic.Parameters.is_free variable -> (
+          let front, back =
+            let is_labeled = function
+              | { Argument.kind = Named _; _ } -> true
+              | _ -> false
+            in
+            let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
+            let first_unlabeled, remainder = List.split_n unlabeled (List.length head) in
+            first_unlabeled, labeled @ remainder
+          in
+          let ( {
+                  constraints_set;
+                  reasons = { arity = head_arity; annotation = head_annotation };
+                  _;
+                } as head_signature )
+            =
+            match_arity
+              base_signature_match
+              ~arguments:front
+              ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+              ~all_parameters
+            |> check_annotations
+          in
+          let solve_back (solution_remainder, solution) =
+            TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
+            >>| (fun parameters ->
+                  check_arity_and_annotations { implementation with parameters } ~arguments:back)
+            >>| List.map
+                  ~f:(fun { reasons = { arity = tail_arity; annotation = tail_annotation }; _ } ->
+                    {
+                      base_signature_match with
+                      (* tail can't bind any more constraints *)
+                      constraints_set = [solution_remainder];
+                      reasons =
+                        {
+                          arity = head_arity @ tail_arity;
+                          annotation = head_annotation @ tail_annotation;
+                        };
+                    })
+            |> Option.value ~default:[]
+          in
+          List.filter_map
+            constraints_set
+            ~f:
+              (TypeOrder.OrderedConstraints.extract_partial_solution
+                 ~order
+                 ~variables:[Type.Variable.ParameterVariadic variable])
+          |> List.concat_map ~f:solve_back
+          |> function
+          | [] -> [head_signature]
+          | nonempty -> nonempty )
+      | ParameterVariadicTypeVariable { head; variable } -> (
+          let combines_into_variable ~positional_component ~keyword_component =
+            Type.Variable.Variadic.Parameters.Components.combine
+              { positional_component; keyword_component }
+            >>| Type.Variable.Variadic.Parameters.equal variable
+            |> Option.value ~default:false
+          in
+          match List.rev arguments with
+          | { kind = DoubleStar; resolved = keyword_component; _ }
+            :: { kind = SingleStar; resolved = positional_component; _ } :: reversed_arguments_head
+            when combines_into_variable ~positional_component ~keyword_component ->
+              let arguments = List.rev reversed_arguments_head in
+              match_arity
+                base_signature_match
+                ~arguments
+                ~parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
+                ~all_parameters
+              |> check_annotations
+              |> fun signature_match -> [signature_match]
+          | _ ->
+              [
+                {
+                  base_signature_match with
+                  reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
+                };
+              ] )
+    in
+
     let get_match signatures =
+      let arguments =
+        let create_argument index { Call.Argument.name; value } =
+          let expression, kind =
+            match value, name with
+            | { Node.value = Starred (Starred.Once expression); _ }, _ ->
+                expression, Argument.SingleStar
+            | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
+            | expression, Some name -> expression, Named name
+            | expression, None -> expression, Positional
+          in
+          let resolved = resolve_with_locals ~locals:[] expression in
+          { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
+        in
+        let is_labeled = function
+          | { Argument.kind = Named _; _ } -> true
+          | _ -> false
+        in
+        let labeled_arguments, unlabeled_arguments =
+          arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
+        in
+        let self_argument =
+          self_argument
+          >>| (fun resolved ->
+                {
+                  Argument.position = 0;
+                  expression = Node.create_with_default_location Expression.Ellipsis;
+                  full_expression = Node.create_with_default_location Expression.Ellipsis;
+                  kind = Positional;
+                  resolved;
+                })
+          |> Option.to_list
+        in
+        self_argument @ labeled_arguments @ unlabeled_arguments
+      in
       signatures
-      |> List.map ~f:match_arity
-      |> List.map ~f:check_annotations
+      |> List.concat_map ~f:(check_arity_and_annotations ~arguments)
       |> List.map ~f:calculate_rank
       |> find_closest
     in

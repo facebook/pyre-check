@@ -733,10 +733,31 @@ let test_select context =
            Type.dictionary ~key:escaped_variable_t ~value:(Type.literal_integer 1);
        });
 
-  assert_select
-    "[Tparams, int]"
-    "(a=1)"
-    (`NotFound ("int", Some AttributeResolution.CallingParameterVariadicTypeVariable));
+  assert_select_direct
+    ~arguments:
+      [{ name = Some (Node.create_with_default_location "a"); value = parse_single_expression "1" }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.integer;
+            parameters =
+              ParameterVariadicTypeVariable
+                {
+                  head = [];
+                  variable =
+                    Type.Variable.Variadic.Parameters.create "TParams"
+                    |> Type.Variable.Variadic.Parameters.mark_as_bound;
+                };
+          };
+        overloads = [];
+      }
+    (NotFound
+       {
+         closest_return_annotation = Type.integer;
+         reason = Some AttributeResolution.CallingParameterVariadicTypeVariable;
+       });
   assert_select "[Ts, int]" "(1, 'string', 1, 'string')" (`Found "int");
   assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "int");
   assert_select
