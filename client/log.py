@@ -206,7 +206,9 @@ def cleanup() -> None:
 
     output = stdout.getvalue()
     if output:
-        sys.stdout.write(output + "\n")
+        sys.stdout.write(output)
+        if not output.endswith("\n"):
+            sys.stdout.write("\n")
 
 
 class StreamLogger:
