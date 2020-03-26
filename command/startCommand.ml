@@ -298,6 +298,7 @@ let request_handler_thread
     | error when is_connection_reset_error error -> handle_disconnect ()
   in
   let rec loop () =
+    Connections.close_json_sockets ~connections;
     let { socket = server_socket; json_socket; persistent_clients; json_sockets; _ } =
       Mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
@@ -306,7 +307,6 @@ let request_handler_thread
         "Stopping server due to missing source root, %s is not a directory."
         (Path.show local_root);
       Operations.stop ~reason:"missing source root" ~configuration:server_configuration );
-    Connections.close_json_sockets ~connections;
     let readable =
       Unix.select
         ~restart:true
