@@ -41,10 +41,10 @@ class ServersCommandTest(unittest.TestCase):
         )
         log_stdout.assert_has_calls(
             [
-                call("Pyre servers:\n<pid> <server-root>"),
-                call("\n789        <root>"),
-                call("\n456        bar/baz"),
-                call("\n123        foo"),
+                call("PID       project\n"),
+                call("789       <root>\n"),
+                call("456       bar/baz\n"),
+                call("123       foo\n"),
             ]
         )
 

@@ -21,7 +21,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 ROOT_PLACEHOLDER_NAME = "<root>"
-PID_MAXIMUM_WIDTH = 10
 
 
 class ServerDetails(NamedTuple):
@@ -83,21 +82,16 @@ class Servers(Command):
     def _print_server_details(
         all_server_details: List[ServerDetails], output_format: str
     ) -> None:
-        server_details = [
-            {"pid": details.pid, "name": details.name} for details in all_server_details
-        ]
         if output_format == JSON:
+            server_details = [
+                {"pid": details.pid, "name": details.name}
+                for details in all_server_details
+            ]
             log.stdout.write(json.dumps(server_details))
         else:
-            log.stdout.write("Pyre servers:\n<pid> <server-root>")
-            for details in server_details:
-                log.stdout.write(
-                    "\n{:<{column_one_width}} {}".format(
-                        details["pid"],
-                        details["name"],
-                        column_one_width=PID_MAXIMUM_WIDTH,
-                    )
-                )
+            log.stdout.write(f"{'PID':<8}  project\n")
+            for details in all_server_details:
+                log.stdout.write(f"{details.pid:<8}  {details.name}\n")
 
     def _find_servers(self) -> List[Path]:
         return list(self._dot_pyre_directory.glob("**/server.pid"))
