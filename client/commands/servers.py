@@ -89,9 +89,12 @@ class Servers(Command):
             ]
             log.stdout.write(json.dumps(server_details))
         else:
-            log.stdout.write(f"{'PID':<8}  project\n")
-            for details in all_server_details:
-                log.stdout.write(f"{details.pid:<8}  {details.name}\n")
+            if len(all_server_details) > 0:
+                log.stdout.write(f"{'PID':<8}  project\n")
+                for details in all_server_details:
+                    log.stdout.write(f"{details.pid:<8}  {details.name}\n")
+            else:
+                log.stdout.write("No servers running")
 
     def _find_servers(self) -> List[Path]:
         return list(self._dot_pyre_directory.glob("**/server.pid"))
