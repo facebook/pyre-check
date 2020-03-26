@@ -6,6 +6,7 @@
 # pyre-strict
 
 import argparse
+import json
 import logging
 import os
 import time
@@ -85,6 +86,15 @@ def _report_results(
                     "\n".join([str(model) for model in sorted(models[name])])
                 )
                 output_file.write("\n")
+        print(
+            json.dumps(
+                {
+                    "number of generated models": sum(
+                        (len(generated_models) for generated_models in models.values())
+                    )
+                }
+            )
+        )
     else:
         all_models = set()
         for name in models:
