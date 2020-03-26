@@ -13,6 +13,8 @@ from .analysis_directory import AnalysisDirectory
 from .configuration import Configuration
 from .filesystem import find_root
 from .socket_connection import SocketConnection
+
+# We use the `LOG` from watchman_subscriber due to its better formatting in log files
 from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
 
 

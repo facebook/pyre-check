@@ -12,6 +12,8 @@ from .analysis_directory import AnalysisDirectory
 from .commands import stop
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+
+# We use the `LOG` from watchman_subscriber due to its better formatting in log files
 from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
 
 
