@@ -8,7 +8,15 @@ open Pyre
 
 let enabled = ref true
 
-let cache = String.Table.create ()
+module Cache : sig
+  val with_cache : f:(string list String.Table.t -> 'a) -> 'a
+end = struct
+  let cache = String.Table.create ()
+
+  let lock = Mutex.create ()
+
+  let with_cache ~f = Mutex.critical_section lock ~f:(fun () -> f cache)
+end
 
 let size = 500
 
@@ -97,21 +105,24 @@ let flush () =
           Unix.close_process_out out_channel |> ignore)
     |> ignore
   in
-  if !enabled then
-    Hashtbl.iteri ~f:flush_category cache;
-  Hashtbl.clear cache;
+  Cache.with_cache ~f:(fun cache ->
+      if !enabled then
+        Hashtbl.iteri ~f:flush_category cache;
+      Hashtbl.clear cache);
   last_flush_timestamp := Unix.time ()
 
 
 let flush_cache = flush
 
 let log ?(flush = false) ?(randomly_log_every = 1) category sample =
-  ( if Random.int randomly_log_every = 0 then
-      match Hashtbl.find cache category with
-      | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
-      | _ -> Hashtbl.set ~key:category ~data:[sample] cache );
+  Cache.with_cache ~f:(fun cache ->
+      if Random.int randomly_log_every = 0 then
+        match Hashtbl.find cache category with
+        | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
+        | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
   let samples_count () =
-    Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data)
+    Cache.with_cache ~f:(fun cache ->
+        Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data))
   in
   let exceeds_timeout () =
     let current_time = Unix.time () in
