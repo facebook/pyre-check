@@ -99,7 +99,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             absolute_paths = [
                 os.path.join(response["root"], path) for path in response["files"]
             ]
-            LOG.info("Received Watchman update for files %s.", absolute_paths)
+            LOG.info(f"Received Watchman update for files {absolute_paths}.")
 
             updated_paths = self._analysis_directory.process_updated_files(
                 absolute_paths
@@ -110,9 +110,8 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 return
 
             LOG.info(
-                "Notifying server of update to files %s and invalidation of %s.",
-                updated_paths.updated_paths,
-                updated_paths.deleted_paths,
+                f"Notifying server of update to files {updated_paths.updated_paths}"
+                f" and invalidation of {updated_paths.deleted_paths}."
             )
             message = json_rpc.Request(
                 method="updateFiles",
@@ -154,4 +153,4 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             ).daemonize()
             LOG.debug("Restarted file monitor.")
         except MonitorException as exception:
-            LOG.warning("Failed to restart file monitor: %s", exception)
+            LOG.warning(f"Failed to restart file monitor: {exception}")

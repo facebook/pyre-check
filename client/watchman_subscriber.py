@@ -66,7 +66,7 @@ class WatchmanSubscriber(object):
             # The client will block indefinitely when timeout is None.
             return pywatchman.client(timeout=None)
         except ImportError as exception:
-            LOG.info("Not starting %s due to %s", self._name, str(exception))
+            LOG.info(f"Not starting {self._name} due to {exception}")
             sys.exit(1)
 
     def _subscribe_to_watchman(self, subscription: Subscription) -> None:
@@ -100,9 +100,9 @@ class WatchmanSubscriber(object):
                 os.getpid(), self._compute_pid_path(self._base_path, self._name)
             )
         ):
-            LOG.debug("Acquired lock on %s", lock_path)
+            LOG.debug(f"Acquired lock on {lock_path}")
             file_handler = logging.FileHandler(
-                os.path.join(self._base_path, "%s.log" % self._name), mode="w"
+                os.path.join(self._base_path, f"{self._name}.log"), mode="w"
             )
             file_handler.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -118,7 +118,9 @@ class WatchmanSubscriber(object):
 
             connection = self._watchman_client.recvConn
             if not connection:
-                LOG.error("Connection to Watchman for %s not found", self._name)
+                LOG.error(
+                    f"Connection to Watchman for {self._name} not found", self._name
+                )
                 sys.exit(1)
 
             while self._alive:
@@ -129,10 +131,8 @@ class WatchmanSubscriber(object):
                     # response.  Ignoring the initial response is fine, but if we
                     # receive a fresh instance response later we should assume that all
                     # files may have been changed.
-                    LOG.info(
-                        "Ignoring initial watchman message for %s",
-                        response.get("root", "<no-root-found>"),
-                    )
+                    root = response.get("root", "<no-root-found>")
+                    LOG.info(f"Ignoring initial watchman message for {root}")
                 else:
                     self._handle_response(response)
                 self._ready.set()  # At least one message has been received.
@@ -143,7 +143,7 @@ class WatchmanSubscriber(object):
         """We double-fork here to detach the daemon process from the parent.
            If we were to just fork the child as a daemon, we'd have to worry about the
            parent process exiting zombifying the daemon."""
-        LOG.debug("Daemonizing the %s.", self._name)
+        LOG.debug(f"Daemonizing the {self._name}.")
         if os.fork() == 0:
             pid = os.fork()
             if pid == 0:
@@ -156,7 +156,7 @@ class WatchmanSubscriber(object):
                     self._run()
                     sys.exit(0)
                 except Exception as exception:
-                    LOG.info("Not running %s due to %s", self._name, str(exception))
+                    LOG.info(f"Not running {self._name} due to {exception}")
                     sys.exit(1)
             else:
                 sys.exit(0)
@@ -169,7 +169,7 @@ class WatchmanSubscriber(object):
             )
             pid = int(pid_path.read_text())
             os.kill(pid, signal.SIGINT)
-            LOG.debug("Stopped the %s with pid %d.", subscriber_name, pid)
+            LOG.debug(f"Stopped the {subscriber_name} with pid {pid}.")
         except FileNotFoundError:
             LOG.debug(f"Could not stop the {subscriber_name} because it was not found.")
         except (OSError, ValueError) as exception:

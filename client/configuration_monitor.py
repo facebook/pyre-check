@@ -76,7 +76,7 @@ class ConfigurationMonitor(WatchmanSubscriber):
                     "fields": ["name"],
                 }
                 subscription = Subscription(root, name, subscription)
-                LOG.debug("Configuration monitor subscription: %s", subscription)
+                LOG.debug(f"Configuration monitor subscription: {subscription}")
                 return [subscription]
         LOG.debug("Configuration monitor is not subscribed to any paths.")
         return []
@@ -90,7 +90,7 @@ class ConfigurationMonitor(WatchmanSubscriber):
             return
 
         absolute_paths = [Path(watchman_root, path).resolve() for path in paths]
-        LOG.info("Update to configuration at %s", absolute_paths)
+        LOG.info(f"Update to configuration at {absolute_paths}")
 
         root_configuration_path = self._project_root_path / CONFIGURATION_FILE
         local_configuration_root = self._local_configuration_root
