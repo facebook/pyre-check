@@ -17,6 +17,20 @@ module Connections = Server.Connections.Unix
 
 exception AlreadyRunning
 
+(* In theory the exception that's supposed to be emitted because of a RST packet is supposed to be
+   `Unix.Unix_error (Unix.ECONNRESET, _, _)`. However for reasons unknown, sometimes the OCaml
+   networking stack emits a `Sys_error "Connection reset by peer"` instead. The hacky fix herein is
+   just to match for both of these. *)
+let is_connection_reset_error = function
+  | Unix.Unix_error (Unix.ECONNRESET, _, _) -> true
+  (* We can't match on Sys_error "Connection reset by peer" directly since Sys_error is marked as
+     @ocaml.warn_on_literal_pattern, so we'd get a `warning 52` since relying on the exact string
+     here is fragile to version upgrades. Unfortunately we're just going to have to live with this
+     fragility, and hope they fix this behavior before they modify the message *)
+  | Sys_error error when String.equal error "Connection reset by peer" -> true
+  | _ -> false
+
+
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
@@ -245,17 +259,23 @@ let request_handler_thread
     | _ -> Squeue.push_or_drop request_queue (origin, request) |> ignore
   in
   let handle_readable_persistent socket =
+    let handle_disconnect () =
+      Log.log ~section:`Server "Persistent client disconnected";
+      Connections.remove_persistent_client ~connections ~socket
+    in
     try
       Log.log ~section:`Server "A persistent client socket is readable.";
       let request = Socket.read socket in
       queue_request ~origin:(Protocol.Request.PersistentSocket socket) request
     with
-    | End_of_file
-    | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
-        Log.log ~section:`Server "Persistent client disconnected";
-        Connections.remove_persistent_client ~connections ~socket
+    | End_of_file -> handle_disconnect ()
+    | error when is_connection_reset_error error -> handle_disconnect ()
   in
   let handle_readable_json_request socket =
+    let handle_disconnect () =
+      Log.log ~section:`Server "File notifier disconnected";
+      Connections.remove_json_socket ~connections ~socket
+    in
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let request = socket |> Unix.in_channel_of_descr |> LanguageServer.Protocol.read_message in
@@ -273,10 +293,9 @@ let request_handler_thread
           ~socket
           (TypeQuery.json_socket_response (TypeQuery.Error message))
     | End_of_file
-    | Yojson.Json_error _
-    | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
-        Log.log ~section:`Server "File notifier disconnected";
-        Connections.remove_json_socket ~connections ~socket
+    | Yojson.Json_error _ ->
+        handle_disconnect ()
+    | error when is_connection_reset_error error -> handle_disconnect ()
   in
   let rec loop () =
     let { socket = server_socket; json_socket; persistent_clients; json_sockets; _ } =
@@ -314,7 +333,7 @@ let request_handler_thread
           queue_request ~origin:(Protocol.Request.NewConnectionSocket new_socket) request
         with
         | Unix.Unix_error (Unix.EPIPE, _, _) -> Log.warning "EPIPE while writing to socket."
-        | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
+        | error when is_connection_reset_error error ->
             Log.warning "ECONNRESET while reading from socket."
         | End_of_file -> Log.warning "New client socket unreadable"
       else if Unix.File_descr.equal socket json_socket then
