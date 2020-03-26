@@ -73,7 +73,7 @@ class Servers(Command):
             Command to manipulate multiple Pyre servers.
             """,
         )
-        servers_parser.set_defaults(command=cls, noninteractive=True)
+        servers_parser.set_defaults(command=cls)
         subparsers = servers_parser.add_subparsers(dest="servers_subcommand")
 
         subparsers.add_parser("list", help="List running servers.")
