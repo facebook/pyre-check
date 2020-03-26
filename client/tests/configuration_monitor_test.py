@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, call, patch
 from .. import configuration_monitor, watchman_subscriber
 from ..analysis_directory import AnalysisDirectory
 from ..commands import stop
-from ..commands.tests.command_test import mock_arguments, mock_configuration
+from ..tests.mocks import mock_arguments, mock_configuration
 
 
 class MonitorTest(unittest.TestCase):

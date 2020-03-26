@@ -181,6 +181,7 @@ class StartTest(unittest.TestCase):
             "hash",
             "-search-path",
             "path1,path2,path3",
+            "-new-incremental-check",
         ]
 
         # Check start with watchman.

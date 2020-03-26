@@ -14,10 +14,10 @@ from unittest.mock import MagicMock, patch
 
 from .. import json_rpc, project_files_monitor
 from ..analysis_directory import AnalysisDirectory, UpdatedPaths
-from ..commands.tests.command_test import mock_arguments, mock_configuration
 from ..json_rpc import Request, read_request
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from ..socket_connection import SocketConnection, SocketException
+from ..tests.mocks import mock_configuration
 
 
 class MonitorTest(unittest.TestCase):
