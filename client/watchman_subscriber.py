@@ -132,7 +132,7 @@ class WatchmanSubscriber(object):
                     # receive a fresh instance response later we should assume that all
                     # files may have been changed.
                     root = response.get("root", "<no-root-found>")
-                    LOG.info(f"Ignoring initial watchman message for {root}")
+                    LOG.info(f"Ignoring is_fresh_instance message for {root}")
                 else:
                     self._handle_response(response)
                 self._ready.set()  # At least one message has been received.
