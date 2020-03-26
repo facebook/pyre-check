@@ -2211,6 +2211,49 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
   { source with Source.statements = List.map statements ~f:expand_new_type }
 
 
+let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
+  let expand_declarative_base_instance ({ Node.location; value } as statement) =
+    let expanded_declaration =
+      let declarative_base_class_declaration class_name_reference =
+        let metaclass =
+          {
+            Call.Argument.name = Some (Node.create ~location "metaclass");
+            value =
+              Node.create
+                ~location
+                (Expression.Name
+                   (create_name ~location "sqlalchemy.ext.declarative.DeclarativeMeta"));
+          }
+        in
+        Some
+          (Statement.Class
+             {
+               name = Node.create ~location class_name_reference;
+               bases = [metaclass];
+               decorators = [];
+               body = [Node.create ~location Statement.Pass];
+             })
+      in
+      match value with
+      | Statement.Assign
+          {
+            target = { Node.value = Name name; _ };
+            value = { Node.value = Call { callee = { Node.value = Name function_name; _ }; _ }; _ };
+            _;
+          }
+        when Name.location_insensitive_compare
+               function_name
+               (create_name ~location "sqlalchemy.ext.declarative.declarative_base")
+             = 0 ->
+          let class_name_reference = name_to_reference name >>| Reference.delocalize in
+          class_name_reference >>= declarative_base_class_declaration |> Option.value ~default:value
+      | _ -> value
+    in
+    { statement with Node.value = expanded_declaration }
+  in
+  { source with Source.statements = List.map ~f:expand_declarative_base_instance statements }
+
+
 let populate_nesting_defines ({ Source.statements; _ } as source) =
   let open Statement in
   let rec transform_statement ~nesting_define statement =
@@ -2727,6 +2770,7 @@ let preprocess_phase1 source =
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
+  |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
   |> expand_new_types
   |> populate_nesting_defines

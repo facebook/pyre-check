@@ -2398,6 +2398,27 @@ let test_expand_typed_dictionaries _ =
   ()
 
 
+let test_sqlalchemy_declarative_base _ =
+  let assert_expand ?(handle = "") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source
+      |> Preprocessing.qualify
+      |> Preprocessing.expand_sqlalchemy_declarative_base
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      Base = sqlalchemy.ext.declarative.declarative_base()
+    |}
+    {|
+      class Base(metaclass=sqlalchemy.ext.declarative.DeclarativeMeta):
+        pass
+    |};
+  ()
+
+
 let test_transform_ast _ =
   let assert_expand ?(handle = "qualifier.py") source expected =
     let parse source = parse source ~handle |> Preprocessing.preprocess in
@@ -3976,6 +3997,7 @@ let () =
          "transform_ast" >:: test_transform_ast;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
          "typed_dictionaries" >:: test_expand_typed_dictionaries;
+         "sqlalchemy_declarative_base" >:: test_sqlalchemy_declarative_base;
          "nesting_define" >:: test_populate_nesting_define;
          "captures" >:: test_populate_captures;
        ]
