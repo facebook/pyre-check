@@ -14,7 +14,7 @@ from enum import Enum, auto
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
 
 import _ast
-from tools.pyre.client import query_api
+from tools.pyre.api import query
 from typing_extensions import Final
 
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
@@ -293,11 +293,11 @@ class FunctionDefinitionModel(RawCallableModel):
 
 
 class PyreFunctionDefinitionModel(RawCallableModel):
-    definition: query_api.Define
+    definition: query.Define
 
     def __init__(
         self,
-        definition: query_api.Define,
+        definition: query.Define,
         arg: Optional[str] = None,
         vararg: Optional[str] = None,
         kwarg: Optional[str] = None,

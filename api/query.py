@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
-from .connection_api import PyreConnection
+from .connection import PyreConnection
 
 
 class DefineParameter(NamedTuple):

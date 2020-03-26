@@ -6,7 +6,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from .. import query_api
+from .. import query
 
 
 class QueryAPITest(unittest.TestCase):
@@ -22,11 +22,11 @@ class QueryAPITest(unittest.TestCase):
             ]
         }
         self.assertEqual(
-            query_api.defines(pyre_connection, ["a"]),
+            query.defines(pyre_connection, ["a"]),
             [
-                query_api.Define(
+                query.Define(
                     name="a.foo",
-                    parameters=[query_api.DefineParameter(name="x", annotation="int")],
+                    parameters=[query.DefineParameter(name="x", annotation="int")],
                     return_annotation="int",
                 )
             ],
@@ -37,7 +37,7 @@ class QueryAPITest(unittest.TestCase):
         pyre_connection.query_server.return_value = {
             "response": [{"Foo": ["object"]}, {"object": []}]
         }
-        hierarchy = query_api.get_class_hierarchy(pyre_connection)
+        hierarchy = query.get_class_hierarchy(pyre_connection)
         assert hierarchy is not None
         self.assertEqual(hierarchy.hierarchy, {"Foo": ["object"], "object": []})
         # Reverse hierarchy.
@@ -61,7 +61,7 @@ class QueryAPITest(unittest.TestCase):
                 {"Bar": ["object"]},
             ]
         }
-        class_hierarchy = query_api.get_class_hierarchy(pyre_connection)
+        class_hierarchy = query.get_class_hierarchy(pyre_connection)
         assert class_hierarchy is not None
         self.assertEqual(
             class_hierarchy.hierarchy,
@@ -69,7 +69,7 @@ class QueryAPITest(unittest.TestCase):
         )
         self.assertEqual(class_hierarchy.superclasses("Foo"), ["Bar", "Baz"])
         pyre_connection.query_server.return_value = {"error": "Found an issue"}
-        self.assertEqual(query_api.get_class_hierarchy(pyre_connection), None)
+        self.assertEqual(query.get_class_hierarchy(pyre_connection), None)
 
     def test_get_superclasses(self) -> None:
         pyre_connection = MagicMock()
@@ -77,13 +77,13 @@ class QueryAPITest(unittest.TestCase):
             "response": {"superclasses": ["Bike", "Vehicle", "object"]}
         }
         self.assertEqual(
-            query_api.get_superclasses(pyre_connection, "Scooter"),
+            query.get_superclasses(pyre_connection, "Scooter"),
             ["Bike", "Vehicle", "object"],
         )
         pyre_connection.query_server.return_value = {
             "error": "Type `Foo` was not found in the type order."
         }
-        self.assertEqual(query_api.get_superclasses(pyre_connection, "Foo"), [])
+        self.assertEqual(query.get_superclasses(pyre_connection, "Foo"), [])
 
     def test_get_attributes(self) -> None:
         pyre_connection = MagicMock()
@@ -95,11 +95,11 @@ class QueryAPITest(unittest.TestCase):
                 ]
             }
         }
-        self.assertEqual(query_api.get_attributes(pyre_connection, "a.C"), ["a", "foo"])
+        self.assertEqual(query.get_attributes(pyre_connection, "a.C"), ["a", "foo"])
         pyre_connection.query_server.return_value = {
             "error": "Type `Foo` was not found in the type order."
         }
-        self.assertEqual(query_api.get_superclasses(pyre_connection, "Foo"), [])
+        self.assertEqual(query.get_superclasses(pyre_connection, "Foo"), [])
 
     def test_get_call_graph(self) -> None:
         pyre_connection = MagicMock()
@@ -123,18 +123,18 @@ class QueryAPITest(unittest.TestCase):
         }
 
         self.assertEqual(
-            query_api.get_call_graph(pyre_connection),
+            query.get_call_graph(pyre_connection),
             {
                 "async_test.foo": [],
                 "async_test.bar": [
-                    query_api.CallGraphTarget(
+                    query.CallGraphTarget(
                         target="async_test.foo",
                         kind="function",
                         locations=[
-                            query_api.Location(
+                            query.Location(
                                 path="async_test.py",
-                                start=query_api.Position(line=6, column=4),
-                                stop=query_api.Position(line=6, column=7),
+                                start=query.Position(line=6, column=4),
+                                stop=query.Position(line=6, column=7),
                             )
                         ],
                     )

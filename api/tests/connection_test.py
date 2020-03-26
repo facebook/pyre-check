@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import _patch, call, patch
 
-from ..connection_api import PyreConnection
+from ..connection import PyreConnection
 
 
 class ConnectionApiTest(unittest.TestCase):
