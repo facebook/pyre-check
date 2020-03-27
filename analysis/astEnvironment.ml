@@ -317,16 +317,25 @@ let expand_wildcard_imports
   Transform.transform () source |> Transform.source
 
 
-let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment qualifiers =
+let process_sources
+    ~configuration
+    ~scheduler
+    ~ast_environment:({ module_tracker } as ast_environment)
+    qualifiers
+  =
+  let project_specific_preprocessing_state =
+    ProjectSpecificPreprocessing.initial (fun qualifier ->
+        ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
+  in
   let process_sources_job =
     let process qualifier =
       match Raw.get_source ast_environment qualifier ~dependency:qualifier with
       | None -> ()
       | Some source ->
           let source =
-            match preprocessing_state with
-            | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
-            | None -> source
+            ProjectSpecificPreprocessing.preprocess
+              ~state:project_specific_preprocessing_state
+              source
           in
           let stored =
             expand_wildcard_imports ~ast_environment source |> Preprocessing.preprocess_phase1
@@ -354,11 +363,11 @@ type parse_sources_result = {
   system_error: SourcePath.t list;
 }
 
-let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment source_paths =
+let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
   let { RawParseResult.parsed; syntax_error; system_error } =
     parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
   in
-  process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
+  process_sources ~configuration ~scheduler ~ast_environment parsed;
   { parsed = List.sort parsed ~compare:Reference.compare; syntax_error; system_error }
 
 
@@ -454,12 +463,7 @@ let update
           in
           remove_sources ast_environment (List.append removed_modules directly_changed_modules);
           let { parsed; syntax_error; system_error } =
-            parse_sources
-              ~configuration
-              ~scheduler
-              ~preprocessing_state:None
-              ~ast_environment
-              reparse_source_paths
+            parse_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
           in
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
@@ -494,12 +498,7 @@ let update
                   ~configuration)
           in
           let update_processed_sources () =
-            process_sources
-              ~configuration
-              ~scheduler
-              ~preprocessing_state:None
-              ~ast_environment
-              raw_dependencies
+            process_sources ~configuration ~scheduler ~ast_environment raw_dependencies
           in
           let triggered_dependencies =
             Profiling.track_duration_and_shared_memory
@@ -526,16 +525,8 @@ let update
         (ModuleTracker.explicit_module_count module_tracker);
       let ast_environment = create module_tracker in
       let { parsed; syntax_error; system_error } =
-        let preprocessing_state =
-          ProjectSpecificPreprocessing.initial (fun qualifier ->
-              ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
-        in
         ModuleTracker.source_paths module_tracker
-        |> parse_sources
-             ~configuration
-             ~scheduler
-             ~preprocessing_state:(Some preprocessing_state)
-             ~ast_environment
+        |> parse_sources ~configuration ~scheduler ~ast_environment
       in
       log_parse_errors ~syntax_error ~system_error;
       Statistics.performance
