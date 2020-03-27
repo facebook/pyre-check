@@ -234,13 +234,23 @@ let test_widen context =
 
 
 let test_check_annotation context =
-  let assert_check_annotation source expression descriptions =
+  let assert_check_annotation source variable_name descriptions =
     let resolution =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
     let module State = State (DefaultContext) in
     let errors =
-      State.parse_and_check_annotation ~resolution !expression |> fst |> AnalysisError.deduplicate
+      let expression =
+        let location =
+          {
+            Location.start = { line = 1; column = 1 };
+            stop = { line = 1; column = 1 + String.length variable_name };
+          }
+        in
+        let value = Expression.Expression.Name (Expression.create_name ~location variable_name) in
+        Node.create ~location value
+      in
+      State.parse_and_check_annotation ~resolution expression |> fst |> AnalysisError.deduplicate
     in
     let errors = List.map ~f:(description ~resolution) errors in
     assert_equal

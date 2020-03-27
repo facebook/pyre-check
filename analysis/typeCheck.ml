@@ -153,11 +153,14 @@ module State (Context : Context) = struct
 
 
   let emit_error ~errors ~location ~kind =
-    Error.create
-      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-      ~kind
-      ~define:Context.define
-    :: errors
+    if Location.equal location Location.synthetic then
+      errors
+    else
+      Error.create
+        ~location:(Location.with_module ~qualifier:Context.qualifier location)
+        ~kind
+        ~define:Context.define
+      :: errors
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
