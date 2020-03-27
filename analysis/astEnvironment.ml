@@ -323,20 +323,15 @@ let process_sources
     ~ast_environment:({ module_tracker } as ast_environment)
     qualifiers
   =
-  let project_specific_preprocessing_state =
-    ProjectSpecificPreprocessing.initial (fun qualifier ->
-        ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
+  let module_exists qualifier =
+    ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some
   in
   let process_sources_job =
     let process qualifier =
       match Raw.get_source ast_environment qualifier ~dependency:qualifier with
       | None -> ()
       | Some source ->
-          let source =
-            ProjectSpecificPreprocessing.preprocess
-              ~state:project_specific_preprocessing_state
-              source
-          in
+          let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
           let stored =
             expand_wildcard_imports ~ast_environment source |> Preprocessing.preprocess_phase1
           in
