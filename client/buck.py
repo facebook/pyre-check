@@ -80,7 +80,8 @@ class FastBuckBuilder(BuckBuilder):
                     "buck",
                     "build",
                     "--show-output",
-                    "//tools/pyre/facebook/fb_buck_project_builder",
+                    "//tools/pyre/facebook/tools/"
+                    "buck_project_builder:fb_buck_project_builder",
                 ],
                 stderr=subprocess.DEVNULL,
             )
