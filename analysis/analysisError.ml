@@ -3262,7 +3262,12 @@ let dequalify
           }
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
-    | TypedDictionaryKeyNotFound key -> TypedDictionaryKeyNotFound key
+    | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
+        TypedDictionaryKeyNotFound
+          {
+            typed_dictionary_name = dequalify_identifier typed_dictionary_name;
+            missing_key = dequalify_identifier missing_key;
+          }
     | TypedDictionaryInvalidOperation ({ typed_dictionary_name; mismatch; _ } as record) ->
         TypedDictionaryInvalidOperation
           {

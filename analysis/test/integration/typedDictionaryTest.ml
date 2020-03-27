@@ -98,7 +98,7 @@ let test_check_typed_dictionaries context =
     [
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `foo` but got `str`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.Movie` has no key `yar`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -220,7 +220,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `str`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.Cat` has no key `year`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -283,7 +283,7 @@ let test_check_typed_dictionaries context =
             q = a["bar"]
         return q
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `test.Baz` has no key `fou`."];
+    ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `fou`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -317,7 +317,7 @@ let test_check_typed_dictionaries context =
             q = a["first_very_long_field"]
         return q
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `test.Baz` has no key `foo`."];
+    ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `foo`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -472,7 +472,7 @@ let test_check_typed_dictionaries context =
         movie: Movie
         movie['nme'] = 'new name'
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `test.Movie` has no key `nme`."];
+    ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -558,7 +558,7 @@ let test_check_typed_dictionaries context =
       "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
       "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[True], str]`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.Movie` has no key `nae`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -604,7 +604,7 @@ let test_check_typed_dictionaries context =
       "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to "
       ^ "call `TypedDictionary.setdefault` but got `int`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.Movie` has no key `nme`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -664,7 +664,7 @@ let test_check_typed_dictionaries context =
       "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[False], str]`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `test.MovieNonTotal` has no key `nae`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `MovieNonTotal` has no key `nae`.";
     ];
 
   (* You can't pop an item from a total typeddict *)
@@ -688,7 +688,7 @@ let test_check_typed_dictionaries context =
         movieNonTotal.__delitem__("name")
         movieNonTotal.__delitem__("nae")
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `test.MovieNonTotal` has no key `nae`."];
+    ["TypedDict accessed with a missing key [27]: TypedDict `MovieNonTotal` has no key `nae`."];
 
   (* You can't delete an item from a total typeddict *)
   assert_test_typed_dictionary
@@ -1241,10 +1241,9 @@ let test_check_typed_dictionary_inheritance context =
       "Revealed type [-1]: Revealed type for `helpers.child[\"bar\"]` is `str`.";
       "Revealed type [-1]: Revealed type for `helpers.grandchild[\"bar\"]` is `str`.";
       "Revealed type [-1]: Revealed type for `helpers.grandchild[\"foo\"]` is `int`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `helpers.GrandChild` has no key \
+      "TypedDict accessed with a missing key [27]: TypedDict `GrandChild` has no key \
        `non_existent`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `helpers.GrandChild` has no key \
-       `__doc__`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `GrandChild` has no key `__doc__`.";
     ];
   (* No attribute access allowed for TypedDictionary. *)
   assert_test_typed_dictionary
@@ -1499,8 +1498,7 @@ let test_check_typed_dictionary_inheritance context =
         reveal_type(child["bar"])
     |}
     [
-      "TypedDict accessed with a missing key [27]: TypedDict `helpers.Child` has no key \
-       `non_existent`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Child` has no key `non_existent`.";
       "Revealed type [-1]: Revealed type for `child[\"foo\"]` is `int`.";
       "Revealed type [-1]: Revealed type for `child[\"bar\"]` is `str`.";
     ];

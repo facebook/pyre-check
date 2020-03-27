@@ -373,7 +373,7 @@ let test_concise context =
       def foo(x: Cat) -> None:
           y = x["year"]
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `test.Cat` has no key `year`."];
+    ["TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`."];
 
   (* Redundant Cast *)
   assert_type_errors
