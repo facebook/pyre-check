@@ -129,7 +129,7 @@ def errors_from_targets(
             output = similar_targets.stdout.decode()
             error_output = similar_targets.stderr.decode()
             if output:
-                targets_to_retry.append(output)
+                targets_to_retry.append(output.strip())
             elif error_output:
                 typecheck_targets = [
                     target.strip()
