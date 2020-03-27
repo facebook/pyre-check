@@ -36,7 +36,9 @@ class VersionControl:
     LINTERS_TO_SKIP: List[str] = []
 
     @staticmethod
-    def commit_message(directory: str, summary_override: Optional[str] = None) -> str:
+    def commit_message(
+        directory: str, summary_override: Optional[str] = None, upgrade: bool = True
+    ) -> str:
         return ""
 
     @staticmethod
@@ -388,7 +390,10 @@ def _upgrade_project(
         local_root = configuration.get_directory().resolve()
         version_control.submit_changes(
             arguments.submit,
-            version_control.commit_message(str(local_root.relative_to(project_root))),
+            version_control.commit_message(
+                str(local_root.relative_to(project_root)),
+                upgrade=arguments.upgrade_version,
+            ),
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
@@ -502,7 +507,10 @@ def run_fixme_targets(
         if not arguments.no_commit:
             version_control.submit_changes(
                 arguments.submit,
-                version_control.commit_message("{} (TARGETS)".format(search_root)),
+                version_control.commit_message(
+                    "{} (TARGETS)".format(search_root),
+                    upgrade=arguments.upgrade_version,
+                ),
             )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
