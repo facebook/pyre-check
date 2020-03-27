@@ -823,13 +823,9 @@ class InitializeTest(TestCommand):
             result = self.run_pyre(
                 "init",
                 working_directory="local_project",
-                prompts=["Y", "//example:target", "Y", "Y", "Y"],
+                prompts=["Y", "//example:target", "Y"],
             )
-            expected_contents = {
-                "differential": False,
-                "push_blocking": True,
-                "targets": ["//example:target"],
-            }
+            expected_contents = {"targets": ["//example:target"]}
             self.assert_file_exists(
                 "local_project/.pyre_configuration.local",
                 json_contents=expected_contents,

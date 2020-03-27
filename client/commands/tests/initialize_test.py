@@ -91,47 +91,16 @@ class InitializeTest(unittest.TestCase):
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "input", return_value="//target/..."
         ):
-            yes_no_input.side_effect = [True, False]
+            yes_no_input.side_effect = [True]
             self.assertEqual(
-                command._get_local_configuration(),
-                {"continuous": False, "targets": ["//target/..."]},
-            )
-
-            yes_no_input.side_effect = [True, True, False]
-            self.assertEqual(
-                command._get_local_configuration(),
-                {
-                    "continuous": True,
-                    "push_blocking": False,
-                    "targets": ["//target/..."],
-                },
-            )
-
-            yes_no_input.side_effect = [True, True, True]
-            self.assertEqual(
-                command._get_local_configuration(),
-                {
-                    "push_blocking": True,
-                    "differential": False,
-                    "targets": ["//target/..."],
-                },
-            )
-
-            yes_no_input.side_effect = [True, True, True]
-            self.assertEqual(
-                command._get_local_configuration(),
-                {
-                    "differential": False,
-                    "push_blocking": True,
-                    "targets": ["//target/..."],
-                },
+                command._get_local_configuration(), {"targets": ["//target/..."]}
             )
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "input", return_value="project/a, project/b"
         ):
-            yes_no_input.side_effect = [False, False]
+            yes_no_input.side_effect = [False]
             self.assertEqual(
                 command._get_local_configuration(),
-                {"continuous": False, "source_directories": ["project/a", "project/b"]},
+                {"source_directories": ["project/a", "project/b"]},
             )

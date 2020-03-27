@@ -117,19 +117,6 @@ class Initialize(CommandParser):
             configuration["source_directories"] = [
                 directory.strip() for directory in source_directories.split(",")
             ]
-        continuous = log.get_yes_no_input(
-            "Would you like to enable Pyre's continuous integration for your changes?"
-        )
-        configuration["continuous"] = continuous
-        if continuous:
-            push_blocking = log.get_yes_no_input(
-                "Would you like the continuous integration to be push blocking?"
-            )
-            configuration["push_blocking"] = push_blocking
-            if push_blocking:
-                # Push blocking implies continuous, it's confusing to have both.
-                del configuration["continuous"]
-                configuration["differential"] = False
         return configuration
 
     def _is_local(self) -> bool:
