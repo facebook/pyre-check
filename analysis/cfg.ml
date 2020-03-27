@@ -245,12 +245,11 @@ let create define =
           create body_statements jumps split
         in
         Node.connect_option body_node join;
-        let { Ast.Node.location = test_location; _ } = test in
         let orelse_statements =
           let test =
             Expression.negate test
             |> Expression.normalize
-            |> fun test -> { test with location = test_location }
+            |> fun test -> { test with location = Location.synthetic }
           in
           Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
           :: orelse

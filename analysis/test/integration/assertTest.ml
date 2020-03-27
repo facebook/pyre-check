@@ -342,6 +342,15 @@ let test_check_impossible_assert context =
         assert not isinstance(42, Derp)
     |}
     [];
+  assert_type_errors
+    {|
+     from typing import Union, Dict, Any
+
+     def foo(x: Dict[str, Any]) -> None:
+       if isinstance(x, dict):
+         pass
+   |}
+    [];
   ()
 
 
