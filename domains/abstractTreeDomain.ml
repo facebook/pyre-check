@@ -101,7 +101,7 @@ module Label = struct
     | Any
   [@@deriving show]
 
-  let compare = Pervasives.compare
+  let compare : t -> t -> int = compare
 
   let _ = show (* shadowed below *)
 
