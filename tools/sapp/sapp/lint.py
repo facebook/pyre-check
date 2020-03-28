@@ -15,6 +15,7 @@ from .cli_lib import require_option
 from .models import Issue, IssueInstance, SharedText, TraceFrame
 
 
+MessageText = aliased(SharedText)
 FilenameText = aliased(SharedText)
 CallerText = aliased(SharedText)
 CalleeText = aliased(SharedText)
@@ -41,28 +42,29 @@ def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
     with ctx.database.make_session() as session:
         instances = (
             session.query(
-                IssueInstance.filename,
                 IssueInstance.location,
-                SharedText.contents,
+                FilenameText.contents.label("filename"),
+                MessageText.contents.label("message"),
                 Issue.code,
             )
             .filter(IssueInstance.run_id == run_id)
-            .filter(IssueInstance.filename.in_(relative))
             .join(Issue, Issue.id == IssueInstance.issue_id)
-            .join(SharedText, SharedText.id == IssueInstance.message_id)
+            .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
+            .filter(FilenameText.contents.in_(relative))
+            .join(MessageText, MessageText.id == IssueInstance.message_id)
             .all()
         )
 
     with ctx.database.make_session() as session:
         frames = (
             session.query(
-                CallerText.contents.label("caller"),
-                CalleeText.contents.label("callee"),
-                FilenameText.contents.label("filename"),
                 TraceFrame.callee_location,
                 TraceFrame.kind,
                 TraceFrame.callee_port,
                 TraceFrame.caller_port,
+                CallerText.contents.label("caller"),
+                CalleeText.contents.label("callee"),
+                FilenameText.contents.label("filename"),
             )
             .filter(TraceFrame.run_id == run_id)
             .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
@@ -83,7 +85,7 @@ def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
         }
 
     lints = [
-        entry(i.filename, str(i.code), i.contents, i.location) for i in instances
+        entry(i.filename, str(i.code), i.message, i.location) for i in instances
     ] + [
         entry(
             i.filename,
