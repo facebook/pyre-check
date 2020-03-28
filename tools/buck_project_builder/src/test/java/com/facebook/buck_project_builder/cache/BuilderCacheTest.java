@@ -31,21 +31,30 @@ public class BuilderCacheTest {
     String scratchPath =
         Paths.get(BuilderCacheTest.DUMMY_BUCK_ROOT, "scratch/fooZjohnsmith/pyre").toString();
     String builderCachePath = Paths.get(scratchPath, ".buck_builder_cache").toString();
+    String builderCachePathWithProjectName =
+        Paths.get(scratchPath, ".buck_builder_cache_foo-project").toString();
 
     PowerMockito.mockStatic(ScratchPath.class);
     PowerMockito.when(ScratchPath.getScratchPath(BuilderCacheTest.DUMMY_BUCK_ROOT))
         .thenReturn(scratchPath);
     assertEquals(
         Paths.get(builderCachePath, "6ff3f6302227d54ed823ac603a57d864").toString(),
-        BuilderCache.getCachePath(ImmutableList.of("//abc"), BuilderCacheTest.DUMMY_BUCK_ROOT));
+        BuilderCache.getCachePath(
+            ImmutableList.of("//abc"), BuilderCacheTest.DUMMY_BUCK_ROOT, null));
     assertEquals(
         Paths.get(builderCachePath, "b8565123512e859863e40feb6d46143e").toString(),
         BuilderCache.getCachePath(
-            ImmutableList.of("//abc", "//def:efg"), BuilderCacheTest.DUMMY_BUCK_ROOT));
+            ImmutableList.of("//abc", "//def:efg"), BuilderCacheTest.DUMMY_BUCK_ROOT, null));
     assertEquals(
         Paths.get(builderCachePath, "cabe45dcc9ae5b66ba86600cca6b8ba8").toString(),
         BuilderCache.getCachePath(
-            ImmutableList.of(Strings.repeat("a", 1000)), BuilderCacheTest.DUMMY_BUCK_ROOT));
+            ImmutableList.of(Strings.repeat("a", 1000)), BuilderCacheTest.DUMMY_BUCK_ROOT, null));
+    assertEquals(
+        Paths.get(builderCachePathWithProjectName, "cabe45dcc9ae5b66ba86600cca6b8ba8").toString(),
+        BuilderCache.getCachePath(
+            ImmutableList.of(Strings.repeat("a", 1000)),
+            BuilderCacheTest.DUMMY_BUCK_ROOT,
+            "foo-project"));
   }
 
   @Test

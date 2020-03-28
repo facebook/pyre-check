@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 
@@ -36,25 +37,32 @@ public final class BuckProjectBuilder {
     String outputDirectory = command.getOutputDirectory();
     ImmutableList<String> targets = command.getTargets();
     String mode = command.getMode();
+    @Nullable String projectName = command.getProjectName();
 
     try {
       CacheLock.synchronize(
           () -> {
             DebugOutput debugOutput =
                 new BuildTargetsCollector(
-                        buckRoot, outputDirectory, platformSelector, commandRewriter, mode)
+                        buckRoot,
+                        outputDirectory,
+                        projectName,
+                        platformSelector,
+                        commandRewriter,
+                        mode)
                     .getBuilder(start, targets)
-                    .buildTargets(buckRoot);
+                    .buildTargets(buckRoot, projectName);
             if (command.isDebug()) {
               System.out.println(new Gson().toJson(debugOutput));
             }
           },
-          buckRoot);
+          buckRoot,
+          projectName);
       BuildTimeLogger.logBuildTime(start, System.currentTimeMillis(), targets);
     } catch (BuilderException exception) {
       SimpleLogger.error(exception.getMessage());
       SimpleLogger.error("Build failure. Invalidating all build cache.");
-      FileUtils.deleteQuietly(new File(BuilderCache.getCachePath(targets, buckRoot)));
+      FileUtils.deleteQuietly(new File(BuilderCache.getCachePath(targets, buckRoot, projectName)));
       System.exit(1);
     }
   }

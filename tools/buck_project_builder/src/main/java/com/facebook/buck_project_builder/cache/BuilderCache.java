@@ -35,18 +35,23 @@ public class BuilderCache {
     this(0, ImmutableSet.of());
   }
 
-  public static String getCachePath(ImmutableList<String> targets, String buckRoot) throws IOException {
+  public static String getCachePath(
+      ImmutableList<String> targets, String buckRoot, @Nullable String projectName)
+      throws IOException {
     String escapedTargets = DigestUtils.md5Hex(String.join(";", targets));
     if (escapedTargets.length() > 255) {
       // 255 is the Linux filename length limit for EXT4.
       // Most target list is not crazily long, and collision is unlikely to happen.
       escapedTargets = escapedTargets.substring(0, 255);
     }
-    return Paths.get(BuilderCache.getBuckBuilderCachePath(buckRoot), escapedTargets).toString();
+    return Paths.get(BuilderCache.getBuckBuilderCachePath(buckRoot, projectName), escapedTargets)
+        .toString();
   }
 
-  private static File getCacheJsonFile(ImmutableList<String> targets, String buckRoot) throws IOException {
-    return Paths.get(getCachePath(targets, buckRoot), "cache.json").toFile();
+  private static File getCacheJsonFile(
+      ImmutableList<String> targets, String buckRoot, @Nullable String projectName)
+      throws IOException {
+    return Paths.get(getCachePath(targets, buckRoot, projectName), "cache.json").toFile();
   }
 
   @VisibleForTesting
@@ -60,9 +65,10 @@ public class BuilderCache {
     }
   }
 
-  public static BuilderCache readFromCache(ImmutableList<String> targets, String buckRoot)
+  public static BuilderCache readFromCache(
+      ImmutableList<String> targets, String buckRoot, @Nullable String projectName)
       throws IOException {
-    File cacheJson = getCacheJsonFile(targets, buckRoot);
+    File cacheJson = getCacheJsonFile(targets, buckRoot, projectName);
     try (FileReader reader = new FileReader(cacheJson)) {
       return readFromCache(reader);
     } catch (IOException exception) {
@@ -77,8 +83,10 @@ public class BuilderCache {
     new Gson().toJson(this, writer);
   }
 
-  public void writeToCache(ImmutableList<String> targets, String buckRoot) throws IOException {
-    File cacheJsonFile = getCacheJsonFile(targets, buckRoot);
+  public void writeToCache(
+      ImmutableList<String> targets, String buckRoot, @Nullable String projectName)
+      throws IOException {
+    File cacheJsonFile = getCacheJsonFile(targets, buckRoot, projectName);
     if (cacheJsonFile.exists()) {
       cacheJsonFile.delete();
     }
@@ -98,20 +106,27 @@ public class BuilderCache {
     return thriftCaches;
   }
 
-  public static String getBuckBuilderCachePath(String buckRoot) throws IOException {
-    return Paths.get(ScratchPath.getScratchPath(buckRoot), ".buck_builder_cache").toString();
+  public static String getBuckBuilderCachePath(String buckRoot, @Nullable String projectName)
+      throws IOException {
+    String suffix = projectName != null ? String.format("_%s", projectName) : "";
+    String cacheDirectoryName = String.format(".buck_builder_cache%s", suffix);
+    return Paths.get(ScratchPath.getScratchPath(buckRoot), cacheDirectoryName).toString();
   }
 
-  public static String getLockPath(String buckRoot) throws IOException {
-    return Paths.get(getBuckBuilderCachePath(buckRoot), "builder.lock").toString();
+  public static String getLockPath(String buckRoot, @Nullable String projectName)
+      throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot, projectName), "builder.lock").toString();
   }
 
-  public static String getThriftCachePath(String buckRoot) throws IOException {
-    return Paths.get(getBuckBuilderCachePath(buckRoot), "thrift-gen").toString();
+  public static String getThriftCachePath(String buckRoot, @Nullable String projectName)
+      throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot, projectName), "thrift-gen").toString();
   }
 
-  public static String getWheelCachePath(String buckRoot) throws IOException {
-    return Paths.get(getBuckBuilderCachePath(buckRoot), "downloaded-wheels").toString();
+  public static String getWheelCachePath(String buckRoot, @Nullable String projectName)
+      throws IOException {
+    return Paths.get(getBuckBuilderCachePath(buckRoot, projectName), "downloaded-wheels")
+        .toString();
   }
 
   @Override

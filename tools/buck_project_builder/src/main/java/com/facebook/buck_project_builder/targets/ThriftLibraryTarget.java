@@ -46,6 +46,7 @@ public final class ThriftLibraryTarget {
   static @Nullable ThriftLibraryTarget parse(
       @Nullable String cellPath,
       String buckRoot,
+      @Nullable String projectName,
       CommandRewriter rewriter,
       JsonObject targetJsonObject)
       throws IOException {
@@ -76,7 +77,9 @@ public final class ThriftLibraryTarget {
     if (sources == null) {
       return null;
     }
-    command = rewriter.rewriteThriftLibraryBuildCommand(command, baseModulePath, sources, buckRoot);
+    command =
+        rewriter.rewriteThriftLibraryBuildCommand(
+            command, baseModulePath, sources, buckRoot, projectName);
     return new ThriftLibraryTarget(command, baseModulePath, sources);
   }
 

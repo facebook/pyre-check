@@ -19,14 +19,21 @@ final class BuilderCommand {
   private final String outputDirectory;
   private final ImmutableList<String> targets;
   private final @Nullable String mode;
+  private final @Nullable String projectName;
 
   BuilderCommand(
-      boolean debug, String buckRoot, String outputDirectory, ImmutableList<String> targets, @Nullable String mode) {
+      boolean debug,
+      String buckRoot,
+      String outputDirectory,
+      ImmutableList<String> targets,
+      @Nullable String mode,
+      @Nullable String projectName) {
     this.debug = debug;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.targets = targets;
     this.mode = mode;
+    this.projectName = projectName;
   }
 
   static BuilderCommand fromCommandLineArguments(String[] arguments) throws BuilderException {
@@ -36,6 +43,7 @@ final class BuilderCommand {
     parsingOptions.addOption(Option.builder().hasArg().longOpt("buck_root").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("output_directory").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("mode").build());
+    parsingOptions.addOption(Option.builder().hasArg().longOpt("project_name").build());
     try {
       CommandLine parsedArguments = parser.parse(parsingOptions, arguments);
       String buckRoot = parsedArguments.getOptionValue("buck_root");
@@ -48,12 +56,14 @@ final class BuilderCommand {
       }
       @Nullable String mode = parsedArguments.getOptionValue("mode");
       List<String> targets = parsedArguments.getArgList();
+      @Nullable String projectName = parsedArguments.getOptionValue("project_name");
       return new BuilderCommand(
           parsedArguments.hasOption("debug"),
           buckRoot,
           outputDirectory,
           ImmutableList.copyOf(targets),
-          mode);
+          mode,
+          projectName);
     } catch (ParseException exception) {
       throw new BuilderException(
           "Unexpected command line arguments. Detail: " + exception.getMessage());
@@ -80,6 +90,10 @@ final class BuilderCommand {
     return mode;
   }
 
+  public @Nullable String getProjectName() {
+    return projectName;
+  }
+
   @Override
   public boolean equals(@Nullable Object other) {
     if (this == other) {
@@ -92,18 +106,21 @@ final class BuilderCommand {
     return debug == builderCommand.debug
         && buckRoot.equals(builderCommand.buckRoot)
         && outputDirectory.equals(builderCommand.outputDirectory)
-        && targets.equals(builderCommand.targets);
+        && targets.equals(builderCommand.targets)
+        && (projectName != null
+            ? projectName.equals(builderCommand.projectName)
+            : builderCommand.projectName == null);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(debug, buckRoot, outputDirectory, targets);
+    return Objects.hash(debug, buckRoot, outputDirectory, targets, projectName);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "{debug=%b, buckRoot=%s, outputDirectory=%s, targets=%s}",
-        debug, buckRoot, outputDirectory, targets);
+        "{debug=%b, buckRoot=%s, outputDirectory=%s, targets=%s, projectName=%s}",
+        debug, buckRoot, outputDirectory, targets, projectName);
   }
 }

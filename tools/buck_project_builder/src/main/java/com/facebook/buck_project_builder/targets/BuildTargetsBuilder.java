@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.StackTraceElement;
@@ -28,6 +29,7 @@ public final class BuildTargetsBuilder {
   private final long startTime;
   private final String buckRoot;
   private final String outputDirectory;
+  private final @Nullable String projectName;
   private final ImmutableList<String> targets;
   /** key: output path, value: source path */
   private final ImmutableMap<Path, Path> sources;
@@ -45,6 +47,7 @@ public final class BuildTargetsBuilder {
       long startTime,
       String buckRoot,
       String outputDirectory,
+      @Nullable String projectName,
       ImmutableList<String> targets,
       ImmutableMap<Path, Path> sources,
       ImmutableSet<String> unsupportedGeneratedSources,
@@ -55,6 +58,7 @@ public final class BuildTargetsBuilder {
     this.startTime = startTime;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
+    this.projectName = projectName;
     this.targets = targets;
     this.sources = sources;
     this.unsupportedGeneratedSources = unsupportedGeneratedSources;
@@ -81,15 +85,15 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Built python sources in " + time + "ms.");
   }
 
-  private void buildPythonWheels(String buckRoot) throws IOException {
+  private void buildPythonWheels(String buckRoot, @Nullable String projectName) throws IOException {
     if (pythonWheelUrls.isEmpty()) {
       return;
     }
     SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
-    new File(BuilderCache.getWheelCachePath(buckRoot)).mkdirs();
+    new File(BuilderCache.getWheelCachePath(buckRoot, projectName)).mkdirs();
     try {
-      FileUtils.cleanDirectory(new File(BuilderCache.getWheelCachePath(buckRoot)));
+      FileUtils.cleanDirectory(new File(BuilderCache.getWheelCachePath(buckRoot, projectName)));
     } catch (IOException exception) {
       // Silently fail if the cache wasn't found.
     }
@@ -101,13 +105,17 @@ public final class BuildTargetsBuilder {
               try {
                 ImmutableSet<String> conflictingFiles =
                     FileSystem.unzipRemoteFile(
-                        url, BuilderCache.getWheelCachePath(buckRoot), outputDirectoryFile);
+                        url,
+                        BuilderCache.getWheelCachePath(buckRoot, projectName),
+                        outputDirectoryFile);
                 this.conflictingFiles.addAll(conflictingFiles);
               } catch (IOException firstException) {
                 try {
                   ImmutableSet<String> conflictingFiles =
                       FileSystem.unzipRemoteFile(
-                          url, BuilderCache.getWheelCachePath(buckRoot), outputDirectoryFile);
+                          url,
+                          BuilderCache.getWheelCachePath(buckRoot, projectName),
+                          outputDirectoryFile);
                   this.conflictingFiles.addAll(conflictingFiles);
                 } catch (IOException secondException) {
                   SimpleLogger.error(
@@ -151,9 +159,9 @@ public final class BuildTargetsBuilder {
     if (this.thriftLibraryTargets.isEmpty()) {
       return;
     }
-    new File(BuilderCache.getThriftCachePath(buckRoot)).mkdirs();
+    new File(BuilderCache.getThriftCachePath(buckRoot, projectName)).mkdirs();
     try {
-      FileUtils.cleanDirectory(new File(BuilderCache.getThriftCachePath(buckRoot)));
+      FileUtils.cleanDirectory(new File(BuilderCache.getThriftCachePath(buckRoot, projectName)));
     } catch (IOException exception) {
       // Silently fail if there was nothing to clean.
     }
@@ -186,7 +194,8 @@ public final class BuildTargetsBuilder {
           try {
             Path generatedCodeRoot =
                 Paths.get(
-                    BuilderCache.getThriftCachePath(buckRoot), DigestUtils.md5Hex(baseModulePath));
+                    BuilderCache.getThriftCachePath(buckRoot, projectName),
+                    DigestUtils.md5Hex(baseModulePath));
             Files.walk(Paths.get(generatedCodeRoot.toString(), baseModulePath))
                 .forEach(
                     absolutePath -> {
@@ -282,13 +291,14 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Generate empty stubs in " + time + "ms.");
   }
 
-  public DebugOutput buildTargets(String buckRoot) throws BuilderException, IOException {
+  public DebugOutput buildTargets(String buckRoot, @Nullable String projectName)
+      throws BuilderException, IOException {
     SimpleLogger.info("Buliding...");
     this.buildThriftLibraries();
     this.buildSwigLibraries();
     this.buildAntlr4Libraries();
     this.buildPythonSources();
-    this.buildPythonWheels(buckRoot);
+    this.buildPythonWheels(buckRoot, projectName);
     this.generateEmptyStubs();
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }

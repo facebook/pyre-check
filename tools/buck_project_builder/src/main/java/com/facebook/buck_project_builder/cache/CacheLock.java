@@ -4,6 +4,7 @@ import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.SimpleLogger;
 import org.apache.commons.io.FileUtils;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -12,9 +13,9 @@ import java.nio.channels.FileLock;
 
 public final class CacheLock {
 
-  public static void synchronize(Builder builder, String buckRoot)
+  public static void synchronize(Builder builder, String buckRoot, @Nullable String projectName)
       throws BuilderException, IOException {
-    File lockFile = new File(BuilderCache.getLockPath(buckRoot));
+    File lockFile = new File(BuilderCache.getLockPath(buckRoot, projectName));
     try {
       FileUtils.touch(lockFile);
     } catch (IOException exception) {

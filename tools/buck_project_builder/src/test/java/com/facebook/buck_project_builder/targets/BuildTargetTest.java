@@ -44,6 +44,7 @@ public class BuildTargetTest {
             0,
             buckRoot.getPath(),
             outputDirectory.getPath(),
+            null,
             targets,
             sources,
             ImmutableSet.of(),
@@ -51,7 +52,7 @@ public class BuildTargetTest {
             ImmutableSet.of(),
             ImmutableSet.of(),
             ImmutableSet.of());
-    builder.buildTargets(buckRoot.toString());
+    builder.buildTargets(buckRoot.toString(), null);
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "b.py"), "print('hello world')");
 
@@ -64,6 +65,7 @@ public class BuildTargetTest {
             0,
             buckRoot.getPath(),
             outputDirectory.getPath(),
+            null,
             targets,
             sources,
             ImmutableSet.of(),
@@ -71,7 +73,7 @@ public class BuildTargetTest {
             ImmutableSet.of(),
             ImmutableSet.of(),
             ImmutableSet.of());
-    builder.buildTargets(buckRoot.toString());
+    builder.buildTargets(buckRoot.toString(), null);
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "foo", "bar", "b.py"), "print('hello world')");
 
