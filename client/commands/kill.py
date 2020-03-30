@@ -128,19 +128,20 @@ class Kill(Command):
         except Exception as exception:
             LOG.debug("Could not find scratch path because of exception: %s", exception)
         if scratch_path is not None:
-            buck_builder_cache_directory = str(
-                Path(scratch_path, ".buck_builder_cache")
-            )
-            try:
-                LOG.debug(
-                    "Deleting buck builder cache at %s", buck_builder_cache_directory
-                )
-                shutil.rmtree(buck_builder_cache_directory)
-            except OSError as exception:
-                LOG.debug(
-                    "Failed to delete buck builder cache due to exception: %s.",
-                    exception,
-                )
+            for buck_builder_cache_directory in Path(scratch_path).glob(
+                ".buck_builder_cache*"
+            ):
+                try:
+                    LOG.debug(
+                        "Deleting buck builder cache at %s",
+                        buck_builder_cache_directory,
+                    )
+                    shutil.rmtree(buck_builder_cache_directory)
+                except OSError as exception:
+                    LOG.debug(
+                        "Failed to delete buck builder cache due to exception: %s.",
+                        exception,
+                    )
 
     def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):

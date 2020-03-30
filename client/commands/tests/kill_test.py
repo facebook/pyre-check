@@ -106,23 +106,33 @@ class KillTest(unittest.TestCase):
             ]
         )
 
+    @patch.object(Path, "glob")
     @patch.object(
         subprocess, "check_output", return_value=b"/some/scratch/directory/pyre\n"
     )
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(
-        self, kill_init: MagicMock, remove_tree: MagicMock, check_output: MagicMock
+        self,
+        kill_init: MagicMock,
+        remove_tree: MagicMock,
+        check_output: MagicMock,
+        path_glob: MagicMock,
     ) -> None:
         kill_command = Kill(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         kill_command._current_directory = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
         kill_command._log_directory = "/some/log/directory/.pyre/foo"
+        path_glob.return_value = [
+            "/some/scratch/directory/pyre/.buck_builder_cache",
+            "/some/scratch/directory/pyre/.buck_builder_cache_isolated_1234",
+        ]
         kill_command._delete_caches()
         remove_tree.assert_has_calls(
             [
                 call("/some/log/directory/.pyre/resource_cache"),
                 call("/some/scratch/directory/pyre/.buck_builder_cache"),
+                call("/some/scratch/directory/pyre/.buck_builder_cache_isolated_1234"),
             ]
         )
 
