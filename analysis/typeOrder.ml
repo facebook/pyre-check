@@ -621,12 +621,11 @@ module OrderImplementation = struct
             ~constraints
             ~left:(Type.parametric "tuple" [Single parameter])
             ~right
-      | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
-          let parameter = List.fold ~f:(join order) ~init:left tail in
+      | Type.Tuple (Type.Bounded (Concrete (_ :: _ as members))), Type.Primitive _ ->
           solve_less_or_equal
             order
             ~constraints
-            ~left:(Type.parametric "tuple" [Single parameter])
+            ~left:(Type.parametric "tuple" [Single (Type.union members)])
             ~right
       | Type.Primitive name, Type.Tuple _ ->
           if Type.Primitive.equal name "tuple" then [constraints] else []
