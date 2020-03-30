@@ -615,6 +615,25 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.backwards_field_assignment",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(external)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[index]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.backwards_model_for_dictionary_comprehension",
     "sources": [],
     "sinks": [
@@ -1021,6 +1040,25 @@
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.return_tito_literally",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(external)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[index]" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {

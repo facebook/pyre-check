@@ -169,3 +169,13 @@ def test_keys_and_values():
     __test_sink(tainted_keys.keys())
     # Shouldn't be an issue.
     __test_sink(tainted_keys.values())
+
+
+def backwards_field_assignment(external):
+    d = {}
+    d["index"] = external
+    return d
+
+
+def return_tito_literally(external):
+    return {"index": external}

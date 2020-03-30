@@ -848,9 +848,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_assignment ~resolution ?(fields = []) ~target ~value state =
-      let taint =
-        compute_assignment_taint ~resolution target state |> fst |> BackwardState.Tree.read fields
-      in
+      let taint = compute_assignment_taint ~resolution target state |> fst |> read_tree fields in
       let state =
         let rec clear_taint state target =
           match Node.value target with
