@@ -30,7 +30,7 @@ class PyreTest(unittest.TestCase):
         run_null_server.assert_not_called()
 
         validate.side_effect = EnvironmentException
-        self.assertEqual(pyre.main(["persistent"]), 2)
+        self.assertEqual(pyre.main(["persistent"]), 0)
         run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 
     @patch.object(os, "getenv")
