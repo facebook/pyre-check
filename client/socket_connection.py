@@ -21,9 +21,10 @@ class SocketException(Exception):
 
 
 class SocketConnection(object):
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str, socket_name: str = "json_server.sock") -> None:
         self.socket: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.root = root
+        self.socket_name = socket_name
         self.input: BinaryIO = self.socket.makefile(mode="rb")
         self.output: BinaryIO = self.socket.makefile(mode="wb")
 
@@ -56,7 +57,7 @@ class SocketConnection(object):
         return json_rpc.read_response(self.input)
 
     def _socket_path(self) -> str:
-        return os.path.join(self.root, "server", "json_server.sock")
+        return os.path.join(self.root, "server", self.socket_name)
 
     def __enter__(self) -> "SocketConnection":
         self.connect()
