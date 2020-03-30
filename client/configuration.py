@@ -135,7 +135,6 @@ class _ConfigurationFile:
             "buck_builder_binary",
             "buck_mode",
             "differential",
-            "push_blocking",
             "pyre_client",
             "saved_state",
             "taint_models_path",
