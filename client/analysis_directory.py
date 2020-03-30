@@ -556,6 +556,30 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 continue
 
 
+def _get_project_name(isolate: bool) -> Optional[str]:
+    return "isolated_{}".format(str(os.getpid())) if isolate else None
+
+
+def _get_fast_buck_builder(
+    arguments: argparse.Namespace, current_directory: str, isolate: bool
+) -> buck.FastBuckBuilder:
+    buck_root = buck.find_buck_root(current_directory)
+    if not buck_root:
+        raise EnvironmentException(
+            "No Buck configuration at `{}` or any of its ancestors.".format(
+                current_directory
+            )
+        )
+    return buck.FastBuckBuilder(
+        buck_root=buck_root,
+        buck_builder_binary=arguments.buck_builder_binary,
+        buck_builder_target=arguments.buck_builder_target,
+        debug_mode=arguments.buck_builder_debug,
+        buck_mode=arguments.buck_mode,
+        project_name=_get_project_name(isolate),
+    )
+
+
 def resolve_analysis_directory(
     arguments: argparse.Namespace,
     configuration: Configuration,
@@ -610,20 +634,7 @@ def resolve_analysis_directory(
         build = arguments.build or build
         buck_builder = buck.SimpleBuckBuilder(build=build)
         if use_buck_builder:
-            buck_root = buck.find_buck_root(os.getcwd())
-            if not buck_root:
-                raise EnvironmentException(
-                    "No Buck configuration at `{}` or any of its ancestors.".format(
-                        os.getcwd()
-                    )
-                )
-            buck_builder = buck.FastBuckBuilder(
-                buck_root=buck_root,
-                buck_builder_binary=arguments.buck_builder_binary,
-                buck_builder_target=arguments.buck_builder_target,
-                debug_mode=arguments.buck_builder_debug,
-                buck_mode=arguments.buck_mode,
-            )
+            buck_builder = _get_fast_buck_builder(arguments, os.getcwd(), isolate)
         else:
             buck_builder = buck.SimpleBuckBuilder(build=build)
 
