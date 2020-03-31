@@ -1879,7 +1879,7 @@ let test_expand_implicit_returns _ =
     match List.rev (Source.statements expanded) with
     | { Node.value = Define { body; _ }; _ } :: _ -> (
         match List.rev body with
-        | return :: _ -> assert_equal return.location expected_location
+        | return :: _ -> assert_equal ~printer:Location.show expected_location return.location
         | _ -> failwith "Preprocessed source's Define body is empty" )
     | _ -> failwith "Preprocessed source failed"
   in
