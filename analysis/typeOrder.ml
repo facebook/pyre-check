@@ -226,13 +226,13 @@ module OrderImplementation = struct
             | ( Parameter.Variable (Concrete variable_annotation)
                 :: Parameter.Keywords keywords_annotation :: _,
                 Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->
-                (* SOLVE *)
-                let is_compatible =
-                  Type.equal variable_annotation keywords_annotation
-                  && always_less_or_equal order ~left:named_annotation ~right:keywords_annotation
-                in
-                if is_compatible then
-                  solve_parameters ~left_parameters ~right_parameters constraints
+                if Type.equal variable_annotation keywords_annotation then
+                  solve_less_or_equal
+                    order
+                    ~constraints
+                    ~left:named_annotation
+                    ~right:keywords_annotation
+                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
                 else
                   []
             | left :: left_parameters, [] ->

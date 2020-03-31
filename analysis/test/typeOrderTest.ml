@@ -3191,6 +3191,25 @@ let test_solve_less_or_equal context =
     ~left:"typing.Callable[[test.T3], test.T3]"
     ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], test.T1][[str], test.T2]] "
     [["test.T2", "str"; "test.T1", "int"]];
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"typing.Callable[[Variable(T_Unconstrained), Keywords(T_Unconstrained)], T_Unconstrained]"
+    ~right:"typing.Callable[[Named(a, int), Named(b, str)], T1]"
+    [["test.T1", "typing.Union[int, str]"]];
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:
+      "typing.Callable[[Variable(typing.Sequence[T_Unconstrained]), \
+       Keywords(typing.Sequence[T_Unconstrained])], T_Unconstrained]"
+    ~right:"typing.Callable[[Named(a, int), Named(b, str)], T1]"
+    [];
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:
+      "typing.Callable[[Variable(typing.Sequence[T_Unconstrained]), \
+       Keywords(typing.Sequence[T_Unconstrained])], T_Unconstrained]"
+    ~right:"typing.Callable[[Named(a, typing.List[int]), Named(b, typing.List[str])], T1]"
+    [["test.T1", "typing.Union[int, str]"]];
 
   (* Callback protocols *)
   let parse_annotation annotation =
