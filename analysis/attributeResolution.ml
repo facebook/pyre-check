@@ -1238,7 +1238,7 @@ module Implementation = struct
       >>| metaclass ~assumptions ~class_metadata_environment ?dependency
     in
     {
-      TypeOrder.class_hierarchy =
+      ConstraintsSet.class_hierarchy =
         {
           instantiate_successors_parameters =
             ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;

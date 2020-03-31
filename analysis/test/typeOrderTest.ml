@@ -61,7 +61,7 @@ let get_typed_dictionary _ = None
 
 let hierarchy class_hierarchy_handler =
   {
-    TypeOrder.instantiate_successors_parameters =
+    ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
     is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
     variables = ClassHierarchy.variables class_hierarchy_handler;
@@ -2843,7 +2843,7 @@ let test_solve_less_or_equal context =
       in
       let order =
         {
-          class_hierarchy;
+          ConstraintsSet.class_hierarchy;
           constructor;
           all_attributes = attributes;
           attribute = attribute_from_attributes attributes;
@@ -3582,7 +3582,7 @@ let test_instantiate_protocol_parameters context =
       in
       let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
-        class_hierarchy = hierarchy handler;
+        ConstraintsSet.class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         all_attributes = attributes;
         attribute = attribute_from_attributes attributes;
@@ -3767,7 +3767,7 @@ let test_mark_escaped_as_escaped context =
     let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
     let handler =
       {
-        class_hierarchy = hierarchy handler;
+        ConstraintsSet.class_hierarchy = hierarchy handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         all_attributes = (fun _ ~assumptions:_ -> None);
         attribute = (fun _ ~assumptions:_ ~name:_ -> None);

@@ -3,32 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Core
-open Assumptions
+type class_hierarchy = ConstraintsSet.class_hierarchy
 
-type class_hierarchy = {
-  instantiate_successors_parameters:
-    source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
-  is_transitive_successor: source:Type.Primitive.t -> target:Type.Primitive.t -> bool;
-  variables: Type.Primitive.t -> Type.Variable.t list option;
-  least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t list;
-}
-
-type order = {
-  class_hierarchy: class_hierarchy;
-  constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
-  all_attributes:
-    Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
-  attribute:
-    Type.t ->
-    assumptions:Assumptions.t ->
-    name:Ast.Identifier.t ->
-    AnnotatedAttribute.instantiated option;
-  is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
-  get_typed_dictionary: Type.t -> Type.t Type.Record.TypedDictionary.record option;
-  metaclass: Type.Primitive.t -> assumptions:Assumptions.t -> Type.t option;
-  assumptions: Assumptions.t;
-}
+type order = ConstraintsSet.order
 
 val solve_less_or_equal
   :  order ->
@@ -66,4 +43,4 @@ val solve_ordered_types_less_or_equal
   left:Type.OrderedTypes.t ->
   right:Type.OrderedTypes.t ->
   constraints:TypeConstraints.t ->
-  TypeConstraints.t sexp_list
+  TypeConstraints.t list
