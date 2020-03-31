@@ -108,6 +108,9 @@ def main(argv: List[str]) -> int:
             except Exception as error:
                 client_exception_message = str(error)
                 exit_code = ExitCode.FAILURE
+            except KeyboardInterrupt:
+                LOG.warning("Interrupted by user")
+                exit_code = ExitCode.SUCCESS
         else:
             client_exception_message = str(error)
             exit_code = ExitCode.BUCK_ERROR
@@ -119,6 +122,9 @@ def main(argv: List[str]) -> int:
             except Exception as error:
                 client_exception_message = str(error)
                 exit_code = ExitCode.FAILURE
+            except KeyboardInterrupt:
+                LOG.warning("Interrupted by user")
+                exit_code = ExitCode.SUCCESS
         else:
             client_exception_message = str(error)
             exit_code = ExitCode.FAILURE
