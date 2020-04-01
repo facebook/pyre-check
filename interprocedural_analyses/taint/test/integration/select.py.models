@@ -280,7 +280,13 @@
               "start": 21,
               "end": 28
             },
-            "leaves": [ { "kind": "UserControlled" } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "select.view_entry_field",
+                "on_all_flows": true
+              }
+            ],
             "features": [
               { "always-has": "first-field" },
               { "always-first-field": "payload" }
@@ -474,7 +480,13 @@
               "start": 21,
               "end": 28
             },
-            "leaves": [ { "kind": "UserControlled" } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "select.view_entry_index",
+                "on_all_flows": true
+              }
+            ],
             "features": [
               { "always-has": "first-index" },
               { "always-has": "first-field" },

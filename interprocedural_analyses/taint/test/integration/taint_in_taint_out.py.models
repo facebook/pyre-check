@@ -200,7 +200,13 @@
               "start": 14,
               "end": 15
             },
-            "leaves": [ { "kind": "Test" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "taint_in_taint_out.adds_tito",
+                "on_all_flows": true
+              }
+            ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "string_concat_lhs" },
@@ -245,7 +251,13 @@
               "start": 24,
               "end": 25
             },
-            "leaves": [ { "kind": "Test" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "taint_in_taint_out.adds_tito_inherited",
+                "on_all_flows": true
+              }
+            ],
             "features": [
               { "always-type": "scalar" },
               { "always-via": "string_concat_lhs" },

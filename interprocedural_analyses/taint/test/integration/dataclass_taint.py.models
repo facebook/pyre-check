@@ -90,7 +90,13 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "UserControlled" } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "dataclass_taint.WeirdDataClass.__init__",
+                "on_all_flows": true
+              }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -234,7 +240,13 @@
               "start": 23,
               "end": 26
             },
-            "leaves": [ { "kind": "UserControlled" } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "dataclass_taint.WeirdDataClass.__init__",
+                "on_all_flows": true
+              }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]
@@ -416,7 +428,13 @@
               "port": "result[bad]",
               "length": 1
             },
-            "leaves": [ { "kind": "UserControlled" } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "dataclass_taint.WeirdDataClass.__init__",
+                "on_all_flows": true
+              }
+            ],
             "features": [ { "always-type": "scalar" } ]
           }
         ]

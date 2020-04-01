@@ -282,7 +282,14 @@
               "start": -1,
               "end": -1
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name":
+                  "properties.TaintedGetterAndSetter.my_property$setter",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }
@@ -828,7 +835,14 @@
               "start": 20,
               "end": 24
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name":
+                  "properties.TaintedGetterAndSetter.my_property$setter",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }

@@ -1049,7 +1049,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let prime =
           let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
           ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
-          |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
+          |> ForwardState.Tree.apply_call
+               location
+               ~callees:[Interprocedural.Callable.create FunctionContext.definition]
+               ~port:parameter_root
         in
         let default_value_taint, state =
           match value with
