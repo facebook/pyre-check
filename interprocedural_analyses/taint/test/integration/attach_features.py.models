@@ -135,6 +135,45 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attach_features.modeled_sink_with_optionals",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 46,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attach_features.sink_is_propagated",
     "sources": [],
     "sinks": [

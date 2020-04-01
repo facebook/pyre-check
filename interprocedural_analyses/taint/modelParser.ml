@@ -822,7 +822,6 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
-      let normalized_model_parameters = AccessPath.Root.normalize_parameters parameters in
       (* Check model matches callables primary signature. *)
       let callable_annotation =
         callable_annotation
@@ -830,6 +829,51 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         |> function
         | Type.Callable t -> Some t
         | _ -> None
+      in
+      let normalized_model_parameters =
+        let parameters = AccessPath.Root.normalize_parameters parameters in
+        (* If there were optional parameters omitted from the model, the positioning will be off in
+           the access path conversion. Let's fix the positions after the fact to make sure that our
+           models aren't off. *)
+        let callable_parameter_names_to_positions =
+          match callable_annotation with
+          | Some
+              {
+                Type.Callable.implementation =
+                  { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+                _;
+              } ->
+              let name = function
+                | Type.Callable.Parameter.Named { name; _ }
+                | Type.Callable.Parameter.KeywordOnly { name; _ } ->
+                    Some name
+                | _ -> None
+              in
+              let add_parameter_to_position position map parameter =
+                match name parameter with
+                | Some name -> Map.set map ~key:(Identifier.sanitized name) ~data:position
+                | None -> map
+              in
+              List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty
+          | _ -> String.Map.empty
+        in
+        let adjust_position (root, name, parameter) =
+          let root =
+            match root with
+            | AccessPath.Root.PositionalParameter { position; name } ->
+                AccessPath.Root.PositionalParameter
+                  {
+                    position =
+                      Map.find callable_parameter_names_to_positions name
+                      |> Option.value ~default:position;
+                    name;
+                  }
+            | _ -> root
+          in
+
+          root, name, parameter
+        in
+        List.map parameters ~f:adjust_position
       in
       let () =
         ModelVerifier.verify_signature ~normalized_model_parameters ~name callable_annotation

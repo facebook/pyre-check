@@ -40,3 +40,7 @@ def attach_without_tito(arg):
 
 def no_tito(arg):
     return attach_without_tito(arg)
+
+
+def modeled_sink_with_optionals(a: int = 0, b: int = 1) -> None:
+    __test_sink(b)
