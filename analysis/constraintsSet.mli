@@ -31,13 +31,12 @@ type order = {
 
 val resolve_callable_protocol : assumption:Type.t -> order:order -> Type.t -> Type.t option
 
+type t = TypeConstraints.t list
+
+val empty : t
+
 module type OrderedConstraintsSetType = sig
-  val solve_less_or_equal
-    :  order ->
-    constraints:TypeConstraints.t ->
-    left:Type.t ->
-    right:Type.t ->
-    TypeConstraints.t list
+  val add : t -> order:order -> left:Type.t -> right:Type.t -> t
 
   val instantiate_protocol_parameters
     :  order ->

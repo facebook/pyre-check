@@ -33,9 +33,9 @@ module OrderImplementation = struct
     type t = order
 
     let rec always_less_or_equal order ~left ~right =
-      OrderedConstraintsSet.solve_less_or_equal
-        order
-        ~constraints:TypeConstraints.empty
+      OrderedConstraintsSet.add
+        ConstraintsSet.empty
+        ~order
         ~left:(Type.Variable.mark_all_variables_as_bound left)
         ~right:(Type.Variable.mark_all_variables_as_bound right)
       |> List.is_empty
@@ -523,7 +523,7 @@ module rec Constraints : OrderedConstraintsType = TypeConstraints.OrderedConstra
 and Set : ConstraintsSet.OrderedConstraintsSetType = ConstraintsSet.Make (Constraints)
 and Implementation : FullOrderType = OrderImplementation.Make (Set)
 
-let solve_less_or_equal = Set.solve_less_or_equal
+let solve_less_or_equal order ~constraints = Set.add [constraints] ~order
 
 let instantiate_protocol_parameters = Set.instantiate_protocol_parameters
 
