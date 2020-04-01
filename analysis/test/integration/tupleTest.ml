@@ -400,7 +400,76 @@ let test_tuple_literal_access context =
   ()
 
 
+let test_custom_tuple context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      class C:
+        def __getitem__(self, index: int) -> int:
+          self.counter += 1
+          return self.counter
+
+        def __init__(self) -> None:
+          self.counter = 0
+
+      def foo() -> None:
+        x, y, z = C()
+        reveal_type(x)
+        reveal_type(y)
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Revealed type [-1]: Revealed type for `z` is `int`.";
+    ];
+  (* We allow specifying Any for custom getitems. *)
+  assert_type_errors
+    {|
+      from typing import Any
+      class C:
+        def __getitem__(self, index: int) -> Any:
+          self.counter += 1
+          return self.counter
+
+        def __init__(self) -> None:
+          self.counter = 0
+
+      def foo() -> None:
+        x, y, z = C()
+        reveal_type(x)
+        reveal_type(y)
+        reveal_type(z)
+    |}
+    [
+      "Missing return annotation [3]: Returning `int` but type `Any` is specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `z` is `typing.Any`.";
+    ];
+
+  (* We still error when your class doesn't have getitem. *)
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x, y, z = object()
+        reveal_type(x)
+        reveal_type(y)
+        reveal_type(z)
+    |}
+    [
+      "Unable to unpack [23]: Unable to unpack `object` into 3 values.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+    ]
+
+
 let () =
   "tuple"
-  >::: ["check_tuple" >:: test_check_tuple; "literal_access" >:: test_tuple_literal_access]
+  >::: [
+         "check_tuple" >:: test_check_tuple;
+         "literal_access" >:: test_tuple_literal_access;
+         "custom_tuple" >:: test_custom_tuple;
+       ]
   |> Test.run

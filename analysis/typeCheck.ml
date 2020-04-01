@@ -3460,12 +3460,51 @@ module State (Context : Context) = struct
                     | Some [element_type] -> element_type
                     | _ -> Type.Any )
               in
-              let nonuniform_sequence_parameters annotation =
+              let nonuniform_sequence_parameters expected_size annotation =
                 match annotation with
                 | Type.Tuple (Type.Bounded (Concrete parameters)) -> Some parameters
                 | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
                     NamedTuple.field_annotations ~global_resolution annotation
-                | _ -> None
+                | annotation -> (
+                    (* Simulate __getitem__ in the fallback. *)
+                    let synthetic = "$getitem_host" in
+                    let resolution =
+                      Resolution.set_local
+                        resolution
+                        ~reference:(Reference.create synthetic)
+                        ~annotation:(Annotation.create annotation)
+                    in
+                    let getitem_type =
+                      let callee =
+                        let base =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier synthetic))
+                        in
+                        Node.create_with_default_location
+                          (Expression.Name
+                             (Name.Attribute { base; attribute = "__getitem__"; special = true }))
+                      in
+
+                      Resolution.resolve_expression_to_type
+                        resolution
+                        (Node.create_with_default_location
+                           (Expression.Call
+                              {
+                                callee;
+                                arguments =
+                                  [
+                                    {
+                                      Call.Argument.value =
+                                        Node.create_with_default_location (Expression.Integer 0);
+                                      name = None;
+                                    };
+                                  ];
+                              }))
+                    in
+                    match getitem_type with
+                    | Type.Top -> None
+                    | getitem_annotation ->
+                        Some (List.init ~f:(fun _ -> getitem_annotation) expected_size) )
               in
               match target_value with
               | Expression.Name name ->
@@ -4165,7 +4204,7 @@ module State (Context : Context) = struct
                     | Type.Any -> errors, List.map assignees ~f:(fun _ -> Type.Any)
                     | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Top)
                     | _ -> (
-                        match nonuniform_sequence_parameters guide with
+                        match nonuniform_sequence_parameters (List.length assignees) guide with
                         | None ->
                             let errors =
                               emit_error
