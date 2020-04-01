@@ -7,13 +7,6 @@ type class_hierarchy = ConstraintsSet.class_hierarchy
 
 type order = ConstraintsSet.order
 
-val solve_less_or_equal
-  :  order ->
-  constraints:TypeConstraints.t ->
-  left:Type.t ->
-  right:Type.t ->
-  TypeConstraints.t list
-
 val always_less_or_equal : order -> left:Type.t -> right:Type.t -> bool
 
 val is_compatible_with : order -> left:Type.t -> right:Type.t -> bool
@@ -31,6 +24,8 @@ val widen
   Type.t
 
 module OrderedConstraints : TypeConstraints.OrderedConstraintsType with type order = order
+
+module OrderedConstraintsSet : ConstraintsSet.OrderedConstraintsSetType
 
 val instantiate_protocol_parameters
   :  order ->

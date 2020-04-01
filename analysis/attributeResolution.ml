@@ -1779,11 +1779,11 @@ module Implementation = struct
       | { Type.Callable.parameters = Defined (Named { annotation; _ } :: _); _ }, _ -> (
           let solution =
             try
-              TypeOrder.solve_less_or_equal
-                order
+              TypeOrder.OrderedConstraintsSet.add
+                ConstraintsSet.empty
+                ~order
                 ~left:self_type
                 ~right:annotation
-                ~constraints:TypeConstraints.empty
               |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
               |> List.hd
               |> Option.value ~default:TypeConstraints.Solution.empty
@@ -2528,11 +2528,7 @@ module Implementation = struct
           TypeConstraints.Solution.empty
       | _ ->
           let order = full_order ?dependency class_metadata_environment ~assumptions in
-          TypeOrder.solve_less_or_equal
-            order
-            ~constraints:TypeConstraints.empty
-            ~left:instantiated
-            ~right
+          TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left:instantiated ~right
           |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
           |> List.hd
           (* TODO(T39598018): error in this case somehow, something must be wrong *)
@@ -2831,9 +2827,9 @@ module Implementation = struct
                   } -> (
                   let order = full_order ?dependency class_metadata_environment ~assumptions in
                   let decorated_annotation =
-                    TypeOrder.solve_less_or_equal
-                      order
-                      ~constraints:TypeConstraints.empty
+                    TypeOrder.OrderedConstraintsSet.add
+                      ConstraintsSet.empty
+                      ~order
                       ~left:(Type.Callable.create ~parameters ~annotation ())
                       ~right:parameter_annotation
                     |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
@@ -3247,12 +3243,11 @@ module Implementation = struct
                 { reasons with annotation = mismatch :: annotation }
               in
               match
-                List.concat_map constraints_set ~f:(fun constraints ->
-                    TypeOrder.solve_less_or_equal
-                      order
-                      ~constraints
-                      ~left:argument_annotation
-                      ~right:parameter_annotation)
+                TypeOrder.OrderedConstraintsSet.add
+                  constraints_set
+                  ~order
+                  ~left:argument_annotation
+                  ~right:parameter_annotation
               with
               | [] -> { signature_match with constraints_set; reasons = reasons_with_mismatch }
               | updated_constraints_set ->
@@ -3298,9 +3293,9 @@ module Implementation = struct
                       if Type.is_unbound resolved then
                         []
                       else
-                        TypeOrder.solve_less_or_equal
-                          order
-                          ~constraints:TypeConstraints.empty
+                        TypeOrder.OrderedConstraintsSet.add
+                          ConstraintsSet.empty
+                          ~order
                           ~left:resolved
                           ~right:solve_against
                     in
@@ -3408,8 +3403,11 @@ module Implementation = struct
           when String.equal (Reference.show name) "dict.__init__"
                && has_matched_keyword_parameter parameters ->
             let updated_constraints =
-              List.concat_map constraints_set ~f:(fun constraints ->
-                  TypeOrder.solve_less_or_equal order ~constraints ~left:Type.string ~right:key_type)
+              TypeOrder.OrderedConstraintsSet.add
+                constraints_set
+                ~order
+                ~left:Type.string
+                ~right:key_type
             in
             if List.is_empty updated_constraints then (* TODO(T41074174): Error here *)
               signature_match
@@ -3458,9 +3456,9 @@ module Implementation = struct
                     Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
                   in
                   let updated_constraints =
-                    TypeOrder.solve_less_or_equal
-                      order
-                      ~constraints:remaining_constraints
+                    TypeOrder.OrderedConstraintsSet.add
+                      [remaining_constraints]
+                      ~order
                       ~left:resolved
                       ~right:annotation
                   in
@@ -3752,7 +3750,7 @@ module Implementation = struct
     =
     let order = full_order ?dependency class_metadata_environment ~assumptions in
     not
-      ( TypeOrder.solve_less_or_equal order ~left ~right ~constraints:TypeConstraints.empty
+      ( TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left ~right
       |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
       |> List.is_empty )
 

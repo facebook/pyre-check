@@ -492,7 +492,9 @@ let variables ?default ({ dependency; _ } as resolution) =
     (class_hierarchy_environment resolution)
 
 
-let solve_less_or_equal resolution = full_order resolution |> TypeOrder.solve_less_or_equal
+let solve_less_or_equal resolution ~constraints =
+  TypeOrder.OrderedConstraintsSet.add [constraints] ~order:(full_order resolution)
+
 
 let constraints_solution_exists ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints_solution_exists

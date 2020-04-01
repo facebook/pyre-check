@@ -520,14 +520,15 @@ module OrderImplementation = struct
 end
 
 module rec Constraints : OrderedConstraintsType = TypeConstraints.OrderedConstraints (Implementation)
-and Set : ConstraintsSet.OrderedConstraintsSetType = ConstraintsSet.Make (Constraints)
-and Implementation : FullOrderType = OrderImplementation.Make (Set)
 
-let solve_less_or_equal order ~constraints = Set.add [constraints] ~order
+and OrderedConstraintsSet : ConstraintsSet.OrderedConstraintsSetType =
+  ConstraintsSet.Make (Constraints)
 
-let instantiate_protocol_parameters = Set.instantiate_protocol_parameters
+and Implementation : FullOrderType = OrderImplementation.Make (OrderedConstraintsSet)
 
-let solve_ordered_types_less_or_equal = Set.solve_ordered_types_less_or_equal
+let instantiate_protocol_parameters = OrderedConstraintsSet.instantiate_protocol_parameters
+
+let solve_ordered_types_less_or_equal = OrderedConstraintsSet.solve_ordered_types_less_or_equal
 
 module OrderedConstraints = Constraints
 
