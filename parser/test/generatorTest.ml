@@ -65,6 +65,19 @@ let test_lexer _ =
     ];
   assert_parsed_equal "print a" [+Statement.Expression !"a"];
   assert_parsed_equal
+    "a.print == 1"
+    [
+      +Statement.Expression
+         (+Expression.ComparisonOperator
+             {
+               ComparisonOperator.left =
+                 +Expression.Name
+                    (Name.Attribute { base = !"a"; attribute = "print"; special = false });
+               operator = ComparisonOperator.Equals;
+               right = +Expression.Integer 1;
+             });
+    ];
+  assert_parsed_equal
     "print (a, file=b)"
     [
       +Statement.Expression
