@@ -43,12 +43,14 @@ val partial_solve_constraints
 
 val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool
 
-val solve_less_or_equal
-  :  t ->
-  constraints:TypeConstraints.t ->
-  left:Type.t ->
-  right:Type.t ->
-  TypeConstraints.t list
+module ConstraintsSet : sig
+  val add
+    :  ConstraintsSet.t ->
+    global_resolution:t ->
+    left:Type.t ->
+    right:Type.t ->
+    ConstraintsSet.t
+end
 
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 

@@ -492,9 +492,12 @@ let variables ?default ({ dependency; _ } as resolution) =
     (class_hierarchy_environment resolution)
 
 
-let solve_less_or_equal resolution ~constraints =
-  TypeOrder.OrderedConstraintsSet.add [constraints] ~order:(full_order resolution)
+module ConstraintsSet = struct
+  include ConstraintsSet
 
+  let add constraints ~global_resolution =
+    TypeOrder.OrderedConstraintsSet.add constraints ~order:(full_order global_resolution)
+end
 
 let constraints_solution_exists ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints_solution_exists
@@ -530,9 +533,9 @@ let extract_type_parameters resolution ~source ~target =
         List.map unaries ~f:(fun unary -> Type.Parameter.Single (Type.Variable unary))
         |> Type.parametric target
       in
-      solve_less_or_equal
-        resolution
-        ~constraints:TypeConstraints.empty
+      ConstraintsSet.add
+        ConstraintsSet.empty
+        ~global_resolution:resolution
         ~left:source
         ~right:solve_against
       |> List.hd

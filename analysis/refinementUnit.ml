@@ -84,9 +84,9 @@ let refine ~global_resolution { annotation; mutability } refined =
         | Type.Top -> refined
         | Type.Bottom -> annotation
         | refined ->
-            GlobalResolution.solve_less_or_equal
-              global_resolution
-              ~constraints:TypeConstraints.empty
+            GlobalResolution.ConstraintsSet.add
+              ConstraintsSet.empty
+              ~global_resolution
               ~left:refined
               ~right:original
             |> List.filter_map ~f:(GlobalResolution.solve_constraints global_resolution)
