@@ -1079,6 +1079,11 @@ let test_less_or_equal context =
        order
        ~left:"typing.Callable[[Variable(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(int), Keywords(int)], int]"
+       ~right:"typing.Callable[[Keywords(int)], int]");
 
   (* Callables with keyword arguments. *)
   assert_false

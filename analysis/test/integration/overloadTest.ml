@@ -152,7 +152,22 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
        arguments of overload defined on line `4`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      from typing import overload
+
+      @overload
+      def f( **kwargs:int) -> int:
+          pass
+
+      def f( *args: int, **kwargs: int) -> int:
+          return 1
+    |}
+    [];
+
+  ()
 
 
 let () = "overload" >::: ["check_implementation" >:: test_check_implementation] |> Test.run

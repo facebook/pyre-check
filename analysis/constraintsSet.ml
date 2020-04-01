@@ -191,9 +191,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 ~concretes:right
                 ~variable:(Concatenation left_variable)
                 ~tail:left_parameters
-          | Parameter.Variable _ :: left_parameters, []
-          | Parameter.Keywords _ :: left_parameters, [] ->
-              solve_parameters ~left_parameters ~right_parameters:[] constraints
           | ( Parameter.Variable (Concrete variable_annotation)
               :: Parameter.Keywords keywords_annotation :: _,
               Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->
@@ -206,6 +203,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
               else
                 []
+          | Parameter.Variable _ :: left_parameters, right_parameters
+          | Parameter.Keywords _ :: left_parameters, right_parameters ->
+              solve_parameters ~left_parameters ~right_parameters constraints
           | left :: left_parameters, [] ->
               if Parameter.default left then
                 solve_parameters ~left_parameters ~right_parameters:[] constraints
