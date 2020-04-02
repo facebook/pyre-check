@@ -54,15 +54,18 @@ module Solution : sig
   val show : t -> string
 end
 
-module type OrderedConstraintsSetType = sig
-  val add : t -> order:order -> left:Type.t -> right:Type.t -> t
+type kind =
+  | LessOrEqual of {
+      left: Type.t;
+      right: Type.t;
+    }
+  | OrderedTypesLessOrEqual of {
+      left: Type.OrderedTypes.t;
+      right: Type.OrderedTypes.t;
+    }
 
-  val add_constraint_on_ordered_types
-    :  t ->
-    order:order ->
-    left:Type.OrderedTypes.t ->
-    right:Type.OrderedTypes.t ->
-    t
+module type OrderedConstraintsSetType = sig
+  val add : t -> new_constraint:kind -> order:order -> t
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 

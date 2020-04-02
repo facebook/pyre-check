@@ -1781,9 +1781,8 @@ module Implementation = struct
             try
               TypeOrder.OrderedConstraintsSet.add
                 ConstraintsSet.empty
+                ~new_constraint:(LessOrEqual { left = self_type; right = annotation })
                 ~order
-                ~left:self_type
-                ~right:annotation
               |> TypeOrder.OrderedConstraintsSet.solve ~order
               |> Option.value ~default:ConstraintsSet.Solution.empty
             with
@@ -2527,7 +2526,10 @@ module Implementation = struct
           ConstraintsSet.Solution.empty
       | _ ->
           let order = full_order ?dependency class_metadata_environment ~assumptions in
-          TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left:instantiated ~right
+          TypeOrder.OrderedConstraintsSet.add
+            ConstraintsSet.empty
+            ~new_constraint:(LessOrEqual { left = instantiated; right })
+            ~order
           |> TypeOrder.OrderedConstraintsSet.solve ~order
           (* TODO(T39598018): error in this case somehow, something must be wrong *)
           |> Option.value ~default:ConstraintsSet.Solution.empty
@@ -2827,9 +2829,13 @@ module Implementation = struct
                   let decorated_annotation =
                     TypeOrder.OrderedConstraintsSet.add
                       ConstraintsSet.empty
+                      ~new_constraint:
+                        (LessOrEqual
+                           {
+                             left = Type.Callable.create ~parameters ~annotation ();
+                             right = parameter_annotation;
+                           })
                       ~order
-                      ~left:(Type.Callable.create ~parameters ~annotation ())
-                      ~right:parameter_annotation
                     |> TypeOrder.OrderedConstraintsSet.solve ~order
                     >>| fun solution ->
                     ConstraintsSet.Solution.instantiate solution return_annotation
@@ -3169,11 +3175,10 @@ module Implementation = struct
           in
           let solve concatenated =
             let updated_constraints_set =
-              TypeOrder.OrderedConstraintsSet.add_constraint_on_ordered_types
+              TypeOrder.OrderedConstraintsSet.add
                 signature_match.constraints_set
+                ~new_constraint:(OrderedTypesLessOrEqual { left = concatenated; right = expected })
                 ~order
-                ~left:concatenated
-                ~right:expected
             in
             if ConstraintsSet.potentially_satisfiable updated_constraints_set then
               Ok updated_constraints_set
@@ -3242,9 +3247,9 @@ module Implementation = struct
               let updated_constraints_set =
                 TypeOrder.OrderedConstraintsSet.add
                   constraints_set
+                  ~new_constraint:
+                    (LessOrEqual { left = argument_annotation; right = parameter_annotation })
                   ~order
-                  ~left:argument_annotation
-                  ~right:parameter_annotation
               in
               if ConstraintsSet.potentially_satisfiable updated_constraints_set then
                 { signature_match with constraints_set = updated_constraints_set }
@@ -3293,9 +3298,8 @@ module Implementation = struct
                       else
                         TypeOrder.OrderedConstraintsSet.add
                           ConstraintsSet.empty
+                          ~new_constraint:(LessOrEqual { left = resolved; right = solve_against })
                           ~order
-                          ~left:resolved
-                          ~right:solve_against
                     in
                     match TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order with
                     | None -> signature_with_error
@@ -3400,9 +3404,8 @@ module Implementation = struct
             let updated_constraints =
               TypeOrder.OrderedConstraintsSet.add
                 constraints_set
+                ~new_constraint:(LessOrEqual { left = Type.string; right = key_type })
                 ~order
-                ~left:Type.string
-                ~right:key_type
             in
             if ConstraintsSet.potentially_satisfiable updated_constraints then
               { signature_match with constraints_set = updated_constraints }
@@ -3453,9 +3456,8 @@ module Implementation = struct
                   let updated_constraints =
                     TypeOrder.OrderedConstraintsSet.add
                       [remaining_constraints]
+                      ~new_constraint:(LessOrEqual { left = resolved; right = annotation })
                       ~order
-                      ~left:resolved
-                      ~right:annotation
                   in
                   { signature_match with constraints_set = updated_constraints } )
         in
@@ -3742,7 +3744,10 @@ module Implementation = struct
       ~right
     =
     let order = full_order ?dependency class_metadata_environment ~assumptions in
-    TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left ~right
+    TypeOrder.OrderedConstraintsSet.add
+      ConstraintsSet.empty
+      ~new_constraint:(LessOrEqual { left; right })
+      ~order
     |> TypeOrder.OrderedConstraintsSet.solve ~order
     |> Option.is_some
 

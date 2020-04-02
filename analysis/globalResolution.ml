@@ -495,8 +495,11 @@ let variables ?default ({ dependency; _ } as resolution) =
 module ConstraintsSet = struct
   include ConstraintsSet
 
-  let add constraints ~global_resolution =
-    TypeOrder.OrderedConstraintsSet.add constraints ~order:(full_order global_resolution)
+  let add constraints ~new_constraint ~global_resolution =
+    TypeOrder.OrderedConstraintsSet.add
+      constraints
+      ~new_constraint
+      ~order:(full_order global_resolution)
 
 
   let solve constraints ~global_resolution =
@@ -536,9 +539,8 @@ let extract_type_parameters resolution ~source ~target =
       in
       ConstraintsSet.add
         ConstraintsSet.empty
+        ~new_constraint:(LessOrEqual { left = source; right = solve_against })
         ~global_resolution:resolution
-        ~left:source
-        ~right:solve_against
       |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
       List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)

@@ -352,7 +352,10 @@ let test_add_constraint context =
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
-      ( TypeOrder.OrderedConstraintsSet.add [constraints] ~order:handler ~left ~right
+      ( TypeOrder.OrderedConstraintsSet.add
+          [constraints]
+          ~new_constraint:(LessOrEqual { left; right })
+          ~order:handler
       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler) )
   in
   assert_add
@@ -1133,7 +1136,10 @@ let test_mark_escaped_as_escaped context =
         metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
       }
     in
-    TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order:handler ~left ~right
+    TypeOrder.OrderedConstraintsSet.add
+      ConstraintsSet.empty
+      ~new_constraint:(LessOrEqual { left; right })
+      ~order:handler
     |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler)
   in
   match result with

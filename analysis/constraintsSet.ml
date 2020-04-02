@@ -46,15 +46,18 @@ let impossible = []
 
 let potentially_satisfiable constraints_set = List.is_empty constraints_set |> not
 
-module type OrderedConstraintsSetType = sig
-  val add : t -> order:order -> left:Type.t -> right:Type.t -> t
+type kind =
+  | LessOrEqual of {
+      left: Type.t;
+      right: Type.t;
+    }
+  | OrderedTypesLessOrEqual of {
+      left: Type.OrderedTypes.t;
+      right: Type.OrderedTypes.t;
+    }
 
-  val add_constraint_on_ordered_types
-    :  t ->
-    order:order ->
-    left:Type.OrderedTypes.t ->
-    right:Type.OrderedTypes.t ->
-    t
+module type OrderedConstraintsSetType = sig
+  val add : t -> new_constraint:kind -> order:order -> t
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
@@ -1061,14 +1064,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             | _ -> None ) )
 
 
-  let add existing_constraints ~order ~left ~right =
-    List.concat_map existing_constraints ~f:(fun constraints ->
-        solve_less_or_equal order ~constraints ~left ~right)
-
-
-  let add_constraint_on_ordered_types existing_constraints ~order ~left ~right =
-    List.concat_map existing_constraints ~f:(fun constraints ->
-        solve_ordered_types_less_or_equal order ~constraints ~left ~right)
+  let add existing_constraints ~new_constraint ~order =
+    match new_constraint with
+    | LessOrEqual { left; right } ->
+        List.concat_map existing_constraints ~f:(fun constraints ->
+            solve_less_or_equal order ~constraints ~left ~right)
+    | OrderedTypesLessOrEqual { left; right } ->
+        List.concat_map existing_constraints ~f:(fun constraints ->
+            solve_ordered_types_less_or_equal order ~constraints ~left ~right)
 
 
   let solve ?only_solve_for constraints_set ~order =

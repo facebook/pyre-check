@@ -33,9 +33,8 @@ val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool
 module ConstraintsSet : sig
   val add
     :  ConstraintsSet.t ->
+    new_constraint:ConstraintsSet.kind ->
     global_resolution:t ->
-    left:Type.t ->
-    right:Type.t ->
     ConstraintsSet.t
 
   val solve : ConstraintsSet.t -> global_resolution:t -> ConstraintsSet.Solution.t option

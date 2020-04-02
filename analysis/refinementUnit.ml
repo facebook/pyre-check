@@ -86,9 +86,8 @@ let refine ~global_resolution { annotation; mutability } refined =
         | refined ->
             GlobalResolution.ConstraintsSet.add
               ConstraintsSet.empty
+              ~new_constraint:(LessOrEqual { left = refined; right = original })
               ~global_resolution
-              ~left:refined
-              ~right:original
             |> GlobalResolution.ConstraintsSet.solve ~global_resolution
             >>| (fun solution -> ConstraintsSet.Solution.instantiate solution refined)
             |> Option.value ~default:annotation

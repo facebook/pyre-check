@@ -35,9 +35,13 @@ module OrderImplementation = struct
     let rec always_less_or_equal order ~left ~right =
       OrderedConstraintsSet.add
         ConstraintsSet.empty
+        ~new_constraint:
+          (LessOrEqual
+             {
+               left = Type.Variable.mark_all_variables_as_bound left;
+               right = Type.Variable.mark_all_variables_as_bound right;
+             })
         ~order
-        ~left:(Type.Variable.mark_all_variables_as_bound left)
-        ~right:(Type.Variable.mark_all_variables_as_bound right)
       (* This potential is not just potential in this case, since this will always be accurate when
          there are no free type variables, as in this case *)
       |> ConstraintsSet.potentially_satisfiable
