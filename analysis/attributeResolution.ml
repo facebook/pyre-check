@@ -3432,26 +3432,30 @@ module Implementation = struct
               | None -> signature_match
               | Some parameter_type ->
                   (* Infer the return type by resolving the lambda body with the parameter type *)
-                  let return_type =
-                    resolve_with_locals
-                      ~locals:[Reference.create lambda_parameter, Annotation.create parameter_type]
-                      lambda_body
-                  in
-                  let return_type = Type.weaken_literals return_type in
-                  let parameters =
-                    Type.Callable.Parameter.create
-                      [
-                        {
-                          Type.Callable.Parameter.name = lambda_parameter;
-                          annotation = parameter_type;
-                          default = false;
-                        };
-                      ]
-                  in
-                  let resolved =
-                    Type.Callable.create ~parameters:(Defined parameters) ~annotation:return_type ()
-                  in
                   let updated_constraints =
+                    let resolved =
+                      let return_type =
+                        resolve_with_locals
+                          ~locals:
+                            [Reference.create lambda_parameter, Annotation.create parameter_type]
+                          lambda_body
+                        |> Type.weaken_literals
+                      in
+                      let parameters =
+                        Type.Callable.Parameter.create
+                          [
+                            {
+                              Type.Callable.Parameter.name = lambda_parameter;
+                              annotation = parameter_type;
+                              default = false;
+                            };
+                          ]
+                      in
+                      Type.Callable.create
+                        ~parameters:(Defined parameters)
+                        ~annotation:return_type
+                        ()
+                    in
                     TypeOrder.OrderedConstraintsSet.add
                       constraints_set
                       ~new_constraint:(LessOrEqual { left = resolved; right = annotation })
