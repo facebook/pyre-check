@@ -32,6 +32,12 @@ type order = {
   assumptions: Assumptions.t;
 }
 
+module Solution = struct
+  (* For now we're just arbitrarily picking the first solution, but we want to allow us the
+     opportunity to augment that behavior in the future *)
+  include TypeConstraints.Solution
+end
+
 type t = TypeConstraints.t list
 
 let empty = [TypeConstraints.empty]
@@ -45,6 +51,8 @@ module type OrderedConstraintsSetType = sig
     left:Type.OrderedTypes.t ->
     right:Type.OrderedTypes.t ->
     t
+
+  val solve : t -> order:order -> Solution.t option
 
   val instantiate_protocol_parameters
     :  order ->
@@ -1057,4 +1065,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   let add_constraint_on_ordered_types existing_constraints ~order ~left ~right =
     List.concat_map existing_constraints ~f:(fun constraints ->
         solve_ordered_types_less_or_equal order ~constraints ~left ~right)
+
+
+  let solve constraints_set ~order =
+    List.find_map constraints_set ~f:(OrderedConstraints.solve ~order)
 end

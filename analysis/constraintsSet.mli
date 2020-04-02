@@ -35,6 +35,16 @@ type t = TypeConstraints.t list
 
 val empty : t
 
+module Solution : sig
+  type t
+
+  val empty : t
+
+  val instantiate : t -> Type.t -> Type.t
+
+  val instantiate_single_variable : t -> Type.Variable.Unary.t -> Type.t option
+end
+
 module type OrderedConstraintsSetType = sig
   val add : t -> order:order -> left:Type.t -> right:Type.t -> t
 
@@ -44,6 +54,8 @@ module type OrderedConstraintsSetType = sig
     left:Type.OrderedTypes.t ->
     right:Type.OrderedTypes.t ->
     t
+
+  val solve : t -> order:order -> Solution.t option
 
   (* Only exposed for testing *)
   val instantiate_protocol_parameters
