@@ -3172,12 +3172,11 @@ module Implementation = struct
           in
           let solve concatenated =
             match
-              List.concat_map signature_match.constraints_set ~f:(fun constraints ->
-                  TypeOrder.solve_ordered_types_less_or_equal
-                    order
-                    ~left:concatenated
-                    ~right:expected
-                    ~constraints)
+              TypeOrder.OrderedConstraintsSet.add_constraint_on_ordered_types
+                signature_match.constraints_set
+                ~order
+                ~left:concatenated
+                ~right:expected
             with
             | [] ->
                 Error

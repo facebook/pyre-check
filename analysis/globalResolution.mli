@@ -24,13 +24,6 @@ val define_body : t -> Reference.t -> Define.t Node.t option
 
 val function_definition : t -> Reference.t -> FunctionDefinition.t option
 
-val solve_ordered_types_less_or_equal
-  :  t ->
-  left:Type.OrderedTypes.t ->
-  right:Type.OrderedTypes.t ->
-  constraints:TypeConstraints.t ->
-  TypeConstraints.t list
-
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
 val solve_constraints : t -> TypeConstraints.t -> TypeConstraints.Solution.t option

@@ -511,10 +511,6 @@ let partial_solve_constraints resolution =
 
 let solve_constraints resolution = TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
 
-let solve_ordered_types_less_or_equal resolution =
-  full_order resolution |> TypeOrder.solve_ordered_types_less_or_equal
-
-
 let extract_type_parameters resolution ~source ~target =
   match source with
   | Type.Top

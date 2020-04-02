@@ -32,10 +32,3 @@ val instantiate_protocol_parameters
   candidate:Type.t ->
   protocol:Ast.Identifier.t ->
   Type.Parameter.t list option
-
-val solve_ordered_types_less_or_equal
-  :  order ->
-  left:Type.OrderedTypes.t ->
-  right:Type.OrderedTypes.t ->
-  constraints:TypeConstraints.t ->
-  TypeConstraints.t list

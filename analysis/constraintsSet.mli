@@ -38,18 +38,19 @@ val empty : t
 module type OrderedConstraintsSetType = sig
   val add : t -> order:order -> left:Type.t -> right:Type.t -> t
 
+  val add_constraint_on_ordered_types
+    :  t ->
+    order:order ->
+    left:Type.OrderedTypes.t ->
+    right:Type.OrderedTypes.t ->
+    t
+
+  (* Only exposed for testing *)
   val instantiate_protocol_parameters
     :  order ->
     candidate:Type.t ->
     protocol:Ast.Identifier.t ->
     Type.Parameter.t list option
-
-  val solve_ordered_types_less_or_equal
-    :  order ->
-    left:Type.OrderedTypes.t ->
-    right:Type.OrderedTypes.t ->
-    constraints:TypeConstraints.t ->
-    TypeConstraints.t list
 end
 
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order

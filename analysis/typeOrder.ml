@@ -528,8 +528,6 @@ and Implementation : FullOrderType = OrderImplementation.Make (OrderedConstraint
 
 let instantiate_protocol_parameters = OrderedConstraintsSet.instantiate_protocol_parameters
 
-let solve_ordered_types_less_or_equal = OrderedConstraintsSet.solve_ordered_types_less_or_equal
-
 module OrderedConstraints = Constraints
 
 module IncludableImplementation : FullOrderTypeWithoutT = Implementation
