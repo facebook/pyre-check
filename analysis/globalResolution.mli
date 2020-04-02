@@ -28,12 +28,6 @@ val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
 val solve_constraints : t -> TypeConstraints.t -> TypeConstraints.Solution.t option
 
-val partial_solve_constraints
-  :  t ->
-  TypeConstraints.t ->
-  variables:Type.Variable.t list ->
-  (TypeConstraints.t * TypeConstraints.Solution.t) option
-
 val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool
 
 module ConstraintsSet : sig
@@ -43,6 +37,8 @@ module ConstraintsSet : sig
     left:Type.t ->
     right:Type.t ->
     ConstraintsSet.t
+
+  val solve : ConstraintsSet.t -> global_resolution:t -> ConstraintsSet.Solution.t option
 
   module Solution : sig
     type t = ConstraintsSet.Solution.t

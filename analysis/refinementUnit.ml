@@ -89,9 +89,8 @@ let refine ~global_resolution { annotation; mutability } refined =
               ~global_resolution
               ~left:refined
               ~right:original
-            |> List.filter_map ~f:(GlobalResolution.solve_constraints global_resolution)
-            |> List.hd
-            >>| (fun solution -> TypeConstraints.Solution.instantiate solution refined)
+            |> GlobalResolution.ConstraintsSet.solve ~global_resolution
+            >>| (fun solution -> ConstraintsSet.Solution.instantiate solution refined)
             |> Option.value ~default:annotation
       in
       let refine =

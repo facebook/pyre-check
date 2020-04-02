@@ -499,8 +499,12 @@ module ConstraintsSet = struct
     TypeOrder.OrderedConstraintsSet.add constraints ~order:(full_order global_resolution)
 
 
+  let solve constraints ~global_resolution =
+    TypeOrder.OrderedConstraintsSet.solve constraints ~order:(full_order global_resolution)
+
+
   module Solution = struct
-    type t = ConstraintsSet.Solution.t
+    include ConstraintsSet.Solution
   end
 end
 
@@ -508,10 +512,6 @@ let constraints_solution_exists ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints_solution_exists
     ?dependency
     (attribute_resolution resolution)
-
-
-let partial_solve_constraints resolution =
-  TypeOrder.OrderedConstraints.extract_partial_solution ~order:(full_order resolution)
 
 
 let solve_constraints resolution = TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
@@ -539,11 +539,9 @@ let extract_type_parameters resolution ~source ~target =
         ~global_resolution:resolution
         ~left:source
         ~right:solve_against
-      |> List.hd
-      >>= fun first_constraint ->
-      solve_constraints resolution first_constraint
+      |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
-      List.map unaries ~f:(TypeConstraints.Solution.instantiate_single_variable solution)
+      List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)
       |> Option.all
 
 
