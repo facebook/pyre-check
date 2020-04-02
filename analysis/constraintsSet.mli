@@ -63,6 +63,7 @@ type kind =
       left: Type.OrderedTypes.t;
       right: Type.OrderedTypes.t;
     }
+  | VariableIsExactly of Type.Variable.pair
 
 module type OrderedConstraintsSetType = sig
   val add : t -> new_constraint:kind -> order:order -> t

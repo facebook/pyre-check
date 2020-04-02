@@ -55,6 +55,7 @@ type kind =
       left: Type.OrderedTypes.t;
       right: Type.OrderedTypes.t;
     }
+  | VariableIsExactly of Type.Variable.pair
 
 module type OrderedConstraintsSetType = sig
   val add : t -> new_constraint:kind -> order:order -> t
@@ -1072,6 +1073,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | OrderedTypesLessOrEqual { left; right } ->
         List.concat_map existing_constraints ~f:(fun constraints ->
             solve_ordered_types_less_or_equal order ~constraints ~left ~right)
+    | VariableIsExactly pair ->
+        let add_both_bounds constraints =
+          OrderedConstraints.add_upper_bound constraints ~order ~pair
+          >>= OrderedConstraints.add_lower_bound ~order ~pair
+        in
+        List.filter_map existing_constraints ~f:add_both_bounds
 
 
   let solve ?only_solve_for constraints_set ~order =

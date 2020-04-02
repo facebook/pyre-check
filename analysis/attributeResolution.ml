@@ -3420,19 +3420,17 @@ module Implementation = struct
           | None -> signature_match
           | Some (annotation, parameter_variable, _, lambda_parameter, lambda_body) -> (
               (* Infer the parameter type using existing constraints. *)
-              let solutions =
-                let variables = [Type.Record.Variable.Unary parameter_variable] in
-                List.filter_map
+              let solution =
+                TypeOrder.OrderedConstraintsSet.solve
                   constraints_set
-                  ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+                  ~order
+                  ~only_solve_for:[Type.Record.Variable.Unary parameter_variable]
+                >>= fun solution ->
+                ConstraintsSet.Solution.instantiate_single_variable solution parameter_variable
               in
-              match solutions with
-              | [] -> signature_match
-              | (remaining_constraints, solution) :: _ ->
-                  let parameter_type =
-                    TypeConstraints.Solution.instantiate_single_variable solution parameter_variable
-                    |> Option.value ~default:Type.Top
-                  in
+              match solution with
+              | None -> signature_match
+              | Some parameter_type ->
                   (* Infer the return type by resolving the lambda body with the parameter type *)
                   let return_type =
                     resolve_with_locals
@@ -3455,9 +3453,14 @@ module Implementation = struct
                   in
                   let updated_constraints =
                     TypeOrder.OrderedConstraintsSet.add
-                      [remaining_constraints]
+                      constraints_set
                       ~new_constraint:(LessOrEqual { left = resolved; right = annotation })
                       ~order
+                    (* Once we've used this solution, we have to commit to it *)
+                    |> TypeOrder.OrderedConstraintsSet.add
+                         ~new_constraint:
+                           (VariableIsExactly (UnaryPair (parameter_variable, parameter_type)))
+                         ~order
                   in
                   { signature_match with constraints_set = updated_constraints } )
         in
