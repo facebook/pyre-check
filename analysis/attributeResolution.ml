@@ -3626,30 +3626,31 @@ module Implementation = struct
               ~all_parameters
             |> check_annotations
           in
-          let solve_back (solution_remainder, solution) =
-            TypeConstraints.Solution.instantiate_single_parameter_variadic solution variable
-            >>| (fun parameters ->
-                  check_arity_and_annotations { implementation with parameters } ~arguments:back)
-            >>| List.map
-                  ~f:(fun { reasons = { arity = tail_arity; annotation = tail_annotation }; _ } ->
-                    {
-                      base_signature_match with
-                      (* tail can't bind any more constraints *)
-                      constraints_set = [solution_remainder];
-                      reasons =
-                        {
-                          arity = head_arity @ tail_arity;
-                          annotation = head_annotation @ tail_annotation;
-                        };
-                    })
-            |> Option.value ~default:[]
+          let solve_back parameters =
+            let constraints_set =
+              (* If we use this option, we have to commit to it as to not move away from it later *)
+              TypeOrder.OrderedConstraintsSet.add
+                constraints_set
+                ~new_constraint:(VariableIsExactly (ParameterVariadicPair (variable, parameters)))
+                ~order
+            in
+            check_arity_and_annotations { implementation with parameters } ~arguments:back
+            |> List.map
+                 ~f:(fun { reasons = { arity = tail_arity; annotation = tail_annotation }; _ } ->
+                   {
+                     base_signature_match with
+                     constraints_set;
+                     reasons =
+                       {
+                         arity = head_arity @ tail_arity;
+                         annotation = head_annotation @ tail_annotation;
+                       };
+                   })
           in
-          List.filter_map
+          TypeOrder.OrderedConstraintsSet.get_parameter_specification_possibilities
             constraints_set
-            ~f:
-              (TypeOrder.OrderedConstraints.extract_partial_solution
-                 ~order
-                 ~variables:[Type.Variable.ParameterVariadic variable])
+            ~parameter_specification:variable
+            ~order
           |> List.concat_map ~f:solve_back
           |> function
           | [] -> [head_signature]

@@ -70,6 +70,12 @@ module type OrderedConstraintsSetType = sig
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
+  val get_parameter_specification_possibilities
+    :  t ->
+    order:order ->
+    parameter_specification:Type.Variable.Variadic.Parameters.t ->
+    Type.Callable.parameters list
+
   (* Only exposed for testing *)
   val instantiate_protocol_parameters
     :  order ->

@@ -62,6 +62,12 @@ module type OrderedConstraintsSetType = sig
 
   val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
+  val get_parameter_specification_possibilities
+    :  t ->
+    order:order ->
+    parameter_specification:Type.Variable.Variadic.Parameters.t ->
+    Type.Callable.parameters list
+
   val instantiate_protocol_parameters
     :  order ->
     candidate:Type.t ->
@@ -1089,4 +1095,18 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         List.find_map constraints_set ~f:partial_solve
     | None -> List.find_map constraints_set ~f:(OrderedConstraints.solve ~order)
+
+
+  let get_parameter_specification_possibilities constraints_set ~order ~parameter_specification =
+    List.filter_map
+      constraints_set
+      ~f:
+        (OrderedConstraints.extract_partial_solution
+           ~order
+           ~variables:[Type.Variable.ParameterVariadic parameter_specification])
+    |> List.map ~f:snd
+    |> List.filter_map ~f:(fun solution ->
+           TypeConstraints.Solution.instantiate_single_parameter_variadic
+             solution
+             parameter_specification)
 end
