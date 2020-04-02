@@ -1492,9 +1492,9 @@ let test_constraints context =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))
     in
     assert_equal
-      ~printer:TypeConstraints.Solution.show
-      ~cmp:TypeConstraints.Solution.equal
-      (TypeConstraints.Solution.create expected)
+      ~printer:ConstraintsSet.Solution.show
+      ~cmp:ConstraintsSet.Solution.equal
+      (ConstraintsSet.Solution.create expected)
       constraints
   in
   let int_and_foo_string_union =

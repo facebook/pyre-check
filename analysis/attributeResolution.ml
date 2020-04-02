@@ -1055,7 +1055,7 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       instantiated:Type.t ->
       unit ->
-      TypeConstraints.Solution.t;
+      ConstraintsSet.Solution.t;
     resolve_literal:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -1784,14 +1784,13 @@ module Implementation = struct
                 ~order
                 ~left:self_type
                 ~right:annotation
-              |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-              |> List.hd
-              |> Option.value ~default:TypeConstraints.Solution.empty
+              |> TypeOrder.OrderedConstraintsSet.solve ~order
+              |> Option.value ~default:ConstraintsSet.Solution.empty
             with
-            | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
+            | ClassHierarchy.Untracked _ -> ConstraintsSet.Solution.empty
           in
           let instantiated =
-            TypeConstraints.Solution.instantiate
+            ConstraintsSet.Solution.instantiate
               solution
               (Type.Callable { kind = Anonymous; implementation; overloads })
           in
@@ -2208,7 +2207,7 @@ module Implementation = struct
               ~assumptions
               ()
           in
-          let instantiate annotation = TypeConstraints.Solution.instantiate solution annotation in
+          let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
           instantiate annotation, instantiate original
       | None -> annotation, original
     in
@@ -2517,7 +2516,7 @@ module Implementation = struct
       | Some parameters -> parameters
     in
     if List.is_empty parameters then
-      TypeConstraints.Solution.empty
+      ConstraintsSet.Solution.empty
     else
       let right = Type.parametric target parameters in
       match instantiated, right with
@@ -2525,14 +2524,13 @@ module Implementation = struct
         ->
           (* TODO(T42259381) This special case is only necessary because constructor calls
              attributes with an "instantiated" type of a bare parametric, which will fill with Anys *)
-          TypeConstraints.Solution.empty
+          ConstraintsSet.Solution.empty
       | _ ->
           let order = full_order ?dependency class_metadata_environment ~assumptions in
           TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left:instantiated ~right
-          |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-          |> List.hd
+          |> TypeOrder.OrderedConstraintsSet.solve ~order
           (* TODO(T39598018): error in this case somehow, something must be wrong *)
-          |> Option.value ~default:TypeConstraints.Solution.empty
+          |> Option.value ~default:ConstraintsSet.Solution.empty
 
 
   (* In general, python expressions can be self-referential. This resolution only checks literals
@@ -2832,10 +2830,9 @@ module Implementation = struct
                       ~order
                       ~left:(Type.Callable.create ~parameters ~annotation ())
                       ~right:parameter_annotation
-                    |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-                    |> List.hd
+                    |> TypeOrder.OrderedConstraintsSet.solve ~order
                     >>| fun solution ->
-                    TypeConstraints.Solution.instantiate solution return_annotation
+                    ConstraintsSet.Solution.instantiate solution return_annotation
                     (* If we failed, just default to the old annotation. *)
                   in
                   let decorated_annotation =
@@ -3298,17 +3295,14 @@ module Implementation = struct
                           ~left:resolved
                           ~right:solve_against
                     in
-                    match iterable_constraints with
-                    | [] -> signature_with_error
-                    | iterable_constraint :: _ ->
-                        TypeOrder.OrderedConstraints.solve ~order iterable_constraint
-                        >>| (fun solution ->
-                              TypeConstraints.Solution.instantiate_single_variable
-                                solution
-                                synthetic_variable
-                              |> Option.value ~default:Type.Any)
-                        >>| set_constraints_and_reasons
-                        |> Option.value ~default:signature_with_error
+                    match TypeOrder.OrderedConstraintsSet.solve iterable_constraints ~order with
+                    | None -> signature_with_error
+                    | Some solution ->
+                        ConstraintsSet.Solution.instantiate_single_variable
+                          solution
+                          synthetic_variable
+                        |> Option.value ~default:Type.Any
+                        |> set_constraints_and_reasons
                   in
                   match kind with
                   | DoubleStar ->
@@ -3748,10 +3742,9 @@ module Implementation = struct
       ~right
     =
     let order = full_order ?dependency class_metadata_environment ~assumptions in
-    not
-      ( TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left ~right
-      |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-      |> List.is_empty )
+    TypeOrder.OrderedConstraintsSet.add ConstraintsSet.empty ~order ~left ~right
+    |> TypeOrder.OrderedConstraintsSet.solve ~order
+    |> Option.is_some
 
 
   let constructor

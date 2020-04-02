@@ -36,13 +36,18 @@ type t = TypeConstraints.t list
 val empty : t
 
 module Solution : sig
-  type t
+  type t [@@deriving eq]
 
   val empty : t
 
   val instantiate : t -> Type.t -> Type.t
 
   val instantiate_single_variable : t -> Type.Variable.Unary.t -> Type.t option
+
+  (* For testing *)
+  val create : Type.Variable.pair list -> t
+
+  val show : t -> string
 end
 
 module type OrderedConstraintsSetType = sig

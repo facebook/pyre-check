@@ -43,6 +43,10 @@ module ConstraintsSet : sig
     left:Type.t ->
     right:Type.t ->
     ConstraintsSet.t
+
+  module Solution : sig
+    type t = ConstraintsSet.Solution.t
+  end
 end
 
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
@@ -214,7 +218,7 @@ val constraints
   ?parameters:Type.Parameter.t list ->
   instantiated:Type.t ->
   unit ->
-  TypeConstraints.Solution.t
+  ConstraintsSet.Solution.t
 
 val signature_select
   :  global_resolution:t ->

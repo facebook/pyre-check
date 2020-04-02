@@ -497,6 +497,11 @@ module ConstraintsSet = struct
 
   let add constraints ~global_resolution =
     TypeOrder.OrderedConstraintsSet.add constraints ~order:(full_order global_resolution)
+
+
+  module Solution = struct
+    type t = ConstraintsSet.Solution.t
+  end
 end
 
 let constraints_solution_exists ({ dependency; _ } as resolution) =

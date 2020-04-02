@@ -206,7 +206,7 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     instantiated:Type.t ->
     unit ->
-    TypeConstraints.Solution.t
+    ConstraintsSet.Solution.t
 
   val resolve_literal
     :  t ->
