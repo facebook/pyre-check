@@ -42,6 +42,10 @@ type t = TypeConstraints.t list
 
 let empty = [TypeConstraints.empty]
 
+let impossible = []
+
+let potentially_satisfiable constraints_set = List.is_empty constraints_set |> not
+
 module type OrderedConstraintsSetType = sig
   val add : t -> order:order -> left:Type.t -> right:Type.t -> t
 

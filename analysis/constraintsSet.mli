@@ -35,6 +35,10 @@ type t = TypeConstraints.t list
 
 val empty : t
 
+val impossible : t
+
+val potentially_satisfiable : t -> bool
+
 module Solution : sig
   type t [@@deriving eq]
 

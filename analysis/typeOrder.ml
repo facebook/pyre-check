@@ -38,8 +38,9 @@ module OrderImplementation = struct
         ~order
         ~left:(Type.Variable.mark_all_variables_as_bound left)
         ~right:(Type.Variable.mark_all_variables_as_bound right)
-      |> List.is_empty
-      |> not
+      (* This potential is not just potential in this case, since this will always be accurate when
+         there are no free type variables, as in this case *)
+      |> ConstraintsSet.potentially_satisfiable
 
 
     and join_implementations ~parameter_join ~return_join order left right =

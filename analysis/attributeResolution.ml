@@ -3168,18 +3168,19 @@ module Implementation = struct
                      { variable = expected; mismatch = CantConcatenate extracted })
           in
           let solve concatenated =
-            match
+            let updated_constraints_set =
               TypeOrder.OrderedConstraintsSet.add_constraint_on_ordered_types
                 signature_match.constraints_set
                 ~order
                 ~left:concatenated
                 ~right:expected
-            with
-            | [] ->
-                Error
-                  (MismatchWithListVariadicTypeVariable
-                     { variable = expected; mismatch = ConstraintFailure concatenated })
-            | updated_constraints_set -> Ok updated_constraints_set
+            in
+            if ConstraintsSet.potentially_satisfiable updated_constraints_set then
+              Ok updated_constraints_set
+            else
+              Error
+                (MismatchWithListVariadicTypeVariable
+                   { variable = expected; mismatch = ConstraintFailure concatenated })
           in
           let make_signature_match = function
             | Ok constraints_set -> { signature_match with constraints_set }
@@ -3238,16 +3239,17 @@ module Implementation = struct
                 in
                 { reasons with annotation = mismatch :: annotation }
               in
-              match
+              let updated_constraints_set =
                 TypeOrder.OrderedConstraintsSet.add
                   constraints_set
                   ~order
                   ~left:argument_annotation
                   ~right:parameter_annotation
-              with
-              | [] -> { signature_match with constraints_set; reasons = reasons_with_mismatch }
-              | updated_constraints_set ->
-                  { signature_match with constraints_set = updated_constraints_set }
+              in
+              if ConstraintsSet.potentially_satisfiable updated_constraints_set then
+                { signature_match with constraints_set = updated_constraints_set }
+              else
+                { signature_match with constraints_set; reasons = reasons_with_mismatch }
             in
             let rec check signature_match = function
               | [] -> signature_match
@@ -3287,7 +3289,7 @@ module Implementation = struct
                     in
                     let iterable_constraints =
                       if Type.is_unbound resolved then
-                        []
+                        ConstraintsSet.impossible
                       else
                         TypeOrder.OrderedConstraintsSet.add
                           ConstraintsSet.empty
@@ -3402,10 +3404,10 @@ module Implementation = struct
                 ~left:Type.string
                 ~right:key_type
             in
-            if List.is_empty updated_constraints then (* TODO(T41074174): Error here *)
-              signature_match
-            else
+            if ConstraintsSet.potentially_satisfiable updated_constraints then
               { signature_match with constraints_set = updated_constraints }
+            else (* TODO(T41074174): Error here *)
+              signature_match
         | _ -> signature_match
       in
       let special_case_lambda_parameter ({ argument_mapping; _ } as signature_match) =
