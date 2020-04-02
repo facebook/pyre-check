@@ -56,7 +56,7 @@ module type OrderedConstraintsSetType = sig
     right:Type.OrderedTypes.t ->
     t
 
-  val solve : t -> order:order -> Solution.t option
+  val solve : ?only_solve_for:Type.Variable.t list -> t -> order:order -> Solution.t option
 
   val instantiate_protocol_parameters
     :  order ->
@@ -1071,6 +1071,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         solve_ordered_types_less_or_equal order ~constraints ~left ~right)
 
 
-  let solve constraints_set ~order =
-    List.find_map constraints_set ~f:(OrderedConstraints.solve ~order)
+  let solve ?only_solve_for constraints_set ~order =
+    match only_solve_for with
+    | Some variables ->
+        let partial_solve constraints =
+          OrderedConstraints.extract_partial_solution constraints ~order ~variables >>| snd
+        in
+        List.find_map constraints_set ~f:partial_solve
+    | None -> List.find_map constraints_set ~f:(OrderedConstraints.solve ~order)
 end

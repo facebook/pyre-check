@@ -3355,13 +3355,13 @@ module Implementation = struct
           ( { constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
           signature_match )
         =
-        let solutions =
-          let variables = Type.Variable.all_free_variables (Type.Callable callable) in
-          List.filter_map
+        let solution =
+          TypeOrder.OrderedConstraintsSet.solve
             constraints_set
-            ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+            ~order
+            ~only_solve_for:(Type.Variable.all_free_variables (Type.Callable callable))
         in
-        if not (List.is_empty solutions) then
+        if Option.is_some solution then
           signature_match
         else
           (* All other cases should have been able to been blamed on a specefic argument, this is
@@ -3512,15 +3512,13 @@ module Implementation = struct
         =
         let instantiated_return_annotation =
           let solution =
-            let variables = Type.Variable.all_free_variables (Type.Callable callable) in
-            List.filter_map
+            TypeOrder.OrderedConstraintsSet.solve
               constraints_set
-              ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
-            |> List.map ~f:snd
-            |> List.hd
-            |> Option.value ~default:TypeConstraints.Solution.empty
+              ~only_solve_for:(Type.Variable.all_free_variables (Type.Callable callable))
+              ~order
+            |> Option.value ~default:ConstraintsSet.Solution.empty
           in
-          TypeConstraints.Solution.instantiate solution uninstantiated_return_annotation
+          ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
           |> Type.Variable.mark_all_free_variables_as_escaped
           (* We need to do transformations of the form Union[T_escaped, int] => int in order to
              properly handle some typeshed stubs which only sometimes bind type variables and expect
