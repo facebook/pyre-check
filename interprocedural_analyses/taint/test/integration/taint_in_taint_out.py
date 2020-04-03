@@ -1,3 +1,6 @@
+from typing import List, Tuple
+
+
 class Data:
     def __init__(self, a, b):
         self.a = a
@@ -93,3 +96,16 @@ def approximate_complex_access_paths(x):
         "k": x.k,
         "l": x.l,
     }
+
+
+async def return_taint(tainted: str, b1: str, b2: str) -> Tuple[str, str, str]:
+    return tainted, b1, b2
+
+
+async def test_tuple_tito_indices():
+    tainted, b1, b2 = await return_taint(__test_source(), "", "")
+    __test_sink(b2)
+
+
+def return_taint_in_list(tainted: str, a: str, b: str) -> List[str]:
+    return [tainted, a, b]

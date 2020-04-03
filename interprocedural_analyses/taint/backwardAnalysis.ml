@@ -702,7 +702,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint ~state ~expression:body
       | List list ->
           let total = List.length list in
-          List.foldi list ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
+          List.rev list
+          |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Name _ when AccessPath.is_global ~resolution { Node.location; value = expression } -> state
@@ -782,7 +783,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | True -> state
       | Tuple list ->
           let total = List.length list in
-          List.foldi list ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
+          List.rev list
+          |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
       | UnaryOperator { operator = _; operand } ->
           analyze_expression ~resolution ~taint ~state ~expression:operand
       | WalrusOperator { target; value } ->
