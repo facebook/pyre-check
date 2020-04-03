@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 from types import TracebackType
-from typing import Iterable, List, Optional, Pattern, Sequence
+from typing import Iterable, Optional, Pattern, Sequence
 
 
 PERFORMANCE: int = 15
@@ -169,7 +169,7 @@ class TimedStreamHandler(logging.StreamHandler):
         sys.stderr.flush()
 
 
-def initialize(noninteractive: bool,) -> None:
+def initialize(noninteractive: bool) -> None:
     global __handler
 
     if noninteractive:

@@ -10,21 +10,30 @@ import sys
 import unittest
 from unittest.mock import call, mock_open, patch
 
-from ... import commands, log
+from ... import commands
 from ...commands import initialize
+from ...commands.initialize import log
 from ...exceptions import EnvironmentException
 from .command_test import mock_arguments
 
 
 class InitializeTest(unittest.TestCase):
     @patch.object(log, "get_yes_no_input", return_value=True)
+    @patch.object(log, "get_optional_input", return_value="")
     @patch.object(log, "get_input", return_value="")
     @patch("shutil.which")
     @patch("os.path.isfile")
     @patch("subprocess.call")
     @patch("builtins.open")
     def test_initialize(
-        self, open, subprocess_call, isfile, which, _get_input, get_yes_no_input
+        self,
+        open,
+        subprocess_call,
+        isfile,
+        which,
+        _get_input,
+        _get_optional_input,
+        get_yes_no_input,
     ) -> None:
         get_yes_no_input.return_value = True
         original_directory = "/original/directory"
@@ -89,7 +98,7 @@ class InitializeTest(unittest.TestCase):
         command = initialize.Initialize(arguments, original_directory)
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
-            log, "input", return_value="//target/..."
+            log, "get_input", return_value="//target/..."
         ):
             yes_no_input.side_effect = [True]
             self.assertEqual(
@@ -97,7 +106,7 @@ class InitializeTest(unittest.TestCase):
             )
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
-            log, "input", return_value="project/a, project/b"
+            log, "get_input", return_value="project/a, project/b"
         ):
             yes_no_input.side_effect = [False]
             self.assertEqual(
