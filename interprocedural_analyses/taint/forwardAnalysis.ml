@@ -521,7 +521,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             [{ Call.Argument.value = expression; _ }] ) ->
             let taint, _ = analyze_expression ~resolution ~state ~expression in
             Log.dump
-              "%a: Revealed taint for %s: %s"
+              "%a: Revealed forward taint for `%s`: %s"
               Location.pp
               (Node.location callee)
               (Ast.Transform.sanitize_expression expression |> Expression.show)

@@ -422,6 +422,21 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         Interprocedural.CallResolution.redirect_special_calls ~resolution { Call.callee; arguments }
       in
       match AccessPath.get_global ~resolution callee, Node.value callee with
+      | _, Name (Name.Identifier "reveal_taint") -> (
+          match arguments with
+          | [{ Call.Argument.value = { Node.value = Name (Name.Identifier identifier); _ }; _ }] ->
+              let taint =
+                BackwardState.read state.taint ~root:(Root.Variable identifier) ~path:[]
+              in
+
+              Log.dump
+                "%a: Revealed backward taint for `%s`: %s"
+                Location.pp
+                location
+                (Identifier.sanitized identifier)
+                (BackwardState.Tree.show taint);
+              state
+          | _ -> state )
       | _, Name (Name.Identifier "super") -> (
           match arguments with
           | [_; Call.Argument.{ value = object_; _ }] ->
