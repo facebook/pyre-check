@@ -418,104 +418,239 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_call ~resolution location ~taint ~state callee arguments =
-      let ({ Call.callee; arguments } as call_expression) =
-        Interprocedural.CallResolution.redirect_special_calls ~resolution { Call.callee; arguments }
-      in
-      match AccessPath.get_global ~resolution callee, Node.value callee with
-      | _, Name (Name.Identifier "reveal_taint") -> (
-          match arguments with
-          | [{ Call.Argument.value = { Node.value = Name (Name.Identifier identifier); _ }; _ }] ->
-              let taint =
-                BackwardState.read state.taint ~root:(Root.Variable identifier) ~path:[]
-              in
+      let analyze_regular_call ~taint state callee arguments =
+        let ({ Call.callee; arguments } as call_expression) =
+          Interprocedural.CallResolution.redirect_special_calls
+            ~resolution
+            { Call.callee; arguments }
+        in
+        match AccessPath.get_global ~resolution callee, Node.value callee with
+        | _, Name (Name.Identifier "reveal_taint") -> (
+            match arguments with
+            | [{ Call.Argument.value = { Node.value = Name (Name.Identifier identifier); _ }; _ }]
+              ->
+                let taint =
+                  BackwardState.read state.taint ~root:(Root.Variable identifier) ~path:[]
+                in
 
-              Log.dump
-                "%a: Revealed backward taint for `%s`: %s"
-                Location.pp
-                location
-                (Identifier.sanitized identifier)
-                (BackwardState.Tree.show taint);
-              state
-          | _ -> state )
-      | _, Name (Name.Identifier "super") -> (
-          match arguments with
-          | [_; Call.Argument.{ value = object_; _ }] ->
-              analyze_expression ~resolution ~taint ~state ~expression:object_
-          | _ -> (
-              (* Use implicit self *)
-              match FunctionContext.first_parameter () with
-              | Some root -> store_weak_taint ~root ~path:[] taint state
-              | None -> state ) )
-      | Some global, _ -> (
-          match Interprocedural.CallResolution.get_global_targets ~resolution global with
-          | Interprocedural.CallResolution.GlobalTargets targets ->
-              apply_call_targets
-                ~resolution
-                ~call_expression:(Expression.Call call_expression)
-                location
-                arguments
+                Log.dump
+                  "%a: Revealed backward taint for `%s`: %s"
+                  Location.pp
+                  location
+                  (Identifier.sanitized identifier)
+                  (BackwardState.Tree.show taint);
                 state
+            | _ -> state )
+        | _, Name (Name.Identifier "super") -> (
+            match arguments with
+            | [_; Call.Argument.{ value = object_; _ }] ->
+                analyze_expression ~resolution ~taint ~state ~expression:object_
+            | _ -> (
+                (* Use implicit self *)
+                match FunctionContext.first_parameter () with
+                | Some root -> store_weak_taint ~root ~path:[] taint state
+                | None -> state ) )
+        | Some global, _ -> (
+            match Interprocedural.CallResolution.get_global_targets ~resolution global with
+            | Interprocedural.CallResolution.GlobalTargets targets ->
+                apply_call_targets
+                  ~resolution
+                  ~call_expression:(Expression.Call call_expression)
+                  location
+                  arguments
+                  state
+                  taint
+                  targets
+            | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
+                analyze_constructor_call
+                  ~resolution
+                  ~call_expression
+                  ~location
+                  ~arguments
+                  ~callee
+                  ~state
+                  ~taint
+                  ~constructor_targets )
+        | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
+            let taint =
+              (* Specially handle super.__init__ calls in constructors for tito *)
+              if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver
+              then
+                BackwardState.Tree.create_leaf Domains.local_return_taint
+                |> BackwardState.Tree.join taint
+              else
                 taint
-                targets
-          | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
-              analyze_constructor_call
+            in
+            let indirect_targets, receiver =
+              Interprocedural.CallResolution.get_indirect_targets
                 ~resolution
-                ~call_expression
-                ~location
-                ~arguments
-                ~callee
-                ~state
-                ~taint
-                ~constructor_targets )
-      | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
-          let taint =
-            (* Specially handle super.__init__ calls in constructors for tito *)
-            if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver then
-              BackwardState.Tree.create_leaf Domains.local_return_taint
-              |> BackwardState.Tree.join taint
-            else
-              taint
-          in
-          let indirect_targets, receiver =
-            Interprocedural.CallResolution.get_indirect_targets
+                ~receiver
+                ~method_name:attribute
+            in
+            apply_call_targets
               ~resolution
-              ~receiver
-              ~method_name:attribute
-          in
-          apply_call_targets
+              ~call_expression:(Expression.Call call_expression)
+              location
+              (Option.to_list receiver @ arguments)
+              state
+              taint
+              indirect_targets
+        | None, Name (Name.Identifier _name) ->
+            let constructor_targets =
+              Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
+            in
+            analyze_constructor_call
+              ~resolution
+              ~call_expression
+              ~location
+              ~callee
+              ~arguments
+              ~state
+              ~taint
+              ~constructor_targets
+        | _ ->
+            (* No targets, treat call as obscure *)
+            let obscure_taint =
+              BackwardState.Tree.collapse taint
+              |> BackwardTaint.transform
+                   BackwardTaint.simple_feature
+                   Abstract.Domain.(Add Features.obscure)
+              |> BackwardState.Tree.create_leaf
+            in
+            let state =
+              List.fold_right arguments ~f:(analyze_argument ~resolution obscure_taint) ~init:state
+            in
+            analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
+      in
+      match { Call.callee; arguments } with
+      | {
+       callee =
+         { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
+       arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
+      } ->
+          (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
+          let state = analyze_regular_call ~taint state callee arguments in
+          (* Handle base[index] = value. *)
+          analyze_assignment
             ~resolution
-            ~call_expression:(Expression.Call call_expression)
-            location
-            (Option.to_list receiver @ arguments)
+            ~fields:[AccessPath.get_index index]
+            ~target:base
+            ~value
             state
-            taint
-            indirect_targets
-      | None, Name (Name.Identifier _name) ->
-          let constructor_targets =
-            Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
-          in
-          analyze_constructor_call
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+       arguments = [{ Call.Argument.value = argument_value; _ }];
+      } ->
+          let index = AccessPath.get_index argument_value in
+          let taint = BackwardState.Tree.prepend [index] taint in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
+         `for element in x`). *)
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+       arguments = [];
+      } ->
+          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
+         being frozen post-initialization. *)
+      | {
+       callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base = { Node.value = Name (Name.Identifier "object"); _ };
+                   attribute = "__setattr__";
+                   _;
+                 });
+           _;
+         };
+       arguments =
+         [
+           { Call.Argument.value = self; name = None };
+           {
+             Call.Argument.value = { Node.value = Expression.String _; _ } as attribute;
+             name = None;
+           };
+           { Call.Argument.value; name = None };
+         ];
+      } ->
+          analyze_assignment
             ~resolution
-            ~call_expression
-            ~location
-            ~callee
-            ~arguments
-            ~state
-            ~taint
-            ~constructor_targets
-      | _ ->
-          (* No targets, treat call as obscure *)
-          let obscure_taint =
-            BackwardState.Tree.collapse taint
-            |> BackwardTaint.transform
-                 BackwardTaint.simple_feature
-                 Abstract.Domain.(Add Features.obscure)
-            |> BackwardState.Tree.create_leaf
+            ~target:self
+            ~fields:[AccessPath.get_index attribute]
+            ~value
+            state
+      (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
+      | {
+       callee = { Node.value = Name (Name.Identifier "getattr"); location };
+       arguments =
+         [
+           { Call.Argument.value = base; _ };
+           {
+             Call.Argument.value =
+               { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
+             _;
+           };
+           { Call.Argument.value = default; _ };
+         ];
+      } ->
+          let attribute_expression =
+            {
+              Node.location;
+              value = Expression.Name (Name.Attribute { base; attribute; special = false });
+            }
           in
           let state =
-            List.fold_right arguments ~f:(analyze_argument ~resolution obscure_taint) ~init:state
+            analyze_expression ~resolution ~state ~expression:attribute_expression ~taint
           in
-          analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
+          analyze_expression ~resolution ~state ~expression:default ~taint
+      (* dictionary .keys() and .values() functions are special, as they require handling of
+         DictionaryKeys taint. *)
+      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        ->
+          let taint =
+            taint
+            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.Any]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        ->
+          let taint =
+            taint
+            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
+            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
+      | {
+       Call.callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 { base = { Node.value = Expression.Name name; _ }; attribute = "gather"; _ });
+           _;
+         };
+       arguments;
+      }
+        when String.equal "asyncio" (Name.last name) ->
+          analyze_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:
+              {
+                Node.location;
+                value =
+                  Expression.Tuple
+                    (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
+              }
+      | _ -> analyze_regular_call ~taint state callee arguments
 
 
     and analyze_expression
@@ -536,147 +671,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | None ->
               analyze_expression ~resolution ~taint ~state ~expression:right
               |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left )
-      | Call
-          {
-            callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as
-              callee;
-            arguments =
-              [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
-          } ->
-          (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
-          let state = analyze_call ~resolution location ~taint ~state callee arguments in
-          (* Handle base[index] = value. *)
-          analyze_assignment
-            ~resolution
-            ~fields:[AccessPath.get_index index]
-            ~target:base
-            ~value
-            state
-      | Call
-          {
-            callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = argument_value; _ }];
-          } ->
-          let index = AccessPath.get_index argument_value in
-          let taint = BackwardState.Tree.prepend [index] taint in
-          analyze_expression ~resolution ~taint ~state ~expression:base
-      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
-         `for element in x`). *)
-      | Call
-          {
-            callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
-            arguments = [];
-          } ->
-          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any] taint in
-          analyze_expression ~resolution ~taint ~state ~expression:base
-      (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
-         being frozen post-initialization. *)
-      | Call
-          {
-            callee =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "object"); _ };
-                        attribute = "__setattr__";
-                        _;
-                      });
-                _;
-              };
-            arguments =
-              [
-                { Call.Argument.value = self; name = None };
-                {
-                  Call.Argument.value = { Node.value = Expression.String _; _ } as attribute;
-                  name = None;
-                };
-                { Call.Argument.value; name = None };
-              ];
-          } ->
-          analyze_assignment
-            ~resolution
-            ~target:self
-            ~fields:[AccessPath.get_index attribute]
-            ~value
-            state
-      (* `getattr(a, "field", default)` should evaluate to the join of `a.field` and `default`. *)
-      | Call
-          {
-            callee = { Node.value = Name (Name.Identifier "getattr"); location };
-            arguments =
-              [
-                { Call.Argument.value = base; _ };
-                {
-                  Call.Argument.value =
-                    { Node.value = Expression.String { StringLiteral.value = attribute; _ }; _ };
-                  _;
-                };
-                { Call.Argument.value = default; _ };
-              ];
-          } ->
-          let attribute_expression =
-            {
-              Node.location;
-              value = Expression.Name (Name.Attribute { base; attribute; special = false });
-            }
-          in
-          let state =
-            analyze_expression ~resolution ~state ~expression:attribute_expression ~taint
-          in
-          analyze_expression ~resolution ~state ~expression:default ~taint
-      (* dictionary .keys() and .values() functions are special, as they require handling of
-         DictionaryKeys taint. *)
-      | Call
-          {
-            callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
-            _;
-          }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
-          let taint =
-            taint
-            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.Any]
-            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-          in
-          analyze_expression ~resolution ~taint ~state ~expression:base
-      | Call
-          { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
-          let taint =
-            taint
-            |> BackwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
-            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-          in
-          analyze_expression ~resolution ~taint ~state ~expression:base
-      | Call
-          {
-            Call.callee =
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      { base = { Node.value = Expression.Name name; _ }; attribute = "gather"; _ });
-                _;
-              };
-            arguments;
-          }
-        when String.equal "asyncio" (Name.last name) ->
-          analyze_expression
-            ~resolution
-            ~taint
-            ~state
-            ~expression:
-              {
-                Node.location;
-                value =
-                  Expression.Tuple
-                    (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
-              }
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state
