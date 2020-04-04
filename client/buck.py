@@ -119,7 +119,6 @@ class FastBuckBuilder(BuckBuilder):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-            env={**os.environ, "NO_BUCKD": "1"},
         ) as buck_builder_process:
             # Java's logging conflicts with Python's logging, we capture the
             # logs and re-log them with python's logger.
@@ -233,12 +232,7 @@ def _normalize(targets: List[str]) -> List[Tuple[str, str]]:
             + ["--type", "python_binary", "python_test"]
         )
         targets_to_destinations: List[str] = (
-            subprocess.check_output(
-                command,
-                stderr=subprocess.PIPE,
-                timeout=600,
-                env={**os.environ, "NO_BUCKD": "1"},
-            )
+            subprocess.check_output(command, stderr=subprocess.PIPE, timeout=600)
             .decode()
             .strip()
             .split("\n")
@@ -286,9 +280,7 @@ def _build_targets(targets: List[str], original_targets: List[str]) -> None:
     )
     command = ["buck", "build"] + targets
     try:
-        subprocess.check_output(
-            command, stderr=subprocess.PIPE, env={**os.environ, "NO_BUCKD": "1"}
-        )
+        subprocess.check_output(command, stderr=subprocess.PIPE)
         LOG.warning("Finished building targets.")
     except subprocess.CalledProcessError as error:
         # The output can be overwhelming, hence print only the last 20 lines.
@@ -354,12 +346,7 @@ def query_buck_relative_paths(
     LOG.info(f"Running command: {command}")
     try:
         owner_output = json.loads(
-            subprocess.check_output(
-                command,
-                timeout=30,
-                stderr=subprocess.DEVNULL,
-                env={**os.environ, "NO_BUCKD": "1"},
-            )
+            subprocess.check_output(command, timeout=30, stderr=subprocess.DEVNULL)
             .decode()
             .strip()
         )
