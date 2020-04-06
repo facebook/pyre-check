@@ -5,40 +5,9 @@
 
 open OUnit2
 open IntegrationTest
-open Test
 
 let test_declarative_base context =
-  let assert_sql_alchemy_errors source =
-    let sql_alchemy_stubs =
-      [
-        {
-          handle = "sqlalchemy/ext/declarative/__init__.pyi";
-          source =
-            {|
-            from .api import (
-                declarative_base as declarative_base,
-                DeclarativeMeta as DeclarativeMeta,
-            )
-          |};
-        };
-        {
-          handle = "sqlalchemy/ext/declarative/api.pyi";
-          source =
-            {|
-            def declarative_base(bind: Optional[Any] = ..., metadata: Optional[Any] = ...,
-                                 mapper: Optional[Any] = ..., cls: Any = ..., name: str = ...,
-                                 constructor: Any = ..., class_registry: Optional[Any] = ...,
-                                 metaclass: Any = ...): ...
-
-            class DeclarativeMeta(type):
-                def __init__(cls, classname, bases, dict_) -> None: ...
-                def __setattr__(cls, key, value): ...
-          |};
-        };
-      ]
-    in
-    assert_type_errors ~context ~update_environment_with:sql_alchemy_stubs source
-  in
+  let assert_sql_alchemy_errors = assert_type_errors ~context in
   assert_sql_alchemy_errors
     {|
       from sqlalchemy.ext.declarative import declarative_base

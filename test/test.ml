@@ -810,6 +810,31 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     else
       builtin_stubs
   in
+  let sqlalchemy_stubs =
+    [
+      (* These are simplified versions of the SQLAlchemy stubs. *)
+      ( "sqlalchemy/ext/declarative/__init__.pyi",
+        {|
+            from .api import (
+                declarative_base as declarative_base,
+                DeclarativeMeta as DeclarativeMeta,
+            )
+          |}
+      );
+      ( "sqlalchemy/ext/declarative/api.pyi",
+        {|
+            def declarative_base(bind: Optional[Any] = ..., metadata: Optional[Any] = ...,
+                                 mapper: Optional[Any] = ..., cls: Any = ..., name: str = ...,
+                                 constructor: Any = ..., class_registry: Optional[Any] = ...,
+                                 metaclass: Any = ...): ...
+
+            class DeclarativeMeta(type):
+                def __init__(cls, classname, bases, dict_) -> None: ...
+                def __setattr__(cls, key, value): ...
+          |}
+      );
+    ]
+  in
   [
     "sys.py", "";
     ( "hashlib.pyi",
@@ -1402,6 +1427,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         # pyre-placeholder-stub
         |};
   ]
+  @ sqlalchemy_stubs
 
 
 let mock_signature =
