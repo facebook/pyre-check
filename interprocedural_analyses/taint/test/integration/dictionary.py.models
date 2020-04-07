@@ -497,6 +497,63 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.test_with_issue_in_dict_comprehension",
+    "callable_line": 184,
+    "code": 5002,
+    "line": 186,
+    "start": 44,
+    "end": 45,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 185,
+              "start": 15,
+              "end": 30
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 186,
+              "start": 44,
+              "end": 45
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.update_tainted_dictionary",
     "callable_line": 57,
     "code": 5002,

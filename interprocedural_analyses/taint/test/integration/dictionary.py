@@ -179,3 +179,8 @@ def backwards_field_assignment(external):
 
 def return_tito_literally(external):
     return {"index": external}
+
+
+def test_with_issue_in_dict_comprehension():
+    sources = [__test_source()]
+    {"k": s for s in sources if __test_sink(s)}

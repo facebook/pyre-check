@@ -373,7 +373,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_generators ~resolution ~state generators =
-      let handle_generator state { Comprehension.Generator.target; iterator; _ } =
+      let handle_generator state { Comprehension.Generator.target; iterator; conditions; _ } =
+        let state =
+          List.fold conditions ~init:state ~f:(fun state condition ->
+              analyze_expression
+                ~resolution
+                ~taint:BackwardState.Tree.empty
+                ~state
+                ~expression:condition)
+        in
         let access_path = of_expression ~resolution target in
         let bound_variable_taint = get_taint access_path state in
         let iterator_taint =
@@ -396,6 +404,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           BackwardState.Tree.prepend [label] bound_variable_taint
         in
+
         analyze_expression ~resolution ~taint:iterator_taint ~state ~expression:iterator
       in
       List.fold ~f:handle_generator generators ~init:state

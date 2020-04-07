@@ -1,5 +1,117 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 33,
+    "start": 16,
+    "end": 20,
+    "filename": "add_feature_to_argument.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 31,
+              "start": 15,
+              "end": 30
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_source" },
+              { "always-has": "first-index" },
+              { "always-first-index": "<numeric>" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 33,
+              "start": 16,
+              "end": 20
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "string_concat_lhs" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-has": "first-index" },
+      { "always-first-index": "<numeric>" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable":
+      "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 37,
+              "start": 54,
+              "end": 63
+            },
+            "leaves": [
+              {
+                "kind": "AddFeatureToArgument",
+                "name": "add_feature_to_argument.add_feature_to_first",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          },
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 38,
+              "start": 16,
+              "end": 25
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_first",

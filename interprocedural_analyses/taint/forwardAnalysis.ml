@@ -417,7 +417,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_comprehension_generators ~resolution ~state generators =
       let add_binding
           (state, resolution)
-          ({ Comprehension.Generator.target; iterator; _ } as generator)
+          ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
         =
         let taint, state =
           let iterator_is_dictionary =
@@ -446,7 +446,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             (Ast.Statement.Statement.generator_assignment generator)
         in
         let access_path = AccessPath.of_expression ~resolution target in
-        store_taint_option access_path taint state, resolution
+        let state = store_taint_option access_path taint state in
+        (* Analyzing the conditions might have issues and side effects. *)
+        let analyze_condition state condiiton =
+          analyze_expression ~resolution ~state ~expression:condiiton |> snd
+        in
+        List.fold conditions ~init:state ~f:analyze_condition, resolution
       in
       List.fold ~f:add_binding generators ~init:(state, resolution)
 
