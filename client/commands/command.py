@@ -701,13 +701,12 @@ class Command(CommandParser, ABC):
                         self._socket_result_handler(result)
                 finally:
                     stderr_tail.terminate()
-        except (
-            SocketException,
-            ResourceWarning,
-            ClientException,
-            json_rpc.JSONRPCException,
-        ) as exception:
+        except (SocketException, ResourceWarning, ClientException) as exception:
             LOG.error("Error while waiting for server: %s", str(exception))
+            LOG.error("Run `pyre restart` in order to restart the server.")
+            self._exit_code = ExitCode.FAILURE
+        except json_rpc.JSONRPCException:
+            LOG.error("Error while waiting for server: JSON-RPC exception ")
             LOG.error("Run `pyre restart` in order to restart the server.")
             self._exit_code = ExitCode.FAILURE
 
