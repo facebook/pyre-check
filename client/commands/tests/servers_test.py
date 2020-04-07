@@ -12,7 +12,7 @@ from ... import commands, log
 from ...analysis_directory import AnalysisDirectory
 from .. import servers
 from ..command import JSON, TEXT
-from ..servers import ServerDetails, Servers
+from ..servers import ServerDetails, Servers, ServersArguments
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -88,6 +88,7 @@ class ServersCommandTest(unittest.TestCase):
             arguments=mock_arguments(
                 dot_pyre_directory=Path("/dot-pyre-directory/.pyre")
             ),
+            servers_arguments=ServersArguments(subcommand="stop"),
             original_directory="/root",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
@@ -137,9 +138,9 @@ class ServersCommandTest(unittest.TestCase):
         fetch_server_details: MagicMock,
     ) -> None:
         arguments = mock_arguments()
-        arguments.servers_subcommand = None
         servers = Servers(
             arguments,
+            servers_arguments=ServersArguments(subcommand=None),
             original_directory="/",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
@@ -148,12 +149,26 @@ class ServersCommandTest(unittest.TestCase):
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        servers._subcommand = "list"
+        arguments = mock_arguments()
+        servers = Servers(
+            arguments,
+            servers_arguments=ServersArguments(subcommand="list"),
+            original_directory="/",
+            configuration=mock_configuration(),
+            analysis_directory=AnalysisDirectory("."),
+        )
         servers._run()
         print_server_details.assert_called_once()
         print_server_details.reset_mock()
 
-        servers._subcommand = "stop"
+        arguments = mock_arguments()
+        servers = Servers(
+            arguments,
+            servers_arguments=ServersArguments(subcommand="stop"),
+            original_directory="/",
+            configuration=mock_configuration(),
+            analysis_directory=AnalysisDirectory("."),
+        )
         servers._run()
         stop_servers.assert_called_once()
         print_server_details.assert_not_called()

@@ -7,6 +7,7 @@ import argparse
 import functools
 import json
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
@@ -49,12 +50,18 @@ class ServerDetails(NamedTuple):
             return self.local_root
 
 
+@dataclass(frozen=True)
+class ServersArguments:
+    subcommand: Optional[str]
+
+
 class Servers(Command):
     NAME: str = "servers"
 
     def __init__(
         self,
         arguments: argparse.Namespace,
+        servers_arguments: ServersArguments,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
@@ -62,7 +69,23 @@ class Servers(Command):
         super(Servers, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._subcommand: Optional[str] = arguments.servers_subcommand
+        self._servers_arguments = servers_arguments
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Servers":
+        servers_arguments = ServersArguments(subcommand=arguments.servers_subcommand)
+        return Servers(
+            arguments,
+            servers_arguments,
+            original_directory,
+            configuration,
+            analysis_directory,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -72,7 +95,7 @@ class Servers(Command):
             Command to manipulate multiple Pyre servers.
             """,
         )
-        servers_parser.set_defaults(command=cls)
+        servers_parser.set_defaults(command=cls.from_arguments)
         subparsers = servers_parser.add_subparsers(dest="servers_subcommand")
 
         subparsers.add_parser("list", help="List running servers.")
@@ -121,7 +144,7 @@ class Servers(Command):
     def _run(self) -> None:
         all_server_details = self._all_server_details()
 
-        subcommand = self._subcommand
+        subcommand = self._servers_arguments.subcommand
         if subcommand == "list" or subcommand is None:
             self._print_server_details(all_server_details, self._output)
         elif subcommand == "stop":

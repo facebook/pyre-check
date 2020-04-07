@@ -17,7 +17,13 @@ from typing import List, Tuple
 
 
 MODULE_NAME = "pyre_check"
-RUNTIME_DEPENDENCIES = ["pywatchman", "psutil", "libcst", "pyre_extensions"]
+RUNTIME_DEPENDENCIES = [
+    "dataclasses",
+    "pywatchman",
+    "psutil",
+    "libcst",
+    "pyre_extensions",
+]
 
 SCRIPTS_DIRECTORY: Path = Path(__file__).resolve().parent
 PYRE_CHECK_DIRECTORY: Path = SCRIPTS_DIRECTORY.parent
