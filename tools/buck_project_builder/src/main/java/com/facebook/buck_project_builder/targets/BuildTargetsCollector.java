@@ -109,7 +109,13 @@ public final class BuildTargetsCollector {
                   new ThriftLibraryTarget(
                       commandString.replace("py:", "mstch_pyi:"),
                       target.getBaseModulePath(),
-                      target.getSources()));
+                      target.getSources()))
+              || commandString.contains(":new_style")
+              && this.thriftLibraryTargets.contains(
+                new ThriftLibraryTarget(
+                  commandString.replace(":new_style", ":asyncio,new_style"),
+                  target.getBaseModulePath(),
+                  target.getSources()));
         });
     return new BuildTargetsBuilder(
         startTime,
