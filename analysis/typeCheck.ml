@@ -3218,6 +3218,21 @@ module State (Context : Context) = struct
         ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
         location
     in
+    let emit_typed_dictionary_errors ~errors mismatches =
+      let emit_error errors { Node.value = mismatch; location = define_location } =
+        let mismatch =
+          match mismatch with
+          | AttributeResolution.FieldTypeMismatch
+              { field_name; expected_type; actual_type; class_name } ->
+              Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
+          | AttributeResolution.MissingRequiredField { field_name; class_name } ->
+              Error.MissingRequiredField { field_name; class_name }
+        in
+        Error.TypedDictionaryInitializationError mismatch
+        |> fun kind -> emit_error ~errors ~location:define_location ~kind
+      in
+      List.fold mismatches ~f:emit_error ~init:errors
+    in
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)
     let validate_return ~expression ~resolution ~errors ~actual ~is_implicit =
@@ -3240,7 +3255,7 @@ module State (Context : Context) = struct
           ~resolved:actual
           ~expected:return_annotation
       in
-      let check_incompatible_return errors =
+      let check_incompatible_return actual errors =
         if
           Define.has_return_annotation define
           && (not
@@ -3283,7 +3298,7 @@ module State (Context : Context) = struct
         else
           errors
       in
-      let check_missing_return errors =
+      let check_missing_return actual errors =
         let contains_literal_any =
           return_annotation_expression
           >>| Type.expression_contains_any
@@ -3311,7 +3326,11 @@ module State (Context : Context) = struct
         else
           errors
       in
-      check_incompatible_return errors |> check_missing_return
+      match actual with
+      | { resolved = actual; typed_dictionary_errors = [] } ->
+          check_incompatible_return actual errors |> check_missing_return actual
+      | { typed_dictionary_errors; _ } ->
+          emit_typed_dictionary_errors ~errors typed_dictionary_errors
     in
     match value with
     | Assign { Assign.target; annotation; value; parent } -> (
@@ -3499,7 +3518,7 @@ module State (Context : Context) = struct
                         Some (List.init ~f:(fun _ -> getitem_annotation) expected_size) )
               in
               match target_value with
-              | Expression.Name name ->
+              | Expression.Name name -> (
                   let reference, attribute, resolved_base, target_annotation =
                     match name with
                     | Name.Identifier identifier ->
@@ -3634,7 +3653,7 @@ module State (Context : Context) = struct
                     not is_setattr_any_defined
                   in
 
-                  let errors =
+                  let check_errors errors resolved =
                     match reference with
                     | Some reference ->
                         let check_final_reassignment errors =
@@ -3839,8 +3858,7 @@ module State (Context : Context) = struct
                     | _ -> errors
                   in
 
-                  (* Check for missing annotations. *)
-                  let errors, is_valid_annotation =
+                  let check_for_missing_annotations errors resolved =
                     let insufficiently_annotated, thrown_at_source =
                       let is_reassignment =
                         (* Special-casing re-use of typed parameters as attributes *)
@@ -4069,74 +4087,87 @@ module State (Context : Context) = struct
                         else
                           errors, true
                   in
-                  (* Propagate annotations. *)
-                  let is_global =
-                    match name with
-                    | Identifier identifier ->
-                        Resolution.is_global resolution ~reference:(Reference.create identifier)
-                    | Attribute _ as name when is_simple_name name ->
-                        Resolution.is_global resolution ~reference:(name_to_reference_exn name)
-                    | _ -> false
-                  in
-                  if is_global && not (Define.is_toplevel Context.define.value) then
-                    resolution, errors
-                  else
-                    let refine_annotation annotation refined =
-                      RefinementUnit.refine ~global_resolution annotation refined
-                    in
-                    let annotation =
-                      if explicit && is_valid_annotation then
-                        let annotation = Annotation.create_immutable ~final:is_final guide in
-                        if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
-                          refine_annotation annotation resolved
-                        else
-                          annotation
-                      else if is_immutable then
-                        refine_annotation target_annotation guide
-                      else
-                        Annotation.create guide
-                    in
-                    let errors, annotation =
-                      if
-                        (not explicit)
-                        && Type.Variable.contains_escaped_free_variable
-                             (Annotation.annotation annotation)
-                      then
-                        let kind =
-                          Error.IncompleteType
-                            {
-                              target = { Node.location; value = target_value };
-                              annotation = resolved;
-                              attempted_action = Naming;
-                            }
-                        in
-                        let converted =
-                          Type.Variable.convert_all_escaped_free_variables_to_anys
-                            (Annotation.annotation annotation)
-                        in
-                        ( emit_error ~errors ~location ~kind,
-                          { annotation with annotation = converted } )
-                      else
-                        errors, annotation
-                    in
-                    let resolution =
+                  let propagate_annotations ~errors ~is_valid_annotation ~resolved =
+                    let is_global =
                       match name with
                       | Identifier identifier ->
-                          Resolution.set_local
-                            resolution
-                            ~reference:(Reference.create identifier)
-                            ~annotation
-                      | Attribute _ as name when is_simple_name name -> (
-                          match resolved_base, attribute with
-                          | Some parent, Some (attribute, _)
-                            when not
-                                   ( Annotated.Attribute.defined attribute
-                                   || is_undefined_attribute parent ) ->
-                              Resolution.set_local_with_attributes resolution ~name ~annotation
-                          | _ -> resolution )
-                      | _ -> resolution
+                          Resolution.is_global resolution ~reference:(Reference.create identifier)
+                      | Attribute _ as name when is_simple_name name ->
+                          Resolution.is_global resolution ~reference:(name_to_reference_exn name)
+                      | _ -> false
                     in
-                    resolution, errors
+                    if is_global && not (Define.is_toplevel Context.define.value) then
+                      resolution, errors
+                    else
+                      let refine_annotation annotation refined =
+                        RefinementUnit.refine ~global_resolution annotation refined
+                      in
+                      let annotation =
+                        if explicit && is_valid_annotation then
+                          let annotation = Annotation.create_immutable ~final:is_final guide in
+                          if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                            refine_annotation annotation resolved
+                          else
+                            annotation
+                        else if is_immutable then
+                          refine_annotation target_annotation guide
+                        else
+                          Annotation.create guide
+                      in
+                      let errors, annotation =
+                        if
+                          (not explicit)
+                          && Type.Variable.contains_escaped_free_variable
+                               (Annotation.annotation annotation)
+                        then
+                          let kind =
+                            Error.IncompleteType
+                              {
+                                target = { Node.location; value = target_value };
+                                annotation = resolved;
+                                attempted_action = Naming;
+                              }
+                          in
+                          let converted =
+                            Type.Variable.convert_all_escaped_free_variables_to_anys
+                              (Annotation.annotation annotation)
+                          in
+                          ( emit_error ~errors ~location ~kind,
+                            { annotation with annotation = converted } )
+                        else
+                          errors, annotation
+                      in
+                      let resolution =
+                        match name with
+                        | Identifier identifier ->
+                            Resolution.set_local
+                              resolution
+                              ~reference:(Reference.create identifier)
+                              ~annotation
+                        | Attribute _ as name when is_simple_name name -> (
+                            match resolved_base, attribute with
+                            | Some parent, Some (attribute, _)
+                              when not
+                                     ( Annotated.Attribute.defined attribute
+                                     || is_undefined_attribute parent ) ->
+                                Resolution.set_local_with_attributes resolution ~name ~annotation
+                            | _ -> resolution )
+                        | _ -> resolution
+                      in
+                      resolution, errors
+                  in
+                  match resolved with
+                  | { resolved; typed_dictionary_errors = [] } ->
+                      let errors = check_errors errors resolved in
+                      let errors, is_valid_annotation =
+                        check_for_missing_annotations errors resolved
+                      in
+                      propagate_annotations ~errors ~is_valid_annotation ~resolved
+                  | { typed_dictionary_errors; _ } ->
+                      propagate_annotations
+                        ~errors:(emit_typed_dictionary_errors ~errors typed_dictionary_errors)
+                        ~is_valid_annotation:false
+                        ~resolved:Type.Top )
               | List elements
               | Tuple elements
                 when is_uniform_sequence guide ->

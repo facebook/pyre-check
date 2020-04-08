@@ -367,6 +367,8 @@ let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation
   |> Option.value ~default:false
 
 
+let resolved_type = AttributeResolution.resolved_type
+
 let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
   let comparator =
     AttributeResolution.ReadOnly.constraints_solution_exists
@@ -382,6 +384,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
       ~resolved:left
       ~expected:right
       ~comparator
+    |> resolved_type
   in
   comparator ~get_typed_dictionary_override:(fun _ -> None) ~left ~right
 

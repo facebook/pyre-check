@@ -3576,6 +3576,10 @@ module TypedDictionary = struct
 
   let are_fields_total = are_fields_total
 
+  let same_name { name = left_name; required = _; _ } { name = right_name; required = _; _ } =
+    String.equal left_name right_name
+
+
   let same_name_different_requiredness
       { name = left_name; required = left_required; _ }
       { name = right_name; required = right_required; _ }
@@ -3665,72 +3669,6 @@ module TypedDictionary = struct
     special_index: int option;
     overloads: t typed_dictionary_field list -> t Callable.overload list;
   }
-
-  let encoded_typed_dictionary_name = "$encoded_typed_dictionary"
-
-  let encode_typed_dictionary (typed_dictionary : t record) =
-    let callable =
-      constructor ~name:encoded_typed_dictionary_name ~fields:typed_dictionary.fields
-    in
-    let map_annotation ~f annotation =
-      let module MapTransform = Transform.Make (struct
-        type state = unit
-
-        let visit_children_before _ _ = true
-
-        let visit_children_after = false
-
-        let visit _ annotation = { Transform.transformed_annotation = f annotation; new_state = () }
-      end)
-      in
-      snd (MapTransform.visit () annotation)
-    in
-    (* Change the default Top annotation because postprocessing suppresses error messages with types
-       containing Top. *)
-    let callable_without_top =
-      map_annotation (Callable callable) ~f:(function
-          | Top -> integer
-          | other -> other)
-    in
-    callable_without_top
-
-
-  let is_encoded_typed_dictionary = function
-    | Callable ({ overloads = [_; { annotation = Primitive name; _ }]; _ } as callable)
-      when String.equal name encoded_typed_dictionary_name ->
-        Option.is_some (fields_from_constructor callable)
-    | _ -> false
-
-
-  let pp_type_with_encoded_typed_dictionary format annotation =
-    let module DequalifyTransform = Transform.Make (struct
-      type state = unit
-
-      let visit_children_before _ _ = true
-
-      let visit_children_after = false
-
-      let visit _ annotation =
-        (* Transform the encoded TypedDictionary into a Primitive with its string form. That way,
-           printing the transformed type will end up printing the string. *)
-        let transformed_annotation =
-          match annotation with
-          | Callable callable when is_encoded_typed_dictionary annotation ->
-              let fields =
-                fields_from_constructor callable
-                |> Option.value ~default:[]
-                |> List.map ~f:(fun { name; annotation; required } ->
-                       Format.asprintf "%s%s: %a" name (if required then "" else "?") pp annotation)
-                |> String.concat ~sep:", "
-              in
-              Primitive (Format.asprintf "TypedDict with fields (%s)" fields)
-          | _ -> annotation
-        in
-        { Transform.transformed_annotation; new_state = () }
-    end)
-    in
-    snd (DequalifyTransform.visit () annotation) |> pp format
-
 
   let key_parameter name =
     CallableParameter.Named { name = "k"; annotation = literal_string name; default = false }

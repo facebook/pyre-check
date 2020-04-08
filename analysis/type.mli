@@ -824,6 +824,8 @@ module TypedDictionary : sig
 
   val are_fields_total : t typed_dictionary_field list -> bool
 
+  val same_name : t typed_dictionary_field -> t typed_dictionary_field -> bool
+
   val same_name_different_requiredness
     :  t typed_dictionary_field ->
     t typed_dictionary_field ->
@@ -839,10 +841,6 @@ module TypedDictionary : sig
   val constructor : name:Identifier.t -> fields:t typed_dictionary_field list -> Callable.t
 
   val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
-
-  val encode_typed_dictionary : t Record.TypedDictionary.record -> t
-
-  val pp_type_with_encoded_typed_dictionary : Format.formatter -> t -> unit
 
   val special_overloads
     :  class_name:Primitive.t ->

@@ -280,6 +280,40 @@ let undecorated_signature class_metadata_environment ~dependency =
 
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
+type typed_dictionary_mismatch =
+  | MissingRequiredField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
+  | FieldTypeMismatch of {
+      field_name: Identifier.t;
+      expected_type: Type.t;
+      actual_type: Type.t;
+      class_name: Identifier.t;
+    }
+[@@deriving compare, eq, show]
+
+type weakened_type = {
+  resolved: Type.t;
+  typed_dictionary_errors: typed_dictionary_mismatch Node.t list;
+}
+[@@deriving eq, show]
+
+let typed_dictionary_errors { typed_dictionary_errors; _ } = typed_dictionary_errors
+
+let resolved_type { resolved; _ } = resolved
+
+let make_weakened_type ?(typed_dictionary_errors = []) resolved =
+  { resolved; typed_dictionary_errors }
+
+
+let combine_weakened_types weakened_types =
+  {
+    resolved = Type.union (List.map weakened_types ~f:resolved_type);
+    typed_dictionary_errors = List.concat_map weakened_types ~f:typed_dictionary_errors;
+  }
+
+
 let rec weaken_mutable_literals
     resolve
     ~get_typed_dictionary
@@ -293,7 +327,7 @@ let rec weaken_mutable_literals
   let open Expression in
   match expression, resolved, expected with
   | _, _, Type.Union expected_types -> (
-      let resolved_types =
+      let weakened_types =
         List.map
           ~f:(fun expected_type ->
             weaken_mutable_literals
@@ -306,12 +340,19 @@ let rec weaken_mutable_literals
           expected_types
       in
       match
-        List.exists2 ~f:(fun left right -> comparator ~left ~right) resolved_types expected_types
+        List.exists2
+          ~f:(fun { resolved = left; _ } right -> comparator ~left ~right)
+          weakened_types
+          expected_types
       with
-      | Ok true -> expected
-      | _ -> resolved )
+      | Ok true -> make_weakened_type expected
+      | Ok false ->
+          make_weakened_type
+            ~typed_dictionary_errors:(List.concat_map weakened_types ~f:typed_dictionary_errors)
+            resolved
+      | Unequal_lengths -> make_weakened_type resolved )
   | _, _, Type.Optional expected_type ->
-      let resolved_type =
+      let { resolved; typed_dictionary_errors } =
         weaken_mutable_literals
           ~get_typed_dictionary
           resolve
@@ -320,60 +361,49 @@ let rec weaken_mutable_literals
           ~expected:expected_type
           ~comparator:comparator_without_override
       in
-      if comparator ~left:resolved_type ~right:expected_type then
-        expected
-      else
-        resolved_type
+      make_weakened_type
+        ~typed_dictionary_errors
+        ( if comparator ~left:resolved ~right:expected_type then
+            expected
+        else
+          resolved )
   | ( Some { Node.value = Expression.List items; _ },
-      Type.Parametric { name = "list"; parameters = [Single actual_item_type] },
-      Type.Parametric { name = "list"; parameters = [Single expected_item_type] } ) ->
-      let weakened_item_type =
-        Type.union
-          (List.map
-             ~f:(fun item ->
-               weaken_mutable_literals
-                 ~get_typed_dictionary
-                 resolve
-                 ~expression:(Some item)
-                 ~resolved:actual_item_type
-                 ~expected:expected_item_type
-                 ~comparator:comparator_without_override)
-             items)
+      Type.Parametric { name = "list" as container_name; parameters = [Single actual_item_type] },
+      Type.Parametric { name = "list"; parameters = [Single expected_item_type] } )
+  | ( Some { Node.value = Expression.Set items; _ },
+      Type.Parametric { name = "set" as container_name; parameters = [Single actual_item_type] },
+      Type.Parametric { name = "set"; parameters = [Single expected_item_type] } ) ->
+      let weakened_item_types =
+        List.map
+          ~f:(fun item ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression:(Some item)
+              ~resolved:actual_item_type
+              ~expected:expected_item_type
+              ~comparator:comparator_without_override)
+          items
       in
-      if comparator ~left:weakened_item_type ~right:expected_item_type then
-        expected
-      else
-        Type.list weakened_item_type
+      let { resolved = weakened_item_type; typed_dictionary_errors } =
+        combine_weakened_types weakened_item_types
+      in
+      make_weakened_type
+        ~typed_dictionary_errors
+        ( if comparator ~left:weakened_item_type ~right:expected_item_type then
+            expected
+        else
+          Type.parametric container_name [Single weakened_item_type] )
   | ( Some { Node.value = Expression.ListComprehension _; _ },
       Type.Parametric { name = "list"; parameters = [Single actual] },
       Type.Parametric { name = "list"; parameters = [Single expected_parameter] } )
     when comparator ~left:actual ~right:expected_parameter ->
-      expected
-  | ( Some { Node.value = Expression.Set items; _ },
-      Type.Parametric { name = "set"; parameters = [Single actual_item_type] },
-      Type.Parametric { name = "set"; parameters = [Single expected_item_type] } ) ->
-      let weakened_item_type =
-        Type.union
-          (List.map
-             ~f:(fun item ->
-               weaken_mutable_literals
-                 ~get_typed_dictionary
-                 resolve
-                 ~expression:(Some item)
-                 ~resolved:actual_item_type
-                 ~expected:expected_item_type
-                 ~comparator:comparator_without_override)
-             items)
-      in
-      if comparator ~left:weakened_item_type ~right:expected_item_type then
-        expected
-      else
-        Type.set weakened_item_type
+      make_weakened_type expected
   | ( Some { Node.value = Expression.SetComprehension _; _ },
       Type.Parametric { name = "set"; parameters = [Single actual] },
       Type.Parametric { name = "set"; parameters = [Single expected_parameter] } )
     when comparator ~left:actual ~right:expected_parameter ->
-      expected
+      make_weakened_type expected
   | ( Some { Node.value = Expression.Tuple items; _ },
       Type.Tuple (Bounded (Concrete actual_item_types)),
       Type.Tuple (Bounded (Concrete expected_item_types)) )
@@ -392,37 +422,45 @@ let rec weaken_mutable_literals
           actual_item_types
           expected_item_types
       in
-      let weakened_type = Type.Tuple (Bounded (Concrete weakened_item_types)) in
-      if comparator ~left:weakened_type ~right:expected then
-        expected
-      else
-        weakened_type
+      let resolved_types = List.map weakened_item_types ~f:resolved_type in
+      let weakened_type = Type.Tuple (Bounded (Concrete resolved_types)) in
+      make_weakened_type
+        ~typed_dictionary_errors:(List.concat_map weakened_item_types ~f:typed_dictionary_errors)
+        ( if comparator ~left:weakened_type ~right:expected then
+            expected
+        else
+          weakened_type )
   | ( Some { Node.value = Expression.Tuple items; _ },
       Type.Tuple (Bounded (Concrete actual_item_types)),
       Type.Tuple (Unbounded expected_item_type) ) ->
-      let weakened_item_type =
-        Type.union
-          (List.map2_exn
-             ~f:(fun item actual_item_type ->
-               weaken_mutable_literals
-                 ~get_typed_dictionary
-                 resolve
-                 ~expression:(Some item)
-                 ~resolved:actual_item_type
-                 ~expected:expected_item_type
-                 ~comparator:comparator_without_override)
-             items
-             actual_item_types)
+      let weakened_item_types =
+        List.map2_exn
+          ~f:(fun item actual_item_type ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression:(Some item)
+              ~resolved:actual_item_type
+              ~expected:expected_item_type
+              ~comparator:comparator_without_override)
+          items
+          actual_item_types
       in
-      if comparator ~left:weakened_item_type ~right:expected_item_type then
-        expected
-      else
-        resolved
-  | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ }, _, Type.Primitive _
-    -> (
+      let { resolved = weakened_item_type; typed_dictionary_errors } =
+        combine_weakened_types weakened_item_types
+      in
+      make_weakened_type
+        ~typed_dictionary_errors
+        ( if comparator ~left:weakened_item_type ~right:expected_item_type then
+            expected
+        else
+          resolved )
+  | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; location },
+      _,
+      Type.Primitive _ ) -> (
       let open Type.Record.TypedDictionary in
       match get_typed_dictionary expected with
-      | Some { fields; _ } ->
+      | Some { fields = expected_fields; name = expected_class_name } ->
           let find_matching_field ~name =
             let matching_name ({ name = expected_name; _ } : Type.t typed_dictionary_field) =
               String.equal name expected_name
@@ -446,13 +484,13 @@ let rec weaken_mutable_literals
                         ~comparator:comparator_without_override
                         ~get_typed_dictionary
                     else if comparator ~left:resolved ~right:annotation then
-                      annotation
+                      make_weakened_type annotation
                     else
-                      resolved
+                      make_weakened_type resolved
                   in
-                  find_matching_field fields ~name
+                  find_matching_field expected_fields ~name
                   >>| (fun field -> relax field, field.required)
-                  |> Option.value ~default:(resolved, true)
+                  |> Option.value ~default:(make_weakened_type resolved, true)
                 in
                 Some { name; annotation; required }
             | _ -> None
@@ -461,7 +499,7 @@ let rec weaken_mutable_literals
             let is_missing ({ name; _ } : Type.t typed_dictionary_field) =
               Option.is_none (find_matching_field sofar ~name)
             in
-            let missing_fields = List.filter fields ~f:is_missing in
+            let missing_fields = List.filter expected_fields ~f:is_missing in
             if List.for_all missing_fields ~f:(fun { required; _ } -> not required) then
               sofar @ missing_fields
             else
@@ -473,23 +511,88 @@ let rec weaken_mutable_literals
             | Type.Primitive name when String.equal name fresh_class_name -> Some typed_dictionary
             | _ -> None
           in
+          let weaken_valid_fields fields =
+            let ({ fields = actual_fields; _ } as resolved_typed_dictionary) =
+              add_missing_fields_if_all_non_required fields |> Type.TypedDictionary.anonymous
+            in
+            let less_than_expected =
+              comparator_without_override
+                ~get_typed_dictionary_override:
+                  (get_typed_dictionary_override ~typed_dictionary:resolved_typed_dictionary)
+                ~left:(Type.Primitive fresh_class_name)
+                ~right:expected
+            in
+            if less_than_expected then
+              make_weakened_type expected
+            else
+              let type_mismatches =
+                let make_type_mismatch
+                    {
+                      Type.Record.TypedDictionary.name = expected_field_name;
+                      annotation = expected_type;
+                      _;
+                    }
+                    { Type.Record.TypedDictionary.annotation = actual_type; required = _; _ }
+                  =
+                  FieldTypeMismatch
+                    {
+                      field_name = expected_field_name;
+                      expected_type;
+                      actual_type;
+                      class_name = expected_class_name;
+                    }
+                  |> Node.create ~location
+                in
+                let find_type_mismatch expected_field =
+                  List.find
+                    actual_fields
+                    ~f:(Type.TypedDictionary.same_name_different_annotation expected_field)
+                  >>| make_type_mismatch expected_field
+                in
+                List.filter_map expected_fields ~f:find_type_mismatch
+              in
+              let missing_field_mismatches =
+                let is_missing expected_field =
+                  not (List.exists actual_fields ~f:(Type.TypedDictionary.same_name expected_field))
+                in
+                let make_missing_field_mismatch
+                    { Type.Record.TypedDictionary.name = field_name; required; _ }
+                  =
+                  MissingRequiredField { field_name; class_name = expected_class_name }
+                  |> Node.create ~location
+                  |> Option.some_if required
+                in
+                List.filter expected_fields ~f:is_missing
+                |> List.filter_map ~f:make_missing_field_mismatch
+              in
+              make_weakened_type
+                ~typed_dictionary_errors:(type_mismatches @ missing_field_mismatches)
+                resolved
+          in
+          let valid_field_or_typed_dictionary_error
+              {
+                name;
+                required;
+                annotation = { resolved; typed_dictionary_errors } as weakened_type;
+              }
+            =
+            match typed_dictionary_errors with
+            | [] -> Ok { name; required; annotation = resolved }
+            | _ -> Error weakened_type
+          in
           List.map entries ~f:resolve_entry
           |> Option.all
-          >>| add_missing_fields_if_all_non_required
-          >>| Type.TypedDictionary.anonymous
-          >>| (fun typed_dictionary ->
-                let result =
-                  comparator_without_override
-                    ~get_typed_dictionary_override:(get_typed_dictionary_override ~typed_dictionary)
-                    ~left:(Type.Primitive fresh_class_name)
-                    ~right:expected
-                in
-                if result then
-                  expected
-                else
-                  Type.TypedDictionary.encode_typed_dictionary typed_dictionary)
-          |> Option.value ~default:resolved
-      | None -> resolved )
+          >>| List.map ~f:valid_field_or_typed_dictionary_error
+          >>| Result.combine_errors
+          >>| (function
+                | Ok fields -> weaken_valid_fields fields
+                | Error erroneous_weakened_types ->
+                    make_weakened_type
+                      ~typed_dictionary_errors:
+                        (List.concat_map erroneous_weakened_types ~f:typed_dictionary_errors)
+                      resolved)
+          |> Option.value ~default:(make_weakened_type resolved)
+      | None -> make_weakened_type resolved )
   | ( Some { Node.value = Expression.Dictionary _; _ },
       _,
       Type.Parametric { name = "typing.Mapping" as generic_name; parameters } )
@@ -499,7 +602,7 @@ let rec weaken_mutable_literals
     )
   | ( Some { Node.value = Expression.Set _; _ },
       _,
-      Type.Parametric { name = "typing.AbstractSet" as generic_name; parameters } ) -> (
+      Type.Parametric { name = "typing.AbstractSet" as generic_name; parameters } ) ->
       let mutable_generic_name =
         match generic_name with
         | "typing.Mapping" -> "dict"
@@ -509,7 +612,7 @@ let rec weaken_mutable_literals
         | "typing.AbstractSet" -> "set"
         | _ -> failwith "Unexpected generic name"
       in
-      let weakened_fallback_type =
+      let { resolved = weakened_fallback_type; typed_dictionary_errors } =
         weaken_mutable_literals
           ~get_typed_dictionary
           resolve
@@ -518,10 +621,13 @@ let rec weaken_mutable_literals
           ~comparator:comparator_without_override
           ~expression
       in
-      match weakened_fallback_type with
-      | Type.Parametric { name; parameters } when Identifier.equal name mutable_generic_name ->
-          Type.parametric generic_name parameters
-      | _ -> resolved )
+      let resolved =
+        match weakened_fallback_type with
+        | Type.Parametric { name; parameters } when Identifier.equal name mutable_generic_name ->
+            Type.parametric generic_name parameters
+        | _ -> weakened_fallback_type
+      in
+      make_weakened_type ~typed_dictionary_errors resolved
   | Some { Node.value = Expression.Dictionary { entries; _ }; _ }, _, _ ->
       weaken_dictionary_entries
         ~get_typed_dictionary
@@ -535,56 +641,55 @@ let rec weaken_mutable_literals
       Type.Parametric { name = "dict"; parameters = [Single expected_key; Single expected_value] } )
     when comparator ~left:actual_key ~right:expected_key
          && comparator ~left:actual_value ~right:expected_value ->
-      expected
-  | _ -> resolved
+      make_weakened_type expected
+  | _ -> make_weakened_type resolved
 
 
 and weaken_dictionary_entries ~get_typed_dictionary resolve ~resolved ~expected ~comparator ~entries
   =
   let comparator_without_override = comparator in
   let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
-  match entries with
-  | _ -> (
-      match resolved, expected with
-      | ( Type.Parametric
-            { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
-          Type.Parametric
-            { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } )
-        ->
-          let weakened_key_type =
-            Type.union
-              (List.map
-                 ~f:(fun { key; _ } ->
-                   weaken_mutable_literals
-                     ~get_typed_dictionary
-                     resolve
-                     ~expression:(Some key)
-                     ~resolved:actual_key_type
-                     ~expected:expected_key_type
-                     ~comparator:comparator_without_override)
-                 entries)
-          in
-          let weakened_value_type =
-            Type.union
-              (List.map
-                 ~f:(fun { value; _ } ->
-                   weaken_mutable_literals
-                     ~get_typed_dictionary
-                     resolve
-                     ~expression:(Some value)
-                     ~resolved:actual_value_type
-                     ~expected:expected_value_type
-                     ~comparator:comparator_without_override)
-                 entries)
-          in
-          if
-            comparator ~left:weakened_key_type ~right:expected_key_type
-            && comparator ~left:weakened_value_type ~right:expected_value_type
-          then
+  match resolved, expected with
+  | ( Type.Parametric
+        { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
+      Type.Parametric
+        { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } ) ->
+      let { resolved = weakened_key_type; typed_dictionary_errors = key_errors } =
+        List.map
+          ~f:(fun { key; _ } ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression:(Some key)
+              ~resolved:actual_key_type
+              ~expected:expected_key_type
+              ~comparator:comparator_without_override)
+          entries
+        |> combine_weakened_types
+      in
+      let { resolved = weakened_value_type; typed_dictionary_errors = value_errors } =
+        List.map
+          ~f:(fun { value; _ } ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression:(Some value)
+              ~resolved:actual_value_type
+              ~expected:expected_value_type
+              ~comparator:comparator_without_override)
+          entries
+        |> combine_weakened_types
+      in
+      make_weakened_type
+        ~typed_dictionary_errors:(key_errors @ value_errors)
+        ( if
+          comparator ~left:weakened_key_type ~right:expected_key_type
+          && comparator ~left:weakened_value_type ~right:expected_value_type
+        then
             expected
-          else
-            Type.dictionary ~key:weakened_key_type ~value:weakened_value_type
-      | _ -> resolved )
+        else
+          Type.dictionary ~key:weakened_key_type ~value:weakened_value_type )
+  | _ -> make_weakened_type resolved
 
 
 module Implementation = struct
@@ -1103,7 +1208,7 @@ module Implementation = struct
       expression:Expression.expression Node.t option ->
       resolved:Type.t ->
       expected:Type.t ->
-      Type.t;
+      weakened_type;
     constraints_solution_exists:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
@@ -3346,6 +3451,7 @@ module Implementation = struct
                             ~expression:(Some expression)
                             ~resolved
                             ~expected:parameter_annotation
+                          |> resolved_type
                         else
                           resolved
                       in

@@ -286,6 +286,7 @@ module State (Context : Context) = struct
               ~expression
               ~resolved:actual
               ~expected:return_annotation
+            |> GlobalResolution.resolved_type
           in
           let contains_literal_any =
             return_annotation_expression

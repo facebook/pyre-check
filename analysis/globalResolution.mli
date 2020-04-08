@@ -147,13 +147,15 @@ val annotation_parser
 
 val class_definitions : t -> Reference.t -> Class.t Node.t list option
 
+val resolved_type : AttributeResolution.weakened_type -> Type.t
+
 val resolve_mutable_literals
   :  t ->
   resolve:(Expression.expression Node.t -> Type.t) ->
   expression:Ast.Expression.t option ->
   resolved:Type.t ->
   expected:Type.t ->
-  Type.t
+  AttributeResolution.weakened_type
 
 val get_typed_dictionary
   :  resolution:t ->

@@ -911,13 +911,6 @@ let test_suppress _ =
   assert_suppressed
     Source.Strict
     (undefined_attribute (Type.Callable.create ~annotation:Type.Top ()));
-  assert_not_suppressed
-    Source.Strict
-    (incompatible_return_type
-       (Type.TypedDictionary.encode_typed_dictionary
-          (Type.TypedDictionary.anonymous
-             [{ name = "name"; annotation = Type.integer; required = true }]))
-       (Type.Primitive "test.Movie"));
   ()
 
 

@@ -2192,45 +2192,6 @@ let test_fields_from_constructor _ =
   ()
 
 
-let test_pp_type_with_encoded_typed_dictionary _ =
-  let open Type.TypedDictionary in
-  let assert_pp ~annotation expected =
-    assert_equal
-      ~printer:[%show: string]
-      expected
-      (Format.asprintf "%a" pp_type_with_encoded_typed_dictionary annotation)
-  in
-  let fields =
-    [
-      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
-      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
-    ]
-  in
-  assert_pp ~annotation:Type.integer "int";
-  assert_pp
-    ~annotation:(encode_typed_dictionary (anonymous fields))
-    "TypedDict with fields (name: str, year?: int)";
-  assert_pp
-    ~annotation:
-      (Type.dictionary
-         ~key:Type.string
-         ~value:(encode_typed_dictionary (Type.TypedDictionary.anonymous fields)))
-    "typing.Dict[str, TypedDict with fields (name: str, year?: int)]";
-  assert_pp
-    ~annotation:
-      (encode_typed_dictionary
-         (anonymous
-            [
-              {
-                name = "foo";
-                annotation = encode_typed_dictionary (Type.TypedDictionary.anonymous fields);
-                required = true;
-              };
-            ]))
-    "TypedDict with fields (foo: TypedDict with fields (name: str, year?: int))";
-  ()
-
-
 let test_is_unit_test _ =
   let assert_is_unit_test name expected =
     Type.Primitive.is_unit_test name |> assert_equal expected
@@ -2289,7 +2250,6 @@ let () =
          "concatenation_zip" >:: test_concatenation_zip;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;
-         "pp_type_with_encoded_typed_dictionary" >:: test_pp_type_with_encoded_typed_dictionary;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

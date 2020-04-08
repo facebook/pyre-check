@@ -59,6 +59,18 @@ and typed_dictionary_field_mismatch =
       annotation_and_parent2: annotation_and_parent;
     }
 
+and typed_dictionary_initialization_mismatch =
+  | MissingRequiredField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
+  | FieldTypeMismatch of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+      expected_type: Type.t;
+      actual_type: Type.t;
+    }
+
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
@@ -312,6 +324,7 @@ type kind =
       method_name: Identifier.t;
       mismatch: mismatch;
     }
+  | TypedDictionaryInitializationError of typed_dictionary_initialization_mismatch
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

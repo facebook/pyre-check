@@ -414,7 +414,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
-       `__init__` but got `TypedDict with fields (name: int, year: str)`.";
+       `__init__` but got `typing.Dict[str, typing.Union[int, str]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -836,7 +836,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
-       `foo` but got `TypedDict with fields (name: str, year: str)`.";
+       `foo` but got `typing.Dict[str, str]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -890,9 +890,8 @@ let test_check_typed_dictionaries context =
         return movie['name']
     |}
     [
-      "Incompatible variable type [9]: movie is declared to have type "
-      ^ "`Movie` but is used as type "
-      ^ "`TypedDict with fields (name: str, year: str)`.";
+      "TypedDict initialization error [55]: Expected type `int` for `Movie` field `year` but got \
+       `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -919,8 +918,8 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible variable type [9]: movie is declared to have type `Movie` but is used as type \
-       `TypedDict with fields (name?: int, year?: int)`.";
+      "TypedDict initialization error [55]: Expected type `str` for `Movie` field `name` but got \
+       `int`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -961,9 +960,8 @@ let test_check_typed_dictionaries context =
         return {'name' : "Blade Runner", 'year' : '1982'}
     |}
     [
-      "Incompatible return type [7]: Expected "
-      ^ "`Movie` but got "
-      ^ "`TypedDict with fields (name: str, year: str)`.";
+      "TypedDict initialization error [55]: Expected type `int` for `Movie` field `year` but got \
+       `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1286,12 +1284,10 @@ let test_check_typed_dictionary_inheritance context =
         correct3: GrandChild = {"foo": 3, "bar": "hello", "baz": "world"}
     |}
     [
-      "Incompatible variable type [9]: wrong1 is declared to have type `Base` but is used as type \
-       `TypedDict with fields ()`.";
-      "Incompatible variable type [9]: wrong2 is declared to have type `Child` but is used as type \
-       `TypedDict with fields (foo: int)`.";
-      "Incompatible variable type [9]: wrong3 is declared to have type `GrandChild` but is used as \
-       type `TypedDict with fields (foo: int, bar: str)`.";
+      "TypedDict initialization error [55]: Missing required field `foo` for TypedDict `Base`.";
+      "TypedDict initialization error [55]: Missing required field `bar` for TypedDict `Child`.";
+      "TypedDict initialization error [55]: Missing required field `baz` for TypedDict \
+       `GrandChild`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1450,8 +1446,8 @@ let test_check_typed_dictionary_inheritance context =
     |}
     [
       "Revealed type [-1]: Revealed type for `d[\"bar\"]` is `str`.";
-      "Incompatible variable type [9]: d2 is declared to have type `NonTotalChild` but is used as \
-       type `TypedDict with fields (bar?: str)`.";
+      "TypedDict initialization error [55]: Missing required field `foo` for TypedDict \
+       `NonTotalChild`.";
     ];
   assert_test_typed_dictionary
     {|

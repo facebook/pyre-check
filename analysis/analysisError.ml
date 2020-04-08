@@ -68,6 +68,18 @@ and typed_dictionary_field_mismatch =
       annotation_and_parent2: annotation_and_parent;
     }
 
+and typed_dictionary_initialization_mismatch =
+  | MissingRequiredField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
+  | FieldTypeMismatch of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+      expected_type: Type.t;
+      actual_type: Type.t;
+    }
+
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
@@ -321,6 +333,7 @@ type kind =
       method_name: Identifier.t;
       mismatch: mismatch;
     }
+  | TypedDictionaryInitializationError of typed_dictionary_initialization_mismatch
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -384,6 +397,7 @@ let code = function
   | PrivateProtocolProperty _ -> 52
   | MissingCaptureAnnotation _ -> 53
   | TypedDictionaryInvalidOperation _ -> 54
+  | TypedDictionaryInitializationError _ -> 55
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -433,6 +447,7 @@ let name = function
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
+  | TypedDictionaryInitializationError _ -> "TypedDict initialization error"
   | TypedDictionaryInvalidOperation _ -> "Invalid TypedDict operation"
   | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
@@ -511,6 +526,19 @@ let weaken_literals kind =
   | NotCallable annotation -> NotCallable (Type.weaken_literals annotation)
   | TypedDictionaryInvalidOperation ({ mismatch; _ } as record) ->
       TypedDictionaryInvalidOperation { record with mismatch = weaken_mismatch mismatch }
+  | TypedDictionaryInitializationError mismatch ->
+      let mismatch =
+        match mismatch with
+        | FieldTypeMismatch ({ expected_type; actual_type; _ } as field_record) ->
+            FieldTypeMismatch
+              {
+                field_record with
+                expected_type = Type.weaken_literals expected_type;
+                actual_type = Type.weaken_literals actual_type;
+              }
+        | _ -> mismatch
+      in
+      TypedDictionaryInitializationError mismatch
   | _ -> kind
 
 
@@ -672,13 +700,7 @@ let messages ~concise ~signature location kind =
         else
           Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      Format.asprintf
-        "Expected `%a` for %s but got `%a`."
-        pp_type
-        expected
-        target
-        Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
-        actual
+      Format.asprintf "Expected `%a` for %s but got `%a`." pp_type expected target pp_type actual
       :: trace
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
@@ -703,12 +725,7 @@ let messages ~concise ~signature location kind =
         if is_implicit then
           Format.asprintf "Expected `%a` but got implicit return value of `None`." pp_type expected
         else
-          Format.asprintf
-            "Expected `%a` but got `%a`."
-            pp_type
-            expected
-            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
-            actual
+          Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
       in
       [message; trace]
   | IncompatibleAttributeType
@@ -751,7 +768,7 @@ let messages ~concise ~signature location kind =
             name
             pp_type
             expected
-            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
+            pp_type
             actual
         else
           Format.asprintf
@@ -760,7 +777,7 @@ let messages ~concise ~signature location kind =
             name
             pp_type
             expected
-            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
+            pp_type
             actual
       in
       let trace =
@@ -1727,6 +1744,21 @@ let messages ~concise ~signature location kind =
             pp_type
             mismatch.actual;
         ]
+  | TypedDictionaryInitializationError mismatch -> (
+      match mismatch with
+      | MissingRequiredField { field_name; class_name } ->
+          [Format.asprintf "Missing required field `%s` for TypedDict `%s`." field_name class_name]
+      | FieldTypeMismatch { field_name; expected_type; actual_type; class_name } ->
+          [
+            Format.asprintf
+              "Expected type `%a` for `%s` field `%s` but got `%a`."
+              pp_type
+              expected_type
+              class_name
+              field_name
+              pp_type
+              actual_type;
+          ] )
   | Unpack { expected_count; unpack_problem } -> (
       match unpack_problem with
       | UnacceptableType bad_type ->
@@ -2058,6 +2090,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
+  | TypedDictionaryInitializationError (FieldTypeMismatch { actual_type = actual; _ })
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
@@ -2112,6 +2145,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
+  | TypedDictionaryInitializationError _
   | Unpack _
   | RedefinedClass _
   | RevealedType _
@@ -2288,6 +2322,29 @@ let less_or_equal ~resolution left right =
       Option.equal Reference.equal_sanitized left.callee right.callee
       && left.expected = right.expected
       && left.provided = right.provided
+  | ( TypedDictionaryInitializationError
+        (FieldTypeMismatch
+          {
+            field_name = left_field_name;
+            class_name = left_class_name;
+            actual_type = left_actual_type;
+            expected_type = left_expected_type;
+          }),
+      TypedDictionaryInitializationError
+        (FieldTypeMismatch
+          {
+            field_name = right_field_name;
+            class_name = right_class_name;
+            actual_type = right_actual_type;
+            expected_type = right_expected_type;
+          }) ) ->
+      Identifier.equal left_field_name right_field_name
+      && Identifier.equal left_class_name right_class_name
+      && GlobalResolution.less_or_equal resolution ~left:left_actual_type ~right:right_actual_type
+      && GlobalResolution.less_or_equal
+           resolution
+           ~left:left_expected_type
+           ~right:right_expected_type
   | UninitializedAttribute left, UninitializedAttribute right when String.equal left.name right.name
     ->
       less_or_equal_mismatch left.mismatch right.mismatch
@@ -2365,6 +2422,7 @@ let less_or_equal ~resolution left right =
   | Top, _
   | TypedDictionaryAccessWithNonLiteral _, _
   | TypedDictionaryInvalidOperation _, _
+  | TypedDictionaryInitializationError _, _
   | TypedDictionaryKeyNotFound _, _
   | UnawaitedAwaitable _, _
   | UndefinedAttribute _, _
@@ -2654,6 +2712,39 @@ let join ~resolution left right =
            && Identifier.equal_sanitized left.method_name right.method_name ->
         let mismatch = join_mismatch left.mismatch right.mismatch in
         TypedDictionaryInvalidOperation { left with mismatch }
+    | ( TypedDictionaryInitializationError
+          (FieldTypeMismatch
+            ( {
+                field_name = left_field_name;
+                class_name = left_class_name;
+                actual_type = left_actual_type;
+                expected_type = left_expected_type;
+              } as mismatch )),
+        TypedDictionaryInitializationError
+          (FieldTypeMismatch
+            {
+              field_name = right_field_name;
+              class_name = right_class_name;
+              actual_type = right_actual_type;
+              expected_type = right_expected_type;
+            }) )
+      when Identifier.equal left_field_name right_field_name
+           && Identifier.equal left_class_name right_class_name ->
+        TypedDictionaryInitializationError
+          (FieldTypeMismatch
+             {
+               mismatch with
+               actual_type = GlobalResolution.join resolution left_actual_type right_actual_type;
+               expected_type =
+                 GlobalResolution.join resolution left_expected_type right_expected_type;
+             })
+    | ( TypedDictionaryInitializationError
+          (MissingRequiredField { field_name = left_field_name; class_name = left_class_name }),
+        TypedDictionaryInitializationError
+          (MissingRequiredField { field_name = right_field_name; class_name = right_class_name }) )
+      when Identifier.equal left_field_name right_field_name
+           && Identifier.equal left_class_name right_class_name ->
+        left.kind
     | Top, _
     | _, Top ->
         Top
@@ -2701,6 +2792,7 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryKeyNotFound _, _
     | TypedDictionaryInvalidOperation _, _
+    | TypedDictionaryInitializationError _, _
     | UnawaitedAwaitable _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
@@ -3286,6 +3378,25 @@ let dequalify
             typed_dictionary_name = dequalify_identifier typed_dictionary_name;
             mismatch = dequalify_mismatch mismatch;
           }
+    | TypedDictionaryInitializationError mismatch ->
+        let mismatch =
+          match mismatch with
+          | MissingRequiredField { field_name; class_name } ->
+              MissingRequiredField
+                {
+                  field_name = dequalify_identifier field_name;
+                  class_name = dequalify_identifier class_name;
+                }
+          | FieldTypeMismatch { field_name; expected_type; actual_type; class_name } ->
+              FieldTypeMismatch
+                {
+                  field_name = dequalify_identifier field_name;
+                  expected_type = dequalify expected_type;
+                  actual_type = dequalify actual_type;
+                  class_name = dequalify_identifier class_name;
+                }
+        in
+        TypedDictionaryInitializationError mismatch
     | UninitializedAttribute ({ mismatch; parent; kind; _ } as inconsistent_usage) ->
         UninitializedAttribute
           {
