@@ -14,9 +14,9 @@ from enum import Enum, auto
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
 
 import _ast
-from tools.pyre.api import query
 from typing_extensions import Final
 
+from ...api import query
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
 
 
