@@ -4,15 +4,8 @@
  * LICENSE file in the root directory of this source tree. *)
 
 type t =
-  | Cookies
-  | Demo
   | Attach
   | NamedSource of string
-  | PII
-  | Secrets (* Such as passwords, tokens *)
-  | Test
-  | Thrift
-  | UserControlled
 [@@deriving compare, eq, sexp, show, hash]
 
 val name : string

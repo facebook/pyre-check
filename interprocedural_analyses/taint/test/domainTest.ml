@@ -10,7 +10,7 @@ open Domains
 open Core
 
 let test_partition_call_map _ =
-  let taint = ForwardTaint.singleton Sources.UserControlled in
+  let taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled") in
   let call_taint1 =
     ForwardTaint.apply_call
       Location.WithModule.any
@@ -44,7 +44,7 @@ let test_partition_call_map _ =
   let matches, does_not_match =
     ForwardTaint.partition
       ForwardTaint.leaf
-      ~f:(fun leaf -> Some (leaf = Sources.UserControlled))
+      ~f:(fun leaf -> Some (leaf = Sources.NamedSource "UserControlled"))
       joined
     |> split
   in
@@ -69,7 +69,7 @@ let test_approximate_complex_access_paths _ =
       (ForwardState.Tree.approximate_complex_access_paths ~cutoff_at tree)
   in
   let create ~features =
-    ForwardState.Tree.create_leaf (ForwardTaint.singleton Sources.Demo)
+    ForwardState.Tree.create_leaf (ForwardTaint.singleton (Sources.NamedSource "Demo"))
     |> ForwardState.Tree.transform
          ForwardTaint.complex_feature_set
          (Abstract.Domain.Map (fun _ -> features))

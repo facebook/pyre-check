@@ -9,11 +9,13 @@ open Taint
 open Domains
 open Core
 
-let is_user_controlled = ( = ) Sources.UserControlled
+let is_user_controlled = ( = ) (Sources.NamedSource "UserControlled")
 
 let is_RCE = ( = ) Sinks.RemoteCodeExecution
 
-let source_taint = ForwardTaint.of_list [Sources.Test; Sources.UserControlled]
+let source_taint =
+  ForwardTaint.of_list [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"]
+
 
 let sink_taint = BackwardTaint.of_list [Sinks.Test; Sinks.RemoteCodeExecution]
 
@@ -32,12 +34,12 @@ let test_partition_match_some_sources _ =
   assert_equal
     ~msg:"Matching"
     ~printer:Flow.show_flows
-    [{ source_taint = ForwardTaint.singleton Sources.UserControlled; sink_taint }]
+    [{ source_taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled"); sink_taint }]
     matched;
   assert_equal
     ~msg:"Rest"
     ~printer:Flow.show_flows
-    [{ source_taint = ForwardTaint.singleton Sources.Test; sink_taint }]
+    [{ source_taint = ForwardTaint.singleton (Sources.NamedSource "Test"); sink_taint }]
     rest
 
 
@@ -66,7 +68,7 @@ let test_partition_match_some_sinks_and_sources _ =
     ~printer:Flow.show_flows
     [
       {
-        source_taint = ForwardTaint.singleton Sources.UserControlled;
+        source_taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled");
         sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
       };
     ]
@@ -76,7 +78,7 @@ let test_partition_match_some_sinks_and_sources _ =
     ~printer:Flow.show_flows
     [
       {
-        source_taint = ForwardTaint.singleton Sources.Test;
+        source_taint = ForwardTaint.singleton (Sources.NamedSource "Test");
         sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
       };
       { source_taint; sink_taint = BackwardTaint.singleton Sinks.Test };
@@ -87,12 +89,12 @@ let test_partition_match_some_sinks_and_sources _ =
 let test_no_errors _ =
   let open Flow in
   let source_tree_a =
-    ForwardTaint.singleton Sources.Demo
+    ForwardTaint.singleton (Sources.NamedSource "Demo")
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let source_tree_b =
-    ForwardTaint.singleton Sources.Test
+    ForwardTaint.singleton (Sources.NamedSource "Test")
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
@@ -137,17 +139,17 @@ let test_no_errors _ =
 let test_errors _ =
   let open Flow in
   let source_tree_a =
-    ForwardTaint.singleton Sources.UserControlled
+    ForwardTaint.singleton (Sources.NamedSource "UserControlled")
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let source_tree_b =
-    ForwardTaint.singleton Sources.Test
+    ForwardTaint.singleton (Sources.NamedSource "Test")
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let source_tree_c =
-    ForwardTaint.singleton Sources.Demo
+    ForwardTaint.singleton (Sources.NamedSource "Demo")
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in

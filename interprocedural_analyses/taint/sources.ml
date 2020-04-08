@@ -7,15 +7,8 @@ open Core
 
 module T = struct
   type t =
-    | Cookies
-    | Demo
     | Attach
     | NamedSource of string
-    | PII
-    | Secrets (* Such as passwords, tokens *)
-    | Test
-    | Thrift
-    | UserControlled
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -24,25 +17,11 @@ include T
 let _ = show (* unused *)
 
 let show = function
-  | Cookies -> "Cookies"
-  | Demo -> "Demo"
   | Attach -> "Attach"
   | NamedSource name -> name
-  | PII -> "PII"
-  | Secrets -> "Secrets"
-  | Test -> "Test"
-  | Thrift -> "Thrift"
-  | UserControlled -> "UserControlled"
 
 
 let create = function
-  | "Cookies" -> Cookies
-  | "PII" -> PII
-  | "Secrets" -> Secrets
-  | "Demo" -> Demo
-  | "Test" -> Test
-  | "Thrift" -> Thrift
-  | "UserControlled" -> UserControlled
   | name -> failwith (Format.sprintf "Unsupported taint source `%s`" name)
 
 

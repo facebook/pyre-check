@@ -28,7 +28,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     Taint.TaintConfiguration.
       {
         empty with
-        sources = ["TestTest"];
+        sources = ["TestTest"; "UserControlled"; "Test"; "Demo"];
         sinks = ["TestSink"; "OtherSink"];
         features = ["special"];
         rules;
@@ -83,7 +83,13 @@ let test_source_models context =
     ();
   assert_model
     ~model_source:"def test.taint() -> TaintSource[Test, UserControlled]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test; Sources.UserControlled] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"]
+          "test.taint";
+      ]
     ();
   assert_model
     ~model_source:"os.environ: TaintSink[Test] = ..."
@@ -98,7 +104,7 @@ let test_source_models context =
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSource[Test, ViaValueOf[x]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "test.f"]
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
     ();
   assert_model
     ~source:
@@ -115,7 +121,7 @@ let test_source_models context =
       @property
       def test.C.foo(self) -> TaintSource[Test]: ...
     |}
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "test.C.foo"]
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "test.C.foo"]
     ();
   assert_model
     ~source:
@@ -133,12 +139,12 @@ let test_source_models context =
       @foo.setter
       def test.C.foo(self, value) -> TaintSource[Test]: ...
     |}
-    ~expect:[outcome ~kind:`PropertySetter ~returns:[Sources.Test] "test.C.foo"]
+    ~expect:[outcome ~kind:`PropertySetter ~returns:[Sources.NamedSource "Test"] "test.C.foo"]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> AppliesTo[0, TaintSource[Test]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "test.f"]
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
     ();
   assert_model
     ~source:
@@ -156,7 +162,7 @@ let test_source_models context =
         @property
         def test.C.foo(self) -> TaintSource[Test]: ...
     |}
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "test.C.foo"]
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "test.C.foo"]
     ();
 
   ()
@@ -221,7 +227,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~returns:[Sources.Demo]
+          ~returns:[Sources.NamedSource "Demo"]
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.Demo] }]
           "test.both";
       ]
@@ -360,10 +366,10 @@ let test_class_models context =
       |}
     ~expect:
       [
-        outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.method";
+        outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.method";
         outcome
           ~kind:`Method
-          ~returns:[Sources.UserControlled]
+          ~returns:[Sources.NamedSource "UserControlled"]
           "test.Source.method_with_multiple_parameters";
       ]
     ();
@@ -389,7 +395,13 @@ let test_class_models context =
           def AnnotatedSource.method(parameter: int) -> None: ...
       |}
     ~model_source:"class test.AnnotatedSource(TaintSource[UserControlled]): ..."
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.AnnotatedSource.method"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.NamedSource "UserControlled"]
+          "test.AnnotatedSource.method";
+      ]
     ();
   assert_model
     ~source:
@@ -414,7 +426,8 @@ let test_class_models context =
            def Source.method(cls, parameter: int) -> None: ...
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.method"]
+    ~expect:
+      [outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.method"]
     ();
   assert_model
     ~source:
@@ -424,7 +437,8 @@ let test_class_models context =
            def Source.prop(self) -> int: ...
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.prop"]
+    ~expect:
+      [outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.prop"]
     ();
   assert_model
     ~source:
@@ -508,7 +522,7 @@ let test_source_breadcrumbs context =
   assert_model
     ~context
     ~model_source:"def test.source() -> TaintSource[Test, Via[special]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "test.source"]
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.source"]
     ()
 
 
@@ -949,7 +963,7 @@ let test_filter_by_rules context =
     ~rules:
       [
         {
-          Taint.TaintConfiguration.sources = [Sources.Test];
+          Taint.TaintConfiguration.sources = [Sources.NamedSource "Test"];
           sinks = [Sinks.NamedSink "TestSink"];
           code = 5021;
           message_format = "";
