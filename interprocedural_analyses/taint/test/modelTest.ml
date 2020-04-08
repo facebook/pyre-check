@@ -29,7 +29,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
       {
         empty with
         sources = ["TestTest"; "UserControlled"; "Test"; "Demo"];
-        sinks = ["TestSink"; "OtherSink"];
+        sinks = ["TestSink"; "OtherSink"; "Test"; "Demo"; "XSS"];
         features = ["special"];
         rules;
       }
@@ -97,7 +97,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Object
-          ~sink_parameters:[{ name = "$global"; sinks = [Sinks.Test] }]
+          ~sink_parameters:[{ name = "$global"; sinks = [Sinks.NamedSink "Test"] }]
           "os.environ";
       ]
     ();
@@ -189,7 +189,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.Test] }]
+          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           "test.sink";
       ]
     ();
@@ -201,8 +201,8 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [
-              { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] };
+              { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
+              { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
           "test.sink";
       ]
@@ -215,8 +215,8 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [
-              { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] };
+              { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
+              { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
           "test.sink";
       ]
@@ -228,7 +228,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~returns:[Sources.NamedSource "Demo"]
-          ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.Demo] }]
+          ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.NamedSink "Demo"] }]
           "test.both";
       ]
     ();
@@ -242,8 +242,8 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [
-              { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] };
+              { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
+              { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
           "test.sink";
       ]
@@ -254,7 +254,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }]
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
           "test.xss";
       ]
     ();
@@ -264,7 +264,8 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] }]
+          ~sink_parameters:
+            [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           "test.multiple";
       ]
     ();
@@ -274,7 +275,8 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] }]
+          ~sink_parameters:
+            [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           "test.multiple";
       ]
     ()
@@ -414,7 +416,7 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
           "test.SourceWithDefault.method";
       ]
     ();
@@ -511,7 +513,7 @@ let test_union_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }]
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
           ~tito_parameters:["parameter"]
           "test.both";
       ]
@@ -534,7 +536,7 @@ let test_sink_breadcrumbs context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
           "test.sink";
       ]
     ()
@@ -597,7 +599,7 @@ let test_invalid_models context =
         {
           empty with
           sources = ["A"; "B"];
-          sinks = ["X"; "Y"];
+          sinks = ["X"; "Y"; "Test"];
           features = ["featureA"; "featureB"];
           rules = [];
         }
@@ -998,7 +1000,7 @@ let test_filter_by_rules context =
       [
         {
           Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
-          sinks = [Sinks.Test];
+          sinks = [Sinks.NamedSink "Test"];
           code = 5021;
           message_format = "";
           name = "test rule";

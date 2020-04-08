@@ -6,20 +6,11 @@
 open Core
 
 type t =
-  | Demo
-  | FileSystem
-  | GetAttr
   | Attach
   | LocalReturn (* Special marker to describe function in-out behavior *)
-  | Logging
   | NamedSink of string
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
-  | RemoteCodeExecution
-  | SQL
   | AddFeatureToArgument
-  | Test
-  | XMLParser
-  | XSS
 [@@deriving compare, eq, sexp, show, hash]
 
 val name : string

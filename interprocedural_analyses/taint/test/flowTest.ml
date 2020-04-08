@@ -11,13 +11,15 @@ open Core
 
 let is_user_controlled = ( = ) (Sources.NamedSource "UserControlled")
 
-let is_RCE = ( = ) Sinks.RemoteCodeExecution
+let is_RCE = ( = ) (Sinks.NamedSink "RemoteCodeExecution")
 
 let source_taint =
   ForwardTaint.of_list [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"]
 
 
-let sink_taint = BackwardTaint.of_list [Sinks.Test; Sinks.RemoteCodeExecution]
+let sink_taint =
+  BackwardTaint.of_list [Sinks.NamedSink "Test"; Sinks.NamedSink "RemoteCodeExecution"]
+
 
 let test_partition_match_all _ =
   let open Flow in
@@ -50,12 +52,12 @@ let test_partition_match_some_sinks _ =
   assert_equal
     ~msg:"Matching"
     ~printer:Flow.show_flows
-    [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution }]
+    [{ source_taint; sink_taint = BackwardTaint.singleton (Sinks.NamedSink "RemoteCodeExecution") }]
     matched;
   assert_equal
     ~msg:"Rest"
     ~printer:Flow.show_flows
-    [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.Test }]
+    [{ source_taint; sink_taint = BackwardTaint.singleton (Sinks.NamedSink "Test") }]
     rest
 
 
@@ -69,7 +71,7 @@ let test_partition_match_some_sinks_and_sources _ =
     [
       {
         source_taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled");
-        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
+        sink_taint = BackwardTaint.singleton (Sinks.NamedSink "RemoteCodeExecution");
       };
     ]
     matched;
@@ -79,9 +81,9 @@ let test_partition_match_some_sinks_and_sources _ =
     [
       {
         source_taint = ForwardTaint.singleton (Sources.NamedSource "Test");
-        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
+        sink_taint = BackwardTaint.singleton (Sinks.NamedSink "RemoteCodeExecution");
       };
-      { source_taint; sink_taint = BackwardTaint.singleton Sinks.Test };
+      { source_taint; sink_taint = BackwardTaint.singleton (Sinks.NamedSink "Test") };
     ]
     rest
 
@@ -99,12 +101,12 @@ let test_no_errors _ =
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let sink_tree_a =
-    BackwardTaint.singleton Sinks.Test
+    BackwardTaint.singleton (Sinks.NamedSink "Test")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_b =
-    BackwardTaint.singleton Sinks.Demo
+    BackwardTaint.singleton (Sinks.NamedSink "Demo")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
@@ -154,22 +156,22 @@ let test_errors _ =
     |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_a =
-    BackwardTaint.singleton Sinks.RemoteCodeExecution
+    BackwardTaint.singleton (Sinks.NamedSink "RemoteCodeExecution")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_b =
-    BackwardTaint.singleton Sinks.Test
+    BackwardTaint.singleton (Sinks.NamedSink "Test")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "b"]
   in
   let sink_tree_c =
-    BackwardTaint.singleton Sinks.Demo
+    BackwardTaint.singleton (Sinks.NamedSink "Demo")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in
   let sink_tree_d =
-    BackwardTaint.singleton Sinks.Test
+    BackwardTaint.singleton (Sinks.NamedSink "Test")
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Field "a"]
   in

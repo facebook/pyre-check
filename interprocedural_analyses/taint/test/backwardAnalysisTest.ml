@@ -109,7 +109,7 @@ let test_sink context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.test_sink";
     ]
 
@@ -126,7 +126,8 @@ let test_rce_sink context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.RemoteCodeExecution] }]
+        ~sink_parameters:
+          [{ name = "tainted_parameter1"; sinks = [Sinks.NamedSink "RemoteCodeExecution"] }]
         "qualifier.test_rce_sink";
     ]
 
@@ -148,9 +149,12 @@ let test_rce_and_test_sink context =
         ~kind:`Function
         ~sink_parameters:
           [
-            { name = "test_only"; sinks = [Sinks.Test] };
-            { name = "rce_only"; sinks = [Sinks.RemoteCodeExecution] };
-            { name = "both"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] };
+            { name = "test_only"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "rce_only"; sinks = [Sinks.NamedSink "RemoteCodeExecution"] };
+            {
+              name = "both";
+              sinks = [Sinks.NamedSink "RemoteCodeExecution"; Sinks.NamedSink "Test"];
+            };
           ]
         "qualifier.test_rce_and_test_sink";
     ]
@@ -173,7 +177,7 @@ let test_tito_sink context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.test_tito_sink";
     ]
 
@@ -216,7 +220,7 @@ let test_apply_method_model_at_call_site context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.taint_across_methods";
     ];
   assert_taint
@@ -254,7 +258,7 @@ let test_apply_method_model_at_call_site context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.taint_across_methods";
     ];
   assert_taint
@@ -296,7 +300,7 @@ let test_apply_method_model_at_call_site context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.taint_across_union_receiver_types";
     ];
   assert_taint
@@ -329,11 +333,11 @@ let test_apply_method_model_at_call_site context =
       outcome ~kind:`Method ~sink_parameters:[] "qualifier.Foo.qux";
       outcome
         ~kind:`Method
-        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.Baz.qux";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.taint_across_union_receiver_types";
     ]
 
@@ -371,7 +375,7 @@ let test_sequential_call_path context =
     [
       outcome
         ~kind:`Method
-        ~sink_parameters:[{ name = "argument"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "argument"; sinks = [Sinks.NamedSink "Test"] }]
         ~tito_parameters:["self"]
         "qualifier.Foo.sink";
     ];
@@ -390,7 +394,7 @@ let test_sequential_call_path context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "first"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "first"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sequential_with_single_sink";
     ];
   assert_taint
@@ -410,7 +414,10 @@ let test_sequential_call_path context =
       outcome
         ~kind:`Function
         ~sink_parameters:
-          [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
+          [
+            { name = "first"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "second"; sinks = [Sinks.NamedSink "Test"] };
+          ]
         "qualifier.sequential_with_two_sinks";
     ];
   assert_taint
@@ -431,7 +438,10 @@ let test_sequential_call_path context =
       outcome
         ~kind:`Function
         ~sink_parameters:
-          [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
+          [
+            { name = "first"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "second"; sinks = [Sinks.NamedSink "Test"] };
+          ]
         "qualifier.sequential_with_redefine";
     ];
   assert_taint
@@ -452,7 +462,10 @@ let test_sequential_call_path context =
       outcome
         ~kind:`Function
         ~sink_parameters:
-          [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
+          [
+            { name = "first"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "second"; sinks = [Sinks.NamedSink "Test"] };
+          ]
         "qualifier.sequential_with_distinct_sinks";
     ];
   assert_taint
@@ -472,7 +485,10 @@ let test_sequential_call_path context =
       outcome
         ~kind:`Function
         ~sink_parameters:
-          [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
+          [
+            { name = "first"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "second"; sinks = [Sinks.NamedSink "Test"] };
+          ]
         "qualifier.sequential_with_self_propagation";
     ]
 
@@ -495,8 +511,8 @@ let test_chained_call_path context =
         ~kind:`Function
         ~sink_parameters:
           [
-            { name = "parameter0"; sinks = [Sinks.Test] };
-            { name = "parameter2"; sinks = [Sinks.Test] };
+            { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "parameter2"; sinks = [Sinks.NamedSink "Test"] };
           ]
         "qualifier.chained";
     ];
@@ -520,8 +536,8 @@ let test_chained_call_path context =
         ~kind:`Function
         ~sink_parameters:
           [
-            { name = "parameter0"; sinks = [Sinks.Test] };
-            { name = "parameter2"; sinks = [Sinks.Test] };
+            { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "parameter2"; sinks = [Sinks.NamedSink "Test"] };
           ]
         "qualifier.chained_with_tito";
     ]
@@ -568,7 +584,7 @@ let test_dictionary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
       outcome
         ~kind:`Function
@@ -606,7 +622,7 @@ let test_dictionary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
     ];
   assert_taint
@@ -618,7 +634,7 @@ let test_dictionary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
     ];
   assert_taint
@@ -630,7 +646,7 @@ let test_dictionary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
     ];
   assert_taint
@@ -642,7 +658,7 @@ let test_dictionary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.dictionary_sink";
     ]
 
@@ -681,29 +697,29 @@ let test_comprehensions context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_iterator";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "data"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_expression";
       outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_set_iterator";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "data"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_set_expression";
       outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_set";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_generator_iterator";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "data"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_generator_expression";
       outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_generator";
     ]
@@ -773,7 +789,7 @@ let test_list context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_list";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_same_index";
       outcome ~kind:`Function "qualifier.list_different_index";
@@ -820,7 +836,7 @@ let test_tuple context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_tuple";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_same_index";
       outcome ~kind:`Function "qualifier.tuple_different_index";
@@ -853,7 +869,7 @@ let test_lambda context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_lambda";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.lambda_tito";
     ]
@@ -877,7 +893,7 @@ let test_set context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_set";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_unknown_index";
@@ -911,11 +927,11 @@ let test_starred context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_starred";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_starred_starred";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred_starred";
@@ -950,20 +966,23 @@ let test_ternary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_then";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_else";
       outcome
         ~kind:`Function
         ~sink_parameters:
-          [{ name = "arg1"; sinks = [Sinks.Test] }; { name = "arg2"; sinks = [Sinks.Test] }]
+          [
+            { name = "arg1"; sinks = [Sinks.NamedSink "Test"] };
+            { name = "arg2"; sinks = [Sinks.NamedSink "Test"] };
+          ]
         "qualifier.sink_in_both";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "cond"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "cond"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_cond";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_then";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_else";
@@ -984,7 +1003,7 @@ let test_unary context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_unary";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_unary";
     ]
@@ -1003,7 +1022,7 @@ let test_walrus context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_walrus";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_walrus";
     ]
@@ -1028,12 +1047,12 @@ let test_yield context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_yield";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_yield_from";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield_from";
     ]
@@ -1376,11 +1395,11 @@ let test_decorator context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "into_sink"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "into_sink"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.decorated";
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "into_decorated"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "into_decorated"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.using_decorated";
     ]
 
@@ -1395,7 +1414,7 @@ let test_assignment context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.assigns_to_sink";
     ];
   assert_taint
@@ -1408,7 +1427,7 @@ let test_assignment context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.assigns_to_sink";
     ];
   assert_taint
@@ -1420,7 +1439,7 @@ let test_assignment context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.assigns_to_sink";
     ]
 
@@ -1442,7 +1461,7 @@ let test_access_paths context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.access_downward_closed";
       outcome ~kind:`Function ~sink_parameters:[] "qualifier.access_non_taint";
     ];
@@ -1455,7 +1474,7 @@ let test_access_paths context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.access_through_expression";
     ]
 
@@ -1471,7 +1490,7 @@ let test_for_loops context =
     [
       outcome
         ~kind:`Function
-        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_through_for";
     ]
 

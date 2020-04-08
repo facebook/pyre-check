@@ -7,21 +7,12 @@ open Core
 
 module T = struct
   type t =
-    | Demo
-    | FileSystem
-    | GetAttr
     | Attach
     | LocalReturn (* Special marker to describe function in-out behavior *)
-    | Logging
     | NamedSink of string
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
-    | RemoteCodeExecution
-    | SQL
     | AddFeatureToArgument
-    (* Special marker to designate modifying the state the parameter passed in. *)
-    | Test
-    | XMLParser
-    | XSS
+      (* Special marker to designate modifying the state the parameter passed in. *)
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -30,34 +21,15 @@ include T
 let _ = show (* unused but derived *)
 
 let show = function
-  | Demo -> "Demo"
-  | FileSystem -> "FileSystem"
-  | GetAttr -> "GetAttr"
   | Attach -> "Attach"
   | LocalReturn -> "LocalReturn"
-  | Logging -> "Logging"
   | NamedSink name -> name
   | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index
-  | RemoteCodeExecution -> "RemoteCodeExecution"
-  | SQL -> "SQL"
   | AddFeatureToArgument -> "AddFeatureToArgument"
-  | Test -> "Test"
-  | XMLParser -> "XMLParser"
-  | XSS -> "XSS"
 
 
 let create = function
-  | "Demo" -> Demo
-  | "FileSystem" -> FileSystem
-  | "GetAttr" -> GetAttr
   | "LocalReturn" -> LocalReturn
-  | "Logging" -> Logging
-  | "RemoteCodeExecution" -> RemoteCodeExecution
-  | "SQL" -> SQL
-  | "AddFeatureToArgument" -> AddFeatureToArgument
-  | "Test" -> Test
-  | "XMLParser" -> XMLParser
-  | "XSS" -> XSS
   | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
       let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
       ParameterUpdate (Int.of_string index)

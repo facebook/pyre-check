@@ -142,7 +142,18 @@ let register configuration =
 let default =
   {
     sources = ["Demo"; "Test"; "UserControlled"; "PII"; "Secrets"; "Cookies"];
-    sinks = [];
+    sinks =
+      [
+        "Demo";
+        "FileSystem";
+        "GetAttr";
+        "Logging";
+        "RemoteCodeExecution";
+        "SQL";
+        "Test";
+        "XMLParser";
+        "XSS";
+      ];
     features =
       [
         "copy";
@@ -157,7 +168,7 @@ let default =
       [
         {
           sources = [Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.RemoteCodeExecution];
+          sinks = [Sinks.NamedSink "RemoteCodeExecution"];
           code = 5001;
           name = "Possible shell injection.";
           message_format =
@@ -165,14 +176,14 @@ let default =
         };
         {
           sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.Test];
+          sinks = [Sinks.NamedSink "Test"];
           code = 5002;
           name = "Test flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.SQL];
+          sinks = [Sinks.NamedSink "SQL"];
           code = 5005;
           name = "User controlled data to SQL execution.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -182,35 +193,35 @@ let default =
             [
               Sources.NamedSource "Cookies"; Sources.NamedSource "PII"; Sources.NamedSource "Secrets";
             ];
-          sinks = [Sinks.Logging];
+          sinks = [Sinks.NamedSink "Logging"];
           code = 5006;
           name = "Restricted data being logged.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.XMLParser];
+          sinks = [Sinks.NamedSink "XMLParser"];
           code = 5007;
           name = "User data to XML Parser.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.XSS];
+          sinks = [Sinks.NamedSink "XSS"];
           code = 5008;
           name = "XSS";
           message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.NamedSource "Demo"];
-          sinks = [Sinks.Demo];
+          sinks = [Sinks.NamedSink "Demo"];
           code = 5009;
           name = "Demo flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
         {
           sources = [Sources.NamedSource "UserControlled"];
-          sinks = [Sinks.GetAttr];
+          sinks = [Sinks.NamedSink "GetAttr"];
           code = 5010;
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";

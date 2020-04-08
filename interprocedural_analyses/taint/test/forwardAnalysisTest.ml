@@ -1006,7 +1006,10 @@ let test_composed_models context =
         ~kind:`Function
         ~returns:[Sources.NamedSource "UserControlled"]
         ~sink_parameters:
-          [{ name = "x"; sinks = [Taint.Sinks.Test] }; { name = "y"; sinks = [Taint.Sinks.Demo] }]
+          [
+            { name = "x"; sinks = [Taint.Sinks.NamedSink "Test"] };
+            { name = "y"; sinks = [Taint.Sinks.NamedSink "Demo"] };
+          ]
         ~tito_parameters:["z"]
         "models.composed_model";
     ]
