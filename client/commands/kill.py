@@ -76,19 +76,36 @@ class Kill(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        with_fire: bool,
     ) -> None:
         super(Kill, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._with_fire: bool = arguments.with_fire
+        self._with_fire = with_fire
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Kill":
+        return Kill(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            with_fire=arguments.with_fire,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         kill = parser.add_parser(cls.NAME)
-        kill.set_defaults(command=cls)
+        kill.set_defaults(command=cls.from_arguments)
         kill.add_argument(
             "--with-fire", action="store_true", help="A no-op flag that adds emphasis."
         )
@@ -219,7 +236,7 @@ class Kill(Command):
         self._delete_server_files()
         self._delete_caches()
         self._kill_client_processes()
-        if self._arguments.with_fire:
+        if self._with_fire:
             LOG.warning(
                 "Note that `--with-fire` adds emphasis to `pyre kill` but does not affect its behavior."
                 f"\n{PYRE_FIRE}"
