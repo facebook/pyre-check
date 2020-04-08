@@ -63,7 +63,7 @@ Notice the following:
 {
   sources: [
     {
-      name: "UserSpecified",
+      name: "UserControlled",
       comment: "use to annotate user input"
     }
   ],
@@ -81,7 +81,7 @@ Notice the following:
     {
       name: "Possible shell injection",
       code: 5001,
-      sources: [ "UserSpecified" ],
+      sources: [ "UserControlled" ],
       sinks: [ "RemoteCodeExecution" ],
       message_format: "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
     }
@@ -90,7 +90,7 @@ Notice the following:
 ```
 
 This declares the valid sources and sinks that Pysa should recognize. We
-also tell Pysa that data flowing from a `UserSpecified` source to a
+also tell Pysa that data flowing from a `UserControlled` source to a
 `RemoteCodeExecution` sink is a possible shell injection.
 
 ### 3. Taint Stubs
@@ -99,7 +99,7 @@ also tell Pysa that data flowing from a `UserSpecified` source to a
 # static_analysis_example/stubs/taint/general.pysa
 
 # model for raw_input
-def input(__prompt = ...) -> TaintSource[UserSpecified]: ...
+def input(__prompt = ...) -> TaintSource[UserControlled]: ...
 
 # model for os.system
 def os.system(command: TaintSink[RemoteCodeExecution]): ...
@@ -137,11 +137,11 @@ Now let's run the static analysis:
     "code": 5001,
     "name": "Possible shell injection",
     "description":
-      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "long_description":
-      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "concise_description":
-      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+      "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
     "define": "source.convert"
   }
