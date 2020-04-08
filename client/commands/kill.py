@@ -199,13 +199,12 @@ class Kill(Command):
             prefix="pyre-rage-", suffix=".log", delete=False
         ) as output:
             LOG.warning("Saving the output of `pyre rage` into `%s`", output.name)
-            arguments = self._arguments
-            arguments.output_path = output.name
             Rage(
-                arguments,
-                self._original_directory,
-                self._configuration,
-                self._analysis_directory,
+                self._arguments,
+                original_directory=self._original_directory,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
+                output_path=output.name,
             ).run()
 
     def _run(self) -> None:

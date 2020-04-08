@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
 from ...commands.command import Result
+from ...commands.rage import Rage
 from ...commands.servers import ServerDetails
 from .command_test import mock_arguments, mock_configuration
 
@@ -32,8 +33,12 @@ class RageTest(unittest.TestCase):
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
         self.assertEqual(
-            commands.Rage(
-                arguments, original_directory, configuration, analysis_directory
+            Rage(
+                arguments,
+                original_directory=original_directory,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
+                output_path=None,
             )._flags(),
             ["-log-directory", ".pyre"],
         )
@@ -55,17 +60,20 @@ class RageTest(unittest.TestCase):
         self, call_client: MagicMock, run: MagicMock, stdout: MagicMock
     ) -> None:
         arguments = mock_arguments()
-        arguments.output_path = None
         arguments.local_configuration = "foo/bar"
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
 
-        commands.Rage(
-            arguments, original_directory, configuration, analysis_directory
+        Rage(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path=None,
         ).run()
         call_client.assert_called_once_with(
-            command=commands.Rage.NAME, capture_output=False, stdout=sys.stdout
+            command=Rage.NAME, capture_output=False, stdout=sys.stdout
         )
         self.assert_output(stdout)
 
@@ -75,7 +83,6 @@ class RageTest(unittest.TestCase):
     )
     def test_file_output(self, call_client: MagicMock, run: MagicMock) -> None:
         arguments = mock_arguments()
-        arguments.output_path = "/output"
         arguments.local_configuration = "foo/bar"
         configuration = mock_configuration()
         original_directory = "/original/directory"
@@ -90,12 +97,16 @@ class RageTest(unittest.TestCase):
         output_file.flush = output_content.flush
 
         with patch("builtins.open", return_value=output_file) as open:
-            commands.Rage(
-                arguments, original_directory, configuration, analysis_directory
+            Rage(
+                arguments,
+                original_directory=original_directory,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
+                output_path="/output",
             ).run()
             open.assert_called_once_with("/output", "w")
             call_client.assert_called_once_with(
-                command=commands.Rage.NAME, capture_output=False, stdout=output_file
+                command=Rage.NAME, capture_output=False, stdout=output_file
             )
             self.assert_output(output_content)
 
@@ -105,12 +116,15 @@ class RageTest(unittest.TestCase):
         self, call_client: MagicMock, all_server_details: MagicMock
     ) -> None:
         arguments = mock_arguments()
-        arguments.output_path = None
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
-        rage_command = commands.Rage(
-            arguments, original_directory, configuration, analysis_directory
+        rage_command = Rage(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path=None,
         )
         rage_command._log_directory_for_binary = "/some-log-directory"
         all_server_details.return_value = [
@@ -126,12 +140,15 @@ class RageTest(unittest.TestCase):
         self, call_client: MagicMock, all_server_details: MagicMock
     ) -> None:
         arguments = mock_arguments()
-        arguments.output_path = None
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
-        rage_command = commands.Rage(
-            arguments, original_directory, configuration, analysis_directory
+        rage_command = Rage(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path=None,
         )
 
         all_server_details.return_value = [
@@ -141,7 +158,7 @@ class RageTest(unittest.TestCase):
 
         log_directories: List[str] = []
 
-        def mock_call_client(_object: commands.Rage, **kwargs: object) -> MagicMock:
+        def mock_call_client(_object: Rage, **kwargs: object) -> MagicMock:
             """Capture the log directory that will be passed to the binary."""
             log_directories.append(_object._log_directory_for_binary)
             return MagicMock()

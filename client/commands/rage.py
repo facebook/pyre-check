@@ -26,15 +26,32 @@ class Rage(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        output_path: Optional[str],
     ) -> None:
         super(Rage, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._output_path: Final[Optional[str]] = arguments.output_path
         self._log_directory_for_binary: str = self.log_directory
+        self._output_path: Final[Optional[str]] = output_path
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Rage":
+        return Rage(
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path=arguments.output_path,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -45,7 +62,7 @@ class Rage(Command):
             information to the terminal or to a file.
             """,
         )
-        rage.set_defaults(command=cls)
+        rage.set_defaults(command=cls.from_arguments)
         rage.add_argument(
             "--output-file",
             default=None,

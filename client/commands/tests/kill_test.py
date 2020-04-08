@@ -30,14 +30,14 @@ class KillTest(unittest.TestCase):
         self.assertEqual(_get_process_name("PYRE_BINARY", "foo"), "main.exe")
 
     @patch.object(kill, "Rage")
-    @patch.object(
-        tempfile, "NamedTemporaryFile", return_value=MagicMock(name="/tmp/file")
-    )
+    @patch.object(tempfile, "NamedTemporaryFile")
     def test_rage(self, named_temporary_file: MagicMock, rage: MagicMock) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
+
+        named_temporary_file.return_value.__enter__.return_value.name = "/tmp/file"
 
         kill_command = Kill(
             arguments, original_directory, configuration, analysis_directory
@@ -48,7 +48,11 @@ class KillTest(unittest.TestCase):
             prefix="pyre-rage-", suffix=".log", delete=False
         )
         rage.assert_called_with(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory=original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            output_path="/tmp/file",
         )
 
     @patch.object(psutil, "process_iter")
