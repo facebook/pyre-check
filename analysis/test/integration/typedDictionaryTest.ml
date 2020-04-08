@@ -1034,6 +1034,21 @@ let test_check_typed_dictionaries context =
       "Incompatible parameter type [6]: Expected `HasField` for 1st positional only parameter to \
        call `expects_has_field` but got `Bar`.";
     ];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      Movie2 = mypy_extensions.TypedDict('Movie2', {'name': str})
+      movie: Movie
+      movie2: Movie2
+      x = movie if True else movie2
+      reveal_type(x)
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` has type \
+       `typing.Union[Movie, Movie2]` but no type is specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[Movie, Movie2]`.";
+    ];
   ()
 
 

@@ -1712,12 +1712,6 @@ module State (Context : Context) = struct
             | meta when Type.is_meta meta -> (
                 let backup = find_method ~parent:meta ~name:"__call__" in
                 match Type.single_parameter meta with
-                | TypedDictionary { name; fields } as parent ->
-                    Some
-                      {
-                        callable = Type.TypedDictionary.constructor ~name ~fields;
-                        self_argument = Some parent;
-                      }
                 | Variable { constraints = Type.Variable.Unconstrained; _ } -> backup
                 | Variable { constraints = Type.Variable.Explicit constraints; _ }
                   when List.length constraints > 1 ->
@@ -1926,8 +1920,6 @@ module State (Context : Context) = struct
                   | _ -> normal
               in
               match self_argument, callee >>| Reference.as_list with
-              | Some (Type.TypedDictionary typed_dictionary), Some [_; method_name] ->
-                  typed_dictionary_error ~method_name ~position typed_dictionary
               | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
                   GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
                   >>| typed_dictionary_error ~method_name ~position
@@ -3791,15 +3783,6 @@ module State (Context : Context) = struct
                               | Some { Node.value = Expression.Ellipsis; _ } -> true
                               | _ -> false
                             in
-                            let is_typed_dictionary_initialization =
-                              (* Special-casing to avoid throwing errors *)
-                              let open Type in
-                              match expected with
-                              | Parametric { name = "type"; parameters = [Single parameter] }
-                                when is_typed_dictionary parameter ->
-                                  contains_unknown resolved
-                              | _ -> false
-                            in
                             is_immutable
                             && (not expression_is_ellipses)
                             && (not
@@ -3807,7 +3790,6 @@ module State (Context : Context) = struct
                                      global_resolution
                                      ~left:resolved
                                      ~right:expected))
-                            && (not is_typed_dictionary_initialization)
                             && (not is_valid_enumeration_assignment)
                             && not (Annotation.is_final target_annotation)
                           in

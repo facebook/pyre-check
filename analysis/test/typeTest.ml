@@ -399,28 +399,6 @@ let test_create _ =
     "typing.Callable[..., function]"
     (Type.Callable.create ~annotation:(Type.Callable.create ~annotation:Type.Any ()) ());
   assert_create
-    "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
-    (Type.TypedDictionary
-       {
-         name = "Movie";
-         fields =
-           [
-             { name = "year"; annotation = Type.integer; required = true };
-             { name = "name"; annotation = Type.string; required = true };
-           ];
-       });
-  assert_create
-    "mypy_extensions.TypedDict[('Movie', False, ('year', int), ('name', str))]"
-    (Type.TypedDictionary
-       {
-         name = "Movie";
-         fields =
-           [
-             { name = "year"; annotation = Type.integer; required = false };
-             { name = "name"; annotation = Type.string; required = false };
-           ];
-       });
-  assert_create
     ~aliases:(function
       | "Ts" -> Some (Type.VariableAlias (ListVariadic (Type.Variable.Variadic.List.create "Ts")))
       | _ -> None)
@@ -596,28 +574,6 @@ let test_expression _ =
        ())
     ("typing.Callable.__getitem__(([Named($0, int), Variable(int), " ^ "Keywords(str)], int))");
   assert_expression
-    (Type.TypedDictionary
-       {
-         name = "Movie";
-         fields =
-           [
-             { name = "title"; annotation = Type.string; required = true };
-             { name = "year"; annotation = Type.integer; required = true };
-           ];
-       })
-    "mypy_extensions.TypedDict[(\"Movie\", True, (\"title\", str), (\"year\", int))]";
-  assert_expression
-    (Type.TypedDictionary
-       {
-         name = "Movie";
-         fields =
-           [
-             { name = "title"; annotation = Type.string; required = false };
-             { name = "year"; annotation = Type.integer; required = false };
-           ];
-       })
-    "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]";
-  assert_expression
     (Type.Parametric
        {
          name = "G";
@@ -712,28 +668,6 @@ let test_concise _ =
   assert_concise (Type.Primitive "a.b.c") "c";
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
-  assert_concise
-    (Type.TypedDictionary
-       {
-         name = "Movie";
-         fields =
-           [
-             { name = "year"; annotation = Type.integer; required = true };
-             { name = "name"; annotation = Type.string; required = true };
-           ];
-       })
-    "Movie";
-  assert_concise
-    (Type.TypedDictionary
-       {
-         name = "$anonymous";
-         fields =
-           [
-             { name = "year"; annotation = Type.integer; required = true };
-             { name = "name"; annotation = Type.string; required = true };
-           ];
-       })
-    "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
   assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T"
 
@@ -800,18 +734,7 @@ let test_primitives _ =
   assert_equal [] (Type.primitives Type.Bottom);
   assert_equal [Type.integer] (Type.primitives Type.integer);
   assert_equal [] (Type.primitives Type.Any);
-  assert_equal
-    [Type.integer; Type.string]
-    ( Type.TypedDictionary
-        {
-          name = "Movie";
-          fields =
-            [
-              { name = "year"; annotation = Type.integer; required = true };
-              { name = "name"; annotation = Type.string; required = true };
-            ];
-        }
-    |> Type.primitives )
+  ()
 
 
 let test_elements _ =
@@ -844,18 +767,7 @@ let test_elements _ =
   assert_equal [] (Type.elements Type.Bottom);
   assert_equal ["int"] (Type.elements Type.integer);
   assert_equal [] (Type.elements Type.Any);
-  assert_equal
-    ["int"; "str"; "TypedDictionary"]
-    ( Type.TypedDictionary
-        {
-          name = "Movie";
-          fields =
-            [
-              { name = "year"; annotation = Type.integer; required = true };
-              { name = "name"; annotation = Type.string; required = true };
-            ];
-        }
-    |> Type.elements )
+  ()
 
 
 let test_exists _ =
@@ -1282,15 +1194,6 @@ let test_visit _ =
     SubstitutionTransform.visit 1 (create "typing.Callable[[typing.Optional[int], int], int]")
   in
   assert_types_equal transformed (create "typing.Callable[[typing.Optional[int], str], int]");
-  assert_equal ~printer:string_of_int 0 end_state;
-  let end_state, transformed =
-    SubstitutionTransform.visit
-      1
-      (create "mypy_extensions.TypedDict[('int', True, ('int', int), ('str', int))]")
-  in
-  assert_types_equal
-    transformed
-    (create "mypy_extensions.TypedDict[('int', True, ('int', str), ('str', int))]");
   assert_equal ~printer:string_of_int 0 end_state;
   let module ConcatenateTransform = Type.Transform.Make (struct
     type state = string
@@ -2289,6 +2192,45 @@ let test_fields_from_constructor _ =
   ()
 
 
+let test_pp_type_with_encoded_typed_dictionary _ =
+  let open Type.TypedDictionary in
+  let assert_pp ~annotation expected =
+    assert_equal
+      ~printer:[%show: string]
+      expected
+      (Format.asprintf "%a" pp_type_with_encoded_typed_dictionary annotation)
+  in
+  let fields =
+    [
+      { Type.Record.TypedDictionary.name = "name"; annotation = Type.string; required = true };
+      { Type.Record.TypedDictionary.name = "year"; annotation = Type.integer; required = false };
+    ]
+  in
+  assert_pp ~annotation:Type.integer "int";
+  assert_pp
+    ~annotation:(encode_typed_dictionary (anonymous fields))
+    "TypedDict with fields (name: str, year?: int)";
+  assert_pp
+    ~annotation:
+      (Type.dictionary
+         ~key:Type.string
+         ~value:(encode_typed_dictionary (Type.TypedDictionary.anonymous fields)))
+    "typing.Dict[str, TypedDict with fields (name: str, year?: int)]";
+  assert_pp
+    ~annotation:
+      (encode_typed_dictionary
+         (anonymous
+            [
+              {
+                name = "foo";
+                annotation = encode_typed_dictionary (Type.TypedDictionary.anonymous fields);
+                required = true;
+              };
+            ]))
+    "TypedDict with fields (foo: TypedDict with fields (name: str, year?: int))";
+  ()
+
+
 let test_is_unit_test _ =
   let assert_is_unit_test name expected =
     Type.Primitive.is_unit_test name |> assert_equal expected
@@ -2347,6 +2289,7 @@ let () =
          "concatenation_zip" >:: test_concatenation_zip;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;
+         "pp_type_with_encoded_typed_dictionary" >:: test_pp_type_with_encoded_typed_dictionary;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

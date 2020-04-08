@@ -368,12 +368,10 @@ let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation
 
 
 let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
-  let comparator ~left ~right =
+  let comparator =
     AttributeResolution.ReadOnly.constraints_solution_exists
       ?dependency
       (attribute_resolution resolution)
-      ~left
-      ~right
   in
 
   let left =
@@ -385,7 +383,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
       ~expected:right
       ~comparator
   in
-  comparator ~left ~right
+  comparator ~get_typed_dictionary_override:(fun _ -> None) ~left ~right
 
 
 let constructor ~resolution:({ dependency; _ } as resolution) =
@@ -513,6 +511,7 @@ end
 
 let constraints_solution_exists ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints_solution_exists
+    ~get_typed_dictionary_override:(fun _ -> None)
     ?dependency
     (attribute_resolution resolution)
 

@@ -196,7 +196,6 @@ and t =
   | Primitive of Primitive.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of t Record.TypedDictionary.record
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
@@ -456,8 +455,6 @@ val is_top : t -> bool
 val is_tuple : t -> bool
 
 val is_type_alias : t -> bool
-
-val is_typed_dictionary : t -> bool
 
 val is_unbound : t -> bool
 
@@ -821,7 +818,7 @@ val is_concrete : t -> bool
 module TypedDictionary : sig
   open Record.TypedDictionary
 
-  val anonymous : t typed_dictionary_field list -> t
+  val anonymous : t typed_dictionary_field list -> t record
 
   val create_field : name:string -> annotation:t -> required:bool -> t typed_dictionary_field
 
@@ -842,6 +839,10 @@ module TypedDictionary : sig
   val constructor : name:Identifier.t -> fields:t typed_dictionary_field list -> Callable.t
 
   val fields_from_constructor : Callable.t -> t typed_dictionary_field list option
+
+  val encode_typed_dictionary : t Record.TypedDictionary.record -> t
+
+  val pp_type_with_encoded_typed_dictionary : Format.formatter -> t -> unit
 
   val special_overloads
     :  class_name:Primitive.t ->

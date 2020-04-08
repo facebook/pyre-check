@@ -132,7 +132,11 @@ val weaken_mutable_literals
   expression:Expression.expression Node.t option ->
   resolved:Type.t ->
   expected:Type.t ->
-  comparator:(left:Type.t -> right:Type.t -> bool) ->
+  comparator:
+    (get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+    left:Type.t ->
+    right:Type.t ->
+    bool) ->
   Type.t
 
 type uninstantiated
@@ -242,6 +246,7 @@ module AttributeReadOnly : sig
   val constraints_solution_exists
     :  t ->
     ?dependency:SharedMemoryKeys.dependency ->
+    get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
     left:Type.t ->
     right:Type.t ->
     bool

@@ -570,12 +570,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let left_typed_dictionary = get_typed_dictionary left in
         let right_typed_dictionary = get_typed_dictionary right in
         match left_typed_dictionary, right_typed_dictionary with
-        | Some left, Some right ->
-            solve_less_or_equal
-              order
-              ~constraints
-              ~left:(Type.TypedDictionary left)
-              ~right:(Type.TypedDictionary right)
+        | Some { fields = left_fields; _ }, Some { fields = right_fields; _ } ->
+            let field_not_found field =
+              not
+                (List.exists
+                   left_fields
+                   ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
+            in
+            if not (List.exists right_fields ~f:field_not_found) then
+              [constraints]
+            else
+              []
         | Some { fields; _ }, None ->
             let left =
               Type.Primitive
@@ -667,49 +672,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
         |> Option.value ~default:[]
     | Type.Callable _, _ -> []
-    | Type.TypedDictionary left, Type.TypedDictionary right ->
-        let field_not_found field =
-          not
-            (List.exists
-               left.fields
-               ~f:([%equal: Type.t Type.Record.TypedDictionary.typed_dictionary_field] field))
-        in
-        if not (List.exists right.fields ~f:field_not_found) then
-          [constraints]
-        else
-          []
-    | _, Type.TypedDictionary { fields; _ } -> (
-        let left_typed_dictionary = get_typed_dictionary left in
-        match left_typed_dictionary with
-        | Some typed_dictionary ->
-            solve_less_or_equal
-              order
-              ~constraints
-              ~left:(Type.TypedDictionary typed_dictionary)
-              ~right
-        | None ->
-            let right =
-              Type.Primitive
-                (Type.TypedDictionary.class_name
-                   ~total:(Type.TypedDictionary.are_fields_total fields))
-            in
-            solve_less_or_equal order ~constraints ~left ~right )
-    | Type.TypedDictionary { fields; _ }, _ -> (
-        let right_typed_dictionary = get_typed_dictionary right in
-        match right_typed_dictionary with
-        | Some typed_dictionary ->
-            solve_less_or_equal
-              order
-              ~constraints
-              ~left
-              ~right:(Type.TypedDictionary typed_dictionary)
-        | None ->
-            let left =
-              Type.Primitive
-                (Type.TypedDictionary.class_name
-                   ~total:(Type.TypedDictionary.are_fields_total fields))
-            in
-            solve_less_or_equal order ~constraints ~left ~right )
     | _, Type.Literal _ -> []
     | Type.Literal _, _ ->
         solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right

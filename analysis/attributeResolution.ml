@@ -288,6 +288,8 @@ let rec weaken_mutable_literals
     ~expected
     ~comparator
   =
+  let comparator_without_override = comparator in
+  let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
   let open Expression in
   match expression, resolved, expected with
   | _, _, Type.Union expected_types -> (
@@ -300,7 +302,7 @@ let rec weaken_mutable_literals
               ~expression
               ~resolved
               ~expected:expected_type
-              ~comparator)
+              ~comparator:comparator_without_override)
           expected_types
       in
       match
@@ -316,7 +318,7 @@ let rec weaken_mutable_literals
           ~expression
           ~resolved
           ~expected:expected_type
-          ~comparator
+          ~comparator:comparator_without_override
       in
       if comparator ~left:resolved_type ~right:expected_type then
         expected
@@ -335,7 +337,7 @@ let rec weaken_mutable_literals
                  ~expression:(Some item)
                  ~resolved:actual_item_type
                  ~expected:expected_item_type
-                 ~comparator)
+                 ~comparator:comparator_without_override)
              items)
       in
       if comparator ~left:weakened_item_type ~right:expected_item_type then
@@ -360,7 +362,7 @@ let rec weaken_mutable_literals
                  ~expression:(Some item)
                  ~resolved:actual_item_type
                  ~expected:expected_item_type
-                 ~comparator)
+                 ~comparator:comparator_without_override)
              items)
       in
       if comparator ~left:weakened_item_type ~right:expected_item_type then
@@ -385,7 +387,7 @@ let rec weaken_mutable_literals
               ~expression:(Some item)
               ~resolved:actual_item_type
               ~expected:expected_item_type
-              ~comparator)
+              ~comparator:comparator_without_override)
           items
           actual_item_types
           expected_item_types
@@ -408,7 +410,7 @@ let rec weaken_mutable_literals
                  ~expression:(Some item)
                  ~resolved:actual_item_type
                  ~expected:expected_item_type
-                 ~comparator)
+                 ~comparator:comparator_without_override)
              items
              actual_item_types)
       in
@@ -434,13 +436,14 @@ let rec weaken_mutable_literals
                 let annotation, required =
                   let resolved = resolve value in
                   let relax { annotation; _ } =
-                    if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
+                    if Type.is_dictionary resolved || Option.is_some (get_typed_dictionary resolved)
+                    then
                       weaken_mutable_literals
                         resolve
                         ~expression:(Some value)
                         ~resolved
                         ~expected:annotation
-                        ~comparator
+                        ~comparator:comparator_without_override
                         ~get_typed_dictionary
                     else if comparator ~left:resolved ~right:annotation then
                       annotation
@@ -460,19 +463,31 @@ let rec weaken_mutable_literals
             in
             let missing_fields = List.filter fields ~f:is_missing in
             if List.for_all missing_fields ~f:(fun { required; _ } -> not required) then
-              sofar @ List.filter fields ~f:is_missing
+              sofar @ missing_fields
             else
               sofar
+          in
+          let fresh_class_name = "$fresh_class_name" in
+          let get_typed_dictionary_override ~typed_dictionary annotation =
+            match annotation with
+            | Type.Primitive name when String.equal name fresh_class_name -> Some typed_dictionary
+            | _ -> None
           in
           List.map entries ~f:resolve_entry
           |> Option.all
           >>| add_missing_fields_if_all_non_required
           >>| Type.TypedDictionary.anonymous
           >>| (fun typed_dictionary ->
-                if comparator ~left:typed_dictionary ~right:expected then
+                let result =
+                  comparator_without_override
+                    ~get_typed_dictionary_override:(get_typed_dictionary_override ~typed_dictionary)
+                    ~left:(Type.Primitive fresh_class_name)
+                    ~right:expected
+                in
+                if result then
                   expected
                 else
-                  typed_dictionary)
+                  Type.TypedDictionary.encode_typed_dictionary typed_dictionary)
           |> Option.value ~default:resolved
       | None -> resolved )
   | ( Some { Node.value = Expression.Dictionary _; _ },
@@ -500,7 +515,7 @@ let rec weaken_mutable_literals
           resolve
           ~resolved
           ~expected:(Type.parametric mutable_generic_name parameters)
-          ~comparator
+          ~comparator:comparator_without_override
           ~expression
       in
       match weakened_fallback_type with
@@ -513,7 +528,7 @@ let rec weaken_mutable_literals
         resolve
         ~resolved
         ~expected
-        ~comparator
+        ~comparator:comparator_without_override
         ~entries
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
       Type.Parametric { name = "dict"; parameters = [Single actual_key; Single actual_value] },
@@ -526,6 +541,8 @@ let rec weaken_mutable_literals
 
 and weaken_dictionary_entries ~get_typed_dictionary resolve ~resolved ~expected ~comparator ~entries
   =
+  let comparator_without_override = comparator in
+  let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
   match entries with
   | _ -> (
       match resolved, expected with
@@ -544,7 +561,7 @@ and weaken_dictionary_entries ~get_typed_dictionary resolve ~resolved ~expected 
                      ~expression:(Some key)
                      ~resolved:actual_key_type
                      ~expected:expected_key_type
-                     ~comparator)
+                     ~comparator:comparator_without_override)
                  entries)
           in
           let weakened_value_type =
@@ -557,7 +574,7 @@ and weaken_dictionary_entries ~get_typed_dictionary resolve ~resolved ~expected 
                      ~expression:(Some value)
                      ~resolved:actual_value_type
                      ~expected:expected_value_type
-                     ~comparator)
+                     ~comparator:comparator_without_override)
                  entries)
           in
           if
@@ -1091,6 +1108,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
       ?dependency:SharedMemoryKeys.dependency ->
+      get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
       left:Type.t ->
       right:Type.t ->
       bool;
@@ -1973,15 +1991,6 @@ module Implementation = struct
                 { name = "self"; annotation = Type.Top; default = false }
             in
             match instantiated, attribute_name, callable with
-            | Type.TypedDictionary { fields; _ }, method_name, callable ->
-                Type.TypedDictionary.special_overloads ~class_name ~fields ~method_name
-                >>| (fun overloads ->
-                      {
-                        callable with
-                        implementation = { annotation = Type.Top; parameters = Undefined };
-                        overloads;
-                      })
-                |> Option.value ~default:callable
             | Type.Tuple (Bounded (Concrete members)), "__getitem__", ({ overloads; _ } as callable)
               ->
                 let overload index member =
@@ -3740,7 +3749,7 @@ module Implementation = struct
       resolve
       ~get_typed_dictionary:
         (get_typed_dictionary open_recurser ~assumptions ~class_metadata_environment ?dependency)
-      ~comparator:(constraints_solution_exists ?dependency ~class_metadata_environment ~assumptions)
+      ~comparator:(constraints_solution_exists ~class_metadata_environment ~assumptions ?dependency)
 
 
   let constraints_solution_exists
@@ -3748,10 +3757,23 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ?dependency
+      ~get_typed_dictionary_override
       ~left
       ~right
     =
-    let order = full_order ?dependency class_metadata_environment ~assumptions in
+    let ({ ConstraintsSet.get_typed_dictionary; _ } as order) =
+      full_order ?dependency class_metadata_environment ~assumptions
+    in
+    let order =
+      {
+        order with
+        get_typed_dictionary =
+          (fun annotation ->
+            Option.first_some
+              (get_typed_dictionary_override annotation)
+              (get_typed_dictionary annotation));
+      }
+    in
     TypeOrder.OrderedConstraintsSet.add
       ConstraintsSet.empty
       ~new_constraint:(LessOrEqual { left; right })

@@ -438,7 +438,6 @@ module T = struct
     | Primitive of Primitive.t
     | Top
     | Tuple of tuple
-    | TypedDictionary of t Record.TypedDictionary.record
     | Union of t list
     | Variable of t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
@@ -594,11 +593,6 @@ let is_type_alias = function
   | _ -> false
 
 
-let is_typed_dictionary = function
-  | TypedDictionary _ -> true
-  | _ -> false
-
-
 let is_unbound = function
   | Bottom -> true
   | _ -> false
@@ -707,28 +701,6 @@ let rec pp format annotation =
         | Unbounded parameter -> Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
-  | TypedDictionary { Record.TypedDictionary.name; fields } ->
-      let fields =
-        fields
-        |> List.map ~f:(Format.asprintf "%a" (pp_typed_dictionary_field ~pp_type:pp))
-        |> String.concat ~sep:", "
-      in
-      let name =
-        if String.equal name "$anonymous" then
-          ""
-        else
-          Format.sprintf " `%s`" name
-      in
-      let fields =
-        let fields_message = Format.sprintf " with fields (%s)" fields in
-        if String.equal name "" then
-          fields_message
-        else if String.length fields_message < 80 then
-          fields_message
-        else
-          ""
-      in
-      Format.fprintf format "TypedDict%s%s" name fields
   | Union parameters ->
       Format.fprintf
         format
@@ -804,14 +776,6 @@ let rec pp_concise format annotation =
         (Record.OrderedTypes.pp_concise ~pp_type:pp_concise)
         parameters
   | Tuple (Unbounded parameter) -> Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
-  | TypedDictionary { name = "$anonymous"; fields; _ } ->
-      let fields =
-        fields
-        |> List.map ~f:(Format.asprintf "%a" (pp_typed_dictionary_field ~pp_type:pp))
-        |> String.concat ~sep:", "
-      in
-      Format.fprintf format "TypedDict(%s)" fields
-  | TypedDictionary { name; _ } -> Format.fprintf format "%s" (strip_qualification name)
   | Union parameters -> Format.fprintf format "Union[%a]" pp_comma_separated parameters
   | Variable { variable; _ } -> Format.fprintf format "%s" (strip_qualification variable)
 
@@ -1167,30 +1131,6 @@ let rec expression annotation =
           | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" parameters
-    | TypedDictionary { name; fields } ->
-        let argument =
-          let tail =
-            let field_to_tuple { Record.TypedDictionary.name; annotation; _ } =
-              Node.create_with_default_location
-                (Expression.Tuple
-                   [
-                     Node.create_with_default_location
-                       (Expression.String { value = name; kind = StringLiteral.String });
-                     expression annotation;
-                   ])
-            in
-            List.map fields ~f:field_to_tuple
-          in
-          let totality =
-            (if are_fields_total fields then Expression.True else Expression.False)
-            |> Node.create_with_default_location
-          in
-          Expression.String { value = name; kind = StringLiteral.String }
-          |> Node.create_with_default_location
-          |> (fun name -> Expression.Tuple (name :: totality :: tail))
-          |> Node.create_with_default_location
-        in
-        get_item_call "mypy_extensions.TypedDict" [argument]
     | Union parameters -> get_item_call "typing.Union" (List.map ~f:expression parameters)
     | Variable { variable; _ } -> create_name variable
   in
@@ -1324,11 +1264,6 @@ module Transform = struct
             Parametric { name; parameters = List.map parameters ~f:visit }
         | Tuple (Bounded ordered) -> Tuple (Bounded (visit_ordered_types ordered))
         | Tuple (Unbounded annotation) -> Tuple (Unbounded (visit_annotation annotation ~state))
-        | TypedDictionary ({ fields; _ } as typed_dictionary) ->
-            let visit_field ({ Record.TypedDictionary.annotation; _ } as field) =
-              { field with annotation = visit_annotation annotation ~state }
-            in
-            TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field }
         | Union annotations -> union (List.map annotations ~f:(visit_annotation ~state))
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
@@ -2020,59 +1955,6 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
-    | Call
-        {
-          callee;
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value =
-                  {
-                    Node.value =
-                      Expression.Tuple
-                        ({ Node.value = Expression.String { value = typed_dictionary_name; _ }; _ }
-                        :: { Node.value = true_or_false; _ } :: fields);
-                    _;
-                  };
-              };
-            ];
-        }
-      when name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
-        let total =
-          match true_or_false with
-          | Expression.True -> Some true
-          | Expression.False -> Some false
-          | _ -> None
-        in
-        let parse_typed_dictionary total =
-          let fields =
-            let tuple_to_field = function
-              | {
-                  Node.value =
-                    Expression.Tuple
-                      [
-                        { Node.value = Expression.String { value = field_name; _ }; _ };
-                        field_annotation;
-                      ];
-                  _;
-                } ->
-                  Some
-                    {
-                      Record.TypedDictionary.name = field_name;
-                      annotation = create_logic field_annotation;
-                      required = total;
-                    }
-              | _ -> None
-            in
-            fields |> List.filter_map ~f:tuple_to_field
-          in
-          TypedDictionary { name = typed_dictionary_name; fields }
-        in
-        let undefined_primitive =
-          Primitive (Expression.show (Node.create_with_default_location expression))
-        in
-        total >>| parse_typed_dictionary |> Option.value ~default:undefined_primitive
     | Call { callee; arguments } when name_is ~name:"typing_extensions.Literal.__getitem__" callee
       ->
         let arguments =
@@ -2309,7 +2191,6 @@ let elements annotation =
         | Parametric { name; _ } -> name :: sofar
         | Primitive annotation -> annotation :: sofar
         | Tuple _ -> "tuple" :: sofar
-        | TypedDictionary _ -> typed_dictionary_class_name ~total:true :: sofar
         | Union _ -> "typing.Union" :: sofar
         | ParameterVariadicComponent _
         | Bottom
@@ -2543,8 +2424,6 @@ let split annotation =
         | Unbounded parameter -> [Single parameter]
       in
       Primitive "tuple", parameters
-  | TypedDictionary { fields; _ } ->
-      Primitive (typed_dictionary_class_name ~total:(are_fields_total fields)), []
   | Literal _ as literal -> weaken_literals literal, []
   | Callable _ -> Primitive "typing.Callable", []
   | annotation -> annotation, []
@@ -3691,7 +3570,7 @@ let dequalify map annotation =
 module TypedDictionary = struct
   open Record.TypedDictionary
 
-  let anonymous fields = TypedDictionary { name = "$anonymous"; fields }
+  let anonymous fields = { name = "$anonymous"; fields }
 
   let create_field ~name ~annotation ~required = { name; annotation; required }
 
@@ -3786,6 +3665,72 @@ module TypedDictionary = struct
     special_index: int option;
     overloads: t typed_dictionary_field list -> t Callable.overload list;
   }
+
+  let encoded_typed_dictionary_name = "$encoded_typed_dictionary"
+
+  let encode_typed_dictionary (typed_dictionary : t record) =
+    let callable =
+      constructor ~name:encoded_typed_dictionary_name ~fields:typed_dictionary.fields
+    in
+    let map_annotation ~f annotation =
+      let module MapTransform = Transform.Make (struct
+        type state = unit
+
+        let visit_children_before _ _ = true
+
+        let visit_children_after = false
+
+        let visit _ annotation = { Transform.transformed_annotation = f annotation; new_state = () }
+      end)
+      in
+      snd (MapTransform.visit () annotation)
+    in
+    (* Change the default Top annotation because postprocessing suppresses error messages with types
+       containing Top. *)
+    let callable_without_top =
+      map_annotation (Callable callable) ~f:(function
+          | Top -> integer
+          | other -> other)
+    in
+    callable_without_top
+
+
+  let is_encoded_typed_dictionary = function
+    | Callable ({ overloads = [_; { annotation = Primitive name; _ }]; _ } as callable)
+      when String.equal name encoded_typed_dictionary_name ->
+        Option.is_some (fields_from_constructor callable)
+    | _ -> false
+
+
+  let pp_type_with_encoded_typed_dictionary format annotation =
+    let module DequalifyTransform = Transform.Make (struct
+      type state = unit
+
+      let visit_children_before _ _ = true
+
+      let visit_children_after = false
+
+      let visit _ annotation =
+        (* Transform the encoded TypedDictionary into a Primitive with its string form. That way,
+           printing the transformed type will end up printing the string. *)
+        let transformed_annotation =
+          match annotation with
+          | Callable callable when is_encoded_typed_dictionary annotation ->
+              let fields =
+                fields_from_constructor callable
+                |> Option.value ~default:[]
+                |> List.map ~f:(fun { name; annotation; required } ->
+                       Format.asprintf "%s%s: %a" name (if required then "" else "?") pp annotation)
+                |> String.concat ~sep:", "
+              in
+              Primitive (Format.asprintf "TypedDict with fields (%s)" fields)
+          | _ -> annotation
+        in
+        { Transform.transformed_annotation; new_state = () }
+    end)
+    in
+    snd (DequalifyTransform.visit () annotation) |> pp format
+
 
   let key_parameter name =
     CallableParameter.Named { name = "k"; annotation = literal_string name; default = false }

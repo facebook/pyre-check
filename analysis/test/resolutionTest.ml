@@ -672,6 +672,7 @@ let test_resolve_mutable_literals_typed_dictionary context =
         name: str
     |}
   in
+  let open Type.TypedDictionary in
   let assert_resolve_mutable_literals ~source ~against_type expected_output_type =
     let expression =
       match parse_single_statement source with
@@ -697,14 +698,10 @@ let test_resolve_mutable_literals_typed_dictionary context =
         { name = "year"; annotation = Type.integer; required = true };
       ]
   in
-  let slightly_wrong_nested_type =
-    Type.TypedDictionary.anonymous
-      [{ name = "outer_foo"; annotation = slightly_wrong_movie_type; required = true }]
-  in
   assert_resolve_mutable_literals
     ~source:"{}"
     ~against_type:(Type.Primitive "test.ClassBasedMovie")
-    (Type.TypedDictionary.anonymous []);
+    (encode_typed_dictionary (Type.TypedDictionary.anonymous []));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
     ~against_type:(Type.Primitive "test.ClassBasedMovie")
@@ -720,15 +717,16 @@ let test_resolve_mutable_literals_typed_dictionary context =
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
     ~against_type:(Type.Primitive "test.Child")
-    (Type.TypedDictionary.anonymous
-       [
-         { name = "name"; annotation = Type.string; required = true };
-         { name = "year"; annotation = Type.integer; required = true };
-       ]);
+    (encode_typed_dictionary
+       (Type.TypedDictionary.anonymous
+          [
+            { name = "name"; annotation = Type.string; required = true };
+            { name = "year"; annotation = Type.integer; required = true };
+          ]));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37, 'year': 1999 }"
     ~against_type:(Type.Primitive "test.ClassBasedMovie")
-    slightly_wrong_movie_type;
+    (encode_typed_dictionary slightly_wrong_movie_type);
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999, 'extra_key': 1 }"
     ~against_type:(Type.Primitive "test.ClassBasedMovie")
@@ -744,25 +742,49 @@ let test_resolve_mutable_literals_typed_dictionary context =
   assert_resolve_mutable_literals
     ~source:"{'hello': { 'name': 37, 'year': 1999 }}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))
-    (Type.dictionary ~key:Type.string ~value:slightly_wrong_movie_type);
+    (Type.dictionary ~key:Type.string ~value:(encode_typed_dictionary slightly_wrong_movie_type));
   assert_resolve_mutable_literals
     ~source:"{'outer_foo': { 'name': 37, 'year': 1999 }}"
     ~against_type:(Type.Primitive "test.OuterTypedDict")
-    slightly_wrong_nested_type;
+    (encode_typed_dictionary
+       (Type.TypedDictionary.anonymous
+          [
+            {
+              name = "outer_foo";
+              annotation = encode_typed_dictionary slightly_wrong_movie_type;
+              required = true;
+            };
+          ]));
   assert_resolve_mutable_literals
     ~source:"{'outer_dict': {'outer_foo': { 'name': 37, 'year': 1999 }}}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.OuterTypedDict"))
-    (Type.dictionary ~key:Type.string ~value:slightly_wrong_nested_type);
+    (Type.dictionary
+       ~key:Type.string
+       ~value:
+         (encode_typed_dictionary
+            (Type.TypedDictionary.anonymous
+               [
+                 {
+                   name = "outer_foo";
+                   annotation = encode_typed_dictionary slightly_wrong_movie_type;
+                   required = true;
+                 };
+               ])));
   assert_resolve_mutable_literals
     ~source:"{'outer_dict': {'outer_foo': {}}}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.OuterTypedDict"))
     (Type.dictionary
        ~key:Type.string
        ~value:
-         (Type.TypedDictionary.anonymous
-            [
-              { name = "outer_foo"; annotation = Type.TypedDictionary.anonymous []; required = true };
-            ]));
+         (encode_typed_dictionary
+            (Type.TypedDictionary.anonymous
+               [
+                 {
+                   name = "outer_foo";
+                   annotation = encode_typed_dictionary (Type.TypedDictionary.anonymous []);
+                   required = true;
+                 };
+               ])));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
     ~against_type:(Type.union [Type.Primitive "test.ClassBasedMovie"; Type.integer])
@@ -774,7 +796,7 @@ let test_resolve_mutable_literals_typed_dictionary context =
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37, 'year': 1999 }"
     ~against_type:(Type.optional (Type.Primitive "test.ClassBasedMovie"))
-    slightly_wrong_movie_type;
+    (encode_typed_dictionary slightly_wrong_movie_type);
 
   (* Non-total typed dictionary. *)
   assert_resolve_mutable_literals
@@ -802,27 +824,32 @@ let test_resolve_mutable_literals_typed_dictionary context =
   assert_resolve_mutable_literals
     ~source:"{'name': 'The Matrix' }"
     ~against_type:(Type.Primitive "test.NameNotRequiredYearRequired")
-    (Type.TypedDictionary.anonymous [{ name = "name"; annotation = Type.string; required = false }]);
+    (encode_typed_dictionary
+       (Type.TypedDictionary.anonymous
+          [{ name = "name"; annotation = Type.string; required = false }]));
+
   assert_resolve_mutable_literals
     ~source:"{}"
     ~against_type:(Type.Primitive "test.NameNotRequiredYearRequired")
-    (Type.TypedDictionary.anonymous []);
+    (encode_typed_dictionary (Type.TypedDictionary.anonymous []));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37}"
     ~against_type:(Type.Primitive "test.NonTotalMovie")
-    (Type.TypedDictionary.anonymous
-       [
-         { name = "name"; annotation = Type.literal_integer 37; required = false };
-         { name = "year"; annotation = Type.integer; required = false };
-       ]);
+    (encode_typed_dictionary
+       (Type.TypedDictionary.anonymous
+          [
+            { name = "name"; annotation = Type.literal_integer 37; required = false };
+            { name = "year"; annotation = Type.integer; required = false };
+          ]));
   assert_resolve_mutable_literals
     ~source:"{ 'name': 37, 'year': 1999 }"
     ~against_type:(Type.Primitive "test.NameNotRequiredYearRequired")
-    (Type.TypedDictionary.anonymous
-       [
-         { name = "name"; annotation = Type.literal_integer 37; required = false };
-         { name = "year"; annotation = Type.integer; required = true };
-       ]);
+    (encode_typed_dictionary
+       (Type.TypedDictionary.anonymous
+          [
+            { name = "name"; annotation = Type.literal_integer 37; required = false };
+            { name = "year"; annotation = Type.integer; required = true };
+          ]));
   ()
 
 

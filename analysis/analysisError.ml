@@ -672,7 +672,13 @@ let messages ~concise ~signature location kind =
         else
           Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      Format.asprintf "Expected `%a` for %s but got `%a`." pp_type expected target pp_type actual
+      Format.asprintf
+        "Expected `%a` for %s but got `%a`."
+        pp_type
+        expected
+        target
+        Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
+        actual
       :: trace
   | IncompatibleConstructorAnnotation _ when concise -> ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
@@ -697,7 +703,12 @@ let messages ~concise ~signature location kind =
         if is_implicit then
           Format.asprintf "Expected `%a` but got implicit return value of `None`." pp_type expected
         else
-          Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual
+          Format.asprintf
+            "Expected `%a` but got `%a`."
+            pp_type
+            expected
+            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
+            actual
       in
       [message; trace]
   | IncompatibleAttributeType
@@ -740,7 +751,7 @@ let messages ~concise ~signature location kind =
             name
             pp_type
             expected
-            pp_type
+            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
             actual
         else
           Format.asprintf
@@ -749,7 +760,7 @@ let messages ~concise ~signature location kind =
             name
             pp_type
             expected
-            pp_type
+            Type.TypedDictionary.pp_type_with_encoded_typed_dictionary
             actual
       in
       let trace =
