@@ -185,7 +185,6 @@ class CommandParser(ABC):
         self._preserve_pythonpath: bool = arguments.preserve_pythonpath
         self._binary: str = arguments.binary
         self._buck_builder_binary: Final[Optional[str]] = arguments.buck_builder_binary
-        self._buck_builder_target: Final[Optional[str]] = arguments.buck_builder_target
         self._exclude: List[str] = arguments.exclude
         self._typeshed: str = arguments.typeshed
         self._save_initial_state_to: Final[
@@ -364,9 +363,6 @@ class CommandParser(ABC):
             "--buck-builder-binary",
             default=None,
             help="Location of the buck builder binary",
-        )
-        parser.add_argument(
-            "--buck-builder-target", default=None, help=argparse.SUPPRESS
         )
 
         parser.add_argument(

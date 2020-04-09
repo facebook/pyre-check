@@ -573,7 +573,6 @@ def _get_fast_buck_builder(
     return buck.FastBuckBuilder(
         buck_root=buck_root,
         buck_builder_binary=arguments.buck_builder_binary,
-        buck_builder_target=arguments.buck_builder_target,
         debug_mode=arguments.buck_builder_debug,
         buck_mode=arguments.buck_mode,
         project_name=_get_project_name(isolate),
