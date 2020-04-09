@@ -527,7 +527,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         let sources_to_keep, sinks_to_keep =
           let { Configuration.rules; _ } = configuration in
           let rules =
-            List.filter_map rules ~f:(fun { Configuration.code; sources; sinks; _ } ->
+            List.filter_map rules ~f:(fun { Configuration.Rule.code; sources; sinks; _ } ->
                 if Core.Set.mem rule_filter code then Some (sources, sinks) else None)
           in
           List.fold

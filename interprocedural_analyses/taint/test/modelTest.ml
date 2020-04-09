@@ -42,7 +42,8 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     in
     let rule_filter =
       match rules with
-      | Some rules -> Some (List.map rules ~f:(fun { Taint.TaintConfiguration.code; _ } -> code))
+      | Some rules ->
+          Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
       | None -> None
     in
     let { Taint.Model.models; errors } =
@@ -951,7 +952,7 @@ let test_filter_by_rules context =
     ~rules:
       [
         {
-          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "TestSink"];
           code = 5021;
           message_format = "";
@@ -965,7 +966,7 @@ let test_filter_by_rules context =
     ~rules:
       [
         {
-          Taint.TaintConfiguration.sources = [Sources.NamedSource "Test"];
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "Test"];
           sinks = [Sinks.NamedSink "TestSink"];
           code = 5021;
           message_format = "";
@@ -979,7 +980,7 @@ let test_filter_by_rules context =
     ~rules:
       [
         {
-          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "TestSink"];
           code = 5021;
           message_format = "";
@@ -999,7 +1000,7 @@ let test_filter_by_rules context =
     ~rules:
       [
         {
-          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "Test"];
           code = 5021;
           message_format = "";

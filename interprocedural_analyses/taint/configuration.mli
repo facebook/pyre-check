@@ -5,13 +5,15 @@
 
 open Pyre
 
-type rule = {
-  sources: Sources.t list;
-  sinks: Sinks.t list;
-  code: int;
-  name: string;
-  message_format: string; (* format *)
-}
+module Rule : sig
+  type t = {
+    sources: Sources.t list;
+    sinks: Sinks.t list;
+    code: int;
+    name: string;
+    message_format: string; (* format *)
+  }
+end
 
 type implicit_sinks = { conditional_test: Sinks.t list }
 
@@ -26,7 +28,7 @@ type t = {
   sources: string list;
   sinks: string list;
   features: string list;
-  rules: rule list;
+  rules: Rule.t list;
   implicit_sinks: implicit_sinks;
 }
 

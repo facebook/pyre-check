@@ -138,7 +138,7 @@ let get_issue_features { source_taint; sink_taint } =
 
 
 let generate_issues ~define { location; flows } =
-  let apply_rule (issues, remaining_flows) { sources; sinks; code; _ } =
+  let apply_rule (issues, remaining_flows) { Rule.sources; sinks; code; _ } =
     let any_sources source_list source = List.exists ~f:(( = ) source) source_list in
     let any_sinks sink_list sink = List.exists ~f:(( = ) sink) sink_list in
     let { matched; rest } =

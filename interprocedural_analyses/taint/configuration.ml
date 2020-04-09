@@ -8,13 +8,15 @@ open Pyre
 module SharedMemory = Memory
 module Json = Yojson.Safe
 
-type rule = {
-  sources: Sources.t list;
-  sinks: Sinks.t list;
-  code: int;
-  name: string;
-  message_format: string; (* format *)
-}
+module Rule = struct
+  type t = {
+    sources: Sources.t list;
+    sinks: Sinks.t list;
+    code: int;
+    name: string;
+    message_format: string; (* format *)
+  }
+end
 
 type implicit_sinks = { conditional_test: Sinks.t list }
 
@@ -33,7 +35,7 @@ type t = {
   sources: string list;
   sinks: string list;
   features: string list;
-  rules: rule list;
+  rules: Rule.t list;
   implicit_sinks: implicit_sinks;
 }
 
@@ -107,7 +109,7 @@ let parse source =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
       let code = Json.Util.member "code" json |> Json.Util.to_int in
-      { sources; sinks; name; code; message_format }
+      { Rule.sources; sinks; name; code; message_format }
     in
     array_member "rules" json |> List.map ~f:parse_rule
   in
