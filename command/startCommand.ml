@@ -352,16 +352,9 @@ let request_handler_thread
           |> function
           (* TODO: Once we have fully rolled out the socket fix - we can remove this special
              handling. *)
-          | Some
-              (Ok
-                {
-                  parameters =
-                    Some { LanguageServer.Types.HandshakeClientParameters.send_confirmation = true };
-                  _;
-                }) ->
+          | Some (Ok _) ->
               Connections.add_json_socket ~connections ~socket:new_socket;
               Jsonrpc.socket_added_message |> Connections.write_to_json_socket ~socket:new_socket
-          | Some (Ok _) -> Connections.add_json_socket ~connections ~socket:new_socket
           | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
           | None -> Log.warning "Failed to parse handshake as LSP."
         with
