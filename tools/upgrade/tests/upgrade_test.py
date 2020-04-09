@@ -1916,6 +1916,38 @@ class TargetsToConfigurationTest(unittest.TestCase):
             ]
         )
 
+    @patch("subprocess.check_output")
+    @patch("%s.Configuration.write" % upgrade.__name__)
+    def test_add_targets(self, mock_write, mock_check_output) -> None:
+        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a:a"]})
+        configuration.add_targets([])
+        expected_targets = ["//a:a"]
+        self.assertEqual(expected_targets, configuration.targets)
+
+        mock_check_output.side_effect = [b"a", b"b"]
+        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
+        configuration.add_targets(["//b/..."])
+        expected_targets = ["//a/...", "//b/..."]
+        self.assertEqual(expected_targets, configuration.targets)
+
+        mock_check_output.side_effect = [b"a", b"a"]
+        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
+        configuration.add_targets(["//b/..."])
+        expected_targets = ["//a/..."]
+        self.assertEqual(expected_targets, configuration.targets)
+
+        mock_check_output.side_effect = [b"a", b"a\nb"]
+        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
+        configuration.add_targets(["//b/..."])
+        expected_targets = ["//a/...", "//b/..."]
+        self.assertEqual(expected_targets, configuration.targets)
+
+        mock_check_output.side_effect = [b"a", b"//c:c"]
+        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
+        configuration.add_targets(["//b/...", "//c:c"])
+        expected_targets = ["//a/...", "//b/..."]
+        self.assertEqual(expected_targets, configuration.targets)
+
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:

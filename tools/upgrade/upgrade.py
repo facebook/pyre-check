@@ -181,9 +181,31 @@ class Configuration:
     def add_targets(self, targets: List[str]) -> None:
         existing_targets = self.targets
         if existing_targets:
-            self.targets = sorted(set(existing_targets + targets))
+            all_targets = sorted(set(existing_targets + targets))
         else:
-            self.targets = targets
+            all_targets = targets
+        # Deduplicate added targets before writing.
+        deduplicated_targets = []
+        expanded_targets = set()
+        for target in all_targets:
+            if target.endswith("/..."):
+                try:
+                    expanded = (
+                        subprocess.check_output(["buck", "query", target])
+                        .decode()
+                        .strip()
+                        .split("\n")
+                    )
+                    if not all([target in expanded_targets for target in expanded]):
+                        expanded_targets.update(expanded)
+                        deduplicated_targets.append(target)
+                except subprocess.CalledProcessError as error:
+                    LOG.warning("Failed to query target: %s\n%s", target, str(error))
+                    deduplicated_targets.append(target)
+            elif target not in expanded_targets:
+                expanded_targets.add(target)
+                deduplicated_targets.append(target)
+        self.targets = deduplicated_targets
         self.write()
 
     def get_errors(
@@ -550,7 +572,6 @@ def run_targets_to_configuration(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
     # TODO(T62926437): Basic integration testing.
-    # TODO(T62926437): Dedup additional targets with existing glob targets.
     subdirectory = arguments.subdirectory
     subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
     LOG.info("Converting typecheck targets to pyre configuration in `%s`", subdirectory)
