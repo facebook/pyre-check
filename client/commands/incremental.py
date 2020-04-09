@@ -43,16 +43,39 @@ class Incremental(Reporting):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        nonblocking: bool,
+        incremental_style: IncrementalStyle,
+        no_start_server: bool,
+        no_watchman: bool,
     ) -> None:
         super(Incremental, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._nonblocking: bool = arguments.nonblocking
-        self._incremental_style: IncrementalStyle = arguments.incremental_style
-        self._no_start_server: bool = arguments.no_start
-        self._no_watchman: bool = getattr(arguments, "no_watchman", False)
+        self._nonblocking = nonblocking
+        self._incremental_style = incremental_style
+        self._no_start_server = no_start_server
+        self._no_watchman = no_watchman
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Incremental":
+        return Incremental(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            nonblocking=arguments.nonblocking,
+            incremental_style=arguments.incremental_style,
+            no_start_server=arguments.no_start,
+            no_watchman=getattr(arguments, "no_watchman", False),
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -66,7 +89,7 @@ class Incremental(Reporting):
         results eagerly, you can run `pyre incremental --nonblocking`.
         """
         incremental = parser.add_parser(cls.NAME, epilog=incremental_help)
-        incremental.set_defaults(command=cls)
+        incremental.set_defaults(command=cls.from_arguments)
         incremental.add_argument(
             "--nonblocking",
             action="store_true",
@@ -97,12 +120,12 @@ class Incremental(Reporting):
                 Start(
                     self._arguments,
                     self._original_directory,
+                    configuration=self._configuration,
+                    analysis_directory=self._analysis_directory,
                     terminal=False,
                     store_type_check_resolution=False,
                     use_watchman=not self._no_watchman,
                     incremental_style=self._incremental_style,
-                    configuration=self._configuration,
-                    analysis_directory=self._analysis_directory,
                 )
                 .run()
                 .exit_code()

@@ -83,15 +83,17 @@ class Restart(Command):
         if exit_code != ExitCode.SUCCESS:
             self._exit_code = ExitCode.FAILURE
             return
-        # Force the incremental run to be blocking.
-        self._arguments.nonblocking = False
-        self._arguments.no_start = False
         exit_code = (
             Incremental(
                 self._arguments,
                 self._original_directory,
-                self._configuration,
-                self._analysis_directory,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
+                # Force the incremental run to be blocking.
+                nonblocking=False,
+                incremental_style=self._incremental_style,
+                no_start_server=False,
+                no_watchman=not self._use_watchman,
             )
             .run()
             .exit_code()

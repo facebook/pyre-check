@@ -55,7 +55,7 @@ def main(argv: List[str]) -> int:
 
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
-            arguments.command = commands.Incremental
+            arguments.command = commands.Incremental.from_arguments
             arguments.nonblocking = False
             arguments.incremental_style = IncrementalStyle.FINE_GRAINED
             arguments.no_start = False
