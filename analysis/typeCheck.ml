@@ -187,6 +187,20 @@ module State (Context : Context) = struct
     errors, List.is_empty untracked
 
 
+  let error_and_location_from_typed_dictionary_mismatch
+      { Node.value = mismatch; location = define_location }
+    =
+    let mismatch =
+      match mismatch with
+      | AttributeResolution.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
+        ->
+          Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
+      | AttributeResolution.MissingRequiredField { field_name; class_name } ->
+          Error.MissingRequiredField { field_name; class_name }
+    in
+    define_location, Error.TypedDictionaryInitializationError mismatch
+
+
   let parse_and_check_annotation
       ?(bind_variables = true)
       ~resolution
@@ -1846,7 +1860,7 @@ module State (Context : Context) = struct
         in
         callables >>| List.map ~f:signature_with_unpacked_callable_and_self_argument
       in
-      let error_from_not_found
+      let errors_from_not_found
           ~unpacked_callable_and_self_argument:
             { callable = { Type.Callable.kind; _ } as callable; self_argument }
           ~reason
@@ -1858,15 +1872,17 @@ module State (Context : Context) = struct
         in
         match reason with
         | AttributeResolution.AbstractClassInstantiation { class_name; abstract_methods } ->
-            ( location,
-              Error.InvalidClassInstantiation
-                (Error.AbstractClassInstantiation { class_name; abstract_methods }) )
+            [
+              ( location,
+                Error.InvalidClassInstantiation
+                  (Error.AbstractClassInstantiation { class_name; abstract_methods }) );
+            ]
         | CallingParameterVariadicTypeVariable ->
-            location, Error.NotCallable (Type.Callable callable)
+            [location, Error.NotCallable (Type.Callable callable)]
         | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
-            location, Error.InvalidArgument (Error.Keyword { expression; annotation })
+            [location, Error.InvalidArgument (Error.Keyword { expression; annotation })]
         | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-            location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
+            [location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
         | Mismatch mismatch ->
             let { AttributeResolution.actual; expected; name; position } = Node.value mismatch in
             let mismatch, name, position, location =
@@ -1926,16 +1942,19 @@ module State (Context : Context) = struct
                   |> Option.value ~default:normal
               | _ -> normal
             in
-            location, kind
+            [location, kind]
         | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
-            location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })
-        | MissingArgument parameter -> location, Error.MissingArgument { callee; parameter }
-        | MutuallyRecursiveTypeVariables -> location, Error.MutuallyRecursiveTypeVariables callee
+            [location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })]
+        | MissingArgument parameter -> [location, Error.MissingArgument { callee; parameter }]
+        | MutuallyRecursiveTypeVariables -> [location, Error.MutuallyRecursiveTypeVariables callee]
         | ProtocolInstantiation class_name ->
-            location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)
+            [location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)]
         | TooManyArguments { expected; provided } ->
-            location, Error.TooManyArguments { callee; expected; provided }
-        | UnexpectedKeyword name -> location, Error.UnexpectedKeyword { callee; name }
+            [location, Error.TooManyArguments { callee; expected; provided }]
+        | TypedDictionaryInitializationError mismatches ->
+            List.map mismatches ~f:(fun mismatch ->
+                error_and_location_from_typed_dictionary_mismatch mismatch)
+        | UnexpectedKeyword name -> [location, Error.UnexpectedKeyword { callee; name }]
       in
 
       let not_found = function
@@ -1950,10 +1969,9 @@ module State (Context : Context) = struct
             :: _,
             _ ) ->
           let errors =
-            let error_location, error_kind =
-              error_from_not_found ~reason ~unpacked_callable_and_self_argument
-            in
-            emit_error ~errors ~location:error_location ~kind:error_kind
+            let error_kinds = errors_from_not_found ~reason ~unpacked_callable_and_self_argument in
+            List.fold error_kinds ~init:errors ~f:(fun errors (error_location, error_kind) ->
+                emit_error ~errors ~location:error_location ~kind:error_kind)
           in
           {
             Resolved.resolution;
@@ -3219,17 +3237,9 @@ module State (Context : Context) = struct
         location
     in
     let emit_typed_dictionary_errors ~errors mismatches =
-      let emit_error errors { Node.value = mismatch; location = define_location } =
-        let mismatch =
-          match mismatch with
-          | AttributeResolution.FieldTypeMismatch
-              { field_name; expected_type; actual_type; class_name } ->
-              Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
-          | AttributeResolution.MissingRequiredField { field_name; class_name } ->
-              Error.MissingRequiredField { field_name; class_name }
-        in
-        Error.TypedDictionaryInitializationError mismatch
-        |> fun kind -> emit_error ~errors ~location:define_location ~kind
+      let emit_error errors mismatch =
+        let location, kind = error_and_location_from_typed_dictionary_mismatch mismatch in
+        emit_error ~errors ~location ~kind
       in
       List.fold mismatches ~f:emit_error ~init:errors
     in

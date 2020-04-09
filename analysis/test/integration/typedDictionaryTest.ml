@@ -413,8 +413,10 @@ let test_check_typed_dictionaries context =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
-       `__init__` but got `typing.Dict[str, typing.Union[int, str]]`.";
+      "TypedDict initialization error [55]: Expected type `str` for `Movie` field `name` but got \
+       `int`.";
+      "TypedDict initialization error [55]: Expected type `int` for `Movie` field `year` but got \
+       `str`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -835,8 +837,8 @@ let test_check_typed_dictionaries context =
         foo({'name' : 'Blade Runner', 'year' : '1982'})
     |}
     [
-      "Incompatible parameter type [6]: Expected `Movie` for 1st positional only parameter to call \
-       `foo` but got `typing.Dict[str, str]`.";
+      "TypedDict initialization error [55]: Expected type `int` for `Movie` field `year` but got \
+       `str`.";
     ];
   assert_test_typed_dictionary
     {|

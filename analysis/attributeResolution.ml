@@ -112,7 +112,7 @@ module WeakenMutableLiterals = struct
         actual_type: Type.t;
         class_name: Identifier.t;
       }
-  [@@deriving compare, eq, show]
+  [@@deriving compare, eq, show, sexp]
 
   type weakened_type = {
     resolved: Type.t;
@@ -593,6 +593,8 @@ module SignatureSelectionTypes = struct
         expected: int;
         provided: int;
       }
+    | TypedDictionaryInitializationError of
+        WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
     | UnexpectedKeyword of Identifier.t
   [@@deriving eq, show, compare, sexp]
 
@@ -3452,31 +3454,43 @@ module Implementation = struct
                       let solve_against = Type.iterable (Type.Variable synthetic_variable) in
                       solution_based_extraction ~create_error ~synthetic_variable ~solve_against
                   | Named _
-                  | Positional ->
-                      let argument_annotation =
+                  | Positional -> (
+                      let argument_annotation, weakening_error =
                         if Type.Variable.all_variables_are_resolved parameter_annotation then
-                          resolve_mutable_literals
-                            ~assumptions
-                            ~class_metadata_environment
-                            ?dependency
-                            ~resolve:(resolve_with_locals ~locals:[])
-                            ~expression:(Some expression)
-                            ~resolved
-                            ~expected:parameter_annotation
-                          |> WeakenMutableLiterals.resolved_type
+                          let { WeakenMutableLiterals.resolved; typed_dictionary_errors } =
+                            resolve_mutable_literals
+                              ~assumptions
+                              ~class_metadata_environment
+                              ?dependency
+                              ~resolve:(resolve_with_locals ~locals:[])
+                              ~expression:(Some expression)
+                              ~resolved
+                              ~expected:parameter_annotation
+                          in
+                          let weakening_error =
+                            if List.is_empty typed_dictionary_errors then
+                              None
+                            else
+                              Some (TypedDictionaryInitializationError typed_dictionary_errors)
+                          in
+                          resolved, weakening_error
                         else
-                          resolved
+                          resolved, None
                       in
-                      if Type.is_meta parameter_annotation && Type.is_top argument_annotation then
-                        parse_annotation
-                          ~assumptions
-                          ~class_metadata_environment
-                          ?dependency
-                          expression
-                        |> Type.meta
-                        |> set_constraints_and_reasons
-                      else
-                        argument_annotation |> set_constraints_and_reasons )
+                      match weakening_error with
+                      | Some weakening_error -> add_annotation_error signature_match weakening_error
+                      | None ->
+                          if Type.is_meta parameter_annotation && Type.is_top argument_annotation
+                          then
+                            parse_annotation
+                              ~assumptions
+                              ~class_metadata_environment
+                              ?dependency
+                              expression
+                            |> Type.meta
+                            |> set_constraints_and_reasons
+                          else
+                            argument_annotation |> set_constraints_and_reasons ) )
             in
             match is_generic_lambda key arguments with
             | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
@@ -3687,6 +3701,7 @@ module Implementation = struct
               | MutuallyRecursiveTypeVariables -> 1
               | ProtocolInstantiation _ -> 1
               | TooManyArguments _ -> 1
+              | TypedDictionaryInitializationError _ -> 1
               | UnexpectedKeyword _ -> 1
             in
             let get_most_important best_reason reason =

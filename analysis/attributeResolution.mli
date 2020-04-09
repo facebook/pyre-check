@@ -114,6 +114,7 @@ type reason =
       expected: int;
       provided: int;
     }
+  | TypedDictionaryInitializationError of typed_dictionary_mismatch Node.t list
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
