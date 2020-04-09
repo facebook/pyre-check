@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 from ... import commands, configuration_monitor, filesystem, project_files_monitor
 from ...analysis_directory import AnalysisDirectory
 from ..command import ExitCode, __name__ as client_name
+from ..start import Start
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -37,7 +38,6 @@ class StartTest(unittest.TestCase):
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
-        arguments.terminal = False
 
         configuration = mock_configuration()
         configuration.version_hash = "hash"
@@ -50,11 +50,17 @@ class StartTest(unittest.TestCase):
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
-            arguments.no_watchman = True
-            commands.Start(
-                arguments, original_directory, configuration, analysis_directory
+            Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=False,
+                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
             ).run()
-            call_client.assert_called_once_with(command=commands.Start.NAME)
+            call_client.assert_called_once_with(command=Start.NAME)
             Monitor.assert_not_called()
 
         # Check start with watchman.
@@ -64,11 +70,17 @@ class StartTest(unittest.TestCase):
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
-            arguments.no_watchman = False
-            commands.Start(
-                arguments, original_directory, configuration, analysis_directory
+            Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=True,
+                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
             ).run()
-            call_client.assert_called_once_with(command=commands.Start.NAME)
+            call_client.assert_called_once_with(command=Start.NAME)
             Monitor.assert_called_once_with(configuration, ".", analysis_directory)
             Monitor.return_value.daemonize.assert_called_once_with()
 
@@ -88,11 +100,17 @@ class StartTest(unittest.TestCase):
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
-            arguments.no_watchman = True
-            commands.Start(
-                arguments, original_directory, configuration, analysis_directory
+            Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=False,
+                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
             ).run()
-            call_client.assert_called_once_with(command=commands.Start.NAME)
+            call_client.assert_called_once_with(command=Start.NAME)
             Monitor.assert_not_called()
 
         lock_file.side_effect = None
@@ -108,10 +126,16 @@ class StartTest(unittest.TestCase):
         ) as call_client, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
-            arguments.no_watchman = True
             with self.assertRaises(OSError):
-                commands.Start(
-                    arguments, original_directory, configuration, analysis_directory
+                Start(
+                    arguments,
+                    original_directory,
+                    terminal=False,
+                    store_type_check_resolution=False,
+                    use_watchman=False,
+                    incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                    configuration=configuration,
+                    analysis_directory=analysis_directory,
                 ).run()
             call_client.assert_not_called()
             Monitor.assert_not_called()
@@ -130,10 +154,17 @@ class StartTest(unittest.TestCase):
         ) as Monitor:
             arguments = mock_arguments(no_watchman=True)
             configuration = mock_configuration(version_hash="hash")
-            commands.Start(
-                arguments, original_directory, configuration, shared_analysis_directory
+            Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=False,
+                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+                analysis_directory=shared_analysis_directory,
             ).run()
-            call_client.assert_called_once_with(command=commands.Start.NAME)
+            call_client.assert_called_once_with(command=Start.NAME)
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
 
@@ -155,8 +186,15 @@ class StartTest(unittest.TestCase):
             filesystem, "acquire_lock"
         ) as acquire_lock:
             acquire_lock.side_effect = raise_os_error
-            command = commands.Start(
-                arguments, original_directory, configuration, analysis_directory
+            command = Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=False,
+                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
             )
             command.run()
             self.assertEqual(command._exit_code, ExitCode.SUCCESS)
@@ -188,23 +226,44 @@ class StartTest(unittest.TestCase):
         original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(command._flags(), flags)
 
-        arguments = mock_arguments(no_watchman=True, terminal=True)
+        arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=True,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(set(command._flags()), {*flags, "-terminal"})
 
         # Check filter directories.
-        arguments = mock_arguments(no_watchman=True)
+        arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
@@ -213,10 +272,17 @@ class StartTest(unittest.TestCase):
             )
 
         # Check configuration-file-hash.
-        arguments = mock_arguments(no_watchman=True)
+        arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash", file_hash="ABCD")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
@@ -234,8 +300,15 @@ class StartTest(unittest.TestCase):
         # Check save-initial-state-to.
         arguments = mock_arguments(save_initial_state_to="/tmp")
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-save-initial-state-to", "/tmp"}
@@ -246,8 +319,15 @@ class StartTest(unittest.TestCase):
             load_initial_state_from="/tmp/pyre_shared_memory",
             changed_files_path="/tmp/changed_files",
         )
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()),
@@ -261,8 +341,15 @@ class StartTest(unittest.TestCase):
         )
 
         arguments = mock_arguments(load_initial_state_from="/tmp/pyre_shared_memory")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()),
@@ -270,8 +357,15 @@ class StartTest(unittest.TestCase):
         )
 
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-saved-state-project", "pyre/saved_state"}
@@ -281,8 +375,15 @@ class StartTest(unittest.TestCase):
         arguments.load_initial_state_from = "/do/not/load"
         arguments.save_initial_state_to = "/do/not/save"
         arguments.changed_files_path = "/do/not/change"
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(set(command._flags()), {*flags})
 
@@ -292,8 +393,15 @@ class StartTest(unittest.TestCase):
             os.getcwd(), "first/second"
         )
         configuration.version_hash = "hash"
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()),
@@ -307,9 +415,16 @@ class StartTest(unittest.TestCase):
         )
 
         # Store type check resolution.
-        arguments = mock_arguments(store_type_check_resolution=True)
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        arguments = mock_arguments()
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=True,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-store-type-check-resolution"}
@@ -319,8 +434,15 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=True,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
@@ -330,8 +452,15 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.autocomplete = True
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(set(command._flags()), {*flags, "-autocomplete"})
 
@@ -339,8 +468,15 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         arguments.enable_profiling = True
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()), {*flags, "-profiling-output", ".pyre/profiling.log"}
@@ -349,8 +485,15 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         arguments.enable_memory_profiling = True
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+        command = Start(
+            arguments,
+            original_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
         )
         self.assertEqual(
             set(command._flags()),
@@ -361,11 +504,15 @@ class StartTest(unittest.TestCase):
     def test_start_configuration_monitor_watchman_enabled(
         self, daemonize: MagicMock
     ) -> None:
-        start_command = commands.Start(
-            mock_arguments(no_watchman=False),
+        start_command = Start(
+            mock_arguments(),
             "/original/directory",
-            mock_configuration(version_hash="hash"),
-            AnalysisDirectory("/root"),
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=True,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=mock_configuration(version_hash="hash"),
+            analysis_directory=AnalysisDirectory("/root"),
         )
         start_command._start_configuration_monitor()
         daemonize.assert_called_once()
@@ -374,11 +521,15 @@ class StartTest(unittest.TestCase):
     def test_start_configuration_monitor_watchman_disabled(
         self, daemonize: MagicMock
     ) -> None:
-        start_command = commands.Start(
-            mock_arguments(no_watchman=True),
+        start_command = Start(
+            mock_arguments(),
             "/original/directory",
-            mock_configuration(version_hash="hash"),
-            AnalysisDirectory("/root"),
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=False,
+            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
+            configuration=mock_configuration(version_hash="hash"),
+            analysis_directory=AnalysisDirectory("/root"),
         )
         start_command._start_configuration_monitor()
         daemonize.assert_not_called()

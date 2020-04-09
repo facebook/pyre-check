@@ -50,15 +50,15 @@ class Persistent(Command):
         )
 
     def _run(self) -> None:
-        arguments = self._arguments
-        arguments.terminal = False
-        arguments.store_type_check_resolution = False
-        arguments.incremental_style = IncrementalStyle.FINE_GRAINED
         Start(
-            arguments,
+            self._arguments,
             self._original_directory,
-            self._configuration,
-            self._analysis_directory,
+            terminal=False,
+            store_type_check_resolution=False,
+            use_watchman=not self._no_watchman,
+            incremental_style=IncrementalStyle.FINE_GRAINED,
+            configuration=self._configuration,
+            analysis_directory=self._analysis_directory,
         ).run()
 
         self._call_client(command=self.NAME, capture_output=False).check()

@@ -30,18 +30,21 @@ class Start(Reporting):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        terminal: bool,
+        store_type_check_resolution: bool,
+        use_watchman: bool,
+        incremental_style: IncrementalStyle,
     ) -> None:
         super(Start, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._terminal: bool = arguments.terminal
-        self._store_type_check_resolution: bool = arguments.store_type_check_resolution
-        self._use_watchman: bool = not arguments.no_watchman
-
-        self._incremental_style: IncrementalStyle = arguments.incremental_style
-
+        self._terminal = terminal
+        self._store_type_check_resolution = store_type_check_resolution
+        self._use_watchman = use_watchman
+        self._incremental_style = incremental_style
         if self._no_saved_state:
             self._save_initial_state_to: Final[Optional[str]] = None
             self._changed_files_path: Final[Optional[str]] = None
@@ -50,10 +53,28 @@ class Start(Reporting):
 
         self._enable_logging_section("environment")
 
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Start":
+        return Start(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            terminal=arguments.terminal,
+            store_type_check_resolution=arguments.store_type_check_resolution,
+            use_watchman=not arguments.no_watchman,
+            incremental_style=arguments.incremental_style,
+        )
+
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         start = parser.add_parser(cls.NAME, epilog="Starts a pyre server as a daemon.")
-        start.set_defaults(command=cls)
+        start.set_defaults(command=cls.from_arguments)
         start.add_argument(
             "--terminal", action="store_true", help="Run the server in the terminal."
         )

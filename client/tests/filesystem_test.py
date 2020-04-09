@@ -447,7 +447,15 @@ class FilesystemTest(unittest.TestCase):
             # same test as above, but Start instead of Check; build should be False
             cwd.return_value = "/"
             original_directory = "/root"
-            command = commands.Start(arguments, original_directory, configuration)
+            command = commands.Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=True,
+                incremental_style=commands.command.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -465,7 +473,15 @@ class FilesystemTest(unittest.TestCase):
         ) as buck_source_directories:
             cwd.side_effect = ["/", "/", "/"]
             original_directory = "/root"
-            command = commands.Start(arguments, original_directory, configuration)
+            command = commands.Start(
+                arguments,
+                original_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=True,
+                incremental_style=commands.command.IncrementalStyle.FINE_GRAINED,
+                configuration=configuration,
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()

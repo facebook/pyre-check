@@ -71,6 +71,7 @@ class IncrementalTest(unittest.TestCase):
 
         original_directory = "/original/directory"
         arguments = mock_arguments()
+        arguments.incremental_style = command.IncrementalStyle.FINE_GRAINED
 
         configuration = mock_configuration()
         configuration.version_hash = "hash"
@@ -167,7 +168,14 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             commands_Start.assert_called_with(
-                arguments, original_directory, configuration, analysis_directory
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=True,
+                incremental_style=command.IncrementalStyle.FINE_GRAINED,
             )
             connect.assert_called_once()
             restart_file_monitor_if_needed.assert_not_called()
@@ -205,6 +213,7 @@ class IncrementalTest(unittest.TestCase):
         arguments = mock_arguments(
             load_initial_state_from="/a/b", changed_files_path="/c/d"
         )
+        arguments.incremental_style = command.IncrementalStyle.FINE_GRAINED
         restart_file_monitor_if_needed.reset_mock()
         with patch.object(SocketConnection, "connect") as connect, patch.object(
             json, "loads", return_value=[]
@@ -230,12 +239,20 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             commands_Start.assert_called_with(
-                arguments, original_directory, configuration, analysis_directory
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=analysis_directory,
+                terminal=False,
+                store_type_check_resolution=False,
+                use_watchman=True,
+                incremental_style=command.IncrementalStyle.FINE_GRAINED,
             )
             connect.assert_called_once()
             restart_file_monitor_if_needed.assert_not_called()
 
         arguments = mock_arguments()
+        arguments.incremental_style = command.IncrementalStyle.FINE_GRAINED
         original_directory = "/test"  # called from
         find_project_root.return_value = "/"  # project root
         configuration = mock_configuration()

@@ -50,7 +50,7 @@ class Incremental(Reporting):
             arguments, original_directory, configuration, analysis_directory
         )
         self._nonblocking: bool = arguments.nonblocking
-        self._incremental_style: bool = arguments.incremental_style
+        self._incremental_style: IncrementalStyle = arguments.incremental_style
         self._no_start_server: bool = arguments.no_start
         self._no_watchman: bool = getattr(arguments, "no_watchman", False)
 
@@ -93,16 +93,16 @@ class Incremental(Reporting):
     def _run(self) -> None:
         if (not self._no_start_server) and self._state() == State.DEAD:
             LOG.info("Starting server at `%s`.", self._analysis_directory.get_root())
-            arguments = self._arguments
-            arguments.no_watchman = self._no_watchman
-            arguments.terminal = False
-            arguments.store_type_check_resolution = False
             exit_code = (
                 Start(
-                    arguments,
+                    self._arguments,
                     self._original_directory,
-                    self._configuration,
-                    self._analysis_directory,
+                    terminal=False,
+                    store_type_check_resolution=False,
+                    use_watchman=not self._no_watchman,
+                    incremental_style=self._incremental_style,
+                    configuration=self._configuration,
+                    analysis_directory=self._analysis_directory,
                 )
                 .run()
                 .exit_code()
