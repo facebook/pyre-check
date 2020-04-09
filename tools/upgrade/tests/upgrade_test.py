@@ -231,10 +231,10 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch("%s.errors_from_stdin" % upgrade.__name__)
-    @patch("%s.run_global_version_update" % upgrade.__name__)
-    @patch("%s.fix" % upgrade.__name__)
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.errors_from_stdin")
+    @patch(f"{upgrade.__name__}.run_global_version_update")
+    @patch(f"{upgrade.__name__}.fix")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     def test_upgrade_project(
         self,
         submit_changes,
@@ -359,9 +359,9 @@ class FixmeAllTest(unittest.TestCase):
     )
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
-    @patch("%s.run_global_version_update" % upgrade.__name__)
-    @patch("%s.fix" % upgrade.__name__)
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.run_global_version_update")
+    @patch(f"{upgrade.__name__}.fix")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     def test_run_fixme_all(
         self,
         submit_changes,
@@ -547,8 +547,8 @@ class FixmeSingleTest(unittest.TestCase):
     )
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
-    @patch("%s.fix" % upgrade.__name__)
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.fix")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     def test_run_fixme_single(
         self,
         submit_changes,
@@ -611,9 +611,9 @@ class FixmeSingleTest(unittest.TestCase):
 class FixmeTest(unittest.TestCase):
     @patch("subprocess.run")
     @patch.object(Path, "read_text")
-    @patch("%s.errors_from_run" % upgrade.__name__)
-    @patch("%s.errors_from_stdin" % upgrade.__name__)
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.errors_from_run")
+    @patch(f"{upgrade.__name__}.errors_from_stdin")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     def test_run_fixme(
         self, submit_changes, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
@@ -1174,8 +1174,8 @@ class FixmeTargetsTest(unittest.TestCase):
         "find_project_configuration",
         return_value=Path(".pyre_configuration"),
     )
-    @patch("%s.run_fixme_targets_file" % upgrade.__name__)
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.run_fixme_targets_file")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     def test_run_fixme_targets(
         self, submit_changes, fix_file, find_configuration, subprocess
     ) -> None:
@@ -1239,7 +1239,7 @@ class FixmeTargetsTest(unittest.TestCase):
         )
 
     @patch("subprocess.run")
-    @patch("%s.fix" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.fix")
     def test_run_fixme_targets_file(self, fix, subprocess) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
@@ -1463,7 +1463,7 @@ class FixmeTargetsTest(unittest.TestCase):
 
 class MigrateTest(unittest.TestCase):
     @patch("subprocess.check_output")
-    @patch("%s.run_fixme_targets" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.run_fixme_targets")
     def test_run_migrate_targets(self, fix_targets, subprocess) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
@@ -1524,15 +1524,15 @@ class MigrateTest(unittest.TestCase):
 
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
-    @patch("%s.Configuration.find_project_configuration" % upgrade.__name__)
-    @patch("%s.Configuration.find_local_configuration" % upgrade.__name__)
-    @patch("%s.find_targets" % upgrade.__name__)
-    @patch("%s.get_filesystem" % upgrade.__name__)
-    @patch("%s.remove_non_pyre_ignores" % upgrade.__name__)
-    @patch("%s.Configuration.get_errors" % upgrade.__name__)
-    @patch("%s.add_local_mode" % upgrade.__name__)
-    @patch("%s.fix" % upgrade.__name__)
-    @patch("%s.get_lint_status" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
+    @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
+    @patch(f"{upgrade.__name__}.find_targets")
+    @patch(f"{upgrade.__name__}.get_filesystem")
+    @patch(f"{upgrade.__name__}.remove_non_pyre_ignores")
+    @patch(f"{upgrade.__name__}.Configuration.get_errors")
+    @patch(f"{upgrade.__name__}.add_local_mode")
+    @patch(f"{upgrade.__name__}.fix")
+    @patch(f"{upgrade.__name__}.get_lint_status")
     def test_run_targets_to_configuration(
         self,
         get_lint_status,
@@ -1850,14 +1850,14 @@ class TargetsToConfigurationTest(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("builtins.open")
-    @patch("%s.Configuration.find_project_configuration" % upgrade.__name__)
-    @patch("%s.Configuration.find_local_configuration" % upgrade.__name__)
-    @patch("%s.find_targets" % upgrade.__name__)
-    @patch("%s.get_filesystem" % upgrade.__name__)
-    @patch("%s.Configuration.get_errors" % upgrade.__name__)
-    @patch("%s.add_local_mode" % upgrade.__name__)
-    @patch("%s.fix" % upgrade.__name__)
-    @patch("%s.get_lint_status" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
+    @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
+    @patch(f"{upgrade.__name__}.find_targets")
+    @patch(f"{upgrade.__name__}.get_filesystem")
+    @patch(f"{upgrade.__name__}.Configuration.get_errors")
+    @patch(f"{upgrade.__name__}.add_local_mode")
+    @patch(f"{upgrade.__name__}.fix")
+    @patch(f"{upgrade.__name__}.get_lint_status")
     def test_targets_file_cleanup(
         self,
         get_lint_status,
@@ -1917,7 +1917,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
 
     @patch("subprocess.check_output")
-    @patch("%s.Configuration.write" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.Configuration.write")
     def test_add_targets(self, mock_write, mock_check_output) -> None:
         configuration = upgrade.Configuration(Path("test"), {"targets": ["//a:a"]})
         configuration.add_targets([])
@@ -1979,7 +1979,7 @@ class DecodeTest(unittest.TestCase):
 
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch("%s.ExternalVersionControl.submit_changes" % upgrade.__name__)
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value="/root"
     )
@@ -2189,8 +2189,8 @@ class DefaultStrictTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "get_directory")
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
-    @patch("%s.add_local_mode" % upgrade.__name__)
-    @patch("%s.get_lint_status" % upgrade.__name__, return_value=0)
+    @patch(f"{upgrade.__name__}.add_local_mode")
+    @patch(f"{upgrade.__name__}.get_lint_status", return_value=0)
     def test_run_strict_default(
         self,
         get_lint_status,
