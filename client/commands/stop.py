@@ -28,6 +28,7 @@ class Stop(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
         from_restart: bool = False,
@@ -35,12 +36,26 @@ class Stop(Command):
         super(Stop, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self.from_restart = from_restart
+        self._from_restart = from_restart
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Stop":
+        return Stop(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         stop = parser.add_parser(cls.NAME, epilog="Signals the Pyre server to stop.")
-        stop.set_defaults(command=cls)
+        stop.set_defaults(command=cls.from_arguments)
 
     def _flags(self) -> List[str]:
         log_directory = self._log_directory
@@ -60,7 +75,7 @@ class Stop(Command):
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
-            if self.from_restart:
+            if self._from_restart:
                 LOG.info("No server running.")
             else:
                 LOG.warning("No server running.")

@@ -44,8 +44,8 @@ class RestartTest(unittest.TestCase):
         commands_Stop.assert_called_with(
             arguments,
             original_directory,
-            configuration,
-            analysis_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
             from_restart=True,
         )
         commands_Incremental.assert_called_with(
@@ -62,8 +62,8 @@ class RestartTest(unittest.TestCase):
         commands_Stop.assert_called_with(
             arguments,
             original_directory,
-            configuration,
-            analysis_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
             from_restart=True,
         )
         commands_Incremental.assert_not_called()

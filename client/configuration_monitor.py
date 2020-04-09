@@ -101,8 +101,8 @@ class ConfigurationMonitor(WatchmanSubscriber):
             stop.Stop(
                 self._arguments,
                 self._original_directory,
-                self._configuration,
-                self._analysis_directory,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
             ).run()
             # TODO(T54088045): Find all local pyre servers running underneath
             # and stop them.
@@ -115,8 +115,8 @@ class ConfigurationMonitor(WatchmanSubscriber):
             stop.Stop(
                 self._arguments,
                 self._original_directory,
-                self._configuration,
-                self._analysis_directory,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
             ).run()
         else:
             LOG.info(

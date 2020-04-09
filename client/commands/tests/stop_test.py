@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ..stop import Stop
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -44,13 +45,13 @@ class StopTest(unittest.TestCase):
     ) -> None:
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
-            commands.Stop(
+            Stop(
                 self.arguments,
                 self.original_directory,
-                self.configuration,
-                self.analysis_directory,
+                configuration=self.configuration,
+                analysis_directory=self.analysis_directory,
             ).run()
-            call_client.assert_called_once_with(command=commands.Stop.NAME)
+            call_client.assert_called_once_with(command=Stop.NAME)
             kill_command_run.assert_not_called()
             os_kill.assert_called_once_with(42, 0)
             stop_subscriber.assert_has_calls(
@@ -70,11 +71,11 @@ class StopTest(unittest.TestCase):
     ) -> None:
         commands_Command_state.return_value = commands.command.State.DEAD
         with patch.object(commands.Command, "_call_client") as call_client:
-            commands.Stop(
+            Stop(
                 self.arguments,
                 self.original_directory,
-                self.configuration,
-                self.analysis_directory,
+                configuration=self.configuration,
+                analysis_directory=self.analysis_directory,
             ).run()
             call_client.assert_not_called()
             kill_command_run.assert_not_called()
@@ -94,18 +95,18 @@ class StopTest(unittest.TestCase):
 
             def fail_on_stop(command: str, flags: Optional[List[str]] = None) -> Mock:
                 flags = flags or []
-                if command == commands.Stop.NAME:
+                if command == Stop.NAME:
                     raise commands.ClientException
                 return Mock()
 
             call_client.side_effect = fail_on_stop
-            commands.Stop(
+            Stop(
                 self.arguments,
                 self.original_directory,
-                self.configuration,
-                self.analysis_directory,
+                configuration=self.configuration,
+                analysis_directory=self.analysis_directory,
             ).run()
-            call_client.assert_has_calls([call(command=commands.Stop.NAME)])
+            call_client.assert_has_calls([call(command=Stop.NAME)])
             kill_command_run.assert_not_called()
             os_kill.assert_not_called()
             self.assertEqual(stop_subscriber.call_count, 2)
@@ -119,11 +120,11 @@ class StopTest(unittest.TestCase):
         os_kill: MagicMock,
     ) -> None:
         self.arguments.debug = True
-        flags = commands.Stop(
+        flags = Stop(
             self.arguments,
             self.original_directory,
-            self.configuration,
-            self.analysis_directory,
+            configuration=self.configuration,
+            analysis_directory=self.analysis_directory,
         )._flags()
         self.assertEqual(flags, ["-log-directory", ".pyre"])
 
@@ -135,14 +136,14 @@ class StopTest(unittest.TestCase):
         stop_subscriber: MagicMock,
         os_kill: MagicMock,
     ) -> None:
-        with patch.object(commands.Stop, "_pid_file", return_value=None), patch.object(
+        with patch.object(Stop, "_pid_file", return_value=None), patch.object(
             commands.Command, "_call_client"
         ) as call_client:
-            commands.Stop(
+            Stop(
                 self.arguments,
                 self.original_directory,
-                self.configuration,
-                self.analysis_directory,
+                configuration=self.configuration,
+                analysis_directory=self.analysis_directory,
             ).run()
-            call_client.assert_has_calls([call(command=commands.Stop.NAME)])
+            call_client.assert_has_calls([call(command=Stop.NAME)])
             kill_command_run.assert_not_called()

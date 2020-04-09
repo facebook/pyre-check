@@ -73,8 +73,8 @@ class Restart(Command):
             Stop(
                 self._arguments,
                 self._original_directory,
-                self._configuration,
-                self._analysis_directory,
+                configuration=self._configuration,
+                analysis_directory=self._analysis_directory,
                 from_restart=True,
             )
             .run()
