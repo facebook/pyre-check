@@ -141,6 +141,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         except KeyError:
             pass
 
+        except Exception as exception:
+            LOG.info(f"Exception during handling of file update: {exception}")
+            raise exception
+
     @staticmethod
     def _find_watchman_path(directory: str) -> str:
         watchman_path = find_root(directory, ".watchmanconfig")
