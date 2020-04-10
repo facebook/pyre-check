@@ -228,6 +228,7 @@ class FixmeAllTest(unittest.TestCase):
         assert run.call_count == 1
 
     @patch("subprocess.run")
+    @patch.object(upgrade.Configuration, "write")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
@@ -244,6 +245,7 @@ class FixmeAllTest(unittest.TestCase):
         gather,
         get_errors,
         remove_version,
+        configuration_write,
         subprocess,
     ) -> None:
         arguments = MagicMock()
@@ -357,6 +359,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
     )
+    @patch.object(upgrade.Configuration, "write")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{upgrade.__name__}.run_global_version_update")
@@ -369,6 +372,7 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update,
         get_errors,
         remove_version,
+        configuration_write,
         find_configuration,
         gather,
         subprocess,
@@ -545,6 +549,7 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
     )
+    @patch.object(upgrade.Configuration, "write")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{upgrade.__name__}.fix")
@@ -555,6 +560,7 @@ class FixmeSingleTest(unittest.TestCase):
         fix,
         get_errors,
         remove_version,
+        configuration_write,
         find_configuration,
         subprocess,
     ) -> None:
@@ -2187,6 +2193,7 @@ class DefaultStrictTest(unittest.TestCase):
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
     )
     @patch.object(upgrade.Configuration, "get_directory")
+    @patch.object(upgrade.Configuration, "write")
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
@@ -2197,6 +2204,7 @@ class DefaultStrictTest(unittest.TestCase):
         add_local_mode,
         get_errors,
         add_strict,
+        configuration_write,
         get_directory,
         find_configuration,
     ) -> None:

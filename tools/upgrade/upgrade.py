@@ -169,14 +169,12 @@ class Configuration:
             LOG.info("Version not found in configuration.")
             return
         self.version = None
-        self.write()
 
     def add_strict(self) -> None:
         if self.strict:
             LOG.info("Configuration is already strict.")
             return
         self.strict = True
-        self.write()
 
     def add_targets(self, targets: List[str]) -> None:
         existing_targets = self.targets
@@ -206,7 +204,6 @@ class Configuration:
                 expanded_targets.add(target)
                 deduplicated_targets.append(target)
         self.targets = deduplicated_targets
-        self.write()
 
     def get_errors(
         self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
@@ -272,6 +269,7 @@ def run_strict_default(
         configuration = Configuration(configuration_path, json.load(configuration_file))
         LOG.info("Processing %s", configuration.get_directory())
         configuration.add_strict()
+        configuration.write()
         errors = configuration.get_errors()
 
         if len(errors) == 0:
@@ -385,6 +383,7 @@ def _upgrade_project(
     if arguments.upgrade_version:
         if configuration.version:
             configuration.remove_version()
+            configuration.write()
         else:
             return
     errors = (
@@ -604,6 +603,7 @@ def run_targets_to_configuration(
                 local_configuration, json.load(configuration_file)
             )
             configuration.add_targets(new_targets)
+            configuration.write()
     elif project_configuration:
         LOG.info("Found project configuration at %s.", project_configuration)
         with open(project_configuration) as configuration_file:
@@ -617,6 +617,7 @@ def run_targets_to_configuration(
             ):
                 LOG.info("Amending targets to existing project configuration.")
                 configuration.add_targets(new_targets)
+                configuration.write()
             else:
                 local_configuration_path = subdirectory / ".pyre_configuration.local"
                 LOG.info(
