@@ -1559,7 +1559,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.fixme_threshold = None
         find_targets.return_value = {
             "subdirectory/a": ["target_one"],
-            "subdirectory/b/c": ["target_two", "target_three"],
+            "subdirectory/b/c": ["target_three", "target_two"],
         }
         filesystem_list = MagicMock()
         filesystem_list.return_value = []
@@ -1609,8 +1609,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "search_path": ["stubs"],
                 "targets": [
                     "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_two",
                     "subdirectory/b/c:target_three",
+                    "subdirectory/b/c:target_two",
                 ],
                 "version": "abc",
             }
@@ -1661,8 +1661,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
             expected_configuration_contents = {
                 "targets": [
                     "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_two",
                     "subdirectory/b/c:target_three",
+                    "subdirectory/b/c:target_two",
                 ],
                 "push_blocking": True,
                 "strict": True,
@@ -1923,34 +1923,41 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
 
     @patch("subprocess.check_output")
-    @patch(f"{upgrade.__name__}.Configuration.write")
-    def test_add_targets(self, mock_write, mock_check_output) -> None:
+    def test_deduplicate_targets(self, mock_check_output) -> None:
         configuration = upgrade.Configuration(Path("test"), {"targets": ["//a:a"]})
-        configuration.add_targets([])
+        configuration.deduplicate_targets()
         expected_targets = ["//a:a"]
         self.assertEqual(expected_targets, configuration.targets)
 
         mock_check_output.side_effect = [b"a", b"b"]
-        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
-        configuration.add_targets(["//b/..."])
+        configuration = upgrade.Configuration(
+            Path("test"), {"targets": ["//a/...", "//b/..."]}
+        )
+        configuration.deduplicate_targets()
         expected_targets = ["//a/...", "//b/..."]
         self.assertEqual(expected_targets, configuration.targets)
 
         mock_check_output.side_effect = [b"a", b"a"]
-        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
-        configuration.add_targets(["//b/..."])
+        configuration = upgrade.Configuration(
+            Path("test"), {"targets": ["//a/...", "//b/..."]}
+        )
+        configuration.deduplicate_targets()
         expected_targets = ["//a/..."]
         self.assertEqual(expected_targets, configuration.targets)
 
         mock_check_output.side_effect = [b"a", b"a\nb"]
-        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
-        configuration.add_targets(["//b/..."])
+        configuration = upgrade.Configuration(
+            Path("test"), {"targets": ["//a/...", "//b/..."]}
+        )
+        configuration.deduplicate_targets()
         expected_targets = ["//a/...", "//b/..."]
         self.assertEqual(expected_targets, configuration.targets)
 
         mock_check_output.side_effect = [b"a", b"//c:c"]
-        configuration = upgrade.Configuration(Path("test"), {"targets": ["//a/..."]})
-        configuration.add_targets(["//b/...", "//c:c"])
+        configuration = upgrade.Configuration(
+            Path("test"), {"targets": ["//a/...", "//b/...", "//c:c"]}
+        )
+        configuration.deduplicate_targets()
         expected_targets = ["//a/...", "//b/..."]
         self.assertEqual(expected_targets, configuration.targets)
 

@@ -179,31 +179,37 @@ class Configuration:
     def add_targets(self, targets: List[str]) -> None:
         existing_targets = self.targets
         if existing_targets:
-            all_targets = sorted(set(existing_targets + targets))
+            existing_targets.extend(targets)
         else:
-            all_targets = targets
-        # Deduplicate added targets before writing.
-        deduplicated_targets = []
-        expanded_targets = set()
-        for target in all_targets:
-            if target.endswith("/..."):
-                try:
-                    expanded = (
-                        subprocess.check_output(["buck", "query", target])
-                        .decode()
-                        .strip()
-                        .split("\n")
-                    )
-                    if not all([target in expanded_targets for target in expanded]):
-                        expanded_targets.update(expanded)
+            self.targets = targets
+
+    def deduplicate_targets(self) -> None:
+        all_targets = self.targets
+        if all_targets:
+            all_targets = sorted(set(all_targets))
+            deduplicated_targets = []
+            expanded_targets = set()
+            for target in all_targets:
+                if target.endswith("/..."):
+                    try:
+                        expanded = (
+                            subprocess.check_output(["buck", "query", target])
+                            .decode()
+                            .strip()
+                            .split("\n")
+                        )
+                        if not all([target in expanded_targets for target in expanded]):
+                            expanded_targets.update(expanded)
+                            deduplicated_targets.append(target)
+                    except subprocess.CalledProcessError as error:
+                        LOG.warning(
+                            "Failed to query target: %s\n%s", target, str(error)
+                        )
                         deduplicated_targets.append(target)
-                except subprocess.CalledProcessError as error:
-                    LOG.warning("Failed to query target: %s\n%s", target, str(error))
+                elif target not in expanded_targets:
+                    expanded_targets.add(target)
                     deduplicated_targets.append(target)
-            elif target not in expanded_targets:
-                expanded_targets.add(target)
-                deduplicated_targets.append(target)
-        self.targets = deduplicated_targets
+            self.targets = deduplicated_targets
 
     def get_errors(
         self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
@@ -603,6 +609,7 @@ def run_targets_to_configuration(
                 local_configuration, json.load(configuration_file)
             )
             configuration.add_targets(new_targets)
+            configuration.deduplicate_targets()
             configuration.write()
     elif project_configuration:
         LOG.info("Found project configuration at %s.", project_configuration)
@@ -617,6 +624,7 @@ def run_targets_to_configuration(
             ):
                 LOG.info("Amending targets to existing project configuration.")
                 configuration.add_targets(new_targets)
+                configuration.deduplicate_targets()
                 configuration.write()
             else:
                 local_configuration_path = subdirectory / ".pyre_configuration.local"
