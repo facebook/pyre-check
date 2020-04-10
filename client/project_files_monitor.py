@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Sequence, Set
 
 from . import json_rpc
 from .analysis_directory import AnalysisDirectory
+from .buck import BuckException
 from .configuration import Configuration
 from .filesystem import find_root
 from .socket_connection import SocketConnection
@@ -139,6 +140,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 self.socket_connection.close()
 
         except KeyError:
+            pass
+
+        except BuckException:
+            LOG.info("Unable to build project.")
             pass
 
         except Exception as exception:
