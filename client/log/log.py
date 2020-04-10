@@ -172,6 +172,9 @@ class TimedStreamHandler(logging.StreamHandler):
 def initialize(noninteractive: bool) -> None:
     global __handler
 
+    if __handler:
+        LOG.debug("Log handler already exists, skipping initialization.")
+        return
     if noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
