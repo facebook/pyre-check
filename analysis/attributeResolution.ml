@@ -2482,7 +2482,11 @@ module Implementation = struct
       | Property { kind; class_property; _ } ->
           let annotation, original, visibility =
             match kind with
-            | ReadWrite { setter_annotation; getter_annotation } ->
+            | ReadWrite
+                {
+                  getter = { return = getter_annotation; _ };
+                  setter = { value = setter_annotation; _ };
+                } ->
                 let current =
                   getter_annotation
                   >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
@@ -2494,7 +2498,7 @@ module Implementation = struct
                   |> Option.value ~default:Type.Top
                 in
                 current, original, AnnotatedAttribute.ReadWrite
-            | ReadOnly { getter_annotation } ->
+            | ReadOnly { getter = { return = getter_annotation; _ } } ->
                 let annotation =
                   getter_annotation
                   >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions

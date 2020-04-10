@@ -436,11 +436,13 @@ let test_attributes _ =
               if setter then
                 Attribute.ReadWrite
                   {
-                    getter_annotation = List.hd values >>| fst >>| parse_single_expression;
-                    setter_annotation = annotation >>| Type.expression;
+                    getter =
+                      { self = None; return = List.hd values >>| fst >>| parse_single_expression };
+                    setter = { self = None; value = annotation >>| Type.expression };
                   }
               else
-                Attribute.ReadOnly { getter_annotation = annotation >>| Type.expression }
+                Attribute.ReadOnly
+                  { getter = { self = None; return = annotation >>| Type.expression } }
             in
             Attribute.Property { kind; async = false; class_property }
           else

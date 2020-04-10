@@ -78,11 +78,23 @@ module rec Assert : sig
 end
 
 and Attribute : sig
+  type getter_property = {
+    self: Expression.t option;
+    return: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type setter_property = {
+    self: Expression.t option;
+    value: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type property_kind =
-    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadOnly of { getter: getter_property }
     | ReadWrite of {
-        getter_annotation: Expression.t option;
-        setter_annotation: Expression.t option;
+        getter: getter_property;
+        setter: setter_property;
       }
   [@@deriving compare, eq, sexp, show, hash]
 

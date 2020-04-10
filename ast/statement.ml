@@ -156,11 +156,23 @@ end = struct
 end
 
 and Attribute : sig
+  type getter_property = {
+    self: Expression.t option;
+    return: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type setter_property = {
+    self: Expression.t option;
+    value: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type property_kind =
-    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadOnly of { getter: getter_property }
     | ReadWrite of {
-        getter_annotation: Expression.t option;
-        setter_annotation: Expression.t option;
+        getter: getter_property;
+        setter: setter_property;
       }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -233,11 +245,23 @@ and Attribute : sig
 
   val location_insensitive_compare_kind : kind -> kind -> int
 end = struct
+  type getter_property = {
+    self: Expression.t option;
+    return: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type setter_property = {
+    self: Expression.t option;
+    value: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type property_kind =
-    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadOnly of { getter: getter_property }
     | ReadWrite of {
-        getter_annotation: Expression.t option;
-        setter_annotation: Expression.t option;
+        getter: getter_property;
+        setter: setter_property;
       }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -293,13 +317,46 @@ end = struct
 
   let location_insensitive_compare_property_kind left right =
     match left, right with
-    | ReadOnly { getter_annotation = left }, ReadOnly { getter_annotation = right } ->
-        Option.compare Expression.location_insensitive_compare left right
-    | ( ReadWrite { getter_annotation = left_getter; setter_annotation = left_setter },
-        ReadWrite { getter_annotation = right_getter; setter_annotation = right_setter } ) -> (
-        match Option.compare Expression.location_insensitive_compare left_getter right_getter with
+    | ( ReadOnly { getter = { self = left_self; return = left_return } },
+        ReadOnly { getter = { self = right_self; return = right_return } } ) -> (
+        match Option.compare Expression.location_insensitive_compare left_self right_self with
         | x when not (Int.equal x 0) -> x
-        | _ -> Option.compare Expression.location_insensitive_compare left_setter right_setter )
+        | _ -> Option.compare Expression.location_insensitive_compare left_return right_return )
+    | ( ReadWrite
+          {
+            getter = { self = left_getter_self; return = left_getter_return };
+            setter = { self = left_setter_self; value = left_setter_value };
+          },
+        ReadWrite
+          {
+            getter = { self = right_getter_self; return = right_getter_return };
+            setter = { self = right_setter_self; value = right_setter_value };
+          } ) -> (
+        match
+          Option.compare Expression.location_insensitive_compare left_getter_self right_getter_self
+        with
+        | x when not (Int.equal x 0) -> x
+        | _ -> (
+            match
+              Option.compare
+                Expression.location_insensitive_compare
+                left_getter_return
+                right_getter_return
+            with
+            | x when not (Int.equal x 0) -> x
+            | _ -> (
+                match
+                  Option.compare
+                    Expression.location_insensitive_compare
+                    left_setter_self
+                    right_setter_self
+                with
+                | x when not (Int.equal x 0) -> x
+                | _ ->
+                    Option.compare
+                      Expression.location_insensitive_compare
+                      left_setter_value
+                      right_setter_value ) ) )
     | _ -> -1
 
 
@@ -633,7 +690,8 @@ end = struct
   module PropertyDefine = struct
     type getter = {
       name: string;
-      annotation: Expression.t option;
+      self_annotation: Expression.t option;
+      return_annotation: Expression.t option;
       location: Location.t;
       async: bool;
       is_class_property: bool;
@@ -641,7 +699,8 @@ end = struct
 
     type setter = {
       name: string;
-      annotation: Expression.t option;
+      self_annotation: Expression.t option;
+      value_annotation: Expression.t option;
       location: Location.t;
       async: bool;
     }
@@ -666,8 +725,14 @@ end = struct
         let is_class_property () =
           String.Set.exists Recognized.classproperty_decorators ~f:(Define.has_decorator define)
         in
+        let self_annotation =
+          match parameters with
+          | { Node.value = { Expression.Parameter.annotation; _ }; _ } :: _ -> annotation
+          | _ -> None
+        in
         let getter ~is_class_property =
-          Some (Getter { name; annotation = return_annotation; is_class_property; async; location })
+          Some
+            (Getter { name; self_annotation; return_annotation; is_class_property; async; location })
         in
         if is_instance_property () then
           getter ~is_class_property:false
@@ -675,8 +740,11 @@ end = struct
           getter ~is_class_property:true
         else
           match Define.is_property_setter define, parameters with
-          | true, _ :: { Node.value = { Expression.Parameter.annotation; _ }; _ } :: _ ->
-              Some (Setter { name; annotation; async; location })
+          | ( true,
+              _
+              :: { Node.value = { Expression.Parameter.annotation = value_annotation; _ }; _ } :: _
+            ) ->
+              Some (Setter { name; self_annotation; value_annotation; async; location })
           | _ -> None
       in
       parent
@@ -754,7 +822,8 @@ end = struct
                 ( Some
                     {
                       PropertyDefine.name;
-                      annotation = getter_annotation;
+                      self_annotation;
+                      return_annotation;
                       async;
                       location;
                       is_class_property;
@@ -766,7 +835,9 @@ end = struct
                     kind =
                       Property
                         {
-                          kind = ReadOnly { getter_annotation };
+                          kind =
+                            ReadOnly
+                              { getter = { self = self_annotation; return = return_annotation } };
                           async;
                           class_property = is_class_property;
                         };
@@ -777,19 +848,35 @@ end = struct
                 ( Some
                     {
                       PropertyDefine.name;
-                      annotation = getter_annotation;
+                      self_annotation = getter_self_annotation;
+                      return_annotation = getter_return_annotation;
                       async;
                       location;
                       is_class_property;
                     },
-                  Some { PropertyDefine.annotation = setter_annotation; _ } ) ) ->
+                  Some
+                    {
+                      PropertyDefine.self_annotation = setter_self_annotation;
+                      value_annotation = setter_value_annotation;
+                      _;
+                    } ) ) ->
                 ( name,
                   {
                     Attribute.name;
                     kind =
                       Property
                         {
-                          kind = ReadWrite { getter_annotation; setter_annotation };
+                          kind =
+                            ReadWrite
+                              {
+                                getter =
+                                  {
+                                    self = getter_self_annotation;
+                                    return = getter_return_annotation;
+                                  };
+                                setter =
+                                  { self = setter_self_annotation; value = setter_value_annotation };
+                              };
                           async;
                           class_property = is_class_property;
                         };
