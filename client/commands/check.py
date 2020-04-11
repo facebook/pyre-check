@@ -47,7 +47,6 @@ class Check(Reporting):
             self._configuration,
             self._original_directory,
             self._current_directory,
-            build=True,
             isolate=True,
         )
 

@@ -66,7 +66,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
         current_directory = "/project"
 
         arguments = MagicMock()
-        arguments.build = None
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -583,7 +582,6 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         current_directory = "/project"
 
         arguments = MagicMock()
-        arguments.build = None
 
         configuration = MagicMock()
         configuration.source_directories = []

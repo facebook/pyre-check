@@ -584,7 +584,6 @@ def resolve_analysis_directory(
     configuration: Configuration,
     original_directory: str,
     current_directory: str,
-    build: bool = False,
     isolate: bool = False,
 ) -> AnalysisDirectory:
     # Only read from the configuration if no explicit targets are passed in.

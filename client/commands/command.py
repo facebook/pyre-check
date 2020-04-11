@@ -171,7 +171,6 @@ class CommandParser(ABC):
         self._formatter: List[str] = arguments.formatter
 
         self._targets: List[str] = arguments.targets
-        self._build: bool = arguments.build
         self._use_buck_builder: bool = arguments.use_buck_builder
         self._use_legacy_builder: bool = arguments.use_legacy_builder
 
@@ -287,11 +286,6 @@ class CommandParser(ABC):
         buck_arguments = parser.add_argument_group("buck")
         buck_arguments.add_argument(
             "--target", action="append", dest="targets", help="The buck target to check"
-        )
-        buck_arguments.add_argument(
-            "--build",
-            action="store_true",
-            help="Freshly build all the necessary artifacts.",
         )
         buck_arguments.add_argument(
             "--use-buck-builder",

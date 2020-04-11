@@ -65,7 +65,6 @@ class Restart(Command):
             self._configuration,
             self._original_directory,
             self._current_directory,
-            build=True,
         )
 
     def _run(self) -> None:

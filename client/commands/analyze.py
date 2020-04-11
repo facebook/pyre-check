@@ -78,7 +78,6 @@ class Analyze(Check):
             self._configuration,
             self._original_directory,
             self._current_directory,
-            build=True,
             isolate=True,
         )
 

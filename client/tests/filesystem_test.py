@@ -376,7 +376,6 @@ class FilesystemTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.source_directories = []
-        arguments.build = False
         arguments.command = commands.Check
         arguments.use_buck_builder = False
         arguments.ignore_unbuilt_dependencies = False
@@ -501,7 +500,6 @@ class FilesystemTest(unittest.TestCase):
             arguments.source_directories = []
             arguments.targets = []
             arguments.command = commands.Check
-            arguments.build = True
             configuration.targets = ["configuration_target"]
             configuration.source_directories = []
 
