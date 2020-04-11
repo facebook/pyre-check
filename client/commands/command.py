@@ -697,7 +697,7 @@ class Command(CommandParser, ABC):
         return self._analysis_directory
 
     @property
-    def configuration(self) -> Optional[Configuration]:
+    def configuration(self) -> Configuration:
         return self._configuration
 
     def _enable_logging_section(self, section: str) -> None:
