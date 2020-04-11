@@ -18,7 +18,6 @@ from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
     UpdatedPaths,
-    _get_project_name,
     _resolve_filter_paths,
     resolve_analysis_directory,
 )
@@ -901,8 +900,3 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             arguments, configuration, original_directory
         )
         self.assertEqual(filter_paths, {"/project/local"})
-
-    @patch.object(os, "getpid", return_value=1234)
-    def test_get_project_name(self, get_process_id: MagicMock) -> None:
-        self.assertEqual(_get_project_name(isolate=True), "isolated_1234")
-        self.assertEqual(_get_project_name(isolate=False), None)

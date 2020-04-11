@@ -556,29 +556,6 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 continue
 
 
-def _get_project_name(isolate: bool) -> Optional[str]:
-    return "isolated_{}".format(str(os.getpid())) if isolate else None
-
-
-def _get_fast_buck_builder(
-    arguments: argparse.Namespace, current_directory: str, isolate: bool
-) -> buck.FastBuckBuilder:
-    buck_root = buck.find_buck_root(current_directory)
-    if not buck_root:
-        raise EnvironmentException(
-            "No Buck configuration at `{}` or any of its ancestors.".format(
-                current_directory
-            )
-        )
-    return buck.FastBuckBuilder(
-        buck_root=buck_root,
-        buck_builder_binary=arguments.buck_builder_binary,
-        debug_mode=arguments.debug,
-        buck_mode=arguments.buck_mode,
-        project_name=_get_project_name(isolate),
-    )
-
-
 def resolve_analysis_directory(
     arguments: argparse.Namespace,
     configuration: Configuration,
@@ -630,7 +607,19 @@ def resolve_analysis_directory(
         )
     else:
         if use_buck_builder:
-            buck_builder = _get_fast_buck_builder(arguments, os.getcwd(), isolate)
+            buck_root = buck.find_buck_root(os.getcwd())
+            if not buck_root:
+                raise EnvironmentException(
+                    f"No Buck configuration at `{current_directory}` or any of its ancestors."
+                )
+            project_name = f"isolated_{os.getpid()}" if isolate else None
+            buck_builder = buck.FastBuckBuilder(
+                buck_root=buck_root,
+                buck_builder_binary=arguments.buck_builder_binary,
+                debug_mode=arguments.debug,
+                buck_mode=arguments.buck_mode,
+                project_name=project_name,
+            )
         else:
             buck_builder = buck.SimpleBuckBuilder()
 
