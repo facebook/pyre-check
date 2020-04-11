@@ -177,7 +177,6 @@ class CommandParser(ABC):
 
         self._source_directories: List[str] = arguments.source_directories
         self._filter_directory: List[str] = arguments.filter_directory
-        self._use_global_shared_analysis_directory: bool = arguments.use_global_shared_analysis_directory
         self._no_saved_state: bool = arguments.no_saved_state
 
         self._search_path: List[str] = arguments.search_path
@@ -318,12 +317,6 @@ class CommandParser(ABC):
         )
         source_directories.add_argument(
             "--filter-directory", help=argparse.SUPPRESS  # override filter directory
-        )
-
-        parser.add_argument(
-            "--use-global-shared-analysis-directory",
-            action="store_true",
-            help=argparse.SUPPRESS,
         )
         parser.add_argument(
             "--no-saved-state",
