@@ -137,15 +137,12 @@ class FastBuckBuilder(BuckBuilder):
 
 
 class SimpleBuckBuilder(BuckBuilder):
-    def __init__(self, build: bool = True) -> None:
-        self._build = build
-
     def build(self, targets: Iterable[str]) -> Iterable[str]:
         """
             Shell out to buck to build the targets, then yield the paths to the
             link trees.
         """
-        return generate_source_directories(targets, build=self._build)
+        return generate_source_directories(targets)
 
 
 def presumed_target_root(target: str) -> str:
@@ -352,23 +349,13 @@ def query_buck_relative_paths(
     return results
 
 
-def generate_source_directories(
-    original_targets: Iterable[str], build: bool
-) -> Set[str]:
+def generate_source_directories(original_targets: Iterable[str]) -> Set[str]:
     original_targets = list(original_targets)
     targets_to_destinations = _normalize(original_targets)
     targets = [pair[0] for pair in targets_to_destinations]
-    if build:
-        _build_targets(targets, original_targets)
+    _build_targets(targets, original_targets)
     buck_out = _find_built_source_directories(targets_to_destinations)
     source_directories = buck_out.source_directories
-
-    if buck_out.targets_not_found:
-        if not build:
-            # Build all targets to ensure buck doesn't remove some link trees as we go.
-            _build_targets(targets, original_targets)
-            buck_out = _find_built_source_directories(targets_to_destinations)
-            source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
         message_targets = _map_normalized_targets_to_original(

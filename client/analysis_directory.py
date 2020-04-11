@@ -630,12 +630,10 @@ def resolve_analysis_directory(
             search_path=configuration.search_path,
         )
     else:
-        build = arguments.build or build
-        buck_builder = buck.SimpleBuckBuilder(build=build)
         if use_buck_builder:
             buck_builder = _get_fast_buck_builder(arguments, os.getcwd(), isolate)
         else:
-            buck_builder = buck.SimpleBuckBuilder(build=build)
+            buck_builder = buck.SimpleBuckBuilder()
 
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
