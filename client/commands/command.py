@@ -172,7 +172,6 @@ class CommandParser(ABC):
 
         self._targets: List[str] = arguments.targets
         self._use_buck_builder: bool = arguments.use_buck_builder
-        self._use_legacy_builder: bool = arguments.use_legacy_builder
 
         self._source_directories: List[str] = arguments.source_directories
         self._filter_directory: List[str] = arguments.filter_directory
@@ -291,11 +290,6 @@ class CommandParser(ABC):
             "--use-buck-builder",
             action="store_true",
             help="Use Pyre's experimental builder for Buck projects.",
-        )
-        buck_arguments.add_argument(
-            "--use-legacy-builder",
-            action="store_true",
-            help="Use Pyre's legacy builder for Buck projects.",
         )
         buck_arguments.add_argument(
             "--buck-mode", type=str, help="Mode to pass to `buck query`"
