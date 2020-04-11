@@ -16,6 +16,10 @@ const users = [
 ];
 
 const siteConfig = {
+  algolia: {
+    apiKey: '751912c73065099b3ff10de18c55b7df',
+    indexName: 'pyre-check',
+  },
   title: 'Pyre',
   tagline: 'A performant type-checker for Python 3',
   url: 'https://pyre-check.org',
