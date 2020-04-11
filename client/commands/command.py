@@ -178,7 +178,6 @@ class CommandParser(ABC):
         self._no_saved_state: bool = arguments.no_saved_state
 
         self._search_path: List[str] = arguments.search_path
-        self._preserve_pythonpath: bool = arguments.preserve_pythonpath
         self._binary: str = arguments.binary
         self._buck_builder_binary: Final[Optional[str]] = arguments.buck_builder_binary
         self._exclude: List[str] = arguments.exclude
@@ -320,13 +319,6 @@ class CommandParser(ABC):
             type=readable_directory,
             help="Add an additional directory of modules and stubs to include"
             " in the type environment",
-        )
-        parser.add_argument(
-            "--preserve-pythonpath",
-            action="store_true",
-            default=False,
-            help="Preserve the value of the PYTHONPATH environment variable and "
-            "inherit the current python environment's search path",
         )
 
         parser.add_argument(
@@ -477,7 +469,6 @@ class Command(CommandParser, ABC):
             search_path=self._search_path,
             binary=self._binary,
             typeshed=self._typeshed,
-            preserve_pythonpath=self._preserve_pythonpath,
             excludes=self._exclude,
             logger=self._logger,
             formatter=self._formatter,

@@ -374,46 +374,6 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
         self.assertEqual(configuration.binary, "/home/user/bin")
 
-        # Test loading of additional directories in the search path
-        # via environment $PYTHONPATH.
-        json_load.side_effect = [
-            {"search_path": ["json/", "file/"], "typeshed": "/TYPESHED/"},
-            {},
-        ]
-        with patch.object(os, "getenv", return_value="additional/:directories/"):
-            with patch.object(os.path, "isdir", return_value=True):
-                configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=True
-                )
-                self.assertEqual(configuration.typeshed, "/TYPESHED/")
-                self.assertEqual(
-                    configuration.search_path,
-                    [
-                        SearchPathElement("additional/"),
-                        SearchPathElement("directories/"),
-                        *[SearchPathElement(i) for i in sys.path if os.path.isdir(i)],
-                        SearchPathElement("command/"),
-                        SearchPathElement("line/"),
-                        SearchPathElement("json/"),
-                        SearchPathElement("file/"),
-                    ],
-                )
-
-        # Test case where we ignore the PYTHONPATH environment variable.
-        json_load.side_effect = [
-            {"search_path": ["json/", "file/"], "typeshed": "/TYPESHED/"},
-            {},
-        ]
-        with patch.object(os, "getenv", return_value="additional/:directories/"):
-            with patch.object(os.path, "isdir", return_value=True):
-                configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=False
-                )
-                self.assertEqual(configuration.typeshed, "/TYPESHED/")
-                self.assertEqual(
-                    configuration.search_path, ["command/", "line/", "json/", "file/"]
-                )
-
         # Test manual loading of the binary
         json_load.side_effect = [{}, {}]
         configuration = Configuration(binary="some/file/path/")

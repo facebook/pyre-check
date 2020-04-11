@@ -152,7 +152,6 @@ class Configuration:
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
-        preserve_pythonpath: bool = False,
         excludes: Optional[List[str]] = None,
         formatter: Optional[str] = None,
         logger: Optional[str] = None,
@@ -177,24 +176,7 @@ class Configuration:
         self._use_buck_builder: Optional[bool] = None
         self.ignore_infer: List[str] = []
 
-        # Handle search path from multiple sources
-        self._search_path = []
-        if preserve_pythonpath:
-            for path in os.getenv("PYTHONPATH", default="").split(":"):
-                if path != "":
-                    if os.path.isdir(path):
-                        self._search_path.append(SearchPathElement(path))
-                    else:
-                        LOG.warning(
-                            "`{}` is not a valid directory, dropping it "
-                            "from PYTHONPATH".format(path)
-                        )
-            # sys.path often includes '' and a zipped python version, so
-            # we don't log warnings for non-dir entries
-            sys_path = [
-                SearchPathElement(path) for path in sys.path if os.path.isdir(path)
-            ]
-            self._search_path.extend(sys_path)
+        self._search_path: List[SearchPathElement] = []
         if search_path:
             search_path_elements = [
                 SearchPathElement.expand(path) for path in search_path
