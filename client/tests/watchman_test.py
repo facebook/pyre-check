@@ -11,8 +11,8 @@ from contextlib import contextmanager
 from typing import Generator, Optional
 from unittest.mock import MagicMock, patch
 
-from .. import watchman_subscriber
-from ..watchman_subscriber import WatchmanSubscriber
+from .. import watchman
+from ..watchman import Subscriber
 
 
 @contextmanager
@@ -23,10 +23,10 @@ def send_sigint_to_self(
     yield
 
 
-class WatchmanSubscriberTest(unittest.TestCase):
-    @patch.object(watchman_subscriber, "register_unique_process")
-    @patch.object(watchman_subscriber, "remove_if_exists")
-    @patch.object(watchman_subscriber, "acquire_lock")
+class SubscriberTest(unittest.TestCase):
+    @patch.object(watchman, "register_unique_process")
+    @patch.object(watchman, "remove_if_exists")
+    @patch.object(watchman, "acquire_lock")
     @patch.object(sys, "exit")
     @patch.object(os, "close")
     @patch.object(os, "fork", return_value=0)
@@ -43,8 +43,8 @@ class WatchmanSubscriberTest(unittest.TestCase):
     ) -> None:
         acquire_lock.side_effect = send_sigint_to_self
         # pyre-fixme[41]: `_name` cannot be reassigned. It is a read-only property.
-        WatchmanSubscriber._name = "foo_subscriber"
-        subscriber = WatchmanSubscriber(".pyre/test")
+        Subscriber._name = "foo_subscriber"
+        subscriber = Subscriber(".pyre/test")
         subscriber.daemonize()
 
         self.assertEqual(fork.call_count, 2)
@@ -54,17 +54,17 @@ class WatchmanSubscriberTest(unittest.TestCase):
         )
 
     @patch.object(os, "kill")
-    @patch.object(watchman_subscriber.Path, "read_text")
+    @patch.object(watchman.Path, "read_text")
     def test_stop_subscriber(self, read_text: MagicMock, os_kill: MagicMock) -> None:
         read_text.return_value = "123"
-        WatchmanSubscriber.stop_subscriber(".pyre/foo", "some_monitor")
+        Subscriber.stop_subscriber(".pyre/foo", "some_monitor")
         os_kill.assert_called_once_with(123, signal.SIGINT)
 
     @patch.object(os, "kill")
-    @patch.object(watchman_subscriber.Path, "read_text")
+    @patch.object(watchman.Path, "read_text")
     def test_stop_subscriber_handle_exception(
         self, read_text: MagicMock, os_kill: MagicMock
     ) -> None:
         read_text.side_effect = FileNotFoundError
-        WatchmanSubscriber.stop_subscriber(".pyre/foo", "some_monitor")
+        Subscriber.stop_subscriber(".pyre/foo", "some_monitor")
         os_kill.assert_not_called()

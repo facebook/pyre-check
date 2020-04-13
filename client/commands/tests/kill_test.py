@@ -112,7 +112,7 @@ class KillTest(unittest.TestCase):
         # Ensure that we don't crash even if os.kill fails due to permissions.
         kill_command._kill_processes_by_name("pyre-client")
 
-    @patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
+    @patch.object(commands.stop.Subscriber, "stop_subscriber")
     @patch.object(Kill, "_kill_processes_by_name")
     @patch.object(Kill, "__init__", return_value=None)
     def test_kill_client_processes(

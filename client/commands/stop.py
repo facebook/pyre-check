@@ -14,7 +14,7 @@ from .. import configuration_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
-from ..watchman_subscriber import WatchmanSubscriber
+from ..watchman import Subscriber
 from .command import ClientException, Command, State
 
 
@@ -110,10 +110,10 @@ class Stop(Command):
             else:
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
-        WatchmanSubscriber.stop_subscriber(
+        Subscriber.stop_subscriber(
             ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
         )
-        WatchmanSubscriber.stop_subscriber(
+        Subscriber.stop_subscriber(
             configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
             configuration_monitor.ConfigurationMonitor.NAME,
         )

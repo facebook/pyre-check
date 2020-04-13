@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Generator, Optional
 from unittest.mock import MagicMock, call, patch
 
-from .. import configuration_monitor, watchman_subscriber
+from .. import configuration_monitor, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..commands import stop
 from ..tests.mocks import mock_arguments, mock_configuration
@@ -67,7 +67,7 @@ class MonitorTest(unittest.TestCase):
         _exit.assert_has_calls([call(0), call(1)])
 
     @patch("os.makedirs")
-    @patch.object(watchman_subscriber, "acquire_lock")
+    @patch.object(watchman, "acquire_lock")
     def test_run(self, _lock: MagicMock, _makedirs: MagicMock) -> None:
         @contextmanager
         def yield_once(
@@ -162,7 +162,7 @@ class MonitorTest(unittest.TestCase):
     @patch.object(
         configuration_monitor.ConfigurationMonitor, "__init__", return_value=None
     )
-    @patch.object(watchman_subscriber.WatchmanSubscriber, "_watchman_client")
+    @patch.object(watchman.Subscriber, "_watchman_client")
     def test_subscriptions(self, watchman_client: MagicMock, init: MagicMock) -> None:
         watchman_client.query.return_value = {"roots": ["/a", "/b"]}
         monitor = configuration_monitor.ConfigurationMonitor(

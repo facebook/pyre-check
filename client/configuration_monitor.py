@@ -13,11 +13,11 @@ from .commands import stop
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
-# We use the `LOG` from watchman_subscriber due to its better formatting in log files
-from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
+# We use the `LOG` from watchman due to its better formatting in log files
+from .watchman import LOG, Subscriber, Subscription
 
 
-class ConfigurationMonitor(WatchmanSubscriber):
+class ConfigurationMonitor(Subscriber):
     """
         The ConfigurationMonitor watches only for .pyre_configuration(.local)
         files, and will kill the corresponding server when a configuration changes.

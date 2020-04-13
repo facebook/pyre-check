@@ -15,8 +15,8 @@ from .configuration import Configuration
 from .filesystem import find_root
 from .socket_connection import SocketConnection
 
-# We use the `LOG` from watchman_subscriber due to its better formatting in log files
-from .watchman_subscriber import LOG, Subscription, WatchmanSubscriber
+# We use the `LOG` from watchman due to its better formatting in log files
+from .watchman import LOG, Subscriber, Subscription
 
 
 class MonitorException(Exception):
@@ -33,7 +33,7 @@ def _log_paths(message: str, paths: Sequence[str]) -> None:
         LOG.info(f"{message} {paths[:log_threshold]} (and {additional_count} more)")
 
 
-class ProjectFilesMonitor(WatchmanSubscriber):
+class ProjectFilesMonitor(Subscriber):
     """
         Logs from this monitor are found in
         .pyre/<local root>/file_monitor/file_monitor.log

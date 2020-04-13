@@ -23,7 +23,7 @@ def _mark_processes_as_completed(process_id: int, signal: int) -> None:
 
 
 @patch.object(os, "kill", side_effect=_mark_processes_as_completed)
-@patch.object(commands.stop.WatchmanSubscriber, "stop_subscriber")
+@patch.object(commands.stop.Subscriber, "stop_subscriber")
 @patch.object(commands.stop, "open", side_effect=lambda filename: StringIO("42"))
 @patch.object(commands.Kill, "_run")
 @patch.object(commands.Command, "_state")

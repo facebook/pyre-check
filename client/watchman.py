@@ -26,7 +26,7 @@ Subscription = NamedTuple(
 )
 
 
-class WatchmanSubscriber(object):
+class Subscriber(object):
     def __init__(self, base_path: str) -> None:
         self._base_path: str = base_path
         self._alive: bool = True
@@ -81,7 +81,7 @@ class WatchmanSubscriber(object):
         except OSError:
             pass
         lock_path: str = os.path.join(self._base_path, "{}.lock".format(self._name))
-        LOG.debug(f"WatchmanSubscriber: Trying to acquire lock file {lock_path}.")
+        LOG.debug(f"Subscriber: Trying to acquire lock file {lock_path}.")
 
         # Die silently if unable to acquire the lock.
         try:
@@ -155,9 +155,7 @@ class WatchmanSubscriber(object):
     @staticmethod
     def stop_subscriber(base_path: str, subscriber_name: str) -> None:
         try:
-            pid_path = Path(
-                WatchmanSubscriber._compute_pid_path(base_path, subscriber_name)
-            )
+            pid_path = Path(Subscriber._compute_pid_path(base_path, subscriber_name))
             pid = int(pid_path.read_text())
             os.kill(pid, signal.SIGINT)
             LOG.debug(f"Stopped the {subscriber_name} with pid {pid}.")

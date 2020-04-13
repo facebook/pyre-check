@@ -21,7 +21,7 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
-from ..watchman_subscriber import WatchmanSubscriber
+from ..watchman import Subscriber
 from .command import Command
 from .rage import Rage
 
@@ -184,10 +184,10 @@ class Kill(Command):
 
     def _kill_client_processes(self) -> None:
         self._kill_processes_by_name(CLIENT_NAME)
-        WatchmanSubscriber.stop_subscriber(
+        Subscriber.stop_subscriber(
             ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
         )
-        WatchmanSubscriber.stop_subscriber(
+        Subscriber.stop_subscriber(
             configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
             configuration_monitor.ConfigurationMonitor.NAME,
         )
