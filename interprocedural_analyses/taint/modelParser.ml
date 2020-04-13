@@ -311,7 +311,11 @@ let rec parse_annotations ~configuration ~parameters annotation =
                           }
                           :: _;
                       } ->
-                      kind, label
+                      if List.mem configuration.sinks kind ~equal:String.equal then
+                        kind, label
+                      else
+                        Format.asprintf "Unrecognized sink for partial sink: `%s`." kind
+                        |> raise_invalid_model
                   | _ -> raise_invalid_annotation ()
                 in
                 [Sink { sink = Sinks.PartialSink { kind; label }; breadcrumbs = []; path = [] }]

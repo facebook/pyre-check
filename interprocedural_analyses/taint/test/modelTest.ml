@@ -948,6 +948,13 @@ let test_invalid_models context =
       \   { Expression.Call.callee = a.__sub__;\n\
       \     arguments = [{ Expression.Call.Argument.name = None; value = feature }]\n\
       \     })"
+    ();
+  assert_invalid_model
+    ~source:"def partial_sink(x, y) -> None: ..."
+    ~model_source:
+      "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
+    ~expect:
+      "Invalid model for `test.partial_sink`: Unrecognized sink for partial sink: `Nonexistent`."
     ()
 
 
