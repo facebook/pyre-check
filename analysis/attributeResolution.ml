@@ -10,6 +10,20 @@ open Statement
 open Assumptions
 
 module UninstantiatedAnnotation = struct
+  type property_annotation = {
+    self: Type.t option;
+    value: Type.t option;
+  }
+  [@@deriving compare]
+
+  type property_kind =
+    | Property of {
+        getter: property_annotation;
+        setter: property_annotation option;
+      }
+    | NotProperty
+  [@@deriving compare]
+
   type kind =
     | Method of {
         callable: Type.Callable.t;
@@ -18,7 +32,7 @@ module UninstantiatedAnnotation = struct
     | Attribute of {
         annotation: Type.t;
         original_annotation: Type.t;
-        is_property: bool;
+        property: property_kind;
       }
   [@@deriving compare]
 
@@ -1077,7 +1091,7 @@ module Implementation = struct
                     UninstantiatedAnnotation.accessed_via_metaclass = false;
                     kind =
                       Attribute
-                        { annotation; original_annotation = annotation; is_property = false };
+                        { annotation; original_annotation = annotation; property = NotProperty };
                   }
                 ~abstract:false
                 ~async:false
@@ -2275,44 +2289,36 @@ module Implementation = struct
           in
 
           callable, callable
-      | Attribute { annotation; original_annotation; is_property = true } ->
+      | Attribute
+          { property = Property { getter = getter_annotation; setter = setter_annotation }; _ } -> (
           (* Special case properties with type variables. *)
-          (* TODO(T44676629): handle this correctly *)
-          let free_variables =
-            let variables =
-              annotation
-              |> Type.Variable.all_free_variables
-              |> List.filter_map ~f:(function
-                     | Type.Variable.Unary variable -> Some (Type.Variable variable)
-                     | _ -> None)
-              |> Type.Set.of_list
-            in
-            let generics =
-              ClassHierarchyEnvironment.ReadOnly.variables
-                (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-                   class_metadata_environment)
-                ?dependency
-                class_name
-              >>= Type.Variable.all_unary
-              >>| List.map ~f:Type.Variable.Unary.self_reference
-              >>| Type.Set.of_list
-              (* TODO(T44676629): This case should be handled when we re-do this handling *)
-              |> Option.value ~default:Type.Set.empty
-            in
-
-            Set.diff variables generics |> Set.to_list
+          let solve_property
+              { UninstantiatedAnnotation.self = self_annotation; value = value_annotation }
+            =
+            match value_annotation with
+            | None -> Type.Top
+            | Some annotation -> (
+                let order = full_order ?dependency class_metadata_environment ~assumptions in
+                let constraints =
+                  match self_annotation with
+                  | Some annotation ->
+                      TypeOrder.OrderedConstraintsSet.add
+                        ConstraintsSet.empty
+                        ~new_constraint:(LessOrEqual { left = instantiated; right = annotation })
+                        ~order
+                  | None -> ConstraintsSet.empty
+                in
+                match TypeOrder.OrderedConstraintsSet.solve ~order constraints with
+                | Some solution -> ConstraintsSet.Solution.instantiate solution annotation
+                | None -> Type.Top )
           in
-          if not (List.is_empty free_variables) then
-            let constraints =
-              List.fold free_variables ~init:Type.Map.empty ~f:(fun map variable ->
-                  Map.set map ~key:variable ~data:instantiated)
-              |> Map.find
-            in
-            let annotation = Type.instantiate ~constraints annotation in
-            annotation, annotation
-          else
-            annotation, original_annotation
-      | Attribute { annotation; original_annotation; is_property = false } ->
+          match setter_annotation with
+          | Some setter_annotation ->
+              solve_property getter_annotation, solve_property setter_annotation
+          | None ->
+              let annotation = solve_property getter_annotation in
+              annotation, annotation )
+      | Attribute { annotation; original_annotation; property = NotProperty } ->
           let order () = full_order ?dependency class_metadata_environment ~assumptions in
           callable_call_special_cases
             ~instantiated:(Some instantiated)
@@ -2439,7 +2445,7 @@ module Implementation = struct
               ReadWrite
           in
           ( UninstantiatedAnnotation.Attribute
-              { annotation; original_annotation = original; is_property = false },
+              { annotation; original_annotation = original; property = NotProperty },
             class_attribute,
             visibility )
       | Method { signatures; final; _ } ->
@@ -2479,37 +2485,56 @@ module Implementation = struct
             | [] -> failwith "impossible"
           in
           callable, default_class_attribute, visibility
-      | Property { kind; class_property; _ } ->
-          let annotation, original, visibility =
-            match kind with
-            | ReadWrite
-                {
-                  getter = { return = getter_annotation; _ };
-                  setter = { value = setter_annotation; _ };
-                } ->
-                let current =
-                  getter_annotation
-                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
-                  |> Option.value ~default:Type.Top
-                in
-                let original =
-                  setter_annotation
-                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
-                  |> Option.value ~default:Type.Top
-                in
-                current, original, AnnotatedAttribute.ReadWrite
-            | ReadOnly { getter = { return = getter_annotation; _ } } ->
-                let annotation =
-                  getter_annotation
-                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
-                  |> Option.value ~default:Type.Top
-                in
-                annotation, annotation, AnnotatedAttribute.ReadOnly Unrefinable
+      | Property { kind; class_property; _ } -> (
+          let parse_annotation_option annotation =
+            annotation >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
           in
-          ( UninstantiatedAnnotation.Attribute
-              { annotation; original_annotation = original; is_property = true },
-            class_property,
-            visibility )
+          match kind with
+          | ReadWrite
+              {
+                getter = { self = getter_self_annotation; return = getter_annotation; _ };
+                setter = { self = setter_self_annotation; value = setter_annotation; _ };
+              } ->
+              let getter_annotation = parse_annotation_option getter_annotation in
+              let setter_annotation = parse_annotation_option setter_annotation in
+              ( UninstantiatedAnnotation.Attribute
+                  {
+                    annotation = getter_annotation |> Option.value ~default:Type.Top;
+                    original_annotation = setter_annotation |> Option.value ~default:Type.Top;
+                    property =
+                      Property
+                        {
+                          getter =
+                            {
+                              self = parse_annotation_option getter_self_annotation;
+                              value = getter_annotation;
+                            };
+                          setter =
+                            Some
+                              {
+                                self = parse_annotation_option setter_self_annotation;
+                                value = setter_annotation;
+                              };
+                        };
+                  },
+                class_property,
+                ReadWrite )
+          | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
+              let annotation = parse_annotation_option getter_annotation in
+              ( UninstantiatedAnnotation.Attribute
+                  {
+                    annotation = annotation |> Option.value ~default:Type.Top;
+                    original_annotation = annotation |> Option.value ~default:Type.Top;
+                    property =
+                      Property
+                        {
+                          getter =
+                            { self = parse_annotation_option self_annotation; value = annotation };
+                          setter = None;
+                        };
+                  },
+                class_property,
+                ReadOnly Unrefinable ) )
     in
     let initialized =
       match kind with
