@@ -1,0 +1,7 @@
+@generated
+Call dependencies
+multiple_sources.Node::__init__ (method) -> []
+multiple_sources.Node::get (method) -> [multiple_sources.Node::__init__ (method) object::__new__ (method)]
+multiple_sources.combine_tainted_user_and_dangerous_vc (fun) -> [multiple_sources.Node::get (method) multiple_sources.Node::send (method) multiple_sources.permissive_context (fun) multiple_sources.user_controlled_input (fun)]
+multiple_sources.permissive_context (fun) -> []
+multiple_sources.user_controlled_input (fun) -> []

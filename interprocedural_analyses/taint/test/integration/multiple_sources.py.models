@@ -1,0 +1,149 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(id)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(id)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.get",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(id)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 10, "start": 19, "end": 21 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[id]" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(cls)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 10, "start": 15, "end": 18 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.send",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(vc)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.permissive_context",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "PermissiveContext" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.user_controlled_input",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

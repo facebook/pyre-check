@@ -8,6 +8,10 @@ open Core
 module T = struct
   type t =
     | Attach
+    | PartialSink of {
+        kind: string;
+        label: string;
+      }
     | LocalReturn (* Special marker to describe function in-out behavior *)
     | NamedSink of string
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
@@ -22,6 +26,7 @@ let _ = show (* unused but derived *)
 
 let show = function
   | Attach -> "Attach"
+  | PartialSink { kind; label } -> Format.sprintf "PartialSink[%s[%s]]" kind label
   | LocalReturn -> "LocalReturn"
   | NamedSink name -> name
   | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index

@@ -286,6 +286,35 @@ let rec parse_annotations ~configuration ~parameters annotation =
                       path = [];
                     };
                 ]
+            | Some "PartialSink" ->
+                let kind, label =
+                  match Node.value expression with
+                  | Call
+                      {
+                        callee =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    base =
+                                      { Node.value = Expression.Name (Name.Identifier kind); _ };
+                                    attribute = "__getitem__";
+                                    _;
+                                  });
+                            _;
+                          };
+                        arguments =
+                          {
+                            Call.Argument.value = { Node.value = Name (Name.Identifier label); _ };
+                            _;
+                          }
+                          :: _;
+                      } ->
+                      kind, label
+                  | _ -> raise_invalid_annotation ()
+                in
+                [Sink { sink = Sinks.PartialSink { kind; label }; breadcrumbs = []; path = [] }]
             | _ -> raise_invalid_annotation () )
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]

@@ -573,6 +573,24 @@ let test_attach_features context =
     ()
 
 
+let test_partial_sinks context =
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
+    ~expect:
+      [
+        outcome
+          ~sink_parameters:
+            [
+              { name = "x"; sinks = [Sinks.PartialSink { kind = "Test"; label = "a" }] };
+              { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
+            ]
+          ~kind:`Function
+          "test.partial_sink";
+      ]
+    ()
+
+
 let test_invalid_models context =
   let assert_invalid_model ?path ?source ~model_source ~expect () =
     let source =
@@ -779,7 +797,6 @@ let test_invalid_models context =
       |}
     ~expect:"Invalid model for `test.ClassSinkWithMethod`: Class model must have a body of `...`."
     ();
-
   (* Attach syntax. *)
   assert_invalid_model
     ~model_source:"def test.sink(parameter: AttachToSink): ..."
@@ -1028,6 +1045,7 @@ let () =
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "invalid_models" >:: test_invalid_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
+         "partial_sinks" >:: test_partial_sinks;
          "filter_by_rules" >:: test_filter_by_rules;
        ]
   |> Test.run

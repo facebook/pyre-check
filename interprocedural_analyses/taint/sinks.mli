@@ -7,6 +7,10 @@ open Core
 
 type t =
   | Attach
+  | PartialSink of {
+      kind: string;
+      label: string;
+    }
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | NamedSink of string
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
