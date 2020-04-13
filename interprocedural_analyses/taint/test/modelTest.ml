@@ -1033,19 +1033,19 @@ let () =
   "taint_model"
   >::: [
          "attach_features" >:: test_attach_features;
-         "source_models" >:: test_source_models;
-         "sink_models" >:: test_sink_models;
          "class_models" >:: test_class_models;
+         "demangle_class_attributes" >:: test_demangle_class_attributes;
+         "filter_by_rules" >:: test_filter_by_rules;
+         "invalid_models" >:: test_invalid_models;
+         "partial_sinks" >:: test_partial_sinks;
+         "sink_breadcrumbs" >:: test_sink_breadcrumbs;
+         "sink_models" >:: test_sink_models;
+         "source_breadcrumbs" >:: test_source_breadcrumbs;
+         "source_models" >:: test_source_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;
          "taint_in_taint_out_models_alternate" >:: test_taint_in_taint_out_models_alternate;
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
-         "source_breadcrumbs" >:: test_source_breadcrumbs;
-         "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
-         "invalid_models" >:: test_invalid_models;
-         "demangle_class_attributes" >:: test_demangle_class_attributes;
-         "partial_sinks" >:: test_partial_sinks;
-         "filter_by_rules" >:: test_filter_by_rules;
        ]
   |> Test.run
