@@ -7,7 +7,6 @@ import argparse
 import functools
 import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
@@ -50,26 +49,22 @@ class ServerDetails(NamedTuple):
             return self.local_root
 
 
-@dataclass(frozen=True)
-class ServersArguments:
-    subcommand: Optional[str]
-
-
 class Servers(Command):
     NAME: str = "servers"
 
     def __init__(
         self,
         arguments: argparse.Namespace,
-        servers_arguments: ServersArguments,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        subcommand: Optional[str],
     ) -> None:
         super(Servers, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._servers_arguments = servers_arguments
+        self._subcommand = subcommand
 
     @staticmethod
     def from_arguments(
@@ -78,13 +73,12 @@ class Servers(Command):
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Servers":
-        servers_arguments = ServersArguments(subcommand=arguments.servers_subcommand)
         return Servers(
             arguments,
-            servers_arguments,
             original_directory,
-            configuration,
-            analysis_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            subcommand=arguments.servers_subcommand,
         )
 
     @classmethod
@@ -144,8 +138,7 @@ class Servers(Command):
     def _run(self) -> None:
         all_server_details = self._all_server_details()
 
-        subcommand = self._servers_arguments.subcommand
-        if subcommand == "list" or subcommand is None:
+        if self._subcommand == "list" or self._subcommand is None:
             self._print_server_details(all_server_details, self._output)
-        elif subcommand == "stop":
+        elif self._subcommand == "stop":
             self._stop_servers(all_server_details)

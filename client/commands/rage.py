@@ -14,7 +14,7 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
 from .command import Command
-from .servers import Servers, ServersArguments
+from .servers import Servers
 
 
 RAGE_DELIMITER: Final[str] = "=" * 50
@@ -86,10 +86,10 @@ class Rage(Command):
     def _call_client_for_root_project(self, output_file: IO[str]) -> None:
         all_servers = Servers(
             self._arguments,
-            ServersArguments(subcommand="list"),
             self._original_directory,
-            self._configuration,
-            self._analysis_directory,
+            configuration=self._configuration,
+            analysis_directory=self._analysis_directory,
+            subcommand="list",
         )._all_server_details()
         if any(server.is_root() for server in all_servers):
             self._call_client(

@@ -12,7 +12,7 @@ from ... import commands, log
 from ...analysis_directory import AnalysisDirectory
 from .. import servers
 from ..command import JSON, TEXT
-from ..servers import ServerDetails, Servers, ServersArguments
+from ..servers import ServerDetails, Servers
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -88,10 +88,10 @@ class ServersCommandTest(unittest.TestCase):
             arguments=mock_arguments(
                 dot_pyre_directory=Path("/dot-pyre-directory/.pyre")
             ),
-            servers_arguments=ServersArguments(subcommand="stop"),
             original_directory="/root",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
+            subcommand="stop",
         )
         servers._stop_servers(
             [
@@ -140,10 +140,10 @@ class ServersCommandTest(unittest.TestCase):
         arguments = mock_arguments()
         servers = Servers(
             arguments,
-            servers_arguments=ServersArguments(subcommand=None),
             original_directory="/",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
+            subcommand=None,
         )
         servers._run()
         print_server_details.assert_called_once()
@@ -152,10 +152,10 @@ class ServersCommandTest(unittest.TestCase):
         arguments = mock_arguments()
         servers = Servers(
             arguments,
-            servers_arguments=ServersArguments(subcommand="list"),
             original_directory="/",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
+            subcommand="list",
         )
         servers._run()
         print_server_details.assert_called_once()
@@ -164,10 +164,10 @@ class ServersCommandTest(unittest.TestCase):
         arguments = mock_arguments()
         servers = Servers(
             arguments,
-            servers_arguments=ServersArguments(subcommand="stop"),
             original_directory="/",
             configuration=mock_configuration(),
             analysis_directory=AnalysisDirectory("."),
+            subcommand="stop",
         )
         servers._run()
         stop_servers.assert_called_once()
