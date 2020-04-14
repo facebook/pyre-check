@@ -49,22 +49,30 @@ class StatisticsTest(unittest.TestCase):
     @patch.object(Statistics, "_log_to_scuba")
     def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:
         arguments = mock_arguments()
-        arguments.filter_paths = ["a.py", "b.py"]
         arguments.local_configuration = "example/path/client"
-        arguments.collect = None
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
         original_directory = "/original/directory"
 
-        arguments.log_results = False
         Statistics(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            filter_paths=["a.py", "b.py"],
+            collect=None,
+            log_results=False,
         )._run()
         log.assert_not_called()
 
-        arguments.log_results = True
         Statistics(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            filter_paths=["a.py", "b.py"],
+            collect=None,
+            log_results=True,
         )._run()
         log.assert_called()
 

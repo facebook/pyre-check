@@ -115,23 +115,44 @@ class Statistics(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        filter_paths: List[str],
+        collect: QualityType,
+        log_results: bool,
     ) -> None:
         super(Statistics, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._filter_paths: Set[str] = set(arguments.filter_paths)
+        self._filter_paths: Set[str] = set(filter_paths)
         self._strict: bool = self._configuration.strict
-        self._collect: QualityType = arguments.collect
-        self._log_results: bool = arguments.log_results
+        self._collect: QualityType = collect
+        self._log_results: bool = log_results
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Statistics":
+        return Statistics(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            filter_paths=arguments.filter_paths,
+            collect=arguments.collect,
+            log_results=arguments.log_results,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         statistics = parser.add_parser(
             cls.NAME, epilog="Collect various syntactic metrics on type coverage."
         )
-        statistics.set_defaults(command=cls)
+        statistics.set_defaults(command=cls.from_arguments)
         # TODO[T60916205]: Rename this argument, it doesn't make sense anymore
         statistics.add_argument(
             "filter_paths", nargs="*", type=file_exists, help=argparse.SUPPRESS
