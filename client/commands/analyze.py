@@ -24,8 +24,16 @@ class Analyze(Check):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        analysis: str,
+        taint_models_path: List[str],
+        no_verify: bool,
+        save_results_to: Optional[str],
+        dump_call_graph: bool,
+        repository_root: Optional[str],
+        rules: Optional[List[int]],
     ) -> None:
         super(Analyze, self).__init__(
             arguments,
@@ -33,20 +41,41 @@ class Analyze(Check):
             configuration=configuration,
             analysis_directory=analysis_directory,
         )
-        self._analysis: str = arguments.analysis
+        self._analysis: str = analysis
         self._taint_models_path: List[str] = (
-            arguments.taint_models_path or self._configuration.taint_models_path
+            taint_models_path or self._configuration.taint_models_path
         )
-        self._no_verify: bool = arguments.no_verify
-        self._save_results_to: Final[Optional[str]] = arguments.save_results_to
-        self._dump_call_graph: bool = arguments.dump_call_graph
-        self._repository_root: Final[Optional[str]] = arguments.repository_root
-        self._rules: Final[Optional[List[int]]] = arguments.rule
+        self._no_verify: bool = no_verify
+        self._save_results_to: Final[Optional[str]] = save_results_to
+        self._dump_call_graph: bool = dump_call_graph
+        self._repository_root: Final[Optional[str]] = repository_root
+        self._rules: Final[Optional[List[int]]] = rules
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Analyze":
+        return Analyze(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            analysis=arguments.analysis,
+            taint_models_path=arguments.taint_models_path,
+            no_verify=arguments.no_verify,
+            save_results_to=arguments.save_results_to,
+            dump_call_graph=arguments.dump_call_graph,
+            repository_root=arguments.repository_root,
+            rules=arguments.rule,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         analyze = parser.add_parser(cls.NAME)
-        analyze.set_defaults(command=cls)
+        analyze.set_defaults(command=cls.from_arguments)
         analyze.add_argument(
             "analysis",
             nargs="?",

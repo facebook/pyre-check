@@ -35,7 +35,6 @@ class AnalyzeTest(unittest.TestCase):
     ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
-        arguments.taint_models_path = []
 
         configuration = mock_configuration()
         configuration.taint_models_path = []
@@ -49,7 +48,17 @@ class AnalyzeTest(unittest.TestCase):
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -77,7 +86,17 @@ class AnalyzeTest(unittest.TestCase):
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = ["taint_models"]
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -107,7 +126,17 @@ class AnalyzeTest(unittest.TestCase):
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = ["taint_models_1", "taint_models_2"]
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -138,9 +167,18 @@ class AnalyzeTest(unittest.TestCase):
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = {"taint_models"}
-            arguments.taint_models_path = {"overriding_models"}
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=["overriding_models"],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -165,14 +203,23 @@ class AnalyzeTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
-        arguments = mock_arguments(no_verify=True)
+        arguments = mock_arguments()
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = {"taint_models"}
-            arguments.taint_models_path = {"overriding_models"}
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=["overriding_models"],
+                no_verify=True,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -200,12 +247,21 @@ class AnalyzeTest(unittest.TestCase):
 
         # Test "." is a valid directory
         arguments = mock_arguments()
-        arguments.save_results_to = "."
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=".",
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -233,12 +289,21 @@ class AnalyzeTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
         arguments = mock_arguments()
-        arguments.save_results_to = "/tmp/results.json"
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to="/tmp/results.json",
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -266,13 +331,21 @@ class AnalyzeTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
         arguments = mock_arguments()
-        arguments.save_results_to = "/tmp/results.json"
-        arguments.repository_root = "/home/username/root"
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to="/tmp/results.json",
+                dump_call_graph=True,
+                repository_root="/home/username/root",
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
@@ -302,12 +375,22 @@ class AnalyzeTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
         arguments = mock_arguments()
-        arguments.rule = [5021, 5022]
+
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="taint",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=[5021, 5022],
             )
             self.assertEqual(
                 command._flags(),
@@ -335,12 +418,21 @@ class AnalyzeTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
         arguments = mock_arguments()
-        arguments.analysis = "liveness"
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             command = commands.Analyze(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                analysis="liveness",
+                taint_models_path=[],
+                no_verify=False,
+                save_results_to=None,
+                dump_call_graph=True,
+                repository_root=None,
+                rules=None,
             )
             self.assertEqual(
                 command._flags(),
