@@ -247,6 +247,7 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration()
             self.assertEqual(configuration.binary, "/root/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/typeshed")
+            self.assertIsNone(configuration.buck_builder_binary)
 
             json_load.side_effect = [
                 {"binary": "~/some/dir/pyre.bin", "typeshed": "~/some/typeshed"},
@@ -279,6 +280,24 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration()
             self.assertEqual(configuration.binary, "/home/user/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
+
+            json_load.side_effect = [
+                {"buck_builder_binary": "/some/dir/buck_builder"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(
+                configuration.buck_builder_binary, "/some/dir/buck_builder"
+            )
+
+            json_load.side_effect = [
+                {"buck_builder_binary": "some/dir/buck_builder"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(
+                configuration.buck_builder_binary, "/root/some/dir/buck_builder"
+            )
 
             json_load.side_effect = [
                 {"ignore_all_errors": ["abc/def", "/abc/def", "~/abc/def"]},

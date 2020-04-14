@@ -132,7 +132,6 @@ class _ConfigurationFile:
         Return all keys not consumed yet. Some keys are explicitly whitelisted.
         """
         return self._configuration.keys() - {
-            "buck_builder_binary",
             "buck_mode",
             "differential",
             "stable_client",
@@ -152,6 +151,7 @@ class Configuration:
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
+        buck_builder_binary: Optional[str] = None,
         excludes: Optional[List[str]] = None,
         formatter: Optional[str] = None,
         logger: Optional[str] = None,
@@ -172,6 +172,7 @@ class Configuration:
         self._version_hash: Optional[str] = None
         self._binary: Optional[str] = None
         self._typeshed: Optional[str] = None
+        self._buck_builder_binary: Optional[str] = None
         self.strict: bool = False
         self._use_buck_builder: Optional[bool] = None
         self.ignore_infer: List[str] = []
@@ -190,6 +191,9 @@ class Configuration:
 
         if typeshed:
             self._typeshed = typeshed
+
+        if buck_builder_binary:
+            self._buck_builder_binary = buck_builder_binary
 
         self.excludes: List[str] = []
         if excludes:
@@ -366,6 +370,10 @@ class Configuration:
         return typeshed
 
     @property
+    def buck_builder_binary(self) -> Optional[str]:
+        return self._buck_builder_binary
+
+    @property
     def use_buck_builder(self) -> bool:
         return self._use_buck_builder or False
 
@@ -502,6 +510,14 @@ class Configuration:
                 if binary is not None:
                     binary = expand_relative_path(configuration_path, binary)
                 self._binary = binary
+
+                buck_builder_binary = configuration.consume(
+                    "buck_builder_binary", current=self._buck_builder_binary
+                )
+                if buck_builder_binary is not None:
+                    self._buck_builder_binary = expand_relative_path(
+                        root=configuration_path, path=buck_builder_binary
+                    )
 
                 additional_search_path = configuration.consume(
                     "search_path", default=[]

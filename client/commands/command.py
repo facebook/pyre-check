@@ -469,6 +469,7 @@ class Command(CommandParser, ABC):
             search_path=self._search_path,
             binary=self._binary,
             typeshed=self._typeshed,
+            buck_builder_binary=self._buck_builder_binary,
             excludes=self._exclude,
             logger=self._logger,
             formatter=self._formatter,

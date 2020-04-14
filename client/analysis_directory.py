@@ -613,7 +613,7 @@ def resolve_analysis_directory(
             project_name = f"isolated_{os.getpid()}" if isolate else None
             buck_builder = buck.FastBuckBuilder(
                 buck_root=buck_root,
-                buck_builder_binary=arguments.buck_builder_binary,
+                buck_builder_binary=configuration.buck_builder_binary,
                 debug_mode=arguments.debug,
                 buck_mode=arguments.buck_mode,
                 project_name=project_name,
