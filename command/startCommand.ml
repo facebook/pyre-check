@@ -271,10 +271,10 @@ let request_handler_thread
     | End_of_file -> handle_disconnect ()
     | error when is_connection_reset_error error -> handle_disconnect ()
   in
-  let handle_readable_json_request socket =
+  let handle_readable_json_request ~remove_socket socket =
     let handle_disconnect () =
-      Log.log ~section:`Server "File notifier disconnected";
-      Connections.remove_json_socket ~connections ~socket
+      Log.log ~section:`Server "JSON socket notifier disconnected";
+      remove_socket ~connections ~socket
     in
     try
       Log.log ~section:`Server "A file notifier is readable.";
@@ -299,7 +299,16 @@ let request_handler_thread
   in
   let rec loop () =
     Connections.close_json_sockets ~connections;
-    let { socket = server_socket; json_socket; persistent_clients; json_sockets; _ } =
+    let {
+      socket = server_socket;
+      json_socket;
+      adapter_socket;
+      persistent_clients;
+      json_sockets;
+      adapter_sockets;
+      _;
+    }
+      =
       Mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
@@ -310,7 +319,10 @@ let request_handler_thread
     let readable =
       Unix.select
         ~restart:true
-        ~read:((server_socket :: json_socket :: Map.keys persistent_clients) @ json_sockets)
+        ~read:
+          ( (server_socket :: json_socket :: adapter_socket :: Map.keys persistent_clients)
+          @ json_sockets
+          @ adapter_sockets )
         ~write:[]
         ~except:[]
         ~timeout:(`After (Time.of_sec 5.0))
@@ -318,6 +330,25 @@ let request_handler_thread
       |> fun { Unix.Select_fds.read; _ } -> read
     in
     let handle_socket socket =
+      let add_json_socket ~add_socket ~socket =
+        let new_socket, _ =
+          Log.log ~section:`Server "New json client connection";
+          Unix.accept socket
+        in
+        Jsonrpc.handshake_message (Option.value ~default:"-1" expected_version)
+        |> LanguageServer.Types.HandshakeServer.to_yojson
+        |> Connections.write_to_json_socket ~socket:new_socket;
+        new_socket
+        |> Unix.in_channel_of_descr
+        |> LanguageServer.Protocol.read_message
+        >>| LanguageServer.Types.HandshakeClient.of_yojson
+        |> function
+        | Some (Ok _) ->
+            add_socket ~connections ~socket:new_socket;
+            Jsonrpc.socket_added_message |> Connections.write_to_json_socket ~socket:new_socket
+        | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
+        | None -> Log.warning "Failed to parse handshake as LSP."
+      in
       if Unix.File_descr.equal socket server_socket then
         let new_socket, _ =
           Log.log ~section:`Server "New client connection";
@@ -337,35 +368,25 @@ let request_handler_thread
             Log.warning "ECONNRESET while reading from socket."
         | End_of_file -> Log.warning "New client socket unreadable"
       else if Unix.File_descr.equal socket json_socket then
-        try
-          let new_socket, _ =
-            Log.log ~section:`Server "New json client connection";
-            Unix.accept json_socket
-          in
-          Jsonrpc.handshake_message (Option.value ~default:"-1" expected_version)
-          |> LanguageServer.Types.HandshakeServer.to_yojson
-          |> Connections.write_to_json_socket ~socket:new_socket;
-          new_socket
-          |> Unix.in_channel_of_descr
-          |> LanguageServer.Protocol.read_message
-          >>| LanguageServer.Types.HandshakeClient.of_yojson
-          |> function
-          (* TODO: Once we have fully rolled out the socket fix - we can remove this special
-             handling. *)
-          | Some (Ok _) ->
-              Connections.add_json_socket ~connections ~socket:new_socket;
-              Jsonrpc.socket_added_message |> Connections.write_to_json_socket ~socket:new_socket
-          | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
-          | None -> Log.warning "Failed to parse handshake as LSP."
-        with
+        try add_json_socket ~add_socket:Connections.add_json_socket ~socket:json_socket with
+        | End_of_file -> Log.warning "Got end of file while waiting for handshake."
+        | Sys_error error
+        | Yojson.Json_error error ->
+            Log.warning "Failed to complete handshake: %s" error
+      else if Unix.File_descr.equal socket adapter_socket then
+        try add_json_socket ~add_socket:Connections.add_adapter_socket ~socket:adapter_socket with
         | End_of_file -> Log.warning "Got end of file while waiting for handshake."
         | Sys_error error
         | Yojson.Json_error error ->
             Log.warning "Failed to complete handshake: %s" error
       else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
         handle_readable_persistent socket
+      else if
+        Mutex.critical_section lock ~f:(fun () -> List.mem ~equal:( = ) adapter_sockets socket)
+      then
+        handle_readable_json_request ~remove_socket:Connections.remove_adapter_socket socket
       else
-        handle_readable_json_request socket
+        handle_readable_json_request ~remove_socket:Connections.remove_json_socket socket
     in
     List.iter ~f:handle_socket readable;
 

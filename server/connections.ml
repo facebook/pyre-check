@@ -28,6 +28,10 @@ module type Connections = sig
   val write_to_json_socket : socket:Network.Socket.t -> Yojson.Safe.t -> unit
 
   val write_lsp_response_to_json_socket : socket:Network.Socket.t -> string -> unit
+
+  val add_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val remove_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 end
 
 module Make (Socket : sig
@@ -135,6 +139,22 @@ end) : Connections = struct
     let out_channel = Unix.out_channel_of_descr socket in
     LanguageServer.Protocol.write_adapter_message out_channel message;
     Out_channel.flush out_channel
+
+
+  let add_adapter_socket ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let { State.adapter_sockets; _ } = !connections in
+        connections := { !connections with adapter_sockets = socket :: adapter_sockets })
+
+
+  let remove_adapter_socket ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let ({ State.adapter_sockets; _ } as cached_connections) = !connections in
+        Socket.close socket;
+        let adapter_sockets =
+          List.filter adapter_sockets ~f:(fun adapter_socket -> not (socket = adapter_socket))
+        in
+        connections := { cached_connections with adapter_sockets })
 end
 
 module Unix = Make (struct
