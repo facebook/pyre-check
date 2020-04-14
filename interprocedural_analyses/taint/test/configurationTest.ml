@@ -104,7 +104,7 @@ let test_combined_source_rules _ =
         { name: "B" }
       ],
       sinks: [
-        { name: "C" }
+        { name: "C", multi_sink_labels: ["a", "b"] }
       ],
       combined_source_rules: [
         {
@@ -143,6 +143,88 @@ let test_combined_source_rules _ =
   assert_equal (List.hd_exn configuration.rules).code 2001
 
 
+let test_combined_source_parse_errors _ =
+  let assert_fails configuration ~expected =
+    assert_raises expected (fun () -> TaintConfiguration.parse configuration |> ignore)
+  in
+  assert_fails
+    {|
+    {
+      sources: [
+        {  name: "A" }
+      ],
+      sinks: [
+        {
+          name: "B",
+          multi_sink_labels: ["a", "b"]
+        }
+      ],
+      rules: [
+        {
+           name: "test rule",
+           sources: ["A"],
+           sinks: ["B"],
+           code: 2001,
+           message_format: "whatever"
+        }
+      ]
+    }
+  |}
+    ~expected:(Failure "Multi sink `B` can't be used for a regular rule.");
+  assert_fails
+    {|
+    {
+      sources: [
+        { name: "A" },
+        { name: "B" }
+      ],
+      sinks: [
+        {
+          name: "C"
+        }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~expected:(Failure "Error when parsing configuration: `C` is not a multi sink.");
+  assert_fails
+    {|
+    {
+      sources: [
+        { name: "A" },
+        { name: "B" }
+      ],
+      sinks: [
+        {
+          name: "C",
+          multi_sink_labels: ["a", "b"]
+        }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "invalid": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~expected:
+      (Failure
+         "Error when parsing configuration: `invalid` is an invalid label For multi sink `C` \
+          (choices: `a, b`)")
+
+
 let test_empty _ =
   assert_raises (Yojson.Json_error "Blank input data") (fun () ->
       let _ = TaintConfiguration.parse {| |} in
@@ -153,6 +235,7 @@ let () =
   "configuration"
   >::: [
          "combined_source_rules" >:: test_combined_source_rules;
+         "combined_source_parse_errors" >:: test_combined_source_parse_errors;
          "empty" >:: test_empty;
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;

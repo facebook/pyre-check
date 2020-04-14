@@ -99,8 +99,8 @@ let parse source =
     let parse_sink (sinks, acceptable_sink_labels) json =
       let sink = Json.Util.member "name" json |> Json.Util.to_string in
       let acceptable_sink_labels =
-        if List.exists ~f:(( = ) "labels") (Json.Util.keys json) then
-          Json.Util.member "labels" json
+        if List.exists ~f:(( = ) "multi_sink_labels") (Json.Util.keys json) then
+          Json.Util.member "multi_sink_labels" json
           |> Json.Util.to_list
           |> List.map ~f:Json.Util.to_string
           |> fun data -> String.Map.Tree.set acceptable_sink_labels ~key:sink ~data
@@ -115,16 +115,23 @@ let parse source =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
     array_member "features" json |> List.map ~f:parse_feature
   in
-  let parse_rules ~allowed_sources ~allowed_sinks json =
+  let parse_rules ~allowed_sources ~allowed_sinks ~acceptable_sink_labels json =
     let parse_rule json =
       let sources =
         Json.Util.member "sources" json
         |> parse_string_list
         |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
       in
+      let validate sink =
+        (* Ensure that the sink used for a normal rule is not a multi sink. *)
+        if String.Map.Tree.mem acceptable_sink_labels sink then
+          failwith (Format.sprintf "Multi sink `%s` can't be used for a regular rule." sink);
+        sink
+      in
       let sinks =
         Json.Util.member "sinks" json
         |> parse_string_list
+        |> List.map ~f:validate
         |> List.map ~f:(Sinks.parse ~allowed:allowed_sinks)
       in
       let name = Json.Util.member "name" json |> Json.Util.to_string in
@@ -134,7 +141,7 @@ let parse source =
     in
     array_member "rules" json |> List.map ~f:parse_rule
   in
-  let parse_combined_source_rules ~allowed_sources json =
+  let parse_combined_source_rules ~allowed_sources ~acceptable_sink_labels json =
     let parse_combined_source_rule json =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
@@ -155,7 +162,26 @@ let parse source =
           in
 
           let sinks = Json.Util.member "sinks" json |> parse_string_list in
-          let create_partial_sink label sink = Sinks.TriggeredPartialSink { kind = sink; label } in
+          let create_partial_sink label sink =
+            begin
+              match String.Map.Tree.find acceptable_sink_labels sink with
+              | Some labels when not (List.mem ~equal:String.equal labels label) ->
+                  failwith
+                    (Format.sprintf
+                       "Error when parsing configuration: `%s` is an invalid label For multi sink \
+                        `%s` (choices: `%s`)"
+                       label
+                       sink
+                       (String.concat labels ~sep:", "))
+              | None ->
+                  failwith
+                    (Format.sprintf
+                       "Error when parsing configuration: `%s` is not a multi sink."
+                       sink)
+              | _ -> ()
+            end;
+            Sinks.TriggeredPartialSink { kind = sink; label }
+          in
           let first_sinks = List.map sinks ~f:(create_partial_sink first) in
           let second_sinks = List.map sinks ~f:(create_partial_sink second) in
           [
@@ -182,8 +208,9 @@ let parse source =
   let sinks, acceptable_sink_labels = parse_sinks json in
   let features = parse_features json in
   let rules =
-    parse_rules ~allowed_sources:sources ~allowed_sinks:sinks json
-    |> List.rev_append (parse_combined_source_rules json ~allowed_sources:sources)
+    parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~acceptable_sink_labels json
+    |> List.rev_append
+         (parse_combined_source_rules json ~allowed_sources:sources ~acceptable_sink_labels)
   in
 
   let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
@@ -312,7 +339,8 @@ let create ~rule_filter ~paths =
         |> parse
         |> Option.some
       with
-      | Yojson.Json_error parse_error ->
+      | Yojson.Json_error parse_error
+      | Failure parse_error ->
           raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
   in
   let merge_implicit_sinks left right =
