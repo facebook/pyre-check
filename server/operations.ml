@@ -50,6 +50,11 @@ let create_configuration ?(daemonize = true) ?log_path ?saved_state_action confi
         path = socket_path ~create:true ~name:"json_server" configuration;
         link = server_root ^| "json_server.sock";
       };
+    adapter_socket =
+      {
+        path = socket_path ~create:true ~name:"adapter" configuration;
+        link = server_root ^| "adapter.sock";
+      };
     lock_path = server_root ^| "server.lock";
     pid_path = server_root ^| "server.pid";
     log_path;
@@ -186,6 +191,7 @@ let stop
       {
         Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
         json_socket = { path = json_socket_path; link = json_socket_link; _ };
+        adapter_socket = { path = adapter_path; link = adapter_link; _ };
         pid_path;
         _;
       }
@@ -195,8 +201,10 @@ let stop
   (* Cleanup server files. *)
   Path.remove socket_path;
   Path.remove json_socket_path;
+  Path.remove adapter_path;
   Path.remove socket_link;
   Path.remove json_socket_link;
+  Path.remove adapter_link;
   Path.remove pid_path;
   Worker.killall ();
   exit 0

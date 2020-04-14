@@ -384,6 +384,7 @@ let request_handler_thread
 let serve
     ~socket
     ~json_socket
+    ~adapter_socket
     ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
   =
   Version.log_version_banner ();
@@ -399,9 +400,11 @@ let serve
             {
               socket;
               json_socket;
+              adapter_socket;
               persistent_clients = Socket.Map.empty;
               json_sockets = [];
               sockets_to_close = [];
+              adapter_sockets = [];
             };
       }
     in
@@ -429,7 +432,7 @@ let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_pat
 
 
 type run_server_daemon_entry =
-  ( Socket.t * Socket.t * Configuration.Server.t,
+  ( Socket.t * Socket.t * Socket.t * Configuration.Server.t,
     unit Daemon.in_channel,
     unit Daemon.out_channel )
   Daemon.entry
@@ -440,7 +443,9 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, json_socket, server_configuration) (parent_in_channel, parent_out_channel) ->
+    (fun (socket, json_socket, adapter_socket, server_configuration)
+         (parent_in_channel, parent_out_channel)
+         ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
 
@@ -452,7 +457,7 @@ let run_server_daemon_entry : run_server_daemon_entry =
         | Some _ -> ()
         | None -> Telemetry.reset_budget ()
       in
-      serve ~socket ~json_socket ~server_configuration)
+      serve ~socket ~json_socket ~adapter_socket ~server_configuration)
 
 
 let run
@@ -460,6 +465,7 @@ let run
         Configuration.Server.lock_path;
         socket = { path = socket_path; _ };
         json_socket = { path = json_socket_path; _ };
+        adapter_socket = { path = adapter_socket_path; _ };
         log_path;
         daemonize;
         configuration = { incremental_style; _ } as configuration;
@@ -483,6 +489,7 @@ let run
       Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
       let socket = Socket.initialize_unix_socket socket_path in
       let json_socket = Socket.initialize_unix_socket json_socket_path in
+      let adapter_socket = Socket.initialize_unix_socket adapter_socket_path in
       if daemonize then (
         let stdin = Daemon.null_fd () in
         let log_path = Log.rotate (Path.absolute log_path) in
@@ -492,7 +499,7 @@ let run
           Daemon.spawn
             (stdin, stdout, stdout)
             run_server_daemon_entry
-            (socket, json_socket, server_configuration)
+            (socket, json_socket, adapter_socket, server_configuration)
         in
         Daemon.close handle;
         Log.log ~section:`Server "Forked off daemon with pid %d" pid;
@@ -500,7 +507,7 @@ let run
         pid )
       else (
         acquire_lock ~server_configuration;
-        serve ~socket ~json_socket ~server_configuration )
+        serve ~socket ~json_socket ~adapter_socket ~server_configuration )
     with
     | AlreadyRunning ->
         Log.info "Server is already running";

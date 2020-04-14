@@ -22,9 +22,11 @@ let connections persistent_clients =
         {
           Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+          adapter_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           persistent_clients;
           json_sockets = [];
           sockets_to_close = [];
+          adapter_sockets = [];
         };
   }
 
