@@ -556,12 +556,23 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 continue
 
 
+def _get_project_name(
+    isolate_per_process: bool, relative_local_root: Optional[str]
+) -> Optional[str]:
+    if isolate_per_process:
+        return f"isolated_{os.getpid()}"
+    if relative_local_root:
+        return "_".join(Path(relative_local_root).parts)
+    return None
+
+
 def resolve_analysis_directory(
     arguments: argparse.Namespace,
     configuration: Configuration,
     original_directory: str,
     current_directory: str,
     isolate: bool = False,
+    relative_local_root: Optional[str] = None,
 ) -> AnalysisDirectory:
     # Only read from the configuration if no explicit targets are passed in.
     if not arguments.source_directories and not arguments.targets:
@@ -610,7 +621,9 @@ def resolve_analysis_directory(
                 raise EnvironmentException(
                     f"No Buck configuration at `{current_directory}` or any of its ancestors."
                 )
-            project_name = f"isolated_{os.getpid()}" if isolate else None
+            project_name = _get_project_name(
+                isolate_per_process=isolate, relative_local_root=relative_local_root
+            )
             buck_builder = buck.FastBuckBuilder(
                 buck_root=buck_root,
                 buck_builder_binary=configuration.buck_builder_binary,

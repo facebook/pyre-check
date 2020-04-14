@@ -414,6 +414,12 @@ class CommandParser(ABC):
     def noninteractive(self) -> bool:
         return self._noninteractive
 
+    @property
+    def relative_local_root(self) -> Optional[str]:
+        if not self.local_configuration:
+            return None
+        return str(Path(self.log_directory).relative_to(self._dot_pyre_directory))
+
 
 class Command(CommandParser, ABC):
     _buffer: List[str] = []
@@ -486,6 +492,7 @@ class Command(CommandParser, ABC):
                 configuration,
                 self._original_directory,
                 self._current_directory,
+                relative_local_root=self.relative_local_root,
             )
 
     def run(self) -> "Command":

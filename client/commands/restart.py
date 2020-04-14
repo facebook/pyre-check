@@ -88,6 +88,7 @@ class Restart(Command):
             self._configuration,
             self._original_directory,
             self._current_directory,
+            relative_local_root=self.relative_local_root,
         )
 
     def _run(self) -> None:
