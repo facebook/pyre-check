@@ -483,7 +483,15 @@ class FilesystemTest(unittest.TestCase):
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with({"arguments_target"})
-            command = commands.Restart(arguments, original_directory, configuration)
+            command = commands.Restart(
+                arguments,
+                original_directory,
+                configuration=configuration,
+                terminal=False,
+                incremental_style=commands.command.IncrementalStyle.FINE_GRAINED,
+                use_watchman=True,
+                store_type_check_resolution=False,
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()

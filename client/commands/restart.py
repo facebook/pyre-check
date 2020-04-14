@@ -21,23 +21,46 @@ class Restart(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        terminal: bool,
+        store_type_check_resolution: bool,
+        use_watchman: bool,
+        incremental_style: IncrementalStyle,
     ) -> None:
         super(Restart, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._terminal: bool = arguments.terminal
-        self._store_type_check_resolution: bool = arguments.store_type_check_resolution
-        self._use_watchman: bool = not arguments.no_watchman
-        self._incremental_style: IncrementalStyle = arguments.incremental_style
+        self._terminal: bool = terminal
+        self._store_type_check_resolution: bool = store_type_check_resolution
+        self._use_watchman: bool = use_watchman
+        self._incremental_style: IncrementalStyle = incremental_style
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Restart":
+        return Restart(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            terminal=arguments.terminal,
+            store_type_check_resolution=arguments.store_type_check_resolution,
+            use_watchman=not arguments.no_watchman,
+            incremental_style=arguments.incremental_style,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         restart = parser.add_parser(
             cls.NAME, epilog="Restarts a server. Equivalent to `pyre stop && pyre`."
         )
-        restart.set_defaults(command=cls)
+        restart.set_defaults(command=cls.from_arguments)
         restart.add_argument(
             "--terminal", action="store_true", help="Run the server in the terminal."
         )
