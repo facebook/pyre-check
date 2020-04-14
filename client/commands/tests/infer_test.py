@@ -602,7 +602,17 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             command = Infer(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                print_errors=True,
+                full_only=True,
+                recursive=False,
+                in_place=None,
+                json=False,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
             )
             self.assertEqual(
                 command._flags(),
@@ -624,7 +634,17 @@ class InferTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client:
 
             command = Infer(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                print_errors=True,
+                full_only=True,
+                recursive=False,
+                in_place=None,
+                json=False,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
             )
             self.assertEqual(
                 command._flags(),
@@ -644,9 +664,18 @@ class InferTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Infer.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.json = True
             command = Infer(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                print_errors=True,
+                full_only=True,
+                recursive=False,
+                in_place=None,
+                json=True,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
             )
             self.assertEqual(
                 command._flags(),
@@ -666,9 +695,18 @@ class InferTest(unittest.TestCase):
             call_client.assert_not_called()
         configuration.ignore_infer = ["path1.py", "path2.py"]
         with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.json = True
             command = Infer(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                print_errors=True,
+                full_only=True,
+                recursive=False,
+                in_place=None,
+                json=True,
+                annotate_from_existing_stubs=False,
+                debug_infer=False,
             )
             self.assertEqual(
                 command._flags(),

@@ -18,6 +18,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, List, Optional, Set, Union
 
+from typing_extensions import Final
+
 from .. import apply_annotations, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
@@ -407,27 +409,56 @@ class Infer(Reporting):
         self,
         arguments,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        print_errors: bool,
+        full_only: bool,
+        recursive: bool,
+        in_place: Optional[List[str]],
+        json: bool,
+        annotate_from_existing_stubs: bool,
+        debug_infer: bool,
     ) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON
         super(Infer, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._print_errors: bool = arguments.print_only
-        self._full_only: bool = arguments.full_only
-        self._recursive: bool = arguments.recursive
-        self._in_place: bool = arguments.in_place
-        self._json: bool = arguments.json
-        self._annotate_from_existing_stubs: bool = arguments.annotate_from_existing_stubs
-        self._debug_infer: bool = arguments.debug_infer
+        self._print_errors = print_errors
+        self._full_only = full_only
+        self._recursive = recursive
+        self._in_place: Final[Optional[List[str]]] = in_place
+        self._json = json
+        self._annotate_from_existing_stubs = annotate_from_existing_stubs
+        self._debug_infer = debug_infer
         self._ignore_infer: List[str] = self._configuration.ignore_infer
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Infer":
+        return Infer(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            print_errors=arguments.print_only,
+            full_only=arguments.full_only,
+            recursive=arguments.recursive,
+            in_place=arguments.in_place,
+            json=arguments.json,
+            annotate_from_existing_stubs=arguments.annotate_from_existing_stubs,
+            debug_infer=arguments.debug_infer,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         infer = parser.add_parser(cls.NAME)
-        infer.set_defaults(command=cls)
+        infer.set_defaults(command=cls.from_arguments)
         infer.add_argument(
             "-p",
             "--print-only",
@@ -478,7 +509,7 @@ class Infer(Reporting):
     def run(self) -> Command:
         self._analysis_directory.prepare()
         if self._annotate_from_existing_stubs:
-            if self._arguments.in_place is None:
+            if self._in_place is None:
                 raise argparse.ArgumentTypeError(
                     "--annotate-from-existing-stubs cannot be used without the \
                     --in-place argument"
@@ -504,7 +535,7 @@ class Infer(Reporting):
             type_directory = Path(os.path.join(self._log_directory, "types"))
             stubs = generate_stub_files(self._arguments, errors)
             write_stubs_to_disk(self._arguments, stubs, type_directory)
-            if self._arguments.in_place is not None:
+            if self._in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(
                     self._configuration.local_configuration_root,
