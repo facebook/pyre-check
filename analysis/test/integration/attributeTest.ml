@@ -590,7 +590,26 @@ let test_check_attributes context =
       from foo import Bar
       class Bar: pass
     |}
-    ["Redefined class [50]: Class `test.Bar` conflicts with imported class `foo.Bar`."]
+    ["Redefined class [50]: Class `test.Bar` conflicts with imported class `foo.Bar`."];
+
+  assert_type_errors
+    {|
+      class Foo:
+        n = None
+        l = typing.List
+      def g(f: Foo) -> None:
+        reveal_type(f.n)
+        reveal_type(f.l)
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `n` of class `Foo` has type `None` but no type \
+       is specified.";
+      "Missing attribute annotation [4]: Attribute `l` of class `Foo` has type `typing.Type[list]` \
+       but no type is specified.";
+      "Revealed type [-1]: Revealed type for `f.n` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `f.l` is `unknown`.";
+    ];
+  ()
 
 
 let test_attribute_decorators context =

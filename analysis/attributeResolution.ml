@@ -2432,8 +2432,7 @@ module Implementation = struct
                 then (* Treat literal attributes as having been explicitly annotated. *)
                   literal_value_annotation, literal_value_annotation
                 else
-                  ( parse_annotation ?dependency ~class_metadata_environment ~assumptions value,
-                    Type.Top )
+                  Type.Top, Type.Top
             | _ -> Type.Top, Type.Top
           in
           let visibility =
