@@ -272,18 +272,35 @@ class Profile(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        profile_output: ProfileOutput,
     ) -> None:
         super(Profile, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._profile_output: ProfileOutput = arguments.profile_output
+        self._profile_output: ProfileOutput = profile_output
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Profile":
+        return Profile(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            profile_output=arguments.profile_output,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         profile = parser.add_parser(cls.NAME)
-        profile.set_defaults(command=cls)
+        profile.set_defaults(command=cls.from_arguments)
         profile.add_argument(
             "--profile-output",
             type=ProfileOutput,
