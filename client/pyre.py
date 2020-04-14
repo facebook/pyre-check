@@ -100,7 +100,7 @@ def main(argv: List[str]) -> int:
                 arguments.noninteractive, command.log_directory
             )
             exit_code = command.run().exit_code()
-    except buck.BuckException as error:
+    except (buck.BuckException, EnvironmentException) as error:
         if arguments.command == commands.Persistent.from_arguments:
             try:
                 commands.Persistent.run_null_server(timeout=3600 * 12)
@@ -113,21 +113,11 @@ def main(argv: List[str]) -> int:
                 exit_code = ExitCode.SUCCESS
         else:
             client_exception_message = str(error)
-            exit_code = ExitCode.BUCK_ERROR
-    except EnvironmentException as error:
-        if arguments.command == commands.Persistent.from_arguments:
-            try:
-                commands.Persistent.run_null_server(timeout=3600 * 12)
-                exit_code = ExitCode.SUCCESS
-            except Exception as error:
-                client_exception_message = str(error)
-                exit_code = ExitCode.FAILURE
-            except KeyboardInterrupt:
-                LOG.warning("Interrupted by user")
-                exit_code = ExitCode.SUCCESS
-        else:
-            client_exception_message = str(error)
-            exit_code = ExitCode.FAILURE
+            exit_code = (
+                ExitCode.BUCK_ERROR
+                if isinstance(error, buck.BuckException)
+                else ExitCode.FAILURE
+            )
     except commands.ClientException as error:
         client_exception_message = str(error)
         exit_code = ExitCode.FAILURE
