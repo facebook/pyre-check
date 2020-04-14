@@ -13,6 +13,7 @@ module Rule : sig
     name: string;
     message_format: string; (* format *)
   }
+  [@@deriving eq, show]
 end
 
 type implicit_sinks = { conditional_test: Sinks.t list }

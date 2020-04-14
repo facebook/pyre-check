@@ -16,6 +16,7 @@ module Rule = struct
     name: string;
     message_format: string; (* format *)
   }
+  [@@deriving eq, show]
 end
 
 type implicit_sinks = { conditional_test: Sinks.t list }
@@ -81,6 +82,7 @@ let parse source =
     | `Null -> []
     | json -> Json.Util.to_list json
   in
+  let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
   let parse_sources json =
     let parse_source json = Json.Util.member "name" json |> Json.Util.to_string in
     array_member "sources" json |> List.map ~f:parse_source
@@ -94,7 +96,6 @@ let parse source =
     array_member "features" json |> List.map ~f:parse_feature
   in
   let parse_rules ~allowed_sources ~allowed_sinks json =
-    let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
     let parse_rule json =
       let sources =
         Json.Util.member "sources" json
@@ -113,6 +114,38 @@ let parse source =
     in
     array_member "rules" json |> List.map ~f:parse_rule
   in
+  let parse_combined_source_rules ~allowed_sources json =
+    let parse_combined_source_rule json =
+      let name = Json.Util.member "name" json |> Json.Util.to_string in
+      let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
+      let code = Json.Util.member "code" json |> Json.Util.to_int in
+      let sources = Json.Util.member "sources" json in
+      let keys = Json.Util.keys sources in
+      match keys with
+      | [first; second] ->
+          let first_source =
+            Json.Util.member first sources
+            |> Json.Util.to_string
+            |> Sources.parse ~allowed:allowed_sources
+          in
+          let second_source =
+            Json.Util.member second sources
+            |> Json.Util.to_string
+            |> Sources.parse ~allowed:allowed_sources
+          in
+
+          let sinks = Json.Util.member "sinks" json |> parse_string_list in
+          let create_partial_sink label sink = Sinks.TriggeredPartialSink { kind = sink; label } in
+          let first_sinks = List.map sinks ~f:(create_partial_sink first) in
+          let second_sinks = List.map sinks ~f:(create_partial_sink second) in
+          [
+            { Rule.sources = [first_source]; sinks = first_sinks; name; code; message_format };
+            { Rule.sources = [second_source]; sinks = second_sinks; name; code; message_format };
+          ]
+      | _ -> failwith "Combined source rules must be of the form {\"a\": SourceA, \"b\": SourceB}"
+    in
+    array_member "combined_source_rules" json |> List.concat_map ~f:parse_combined_source_rule
+  in
   let parse_implicit_sinks ~allowed_sinks json =
     match member "implicit_sinks" json with
     | `Null -> empty_implicit_sinks
@@ -128,7 +161,11 @@ let parse source =
   let sources = parse_sources json in
   let sinks = parse_sinks json in
   let features = parse_features json in
-  let rules = parse_rules ~allowed_sources:sources ~allowed_sinks:sinks json in
+  let rules =
+    parse_rules ~allowed_sources:sources ~allowed_sinks:sinks json
+    |> List.rev_append (parse_combined_source_rules json ~allowed_sources:sources)
+  in
+
   let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
   { sources; sinks; features; rules; implicit_sinks }
 
