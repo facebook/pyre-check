@@ -49,7 +49,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),
@@ -79,7 +82,10 @@ class CheckTest(unittest.TestCase):
             shared_analysis_directory, "prepare"
         ) as prepare:
             command = commands.Check(
-                arguments, original_directory, configuration, shared_analysis_directory
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=shared_analysis_directory,
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
@@ -112,7 +118,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),
@@ -162,7 +171,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),
@@ -212,7 +224,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),
@@ -260,7 +275,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),
@@ -307,7 +325,10 @@ class CheckTest(unittest.TestCase):
             json, "loads", return_value=NO_ERROR_JSON_OUTPUT
         ):
             command = commands.Check(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
             )
             self.assertEqual(
                 command._flags(),

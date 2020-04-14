@@ -28,7 +28,10 @@ class Analyze(Check):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Analyze, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
         )
         self._analysis: str = arguments.analysis
         self._taint_models_path: List[str] = (

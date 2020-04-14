@@ -430,7 +430,9 @@ class FilesystemTest(unittest.TestCase):
             arguments.targets = ["arguments_target"]
             configuration.source_directories = ["configuration_source_directory"]
 
-            command = commands.Check(arguments, original_directory, configuration)
+            command = commands.Check(
+                arguments, original_directory, configuration=configuration
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -511,7 +513,9 @@ class FilesystemTest(unittest.TestCase):
             configuration.targets = ["configuration_target"]
             configuration.source_directories = []
 
-            command = commands.Check(arguments, original_directory, configuration)
+            command = commands.Check(
+                arguments, original_directory, configuration=configuration
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -532,7 +536,9 @@ class FilesystemTest(unittest.TestCase):
             arguments.targets = []
             configuration.targets = ["."]
 
-            command = commands.Check(arguments, original_directory, configuration)
+            command = commands.Check(
+                arguments, original_directory, configuration=configuration
+            )
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()

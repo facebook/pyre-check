@@ -24,11 +24,26 @@ class Check(Reporting):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Check, self).__init__(
             arguments, original_directory, configuration, analysis_directory
+        )
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Check":
+        return Check(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
         )
 
     @classmethod
@@ -39,7 +54,7 @@ class Check(Reporting):
           Runs a one-time check of a project without initializing a type check server.
         """,
         )
-        check.set_defaults(command=cls)
+        check.set_defaults(command=cls.from_arguments)
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
