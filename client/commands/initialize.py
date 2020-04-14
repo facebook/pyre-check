@@ -31,14 +31,26 @@ LOG: Logger = logging.getLogger(__name__)
 class Initialize(CommandParser):
     NAME = "initialize"
 
-    def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        original_directory: str,
+        *,
+        local: bool = False
+    ) -> None:
         super(Initialize, self).__init__(arguments, original_directory)
-        self._local: bool = arguments.local
+        self._local = local
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace, original_directory: str
+    ) -> "Initialize":
+        return Initialize(arguments, original_directory, local=arguments.local)
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         initialize = parser.add_parser(cls.NAME, aliases=["init"])
-        initialize.set_defaults(command=cls)
+        initialize.set_defaults(command=cls.from_arguments)
         initialize.add_argument(
             "--local",
             action="store_true",
