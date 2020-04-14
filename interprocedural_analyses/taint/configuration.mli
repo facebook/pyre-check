@@ -31,6 +31,7 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  acceptable_sink_labels: string list Core.String.Map.Tree.t;
 }
 
 val empty : t

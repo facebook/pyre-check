@@ -38,10 +38,18 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  acceptable_sink_labels: string list String.Map.Tree.t;
 }
 
 let empty =
-  { sources = []; sinks = []; features = []; rules = []; implicit_sinks = empty_implicit_sinks }
+  {
+    sources = [];
+    sinks = [];
+    features = [];
+    rules = [];
+    implicit_sinks = empty_implicit_sinks;
+    acceptable_sink_labels = String.Map.Tree.empty;
+  }
 
 
 (* There's only a single taint configuration *)
@@ -88,8 +96,20 @@ let parse source =
     array_member "sources" json |> List.map ~f:parse_source
   in
   let parse_sinks json =
-    let parse_sink json = Json.Util.member "name" json |> Json.Util.to_string in
-    array_member "sinks" json |> List.map ~f:parse_sink
+    let parse_sink (sinks, acceptable_sink_labels) json =
+      let sink = Json.Util.member "name" json |> Json.Util.to_string in
+      let acceptable_sink_labels =
+        if List.exists ~f:(( = ) "labels") (Json.Util.keys json) then
+          Json.Util.member "labels" json
+          |> Json.Util.to_list
+          |> List.map ~f:Json.Util.to_string
+          |> fun data -> String.Map.Tree.set acceptable_sink_labels ~key:sink ~data
+        else
+          acceptable_sink_labels
+      in
+      sink :: sinks, acceptable_sink_labels
+    in
+    array_member "sinks" json |> List.fold ~init:([], String.Map.Tree.empty) ~f:parse_sink
   in
   let parse_features json =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
@@ -159,7 +179,7 @@ let parse source =
   in
   let json = Json.from_string source in
   let sources = parse_sources json in
-  let sinks = parse_sinks json in
+  let sinks, acceptable_sink_labels = parse_sinks json in
   let features = parse_features json in
   let rules =
     parse_rules ~allowed_sources:sources ~allowed_sinks:sinks json
@@ -167,7 +187,7 @@ let parse source =
   in
 
   let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
-  { sources; sinks; features; rules; implicit_sinks }
+  { sources; sinks; features; rules; implicit_sinks; acceptable_sink_labels }
 
 
 let register configuration =
@@ -267,6 +287,7 @@ let default =
         };
       ];
     implicit_sinks = empty_implicit_sinks;
+    acceptable_sink_labels = String.Map.Tree.empty;
   }
 
 
@@ -304,6 +325,16 @@ let create ~rule_filter ~paths =
       features = left.features @ right.features;
       rules = left.rules @ right.rules;
       implicit_sinks = merge_implicit_sinks left.implicit_sinks right.implicit_sinks;
+      acceptable_sink_labels =
+        String.Map.Tree.merge
+          left.acceptable_sink_labels
+          right.acceptable_sink_labels
+          ~f:(fun ~key:_ ->
+          function
+          | `Both (left_labels, right_labels) -> Some (left_labels @ right_labels)
+          | `Left labels
+          | `Right labels ->
+              Some labels);
     }
   in
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in

@@ -31,6 +31,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
         sources = ["TestTest"; "UserControlled"; "Test"; "Demo"];
         sinks = ["TestSink"; "OtherSink"; "Test"; "Demo"; "XSS"];
         features = ["special"];
+        acceptable_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
       }
   in
@@ -602,6 +603,7 @@ let test_invalid_models context =
               def test.sink(parameter) -> None: pass
               def test.sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
               def test.source() -> None: pass
+              def test.partial_sink(x, y) -> None: pass
               def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
               def function_with_kwargs(normal_arg, **kwargs) -> None: pass
               def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
@@ -621,6 +623,7 @@ let test_invalid_models context =
           sinks = ["X"; "Y"; "Test"];
           features = ["featureA"; "featureB"];
           rules = [];
+          acceptable_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         }
     in
     let error_message =
@@ -670,6 +673,27 @@ let test_invalid_models context =
     ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."
     ~expect:
       "Invalid model for `test.sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[first]], y: PartialSink[Test[b]]): ..."
+    ~expect:
+      "Invalid model for `test.partial_sink`: Unrecognized label `first` for partial sink `Test` \
+       (choices: `a, b`)"
+    ();
+  assert_invalid_model
+    ~model_source:
+      "def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[second]]): ..."
+    ~expect:
+      "Invalid model for `test.partial_sink`: Unrecognized label `second` for partial sink `Test` \
+       (choices: `a, b`)"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
+    ~expect:"Invalid model for `test.partial_sink`: No labels specified for `X`"
+    ();
+
+  assert_valid_model
+    ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
     ();
 
   assert_invalid_model

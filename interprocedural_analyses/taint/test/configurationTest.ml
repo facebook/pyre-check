@@ -36,7 +36,7 @@ let test_simple _ =
   |}
   in
   assert_equal configuration.sources ["A"; "B"];
-  assert_equal configuration.sinks ["C"; "D"];
+  assert_equal configuration.sinks ["D"; "C"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
   assert_equal (List.hd_exn configuration.rules).code 2001
