@@ -33,12 +33,15 @@ class PersistentTest(unittest.TestCase):
 
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.no_watchman = True
             arguments.features = json.dumps(
                 {"click_to_fix": True, "go_to_definition": True, "hover": True}
             )
             command = commands.Persistent(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                no_watchman=True,
             )
             self.assertEqual(
                 command._flags(),
@@ -64,7 +67,11 @@ class PersistentTest(unittest.TestCase):
 
         # Check null server initialize output
         command = commands.Persistent(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
+            no_watchman=True,
         )
         self.assertEqual(
             command._initialize_response(5),

@@ -24,13 +24,30 @@ class Persistent(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        no_watchman: bool,
     ) -> None:
         super(Persistent, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self._no_watchman: bool = arguments.no_watchman
+        self._no_watchman: bool = no_watchman
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Persistent":
+        return Persistent(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            no_watchman=arguments.no_watchman,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -42,7 +59,7 @@ class Persistent(Command):
             writing diagnostics and responses from the Pyre server to stdout.
             """,
         )
-        persistent.set_defaults(command=cls, noninteractive=True)
+        persistent.set_defaults(command=cls.from_arguments, noninteractive=True)
         persistent.add_argument(
             "--no-watchman",
             action="store_true",

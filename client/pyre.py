@@ -101,7 +101,7 @@ def main(argv: List[str]) -> int:
             )
             exit_code = command.run().exit_code()
     except buck.BuckException as error:
-        if arguments.command == commands.Persistent:
+        if arguments.command == commands.Persistent.from_arguments:
             try:
                 commands.Persistent.run_null_server(timeout=3600 * 12)
                 exit_code = ExitCode.SUCCESS
@@ -115,7 +115,7 @@ def main(argv: List[str]) -> int:
             client_exception_message = str(error)
             exit_code = ExitCode.BUCK_ERROR
     except EnvironmentException as error:
-        if arguments.command == commands.Persistent:
+        if arguments.command == commands.Persistent.from_arguments:
             try:
                 commands.Persistent.run_null_server(timeout=3600 * 12)
                 exit_code = ExitCode.SUCCESS
