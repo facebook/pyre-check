@@ -44,13 +44,30 @@ class Query(Command):
         self,
         arguments: argparse.Namespace,
         original_directory: str,
+        *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
+        query: str,
     ) -> None:
         super(Query, self).__init__(
             arguments, original_directory, configuration, analysis_directory
         )
-        self.query: str = self._rewrite_paths(arguments.query)
+        self.query: str = self._rewrite_paths(query)
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace,
+        original_directory: str,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> "Query":
+        return Query(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            query=arguments.query,
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -62,7 +79,7 @@ class Query(Command):
         To get a full list of queries, you can run `pyre query help`.
         """
         query = parser.add_parser(cls.NAME, epilog=query_message)
-        query.set_defaults(command=cls)
+        query.set_defaults(command=cls.from_arguments)
         query_argument_message = """
         `pyre query help` will give a full list of available queries for \
         the running Pyre server.

@@ -18,7 +18,6 @@ class QueryTest(unittest.TestCase):
     def test_query(self) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments(dot_pyre_directory=Path("/tmp/foo"))
-        arguments.query = ""
         configuration = mock_configuration()
 
         with patch.object(SocketConnection, "connect") as connect:
@@ -27,14 +26,21 @@ class QueryTest(unittest.TestCase):
             read_response.return_value = result
 
             commands.Query(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                query="",
             ).run()
             connect.assert_called_once()
 
-        arguments.query = "query"
         self.assertEqual(
             commands.Query(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
+                arguments,
+                original_directory,
+                configuration=configuration,
+                analysis_directory=AnalysisDirectory("."),
+                query="query",
             )._flags(),
             ["query", "-log-directory", "/tmp/foo"],
         )
@@ -44,13 +50,16 @@ class QueryTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = MagicMock()
-        arguments.query = ""
         analysis_directory.compute_symbolic_links.return_value = {
             "/root/a.py": "/shared/a.py",
             "/root/b.py": "/shared/b.py",
         }
         query = commands.Query(
-            arguments, original_directory, configuration, analysis_directory
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=analysis_directory,
+            query="",
         )
         self.assertEqual(
             query._rewrite_paths("run_check('awaitable', '/root/a.py')"),
