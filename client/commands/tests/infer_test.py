@@ -736,14 +736,17 @@ class InferTest(unittest.TestCase):
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        arguments = Mock(in_place=[])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/my-project/types"),
+            in_place=[],
+            debug_infer=False,
         )
         annotate_path.assert_called_once_with(
-            arguments,
             "/root/.pyre/my-project/types/foo/bar/baz.pyi",
             "/root/my-project/foo/bar/baz.py",
+            False,
         )
 
     @patch.object(Path, "rglob")
@@ -755,14 +758,17 @@ class InferTest(unittest.TestCase):
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        arguments = Mock(in_place=["foo/bar"])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/my-project/types"),
+            in_place=["foo/bar"],
+            debug_infer=False,
         )
         annotate_path.assert_called_once_with(
-            arguments,
             "/root/.pyre/my-project/types/foo/bar/baz.pyi",
             "/root/my-project/foo/bar/baz.py",
+            False,
         )
 
     @patch.object(Path, "rglob")
@@ -774,9 +780,12 @@ class InferTest(unittest.TestCase):
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        arguments = Mock(in_place=["some_other_directory"])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/my-project/types"),
+            in_place=["some_other_directory"],
+            debug_infer=False,
         )
         annotate_path.assert_not_called()
 
@@ -789,14 +798,17 @@ class InferTest(unittest.TestCase):
         recursive_glob.return_value = [
             Path("/root/.pyre/my-project/types/foo/bar/baz.pyi")
         ]
-        arguments = Mock(in_place=["foo/bar/baz.py"])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/my-project/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/my-project/types"),
+            in_place=["foo/bar/baz.py"],
+            debug_infer=False,
         )
         annotate_path.assert_called_once_with(
-            arguments,
             "/root/.pyre/my-project/types/foo/bar/baz.pyi",
             "/root/my-project/foo/bar/baz.py",
+            False,
         )
 
     @patch.object(Path, "rglob")
@@ -806,14 +818,17 @@ class InferTest(unittest.TestCase):
     ) -> None:
         root = Path("/root")
         recursive_glob.return_value = [Path("/root/.pyre/types/foo/bar/types/baz.pyi")]
-        arguments = Mock(in_place=["foo/bar/types/baz.py"])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/types"),
+            in_place=["foo/bar/types/baz.py"],
+            debug_infer=False,
         )
         annotate_path.assert_called_once_with(
-            arguments,
             "/root/.pyre/types/foo/bar/types/baz.pyi",
             "/root/foo/bar/types/baz.py",
+            False,
         )
 
     @patch.object(Path, "rglob")
@@ -825,12 +840,15 @@ class InferTest(unittest.TestCase):
         recursive_glob.return_value = [
             Path("/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi")
         ]
-        arguments = Mock(in_place=["local-root/foo/bar"])
         infer.annotate_from_existing_stubs(
-            root, arguments, None, type_directory=Path("/root/.pyre/local-root/types")
+            root,
+            None,
+            type_directory=Path("/root/.pyre/local-root/types"),
+            in_place=["local-root/foo/bar"],
+            debug_infer=False,
         )
         annotate_path.assert_called_once_with(
-            arguments,
             "/root/.pyre/local-root/types/local-root/foo/bar/baz.pyi",
             "/root/local-root/foo/bar/baz.py",
+            False,
         )

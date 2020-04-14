@@ -16,14 +16,14 @@ import sys
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import Any, List, Optional, Set, Union
+from typing import Any, List, Optional, Sequence, Set, Union
 
 from typing_extensions import Final
 
 from .. import apply_annotations, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .check import Check
+from ..error import Error
 from .command import JSON, Command, Result, typeshed_search_path
 from .reporting import Reporting
 
@@ -291,7 +291,7 @@ class StubFile:
         path.write_text(contents)
 
 
-def generate_stub_files(arguments, errors) -> List[StubFile]:
+def generate_stub_files(full_only: bool, errors: Sequence[Error]) -> List[StubFile]:
     errors = [
         error
         for error in errors
@@ -305,13 +305,13 @@ def generate_stub_files(arguments, errors) -> List[StubFile]:
 
     stubs = []
     for _path, errors in files.items():
-        stub = StubFile(errors, full_only=arguments.full_only)
+        stub = StubFile(errors, full_only=full_only)
         if not stub.is_empty():
             stubs.append(stub)
     return stubs
 
 
-def write_stubs_to_disk(arguments, stubs, type_directory) -> None:
+def write_stubs_to_disk(stubs, type_directory) -> None:
     if type_directory.exists():
         LOG.log(log.SUCCESS, "Deleting {}".format(type_directory))
         shutil.rmtree(type_directory)
@@ -322,10 +322,12 @@ def write_stubs_to_disk(arguments, stubs, type_directory) -> None:
         stub.output_to_file(stub.path(type_directory))
 
 
-def filter_paths(arguments, stubs, type_directory):
+def filter_paths(
+    stubs: Sequence[StubFile], type_directory: Path, in_place: Sequence[str]
+):
     unused_annotates = [
         path
-        for path in arguments.in_place
+        for path in in_place
         if all(not str(stub.path(Path(""))).startswith(str(path)) for stub in stubs)
     ]
     for path in unused_annotates:
@@ -334,14 +336,11 @@ def filter_paths(arguments, stubs, type_directory):
     return [
         stub
         for stub in stubs
-        if any(
-            str(stub.path(Path(""))).startswith(str(path))
-            for path in arguments.in_place
-        )
+        if any(str(stub.path(Path(""))).startswith(str(path)) for path in in_place)
     ]
 
 
-def annotate_path(arguments, stub_path: str, file_path: str) -> None:
+def annotate_path(stub_path: str, file_path: str, debug_infer: bool) -> None:
     try:
         annotated_content = apply_annotations.apply_stub_annotations(
             stub_path, file_path
@@ -351,15 +350,20 @@ def annotate_path(arguments, stub_path: str, file_path: str) -> None:
         LOG.info("Annotated {}".format(file_path))
     except Exception as error:
         LOG.warning("Failed to annotate {}".format(file_path))
-        if arguments.debug_infer:
+        if debug_infer:
             LOG.warning("\tError: {}".format(error))
 
 
 def annotate_paths(
-    root, arguments, formatter: Optional[str], stubs, type_directory
+    root,
+    formatter: Optional[str],
+    stubs,
+    type_directory,
+    in_place: Sequence[str],
+    debug_infer: bool,
 ) -> None:
-    if arguments.in_place != []:
-        stubs = filter_paths(arguments, stubs, type_directory)
+    if in_place != []:
+        stubs = filter_paths(stubs, type_directory, in_place)
 
     for stub in stubs:
         stub_path = stub.path(type_directory)
@@ -367,18 +371,19 @@ def annotate_paths(
             file_path = (root / stub._path).resolve()
         else:
             file_path = stub._path.resolve()
-        annotate_path(arguments, stub_path, file_path)
+        annotate_path(stub_path, file_path, debug_infer)
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def annotate_from_existing_stubs(
     root: Path,
-    arguments: argparse.Namespace,
     formatter: Optional[str],
     type_directory: Path,
+    in_place: Sequence[str],
+    debug_infer: bool,
 ) -> None:
-    in_place_paths = [Path(path) for path in arguments.in_place]
+    in_place_paths = [Path(path) for path in in_place]
     for stub_path in type_directory.rglob("*.pyi"):
         relative_source_path_for_stub = stub_path.relative_to(
             type_directory
@@ -390,7 +395,7 @@ def annotate_from_existing_stubs(
             for path in in_place_paths
         ):
             annotate_path(
-                arguments, str(stub_path), str(root / relative_source_path_for_stub)
+                str(stub_path), str(root / relative_source_path_for_stub), debug_infer
             )
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -518,9 +523,10 @@ class Infer(Reporting):
             type_directory = Path(os.path.join(self._log_directory, "types"))
             annotate_from_existing_stubs(
                 Path(self._original_directory),
-                self._arguments,
                 self._formatter,
                 type_directory,
+                self._in_place,
+                self._debug_infer,
             )
             return self
         if self._json:
@@ -533,16 +539,17 @@ class Infer(Reporting):
             self._print(errors)
         else:
             type_directory = Path(os.path.join(self._log_directory, "types"))
-            stubs = generate_stub_files(self._arguments, errors)
-            write_stubs_to_disk(self._arguments, stubs, type_directory)
+            stubs = generate_stub_files(self._full_only, errors)
+            write_stubs_to_disk(stubs, type_directory)
             if self._in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(
                     self._configuration.local_configuration_root,
-                    self._arguments,
                     self._formatter,
                     stubs,
                     type_directory,
+                    self._in_place,
+                    self._debug_infer,
                 )
 
         return self
