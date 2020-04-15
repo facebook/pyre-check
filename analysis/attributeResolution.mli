@@ -138,7 +138,6 @@ module Argument : sig
 
   type t = {
     expression: Expression.t;
-    full_expression: Expression.t;
     position: int;
     kind: kind;
     resolved: Type.t;

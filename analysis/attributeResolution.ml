@@ -630,7 +630,6 @@ module SignatureSelectionTypes = struct
 
     type t = {
       expression: Expression.t;
-      full_expression: Expression.t;
       position: int;
       kind: kind;
       resolved: Type.t;
@@ -3389,7 +3388,7 @@ module Implementation = struct
               | Default :: tail ->
                   (* Parameter default value was used. Assume it is correct. *)
                   check signature_match tail
-              | Argument { expression; full_expression; position; kind; resolved } :: tail -> (
+              | Argument { expression; position; kind; resolved } :: tail -> (
                   let set_constraints_and_reasons argument_annotation =
                     let name =
                       match kind with
@@ -3398,7 +3397,7 @@ module Implementation = struct
                     in
                     set_constraints_and_reasons
                       ~position
-                      ~argument:full_expression
+                      ~argument:expression
                       ~argument_annotation
                       ~name
                       signature_match
@@ -3837,7 +3836,7 @@ module Implementation = struct
             | expression, None -> expression, Positional
           in
           let resolved = resolve_with_locals ~locals:[] expression in
-          { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
+          { Argument.position = index + 1; expression; kind; resolved }
         in
         let is_labeled = function
           | { Argument.kind = Named _; _ } -> true
@@ -3852,7 +3851,6 @@ module Implementation = struct
                 {
                   Argument.position = 0;
                   expression = Node.create_with_default_location Expression.Ellipsis;
-                  full_expression = Node.create_with_default_location Expression.Ellipsis;
                   kind = Positional;
                   resolved;
                 })
