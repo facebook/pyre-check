@@ -1962,10 +1962,10 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         "gather_local_configurations",
         return_value=[
             upgrade.Configuration(
-                Path("/root/a/.pyre_configuration.local"), {"push_blocking": False}
+                Path("/root/a/.pyre_configuration.local"), {"use_buck_builder": False}
             ),
             upgrade.Configuration(
-                Path("/root/b/.pyre_configuration.local"), {"push_blocking": True}
+                Path("/root/b/.pyre_configuration.local"), {"use_buck_builder": True}
             ),
         ],
     )
@@ -1986,9 +1986,9 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
                 mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": false}').return_value,
+                mock_open(read_data='{"use_buck_builder": false}').return_value,
                 mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": true}').return_value,
+                mock_open(read_data='{"use_buck_builder": true}').return_value,
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
@@ -1998,13 +1998,13 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 [
                     call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
                     call(
-                        {"push_blocking": False, "version": "old"},
+                        {"use_buck_builder": False, "version": "old"},
                         mocks[3],
                         indent=2,
                         sort_keys=True,
                     ),
                     call(
-                        {"push_blocking": True, "version": "old"},
+                        {"use_buck_builder": True, "version": "old"},
                         mocks[5],
                         indent=2,
                         sort_keys=True,
@@ -2024,15 +2024,14 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         # Therefore, we only read the first json configuration.
         subprocess.reset_mock()
         arguments.paths = [Path("foo/bar")]
-        arguments.push_blocking_only = False
         arguments.submit = False
         with patch("json.dump") as dump:
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
                 mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": false}').return_value,
                 mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": true}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data="{}").return_value,
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks

@@ -191,13 +191,7 @@ class ReportingTest(unittest.TestCase):
                 ]
             ).encode("utf-8"),
         )
-        with patch("builtins.open", mock_open(read_data='{"push_blocking": false}')):
-            self.assertEqual(handler._get_directories_to_analyze(), {"base"})
-
-        with patch("builtins.open", mock_open(read_data='{"push_blocking": true}')):
-            self.assertEqual(handler._get_directories_to_analyze(), {"base"})
-
-        with patch("builtins.open", mock_open(read_data='{"continuous": true}')):
+        with patch("builtins.open", mock_open(read_data="{}")):
             self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
