@@ -519,8 +519,7 @@ def run_fixme_targets(
             version_control.submit_changes(
                 arguments.submit,
                 version_control.commit_message(
-                    "{} (TARGETS)".format(search_root),
-                    upgrade=arguments.upgrade_version,
+                    "{} (TARGETS)".format(search_root), upgrade=False
                 ),
             )
     except subprocess.CalledProcessError:
