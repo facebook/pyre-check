@@ -235,7 +235,6 @@ let is_consistent_with ({ global_resolution; _ } as resolution) =
 let global_resolution { global_resolution; _ } = global_resolution
 
 let fallback_attribute ~resolution ~name class_name =
-  let open Ast.Expression in
   let class_name_reference = Reference.create class_name in
   let global_resolution = global_resolution resolution in
   let compound_backup =
@@ -288,27 +287,20 @@ let fallback_attribute ~resolution ~name class_name =
               parameters =
                 [Single (Callable ({ implementation; _ } as callable)); Single self_argument];
             } ->
-            let arguments =
-              let name_argument =
-                {
-                  Call.Argument.name = None;
-                  value =
-                    {
-                      Node.location = Location.any;
-                      value = Expression.String (StringLiteral.create name);
-                    };
-                }
-              in
-              [name_argument]
-            in
             let return_annotation =
               match
                 GlobalResolution.signature_select
                   ~global_resolution
-                  ~resolve_with_locals:
-                    (resolve_expression_to_type_with_locals resolution)
-                    (* TODO use Resolved to avoid needing to synthesize an argument *)
-                  ~arguments:(Unresolved arguments)
+                  ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
+                  ~arguments:
+                    (Resolved
+                       [
+                         {
+                           expression = None;
+                           kind = Positional;
+                           resolved = Type.literal_string name;
+                         };
+                       ])
                   ~callable
                   ~self_argument:(Some self_argument)
               with
