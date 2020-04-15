@@ -87,11 +87,11 @@ and incompatible_type = {
 
 and invalid_argument =
   | Keyword of {
-      expression: Expression.t;
+      expression: Expression.t option;
       annotation: Type.t;
     }
   | ConcreteVariable of {
-      expression: Expression.t;
+      expression: Expression.t option;
       annotation: Type.t;
     }
   | ListVariadicVariable of {
@@ -561,6 +561,9 @@ let messages ~concise ~signature location kind =
   let show_sanitized_expression expression =
     Ast.Transform.sanitize_expression expression |> Expression.show
   in
+  let show_sanitized_optional_expression expression =
+    expression >>| show_sanitized_expression >>| Format.sprintf " `%s`" |> Option.value ~default:""
+  in
   let ordinal number =
     let suffix =
       if number % 10 = 1 && number % 100 <> 11 then
@@ -878,16 +881,16 @@ let messages ~concise ~signature location kind =
       | Keyword { expression; annotation } ->
           [
             Format.asprintf
-              "Keyword argument `%s` has type `%a` but must be a mapping with string keys."
-              (show_sanitized_expression expression)
+              "Keyword argument%s has type `%a` but must be a mapping with string keys."
+              (show_sanitized_optional_expression expression)
               pp_type
               annotation;
           ]
       | ConcreteVariable { expression; annotation } ->
           [
             Format.asprintf
-              "Variable argument `%s` has type `%a` but must be an iterable."
-              (show_sanitized_expression expression)
+              "Variable argument%s has type `%a` but must be an iterable."
+              (show_sanitized_optional_expression expression)
               pp_type
               annotation;
           ]
@@ -903,9 +906,9 @@ let messages ~concise ~signature location kind =
       | ListVariadicVariable { variable; mismatch = NotDefiniteTuple { expression; annotation } } ->
           [
             Format.asprintf
-              "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
+              "Variable argument%s has type `%a` but must be a definite tuple to be included in \
                variadic type variable `%a`."
-              (show_sanitized_expression expression)
+              (show_sanitized_optional_expression expression)
               pp_type
               annotation
               (Type.Record.OrderedTypes.pp_concise ~pp_type)
@@ -2225,10 +2228,10 @@ let less_or_equal ~resolution left right =
           less_or_equal_mismatch left_mismatch right_mismatch
       | _ -> false )
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
-    when Expression.equal left.expression right.expression ->
+    when Option.equal Expression.equal left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
-    when Expression.equal left.expression right.expression ->
+    when Option.equal Expression.equal left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidMethodSignature left, InvalidMethodSignature right -> (
       match left.annotation, right.annotation with
@@ -2605,7 +2608,7 @@ let join ~resolution left right =
         let mismatch = join_mismatch left_mismatch right_mismatch in
         InconsistentOverride { left with override = WeakenedPostcondition mismatch }
     | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
-      when Expression.equal left.expression right.expression ->
+      when Option.equal Expression.equal left.expression right.expression ->
         InvalidArgument
           (Keyword
              {
@@ -2613,7 +2616,7 @@ let join ~resolution left right =
                annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
     | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
-      when Expression.equal left.expression right.expression ->
+      when Option.equal Expression.equal left.expression right.expression ->
         InvalidArgument
           (ConcreteVariable
              {

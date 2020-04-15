@@ -78,7 +78,7 @@ type mismatch = {
 [@@deriving eq, show, compare]
 
 type invalid_argument = {
-  expression: Expression.t;
+  expression: Expression.t option;
   annotation: Type.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
@@ -128,44 +128,6 @@ type sig_t =
   | Found of { selected_return_annotation: Type.t }
   | NotFound of closest
 [@@deriving eq, show, sexp]
-
-module Argument : sig
-  type kind =
-    | SingleStar
-    | DoubleStar
-    | Named of string Node.t
-    | Positional
-
-  type t = {
-    expression: Expression.t;
-    position: int;
-    kind: kind;
-    resolved: Type.t;
-  }
-end
-
-type argument =
-  | Argument of Argument.t
-  | Default
-
-type ranks = {
-  arity: int;
-  annotation: int;
-  position: int;
-}
-
-type reasons = {
-  arity: reason list;
-  annotation: reason list;
-}
-
-type signature_match = {
-  callable: Type.Callable.t;
-  argument_mapping: argument list Type.Callable.Parameter.Map.t;
-  constraints_set: TypeConstraints.t list;
-  ranks: ranks;
-  reasons: reasons;
-}
 
 type uninstantiated
 

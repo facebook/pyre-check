@@ -563,7 +563,7 @@ module SignatureSelectionTypes = struct
   [@@deriving eq, show, compare, sexp]
 
   type invalid_argument = {
-    expression: Expression.t;
+    expression: Expression.t option;
     annotation: Type.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
@@ -629,7 +629,7 @@ module SignatureSelectionTypes = struct
       | Positional
 
     type t = {
-      expression: Expression.t;
+      expression: Expression.t option;
       position: int;
       kind: kind;
       resolved: Type.t;
@@ -3232,22 +3232,23 @@ module Implementation = struct
               SignatureSelectionTypes.Argument
                 {
                   expression =
-                    {
-                      value =
-                        Lambda
-                          {
-                            body = lambda_body;
-                            parameters =
-                              [
-                                {
-                                  value =
-                                    { name = lambda_parameter; value = None; annotation = None };
-                                  _;
-                                };
-                              ];
-                          };
-                      _;
-                    };
+                    Some
+                      {
+                        value =
+                          Lambda
+                            {
+                              body = lambda_body;
+                              parameters =
+                                [
+                                  {
+                                    value =
+                                      { name = lambda_parameter; value = None; annotation = None };
+                                    _;
+                                  };
+                                ];
+                            };
+                        _;
+                      };
                   _;
                 };
             ] )
@@ -3350,7 +3351,7 @@ module Implementation = struct
         | Keywords parameter_annotation, arguments -> (
             let set_constraints_and_reasons
                 ~position
-                ~argument
+                ~argument_location
                 ~name
                 ~argument_annotation
                 ({ constraints_set; reasons = { annotation; _ }; _ } as signature_match)
@@ -3358,7 +3359,7 @@ module Implementation = struct
               let reasons_with_mismatch =
                 let mismatch =
                   let location =
-                    name >>| Node.location |> Option.value ~default:argument.Node.location
+                    name >>| Node.location |> Option.value ~default:argument_location
                   in
                   {
                     actual = argument_annotation;
@@ -3389,6 +3390,9 @@ module Implementation = struct
                   (* Parameter default value was used. Assume it is correct. *)
                   check signature_match tail
               | Argument { expression; position; kind; resolved } :: tail -> (
+                  let argument_location =
+                    expression >>| Node.location |> Option.value ~default:Location.any
+                  in
                   let set_constraints_and_reasons argument_annotation =
                     let name =
                       match kind with
@@ -3397,7 +3401,7 @@ module Implementation = struct
                     in
                     set_constraints_and_reasons
                       ~position
-                      ~argument:expression
+                      ~argument_location
                       ~argument_annotation
                       ~name
                       signature_match
@@ -3415,7 +3419,7 @@ module Implementation = struct
                   let solution_based_extraction ~create_error ~synthetic_variable ~solve_against =
                     let signature_with_error =
                       { expression; annotation = resolved }
-                      |> Node.create ~location:expression.location
+                      |> Node.create ~location:argument_location
                       |> create_error
                       |> add_annotation_error signature_match
                     in
@@ -3462,7 +3466,7 @@ module Implementation = struct
                               ~class_metadata_environment
                               ?dependency
                               ~resolve:(resolve_with_locals ~locals:[])
-                              ~expression:(Some expression)
+                              ~expression
                               ~resolved
                               ~expected:parameter_annotation
                           in
@@ -3825,7 +3829,7 @@ module Implementation = struct
             | expression, None -> expression, Positional
           in
           let resolved = resolve_with_locals ~locals:[] expression in
-          { Argument.position = index + 1; expression; kind; resolved }
+          { Argument.position = index + 1; expression = Some expression; kind; resolved }
         in
         let is_labeled = function
           | { Argument.kind = Named _; _ } -> true
@@ -3837,12 +3841,7 @@ module Implementation = struct
         let self_argument =
           self_argument
           >>| (fun resolved ->
-                {
-                  Argument.position = 0;
-                  expression = Node.create_with_default_location Expression.Ellipsis;
-                  kind = Positional;
-                  resolved;
-                })
+                { Argument.position = 0; expression = None; kind = Positional; resolved })
           |> Option.to_list
         in
         self_argument @ labeled_arguments @ unlabeled_arguments

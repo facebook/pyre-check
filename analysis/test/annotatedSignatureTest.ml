@@ -37,7 +37,8 @@ let test_select context =
           { reason = Some right_reason; closest_return_annotation = right_closest } )
       when Type.equal left_closest right_closest -> (
         let equal_invalid_argument left right =
-          Expression.location_insensitive_compare
+          Option.compare
+            Expression.location_insensitive_compare
             left.AttributeResolution.expression
             right.AttributeResolution.expression
           = 0
@@ -184,14 +185,14 @@ let test_select context =
       | `NotFoundNoReason -> NotFound { closest_return_annotation; reason = None }
       | `NotFoundInvalidKeywordArgument (expression, annotation) ->
           let reason =
-            { expression; annotation }
+            { expression = Some expression; annotation }
             |> Node.create_with_default_location
             |> fun invalid_argument -> Some (InvalidKeywordArgument invalid_argument)
           in
           NotFound { closest_return_annotation; reason }
       | `NotFoundInvalidVariableArgument (expression, annotation) ->
           let reason =
-            { expression; annotation }
+            { expression = Some expression; annotation }
             |> Node.create_with_default_location
             |> fun invalid_argument -> Some (InvalidVariableArgument invalid_argument)
           in
@@ -780,7 +781,8 @@ let test_select context =
                mismatch =
                  NotDefiniteTuple
                    {
-                     expression = +Expression.Name (Name.Identifier "$local_test$unbounded_tuple");
+                     expression =
+                       Some (+Expression.Name (Name.Identifier "$local_test$unbounded_tuple"));
                      annotation = Type.Tuple (Unbounded Type.integer);
                    };
              }) ));

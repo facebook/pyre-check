@@ -78,11 +78,11 @@ and incompatible_type = {
 
 and invalid_argument =
   | Keyword of {
-      expression: Expression.t;
+      expression: Expression.t option;
       annotation: Type.t;
     }
   | ConcreteVariable of {
-      expression: Expression.t;
+      expression: Expression.t option;
       annotation: Type.t;
     }
   | ListVariadicVariable of {
