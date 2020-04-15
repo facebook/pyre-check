@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
 open Pyre
 
 module Rule : sig
@@ -23,14 +24,9 @@ type analysis_model_constraints = {
   maximum_complex_access_path_length: int;
 }
 
-val analysis_model_constraints : analysis_model_constraints
+type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
 
-type combined_rule = {
-  first_source: Sources.t;
-  first_sinks: Sinks.partial_sink list;
-  second_source: Sources.t;
-  second_sinks: Sinks.partial_sink list;
-}
+val analysis_model_constraints : analysis_model_constraints
 
 type t = {
   sources: string list;
@@ -38,7 +34,7 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
-  combined_rules: combined_rule list;
+  partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list Core.String.Map.Tree.t;
 }
 
@@ -61,3 +57,5 @@ val default : t
 val create : rule_filter:int list option -> paths:Path.t list -> t
 
 val conditional_test_sinks : unit -> Sinks.t list
+
+val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option

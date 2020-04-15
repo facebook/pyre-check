@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 open Taint
+open Pyre
 
 let test_simple _ =
   let configuration =
@@ -231,6 +232,93 @@ let test_empty _ =
       ())
 
 
+let test_partial_sink_converter _ =
+  let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
+    Taint.TaintConfiguration.parse configuration |> Taint.TaintConfiguration.register;
+    Taint.TaintConfiguration.get_triggered_sink ~partial_sink ~source
+    |> assert_equal
+         ~cmp:(Option.equal Sinks.equal)
+         ~printer:(fun value -> value >>| Sinks.show |> Option.value ~default:"None")
+         expected_sink
+  in
+  assert_triggered_sinks
+    {|
+    {
+      sources: [{ name: "A" }, { name: "B" }],
+      sinks: [{ name: "C", multi_sink_labels: ["ca", "cb"] }],
+      combined_source_rules: [
+        {
+           name: "c rule",
+           sources: {"ca": "A", "cb": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
+    ~source:(Sources.NamedSource "A")
+    ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "cb" }));
+  assert_triggered_sinks
+    {|
+    {
+      sources: [{ name: "A" }, { name: "B" }],
+      sinks: [{ name: "C", multi_sink_labels: ["ca", "cb"] }],
+      combined_source_rules: [
+        {
+           name: "c rule",
+           sources: {"ca": "A", "cb": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
+    ~source:(Sources.NamedSource "B")
+    ~expected_sink:(Some (Sinks.TriggeredPartialSink { Sinks.kind = "C"; label = "ca" }));
+  assert_triggered_sinks
+    {|
+    {
+      sources: [{ name: "A" }, { name: "B" }],
+      sinks: [{ name: "C", multi_sink_labels: ["ca", "cb"] }],
+      combined_source_rules: [
+        {
+           name: "c rule",
+           sources: {"ca": "A", "cb": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~partial_sink:{ Sinks.kind = "C"; label = "ca" }
+    ~source:(Sources.NamedSource "B")
+    ~expected_sink:None;
+  assert_triggered_sinks
+    {|
+    {
+      sources: [{ name: "A" }, { name: "B" }],
+      sinks: [{ name: "C", multi_sink_labels: ["ca", "cb"] }],
+      combined_source_rules: [
+        {
+           name: "c rule",
+           sources: {"ca": "A", "cb": "B"},
+           sinks: ["C"],
+           code: 2001,
+           message_format: "some form"
+        }
+      ]
+    }
+  |}
+    ~partial_sink:{ Sinks.kind = "C"; label = "cb" }
+    ~source:(Sources.NamedSource "A")
+    ~expected_sink:None
+
+
 let () =
   "configuration"
   >::: [
@@ -240,5 +328,6 @@ let () =
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
          "simple" >:: test_simple;
+         "partial_sink_converter" >:: test_partial_sink_converter;
        ]
   |> Test.run

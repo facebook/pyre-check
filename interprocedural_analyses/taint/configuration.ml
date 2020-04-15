@@ -32,12 +32,7 @@ let analysis_model_constraints =
   { maximum_model_width = 25; maximum_complex_access_path_length = 10 }
 
 
-type combined_rule = {
-  first_source: Sources.t;
-  first_sinks: Sinks.partial_sink list;
-  second_source: Sources.t;
-  second_sinks: Sinks.partial_sink list;
-}
+type partial_sink_converter = (Sources.t * Sinks.t) list String.Map.Tree.t
 
 type t = {
   sources: string list;
@@ -45,7 +40,7 @@ type t = {
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
-  combined_rules: combined_rule list;
+  partial_sink_converter: partial_sink_converter;
   acceptable_sink_labels: string list String.Map.Tree.t;
 }
 
@@ -55,7 +50,7 @@ let empty =
     sinks = [];
     features = [];
     rules = [];
-    combined_rules = [];
+    partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
   }
@@ -88,6 +83,43 @@ exception
     path: string;
     parse_error: string;
   }
+
+module PartialSinkConverter = struct
+  let mangle { Sinks.kind; label } = Format.sprintf "%s$%s" kind label
+
+  let add map ~first_source ~first_sinks ~second_source ~second_sinks =
+    let add map (first_sink, second_sink) =
+      (* Trigger second sink when the first sink matches a source, and vice versa. *)
+      String.Map.Tree.add_multi
+        map
+        ~key:(mangle first_sink)
+        ~data:(first_source, Sinks.TriggeredPartialSink second_sink)
+      |> String.Map.Tree.add_multi
+           ~key:(mangle second_sink)
+           ~data:(second_source, Sinks.TriggeredPartialSink first_sink)
+    in
+    List.cartesian_product first_sinks second_sinks |> List.fold ~f:add ~init:map
+
+
+  let merge left right =
+    String.Map.Tree.merge
+      ~f:(fun ~key:_ -> function
+        | `Left value
+        | `Right value ->
+            Some value
+        | `Both (left, right) -> Some (left @ right))
+      left
+      right
+
+
+  let get_triggered_sink sink_to_sources ~partial_sink ~source =
+    match mangle partial_sink |> String.Map.Tree.find sink_to_sources with
+    | Some source_and_sink_list ->
+        List.find source_and_sink_list ~f:(fun (supported_source, _) ->
+            Sources.equal source supported_source)
+        >>| snd
+    | _ -> None
+end
 
 let parse source =
   let member name json =
@@ -151,7 +183,7 @@ let parse source =
     array_member "rules" json |> List.map ~f:parse_rule
   in
   let parse_combined_source_rules ~allowed_sources ~acceptable_sink_labels json =
-    let parse_combined_source_rule json =
+    let parse_combined_source_rule (rules, partial_sink_converter) json =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
       let code = Json.Util.member "code" json |> Json.Util.to_int in
@@ -193,29 +225,31 @@ let parse source =
           in
           let first_sinks = List.map sinks ~f:(create_partial_sink first) in
           let second_sinks = List.map sinks ~f:(create_partial_sink second) in
-          ( [
-              {
-                Rule.sources = [first_source];
-                sinks = List.map first_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-                name;
-                code;
-                message_format;
-              };
-              {
-                Rule.sources = [second_source];
-                sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-                name;
-                code;
-                message_format;
-              };
-            ],
-            [{ first_source; first_sinks; second_source; second_sinks }] )
+          ( {
+              Rule.sources = [first_source];
+              sinks = List.map first_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+              name;
+              code;
+              message_format;
+            }
+            :: {
+                 Rule.sources = [second_source];
+                 sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+                 name;
+                 code;
+                 message_format;
+               }
+            :: rules,
+            PartialSinkConverter.add
+              partial_sink_converter
+              ~first_source
+              ~first_sinks
+              ~second_source
+              ~second_sinks )
       | _ -> failwith "Combined source rules must be of the form {\"a\": SourceA, \"b\": SourceB}"
     in
     array_member "combined_source_rules" json
-    |> List.map ~f:parse_combined_source_rule
-    |> List.unzip
-    |> fun (rules, combined_rules) -> List.concat rules, List.concat combined_rules
+    |> List.fold ~init:([], String.Map.Tree.empty) ~f:parse_combined_source_rule
   in
   let parse_implicit_sinks ~allowed_sinks json =
     match member "implicit_sinks" json with
@@ -235,7 +269,7 @@ let parse source =
   let rules =
     parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~acceptable_sink_labels json
   in
-  let generated_combined_rules, combined_rules =
+  let generated_combined_rules, partial_sink_converter =
     parse_combined_source_rules json ~allowed_sources:sources ~acceptable_sink_labels
   in
 
@@ -245,7 +279,7 @@ let parse source =
     sinks;
     features;
     rules = List.rev_append rules generated_combined_rules;
-    combined_rules;
+    partial_sink_converter;
     implicit_sinks;
     acceptable_sink_labels;
   }
@@ -347,7 +381,7 @@ let default =
           message_format = "Attacker may control at least one argument to getattr(,).";
         };
       ];
-    combined_rules = [];
+    partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
   }
@@ -387,7 +421,8 @@ let create ~rule_filter ~paths =
       sinks = left.sinks @ right.sinks;
       features = left.features @ right.features;
       rules = left.rules @ right.rules;
-      combined_rules = left.combined_rules @ right.combined_rules;
+      partial_sink_converter =
+        PartialSinkConverter.merge left.partial_sink_converter right.partial_sink_converter;
       implicit_sinks = merge_implicit_sinks left.implicit_sinks right.implicit_sinks;
       acceptable_sink_labels =
         String.Map.Tree.merge
@@ -416,3 +451,8 @@ let create ~rule_filter ~paths =
 let conditional_test_sinks () =
   match get () with
   | { implicit_sinks = { conditional_test }; _ } -> conditional_test
+
+
+let get_triggered_sink ~partial_sink ~source =
+  let { partial_sink_converter; _ } = get () in
+  PartialSinkConverter.get_triggered_sink partial_sink_converter ~partial_sink ~source
