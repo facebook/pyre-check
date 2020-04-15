@@ -3031,7 +3031,7 @@ module Implementation = struct
 
 
   let signature_select
-      { full_order; resolve_mutable_literals; parse_annotation; _ }
+      { full_order; resolve_mutable_literals; _ }
       ~assumptions
       ~class_metadata_environment
       ?dependency
@@ -3478,18 +3478,7 @@ module Implementation = struct
                       in
                       match weakening_error with
                       | Some weakening_error -> add_annotation_error signature_match weakening_error
-                      | None ->
-                          if Type.is_meta parameter_annotation && Type.is_top argument_annotation
-                          then
-                            parse_annotation
-                              ~assumptions
-                              ~class_metadata_environment
-                              ?dependency
-                              expression
-                            |> Type.meta
-                            |> set_constraints_and_reasons
-                          else
-                            argument_annotation |> set_constraints_and_reasons ) )
+                      | None -> argument_annotation |> set_constraints_and_reasons ) )
             in
             match is_generic_lambda key arguments with
             | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
