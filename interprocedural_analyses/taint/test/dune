@@ -24,6 +24,7 @@
   flowTest
   forwardAnalysisTest
   backwardAnalysisTest
+  partialSinkConverterTest
   modelTest)
  (modules :standard \ testHelper)
  (preprocess

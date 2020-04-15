@@ -25,12 +25,20 @@ type analysis_model_constraints = {
 
 val analysis_model_constraints : analysis_model_constraints
 
+type combined_rule = {
+  first_source: Sources.t;
+  first_sinks: Sinks.partial_sink list;
+  second_source: Sources.t;
+  second_sinks: Sinks.partial_sink list;
+}
+
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  combined_rules: combined_rule list;
   acceptable_sink_labels: string list Core.String.Map.Tree.t;
 }
 

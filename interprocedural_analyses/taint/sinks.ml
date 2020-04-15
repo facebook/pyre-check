@@ -6,16 +6,16 @@
 open Core
 
 module T = struct
+  type partial_sink = {
+    kind: string;
+    label: string;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type t =
     | Attach
-    | PartialSink of {
-        kind: string;
-        label: string;
-      }
-    | TriggeredPartialSink of {
-        kind: string;
-        label: string;
-      }
+    | PartialSink of partial_sink
+    | TriggeredPartialSink of partial_sink
     | LocalReturn (* Special marker to describe function in-out behavior *)
     | NamedSink of string
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)

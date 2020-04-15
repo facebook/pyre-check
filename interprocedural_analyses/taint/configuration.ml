@@ -32,12 +32,20 @@ let analysis_model_constraints =
   { maximum_model_width = 25; maximum_complex_access_path_length = 10 }
 
 
+type combined_rule = {
+  first_source: Sources.t;
+  first_sinks: Sinks.partial_sink list;
+  second_source: Sources.t;
+  second_sinks: Sinks.partial_sink list;
+}
+
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
+  combined_rules: combined_rule list;
   acceptable_sink_labels: string list String.Map.Tree.t;
 }
 
@@ -47,6 +55,7 @@ let empty =
     sinks = [];
     features = [];
     rules = [];
+    combined_rules = [];
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
   }
@@ -180,17 +189,33 @@ let parse source =
                        sink)
               | _ -> ()
             end;
-            Sinks.TriggeredPartialSink { kind = sink; label }
+            { Sinks.kind = sink; label }
           in
           let first_sinks = List.map sinks ~f:(create_partial_sink first) in
           let second_sinks = List.map sinks ~f:(create_partial_sink second) in
-          [
-            { Rule.sources = [first_source]; sinks = first_sinks; name; code; message_format };
-            { Rule.sources = [second_source]; sinks = second_sinks; name; code; message_format };
-          ]
+          ( [
+              {
+                Rule.sources = [first_source];
+                sinks = List.map first_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+                name;
+                code;
+                message_format;
+              };
+              {
+                Rule.sources = [second_source];
+                sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
+                name;
+                code;
+                message_format;
+              };
+            ],
+            [{ first_source; first_sinks; second_source; second_sinks }] )
       | _ -> failwith "Combined source rules must be of the form {\"a\": SourceA, \"b\": SourceB}"
     in
-    array_member "combined_source_rules" json |> List.concat_map ~f:parse_combined_source_rule
+    array_member "combined_source_rules" json
+    |> List.map ~f:parse_combined_source_rule
+    |> List.unzip
+    |> fun (rules, combined_rules) -> List.concat rules, List.concat combined_rules
   in
   let parse_implicit_sinks ~allowed_sinks json =
     match member "implicit_sinks" json with
@@ -209,12 +234,21 @@ let parse source =
   let features = parse_features json in
   let rules =
     parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~acceptable_sink_labels json
-    |> List.rev_append
-         (parse_combined_source_rules json ~allowed_sources:sources ~acceptable_sink_labels)
+  in
+  let generated_combined_rules, combined_rules =
+    parse_combined_source_rules json ~allowed_sources:sources ~acceptable_sink_labels
   in
 
   let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
-  { sources; sinks; features; rules; implicit_sinks; acceptable_sink_labels }
+  {
+    sources;
+    sinks;
+    features;
+    rules = List.rev_append rules generated_combined_rules;
+    combined_rules;
+    implicit_sinks;
+    acceptable_sink_labels;
+  }
 
 
 let register configuration =
@@ -313,6 +347,7 @@ let default =
           message_format = "Attacker may control at least one argument to getattr(,).";
         };
       ];
+    combined_rules = [];
     implicit_sinks = empty_implicit_sinks;
     acceptable_sink_labels = String.Map.Tree.empty;
   }
@@ -352,6 +387,7 @@ let create ~rule_filter ~paths =
       sinks = left.sinks @ right.sinks;
       features = left.features @ right.features;
       rules = left.rules @ right.rules;
+      combined_rules = left.combined_rules @ right.combined_rules;
       implicit_sinks = merge_implicit_sinks left.implicit_sinks right.implicit_sinks;
       acceptable_sink_labels =
         String.Map.Tree.merge
