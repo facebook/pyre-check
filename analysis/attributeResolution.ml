@@ -16,23 +16,15 @@ module UninstantiatedAnnotation = struct
   }
   [@@deriving compare]
 
-  type property_kind =
-    | Property of {
-        getter: property_annotation;
-        setter: property_annotation option;
-      }
-    | NotProperty
-  [@@deriving compare]
-
   type kind =
     | Method of {
         callable: Type.Callable.t;
         is_class_method: bool;
       }
-    | Attribute of {
-        annotation: Type.t;
-        original_annotation: Type.t;
-        property: property_kind;
+    | Attribute of Type.t
+    | Property of {
+        getter: property_annotation;
+        setter: property_annotation option;
       }
   [@@deriving compare]
 
@@ -1089,9 +1081,7 @@ module Implementation = struct
                 ~uninstantiated_annotation:
                   {
                     UninstantiatedAnnotation.accessed_via_metaclass = false;
-                    kind =
-                      Attribute
-                        { annotation; original_annotation = annotation; property = NotProperty };
+                    kind = Attribute annotation;
                   }
                 ~abstract:false
                 ~async:false
@@ -1649,7 +1639,7 @@ module Implementation = struct
       in
       let attribute_to_typed_dictionary_field (attribute, required) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with
-        | { UninstantiatedAnnotation.kind = Attribute { annotation; _ }; _ } ->
+        | { UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
             Some
               (Type.TypedDictionary.create_field
                  ~name:(AnnotatedAttribute.name attribute)
@@ -2289,8 +2279,7 @@ module Implementation = struct
           in
 
           callable, callable
-      | Attribute
-          { property = Property { getter = getter_annotation; setter = setter_annotation }; _ } -> (
+      | Property { getter = getter_annotation; setter = setter_annotation } -> (
           (* Special case properties with type variables. *)
           let solve_property
               { UninstantiatedAnnotation.self = self_annotation; value = value_annotation }
@@ -2318,7 +2307,7 @@ module Implementation = struct
           | None ->
               let annotation = solve_property getter_annotation in
               annotation, annotation )
-      | Attribute { annotation; original_annotation; property = NotProperty } ->
+      | Attribute annotation ->
           let order () = full_order ?dependency class_metadata_environment ~assumptions in
           callable_call_special_cases
             ~instantiated:(Some instantiated)
@@ -2326,7 +2315,7 @@ module Implementation = struct
             ~attribute_name
             ~order
           >>| (fun callable -> callable, callable)
-          |> Option.value ~default:(annotation, original_annotation)
+          |> Option.value ~default:(annotation, annotation)
     in
     let annotation, original =
       match instantiated with
@@ -2405,10 +2394,9 @@ module Implementation = struct
             else
               annotation, value, class_attribute
           in
-          let annotation, original =
+          let annotation =
             match annotation, value with
-            | Some annotation, Some _ -> annotation, annotation
-            | Some annotation, None -> annotation, annotation
+            | Some annotation, _ -> annotation
             | None, Some value ->
                 let literal_value_annotation =
                   resolve_literal ?dependency ~class_metadata_environment ~assumptions value
@@ -2430,10 +2418,10 @@ module Implementation = struct
                   && (not is_dataclass_attribute)
                   && toplevel
                 then (* Treat literal attributes as having been explicitly annotated. *)
-                  literal_value_annotation, literal_value_annotation
+                  literal_value_annotation
                 else
-                  Type.Top, Type.Top
-            | _ -> Type.Top, Type.Top
+                  Type.Top
+            | _ -> Type.Top
           in
           let visibility =
             if final then
@@ -2443,10 +2431,7 @@ module Implementation = struct
             else
               ReadWrite
           in
-          ( UninstantiatedAnnotation.Attribute
-              { annotation; original_annotation = original; property = NotProperty },
-            class_attribute,
-            visibility )
+          UninstantiatedAnnotation.Attribute annotation, class_attribute, visibility
       | Method { signatures; final; _ } ->
           (* Handle Callables *)
           let visibility =
@@ -2496,41 +2481,28 @@ module Implementation = struct
               } ->
               let getter_annotation = parse_annotation_option getter_annotation in
               let setter_annotation = parse_annotation_option setter_annotation in
-              ( UninstantiatedAnnotation.Attribute
+              ( UninstantiatedAnnotation.Property
                   {
-                    annotation = getter_annotation |> Option.value ~default:Type.Top;
-                    original_annotation = setter_annotation |> Option.value ~default:Type.Top;
-                    property =
-                      Property
+                    getter =
+                      {
+                        self = parse_annotation_option getter_self_annotation;
+                        value = getter_annotation;
+                      };
+                    setter =
+                      Some
                         {
-                          getter =
-                            {
-                              self = parse_annotation_option getter_self_annotation;
-                              value = getter_annotation;
-                            };
-                          setter =
-                            Some
-                              {
-                                self = parse_annotation_option setter_self_annotation;
-                                value = setter_annotation;
-                              };
+                          self = parse_annotation_option setter_self_annotation;
+                          value = setter_annotation;
                         };
                   },
                 class_property,
                 ReadWrite )
           | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
               let annotation = parse_annotation_option getter_annotation in
-              ( UninstantiatedAnnotation.Attribute
+              ( UninstantiatedAnnotation.Property
                   {
-                    annotation = annotation |> Option.value ~default:Type.Top;
-                    original_annotation = annotation |> Option.value ~default:Type.Top;
-                    property =
-                      Property
-                        {
-                          getter =
-                            { self = parse_annotation_option self_annotation; value = annotation };
-                          setter = None;
-                        };
+                    getter = { self = parse_annotation_option self_annotation; value = annotation };
+                    setter = None;
                   },
                 class_property,
                 ReadOnly Unrefinable ) )
