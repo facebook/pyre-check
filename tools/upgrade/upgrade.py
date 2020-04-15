@@ -64,7 +64,6 @@ class Configuration:
         self.source_directories: Optional[List[str]] = json_contents.get(
             "source_directories"
         )
-        self.push_blocking: bool = bool(json_contents.get("push_blocking"))
         self.version: Optional[str] = json_contents.get("version")
 
     def get_contents(self) -> Dict[str, Any]:
@@ -79,7 +78,6 @@ class Configuration:
 
         update_contents("targets")
         update_contents("source_directories")
-        update_contents("push_blocking")
         update_contents("version")
         update_contents("strict")
         return contents
@@ -118,9 +116,7 @@ class Configuration:
         ]
 
     @staticmethod
-    def gather_local_configurations(
-        *, push_blocking_only: bool = False
-    ) -> List["Configuration"]:
+    def gather_local_configurations() -> List["Configuration"]:
         LOG.info("Finding configurations...")
         configuration_paths = Configuration.gather_local_configuration_paths(".")
         if not configuration_paths:
@@ -138,17 +134,15 @@ class Configuration:
                     configuration = Configuration(
                         configuration_path, json.load(configuration_file)
                     )
-                    if configuration.push_blocking or (not push_blocking_only):
-                        configurations.append(configuration)
+                    configurations.append(configuration)
                 except json.decoder.JSONDecodeError:
                     LOG.error(
                         "Configuration at `%s` is invalid, skipping.",
                         configuration_path,
                     )
         LOG.info(
-            "Found %d %sconfiguration%s",
+            "Found %d configuration%s",
             len(configurations),
-            "push-blocking " if push_blocking_only else "",
             "s" if len(configurations) != 1 else "",
         )
         return configurations
@@ -322,9 +316,7 @@ def run_global_version_update(
         if paths
         else [
             configuration.get_path()
-            for configuration in Configuration.gather_local_configurations(
-                push_blocking_only=arguments.push_blocking_only
-            )
+            for configuration in Configuration.gather_local_configurations()
             if configuration.is_local
         ]
     )
@@ -362,16 +354,13 @@ def run_global_version_update(
 def run_upgrade_all(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
-    configurations = Configuration.gather_local_configurations(
-        push_blocking_only=arguments.push_blocking_only
-    )
+    configurations = Configuration.gather_local_configurations()
     paths = [str(configuration.get_directory()) for configuration in configurations]
     with open(arguments.sandcastle) as sandcastle_file:
         sandcastle_command = json.load(sandcastle_file)
     if arguments.hash:
         sandcastle_command["args"]["hash"] = arguments.hash
     sandcastle_command["args"]["paths"] = paths
-    sandcastle_command["args"]["push_blocking_only"] = arguments.push_blocking_only
     command = ["scutil", "create"]
     subprocess.run(command, input=json.dumps(sandcastle_command).encode())
 
@@ -471,9 +460,7 @@ def run_fixme_all(
         LOG.info("No project configuration found for the current directory.")
         return
 
-    configurations = Configuration.gather_local_configurations(
-        push_blocking_only=arguments.push_blocking_only
-    )
+    configurations = Configuration.gather_local_configurations()
     for configuration in configurations:
         _upgrade_project(
             arguments, configuration, project_configuration.parent, version_control
@@ -631,11 +618,7 @@ def run_targets_to_configuration(
                 LOG.info(
                     "Creating local configuration at %s.", local_configuration_path
                 )
-                configuration_contents = {
-                    "targets": new_targets,
-                    "push_blocking": True,
-                    "strict": True,
-                }
+                configuration_contents = {"targets": new_targets, "strict": True}
                 # Heuristic: if all targets with type checked targets are setting
                 # a target to be strictly checked, let's turn on default strict.
                 for targets_file in targets_files:
@@ -770,7 +753,6 @@ def run(version_control: VersionControl) -> None:
     upgrade_all = commands.add_parser("upgrade-all")
     upgrade_all.set_defaults(function=run_upgrade_all)
     upgrade_all.add_argument("hash", help="Hash of new Pyre version")
-    upgrade_all.add_argument("-p", "--push-blocking-only", action="store_true")
     upgrade_all.add_argument(
         "-s",
         "--sandcastle",
@@ -783,9 +765,6 @@ def run(version_control: VersionControl) -> None:
     update_global_version = commands.add_parser("update-global-version")
     update_global_version.set_defaults(function=run_global_version_update)
     update_global_version.add_argument("hash", help="Hash of new Pyre version")
-    update_global_version.add_argument(
-        "-p", "--push-blocking-only", action="store_true"
-    )
     update_global_version.add_argument(
         "--paths",
         nargs="*",
@@ -827,7 +806,6 @@ def run(version_control: VersionControl) -> None:
     fixme_all.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
-    fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
     fixme_all.add_argument(
         "--upgrade-version",
         action="store_true",

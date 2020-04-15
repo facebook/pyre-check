@@ -28,7 +28,7 @@ class UpgradeAllTest(unittest.TestCase):
         command_json = """
         {
             "command": "CommandName",
-            "args": {"hash": null, "paths": null, "push_blocking_only": null},
+            "args": {"hash": null, "paths": null},
             "hash": "repository/hash",
             "priority": 0,
             "user": "unixname",
@@ -39,17 +39,15 @@ class UpgradeAllTest(unittest.TestCase):
         }
         """
 
-        def generate_sandcastle_command(binary_hash, paths, push_blocking) -> bytes:
+        def generate_sandcastle_command(binary_hash, paths) -> bytes:
             command = json.loads(command_json)
             if binary_hash:
                 command["args"]["hash"] = binary_hash
             command["args"]["paths"] = paths
-            command["args"]["push_blocking_only"] = push_blocking
             return json.dumps(command).encode()
 
         arguments = MagicMock()
         arguments.sandcastle = Path("sandcastle.json")
-        arguments.push_blocking_only = False
         with patch("builtins.open", mock_open(read_data=command_json)):
             arguments.hash = "abc"
             gather.return_value = [
@@ -64,7 +62,7 @@ class UpgradeAllTest(unittest.TestCase):
             find_configuration.assert_not_called()
             run.assert_called_once_with(
                 ["scutil", "create"],
-                input=generate_sandcastle_command("abc", ["a", "b"], False),
+                input=generate_sandcastle_command("abc", ["a", "b"]),
             )
 
         run.reset_mock()
@@ -78,8 +76,7 @@ class UpgradeAllTest(unittest.TestCase):
             upgrade.run_upgrade_all(arguments, VERSION_CONTROL)
             find_configuration.assert_not_called()
             run.assert_called_once_with(
-                ["scutil", "create"],
-                input=generate_sandcastle_command(None, ["local"], False),
+                ["scutil", "create"], input=generate_sandcastle_command(None, ["local"])
             )
 
 
@@ -124,22 +121,12 @@ class FixmeAllTest(unittest.TestCase):
                         )
                     )
                     lists_equal = False
-                elif expected.push_blocking != actual.push_blocking:
-                    print(
-                        "Expected configuration with push_blocking {}, \
-                        got push_blocking {}".format(
-                            expected.push_blocking, actual.push_blocking
-                        )
-                    )
-                    lists_equal = False
             return lists_equal
 
         configurations_string = ""
         process.stdout = configurations_string.encode()
         with patch("subprocess.run", return_value=process):
-            configurations = upgrade.Configuration.gather_local_configurations(
-                push_blocking_only=False
-            )
+            configurations = upgrade.Configuration.gather_local_configurations()
             self.assertEqual([], configurations)
 
         configurations_string = "path/to/.pyre_configuration.local"
@@ -153,9 +140,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         with patch("subprocess.run", return_value=process) as subprocess_run:
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
-                configurations = upgrade.Configuration.gather_local_configurations(
-                    push_blocking_only=False
-                )
+                configurations = upgrade.Configuration.gather_local_configurations()
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
                 )
@@ -181,32 +166,10 @@ class FixmeAllTest(unittest.TestCase):
         ]
         with patch("subprocess.run", return_value=process):
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
-                configurations = upgrade.Configuration.gather_local_configurations(
-                    push_blocking_only=False
-                )
+                configurations = upgrade.Configuration.gather_local_configurations()
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
                 )
-
-        configurations_string = (
-            "a/.pyre_configuration.local\nb/.pyre_configuration.local\n"
-        )
-        process.stdout = configurations_string.encode()
-        configuration_contents = '{"targets":[],\n"coverage":true}'
-        expected_configurations = [
-            upgrade.Configuration(
-                Path("a/.pyre_configuration.local"), json.loads(configuration_contents)
-            ),
-            upgrade.Configuration(
-                Path("b/.pyre_configuration.local"), json.loads(configuration_contents)
-            ),
-        ]
-        with patch("subprocess.run", return_value=process):
-            with patch("builtins.open", mock_open(read_data=configuration_contents)):
-                configurations = upgrade.Configuration.gather_local_configurations(
-                    push_blocking_only=True
-                )
-                self.assertEqual([], configurations)
 
     mock_completed_process = MagicMock()
     mock_completed_process.stdout.decode = MagicMock(return_value="[]")
@@ -1664,7 +1627,6 @@ class TargetsToConfigurationTest(unittest.TestCase):
                     "subdirectory/b/c:target_three",
                     "subdirectory/b/c:target_two",
                 ],
-                "push_blocking": True,
                 "strict": True,
             }
             open_mock.assert_has_calls(
@@ -1837,7 +1799,6 @@ class TargetsToConfigurationTest(unittest.TestCase):
             upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
             expected_configuration_contents = {
                 "targets": ["//subdirectory/..."],
-                "push_blocking": True,
                 "strict": True,
             }
             open_mock.assert_has_calls(
@@ -2021,7 +1982,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         arguments.submit = False
         arguments.hash = "abcd"
         arguments.paths = []
-        arguments.push_blocking_only = False
         with patch("json.dump") as dump:
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
@@ -2053,49 +2013,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             )
             submit_changes.assert_called_once_with(
                 False,
-                VERSION_CONTROL.commit_message(
-                    "global configuration",
-                    summary_override="Automatic upgrade to hash `abcd`",
-                ),
-                ignore_failures=True,
-            )
-        # Push blocking argument: Since the push blocking only argument is only used
-        # when gathering local configurations (mocked here), this is a no-op.
-        # Documents it.
-        submit_changes.reset_mock()
-        arguments.push_blocking_only = True
-        arguments.submit = True
-        with patch("json.dump") as dump:
-            mocks = [
-                mock_open(read_data='{"version": "old"}').return_value,
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": false}').return_value,
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data='{"push_blocking": true}').return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-
-            upgrade.run_global_version_update(arguments, VERSION_CONTROL)
-            dump.assert_has_calls(
-                [
-                    call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
-                    call(
-                        {"push_blocking": False, "version": "old"},
-                        mocks[3],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                    call(
-                        {"push_blocking": True, "version": "old"},
-                        mocks[5],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                ]
-            )
-            submit_changes.assert_called_once_with(
-                True,
                 VERSION_CONTROL.commit_message(
                     "global configuration",
                     summary_override="Automatic upgrade to hash `abcd`",
