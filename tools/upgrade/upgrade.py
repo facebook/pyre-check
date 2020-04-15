@@ -354,13 +354,10 @@ def run_global_version_update(
 def run_upgrade_all(
     arguments: argparse.Namespace, version_control: VersionControl
 ) -> None:
-    configurations = Configuration.gather_local_configurations()
-    paths = [str(configuration.get_directory()) for configuration in configurations]
     with open(arguments.sandcastle) as sandcastle_file:
         sandcastle_command = json.load(sandcastle_file)
     if arguments.hash:
         sandcastle_command["args"]["hash"] = arguments.hash
-    sandcastle_command["args"]["paths"] = paths
     command = ["scutil", "create"]
     subprocess.run(command, input=json.dumps(sandcastle_command).encode())
 
@@ -758,6 +755,7 @@ def run(version_control: VersionControl) -> None:
         "--sandcastle",
         help="Create upgrade stack on sandcastle.",
         type=path_exists,
+        required=True,
     )
 
     # Subcommand: Set global configuration to given hash, and add version override

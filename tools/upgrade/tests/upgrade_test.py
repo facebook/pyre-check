@@ -39,11 +39,10 @@ class UpgradeAllTest(unittest.TestCase):
         }
         """
 
-        def generate_sandcastle_command(binary_hash, paths) -> bytes:
+        def generate_sandcastle_command(binary_hash) -> bytes:
             command = json.loads(command_json)
             if binary_hash:
                 command["args"]["hash"] = binary_hash
-            command["args"]["paths"] = paths
             return json.dumps(command).encode()
 
         arguments = MagicMock()
@@ -61,8 +60,7 @@ class UpgradeAllTest(unittest.TestCase):
             upgrade.run_upgrade_all(arguments, VERSION_CONTROL)
             find_configuration.assert_not_called()
             run.assert_called_once_with(
-                ["scutil", "create"],
-                input=generate_sandcastle_command("abc", ["a", "b"]),
+                ["scutil", "create"], input=generate_sandcastle_command("abc")
             )
 
         run.reset_mock()
@@ -76,7 +74,7 @@ class UpgradeAllTest(unittest.TestCase):
             upgrade.run_upgrade_all(arguments, VERSION_CONTROL)
             find_configuration.assert_not_called()
             run.assert_called_once_with(
-                ["scutil", "create"], input=generate_sandcastle_command(None, ["local"])
+                ["scutil", "create"], input=generate_sandcastle_command(None)
             )
 
 
