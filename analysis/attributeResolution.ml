@@ -3044,8 +3044,8 @@ module Implementation = struct
     let order = full_order ~assumptions ?dependency class_metadata_environment in
     let open Expression in
     let open Type.Callable in
-    let all_arguments = arguments in
-    let match_arity ~all_parameters =
+    let match_arity ~all_parameters signature_match ~arguments ~parameters =
+      let all_arguments = arguments in
       let rec consume
           ({ argument_mapping; reasons = { arity; _ } as reasons; _ } as signature_match)
           ~arguments
@@ -3059,7 +3059,7 @@ module Implementation = struct
           | Defined all_parameters ->
               let matched_keyword_arguments =
                 let is_keyword_argument = function
-                  | { Call.Argument.name = Some _; _ } -> true
+                  | { Argument.kind = Named _; _ } -> true
                   | _ -> false
                 in
                 List.filter ~f:is_keyword_argument all_arguments
@@ -3197,7 +3197,7 @@ module Implementation = struct
               ~parameters:parameters_tail
               { signature_match with argument_mapping }
       in
-      consume
+      consume signature_match ~arguments ~parameters
     in
     let check_annotations ({ argument_mapping; _ } as signature_match) =
       (* Check whether the parameter annotation is `Callable[[ParamVar], ReturnVar]`
