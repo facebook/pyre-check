@@ -1791,7 +1791,8 @@ module State (Context : Context) = struct
           =
           let signature =
             GlobalResolution.signature_select
-              ~arguments
+            (* TODO use Resolved to reuse resolved types from above *)
+              ~arguments:(Unresolved arguments)
               ~global_resolution
               ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
               ~callable
@@ -1810,7 +1811,8 @@ module State (Context : Context) = struct
                         find_method ~parent:(resolve_expression_type ~resolution value) ~name)
                   >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
                         ( GlobalResolution.signature_select
-                            ~arguments
+                          (* TODO use Resolved to reuse resolved types from above *)
+                            ~arguments:(Unresolved arguments)
                             ~global_resolution:(Resolution.global_resolution resolution)
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                             ~callable

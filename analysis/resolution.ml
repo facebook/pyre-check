@@ -305,8 +305,10 @@ let fallback_attribute ~resolution ~name class_name =
               match
                 GlobalResolution.signature_select
                   ~global_resolution
-                  ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
-                  ~arguments
+                  ~resolve_with_locals:
+                    (resolve_expression_to_type_with_locals resolution)
+                    (* TODO use Resolved to avoid needing to synthesize an argument *)
+                  ~arguments:(Unresolved arguments)
                   ~callable
                   ~self_argument:(Some self_argument)
               with

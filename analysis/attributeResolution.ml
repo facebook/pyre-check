@@ -630,14 +630,24 @@ module SignatureSelectionTypes = struct
 
     type t = {
       expression: Expression.t option;
-      position: int;
       kind: kind;
       resolved: Type.t;
     }
   end
 
+  type argument_with_position = {
+    position: int;
+    expression: Expression.t option;
+    kind: Argument.kind;
+    resolved: Type.t;
+  }
+
+  type arguments =
+    | Resolved of Argument.t list
+    | Unresolved of Ast.Expression.Call.Argument.t list
+
   type argument =
-    | Argument of Argument.t
+    | Argument of argument_with_position
     | Default
 
   type ranks = {
@@ -1213,7 +1223,7 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       resolve_with_locals:
         (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-      arguments:Expression.Call.Argument.t list ->
+      arguments:SignatureSelectionTypes.arguments ->
       callable:Type.Callable.t ->
       self_argument:Type.t option ->
       SignatureSelectionTypes.sig_t;
@@ -2921,7 +2931,7 @@ module Implementation = struct
                         ~class_metadata_environment
                         ~assumptions
                         ~resolve_with_locals
-                        ~arguments
+                        ~arguments:(Unresolved arguments)
                         ~callable
                         ~self_argument:None
                     with
@@ -3059,7 +3069,7 @@ module Implementation = struct
           | Defined all_parameters ->
               let matched_keyword_arguments =
                 let is_keyword_argument = function
-                  | { Argument.kind = Named _; _ } -> true
+                  | { SignatureSelectionTypes.kind = Named _; _ } -> true
                   | _ -> false
                 in
                 List.filter ~f:is_keyword_argument all_arguments
@@ -3090,7 +3100,7 @@ module Implementation = struct
         | [], [] ->
             (* Both empty *)
             signature_match
-        | { Argument.kind = Argument.SingleStar; _ } :: arguments_tail, []
+        | { SignatureSelectionTypes.kind = Argument.SingleStar; _ } :: arguments_tail, []
         | { kind = DoubleStar; _ } :: arguments_tail, [] ->
             (* Starred or double starred arguments; parameters empty *)
             consume ~arguments:arguments_tail ~parameters signature_match
@@ -3266,7 +3276,7 @@ module Implementation = struct
                     | Argument argument -> argument
                     | Default -> failwith "Variable parameters do not have defaults")
               in
-              let extract { Argument.kind; resolved; expression; _ } =
+              let extract { SignatureSelectionTypes.kind; resolved; expression; _ } =
                 match kind with
                 | SingleStar -> (
                     match resolved with
@@ -3719,7 +3729,10 @@ module Implementation = struct
            ~default:
              (NotFound { closest_return_annotation = default_return_annotation; reason = None })
     in
-    let rec check_arity_and_annotations implementation ~arguments =
+    let rec check_arity_and_annotations
+        implementation
+        ~(arguments : SignatureSelectionTypes.argument_with_position list)
+      =
       let base_signature_match =
         {
           callable = { callable with Type.Callable.implementation; overloads = [] };
@@ -3740,7 +3753,7 @@ module Implementation = struct
         when Type.Variable.Variadic.Parameters.is_free variable -> (
           let front, back =
             let is_labeled = function
-              | { Argument.kind = Named _; _ } -> true
+              | { SignatureSelectionTypes.kind = Named _; _ } -> true
               | _ -> false
             in
             let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
@@ -3819,29 +3832,37 @@ module Implementation = struct
 
     let get_match signatures =
       let arguments =
-        let create_argument index { Call.Argument.name; value } =
-          let expression, kind =
-            match value, name with
-            | { Node.value = Starred (Starred.Once expression); _ }, _ ->
-                expression, Argument.SingleStar
-            | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
-            | expression, Some name -> expression, Named name
-            | expression, None -> expression, Positional
-          in
-          let resolved = resolve_with_locals ~locals:[] expression in
-          { Argument.position = index + 1; expression = Some expression; kind; resolved }
+        let arguments =
+          match arguments with
+          | Resolved resolved ->
+              let add_index index { Argument.expression; kind; resolved } =
+                { position = index + 1; expression; kind; resolved }
+              in
+              List.mapi resolved ~f:add_index
+          | Unresolved unresolved ->
+              let create_argument index { Call.Argument.name; value } =
+                let expression, kind =
+                  match value, name with
+                  | { Node.value = Starred (Starred.Once expression); _ }, _ ->
+                      expression, Argument.SingleStar
+                  | { Node.value = Starred (Starred.Twice expression); _ }, _ ->
+                      expression, DoubleStar
+                  | expression, Some name -> expression, Named name
+                  | expression, None -> expression, Positional
+                in
+                let resolved = resolve_with_locals ~locals:[] expression in
+                { position = index + 1; expression = Some expression; kind; resolved }
+              in
+              List.mapi unresolved ~f:create_argument
         in
         let is_labeled = function
-          | { Argument.kind = Named _; _ } -> true
+          | { SignatureSelectionTypes.kind = Named _; _ } -> true
           | _ -> false
         in
-        let labeled_arguments, unlabeled_arguments =
-          arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
-        in
+        let labeled_arguments, unlabeled_arguments = arguments |> List.partition_tf ~f:is_labeled in
         let self_argument =
           self_argument
-          >>| (fun resolved ->
-                { Argument.position = 0; expression = None; kind = Positional; resolved })
+          >>| (fun resolved -> { position = 0; expression = None; kind = Positional; resolved })
           |> Option.to_list
         in
         self_argument @ labeled_arguments @ unlabeled_arguments

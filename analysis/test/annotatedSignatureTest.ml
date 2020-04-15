@@ -27,40 +27,41 @@ let variable_r, escaped_variable_r =
   make_normal_and_escaped_variable ~constraints:(Explicit [Type.integer; Type.float]) "_R"
 
 
-let test_select context =
-  let cmp left right =
-    let default = AttributeResolution.equal_sig_t left right in
-    match left, right with
-    | ( AttributeResolution.NotFound
-          { reason = Some left_reason; closest_return_annotation = left_closest },
-        AttributeResolution.NotFound
-          { reason = Some right_reason; closest_return_annotation = right_closest } )
-      when Type.equal left_closest right_closest -> (
-        let equal_invalid_argument left right =
-          Option.compare
-            Expression.location_insensitive_compare
-            left.AttributeResolution.expression
-            right.AttributeResolution.expression
-          = 0
-          && Type.equal left.annotation right.annotation
-        in
-        let equal_mismatch_with_list_variadic_type_variable left right =
-          match left, right with
-          | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right ->
-              equal_invalid_argument left right
-          | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
-        in
-        match left_reason, right_reason with
-        | InvalidKeywordArgument left, InvalidKeywordArgument right
-        | InvalidVariableArgument left, InvalidVariableArgument right ->
-            equal_invalid_argument left.value right.value
-        | Mismatch left, Mismatch right -> AttributeResolution.equal_mismatch left.value right.value
-        | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
-            Type.OrderedTypes.equal left.variable right.variable
-            && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
-        | _ -> default )
-    | _ -> default
-  in
+let compare_sig_t left right =
+  let default = AttributeResolution.equal_sig_t left right in
+  match left, right with
+  | ( AttributeResolution.NotFound
+        { reason = Some left_reason; closest_return_annotation = left_closest },
+      AttributeResolution.NotFound
+        { reason = Some right_reason; closest_return_annotation = right_closest } )
+    when Type.equal left_closest right_closest -> (
+      let equal_invalid_argument left right =
+        Option.compare
+          Expression.location_insensitive_compare
+          left.AttributeResolution.expression
+          right.AttributeResolution.expression
+        = 0
+        && Type.equal left.annotation right.annotation
+      in
+      let equal_mismatch_with_list_variadic_type_variable left right =
+        match left, right with
+        | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right ->
+            equal_invalid_argument left right
+        | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
+      in
+      match left_reason, right_reason with
+      | InvalidKeywordArgument left, InvalidKeywordArgument right
+      | InvalidVariableArgument left, InvalidVariableArgument right ->
+          equal_invalid_argument left.value right.value
+      | Mismatch left, Mismatch right -> AttributeResolution.equal_mismatch left.value right.value
+      | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
+          Type.OrderedTypes.equal left.variable right.variable
+          && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
+      | _ -> default )
+  | _ -> default
+
+
+let test_unresolved_select context =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let replace_specials name =
       name
@@ -161,7 +162,7 @@ let test_select context =
         in
         ( callable,
           GlobalResolution.signature_select
-            ~arguments
+            ~arguments:(Unresolved arguments)
             ~global_resolution
             ~callable
             ~self_argument:None
@@ -249,7 +250,7 @@ let test_select context =
       | `NotFound (closest, reason) ->
           NotFound { closest_return_annotation = parse_return closest; reason }
     in
-    assert_equal ~printer:AttributeResolution.show_sig_t ~cmp expected signature
+    assert_equal ~printer:AttributeResolution.show_sig_t ~cmp:compare_sig_t expected signature
   in
   let assert_select_direct ~arguments ~callable expected =
     Type.Variable.Namespace.reset ();
@@ -257,14 +258,14 @@ let test_select context =
     let global_resolution = Resolution.global_resolution resolution in
     let signature =
       GlobalResolution.signature_select
-        ~arguments
+        ~arguments:(Unresolved arguments)
         ~global_resolution
         ~callable
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
     let printer x = AttributeResolution.sexp_of_sig_t x |> Sexp.to_string_hum in
-    assert_equal ~cmp ~printer expected signature
+    assert_equal ~cmp:compare_sig_t ~printer expected signature
   in
   (* Undefined callables always match. *)
   assert_select ~allow_undefined:true "[..., int]" "()" (`Found "int");
@@ -817,4 +818,102 @@ let test_select context =
   ()
 
 
-let () = "signature" >::: ["select" >: test_case ~length:Long test_select] |> Test.run
+let test_resolved_select context =
+  let assert_select ~arguments ~callable expected =
+    Type.Variable.Namespace.reset ();
+    let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+    let global_resolution = Resolution.global_resolution resolution in
+    let signature =
+      GlobalResolution.signature_select
+        ~arguments:(Resolved arguments)
+        ~global_resolution
+        ~callable
+        ~self_argument:None
+        ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
+    in
+    let printer x = AttributeResolution.sexp_of_sig_t x |> Sexp.to_string_hum in
+    assert_equal ~cmp:compare_sig_t ~printer expected signature
+  in
+  assert_select
+    ~arguments:[{ expression = None; kind = Positional; resolved = Type.string }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.integer;
+            parameters =
+              Defined [PositionalOnly { index = 0; annotation = Type.string; default = false }];
+          };
+        overloads = [];
+      }
+    (Found { selected_return_annotation = Type.integer });
+  assert_select
+    ~arguments:[{ expression = None; kind = Positional; resolved = Type.integer }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.integer;
+            parameters =
+              Defined [PositionalOnly { index = 0; annotation = Type.string; default = false }];
+          };
+        overloads = [];
+      }
+    (NotFound
+       {
+         closest_return_annotation = Type.integer;
+         reason =
+           Some
+             (Mismatch
+                {
+                  location = Location.any;
+                  value =
+                    { actual = Type.integer; expected = Type.string; name = None; position = 1 };
+                });
+       });
+  assert_select
+    ~arguments:[{ expression = None; kind = Positional; resolved = Type.literal_integer 1 }]
+    ~callable:
+      {
+        kind = Anonymous;
+        implementation =
+          {
+            annotation = Type.string;
+            parameters =
+              Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }];
+          };
+        overloads =
+          [
+            {
+              annotation = Type.literal_string "zero";
+              parameters =
+                Defined
+                  [
+                    PositionalOnly
+                      { index = 0; annotation = Type.literal_integer 0; default = false };
+                  ];
+            };
+            {
+              annotation = Type.literal_string "one";
+              parameters =
+                Defined
+                  [
+                    PositionalOnly
+                      { index = 0; annotation = Type.literal_integer 1; default = false };
+                  ];
+            };
+          ];
+      }
+    (Found { selected_return_annotation = Type.literal_string "one" });
+  ()
+
+
+let () =
+  "signature"
+  >::: [
+         "unresolved" >: test_case ~length:Long test_unresolved_select;
+         "resolved" >:: test_resolved_select;
+       ]
+  |> Test.run

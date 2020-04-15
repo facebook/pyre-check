@@ -124,6 +124,24 @@ type closest = {
 }
 [@@deriving show]
 
+module Argument : sig
+  type kind =
+    | SingleStar
+    | DoubleStar
+    | Named of string Node.t
+    | Positional
+
+  type t = {
+    expression: Expression.t option;
+    kind: kind;
+    resolved: Type.t;
+  }
+end
+
+type arguments =
+  | Resolved of Argument.t list
+  | Unresolved of Ast.Expression.Call.Argument.t list
+
 type sig_t =
   | Found of { selected_return_annotation: Type.t }
   | NotFound of closest
@@ -219,7 +237,7 @@ module AttributeReadOnly : sig
     ?dependency:SharedMemoryKeys.dependency ->
     resolve_with_locals:
       (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-    arguments:Expression.Call.Argument.t list ->
+    arguments:arguments ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
     sig_t
