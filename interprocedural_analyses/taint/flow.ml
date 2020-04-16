@@ -7,6 +7,7 @@ open Core
 open Ast
 open Configuration
 open Domains
+open Pyre
 
 type flow = {
   source_taint: ForwardTaint.t;
@@ -28,6 +29,8 @@ type issue = {
   issue_location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
+
+type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 (* Compute all flows from paths in ~source tree to corresponding paths in ~sink tree, while avoiding
    duplication as much as possible.
@@ -265,3 +268,30 @@ let code_metadata () =
   let configuration = Configuration.get () in
   `Assoc
     (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
+
+
+let compute_triggered_sinks ~source_tree ~sink_tree =
+  let partial_sinks_to_taint =
+    BackwardState.Tree.collapse sink_tree
+    |> BackwardTaint.partition BackwardTaint.leaf ~f:(function
+           | Sinks.PartialSink { Sinks.kind; label } -> Some { Sinks.kind; label }
+           | _ -> None)
+  in
+  if not (Map.Poly.is_empty partial_sinks_to_taint) then
+    let sources =
+      source_tree
+      |> ForwardState.Tree.partition ForwardTaint.leaf ~f:(fun source -> Some source)
+      |> Map.Poly.keys
+    in
+    let add_triggered_sinks triggered sink =
+      let add_triggered_sinks_for_source source =
+        Configuration.get_triggered_sink ~partial_sink:sink ~source
+        >>= function
+        | Sinks.TriggeredPartialSink triggered_sink -> Some triggered_sink
+        | _ -> None
+      in
+      List.filter_map sources ~f:add_triggered_sinks_for_source |> List.rev_append triggered
+    in
+    partial_sinks_to_taint |> Core.Map.Poly.keys |> List.fold ~f:add_triggered_sinks ~init:[]
+  else
+    []

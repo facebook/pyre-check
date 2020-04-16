@@ -37,6 +37,7 @@ let assert_taint ~context source expected =
         ~qualifier
         ~define
         ~existing_model:Taint.Result.empty_model
+        ~triggered_sinks:(Ast.Location.Table.create ())
     in
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model

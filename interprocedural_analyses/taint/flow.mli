@@ -34,6 +34,8 @@ type issue = {
   define: Ast.Statement.Define.t Ast.Node.t;
 }
 
+type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
+
 val partition_flows
   :  ?sources:(Sources.t -> bool) ->
   ?sinks:(Sinks.t -> bool) ->
@@ -57,3 +59,9 @@ val to_json
 val generate_error : issue -> Interprocedural.Error.t
 
 val code_metadata : unit -> Yojson.Safe.json
+
+(* Will modify the triggered_sinks data structure, adding the newly triggered sinks. *)
+val compute_triggered_sinks
+  :  source_tree:ForwardState.Tree.t ->
+  sink_tree:BackwardState.Tree.t ->
+  Sinks.partial_sink list

@@ -67,8 +67,12 @@ include TaintResult.Register (struct
 
 
   let analyze ~callable:_ ~environment ~qualifier ~define ~mode existing_model =
-    let forward, result = ForwardAnalysis.run ~environment ~qualifier ~define ~existing_model in
-    let backward = BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model in
+    let forward, result, triggered_sinks =
+      ForwardAnalysis.run ~environment ~qualifier ~define ~existing_model
+    in
+    let backward =
+      BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model ~triggered_sinks
+    in
     let model =
       if mode = Normal then
         { forward; backward; mode }

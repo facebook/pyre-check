@@ -12,4 +12,4 @@ val run
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
-  TaintResult.Forward.model * TaintResult.result
+  TaintResult.Forward.model * TaintResult.result * Flow.triggered_sinks

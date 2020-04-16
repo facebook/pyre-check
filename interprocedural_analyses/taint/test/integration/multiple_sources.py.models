@@ -1,5 +1,132 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_context",
+    "callable_line": 42,
+    "code": 4321,
+    "line": 44,
+    "start": 34,
+    "end": 36,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 43,
+              "start": 9,
+              "end": 29
+            },
+            "leaves": [
+              {
+                "kind": "PermissiveContext",
+                "name": "multiple_sources.permissive_context",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 44,
+                "start": 34,
+                "end": 36
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_context"
+              ],
+              "port": "formal(vc)",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "name": "multiple_sources.Node.send",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_input",
+    "callable_line": 37,
+    "code": 4321,
+    "line": 39,
+    "start": 32,
+    "end": 34,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 38,
+              "start": 9,
+              "end": 32
+            },
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "multiple_sources.user_controlled_input",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "multiple_sources.py",
+                "line": 39,
+                "start": 32,
+                "end": 34
+              },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_input"
+              ],
+              "port": "formal(id)",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
+                "name": "multiple_sources.Node.send",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
@@ -108,6 +235,68 @@
           {
             "decl": null,
             "leaves": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_context",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(vc)",
+        "taint": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 29,
+              "start": 22,
+              "end": 24
+            },
+            "leaves": [
+              {
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
+                "name": "multiple_sources.Node.send",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_input",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(id)",
+        "taint": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 34,
+              "start": 4,
+              "end": 16
+            },
+            "tito": [ { "line": 34, "start": 13, "end": 15 } ],
+            "leaves": [
+              {
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
+                "name": "multiple_sources.Node.send",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }

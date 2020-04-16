@@ -36,6 +36,8 @@ module type FUNCTION_CONTEXT = sig
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
   val debug : bool
+
+  val triggered_sinks : Flow.triggered_sinks
 end
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
@@ -133,10 +135,22 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         call_targets
       =
       let analyze_call_target (call_target, _implicit) =
+        let triggered_taint =
+          match Hashtbl.find FunctionContext.triggered_sinks location with
+          | Some items ->
+              List.fold
+                items
+                ~f:(fun state (root, sink) ->
+                  let new_taint = BackwardState.Tree.create_leaf (BackwardTaint.singleton sink) in
+                  BackwardState.assign ~root ~path:[] new_taint state)
+                ~init:BackwardState.bottom
+          | None -> BackwardState.bottom
+        in
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let { TaintResult.backward; _ } = taint_model.model in
+        let sink_taint = BackwardState.join backward.sink_taint triggered_taint in
         let sink_argument_matches =
-          BackwardState.roots backward.sink_taint |> AccessPath.match_actuals_to_formals arguments
+          BackwardState.roots sink_taint |> AccessPath.match_actuals_to_formals arguments
         in
         let tito_argument_matches =
           BackwardState.roots backward.taint_in_taint_out
@@ -144,7 +158,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
         let combine_sink_taint location taint_tree { root; actual_path; formal_path } =
-          BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
+          BackwardState.read ~transform_non_leaves ~root ~path:[] sink_taint
           |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
           |> read_tree formal_path
           |> BackwardState.Tree.prepend actual_path
@@ -253,7 +267,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardState.Tree.join sink_taint taint_in_taint_out
             |> BackwardState.Tree.join obscure_taint
           in
-
           let state =
             match AccessPath.of_expression ~resolution argument with
             | Some { AccessPath.root; path } -> (
@@ -1045,6 +1058,8 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       let simplify_sink_taint ~key:sink ~data:sink_tree accumulator =
         match sink with
         | Sinks.LocalReturn
+        (* For now, we don't propagate partial sinks at all. *)
+        | Sinks.PartialSink _
         | Sinks.Attach ->
             accumulator
         | _ -> simplify annotation sink_tree |> BackwardState.Tree.join accumulator
@@ -1073,7 +1088,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run ~environment ~qualifier ~define ~existing_model =
+let run ~environment ~qualifier ~define ~existing_model ~triggered_sinks =
   let timer = Timer.start () in
   let ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
       define )
@@ -1111,6 +1126,8 @@ let run ~environment ~qualifier ~define ~existing_model =
 
 
     let debug = Define.dump define.value
+
+    let triggered_sinks = triggered_sinks
   end)
   in
   let open AnalysisInstance in

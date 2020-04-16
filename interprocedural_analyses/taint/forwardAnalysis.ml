@@ -41,6 +41,8 @@ module type FUNCTION_CONTEXT = sig
   val return_sink : BackwardState.Tree.t
 
   val debug : bool
+
+  val add_triggered_sinks : location:Location.t -> triggered_sinks:(Root.t * Sinks.t) list -> unit
 end
 
 let number_regexp = Str.regexp "[0-9]+"
@@ -145,6 +147,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution ~callee call_location arguments state call_targets =
+      (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
+         sinks at the end. *)
+      let triggered_sinks = String.Hash_set.create () in
       let apply_call_target state argument_taint (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let { TaintResult.forward; backward; _ } = taint_model.model in
@@ -265,6 +270,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let sink_tree =
             List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
           in
+          (* Compute triggered partial sinks, if any. *)
+          let () =
+            Flow.compute_triggered_sinks ~source_tree:argument_taint ~sink_tree
+            |> List.iter ~f:(fun sink ->
+                   Hash_set.add triggered_sinks (Sinks.show_partial_sink sink))
+          in
+
           (* Add features to arguments. *)
           let state =
             match AccessPath.of_expression ~resolution argument with
@@ -303,6 +315,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           Map.Poly.find tito_effects Sinks.LocalReturn
           |> Option.value ~default:ForwardState.Tree.empty
         in
+        ( if not (Hash_set.is_empty triggered_sinks) then
+            let add_sink (key, taint) roots_and_sinks =
+              let add roots_and_sinks = function
+                | Sinks.PartialSink sink ->
+                    if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
+                      (key, Sinks.TriggeredPartialSink sink) :: roots_and_sinks
+                    else
+                      roots_and_sinks
+                | _ -> roots_and_sinks
+              in
+              BackwardTaint.leaves (BackwardState.Tree.collapse taint)
+              |> List.fold ~f:add ~init:roots_and_sinks
+            in
+            let triggered_sinks =
+              BackwardState.fold BackwardState.KeyValue backward.sink_taint ~init:[] ~f:add_sink
+            in
+            let { Location.WithModule.start; stop; _ } = call_location in
+            FunctionContext.add_triggered_sinks ~location:{ Location.start; stop } ~triggered_sinks
+        );
         let apply_tito_side_effects tito_effects state =
           (* We also have to consider the cases when the updated parameter has a global model, in
              which case we need to capture the flow. *)
@@ -1234,6 +1265,12 @@ let run ~environment ~qualifier ~define ~existing_model =
            (Location.with_module ~qualifier return_location)
            ~callees:[]
            ~port:AccessPath.Root.LocalResult
+
+
+    let triggered_sinks = Location.Table.create ()
+
+    let add_triggered_sinks ~location ~triggered_sinks:new_triggered_sinks =
+      Hashtbl.set triggered_sinks ~key:location ~data:new_triggered_sinks
   end
   in
   let module AnalysisInstance = AnalysisInstance (Context) in
@@ -1270,4 +1307,4 @@ let run ~environment ~qualifier ~define ~existing_model =
     ~normals:["callable", Reference.show name]
     ~timer
     ();
-  model, issues
+  model, issues, Context.triggered_sinks
