@@ -7,17 +7,32 @@ import argparse
 import asyncio
 import json
 import re
+import subprocess
 import sys
 from asyncio.events import AbstractEventLoop
+from pathlib import Path
 from typing import Optional, Union
 
+from ..client.find_directories import find_local_root
 from ..client.json_rpc import Response
+from ..client.resources import log_directory
 
 
 def _should_run_null_server(null_server_flag: bool) -> bool:
     # TODO[T58989824]: We also need to check if the project can be run here.
     # Needs updating to mimic the current implementation (i.e. catch the buck errors)
     return null_server_flag
+
+
+def socket_exists(current_directory: str) -> bool:
+    local_root = find_local_root(original_directory=current_directory)
+    return Path.exists(
+        log_directory(current_directory, local_root, "server") / "adapter.sock"
+    )
+
+
+def start_server(current_directory: str) -> None:
+    subprocess.run(["pyre", "start"], cwd=current_directory)
 
 
 def _null_initialize_response(request_id: Optional[Union[str, int]]) -> None:
@@ -39,8 +54,11 @@ class AdapterProtocol(asyncio.Protocol):
 
 
 def main(arguments: argparse.Namespace) -> None:
+    root = arguments.root
     loop: AbstractEventLoop = asyncio.get_event_loop()
     try:
+        if not socket_exists(root):
+            start_server(root)
         if _should_run_null_server(arguments.null_server):
             stdin_pipe_reader = loop.connect_read_pipe(
                 NullServerAdapterProtocol, sys.stdin
