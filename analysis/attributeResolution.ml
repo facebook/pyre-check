@@ -622,15 +622,9 @@ module SignatureSelectionTypes = struct
   [@@deriving eq, show, sexp]
 
   module Argument = struct
-    type kind =
-      | SingleStar
-      | DoubleStar
-      | Named of string Node.t
-      | Positional
-
     type t = {
       expression: Expression.t option;
-      kind: kind;
+      kind: Ast.Expression.Call.Argument.kind;
       resolved: Type.t;
     }
   end
@@ -638,7 +632,7 @@ module SignatureSelectionTypes = struct
   type argument_with_position = {
     position: int;
     expression: Expression.t option;
-    kind: Argument.kind;
+    kind: Ast.Expression.Call.Argument.kind;
     resolved: Type.t;
   }
 
@@ -3052,7 +3046,6 @@ module Implementation = struct
     =
     let open SignatureSelectionTypes in
     let order = full_order ~assumptions ?dependency class_metadata_environment in
-    let open Expression in
     let open Type.Callable in
     let match_arity ~all_parameters signature_match ~arguments ~parameters =
       let all_arguments = arguments in
@@ -3100,7 +3093,7 @@ module Implementation = struct
         | [], [] ->
             (* Both empty *)
             signature_match
-        | { SignatureSelectionTypes.kind = Argument.SingleStar; _ } :: arguments_tail, []
+        | { SignatureSelectionTypes.kind = SingleStar; _ } :: arguments_tail, []
         | { kind = DoubleStar; _ } :: arguments_tail, [] ->
             (* Starred or double starred arguments; parameters empty *)
             consume ~arguments:arguments_tail ~parameters signature_match
@@ -3840,16 +3833,8 @@ module Implementation = struct
               in
               List.mapi resolved ~f:add_index
           | Unresolved unresolved ->
-              let create_argument index { Call.Argument.name; value } =
-                let expression, kind =
-                  match value, name with
-                  | { Node.value = Starred (Starred.Once expression); _ }, _ ->
-                      expression, Argument.SingleStar
-                  | { Node.value = Starred (Starred.Twice expression); _ }, _ ->
-                      expression, DoubleStar
-                  | expression, Some name -> expression, Named name
-                  | expression, None -> expression, Positional
-                in
+              let create_argument index argument =
+                let expression, kind = Ast.Expression.Call.Argument.unpack argument in
                 let resolved = resolve_with_locals ~locals:[] expression in
                 { position = index + 1; expression = Some expression; kind; resolved }
               in

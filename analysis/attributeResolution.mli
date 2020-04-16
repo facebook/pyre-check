@@ -125,15 +125,9 @@ type closest = {
 [@@deriving show]
 
 module Argument : sig
-  type kind =
-    | SingleStar
-    | DoubleStar
-    | Named of string Node.t
-    | Positional
-
   type t = {
     expression: Expression.t option;
-    kind: kind;
+    kind: Ast.Expression.Call.Argument.kind;
     resolved: Type.t;
   }
 end

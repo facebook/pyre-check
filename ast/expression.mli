@@ -46,7 +46,15 @@ and Call : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+    type kind =
+      | SingleStar
+      | DoubleStar
+      | Named of string Node.t
+      | Positional
+
     val location_insensitive_compare : t -> t -> int
+
+    val unpack : t -> Expression.t * kind
   end
 
   type t = {

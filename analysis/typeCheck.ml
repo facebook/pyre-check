@@ -1670,13 +1670,20 @@ module State (Context : Context) = struct
               { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None } )
     in
     let forward_callable ~resolution ~errors ~target ~dynamic ~callee ~resolved ~arguments =
-      let resolution, errors =
-        let forward_argument (resolution, errors) { Call.Argument.value; _ } =
-          forward_expression ~resolution ~expression:value
-          |> fun { resolution; errors = new_errors; _ } -> resolution, List.append new_errors errors
+      let original_arguments = arguments in
+      let resolution, errors, reversed_arguments =
+        let forward_argument (resolution, errors, reversed_arguments) argument =
+          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+          forward_expression ~resolution ~expression
+          |> fun { resolution; errors = new_errors; resolved; _ } ->
+          ( resolution,
+            List.append new_errors errors,
+            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+            :: reversed_arguments )
         in
-        List.fold arguments ~f:forward_argument ~init:(resolution, errors)
+        List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
       in
+      let arguments = List.rev reversed_arguments in
       let unpack_callable_and_self_argument = function
         | Type.Callable callable -> Some { callable; self_argument = None }
         | Parametric
@@ -1757,14 +1764,21 @@ module State (Context : Context) = struct
             | Type.Variable { constraints = Type.Variable.Bound parent; _ } -> get_callables parent
             | Type.Top -> (
                 match Node.value callee, arguments with
-                | Expression.Name (Attribute { base; attribute; _ }), [{ Call.Argument.value; _ }]
-                  ->
-                    let inverted_arguments = [{ Call.Argument.value = base; name = None }] in
+                | ( Expression.Name (Attribute { base; attribute; _ }),
+                    [{ AttributeResolution.Argument.resolved; _ }] ) ->
                     inverse_operator attribute
-                    >>= (fun name ->
-                          find_method ~parent:(resolve_expression_type ~resolution value) ~name)
+                    >>= (fun name -> find_method ~parent:resolved ~name)
                     >>= (fun found_callable ->
                           let resolved_base = resolve_expression_type ~resolution base in
+                          let inverted_arguments =
+                            [
+                              {
+                                AttributeResolution.Argument.expression = Some base;
+                                resolved = resolved_base;
+                                kind = Positional;
+                              };
+                            ]
+                          in
                           if Type.is_any resolved_base || Type.is_unbound resolved_base then
                             callable resolved >>| fun callable -> [callable], arguments, false
                           else
@@ -1782,7 +1796,7 @@ module State (Context : Context) = struct
           ~global_resolution
           ~target
           ~callables:(callables >>| List.map ~f:(fun { callable; _ } -> callable))
-          ~arguments
+          ~arguments:original_arguments
           ~dynamic
           ~qualifier:Context.qualifier
           ~callee;
@@ -1792,7 +1806,7 @@ module State (Context : Context) = struct
           let signature =
             GlobalResolution.signature_select
             (* TODO use Resolved to reuse resolved types from above *)
-              ~arguments:(Unresolved arguments)
+              ~arguments:(Resolved arguments)
               ~global_resolution
               ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
               ~callable
@@ -1803,15 +1817,13 @@ module State (Context : Context) = struct
               match Node.value callee, callable, arguments with
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
-                  [{ Call.Argument.value; _ }] )
+                  [{ AttributeResolution.Argument.resolved; _ }] )
                 when not was_operator_inverted ->
-                  let arguments = [{ Call.Argument.value = base; name = None }] in
                   inverse_operator (Reference.last name)
-                  >>= (fun name ->
-                        find_method ~parent:(resolve_expression_type ~resolution value) ~name)
+                  >>= (fun name -> find_method ~parent:resolved ~name)
                   >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
+                        let arguments = [{ Call.Argument.value = base; name = None }] in
                         ( GlobalResolution.signature_select
-                          (* TODO use Resolved to reuse resolved types from above *)
                             ~arguments:(Unresolved arguments)
                             ~global_resolution:(Resolution.global_resolution resolution)
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
@@ -1929,7 +1941,8 @@ module State (Context : Context) = struct
                   match method_name, arguments with
                   | ( "__setitem__",
                       {
-                        Call.Argument.value = { Node.value = String { value = field_name; _ }; _ };
+                        AttributeResolution.Argument.expression =
+                          Some { Node.value = String { value = field_name; _ }; _ };
                         _;
                       }
                       :: _ ) ->

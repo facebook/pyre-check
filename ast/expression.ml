@@ -85,7 +85,15 @@ and Call : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+    type kind =
+      | SingleStar
+      | DoubleStar
+      | Named of string Node.t
+      | Positional
+
     val location_insensitive_compare : t -> t -> int
+
+    val unpack : t -> Expression.t * kind
   end
 
   type t = {
@@ -103,6 +111,12 @@ end = struct
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+    type kind =
+      | SingleStar
+      | DoubleStar
+      | Named of string Node.t
+      | Positional
+
     let location_insensitive_compare left right =
       match
         Option.compare
@@ -112,6 +126,15 @@ end = struct
       with
       | x when not (Int.equal x 0) -> x
       | _ -> Expression.location_insensitive_compare left.value right.value
+
+
+    let unpack = function
+      | { value = { Node.value = Starred (Starred.Once expression); _ }; _ } ->
+          expression, SingleStar
+      | { value = { Node.value = Starred (Starred.Twice expression); _ }; _ } ->
+          expression, DoubleStar
+      | { value; name = Some name } -> value, Named name
+      | { value; name = None } -> value, Positional
   end
 
   type t = {
