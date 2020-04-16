@@ -147,7 +147,12 @@ class RawCallableModel(Model):
     # Need to explicitly define this(despite baseclass) as we are overriding eq
     def __hash__(self) -> int:
         parameter_names_string = ",".join(
-            map(lambda parameter: parameter.name, self.parameters)
+            map(
+                lambda parameter: f"{parameter.name}:{parameter.annotation}"
+                if parameter.annotation
+                else f"{parameter.name}:_empty",
+                self.parameters,
+            )
         )
         return hash((self.callable_name, parameter_names_string))
 
