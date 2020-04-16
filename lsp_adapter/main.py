@@ -56,5 +56,6 @@ def main(arguments: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LSP adapter for Pyre.")
     parser.add_argument("--null-server", default=False, action="store_true")
+    parser.add_argument("--root", type=str, required=True)
     arguments: argparse.Namespace = parser.parse_args()
     main(arguments)

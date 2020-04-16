@@ -29,18 +29,17 @@ from ..filesystem import readable_directory, remove_if_exists, translate_path
 from ..find_directories import (
     LOCAL_CONFIGURATION_FILE,
     find_local_root,
-    find_log_directory,
     find_project_root,
 )
 from ..log import StreamLogger
 from ..process import register_non_unique_process
+from ..resources import LOG_DIRECTORY, find_log_directory
 from ..socket_connection import SocketConnection, SocketException
 
 
 TEXT: str = "text"
 JSON: str = "json"
 
-LOG_DIRECTORY: str = ".pyre"
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

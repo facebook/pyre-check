@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import __name__ as client_name
 from ..filesystem import __name__ as filesystem_name
-from ..find_directories import find_local_root, find_log_directory, find_project_root
+from ..find_directories import find_local_root, find_project_root
 
 
 class InitTest(unittest.TestCase):
@@ -53,18 +53,3 @@ class InitTest(unittest.TestCase):
             )
             find_local_root(original_directory)
             warning.assert_called_once()
-
-    def test_find_log_directory(self) -> None:
-        local_configuration = None
-        current_directory = "project"
-        log_directory = find_log_directory(
-            current_directory, local_configuration, dot_pyre_directory="project/.pyre"
-        )
-        self.assertEqual(log_directory, "project/.pyre")
-
-        local_configuration = "/project/subdirectory"
-        current_directory = "/project"
-        log_directory = find_log_directory(
-            current_directory, local_configuration, "/project/.pyre"
-        )
-        self.assertEqual(log_directory, "/project/.pyre/subdirectory")
