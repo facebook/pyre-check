@@ -3677,8 +3677,8 @@ module State (Context : Context) = struct
                               visibility attribute, property attribute, initialized attribute
                             in
                             match attribute >>| fst >>| relevant_properties with
-                            | Some (ReadOnly _, false, Implicitly) when Define.is_constructor define
-                              ->
+                            | Some (ReadOnly _, false, OnlyOnInstance)
+                              when Define.is_constructor define ->
                                 false
                             | Some (ReadOnly _, false, _) -> true
                             | _ -> false

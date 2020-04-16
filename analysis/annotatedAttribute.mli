@@ -16,8 +16,8 @@ type visibility =
 [@@deriving eq, show, compare, sexp]
 
 type initialized =
-  | Explicitly
-  | Implicitly
+  | OnClass
+  | OnlyOnInstance
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 

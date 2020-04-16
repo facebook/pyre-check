@@ -375,7 +375,7 @@ let test_class_attributes context =
   let create_simple_attribute
       ?(annotation = Type.integer)
       ?(class_attribute = false)
-      ?(initialized = Attribute.Explicitly)
+      ?(initialized = Attribute.OnClass)
       ~parent
       name
     =
@@ -446,7 +446,7 @@ let test_class_attributes context =
       create_simple_attribute
         ~parent:"test.foo"
         ~annotation:constructor
-        ~initialized:Explicitly
+        ~initialized:OnClass
         "__init__";
       create_simple_attribute
         ~parent:"test.foo"
@@ -454,7 +454,7 @@ let test_class_attributes context =
         ~initialized:NotInitialized
         "class_attribute";
       create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "first";
-      create_simple_attribute ~parent:"test.foo" ~initialized:Implicitly "implicit";
+      create_simple_attribute ~parent:"test.foo" ~initialized:OnlyOnInstance "implicit";
       create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "second";
       create_simple_attribute ~parent:"test.foo" "third";
     ];
@@ -530,7 +530,7 @@ let test_class_attributes context =
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
-      ?(initialized = Annotated.Attribute.Explicitly)
+      ?(initialized = Annotated.Attribute.OnClass)
       ?(defined = true)
       ?callable_name
       name
@@ -600,7 +600,7 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.DC"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
+         ~initialized:OnlyOnInstance
          "x"
          "int");
   assert_attribute
@@ -611,7 +611,7 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.Parent"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
+         ~initialized:OnlyOnInstance
          "inherited"
          "int");
   assert_attribute
@@ -622,7 +622,7 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.NT"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
+         ~initialized:OnlyOnInstance
          "x"
          "int");
   assert_attribute
@@ -678,7 +678,7 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"typing.Callable"
          ~visibility:ReadWrite
-         ~initialized:Explicitly
+         ~initialized:OnClass
          "__call__"
          "typing.Callable[[Named(x, str)], int]");
   assert_attribute
@@ -826,7 +826,7 @@ let test_typed_dictionary_individual_attributes context =
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
-      ?(initialized = Annotated.Attribute.Explicitly)
+      ?(initialized = Annotated.Attribute.OnClass)
       ?(defined = true)
       ~annotation
       name

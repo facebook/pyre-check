@@ -25,7 +25,7 @@ let make_attributes ~class_name =
       ~async:false
       ~class_attribute:false
       ~defined:true
-      ~initialized:Explicitly
+      ~initialized:OnClass
       ~parent:class_name
       ~property:false
       ~static:false

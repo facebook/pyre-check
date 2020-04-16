@@ -76,7 +76,7 @@ module UninstantiatedAttributeTable = struct
     in
     match Caml.Hashtbl.find_opt attributes name with
     | Some attribute when is_uninitialized attribute ->
-        AnnotatedAttribute.with_initialized ~initialized:Implicitly attribute
+        AnnotatedAttribute.with_initialized ~initialized:OnlyOnInstance attribute
         |> Caml.Hashtbl.replace attributes name
     | _ -> ()
 
@@ -1090,7 +1090,7 @@ module Implementation = struct
                 ~async:false
                 ~class_attribute:false
                 ~defined:true
-                ~initialized:Explicitly
+                ~initialized:OnClass
                 ~name:attribute_name
                 ~parent:(Reference.show name)
                 ~visibility:ReadWrite
@@ -1701,7 +1701,7 @@ module Implementation = struct
           ~async:false
           ~class_attribute:class_attributes
           ~defined:true
-          ~initialized:Explicitly
+          ~initialized:OnClass
           ~name:"__init__"
           ~parent:class_name
           ~visibility:ReadWrite
@@ -1773,7 +1773,7 @@ module Implementation = struct
                  ~async:false
                  ~class_attribute:false
                  ~defined:true
-                 ~initialized:Explicitly
+                 ~initialized:OnClass
                  ~name:attribute_name
                  ~parent:class_name
                  ~visibility:ReadWrite
@@ -1997,7 +1997,7 @@ module Implementation = struct
           ~async:false
           ~class_attribute:class_attributes
           ~defined:true
-          ~initialized:Explicitly
+          ~initialized:OnClass
           ~name:"__call__"
           ~parent:"typing.Callable"
           ~static:false
@@ -2512,7 +2512,7 @@ module Implementation = struct
     in
     let initialized =
       match kind with
-      | Simple { nested_class = true; _ } -> AnnotatedAttribute.Explicitly
+      | Simple { nested_class = true; _ } -> AnnotatedAttribute.OnClass
       | Simple { values; _ } ->
           let is_not_ellipsis = function
             | { Attribute.value = { Node.value = Ellipsis; _ }; _ } -> false
@@ -2520,12 +2520,12 @@ module Implementation = struct
           in
           List.find values ~f:is_not_ellipsis
           >>| (function
-                | { Attribute.origin = Explicit; _ } -> AnnotatedAttribute.Explicitly
-                | { origin = Implicit; _ } -> Implicitly)
+                | { Attribute.origin = Explicit; _ } -> AnnotatedAttribute.OnClass
+                | { origin = Implicit; _ } -> OnlyOnInstance)
           |> Option.value ~default:AnnotatedAttribute.NotInitialized
       | Method _
       | Property _ ->
-          Explicitly
+          OnClass
     in
     AnnotatedAttribute.create_uninstantiated
       ~uninstantiated_annotation:
