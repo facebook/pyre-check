@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import psutil
 
-from ... import commands
+from ... import watchman
 from ...analysis_directory import AnalysisDirectory
 from .. import kill
 from ..kill import Kill, _get_process_name
@@ -112,14 +112,14 @@ class KillTest(unittest.TestCase):
         # Ensure that we don't crash even if os.kill fails due to permissions.
         kill_command._kill_processes_by_name("pyre-client")
 
-    @patch.object(commands.stop.Subscriber, "stop_subscriber")
+    @patch.object(watchman, "stop_subscriptions")
     @patch.object(Kill, "_kill_processes_by_name")
     @patch.object(Kill, "__init__", return_value=None)
     def test_kill_client_processes(
         self,
         kill_init: MagicMock,
         kill_processes_by_name: MagicMock,
-        stop_subscriber: MagicMock,
+        stop_subscriptions: MagicMock,
     ) -> None:
         kill_command = Kill(
             MagicMock(),
@@ -131,7 +131,7 @@ class KillTest(unittest.TestCase):
         kill_command._configuration = MagicMock(log_directory=".pyre")
         kill_command._kill_client_processes()
         kill_processes_by_name.assert_called_with("pyre-client")
-        stop_subscriber.assert_has_calls(
+        stop_subscriptions.assert_has_calls(
             [
                 call(".pyre/file_monitor", "file_monitor"),
                 call(".pyre/configuration_monitor", "configuration_monitor"),

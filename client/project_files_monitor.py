@@ -8,7 +8,7 @@ import functools
 import os
 from typing import Any, Dict, List, Sequence, Set
 
-from . import json_rpc
+from . import json_rpc, watchman
 from .analysis_directory import AnalysisDirectory
 from .buck import BuckException
 from .configuration import Configuration
@@ -96,7 +96,7 @@ class ProjectFilesMonitor(Subscriber):
 
     @staticmethod
     def is_alive(configuration: Configuration) -> bool:
-        pid_path = ProjectFilesMonitor._compute_pid_path(
+        pid_path = watchman.compute_pid_path(
             ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
         )
         try:

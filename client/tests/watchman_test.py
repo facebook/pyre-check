@@ -55,16 +55,16 @@ class SubscriberTest(unittest.TestCase):
 
     @patch.object(os, "kill")
     @patch.object(watchman.Path, "read_text")
-    def test_stop_subscriber(self, read_text: MagicMock, os_kill: MagicMock) -> None:
+    def test_stop_subscription(self, read_text: MagicMock, os_kill: MagicMock) -> None:
         read_text.return_value = "123"
-        Subscriber.stop_subscriber(".pyre/foo", "some_monitor")
+        watchman.stop_subscriptions(".pyre/foo", "some_monitor")
         os_kill.assert_called_once_with(123, signal.SIGINT)
 
     @patch.object(os, "kill")
     @patch.object(watchman.Path, "read_text")
-    def test_stop_subscriber_handle_exception(
+    def test_stop_subscription_handle_exception(
         self, read_text: MagicMock, os_kill: MagicMock
     ) -> None:
         read_text.side_effect = FileNotFoundError
-        Subscriber.stop_subscriber(".pyre/foo", "some_monitor")
+        watchman.stop_subscriptions(".pyre/foo", "some_monitor")
         os_kill.assert_not_called()

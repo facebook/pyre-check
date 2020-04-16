@@ -16,12 +16,11 @@ from typing import Optional
 
 import psutil
 
-from .. import configuration_monitor
+from .. import configuration_monitor, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
-from ..watchman import Subscriber
 from .command import Command
 from .rage import Rage
 
@@ -184,10 +183,10 @@ class Kill(Command):
 
     def _kill_client_processes(self) -> None:
         self._kill_processes_by_name(CLIENT_NAME)
-        Subscriber.stop_subscriber(
+        watchman.stop_subscriptions(
             ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
         )
-        Subscriber.stop_subscriber(
+        watchman.stop_subscriptions(
             configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
             configuration_monitor.ConfigurationMonitor.NAME,
         )

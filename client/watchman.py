@@ -26,6 +26,10 @@ Subscription = NamedTuple(
 )
 
 
+def compute_pid_path(base_path: str, name: str) -> str:
+    return str(Path(base_path, f"{name}.pid"))
+
+
 class Subscriber(object):
     def __init__(self, base_path: str) -> None:
         self._base_path: str = base_path
@@ -52,10 +56,6 @@ class Subscriber(object):
             Callback invoked when a message is received from watchman
         """
         raise NotImplementedError
-
-    @staticmethod
-    def _compute_pid_path(base_path: str, name: str) -> str:
-        return str(Path(base_path, f"{name}.pid"))
 
     @property
     @functools.lru_cache(1)
@@ -87,7 +87,7 @@ class Subscriber(object):
         try:
             with acquire_lock(lock_path, blocking=False), (
                 register_unique_process(
-                    os.getpid(), self._compute_pid_path(self._base_path, self._name)
+                    os.getpid(), compute_pid_path(self._base_path, self._name)
                 )
             ):
                 LOG.debug(f"Acquired lock on {lock_path}")
@@ -152,17 +152,17 @@ class Subscriber(object):
             else:
                 sys.exit(0)
 
-    @staticmethod
-    def stop_subscriber(base_path: str, subscriber_name: str) -> None:
-        try:
-            pid_path = Path(Subscriber._compute_pid_path(base_path, subscriber_name))
-            pid = int(pid_path.read_text())
-            os.kill(pid, signal.SIGINT)
-            LOG.debug(f"Stopped the {subscriber_name} with pid {pid}.")
-        except FileNotFoundError:
-            LOG.debug(f"Could not stop the {subscriber_name} because it was not found.")
-        except (OSError, ValueError) as exception:
-            LOG.debug(
-                f"Could not stop the {subscriber_name} "
-                f"because of exception `{exception}`."
-            )
+
+def stop_subscriptions(base_path: str, subscriber_name: str) -> None:
+    try:
+        pid_path = Path(compute_pid_path(base_path, subscriber_name))
+        pid = int(pid_path.read_text())
+        os.kill(pid, signal.SIGINT)
+        LOG.debug(f"Stopped the {subscriber_name} with pid {pid}.")
+    except FileNotFoundError:
+        LOG.debug(f"Could not stop the {subscriber_name} because it was not found.")
+    except (OSError, ValueError) as exception:
+        LOG.debug(
+            f"Could not stop the {subscriber_name} "
+            f"because of exception `{exception}`."
+        )
