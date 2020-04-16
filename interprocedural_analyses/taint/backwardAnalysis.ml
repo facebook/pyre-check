@@ -37,7 +37,7 @@ module type FUNCTION_CONTEXT = sig
 
   val debug : bool
 
-  val triggered_sinks : Flow.triggered_sinks
+  val triggered_sinks : ForwardAnalysis.triggered_sinks
 end
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct

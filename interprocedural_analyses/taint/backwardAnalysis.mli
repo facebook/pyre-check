@@ -12,5 +12,5 @@ val run
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
-  triggered_sinks:Flow.triggered_sinks ->
+  triggered_sinks:ForwardAnalysis.triggered_sinks ->
   TaintResult.Backward.model

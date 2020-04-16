@@ -7,7 +7,6 @@ open Core
 open Ast
 open Configuration
 open Domains
-open Pyre
 
 type flow = {
   source_taint: ForwardTaint.t;
@@ -30,7 +29,7 @@ type issue = {
   define: Statement.Define.t Node.t;
 }
 
-type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
+type triggered_sinks = String.Hash_set.t
 
 (* Compute all flows from paths in ~source tree to corresponding paths in ~sink tree, while avoiding
    duplication as much as possible.
@@ -270,7 +269,7 @@ let code_metadata () =
     (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
 
 
-let compute_triggered_sinks ~source_tree ~sink_tree =
+let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse sink_tree
     |> BackwardTaint.partition BackwardTaint.leaf ~f:(function
@@ -283,15 +282,34 @@ let compute_triggered_sinks ~source_tree ~sink_tree =
       |> ForwardState.Tree.partition ForwardTaint.leaf ~f:(fun source -> Some source)
       |> Map.Poly.keys
     in
-    let add_triggered_sinks triggered sink =
+    let add_triggered_sinks (triggered, candidates) sink =
       let add_triggered_sinks_for_source source =
         Configuration.get_triggered_sink ~partial_sink:sink ~source
-        >>= function
-        | Sinks.TriggeredPartialSink triggered_sink -> Some triggered_sink
-        | _ -> None
+        |> function
+        | Some (Sinks.TriggeredPartialSink triggered_sink) ->
+            if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
+              (* We have both pairs, let's check the flow directly for this sink being triggered. *)
+              let candidate =
+                generate_source_sink_matches
+                  ~location
+                  ~source_tree
+                  ~sink_tree:
+                    (BackwardState.Tree.create_leaf
+                       (BackwardTaint.singleton ~location (Sinks.TriggeredPartialSink sink)))
+              in
+              None, Some candidate
+            else
+              Some triggered_sink, None
+        | _ -> None, None
       in
-      List.filter_map sources ~f:add_triggered_sinks_for_source |> List.rev_append triggered
+      let new_triggered, new_candidates =
+        List.map sources ~f:add_triggered_sinks_for_source
+        |> List.unzip
+        |> fun (triggered_sinks, candidates) ->
+        List.filter_opt triggered_sinks, List.filter_opt candidates
+      in
+      List.rev_append new_triggered triggered, List.rev_append new_candidates candidates
     in
-    partial_sinks_to_taint |> Core.Map.Poly.keys |> List.fold ~f:add_triggered_sinks ~init:[]
+    partial_sinks_to_taint |> Core.Map.Poly.keys |> List.fold ~f:add_triggered_sinks ~init:([], [])
   else
-    []
+    [], []

@@ -2,6 +2,58 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
+    "callable_line": 21,
+    "code": 4321,
+    "line": 24,
+    "start": 22,
+    "end": 24,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 23,
+              "start": 9,
+              "end": 29
+            },
+            "leaves": [
+              {
+                "kind": "PermissiveContext",
+                "name": "multiple_sources.permissive_context",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "multiple_sources.py",
+              "line": 24,
+              "start": 22,
+              "end": 24
+            },
+            "leaves": [
+              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
+            ]
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "multiple_sources.issue_with_triggered_context",
     "callable_line": 42,
     "code": 4321,

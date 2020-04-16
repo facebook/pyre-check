@@ -23,6 +23,8 @@ module type FixpointState = sig
     t
 end
 
+type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
+
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
 
@@ -34,6 +36,13 @@ module type FUNCTION_CONTEXT = sig
 
   val check_flow
     :  location:Location.WithModule.t ->
+    source_tree:ForwardState.Tree.t ->
+    sink_tree:BackwardState.Tree.t ->
+    unit
+
+  val check_triggered_flows
+    :  triggered_sinks:Flow.triggered_sinks ->
+    location:Location.WithModule.t ->
     source_tree:ForwardState.Tree.t ->
     sink_tree:BackwardState.Tree.t ->
     unit
@@ -272,9 +281,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           (* Compute triggered partial sinks, if any. *)
           let () =
-            Flow.compute_triggered_sinks ~source_tree:argument_taint ~sink_tree
-            |> List.iter ~f:(fun sink ->
-                   Hash_set.add triggered_sinks (Sinks.show_partial_sink sink))
+            FunctionContext.check_triggered_flows
+              ~triggered_sinks
+              ~location
+              ~source_tree:argument_taint
+              ~sink_tree
           in
 
           (* Add features to arguments. *)
@@ -1241,6 +1252,16 @@ let run ~environment ~qualifier ~define ~existing_model =
     let check_flow ~location ~source_tree ~sink_tree =
       let flow_candidate = Flow.generate_source_sink_matches ~location ~source_tree ~sink_tree in
       add_flow_candidate flow_candidate
+
+
+    let check_triggered_flows ~triggered_sinks ~location ~source_tree ~sink_tree =
+      let triggered, candidates =
+        Flow.compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree
+      in
+
+      List.iter triggered ~f:(fun sink ->
+          Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
+      List.iter candidates ~f:add_flow_candidate
 
 
     let generate_issues () =

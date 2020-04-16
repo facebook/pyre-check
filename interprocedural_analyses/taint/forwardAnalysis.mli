@@ -7,9 +7,11 @@ open Ast
 open Analysis
 open Statement
 
+type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
+
 val run
   :  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
-  TaintResult.Forward.model * TaintResult.result * Flow.triggered_sinks
+  TaintResult.Forward.model * TaintResult.result * triggered_sinks

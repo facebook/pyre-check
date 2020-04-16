@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
 open Ast
 open Statement
 open Domains
@@ -34,7 +35,7 @@ type issue = {
   define: Ast.Statement.Define.t Ast.Node.t;
 }
 
-type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
+type triggered_sinks = String.Hash_set.t
 
 val partition_flows
   :  ?sources:(Sources.t -> bool) ->
@@ -62,6 +63,8 @@ val code_metadata : unit -> Yojson.Safe.json
 
 (* Will modify the triggered_sinks data structure, adding the newly triggered sinks. *)
 val compute_triggered_sinks
-  :  source_tree:ForwardState.Tree.t ->
+  :  triggered_sinks:triggered_sinks ->
+  location:Location.WithModule.t ->
+  source_tree:ForwardState.Tree.t ->
   sink_tree:BackwardState.Tree.t ->
-  Sinks.partial_sink list
+  Sinks.partial_sink list * candidate list
