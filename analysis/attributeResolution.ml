@@ -1090,7 +1090,7 @@ module Implementation = struct
                 ~async:false
                 ~class_attribute:false
                 ~defined:true
-                ~initialized:Implicitly
+                ~initialized:Explicitly
                 ~name:attribute_name
                 ~parent:(Reference.show name)
                 ~visibility:ReadWrite
@@ -1701,7 +1701,7 @@ module Implementation = struct
           ~async:false
           ~class_attribute:class_attributes
           ~defined:true
-          ~initialized:Implicitly
+          ~initialized:Explicitly
           ~name:"__init__"
           ~parent:class_name
           ~visibility:ReadWrite
@@ -1773,7 +1773,7 @@ module Implementation = struct
                  ~async:false
                  ~class_attribute:false
                  ~defined:true
-                 ~initialized:Implicitly
+                 ~initialized:Explicitly
                  ~name:attribute_name
                  ~parent:class_name
                  ~visibility:ReadWrite
@@ -2512,7 +2512,7 @@ module Implementation = struct
     in
     let initialized =
       match kind with
-      | Simple { nested_class = true; _ } -> AnnotatedAttribute.Implicitly
+      | Simple { nested_class = true; _ } -> AnnotatedAttribute.Explicitly
       | Simple { values; _ } ->
           let is_not_ellipsis = function
             | { Attribute.value = { Node.value = Ellipsis; _ }; _ } -> false
@@ -2525,7 +2525,7 @@ module Implementation = struct
           |> Option.value ~default:AnnotatedAttribute.NotInitialized
       | Method _
       | Property _ ->
-          Implicitly
+          Explicitly
     in
     AnnotatedAttribute.create_uninstantiated
       ~uninstantiated_annotation:

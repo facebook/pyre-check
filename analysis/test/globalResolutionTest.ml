@@ -446,7 +446,7 @@ let test_class_attributes context =
       create_simple_attribute
         ~parent:"test.foo"
         ~annotation:constructor
-        ~initialized:Implicitly
+        ~initialized:Explicitly
         "__init__";
       create_simple_attribute
         ~parent:"test.foo"
@@ -530,7 +530,7 @@ let test_class_attributes context =
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
-      ?(initialized = Annotated.Attribute.Implicitly)
+      ?(initialized = Annotated.Attribute.Explicitly)
       ?(defined = true)
       ?callable_name
       name
@@ -633,7 +633,6 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.Prot"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
          "method"
          "typing.Callable[[Named(x, int)], str]");
   (* This is still not great, since the signature of ExplicitProtChild.method is probably actually
@@ -647,7 +646,6 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.Prot"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
          ~callable_name:(Reference.create "test.Prot.method")
          "method"
          "BoundMethod[typing.Callable[[Named(self, test.Prot), Named(x, int)], str], \
@@ -691,7 +689,6 @@ let test_class_attributes context =
       (create_expected_attribute
          ~parent:"test.ChildOfPlaceholderStub"
          ~visibility:ReadWrite
-         ~initialized:Implicitly
          "__getattr__"
          "BoundMethod[typing.Callable[..., typing.Any], test.ChildOfPlaceholderStub]");
   ()
@@ -829,7 +826,7 @@ let test_typed_dictionary_individual_attributes context =
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
-      ?(initialized = Annotated.Attribute.Implicitly)
+      ?(initialized = Annotated.Attribute.Explicitly)
       ?(defined = true)
       ~annotation
       name
