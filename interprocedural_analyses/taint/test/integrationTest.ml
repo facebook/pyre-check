@@ -94,7 +94,8 @@ let test_integration context =
           let path = Path.with_suffix path ~suffix:".config" in
           File.create path
           |> File.content
-          |> Option.map ~f:Taint.TaintConfiguration.parse
+          |> Option.map ~f:(fun content ->
+                 Taint.TaintConfiguration.parse [Yojson.Safe.from_string content])
           |> Option.value ~default:Taint.TaintConfiguration.default
         with
         | Unix.Unix_error _ -> Taint.TaintConfiguration.default

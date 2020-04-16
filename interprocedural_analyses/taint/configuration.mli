@@ -48,7 +48,7 @@ exception
     parse_error: string;
   }
 
-val parse : string -> t
+val parse : Yojson.Safe.t list -> t
 
 val register : t -> unit
 

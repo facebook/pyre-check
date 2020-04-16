@@ -8,9 +8,11 @@ open OUnit2
 open Taint
 open Pyre
 
+let parse configuration = TaintConfiguration.parse [Yojson.Safe.from_string configuration]
+
 let test_simple _ =
   let configuration =
-    TaintConfiguration.parse
+    parse
       {|
     { sources: [
         { name: "A" },
@@ -45,7 +47,7 @@ let test_simple _ =
 
 let test_invalid_source _ =
   let parse () =
-    TaintConfiguration.parse
+    parse
       {|
     { sources: [
         { name: "A" },
@@ -72,7 +74,7 @@ let test_invalid_source _ =
 
 let test_invalid_sink _ =
   let parse () =
-    TaintConfiguration.parse
+    parse
       {|
     { sources: [
       ],
@@ -98,7 +100,7 @@ let test_invalid_sink _ =
 
 let test_combined_source_rules _ =
   let configuration =
-    TaintConfiguration.parse
+    parse
       {|
     { sources: [
         { name: "A" },
@@ -146,7 +148,7 @@ let test_combined_source_rules _ =
 
 let test_combined_source_parse_errors _ =
   let assert_fails configuration ~expected =
-    assert_raises expected (fun () -> TaintConfiguration.parse configuration |> ignore)
+    assert_raises expected (fun () -> parse configuration |> ignore)
   in
   assert_fails
     {|
@@ -228,13 +230,13 @@ let test_combined_source_parse_errors _ =
 
 let test_empty _ =
   assert_raises (Yojson.Json_error "Blank input data") (fun () ->
-      let _ = TaintConfiguration.parse {| |} in
+      let _ = parse {| |} in
       ())
 
 
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
-    Taint.TaintConfiguration.parse configuration |> Taint.TaintConfiguration.register;
+    parse configuration |> Taint.TaintConfiguration.register;
     Taint.TaintConfiguration.get_triggered_sink ~partial_sink ~source
     |> assert_equal
          ~cmp:(Option.equal Sinks.equal)
@@ -319,6 +321,53 @@ let test_partial_sink_converter _ =
     ~expected_sink:None
 
 
+let test_multiple_configurations _ =
+  let configuration =
+    TaintConfiguration.parse
+      [
+        Yojson.Safe.from_string
+          {|
+          { sources: [
+              { name: "A" },
+              { name: "B" }
+            ],
+            sinks: [
+              { name: "C" },
+              { name: "D" }
+            ],
+            features: [
+              { name: "E" },
+              { name: "F" }
+            ],
+            rules: []
+           }
+           |};
+        Yojson.Safe.from_string
+          {|
+          {
+            sources: [],
+            sinks: [],
+            features: [],
+            rules: [
+              {
+                 name: "test rule",
+                 sources: ["A"],
+                 sinks: ["D"],
+                 code: 2001,
+                 message_format: "whatever"
+              }
+            ]
+          }
+          |};
+      ]
+  in
+  assert_equal configuration.sources ["A"; "B"];
+  assert_equal configuration.sinks ["D"; "C"];
+  assert_equal configuration.features ["E"; "F"];
+  assert_equal (List.length configuration.rules) 1;
+  assert_equal (List.hd_exn configuration.rules).code 2001
+
+
 let () =
   "configuration"
   >::: [
@@ -329,5 +378,6 @@ let () =
          "invalid_source" >:: test_invalid_source;
          "simple" >:: test_simple;
          "partial_sink_converter" >:: test_partial_sink_converter;
+         "multiple_configurations" >:: test_multiple_configurations;
        ]
   |> Test.run

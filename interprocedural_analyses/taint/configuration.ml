@@ -121,7 +121,7 @@ module PartialSinkConverter = struct
     | _ -> None
 end
 
-let parse source =
+let parse source_jsons =
   let member name json =
     try Json.Util.member name json with
     | Not_found -> `Null
@@ -262,18 +262,37 @@ let parse source =
         in
         { conditional_test }
   in
-  let json = Json.from_string source in
-  let sources = parse_sources json in
-  let sinks, acceptable_sink_labels = parse_sinks json in
-  let features = parse_features json in
+  let sources = List.concat_map source_jsons ~f:parse_sources in
+  let sinks, acceptable_sink_labels =
+    List.map source_jsons ~f:parse_sinks
+    |> List.unzip
+    |> fun (sinks, acceptable_sink_labels) ->
+    ( List.concat sinks,
+      List.fold acceptable_sink_labels ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge )
+  in
+  let features = List.concat_map source_jsons ~f:parse_features in
   let rules =
-    parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~acceptable_sink_labels json
+    List.concat_map
+      source_jsons
+      ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~acceptable_sink_labels)
   in
   let generated_combined_rules, partial_sink_converter =
-    parse_combined_source_rules json ~allowed_sources:sources ~acceptable_sink_labels
+    List.map
+      source_jsons
+      ~f:(parse_combined_source_rules ~allowed_sources:sources ~acceptable_sink_labels)
+    |> List.unzip
+    |> fun (generated_combined_rules, partial_sink_converters) ->
+    ( List.concat generated_combined_rules,
+      List.fold partial_sink_converters ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge )
   in
 
-  let implicit_sinks = parse_implicit_sinks ~allowed_sinks:sinks json in
+  let merge_implicit_sinks left right =
+    { conditional_test = left.conditional_test @ right.conditional_test }
+  in
+  let implicit_sinks =
+    List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
+    |> List.fold ~init:{ conditional_test = [] } ~f:merge_implicit_sinks
+  in
   {
     sources;
     sinks;
@@ -405,41 +424,17 @@ let create ~rule_filter ~paths =
         |> File.create
         |> File.content
         |> Option.value ~default:""
-        |> parse
+        |> Json.from_string
         |> Option.some
       with
       | Yojson.Json_error parse_error
       | Failure parse_error ->
           raise (MalformedConfiguration { path = Path.absolute config_file; parse_error })
   in
-  let merge_implicit_sinks left right =
-    { conditional_test = left.conditional_test @ right.conditional_test }
-  in
-  let merge left right =
-    {
-      sources = left.sources @ right.sources;
-      sinks = left.sinks @ right.sinks;
-      features = left.features @ right.features;
-      rules = left.rules @ right.rules;
-      partial_sink_converter =
-        PartialSinkConverter.merge left.partial_sink_converter right.partial_sink_converter;
-      implicit_sinks = merge_implicit_sinks left.implicit_sinks right.implicit_sinks;
-      acceptable_sink_labels =
-        String.Map.Tree.merge
-          left.acceptable_sink_labels
-          right.acceptable_sink_labels
-          ~f:(fun ~key:_ ->
-          function
-          | `Both (left_labels, right_labels) -> Some (left_labels @ right_labels)
-          | `Left labels
-          | `Right labels ->
-              Some labels);
-    }
-  in
   let configurations = file_paths |> List.filter_map ~f:parse_configuration in
   if List.is_empty configurations then
     raise (Invalid_argument "No `.config` was found in the taint directories.");
-  let ({ rules; _ } as configuration) = List.fold_left configurations ~f:merge ~init:empty in
+  let ({ rules; _ } as configuration) = parse configurations in
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->
