@@ -1053,17 +1053,8 @@ let rec process
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
           LookupCache.evict_path ~state ~configuration path;
-          let check_on_save =
-            Mutex.critical_section connections.lock ~f:(fun () ->
-                let { json_sockets; _ } = !(connections.connections) in
-                List.is_empty json_sockets)
-          in
-          if check_on_save then
-            let configuration = { configuration with include_hints = true } in
-            process_type_check_request ~state ~configuration [path]
-          else (
-            Log.log ~section:`Server "Explicitly ignoring didSave request";
-            { state; response = None } )
+          let configuration = { configuration with include_hints = true } in
+          process_type_check_request ~state ~configuration [path]
       | ShowStatusRequest { message; shortMessage; type_; _ } ->
           let update_function =
             let open LanguageServer.Types in
