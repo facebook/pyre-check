@@ -23,6 +23,55 @@ let _ = show_breadcrumbs (* unused but derived *)
 
 let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
+module DefinitionsCache (Type : sig
+  type t
+end) =
+struct
+  let cache : Type.t Reference.Table.t = Reference.Table.create ()
+
+  let set key value = Hashtbl.set cache ~key ~data:value
+
+  let get = Hashtbl.find cache
+
+  let invalidate () = Hashtbl.clear cache
+end
+
+module ClassDefinitionsCache = DefinitionsCache (struct
+  type t = Class.t Node.t list option
+end)
+
+let containing_source resolution reference =
+  let ast_environment = GlobalResolution.ast_environment resolution in
+  let rec qualifier ~lead ~tail =
+    match tail with
+    | head :: (_ :: _ as tail) ->
+        let new_lead = Reference.create ~prefix:lead head in
+        if not (GlobalResolution.module_exists resolution new_lead) then
+          lead
+        else
+          qualifier ~lead:new_lead ~tail
+    | _ -> lead
+  in
+  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
+  |> AstEnvironment.ReadOnly.get_source ast_environment
+
+
+let class_definitions resolution reference =
+  match ClassDefinitionsCache.get reference with
+  | Some result -> result
+  | None ->
+      let result =
+        containing_source resolution reference
+        >>| Preprocessing.classes
+        >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
+                Reference.equal reference (Node.value name))
+        (* Prefer earlier definitions. *)
+        >>| List.rev
+      in
+      ClassDefinitionsCache.set reference result;
+      result
+
+
 module T = struct
   type parse_result = {
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
@@ -655,7 +704,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             List.filter_map bases ~f:class_source_base
           in
           if (not (List.is_empty sink_annotations)) || not (List.is_empty source_annotations) then
-            GlobalResolution.class_definitions global_resolution name
+            class_definitions global_resolution name
             >>= List.hd
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let signature { Node.value; location } =
@@ -834,7 +883,7 @@ let create ~resolution ?path ~configuration ~rule_filter source =
                   None
             | _ -> None
           in
-          GlobalResolution.class_definitions global_resolution parent
+          class_definitions global_resolution parent
           >>= List.hd
           >>| (fun definition -> definition.Node.value.Class.body)
           >>= List.find_map ~f:get_matching_define

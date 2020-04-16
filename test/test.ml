@@ -1451,7 +1451,7 @@ let create_type_alias_table type_aliases =
 
 
 let mock_scheduler () =
-  Analysis.GlobalResolution.ClassDefinitionsCache.invalidate ();
+  Taint.ModelParser.ClassDefinitionsCache.invalidate ();
   Scheduler.create_sequential ()
 
 

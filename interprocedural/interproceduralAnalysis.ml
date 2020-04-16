@@ -473,7 +473,6 @@ type result = {
 
 (* Called on a worker with a set of functions to analyze. *)
 let one_analysis_pass ~analyses ~step ~environment ~callables =
-  Analysis.GlobalResolution.ClassDefinitionsCache.enable ();
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
     let timer = Timer.start () in

@@ -13,6 +13,7 @@ module Domains = Domains
 module Features = Features
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis
+module ModelParser = ModelParser
 
 module Model = struct
   include Model

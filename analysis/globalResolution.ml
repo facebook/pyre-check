@@ -132,71 +132,10 @@ let module_exists ({ dependency; _ } as resolution) =
   AstEnvironment.ReadOnly.module_exists ?dependency (ast_environment resolution)
 
 
-module DefinitionsCache (Type : sig
-  type t
-end) =
-struct
-  let cache : Type.t Reference.Table.t = Reference.Table.create ()
-
-  let enabled =
-    (* Only enable this in nonincremental mode for now. *)
-    ref false
-
-
-  let enable () = enabled := true
-
-  let set key value = Hashtbl.set cache ~key ~data:value
-
-  let get key =
-    if !enabled then
-      Hashtbl.find cache key
-    else
-      None
-
-
-  let invalidate () = Hashtbl.clear cache
-end
-
-module ClassDefinitionsCache = DefinitionsCache (struct
-  type t = Class.t Node.t list option
-end)
-
-let containing_source resolution reference =
-  let ast_environment = ast_environment resolution in
-  let rec qualifier ~lead ~tail =
-    match tail with
-    | head :: (_ :: _ as tail) ->
-        let new_lead = Reference.create ~prefix:lead head in
-        if not (module_exists resolution new_lead) then
-          lead
-        else
-          qualifier ~lead:new_lead ~tail
-    | _ -> lead
-  in
-  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> AstEnvironment.ReadOnly.get_source ast_environment
-
-
 let function_definitions resolution reference =
   let unannotated_global_environment = unannotated_global_environment resolution in
   UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment reference
   >>| FunctionDefinition.all_bodies
-
-
-let class_definitions resolution reference =
-  match ClassDefinitionsCache.get reference with
-  | Some result -> result
-  | None ->
-      let result =
-        containing_source resolution reference
-        >>| Preprocessing.classes
-        >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
-                Reference.equal reference (Node.value name))
-        (* Prefer earlier definitions. *)
-        >>| List.rev
-      in
-      ClassDefinitionsCache.set reference result;
-      result
 
 
 let full_order ({ dependency; _ } as resolution) =

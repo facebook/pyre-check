@@ -5,6 +5,10 @@
 
 open Pyre
 
+module ClassDefinitionsCache : sig
+  val invalidate : unit -> unit
+end
+
 module T : sig
   type parse_result = {
     models: TaintResult.call_model Interprocedural.Callable.Map.t;

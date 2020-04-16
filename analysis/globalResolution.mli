@@ -100,12 +100,6 @@ val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata opti
 
 val is_protocol : t -> Type.t -> bool
 
-module ClassDefinitionsCache : sig
-  val enable : unit -> unit
-
-  val invalidate : unit -> unit
-end
-
 val function_definitions : t -> Reference.t -> Define.t Node.t list option
 
 val is_suppressed_module : t -> Reference.t -> bool
@@ -144,8 +138,6 @@ val annotation_parser
   :  ?allow_invalid_type_parameters:bool ->
   t ->
   AnnotatedCallable.annotation_parser
-
-val class_definitions : t -> Reference.t -> Class.t Node.t list option
 
 val resolved_type : AttributeResolution.weakened_type -> Type.t
 

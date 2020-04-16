@@ -1118,72 +1118,6 @@ let test_function_definitions context =
   ()
 
 
-let test_class_definitions context =
-  let assert_classes sources class_name expected =
-    let project = ScratchProject.setup ~context sources in
-    let resolution = ScratchProject.build_resolution project in
-    let resolution = Resolution.global_resolution resolution in
-    let classes =
-      GlobalResolution.class_definitions resolution !&class_name
-      >>| List.map ~f:(fun { Node.value = { Class.name; body; _ }; _ } ->
-              Reference.show (Node.value name), List.length body)
-      |> Option.value ~default:[]
-    in
-    let show_element (name, number_of_statements) =
-      Format.sprintf "%s: %d" name number_of_statements
-    in
-    assert_equal
-      ~printer:(fun elements -> List.map elements ~f:show_element |> String.concat ~sep:", ")
-      expected
-      classes
-  in
-  assert_classes ["foo.py", {|
-    class Foo:
-      pass
-  |}] "foo.Foo" ["foo.Foo", 1];
-  assert_classes
-    ["foo.py", {|
-    class Foo:
-      class Bar:
-        pass
-  |}]
-    "foo.Foo.Bar"
-    ["foo.Foo.Bar", 1];
-  assert_classes
-    ["foo.py", {|
-    if sun_is_out():
-      class Foo:
-        pass
-  |}]
-    "foo.Foo"
-    ["foo.Foo", 1];
-  assert_classes
-    [
-      ( "foo.py",
-        {|
-    if sun_is_out():
-      class Foo:
-        pass
-    else:
-      class Foo:
-        a = 1
-        b = 2
-    |}
-      );
-    ]
-    "foo.Foo"
-    ["foo.Foo", 1; "foo.Foo", 2];
-
-  (* Also handle the case where foo.bar is a class but foo.bar the module exists. *)
-  assert_classes
-    ["foo.py", {|
-         class bar:
-           a = 1
-       |}; "foo/bar.py", "pass"]
-    "foo.bar"
-    ["foo.bar", 1]
-
-
 (* We don't reverse order when returning the classes. *)
 
 let test_source_is_unit_test context =
@@ -1402,7 +1336,6 @@ let () =
          >:: test_resolve_mutable_literals_typed_dictionary;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
-         "class_definitions" >:: test_class_definitions;
          "source_is_unit_test" >:: test_source_is_unit_test;
          "fallback_attribute" >:: test_fallback_attribute;
        ]
