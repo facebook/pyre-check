@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import logging
 import os
 import shutil
@@ -11,7 +12,11 @@ from logging import Logger
 from pathlib import Path
 from typing import Optional
 
-from .find_directories import find_project_root
+from .find_directories import (
+    CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
+    find_project_root,
+)
 
 
 TEST_DIRECTORY = "__TEST_DIRECTORY"
@@ -88,3 +93,19 @@ def log_directory(
     if subdirectory is None:
         return log_directory
     return log_directory / subdirectory
+
+
+def get_configuration_value(directory: str, key: str) -> str:
+    local_configuration = Path(directory) / LOCAL_CONFIGURATION_FILE
+    project_root = Path(find_project_root(original_directory=directory))
+    project_configuration = project_root / CONFIGURATION_FILE
+
+    with open(local_configuration) as file:
+        local_configuration = json.load(file)
+
+    if local_configuration.get(key):
+        return local_configuration.get(key)
+    else:
+        with open(project_configuration) as file:
+            project_configuration = json.load(file)
+        return project_configuration.get(key)

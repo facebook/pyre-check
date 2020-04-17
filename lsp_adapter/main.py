@@ -53,18 +53,21 @@ class AdapterProtocol(asyncio.Protocol):
         pass
 
 
+def run_null_server(loop: AbstractEventLoop) -> None:
+    stdin_pipe_reader = loop.connect_read_pipe(NullServerAdapterProtocol, sys.stdin)
+    loop.run_until_complete(stdin_pipe_reader)
+    loop.run_forever()
+
+
 def main(arguments: argparse.Namespace) -> None:
     root = arguments.root
     loop: AbstractEventLoop = asyncio.get_event_loop()
     try:
+        if _should_run_null_server(arguments.null_server):
+            return run_null_server(loop)
         if not socket_exists(root):
             start_server(root)
-        if _should_run_null_server(arguments.null_server):
-            stdin_pipe_reader = loop.connect_read_pipe(
-                NullServerAdapterProtocol, sys.stdin
-            )
-        else:
-            stdin_pipe_reader = loop.connect_read_pipe(AdapterProtocol, sys.stdin)
+        stdin_pipe_reader = loop.connect_read_pipe(AdapterProtocol, sys.stdin)
         loop.run_until_complete(stdin_pipe_reader)
         loop.run_forever()
     finally:
