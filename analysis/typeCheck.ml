@@ -1719,12 +1719,7 @@ module State (Context : Context) = struct
           when Option.is_some (inverse_operator attribute)
                && (not (Type.is_any target))
                && not (Type.is_unbound target) ->
-            Some
-              (Error.UndefinedAttribute
-                 {
-                   attribute;
-                   origin = Error.Class { annotation = target; class_attribute = false };
-                 })
+            Some (Error.UndefinedAttribute { attribute; origin = Error.Class target })
         | _ -> None
       in
       let signatures =
@@ -2830,12 +2825,7 @@ module State (Context : Context) = struct
                     ~errors
                     ~location
                     ~kind:
-                      (Error.UndefinedAttribute
-                         {
-                           attribute;
-                           origin =
-                             Error.Class { annotation = resolved_base; class_attribute = false };
-                         })
+                      (Error.UndefinedAttribute { attribute; origin = Error.Class resolved_base })
                 in
                 {
                   Resolved.resolution;
@@ -2885,7 +2875,7 @@ module State (Context : Context) = struct
                   match reference, definition with
                   | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
                       emit_error ~errors ~location ~kind:(Error.UndefinedName reference)
-                  | _, (attribute, Some target) ->
+                  | _, (_, Some target) ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
@@ -2896,16 +2886,7 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.UndefinedAttribute
-                               {
-                                 attribute = name;
-                                 origin =
-                                   Error.Class
-                                     {
-                                       annotation = target;
-                                       class_attribute =
-                                         Annotated.Attribute.class_attribute attribute;
-                                     };
-                               })
+                               { attribute = name; origin = Error.Class target })
                   | _ ->
                       let enclosing_class_reference =
                         let open Annotated in
@@ -2933,12 +2914,7 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.UndefinedAttribute
-                               {
-                                 attribute = name;
-                                 origin =
-                                   Error.Class
-                                     { annotation = resolved_base; class_attribute = false };
-                               })
+                               { attribute = name; origin = Error.Class resolved_base })
                       else
                         errors
                 in
@@ -3826,15 +3802,7 @@ module State (Context : Context) = struct
                                   ~location
                                   ~kind:
                                     (Error.UndefinedAttribute
-                                       {
-                                         attribute = name;
-                                         origin =
-                                           Error.Class
-                                             {
-                                               annotation = parent;
-                                               class_attribute = Type.is_meta resolved;
-                                             };
-                                       })
+                                       { attribute = name; origin = Error.Class parent })
                               else
                                 errors
                           | _ -> errors

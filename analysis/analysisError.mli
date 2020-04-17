@@ -30,10 +30,7 @@ type invalid_class_instantiation =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Class of {
-      annotation: Type.t;
-      class_attribute: bool;
-    }
+  | Class of Type.t
   | Module of Reference.t
 
 and mismatch = {

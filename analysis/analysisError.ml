@@ -39,10 +39,7 @@ type invalid_class_instantiation =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Class of {
-      annotation: Type.t;
-      class_attribute: bool;
-    }
+  | Class of Type.t
   | Module of Reference.t
 
 and mismatch = {
@@ -1800,19 +1797,15 @@ let messages ~concise ~signature location kind =
       let target =
         match origin with
         | Class
-            {
-              annotation =
-                ( Callable { kind; _ }
-                (* TODO(T64161566): Don't pretend these are just Callables *)
-                | Parametric
-                    { name = "BoundMethod"; parameters = [Single (Callable { kind; _ }); Single _] }
-                  );
-              _;
-            } -> (
+            ( Callable { kind; _ }
+            (* TODO(T64161566): Don't pretend these are just Callables *)
+            | Parametric
+                { name = "BoundMethod"; parameters = [Single (Callable { kind; _ }); Single _] } )
+          -> (
             match kind with
             | Anonymous -> "Anonymous callable"
             | Named name -> Format.asprintf "Callable `%a`" pp_reference name )
-        | Class { annotation; _ } ->
+        | Class annotation ->
             let annotation, _ = Type.split annotation in
             let name =
               if Type.is_optional_primitive annotation then
@@ -1823,16 +1816,7 @@ let messages ~concise ~signature location kind =
             name
         | Module name -> Format.asprintf "Module `%a`" pp_reference name
       in
-      let trace =
-        match origin with
-        | Class { class_attribute; _ } when class_attribute ->
-            [
-              "This attribute is accessed as a class variable; did you mean to declare it with "
-              ^ "`typing.ClassVar`?";
-            ]
-        | _ -> []
-      in
-      [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute] @ trace
+      [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
   | UndefinedName name when concise ->
       [Format.asprintf "Global name `%a` is undefined." pp_reference name]
   | UndefinedName name ->
@@ -2116,7 +2100,7 @@ let due_to_analysis_limitations { kind; _ } =
       || Type.is_type_alias actual
       || Type.is_undeclared actual
   | Top -> true
-  | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.contains_unknown annotation
+  | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
   | DeadStore _
   | Deobfuscation _
@@ -2355,8 +2339,7 @@ let less_or_equal ~resolution left right =
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
-      | Class left, Class right when Bool.equal left.class_attribute right.class_attribute ->
-          GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+      | Class left, Class right -> GlobalResolution.less_or_equal resolution ~left ~right
       | Module left, Module right -> Reference.equal_sanitized left right
       | _ -> false )
   | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right -> true
@@ -2666,8 +2649,8 @@ let join ~resolution left right =
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute ->
-        let annotation = GlobalResolution.join resolution left.annotation right.annotation in
-        UndefinedAttribute { origin = Class { left with annotation }; attribute = left_attribute }
+        let annotation = GlobalResolution.join resolution left right in
+        UndefinedAttribute { origin = Class annotation; attribute = left_attribute }
     | ( UndefinedAttribute { origin = Module left; attribute = left_attribute },
         UndefinedAttribute { origin = Module right; attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute
@@ -2853,7 +2836,7 @@ let join_at_define ~resolution errors =
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
         add_error_to_map (Reference.show_sanitized name)
-    | { kind = UndefinedAttribute { attribute; origin = Class { annotation; _ } }; _ } ->
+    | { kind = UndefinedAttribute { attribute; origin = Class annotation }; _ } ->
         (* Only error once per define on accesses or assigns to an undefined class attribute. *)
         add_error_to_map (attribute ^ Type.show annotation)
     | _ -> error :: errors
@@ -2909,7 +2892,7 @@ let filter ~resolution errors =
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
-      | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
+      | UndefinedAttribute { origin = Class actual; _ } ->
           let is_subclass_of_mock annotation =
             try
               match annotation with
@@ -2989,20 +2972,17 @@ let filter ~resolution errors =
     let is_callable_attribute_error { kind; _ } =
       (* TODO(T53616545): Remove once our decorators are more expressive. *)
       match kind with
-      | UndefinedAttribute { origin = Class { annotation = Callable _; _ }; attribute = "command" }
-        ->
-          true
+      | UndefinedAttribute { origin = Class (Callable _); attribute = "command" } -> true
       (* We also need to filter errors for common mocking patterns. *)
       | UndefinedAttribute
           {
-            origin = Class { annotation = Callable _ | Parametric { name = "BoundMethod"; _ }; _ };
+            origin = Class (Callable _ | Parametric { name = "BoundMethod"; _ });
             attribute =
               ( "assert_not_called" | "assert_called_once" | "assert_called_once_with"
               | "reset_mock" | "assert_has_calls" | "assert_any_call" );
           } ->
           true
-      | UndefinedAttribute
-          { origin = Class { annotation = Callable { kind = Named name; _ }; _ }; _ } ->
+      | UndefinedAttribute { origin = Class (Callable { kind = Named name; _ }); _ } ->
           Reference.last name = "patch"
       | _ -> false
     in
@@ -3414,7 +3394,7 @@ let dequalify
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with
-          | Class { annotation; class_attribute } ->
+          | Class annotation ->
               let annotation =
                 (* Don't dequalify optionals because we special case their display. *)
                 if Type.is_optional_primitive annotation then
@@ -3422,7 +3402,7 @@ let dequalify
                 else
                   dequalify annotation
               in
-              Class { annotation; class_attribute }
+              Class annotation
           | Module module_name -> Module (dequalify_reference module_name)
         in
         UndefinedAttribute { attribute; origin }
