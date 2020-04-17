@@ -2378,7 +2378,7 @@ module Implementation = struct
             |> Option.value ~default:(None, false, default_class_attribute)
           in
           (* Handle enumeration attributes. *)
-          let annotation, value, class_attribute =
+          let annotation, visibility =
             let superclasses =
               ClassMetadataEnvironment.ReadOnly.successors
                 class_metadata_environment
@@ -2393,9 +2393,17 @@ module Implementation = struct
               && defined
               && not implicit
             then
-              Some class_annotation, None, true (* Enums override values. *)
+              Some class_annotation, AnnotatedAttribute.ReadOnly (Refinable { overridable = true })
             else
-              annotation, value, class_attribute
+              let visibility =
+                if final then
+                  AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
+                else if frozen then
+                  ReadOnly (Refinable { overridable = true })
+                else
+                  ReadWrite
+              in
+              annotation, visibility
           in
           let annotation =
             match annotation, value with
@@ -2425,14 +2433,6 @@ module Implementation = struct
                 else
                   Type.Top
             | _ -> Type.Top
-          in
-          let visibility =
-            if final then
-              AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
-            else if frozen then
-              ReadOnly (Refinable { overridable = true })
-            else
-              ReadWrite
           in
           UninstantiatedAnnotation.Attribute annotation, class_attribute, visibility
       | Method { signatures; final; _ } ->
