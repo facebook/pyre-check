@@ -877,14 +877,15 @@ let undeclared = Primitive "typing.Undeclared"
 
 let union parameters =
   let parameters =
-    let rec flattened parameters =
+    let rec flattened parameters ~in_optional =
       let flatten sofar = function
-        | Union parameters -> flattened parameters @ sofar
-        | parameter -> parameter :: sofar
+        | Optional parameter -> flattened [parameter] ~in_optional:true @ sofar
+        | Union parameters -> flattened parameters ~in_optional @ sofar
+        | parameter -> (if in_optional then Optional parameter else parameter) :: sofar
       in
       List.fold ~init:[] ~f:flatten parameters
     in
-    let parameters = Set.of_list (flattened parameters) in
+    let parameters = Set.of_list (flattened parameters ~in_optional:false) in
     let filter_redundant_annotations sofar annotation =
       match annotation with
       | Optional _ -> annotation :: sofar

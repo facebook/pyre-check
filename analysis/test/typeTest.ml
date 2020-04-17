@@ -673,34 +673,41 @@ let test_concise _ =
 
 
 let test_union _ =
-  assert_equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]);
-  assert_equal (Type.union [Type.float; Type.string]) (Type.Union [Type.float; Type.string]);
-  assert_equal
-    (Type.union [Type.optional Type.string; Type.float])
+  let assert_union arguments expected =
+    assert_equal ~printer:Type.show ~cmp:Type.equal expected (Type.union arguments)
+  in
+  assert_union
+    [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
+    (Type.Optional (Type.Union [Type.integer; Type.string]));
+  assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
+  assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);
+  assert_union
+    [Type.optional Type.string; Type.float]
     (Type.Optional (Type.Union [Type.string; Type.float]));
-  assert_equal
-    (Type.union [Type.float; Type.string; Type.optional Type.float])
+  assert_union
+    [Type.float; Type.string; Type.optional Type.float]
     (Type.Optional (Type.Union [Type.float; Type.string]));
-  assert_false (Type.equal (Type.union [Type.float; Type.Any]) Type.Any);
-  assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);
-  assert_true
-    (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));
-  assert_true
-    (Type.equal (Type.union [Type.float; Type.string]) (Type.Union [Type.float; Type.string]));
-  assert_true (Type.equal (Type.union [Type.float]) Type.float);
-  assert_true (Type.equal (Type.union [Type.float; Type.Bottom]) Type.float);
-  assert_true (Type.equal (Type.union [Type.Bottom; Type.Bottom]) Type.Bottom);
+  assert_union [Type.float; Type.Any] (Type.Union [Type.Any; Type.float]);
+  assert_union [Type.float; Type.Top] Type.Top;
+  assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
+  assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);
+  assert_union [Type.float] Type.float;
+  assert_union [Type.float; Type.Bottom] Type.float;
+  assert_union [Type.Bottom; Type.Bottom] Type.Bottom;
 
   (* Flatten unions. *)
-  assert_equal
-    (Type.union [Type.float; Type.union [Type.string; Type.bytes]])
-    (Type.union [Type.float; Type.string; Type.bytes]);
-  assert_equal
-    (Type.union [Type.Optional (Type.list Type.integer); Type.list Type.integer])
+  assert_union
+    [Type.float; Type.union [Type.string; Type.bytes]]
+    (Type.Union [Type.bytes; Type.float; Type.string]);
+  assert_union
+    [Type.Optional (Type.list Type.integer); Type.list Type.integer]
     (Type.Optional (Type.list Type.integer));
-  assert_equal
-    (Type.union [Type.Optional (Type.variable "A"); Type.variable "A"])
+  assert_union
+    [Type.Optional (Type.variable "A"); Type.variable "A"]
     (Type.Optional (Type.variable "A"));
+  assert_union
+    [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
+    (Type.Optional (Type.Union [Type.integer; Type.string]));
   ()
 
 

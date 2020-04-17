@@ -353,7 +353,22 @@ let test_check_local_refinement context =
           reveal_type(x)
           return d[x]
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[str]` (inferred: `str`)."]
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[str]` (inferred: `str`)."];
+  (* We don't actually care about the errors here, just that this terminates *)
+  assert_type_errors
+    {|
+    def f(y):
+      while True:
+          if y in (None, []):
+             pass
+          if True:
+             pass
+    |}
+    [
+      "Missing return annotation [3]: Return type is not specified.";
+      "Missing parameter annotation [2]: Parameter `y` has no type specified.";
+    ];
+  ()
 
 
 let test_check_isinstance context =
