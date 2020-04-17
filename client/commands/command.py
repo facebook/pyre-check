@@ -173,7 +173,8 @@ class CommandParser(ABC):
         self._use_buck_builder: bool = arguments.use_buck_builder
 
         self._source_directories: List[str] = arguments.source_directories
-        self._filter_directory: List[str] = arguments.filter_directory
+        self._filter_directory: Optional[str] = arguments.filter_directory
+        self._buck_mode: Optional[str] = arguments.buck_mode
         self._no_saved_state: bool = arguments.no_saved_state
 
         self._search_path: List[str] = arguments.search_path
@@ -487,10 +488,14 @@ class Command(CommandParser, ABC):
             return AnalysisDirectory(".")
         else:
             return resolve_analysis_directory(
-                self._arguments,
+                self._source_directories,
+                self._targets,
                 configuration,
                 self._original_directory,
                 self._current_directory,
+                filter_directory=self._filter_directory,
+                use_buck_builder=self._use_buck_builder,
+                debug=self._debug,
                 relative_local_root=self.relative_local_root,
             )
 

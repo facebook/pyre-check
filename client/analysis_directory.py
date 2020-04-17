@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import functools
 import logging
 import os
@@ -53,17 +52,18 @@ DONT_CARE_PROGRESS_VALUE = 1
 
 
 def _resolve_filter_paths(
-    arguments: argparse.Namespace,
+    source_directories: List[str],
+    targets: List[str],
     configuration: "Configuration",
     original_directory: str,
 ) -> Set[str]:
     filter_paths = set()
-    if arguments.source_directories or arguments.targets:
-        if arguments.source_directories:
-            filter_paths.update(arguments.source_directories)
-        if arguments.targets:
+    if source_directories or targets:
+        if source_directories:
+            filter_paths.update(source_directories)
+        if targets:
             filter_paths.update(
-                [buck.presumed_target_root(target) for target in arguments.targets]
+                [buck.presumed_target_root(target) for target in targets]
             )
     else:
         local_configuration_root = configuration.local_configuration_root
@@ -567,20 +567,25 @@ def _get_project_name(
 
 
 def resolve_analysis_directory(
-    arguments: argparse.Namespace,
+    source_directories: List[str],
+    targets: List[str],
     configuration: Configuration,
     original_directory: str,
     current_directory: str,
+    filter_directory: Optional[str],
+    use_buck_builder: bool,
+    debug: bool,
+    buck_mode: Optional[str] = None,
     isolate: bool = False,
     relative_local_root: Optional[str] = None,
 ) -> AnalysisDirectory:
     # Only read from the configuration if no explicit targets are passed in.
-    if not arguments.source_directories and not arguments.targets:
+    if not source_directories and not targets:
         source_directories = configuration.source_directories
         targets = configuration.targets
     else:
-        source_directories = arguments.source_directories or []
-        targets = arguments.targets or []
+        source_directories = source_directories or []
+        targets = targets or []
         if targets:
             configuration_name = ".pyre_configuration.local"
             command = "pyre init --local"
@@ -593,11 +598,11 @@ def resolve_analysis_directory(
             command,
         )
 
-    if arguments.filter_directory:
-        filter_paths = {arguments.filter_directory}
+    if filter_directory:
+        filter_paths = {filter_directory}
     else:
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories, targets, configuration, original_directory
         )
 
     local_configuration_root = configuration.local_configuration_root
@@ -606,7 +611,7 @@ def resolve_analysis_directory(
             local_configuration_root, current_directory
         )
 
-    use_buck_builder = arguments.use_buck_builder or configuration.use_buck_builder
+    use_buck_builder = use_buck_builder or configuration.use_buck_builder
 
     if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(
@@ -627,8 +632,8 @@ def resolve_analysis_directory(
             buck_builder = buck.FastBuckBuilder(
                 buck_root=buck_root,
                 buck_builder_binary=configuration.buck_builder_binary,
-                debug_mode=arguments.debug,
-                buck_mode=arguments.buck_mode,
+                debug_mode=debug,
+                buck_mode=buck_mode,
                 project_name=project_name,
             )
         else:

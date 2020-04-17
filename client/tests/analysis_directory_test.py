@@ -65,32 +65,38 @@ class AnalysisDirectoryTest(unittest.TestCase):
         original_directory = "/project"
         current_directory = "/project"
 
-        arguments = MagicMock()
-
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.targets = []
         configuration.local_configuration_root = None
 
-        arguments.source_directories = ["a/b"]
-        arguments.targets = []
-        arguments.filter_directory = None
         expected_analysis_directory = AnalysisDirectory("a/b")
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, original_directory, current_directory
+            source_directories=["a/b"],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory=None,
+            use_buck_builder=False,
+            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
 
-        arguments.source_directories = ["/symlinked/directory"]
-        arguments.targets = []
-        arguments.filter_directory = "/real/directory"
         expected_analysis_directory = AnalysisDirectory(
             "/symlinked/directory", filter_paths={"/real/directory"}
         )
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, original_directory, current_directory
+            source_directories=["/symlinked/directory"],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory="/real/directory",
+            use_buck_builder=False,
+            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -581,16 +587,11 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         original_directory = "/project"
         current_directory = "/project"
 
-        arguments = MagicMock()
-
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.targets = []
         configuration.local_configuration_root = None
 
-        arguments.source_directories = []
-        arguments.targets = ["//x:y"]
-        arguments.filter_directory = "/real/directory"
         expected_analysis_directory = SharedAnalysisDirectory(
             [],
             ["//x:y"],
@@ -598,16 +599,19 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             filter_paths={"/real/directory"},
         )
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, original_directory, current_directory
+            source_directories=[],
+            targets=["//x:y"],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory="/real/directory",
+            use_buck_builder=False,
+            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
 
-        arguments.source_directories = ["a/b"]
-        arguments.targets = ["//x:y", "//y/..."]
-        arguments.filter_directory = "/filter"
-        configuration.targets = ["//overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
             ["a/b"],
             ["//x:y", "//y:/..."],
@@ -615,15 +619,19 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             filter_paths={"/filter"},
         )
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, original_directory, current_directory
+            source_directories=["a/b"],
+            targets=["//overridden/..."],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory="/filter",
+            use_buck_builder=False,
+            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
 
-        arguments.source_directories = []
-        arguments.targets = []
-        arguments.filter_directory = "/filter"
         configuration.source_directories = []
         configuration.targets = ["//not:overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
@@ -633,7 +641,14 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             filter_paths={"/filter"},
         )
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, original_directory, current_directory
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory="/filter",
+            use_buck_builder=False,
+            debug=False,
         )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
@@ -861,44 +876,49 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         socket_connection_class.assert_called_once()
 
     def test_resolve_filter_paths(self) -> None:
-        arguments = MagicMock()
         configuration = MagicMock()
         original_directory = "/project"
-        arguments.source_directories = []
-        arguments.targets = []
         configuration.local_configuration_root = None
 
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
         )
         self.assertEqual(filter_paths, set())
 
-        arguments.source_directories = ["/project/a"]
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories=["/project/a"],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
         )
         self.assertEqual(filter_paths, {"/project/a"})
 
-        arguments.source_directories = ["/project/a"]
-        arguments.targets = ["//x/y/..."]
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories=["/project/a"],
+            targets=["//x/y/..."],
+            configuration=configuration,
+            original_directory=original_directory,
         )
         self.assertEqual(filter_paths, {"/project/a", "x/y"})
 
-        arguments.source_directories = ["/project/local/a"]
-        arguments.targets = ["//x/y:z"]
         configuration.local_configuration_root = "project/local"
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories=["/project/local/a"],
+            targets=["//x/y:z"],
+            configuration=configuration,
+            original_directory=original_directory,
         )
         self.assertEqual(filter_paths, {"/project/local/a", "x/y"})
 
-        arguments.source_directories = []
-        arguments.targets = []
         configuration.local_configuration_root = "/project/local"
         filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
         )
         self.assertEqual(filter_paths, {"/project/local"})
 

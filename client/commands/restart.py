@@ -84,10 +84,14 @@ class Restart(Command):
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
-            self._arguments,
+            self._source_directories,
+            self._targets,
             self._configuration,
             self._original_directory,
             self._current_directory,
+            filter_directory=self._filter_directory,
+            use_buck_builder=self._use_buck_builder,
+            debug=self._debug,
             relative_local_root=self.relative_local_root,
         )
 
