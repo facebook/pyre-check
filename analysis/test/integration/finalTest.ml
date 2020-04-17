@@ -248,6 +248,16 @@ let test_final_attributes context =
           self.x = 2
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int] = "A"
+      |}
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `A` has type `int` but is \
+       used as type `str`.";
+    ];
   ()
 
 

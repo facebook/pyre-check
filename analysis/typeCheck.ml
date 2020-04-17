@@ -3664,7 +3664,85 @@ module State (Context : Context) = struct
                   let check_errors errors resolved =
                     match reference with
                     | Some reference ->
-                        let check_final_reassignment errors =
+                        let check_assignment_compatibility_and_final_reassignment errors =
+                          let check_assignment_compatibility errors =
+                            let resolved =
+                              match resolved with
+                              | Type.Parametric _ -> Type.weaken_literals resolved
+                              | _ -> resolved
+                            in
+                            let is_valid_enumeration_assignment =
+                              let parent_annotation =
+                                match parent with
+                                | None -> Type.Top
+                                | Some reference -> Type.Primitive (Reference.show reference)
+                              in
+                              let compatible =
+                                if explicit then
+                                  GlobalResolution.less_or_equal
+                                    global_resolution
+                                    ~left:expected
+                                    ~right:resolved
+                                else
+                                  true
+                              in
+                              GlobalResolution.less_or_equal
+                                global_resolution
+                                ~left:parent_annotation
+                                ~right:Type.enumeration
+                              && compatible
+                            in
+                            let is_incompatible =
+                              let expression_is_ellipses =
+                                match expression with
+                                | Some { Node.value = Expression.Ellipsis; _ } -> true
+                                | _ -> false
+                              in
+                              is_immutable
+                              && (not expression_is_ellipses)
+                              && (not
+                                    (GlobalResolution.constraints_solution_exists
+                                       global_resolution
+                                       ~left:resolved
+                                       ~right:expected))
+                              && not is_valid_enumeration_assignment
+                            in
+                            let open Annotated in
+                            match attribute with
+                            | Some (attribute, name) when is_incompatible ->
+                                Error.IncompatibleAttributeType
+                                  {
+                                    parent = Primitive (Attribute.parent attribute);
+                                    incompatible_type =
+                                      {
+                                        Error.name = Reference.create name;
+                                        mismatch =
+                                          Error.create_mismatch
+                                            ~resolution:global_resolution
+                                            ~actual:resolved
+                                            ~expected
+                                            ~covariant:true;
+                                      };
+                                  }
+                                |> fun kind -> emit_error ~errors ~location ~kind
+                            | None when is_incompatible ->
+                                Error.IncompatibleVariableType
+                                  {
+                                    incompatible_type =
+                                      {
+                                        Error.name = reference;
+                                        mismatch =
+                                          Error.create_mismatch
+                                            ~resolution:global_resolution
+                                            ~actual:resolved
+                                            ~expected
+                                            ~covariant:true;
+                                      };
+                                    declare_location = instantiate location;
+                                  }
+                                |> fun kind -> emit_error ~errors ~location ~kind
+                            | _ -> errors
+                          in
                           let error () =
                             emit_error
                               ~errors
@@ -3693,7 +3771,20 @@ module State (Context : Context) = struct
                           then
                             error ()
                           else
-                            errors
+                            match
+                              ( attribute >>| fst >>| Annotated.Attribute.visibility,
+                                attribute >>| fst >>| Annotated.Attribute.property )
+                            with
+                            | Some (ReadOnly _), Some true when Option.is_none original_annotation
+                              ->
+                                emit_error
+                                  ~errors
+                                  ~location
+                                  ~kind:(Error.InvalidAssignment (ReadOnly reference))
+                            | _ ->
+                                (* We don't check compatibility when we're already erroring about
+                                   Final reassingment *)
+                                check_assignment_compatibility errors
                         in
                         let check_assign_class_variable_on_instance errors =
                           match
@@ -3723,18 +3814,6 @@ module State (Context : Context) = struct
                                 else
                                   errors)
                           |> Option.value ~default:errors
-                        in
-                        let check_is_readonly_property errors =
-                          match
-                            ( attribute >>| fst >>| Annotated.Attribute.visibility,
-                              attribute >>| fst >>| Annotated.Attribute.property )
-                          with
-                          | Some (ReadOnly _), Some true when Option.is_none original_annotation ->
-                              emit_error
-                                ~errors
-                                ~location
-                                ~kind:(Error.InvalidAssignment (ReadOnly reference))
-                          | _ -> errors
                         in
                         let check_undefined_attribute_target errors =
                           match resolved_base, attribute with
@@ -3780,92 +3859,11 @@ module State (Context : Context) = struct
                                 ~kind:(Error.InvalidType (NestedAlias identifier))
                           | _ -> errors
                         in
-                        let check_assignment_compatibility errors =
-                          let resolved =
-                            match resolved with
-                            | Type.Parametric _ -> Type.weaken_literals resolved
-                            | _ -> resolved
-                          in
-                          let is_valid_enumeration_assignment =
-                            let parent_annotation =
-                              match parent with
-                              | None -> Type.Top
-                              | Some reference -> Type.Primitive (Reference.show reference)
-                            in
-                            let compatible =
-                              if explicit then
-                                GlobalResolution.less_or_equal
-                                  global_resolution
-                                  ~left:expected
-                                  ~right:resolved
-                              else
-                                true
-                            in
-                            GlobalResolution.less_or_equal
-                              global_resolution
-                              ~left:parent_annotation
-                              ~right:Type.enumeration
-                            && compatible
-                          in
-                          let is_incompatible =
-                            let expression_is_ellipses =
-                              match expression with
-                              | Some { Node.value = Expression.Ellipsis; _ } -> true
-                              | _ -> false
-                            in
-                            is_immutable
-                            && (not expression_is_ellipses)
-                            && (not
-                                  (GlobalResolution.constraints_solution_exists
-                                     global_resolution
-                                     ~left:resolved
-                                     ~right:expected))
-                            && (not is_valid_enumeration_assignment)
-                            && not (Annotation.is_final target_annotation)
-                          in
-                          let open Annotated in
-                          match attribute with
-                          | Some (attribute, name) when is_incompatible ->
-                              Error.IncompatibleAttributeType
-                                {
-                                  parent = Primitive (Attribute.parent attribute);
-                                  incompatible_type =
-                                    {
-                                      Error.name = Reference.create name;
-                                      mismatch =
-                                        Error.create_mismatch
-                                          ~resolution:global_resolution
-                                          ~actual:resolved
-                                          ~expected
-                                          ~covariant:true;
-                                    };
-                                }
-                              |> fun kind -> emit_error ~errors ~location ~kind
-                          | None when is_incompatible ->
-                              Error.IncompatibleVariableType
-                                {
-                                  incompatible_type =
-                                    {
-                                      Error.name = reference;
-                                      mismatch =
-                                        Error.create_mismatch
-                                          ~resolution:global_resolution
-                                          ~actual:resolved
-                                          ~expected
-                                          ~covariant:true;
-                                    };
-                                  declare_location = instantiate location;
-                                }
-                              |> fun kind -> emit_error ~errors ~location ~kind
-                          | _ -> errors
-                        in
-                        check_final_reassignment errors
+                        check_assignment_compatibility_and_final_reassignment errors
                         |> check_assign_class_variable_on_instance
                         |> check_final_is_outermost_qualifier
-                        |> check_is_readonly_property
                         |> check_undefined_attribute_target
                         |> check_nested_explicit_type_alias
-                        |> check_assignment_compatibility
                     | _ -> errors
                   in
 
