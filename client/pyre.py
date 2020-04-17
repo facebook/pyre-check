@@ -23,6 +23,23 @@ from .version import __version__
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+def _set_default_command(arguments: argparse.Namespace) -> None:
+    if shutil.which("watchman"):
+        arguments.command = commands.Incremental.from_arguments
+        arguments.nonblocking = False
+        arguments.incremental_style = IncrementalStyle.FINE_GRAINED
+        arguments.no_start = False
+    else:
+        watchman_link = "https://facebook.github.io/watchman/docs/install.html"
+        LOG.warning(
+            "No watchman binary found. \n"
+            "To enable pyre incremental, "
+            "you can install watchman: {}".format(watchman_link)
+        )
+        LOG.warning("Defaulting to non-incremental check.")
+        arguments.command = commands.Check.from_arguments
+
+
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
@@ -54,20 +71,7 @@ def main(argv: List[str]) -> int:
     log.initialize(arguments.noninteractive)
 
     if not hasattr(arguments, "command"):
-        if shutil.which("watchman"):
-            arguments.command = commands.Incremental.from_arguments
-            arguments.nonblocking = False
-            arguments.incremental_style = IncrementalStyle.FINE_GRAINED
-            arguments.no_start = False
-        else:
-            watchman_link = "https://facebook.github.io/watchman/docs/install.html"
-            LOG.warning(
-                "No watchman binary found. \n"
-                "To enable pyre incremental, "
-                "you can install watchman: {}".format(watchman_link)
-            )
-            LOG.warning("Defaulting to non-incremental check.")
-            arguments.command = commands.Check
+        _set_default_command(arguments)
 
     command: Optional[CommandParser] = None
     client_exception_message = ""

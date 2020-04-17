@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import json
 import os
 import shutil
@@ -13,6 +14,7 @@ from unittest.mock import MagicMock, call, patch
 
 from .. import analysis_directory, buck, commands, configuration, pyre
 from ..exceptions import EnvironmentException
+from ..pyre import _set_default_command
 
 
 class PyreTest(unittest.TestCase):
@@ -89,3 +91,15 @@ class PyreTest(unittest.TestCase):
         with patch.object(commands.Start, "run", return_value=mock_success):
             self.assertEqual(pyre.main(["--noninteractive", "start"]), 0)
             generate_source_directories.assert_not_called()
+
+    @patch.object(shutil, "which", return_value=True)
+    def test_set_default_command__watchman_exists(self, which: MagicMock) -> None:
+        arguments = argparse.Namespace()
+        _set_default_command(arguments)
+        self.assertEqual(arguments.command, commands.Incremental.from_arguments)
+
+    @patch.object(shutil, "which", return_value=False)
+    def test_set_default_command__no_watchman(self, which: MagicMock) -> None:
+        arguments = argparse.Namespace()
+        _set_default_command(arguments)
+        self.assertEqual(arguments.command, commands.Check.from_arguments)
