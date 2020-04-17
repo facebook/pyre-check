@@ -532,6 +532,7 @@ let test_class_attributes context =
       ?(parent = "test.Attributes")
       ?(initialized = Annotated.Attribute.OnClass)
       ?(defined = true)
+      ?(class_attribute = false)
       ?callable_name
       name
       callable
@@ -543,7 +544,7 @@ let test_class_attributes context =
          ~original_annotation:annotation
          ~abstract:false
          ~async:false
-         ~class_attribute:false
+         ~class_attribute
          ~defined
          ~initialized
          ~name
@@ -585,13 +586,24 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.meta (Type.Primitive "test.Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~property:true ~visibility:(ReadOnly Unrefinable) "property" "str");
+      (create_expected_attribute
+         ~class_attribute:true
+         ~initialized:OnlyOnInstance
+         ~property:true
+         ~visibility:(ReadOnly Unrefinable)
+         "property"
+         "str");
   assert_attribute
     ~parent:"test.Attributes"
     ~parent_instantiated_type:(Type.Primitive "Nonsense")
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~property:true ~visibility:(ReadOnly Unrefinable) "property" "str");
+      (create_expected_attribute
+         ~property:true
+         ~initialized:OnlyOnInstance
+         ~visibility:(ReadOnly Unrefinable)
+         "property"
+         "str");
   assert_attribute
     ~parent:"test.DC"
     ~parent_instantiated_type:(Type.Primitive "test.DC")

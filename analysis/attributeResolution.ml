@@ -2472,7 +2472,7 @@ module Implementation = struct
             | [] -> failwith "impossible"
           in
           callable, default_class_attribute, visibility
-      | Property { kind; class_property; _ } -> (
+      | Property { kind; _ } -> (
           let parse_annotation_option annotation =
             annotation >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
           in
@@ -2498,7 +2498,7 @@ module Implementation = struct
                           value = setter_annotation;
                         };
                   },
-                class_property,
+                default_class_attribute,
                 ReadWrite )
           | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
               let annotation = parse_annotation_option getter_annotation in
@@ -2507,7 +2507,7 @@ module Implementation = struct
                     getter = { self = parse_annotation_option self_annotation; value = annotation };
                     setter = None;
                   },
-                class_property,
+                default_class_attribute,
                 ReadOnly Unrefinable ) )
     in
     let initialized =
@@ -2524,8 +2524,9 @@ module Implementation = struct
                 | { origin = Implicit; _ } -> OnlyOnInstance)
           |> Option.value ~default:AnnotatedAttribute.NotInitialized
       | Method _
-      | Property _ ->
+      | Property { class_property = true; _ } ->
           OnClass
+      | Property { class_property = false; _ } -> OnlyOnInstance
     in
     AnnotatedAttribute.create_uninstantiated
       ~uninstantiated_annotation:
