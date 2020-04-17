@@ -132,6 +132,16 @@ let test_check_data_class context =
           b = Foo(1)
     |}
     [];
+  assert_type_errors
+    {|
+      @dataclass(frozen=True)
+      class F:
+        x = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `F` has type `int` but no type is \
+       specified.";
+    ];
   ()
 
 

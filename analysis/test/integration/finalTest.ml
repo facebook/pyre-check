@@ -235,6 +235,19 @@ let test_final_attributes context =
        is never initialized.";
       "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final
+      class Foo:
+        x: Final = 1
+        x = 45
+      class Bar:
+        x: Final[int]
+        def __init__(self) -> None:
+          self.x = 1
+          self.x = 2
+    |}
+    [];
   ()
 
 

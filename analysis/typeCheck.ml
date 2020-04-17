@@ -3680,6 +3680,9 @@ module State (Context : Context) = struct
                             | Some (ReadOnly _, false, OnlyOnInstance)
                               when Define.is_constructor define ->
                                 false
+                            | Some (ReadOnly _, false, OnClass) when Define.is_class_toplevel define
+                              ->
+                                false
                             | Some (ReadOnly _, false, _) -> true
                             | _ -> false
                           in
