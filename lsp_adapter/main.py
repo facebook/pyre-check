@@ -15,7 +15,8 @@ from typing import Optional, Union
 
 from ..client.find_directories import find_local_root
 from ..client.json_rpc import Response
-from ..client.resources import log_directory
+from ..client.resources import get_configuration_value, log_directory
+from ..client.socket_connection import SocketConnection
 
 
 def _should_run_null_server(null_server_flag: bool) -> bool:
@@ -35,6 +36,10 @@ def start_server(current_directory: str) -> None:
     subprocess.run(["pyre", "start"], cwd=current_directory)
 
 
+def get_version(root: str) -> str:
+    return get_configuration_value(root, "version")
+
+
 def _null_initialize_response(request_id: Optional[Union[str, int]]) -> None:
     response = Response(id=request_id, result={"capabilities": {}})
     response.write(sys.stdout.buffer)
@@ -48,8 +53,22 @@ class NullServerAdapterProtocol(asyncio.Protocol):
 
 
 class AdapterProtocol(asyncio.Protocol):
+    def __init__(self, socket: SocketConnection) -> None:
+        self.socket = socket
+
     def data_received(self, data: bytes) -> None:
-        # TODO[T58989824]: Send request to running pyre server
+        # TODO[T58989824]: Handle errors and lost connections
+        self.socket.output.write(data)
+        self.socket.output.flush()
+
+
+class SocketProtocol(asyncio.Protocol):
+    def data_received(self, data: bytes) -> None:
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+
+    def connection_lost(self, exc: Optional[Exception]) -> None:
+        # TODO[T58989824]: Handle when we lose connection to the server.
         pass
 
 
@@ -67,8 +86,20 @@ def main(arguments: argparse.Namespace) -> None:
             return run_null_server(loop)
         if not socket_exists(root):
             start_server(root)
-        stdin_pipe_reader = loop.connect_read_pipe(AdapterProtocol, sys.stdin)
+        local_root = find_local_root(original_directory=root)
+        socket_connection = SocketConnection(
+            str(log_directory(root, local_root)), "adapter.sock"
+        )
+        socket_connection.connect()
+        socket_connection.perform_handshake(get_version(root))
+        socket_reader = loop.connect_accepted_socket(
+            SocketProtocol, socket_connection.socket
+        )
+        stdin_pipe_reader = loop.connect_read_pipe(
+            lambda: AdapterProtocol(socket_connection), sys.stdin
+        )
         loop.run_until_complete(stdin_pipe_reader)
+        loop.run_until_complete(socket_reader)
         loop.run_forever()
     finally:
         loop.close()
