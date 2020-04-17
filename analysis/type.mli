@@ -202,7 +202,7 @@ and t =
 
 type class_data = {
   instantiated: t;
-  class_attributes: bool;
+  accessed_through_class: bool;
   class_name: Primitive.t;
 }
 

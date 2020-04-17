@@ -241,7 +241,10 @@ let process_type_query_request
         let to_attribute attribute =
           let name = Annotated.Attribute.name attribute in
           let instantiated_annotation =
-            GlobalResolution.instantiate_attribute ~resolution:global_resolution attribute
+            GlobalResolution.instantiate_attribute
+              ~resolution:global_resolution
+              ~accessed_through_class:false
+              attribute
           in
           let annotation =
             instantiated_annotation |> Annotated.Attribute.annotation |> Annotation.annotation
@@ -564,6 +567,7 @@ let process_type_query_request
             GlobalResolution.instantiate_attribute
               ~resolution:global_resolution
               ~instantiated:parsed_annotation
+              ~accessed_through_class:false
               attribute
             |> Annotated.Attribute.annotation
             |> Annotation.annotation

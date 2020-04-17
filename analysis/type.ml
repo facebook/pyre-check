@@ -449,7 +449,7 @@ let _ = show (* shadowed below *)
 
 type class_data = {
   instantiated: t;
-  class_attributes: bool;
+  accessed_through_class: bool;
   class_name: Primitive.t;
 }
 
@@ -4036,7 +4036,7 @@ let resolve_class annotation =
     | _ -> (
         match split annotation |> fst |> primitive_name with
         | Some class_name ->
-            Some [{ instantiated = original_annotation; class_attributes = meta; class_name }]
+            Some [{ instantiated = original_annotation; accessed_through_class = meta; class_name }]
         | None -> None )
   in
   extract ~meta:false annotation

@@ -1777,7 +1777,11 @@ let assert_equivalent_attributes ~context source expected =
     >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
     |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
-    |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution:global_resolution)
+    |> List.map
+         ~f:
+           (GlobalResolution.instantiate_attribute
+              ~resolution:global_resolution
+              ~accessed_through_class:false)
   in
   let class_names =
     let expected =

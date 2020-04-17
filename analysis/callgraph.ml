@@ -214,12 +214,12 @@ module DefaultBuilder : Builder = struct
         | Type.Optional base -> (
             Type.resolve_class base
             |> function
-            | Some [{ instantiated; class_attributes; class_name }] -> (
+            | Some [{ instantiated; accessed_through_class; class_name }] -> (
                 let attribute =
                   GlobalResolution.attribute_from_class_name
                     class_name
                     ~transitive:true
-                    ~class_attributes
+                    ~accessed_through_class
                     ~special_method:false
                     ~resolution:global_resolution
                     ~name

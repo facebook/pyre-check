@@ -2400,10 +2400,10 @@ module State (Context : Context) = struct
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let resolve_in_call
             (resolution, errors, joined_annotation)
-            { Type.instantiated; class_name; class_attributes }
+            { Type.instantiated; class_name; accessed_through_class }
           =
           let resolve_method
-              ?(class_attributes = false)
+              ?(accessed_through_class = false)
               ?(special_method = false)
               class_name
               instantiated
@@ -2411,7 +2411,7 @@ module State (Context : Context) = struct
             =
             GlobalResolution.attribute_from_class_name
               ~transitive:true
-              ~class_attributes
+              ~accessed_through_class
               class_name
               ~resolution:global_resolution
               ~special_method
@@ -2426,7 +2426,7 @@ module State (Context : Context) = struct
           let { Resolved.resolution; resolved; errors; _ } =
             match
               resolve_method
-                ~class_attributes
+                ~accessed_through_class
                 ~special_method:true
                 class_name
                 instantiated
@@ -2452,7 +2452,7 @@ module State (Context : Context) = struct
             | None -> (
                 match
                   resolve_method
-                    ~class_attributes
+                    ~accessed_through_class
                     ~special_method:true
                     class_name
                     instantiated
@@ -2783,13 +2783,15 @@ module State (Context : Context) = struct
         }
           =
           let access_as_attribute () =
-            let find_attribute ({ Type.instantiated; class_attributes; class_name } as resolved) =
+            let find_attribute
+                ({ Type.instantiated; accessed_through_class; class_name } as resolved)
+              =
               let name = attribute in
               match
                 GlobalResolution.attribute_from_class_name
                   class_name
                   ~transitive:(not (is_private_attribute attribute))
-                  ~class_attributes
+                  ~accessed_through_class
                   ~special_method:special
                   ~resolution:global_resolution
                   ~name
@@ -3516,7 +3518,7 @@ module State (Context : Context) = struct
                     | Name.Attribute { base; attribute; _ } ->
                         let name = attribute in
                         let resolved = resolve_expression_type ~resolution base in
-                        let parent, class_attributes =
+                        let parent, accessed_through_class =
                           if Type.is_meta resolved then
                             Type.single_parameter resolved, true
                           else
@@ -3539,7 +3541,7 @@ module State (Context : Context) = struct
                                 ~name:attribute
                                 ~instantiated:parent
                                 ~transitive:true
-                                ~class_attributes
+                                ~accessed_through_class
                           >>| fun annotated -> annotated, attribute
                         in
                         let target_annotation =
@@ -3593,7 +3595,7 @@ module State (Context : Context) = struct
                         | Some [{ instantiated; class_name; _ }] ->
                             GlobalResolution.attribute_from_class_name
                               class_name
-                              ~class_attributes:false
+                              ~accessed_through_class:false
                               ~transitive:false
                               ~resolution:global_resolution
                               ~name:"__setattr__"
@@ -3755,7 +3757,7 @@ module State (Context : Context) = struct
                         let check_assign_class_variable_on_instance errors =
                           match
                             ( resolved_base,
-                              attribute >>| fst >>| Annotated.Attribute.class_attribute,
+                              attribute >>| fst >>| Annotated.Attribute.class_variable,
                               attribute >>| fst >>| Annotated.Attribute.name )
                           with
                           | Some parent, Some true, Some class_variable
@@ -3960,7 +3962,7 @@ module State (Context : Context) = struct
                         else
                           errors, true
                     | ( Name.Attribute { attribute; _ },
-                        Some ({ Type.instantiated; class_attributes; class_name } :: _) ) -> (
+                        Some ({ Type.instantiated; accessed_through_class; class_name } :: _) ) -> (
                         (* Instance *)
                         let reference = Reference.create attribute in
                         let attribute =
@@ -3968,7 +3970,7 @@ module State (Context : Context) = struct
                             ~resolution:global_resolution
                             ~name:attribute
                             ~instantiated
-                            ~class_attributes
+                            ~accessed_through_class
                             ~transitive:true
                             class_name
                         in
@@ -5094,6 +5096,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 let annotation =
                   GlobalResolution.instantiate_attribute
                     ~resolution:global_resolution
+                    ~accessed_through_class:false
                     ?instantiated:None
                     attribute
                   |> Annotated.Attribute.annotation
@@ -5326,6 +5329,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             >>| List.filter_map ~f:(fun attribute ->
                     let annotation =
                       GlobalResolution.instantiate_attribute
+                        ~accessed_through_class:false
                         ~resolution:global_resolution
                         ?instantiated:None
                         attribute

@@ -26,7 +26,7 @@ type 'a t = {
   payload: 'a;
   abstract: bool;
   async: bool;
-  class_attribute: bool;
+  class_variable: bool;
   defined: bool;
   initialized: initialized;
   name: Identifier.t;
@@ -50,7 +50,7 @@ let create
     ~annotation
     ~original_annotation
     ~async
-    ~class_attribute
+    ~class_variable
     ~defined
     ~initialized
     ~name
@@ -63,7 +63,7 @@ let create
     payload = { annotation; original_annotation };
     abstract;
     async;
-    class_attribute;
+    class_variable;
     defined;
     initialized;
     name;
@@ -78,7 +78,7 @@ let create_uninstantiated
     ~abstract
     ~uninstantiated_annotation
     ~async
-    ~class_attribute
+    ~class_variable
     ~defined
     ~initialized
     ~name
@@ -91,7 +91,7 @@ let create_uninstantiated
     payload = uninstantiated_annotation;
     abstract;
     async;
-    class_attribute;
+    class_variable;
     defined;
     initialized;
     name;
@@ -139,7 +139,7 @@ let initialized { initialized; _ } = initialized
 
 let defined { defined; _ } = defined
 
-let class_attribute { class_attribute; _ } = class_attribute
+let class_variable { class_variable; _ } = class_variable
 
 let abstract { abstract; _ } = abstract
 

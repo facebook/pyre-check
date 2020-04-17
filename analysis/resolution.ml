@@ -261,7 +261,7 @@ let fallback_attribute ~resolution ~name class_name =
         GlobalResolution.attribute_from_class_name
           ~resolution:global_resolution
           class_name
-          ~class_attributes:false
+          ~accessed_through_class:false
           ~transitive:true
           ~instantiated:(Type.Primitive class_name)
           ~name
@@ -271,7 +271,7 @@ let fallback_attribute ~resolution ~name class_name =
     let fallback =
       GlobalResolution.attribute_from_class_name
         class_name
-        ~class_attributes:false
+        ~accessed_through_class:false
         ~transitive:true
         ~resolution:global_resolution
         ~name:"__getattr__"
@@ -315,7 +315,7 @@ let fallback_attribute ~resolution ~name class_name =
                  ~original_annotation:return_annotation
                  ~abstract:false
                  ~async:false
-                 ~class_attribute:false
+                 ~class_variable:false
                  ~defined:true
                  ~initialized:NotInitialized
                  ~name

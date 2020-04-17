@@ -32,7 +32,7 @@ val create
   annotation:Type.t ->
   original_annotation:Type.t ->
   async:bool ->
-  class_attribute:bool ->
+  class_variable:bool ->
   defined:bool ->
   initialized:initialized ->
   name:Identifier.t ->
@@ -46,7 +46,7 @@ val create_uninstantiated
   :  abstract:bool ->
   uninstantiated_annotation:'a ->
   async:bool ->
-  class_attribute:bool ->
+  class_variable:bool ->
   defined:bool ->
   initialized:initialized ->
   name:Identifier.t ->
@@ -74,7 +74,7 @@ val initialized : 'a t -> initialized
 
 val defined : 'a t -> bool
 
-val class_attribute : 'a t -> bool
+val class_variable : 'a t -> bool
 
 val static : 'a t -> bool
 

@@ -374,7 +374,7 @@ let test_class_attributes context =
   in
   let create_simple_attribute
       ?(annotation = Type.integer)
-      ?(class_attribute = false)
+      ?(class_variable = false)
       ?(initialized = Attribute.OnClass)
       ~parent
       name
@@ -384,7 +384,7 @@ let test_class_attributes context =
       ~annotation
       ~original_annotation:annotation
       ~async:false
-      ~class_attribute
+      ~class_variable
       ~defined:true
       ~initialized
       ~name
@@ -414,7 +414,8 @@ let test_class_attributes context =
       ~pp_diff:(diff ~print)
       ( GlobalResolution.attributes ~resolution definition
       |> (fun a -> Option.value_exn a)
-      |> List.map ~f:(GlobalResolution.instantiate_attribute ~resolution) )
+      |> List.map
+           ~f:(GlobalResolution.instantiate_attribute ~resolution ~accessed_through_class:false) )
       attributes
   in
   let constructor =
@@ -450,7 +451,7 @@ let test_class_attributes context =
         "__init__";
       create_simple_attribute
         ~parent:"test.foo"
-        ~class_attribute:true
+        ~class_variable:true
         ~initialized:NotInitialized
         "class_attribute";
       create_simple_attribute ~parent:"test.foo" ~initialized:NotInitialized "first";
@@ -504,7 +505,7 @@ let test_class_attributes context =
       |}
   in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
-    let instantiated, class_attributes =
+    let instantiated, accessed_through_class =
       if Type.is_meta parent_instantiated_type then
         Type.single_parameter parent_instantiated_type, true
       else
@@ -514,7 +515,7 @@ let test_class_attributes context =
       GlobalResolution.attribute_from_class_name
         parent
         ~transitive:true
-        ~class_attributes
+        ~accessed_through_class
         ~resolution
         ~name:attribute_name
         ~instantiated
@@ -532,7 +533,7 @@ let test_class_attributes context =
       ?(parent = "test.Attributes")
       ?(initialized = Annotated.Attribute.OnClass)
       ?(defined = true)
-      ?(class_attribute = false)
+      ?(class_variable = false)
       ?callable_name
       name
       callable
@@ -544,7 +545,7 @@ let test_class_attributes context =
          ~original_annotation:annotation
          ~abstract:false
          ~async:false
-         ~class_attribute
+         ~class_variable
          ~defined
          ~initialized
          ~name
@@ -587,7 +588,6 @@ let test_class_attributes context =
     ~attribute_name:"property"
     ~expected_attribute:
       (create_expected_attribute
-         ~class_attribute:true
          ~initialized:OnlyOnInstance
          ~property:true
          ~visibility:(ReadOnly Unrefinable)
@@ -714,7 +714,7 @@ let test_typed_dictionary_attributes context =
     let attributes =
       GlobalResolution.attributes
         ~resolution
-        ~class_attributes:true
+        ~accessed_through_class:true
         ~transitive:true
         ~include_generated_attributes:true
         class_name
@@ -826,7 +826,7 @@ let test_typed_dictionary_individual_attributes context =
     let attribute =
       GlobalResolution.attribute_from_class_name
         ~transitive:true
-        ~class_attributes:false
+        ~accessed_through_class:false
         ~resolution
         parent_name
         ~name:attribute_name
@@ -849,7 +849,7 @@ let test_typed_dictionary_individual_attributes context =
          ~original_annotation:annotation
          ~abstract:false
          ~async:false
-         ~class_attribute:false
+         ~class_variable:false
          ~defined
          ~initialized
          ~name

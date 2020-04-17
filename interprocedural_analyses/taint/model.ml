@@ -185,7 +185,7 @@ let infer_class_models ~environment =
     GlobalResolution.attributes
       ~resolution:global_resolution
       ~transitive:false
-      ~class_attributes:false
+      ~accessed_through_class:false
       ~include_generated_attributes:false
       class_summary
   in

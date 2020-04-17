@@ -1008,7 +1008,6 @@ module Implementation = struct
                             ?dependency
                             ~parent
                             ?defined:None
-                            ?default_class_attribute:None
                             ~accessed_via_metaclass:false
                             (Node.value attribute),
                           value )
@@ -1083,7 +1082,7 @@ module Implementation = struct
                   { UninstantiatedAnnotation.accessed_via_metaclass = false; kind }
                 ~abstract:false
                 ~async:false
-                ~class_attribute:false
+                ~class_variable:false
                 ~defined:true
                 ~initialized:OnClass
                 ~name:attribute_name
@@ -1116,7 +1115,6 @@ module Implementation = struct
       TypeOrder.order;
     single_uninstantiated_attribute_table:
       assumptions:Assumptions.t ->
-      class_attributes:bool ->
       include_generated_attributes:bool ->
       in_test:bool ->
       accessed_via_metaclass:bool ->
@@ -1128,7 +1126,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
       transitive:bool ->
-      class_attributes:bool ->
+      accessed_through_class:bool ->
       include_generated_attributes:bool ->
       special_method:bool ->
       ?dependency:dependency ->
@@ -1138,7 +1136,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
       transitive:bool ->
-      class_attributes:bool ->
+      accessed_through_class:bool ->
       include_generated_attributes:bool ->
       ?special_method:bool ->
       ?instantiated:Type.t ->
@@ -1150,7 +1148,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
       transitive:bool ->
-      class_attributes:bool ->
+      accessed_through_class:bool ->
       include_generated_attributes:bool ->
       ?special_method:bool ->
       ?dependency:dependency ->
@@ -1175,7 +1173,6 @@ module Implementation = struct
       ?dependency:SharedMemoryKeys.dependency ->
       parent:ClassSummary.t Node.t ->
       ?defined:bool ->
-      ?default_class_attribute:bool ->
       accessed_via_metaclass:bool ->
       Attribute.attribute ->
       UninstantiatedAnnotation.t AnnotatedAttribute.t;
@@ -1243,6 +1240,7 @@ module Implementation = struct
     instantiate_attribute:
       assumptions:Assumptions.t ->
       class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
+      accessed_through_class:bool ->
       ?dependency:SharedMemoryKeys.dependency ->
       ?instantiated:Type.t ->
       UninstantiatedAnnotation.t AnnotatedAttribute.t ->
@@ -1273,7 +1271,7 @@ module Implementation = struct
             ~assumptions
             ~class_metadata_environment
             ~transitive:false
-            ~class_attributes:true
+            ~accessed_through_class:true
             ~include_generated_attributes:true
             ~instantiated:(Type.meta annotation)
             ?dependency
@@ -1323,12 +1321,12 @@ module Implementation = struct
     in
     let attribute class_type ~assumptions ~name =
       resolve class_type
-      >>= fun { instantiated; class_attributes; class_name } ->
+      >>= fun { instantiated; accessed_through_class; class_name } ->
       attribute
         ~assumptions
         ~class_metadata_environment
         ~transitive:true
-        ~class_attributes
+        ~accessed_through_class
         ~include_generated_attributes:true
         ?special_method:None
         ?dependency
@@ -1338,12 +1336,12 @@ module Implementation = struct
     in
     let all_attributes class_type ~assumptions =
       resolve class_type
-      >>= fun { instantiated; class_attributes; class_name } ->
+      >>= fun { instantiated; accessed_through_class; class_name } ->
       all_attributes
         ~assumptions
         ~class_metadata_environment
         ~transitive:true
-        ~class_attributes
+        ~accessed_through_class
         ~include_generated_attributes:true
         ?special_method:None
         ?dependency
@@ -1354,7 +1352,8 @@ module Implementation = struct
                  ?dependency
                  ~assumptions
                  ~class_metadata_environment
-                 ~instantiated)
+                 ~instantiated
+                 ~accessed_through_class)
     in
 
     let is_protocol annotation ~protocol_assumptions:_ =
@@ -1566,7 +1565,6 @@ module Implementation = struct
   let typed_dictionary_special_methods_table
       ~create_attribute
       ~assumptions
-      ~class_attributes
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
@@ -1630,7 +1628,6 @@ module Implementation = struct
                    ?dependency
                    ~parent:parent_definition
                    ?defined:(Some true)
-                   ?default_class_attribute:(Some class_attributes)
                    ~accessed_via_metaclass
                    (Node.value field_attribute),
                  required ))
@@ -1694,7 +1691,7 @@ module Implementation = struct
           ~uninstantiated_annotation
           ~abstract:false
           ~async:false
-          ~class_attribute:class_attributes
+          ~class_variable:false
           ~defined:true
           ~initialized:OnClass
           ~name:"__init__"
@@ -1717,7 +1714,6 @@ module Implementation = struct
   let single_uninstantiated_attribute_table
       { create_attribute; instantiate_attribute; _ }
       ~assumptions
-      ~class_attributes
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
@@ -1735,7 +1731,6 @@ module Implementation = struct
             ~class_metadata_environment
             ~assumptions
             ~parent
-            ~default_class_attribute:class_attributes
             ~accessed_via_metaclass
           |> UninstantiatedAttributeTable.add table
         in
@@ -1766,7 +1761,7 @@ module Implementation = struct
                    }
                  ~abstract:false
                  ~async:false
-                 ~class_attribute:false
+                 ~class_variable:false
                  ~defined:true
                  ~initialized:OnClass
                  ~name:attribute_name
@@ -1800,7 +1795,8 @@ module Implementation = struct
                  ?dependency
                  ~assumptions
                  ~class_metadata_environment
-                 ?instantiated:None)
+                 ?instantiated:None
+                 ~accessed_through_class:false)
             ?dependency
             table
       in
@@ -1820,7 +1816,6 @@ module Implementation = struct
       typed_dictionary_special_methods_table
         ~create_attribute
         ~assumptions
-        ~class_attributes
         ~include_generated_attributes
         ~in_test
         ~accessed_via_metaclass
@@ -1837,27 +1832,26 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ~special_method
       ?dependency
       class_name
     =
     let handle { ClassMetadataEnvironment.is_test; successors; _ } =
-      let get_table ~class_attributes ~accessed_via_metaclass =
+      let get_table ~accessed_via_metaclass =
         single_uninstantiated_attribute_table
           ~assumptions
           ?dependency
           ~class_metadata_environment
           ~include_generated_attributes
           ~in_test:is_test
-          ~class_attributes
           ~accessed_via_metaclass
       in
       let normal_tables =
         let normal_hierarchy =
           (* Pass over normal class hierarchy. *)
-          if class_attributes && special_method then
+          if accessed_through_class && special_method then
             []
           else if transitive then
             class_name :: successors
@@ -1865,7 +1859,7 @@ module Implementation = struct
             [class_name]
         in
         Sequence.of_list normal_hierarchy
-        |> Sequence.filter_map ~f:(get_table ~class_attributes ~accessed_via_metaclass:false)
+        |> Sequence.filter_map ~f:(get_table ~accessed_via_metaclass:false)
       in
       let metaclass_tables =
         (* We don't want to have to find our metaclass/it's parents if we successfully find the
@@ -1874,7 +1868,7 @@ module Implementation = struct
           begin
             let metaclass_hierarchy =
               (* Class over meta hierarchy if necessary. *)
-              if class_attributes then
+              if accessed_through_class then
                 let successors_of class_name =
                   ClassMetadataEnvironment.ReadOnly.successors
                     class_metadata_environment
@@ -1897,8 +1891,7 @@ module Implementation = struct
             in
             metaclass_hierarchy
             |> Sequence.of_list
-            |> Sequence.filter_map
-                 ~f:(get_table ~class_attributes:false ~accessed_via_metaclass:true)
+            |> Sequence.filter_map ~f:(get_table ~accessed_via_metaclass:true)
           end
       in
       Sequence.append normal_tables (Sequence.of_lazy metaclass_tables)
@@ -1972,7 +1965,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ?(special_method = false)
       ?instantiated
@@ -1989,7 +1982,7 @@ module Implementation = struct
           ~visibility:ReadWrite
           ~abstract:false
           ~async:false
-          ~class_attribute:class_attributes
+          ~class_variable:false
           ~defined:true
           ~initialized:OnClass
           ~name:"__call__"
@@ -2002,14 +1995,19 @@ module Implementation = struct
           ~assumptions
           ~class_metadata_environment
           ~transitive
-          ~class_attributes
+          ~accessed_through_class
           ~include_generated_attributes
           ~special_method
           ?dependency
           class_name
         >>= Sequence.find_map ~f:(fun table ->
                 UninstantiatedAttributeTable.lookup_name table attribute_name)
-        >>| instantiate_attribute ~assumptions ~class_metadata_environment ?instantiated ?dependency
+        >>| instantiate_attribute
+              ~assumptions
+              ~class_metadata_environment
+              ~accessed_through_class
+              ?instantiated
+              ?dependency
 
 
   let all_attributes
@@ -2017,7 +2015,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ?(special_method = false)
       ?dependency
@@ -2037,7 +2035,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ~special_method
       ?dependency
@@ -2052,7 +2050,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ?(special_method = false)
       ?dependency
@@ -2071,7 +2069,7 @@ module Implementation = struct
       ~assumptions
       ~class_metadata_environment
       ~transitive
-      ~class_attributes
+      ~accessed_through_class
       ~include_generated_attributes
       ~special_method
       ?dependency
@@ -2085,11 +2083,11 @@ module Implementation = struct
       { constraints; full_order; _ }
       ~assumptions
       ~class_metadata_environment
+      ~accessed_through_class
       ?dependency
       ?instantiated
       attribute
     =
-    let default_class_attribute = AnnotatedAttribute.class_attribute attribute in
     let class_name = AnnotatedAttribute.parent attribute in
     let attribute_name = AnnotatedAttribute.name attribute in
     let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
@@ -2254,7 +2252,7 @@ module Implementation = struct
               bound_method ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
               Type.Callable callable
-            else if default_class_attribute then
+            else if accessed_through_class && not accessed_via_metaclass then
               (* Keep first argument around when calling instance methods from class attributes. *)
               Type.Callable callable
             else
@@ -2340,14 +2338,13 @@ module Implementation = struct
       ?dependency
       ~parent
       ?(defined = true)
-      ?(default_class_attribute = false)
       ~accessed_via_metaclass
       { Attribute.name = attribute_name; kind }
     =
     let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
     let parent_name = Reference.show parent_name in
     let class_annotation = Type.Primitive parent_name in
-    let annotation, class_attribute, visibility =
+    let annotation, class_variable, visibility =
       match kind with
       | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
           let value = List.hd values >>| fun { value; _ } -> value in
@@ -2355,7 +2352,7 @@ module Implementation = struct
             annotation >>| parse_annotation ?dependency ~assumptions ~class_metadata_environment
           in
           (* Account for class attributes. *)
-          let annotation, final, class_attribute =
+          let annotation, final, class_variable =
             parsed_annotation
             >>| (fun annotation ->
                   let is_final, annotation =
@@ -2369,7 +2366,7 @@ module Implementation = struct
                     | None -> false, annotation
                   in
                   Some annotation, is_final, is_class_variable)
-            |> Option.value ~default:(None, false, default_class_attribute)
+            |> Option.value ~default:(None, false, false)
           in
           (* Handle enumeration attributes. *)
           let annotation, visibility =
@@ -2428,7 +2425,7 @@ module Implementation = struct
                   Type.Top
             | _ -> Type.Top
           in
-          UninstantiatedAnnotation.Attribute annotation, class_attribute, visibility
+          UninstantiatedAnnotation.Attribute annotation, class_variable, visibility
       | Method { signatures; final; _ } ->
           (* Handle Callables *)
           let visibility =
@@ -2465,7 +2462,7 @@ module Implementation = struct
                 UninstantiatedAnnotation.Method { callable; is_class_method }
             | [] -> failwith "impossible"
           in
-          callable, default_class_attribute, visibility
+          callable, false, visibility
       | Property { kind; _ } -> (
           let parse_annotation_option annotation =
             annotation >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
@@ -2492,7 +2489,7 @@ module Implementation = struct
                           value = setter_annotation;
                         };
                   },
-                default_class_attribute,
+                false,
                 ReadWrite )
           | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
               let annotation = parse_annotation_option getter_annotation in
@@ -2501,7 +2498,7 @@ module Implementation = struct
                     getter = { self = parse_annotation_option self_annotation; value = annotation };
                     setter = None;
                   },
-                default_class_attribute,
+                false,
                 ReadOnly Unrefinable ) )
     in
     let initialized =
@@ -2534,7 +2531,7 @@ module Implementation = struct
         ( match kind with
         | Property { async; _ } -> async
         | _ -> false )
-      ~class_attribute
+      ~class_variable
       ~defined
       ~initialized
       ~name:attribute_name
@@ -3957,7 +3954,7 @@ module Implementation = struct
           attribute
             ~assumptions
             ~transitive:true
-            ~class_attributes:false
+            ~accessed_through_class:false
             ~include_generated_attributes:true
             ?special_method:None
             ?dependency
@@ -4164,8 +4161,7 @@ module Cache = ManagedCache.Make (struct
   let produce_value
       parse_annotation_cache
       ( {
-          SharedMemoryKeys.AttributeTableKey.class_attributes;
-          include_generated_attributes;
+          SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
           in_test;
           accessed_via_metaclass;
           name;
@@ -4188,7 +4184,6 @@ module Cache = ManagedCache.Make (struct
     in
     Implementation.single_uninstantiated_attribute_table
       open_recurser_with_parse_annotation_cache
-      ~class_attributes
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
@@ -4221,7 +4216,6 @@ module ReadOnly = struct
          version inside of the implementation of produce_value *)
         _open_recurser
       ~assumptions
-      ~class_attributes
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
@@ -4235,8 +4229,7 @@ module ReadOnly = struct
       read_only
       ?dependency
       {
-        SharedMemoryKeys.AttributeTableKey.class_attributes;
-        include_generated_attributes;
+        SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
         in_test;
         accessed_via_metaclass;
         name;

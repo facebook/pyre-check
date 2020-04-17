@@ -236,7 +236,7 @@ let global ({ dependency; _ } as resolution) reference =
 let attribute_from_class_name
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
-    ?(class_attributes = false)
+    ?(accessed_through_class = false)
     ?(special_method = false)
     class_name
     ~name
@@ -257,7 +257,7 @@ let attribute_from_class_name
               ~original_annotation:Type.Top
               ~abstract:false
               ~async:false
-              ~class_attribute:class_attributes
+              ~class_variable:false
               ~defined:false
               ~initialized:NotInitialized
               ~name
@@ -271,7 +271,7 @@ let attribute_from_class_name
   AttributeResolution.ReadOnly.attribute
     ~instantiated
     ~transitive
-    ~class_attributes
+    ~accessed_through_class
     ~special_method
     ~include_generated_attributes:true
     ?dependency
@@ -285,12 +285,12 @@ let attribute_from_annotation resolution ~parent:annotation ~name =
   match Type.resolve_class annotation with
   | None -> None
   | Some [] -> None
-  | Some [{ instantiated; class_attributes; class_name }] ->
+  | Some [{ instantiated; accessed_through_class; class_name }] ->
       attribute_from_class_name
         ~resolution
         ~transitive:true
         ~instantiated
-        ~class_attributes
+        ~accessed_through_class
         ~name
         class_name
       >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
@@ -374,14 +374,14 @@ let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hier
 let attributes
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
-    ?(class_attributes = false)
+    ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
     name
   =
   AttributeResolution.ReadOnly.all_attributes
     (attribute_resolution resolution)
     ~transitive
-    ~class_attributes
+    ~accessed_through_class
     ~include_generated_attributes
     name
     ?dependency
@@ -527,7 +527,7 @@ let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
 let attribute_names
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
-    ?(class_attributes = false)
+    ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
     ?instantiated:_
     name
@@ -535,7 +535,7 @@ let attribute_names
   AttributeResolution.ReadOnly.attribute_names
     (attribute_resolution resolution)
     ~transitive
-    ~class_attributes
+    ~accessed_through_class
     ~include_generated_attributes
     name
     ?dependency
@@ -557,7 +557,7 @@ let overrides class_name ~resolution ~name =
   let find_override parent =
     attribute_from_class_name
       ~transitive:false
-      ~class_attributes:true
+      ~accessed_through_class:true
       ~name
       parent
       ~resolution

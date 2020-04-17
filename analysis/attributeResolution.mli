@@ -174,7 +174,7 @@ module AttributeReadOnly : sig
   val attribute
     :  t ->
     transitive:bool ->
-    class_attributes:bool ->
+    accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?instantiated:Type.t ->
@@ -186,7 +186,7 @@ module AttributeReadOnly : sig
   val attribute_names
     :  t ->
     transitive:bool ->
-    class_attributes:bool ->
+    accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
@@ -196,7 +196,7 @@ module AttributeReadOnly : sig
   val all_attributes
     :  t ->
     transitive:bool ->
-    class_attributes:bool ->
+    accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
@@ -262,6 +262,7 @@ module AttributeReadOnly : sig
 
   val instantiate_attribute
     :  t ->
+    accessed_through_class:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
     ?instantiated:Type.t ->
     uninstantiated_attribute ->

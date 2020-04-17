@@ -174,7 +174,7 @@ val is_transitive_successor
 val attributes
   :  resolution:t ->
   ?transitive:bool ->
-  ?class_attributes:bool ->
+  ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
   Type.Primitive.t ->
   AttributeResolution.uninstantiated_attribute list option
@@ -182,6 +182,7 @@ val attributes
 val instantiate_attribute
   :  resolution:t ->
   ?instantiated:Type.t ->
+  accessed_through_class:bool ->
   AttributeResolution.uninstantiated_attribute ->
   AnnotatedAttribute.instantiated
 
@@ -190,7 +191,7 @@ val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
 val attribute_from_class_name
   :  resolution:t ->
   ?transitive:bool ->
-  ?class_attributes:bool ->
+  ?accessed_through_class:bool ->
   ?special_method:bool ->
   Type.Primitive.t ->
   name:Identifier.t ->
@@ -225,7 +226,7 @@ val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Typ
 val attribute_names
   :  resolution:t ->
   ?transitive:bool ->
-  ?class_attributes:bool ->
+  ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
   ?instantiated:Type.t ->
   Type.Primitive.t ->

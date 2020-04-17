@@ -41,7 +41,7 @@ let make_attributes ~class_name =
       ~visibility:ReadWrite
       ~abstract:false
       ~async:false
-      ~class_attribute:false
+      ~class_variable:false
       ~defined:true
       ~initialized:OnClass
       ~parent:class_name

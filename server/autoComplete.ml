@@ -106,7 +106,7 @@ let get_class_attributes_list ~resolution ~cursor_position:{ Location.line; colu
   let filter_name_and_type annotation =
     let item_name = Annotated.Attribute.name annotation in
     let item_type =
-      GlobalResolution.instantiate_attribute ~resolution annotation
+      GlobalResolution.instantiate_attribute ~resolution ~accessed_through_class:false annotation
       |> Annotated.Attribute.annotation
       |> Annotation.annotation
     in
