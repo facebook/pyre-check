@@ -3743,48 +3743,38 @@ module State (Context : Context) = struct
                                 |> fun kind -> emit_error ~errors ~location ~kind
                             | _ -> errors
                           in
-                          let error () =
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:(Error.InvalidAssignment (FinalAttribute reference))
+                          let modifying_read_only_error =
+                            match attribute, original_annotation with
+                            | None, _ ->
+                                Option.some_if
+                                  (Annotation.is_final target_annotation)
+                                  (AnalysisError.FinalAttribute reference)
+                            | Some _, Some _ ->
+                                (* We presume assignments to annotated targets are valid re:
+                                   Finality *)
+                                None
+                            | Some (attribute, _), None -> (
+                                let open AnnotatedAttribute in
+                                match
+                                  visibility attribute, property attribute, initialized attribute
+                                with
+                                | ReadOnly _, false, OnlyOnInstance
+                                  when Define.is_constructor define ->
+                                    None
+                                | ReadOnly _, false, OnClass when Define.is_class_toplevel define ->
+                                    None
+                                | ReadOnly _, false, _ ->
+                                    Some (AnalysisError.FinalAttribute reference)
+                                | ReadOnly _, true, _ -> Some (ReadOnly reference)
+                                | _ -> None )
                           in
-                          let read_only_non_property_attribute =
-                            let open AnnotatedAttribute in
-                            let relevant_properties attribute =
-                              visibility attribute, property attribute, initialized attribute
-                            in
-                            match attribute >>| fst >>| relevant_properties with
-                            | Some (ReadOnly _, false, OnlyOnInstance)
-                              when Define.is_constructor define ->
-                                false
-                            | Some (ReadOnly _, false, OnClass) when Define.is_class_toplevel define
-                              ->
-                                false
-                            | Some (ReadOnly _, false, _) -> true
-                            | _ -> false
-                          in
-                          if read_only_non_property_attribute && Option.is_none original_annotation
-                          then
-                            error ()
-                          else if Option.is_none attribute && Annotation.is_final target_annotation
-                          then
-                            error ()
-                          else
-                            match
-                              ( attribute >>| fst >>| Annotated.Attribute.visibility,
-                                attribute >>| fst >>| Annotated.Attribute.property )
-                            with
-                            | Some (ReadOnly _), Some true when Option.is_none original_annotation
-                              ->
-                                emit_error
-                                  ~errors
-                                  ~location
-                                  ~kind:(Error.InvalidAssignment (ReadOnly reference))
-                            | _ ->
-                                (* We don't check compatibility when we're already erroring about
-                                   Final reassingment *)
-                                check_assignment_compatibility errors
+                          match modifying_read_only_error with
+                          | Some error ->
+                              emit_error ~errors ~location ~kind:(Error.InvalidAssignment error)
+                          | None ->
+                              (* We don't check compatibility when we're already erroring about
+                                 Final reassingment *)
+                              check_assignment_compatibility errors
                         in
                         let check_assign_class_variable_on_instance errors =
                           match
