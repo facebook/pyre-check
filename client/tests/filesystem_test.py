@@ -553,7 +553,7 @@ class FilesystemTest(unittest.TestCase):
         self.assertEqual(find_root("/a/b/c/d", "configuration"), "/a")
         os_mock_isfile.side_effect = [True]
         self.assertEqual(find_root("/a", "configuration"), "/a")
-        os_mock_isfile.side_effect = [False, False]
+        os_mock_isfile.side_effect = [False, False, False]
         self.assertEqual(find_root("/a/b", "configuration"), None)
 
     @patch("os.unlink")
