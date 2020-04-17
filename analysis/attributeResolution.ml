@@ -821,7 +821,6 @@ module Implementation = struct
     let apply
         ~definition
         ~class_metadata_environment
-        ~class_attributes
         ~create_attribute
         ~instantiate_attribute
         ?dependency
@@ -846,7 +845,7 @@ module Implementation = struct
         let already_in_table name =
           UninstantiatedAttributeTable.lookup_name table name |> Option.is_some
         in
-        let make_callable ~parameters ~annotation ~attribute_name =
+        let make_method ~parameters ~annotation ~attribute_name =
           let parameters =
             {
               Type.Callable.Parameter.name = "$parameter$self";
@@ -855,22 +854,21 @@ module Implementation = struct
             }
             :: parameters
           in
-          let callable =
-            Type.Callable.create
-              ~name:(Reference.combine name (Reference.create attribute_name))
-              ~parameters:(Defined (Type.Callable.Parameter.create parameters))
-              ~annotation
-              ()
-          in
           ( attribute_name,
-            if class_attributes then
-              callable
-            else
-              Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters = [Single callable; Single (Primitive (Reference.show name))];
-                } )
+            UninstantiatedAnnotation.Method
+              {
+                callable =
+                  {
+                    kind = Named (Reference.combine name (Reference.create attribute_name));
+                    overloads = [];
+                    implementation =
+                      {
+                        annotation;
+                        parameters = Defined (Type.Callable.Parameter.create parameters);
+                      };
+                  };
+                is_class_method = false;
+              } )
         in
         match options definition with
         | None -> []
@@ -1040,14 +1038,14 @@ module Implementation = struct
                     |> List.fold ~init:[] ~f:(fun parameters ->
                            List.fold ~init:parameters ~f:collect_parameters)
                   in
-                  [make_callable ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
+                  [make_method ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
                 else
                   []
               in
               let methods =
                 if repr && not (already_in_table "__repr__") then
                   let new_method =
-                    make_callable ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
+                    make_method ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
                   in
                   new_method :: methods
                 else
@@ -1056,7 +1054,7 @@ module Implementation = struct
               let add_order_method methods name =
                 let annotation = Type.object_primitive in
                 if not (already_in_table name) then
-                  make_callable
+                  make_method
                     ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
                     ~annotation:Type.bool
                     ~attribute_name:name
@@ -1079,13 +1077,10 @@ module Implementation = struct
               in
               methods
             in
-            let make_attribute (attribute_name, annotation) =
+            let make_attribute (attribute_name, kind) =
               AnnotatedAttribute.create_uninstantiated
                 ~uninstantiated_annotation:
-                  {
-                    UninstantiatedAnnotation.accessed_via_metaclass = false;
-                    kind = Attribute annotation;
-                  }
+                  { UninstantiatedAnnotation.accessed_via_metaclass = false; kind }
                 ~abstract:false
                 ~async:false
                 ~class_attribute:false
@@ -1799,7 +1794,6 @@ module Implementation = struct
           ClassDecorators.apply
             ~definition:parent
             ~class_metadata_environment
-            ~class_attributes
             ~create_attribute:(create_attribute ~assumptions)
             ~instantiate_attribute:
               (instantiate_attribute
