@@ -56,6 +56,8 @@ val default : t
 
 val create : rule_filter:int list option -> paths:Path.t list -> t
 
+val validate : t -> unit
+
 val conditional_test_sinks : unit -> Sinks.t list
 
 val get_triggered_sink : partial_sink:Sinks.partial_sink -> source:Sources.t -> Sinks.t option

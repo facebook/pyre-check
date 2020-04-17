@@ -368,6 +368,101 @@ let test_multiple_configurations _ =
   assert_equal (List.hd_exn configuration.rules).code 2001
 
 
+let test_validate _ =
+  let assert_validation_error ~error configuration =
+    let configuration = Taint.TaintConfiguration.parse [Yojson.Safe.from_string configuration] in
+    assert_raises (Failure error) (fun () -> Taint.TaintConfiguration.validate configuration)
+  in
+  assert_validation_error
+    ~error:"Duplicate entry for source: `UserControlled`"
+    {|
+    {
+      sources: [
+       { name: "UserControlled" },
+       { name: "UserControlled" }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Duplicate entry for sink: `Test`"
+    {|
+    {
+      sources: [
+      ],
+      sinks: [
+       { name: "Test" },
+       { name: "Test" }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Duplicate entry for feature: `concat`"
+    {|
+    {
+      sources: [
+       { name: "UserControlled" }
+      ],
+      sinks: [
+       { name: "Test" }
+      ],
+      features: [
+       { name: "concat" },
+       { name: "concat" }
+      ]
+    }
+    |};
+  (* We only surface one error. *)
+  assert_validation_error
+    ~error:"Duplicate entry for source: `UserControlled`"
+    {|
+    {
+      sources: [
+       { name: "UserControlled" },
+       { name: "UserControlled" }
+      ],
+      sinks: [
+       { name: "Test" },
+       { name: "Test" }
+      ],
+      features: [
+       { name: "concat" },
+       { name: "concat" }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Duplicate entry for source: `UserControlled`"
+    {|
+    {
+      sources: [
+       {
+         name: "UserControlled",
+         comment: "First copy of user controlled"
+       },
+       {
+         name: "UserControlled",
+         comment: "Another copy of user controlled"
+       }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Duplicate entry for sink: `Test`"
+    {|
+    {
+      sinks: [
+       {
+         name: "Test"
+       },
+       {
+         name: "Test",
+         multi_sink_labels: ["a", "b"]
+       }
+      ]
+    }
+    |}
+
+
 let () =
   "configuration"
   >::: [
@@ -379,5 +474,6 @@ let () =
          "simple" >:: test_simple;
          "partial_sink_converter" >:: test_partial_sink_converter;
          "multiple_configurations" >:: test_multiple_configurations;
+         "validate" >:: test_validate;
        ]
   |> Test.run

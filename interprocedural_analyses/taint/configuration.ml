@@ -304,6 +304,21 @@ let parse source_jsons =
   }
 
 
+let validate { sources; sinks; features; _ } =
+  let ensure_list_unique ~kind elements =
+    let seen = String.Hash_set.create () in
+    let ensure_unique element =
+      if Hash_set.mem seen element then
+        failwith (Format.sprintf "Duplicate entry for %s: `%s`" kind element);
+      Hash_set.add seen element
+    in
+    List.iter elements ~f:ensure_unique
+  in
+  ensure_list_unique ~kind:"source" sources;
+  ensure_list_unique ~kind:"sink" sinks;
+  ensure_list_unique ~kind:"feature" features
+
+
 let register configuration =
   let () =
     if ConfigurationSharedMemory.mem key then
@@ -435,6 +450,7 @@ let create ~rule_filter ~paths =
   if List.is_empty configurations then
     raise (Invalid_argument "No `.config` was found in the taint directories.");
   let ({ rules; _ } as configuration) = parse configurations in
+  validate configuration;
   match rule_filter with
   | None -> configuration
   | Some rule_filter ->
