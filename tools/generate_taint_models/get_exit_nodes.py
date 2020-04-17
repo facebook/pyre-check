@@ -16,10 +16,14 @@ from .view_generator import DjangoUrls, get_all_views
 
 class ExitNodeGenerator(ModelGenerator):
     def __init__(
-        self, django_urls: DjangoUrls, whitelisted_views: Optional[List[str]] = None
+        self,
+        django_urls: DjangoUrls,
+        whitelisted_views: Optional[List[str]] = None,
+        taint_annotation: str = "TaintSink[ReturnedToUser]",
     ) -> None:
         self.django_urls = django_urls
         self.whitelisted_views: List[str] = whitelisted_views or []
+        self.taint_annotation: str = taint_annotation
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return get_all_views(self.django_urls)
@@ -35,7 +39,7 @@ class ExitNodeGenerator(ModelGenerator):
                 continue
             try:
                 model = CallableModel(
-                    returns="TaintSink[ReturnedToUser]", callable_object=view_function
+                    returns=self.taint_annotation, callable_object=view_function
                 )
                 exit_nodes.add(model)
             except ValueError:

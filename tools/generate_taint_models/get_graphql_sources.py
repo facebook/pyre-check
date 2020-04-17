@@ -22,10 +22,14 @@ class GraphQLSourceGenerator(ModelGenerator):
         self,
         graphql_module: Union[List[str], str],
         graphql_object_type: GraphQLObjectType,
+        args_taint_annotation: str = "TaintSource[UserControlled]",
+        return_taint_annotation: str = "TaintSink[ReturnedToUser]",
     ) -> None:
         super().__init__()
         self.graphql_module: Union[List[str], str] = graphql_module
         self.graphql_object_type: GraphQLObjectType = graphql_object_type
+        self.args_taint_annotation: str = args_taint_annotation
+        self.return_taint_annotation: str = return_taint_annotation
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         # Get all graphql import names.
@@ -77,9 +81,9 @@ class GraphQLSourceGenerator(ModelGenerator):
             try:
                 model = CallableModel(
                     callable_object=view_function,
-                    vararg="TaintSource[UserControlled]",
-                    kwarg="TaintSource[UserControlled]",
-                    returns="TaintSink[ReturnedToUser]",
+                    vararg=self.args_taint_annotation,
+                    kwarg=self.args_taint_annotation,
+                    returns=self.return_taint_annotation,
                 )
                 graphql_models.add(model)
             except ValueError:
