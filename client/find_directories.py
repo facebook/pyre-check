@@ -3,31 +3,18 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import json
-import logging
-import multiprocessing
-import os
-import platform
-import subprocess
-import sys
-import time
-import traceback
-from argparse import Namespace
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Set, TextIO
 
-from . import buck
-from .exceptions import EnvironmentException
-from .filesystem import find_root, translate_paths
+import logging
+import os
+from typing import Optional
+
+from .filesystem import find_root
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 BINARY_NAME: str = "pyre.bin"
 CLIENT_NAME: str = "pyre-client"
-
-if TYPE_CHECKING:
-    from .configuration import Configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
