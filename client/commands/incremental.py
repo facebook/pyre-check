@@ -4,36 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import atexit
-import json
 import logging
-import os
-import subprocess
 from logging import Logger
 from typing import List, Optional
 
 from .. import json_rpc
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..project_files_monitor import MonitorException, ProjectFilesMonitor
-from .command import (
-    ClientException,
-    ExitCode,
-    IncrementalStyle,
-    Result,
-    State,
-    typeshed_search_path,
-)
+from ..project_files_monitor import ProjectFilesMonitor
+from .command import ExitCode, IncrementalStyle, Result, State, typeshed_search_path
 from .reporting import Reporting
 from .start import Start
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-def _convert_to_result(response: json_rpc.Response) -> Result:
-    error_code = ExitCode.FAILURE if response.error else ExitCode.SUCCESS
-    return Result(output=json.dumps(response.result), code=error_code)
 
 
 class Incremental(Reporting):
