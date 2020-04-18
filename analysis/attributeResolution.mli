@@ -166,40 +166,40 @@ module AttributeReadOnly : sig
 
   val parse_annotation
     :  t ->
-    ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     ?dependency:SharedMemoryKeys.dependency ->
+    ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     Expression.expression Node.t ->
     Type.t
 
   val attribute
     :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
     ?instantiated:Type.t ->
-    ?dependency:SharedMemoryKeys.dependency ->
     attribute_name:Identifier.t ->
     string ->
     AnnotatedAttribute.instantiated option
 
   val attribute_names
     :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
-    ?dependency:SharedMemoryKeys.dependency ->
     string ->
     Identifier.t list option
 
   val all_attributes
     :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
     ?special_method:bool ->
-    ?dependency:SharedMemoryKeys.dependency ->
     string ->
     uninstantiated_attribute list option
 
@@ -207,9 +207,9 @@ module AttributeReadOnly : sig
 
   val constraints
     :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
     target:Type.Primitive.t ->
     ?parameters:Type.Parameter.t list ->
-    ?dependency:SharedMemoryKeys.dependency ->
     instantiated:Type.t ->
     unit ->
     ConstraintsSet.Solution.t
@@ -262,8 +262,8 @@ module AttributeReadOnly : sig
 
   val instantiate_attribute
     :  t ->
-    accessed_through_class:bool ->
     ?dependency:SharedMemoryKeys.dependency ->
+    accessed_through_class:bool ->
     ?instantiated:Type.t ->
     uninstantiated_attribute ->
     AnnotatedAttribute.instantiated
