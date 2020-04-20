@@ -1933,7 +1933,7 @@ class DecodeTest(unittest.TestCase):
 
             self.assertEqual(errors.json_to_errors(None), errors.Errors([]))
             mock_error.assert_called_once_with(
-                "Recevied no input."
+                "Received no input. "
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
             mock_error.reset_mock()
@@ -1943,7 +1943,7 @@ class DecodeTest(unittest.TestCase):
                 errors.Errors([]),
             )
             mock_error.assert_called_once_with(
-                "Recevied invalid JSON as input."
+                "Received invalid JSON as input. "
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
             mock_error.reset_mock()

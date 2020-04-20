@@ -62,12 +62,12 @@ def json_to_errors(
             return Errors(_filter_errors(errors, only_fix_error_code))
         except json.decoder.JSONDecodeError:
             LOG.error(
-                "Recevied invalid JSON as input."
+                "Received invalid JSON as input. "
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
     else:
         LOG.error(
-            "Recevied no input."
+            "Received no input. "
             "If piping from `pyre check` be sure to use `--output=json`."
         )
     return Errors.empty()
