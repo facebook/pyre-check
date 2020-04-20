@@ -456,6 +456,16 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Concrete lefts)
           ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
           ~constraints
+    | Type.Optional Bottom, Type.Optional _ -> [constraints]
+    | Type.Optional Bottom, Type.Union rights ->
+        List.concat_map rights ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
+    | Type.Optional Bottom, _ -> []
+    | Type.Optional left, right ->
+        solve_ordered_types_less_or_equal
+          order
+          ~left:(Concrete [left; Type.Optional Type.Bottom])
+          ~right:(Concrete [right; right])
+          ~constraints
     (* We have to consider both the variables' constraint and its full value against the union. *)
     | Type.Variable bound_variable, Type.Union union ->
         solve_less_or_equal
@@ -599,11 +609,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.Parametric { name = source; _ }, Type.Primitive target ->
         solve_less_or_equal_primitives ~source ~target
     (* A <= B -> A <= Optional[B].*)
-    | Optional left, Optional right
     | left, Optional right
     | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
         solve_less_or_equal order ~constraints ~left ~right
-    | Optional _, _ -> []
     | Type.Tuple (Type.Bounded lefts), Type.Tuple (Type.Unbounded right) ->
         let left = Type.OrderedTypes.union_upper_bound lefts in
         solve_less_or_equal order ~constraints ~left ~right
