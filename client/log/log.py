@@ -203,9 +203,11 @@ def start_logging_to_directory(noninteractive: bool, log_directory: str) -> None
 
 
 def cleanup() -> None:
+    global __handler
     handler = __handler
     if handler:
         handler.terminate()
+        __handler = None
 
     output = stdout.getvalue()
     if output:
