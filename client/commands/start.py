@@ -5,7 +5,6 @@
 
 import argparse
 import errno
-import json
 import logging
 import os
 from logging import Logger
