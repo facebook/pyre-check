@@ -898,6 +898,8 @@ let union parameters =
     Union parameters
   else if List.exists ~f:is_top parameters then
     Top
+  else if List.exists ~f:is_any parameters then
+    Any
   else
     let normalize parameters =
       let parameters =

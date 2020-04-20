@@ -687,7 +687,7 @@ let test_union _ =
   assert_union
     [Type.float; Type.string; Type.optional Type.float]
     (Type.Optional (Type.Union [Type.float; Type.string]));
-  assert_union [Type.float; Type.Any] (Type.Union [Type.Any; Type.float]);
+  assert_union [Type.float; Type.Any] Type.Any;
   assert_union [Type.float; Type.Top] Type.Top;
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
   assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);

@@ -262,7 +262,7 @@ let test_register_aliases context =
         |}
       );
     ]
-    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Union[typing.Any, qualifier.str]"];
+    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"];
   assert_resolved
     [
       ( "t.py",
