@@ -1,5 +1,7 @@
 from typing import Optional
 
+from pyre_extensions import classproperty
+
 
 class Class:
     def __init__():
@@ -110,3 +112,13 @@ def setters_are_simulated() -> None:
     x.p = __test_source()
     # x.p should now have an issue
     __test_sink(x.p)
+
+
+class ClassProperty:
+    @classproperty
+    def my_class_property(cls) -> str:
+        return ""
+
+
+def test_issue_in_class_property():
+    __test_sink(ClassProperty.my_class_property)

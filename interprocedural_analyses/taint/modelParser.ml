@@ -110,12 +110,12 @@ type taint_annotation =
 
 (* Don't propagate inferred model of methods with Sanitize *)
 
-let is_property define =
-  String.Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
+let decorators = String.Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
+let is_property define = String.Set.exists decorators ~f:(Define.has_decorator define)
 
 let signature_is_property signature =
-  String.Set.exists Recognized.property_decorators ~f:(Define.Signature.has_decorator signature)
+  String.Set.exists decorators ~f:(Define.Signature.has_decorator signature)
 
 
 let rec parse_annotations ~configuration ~parameters annotation =

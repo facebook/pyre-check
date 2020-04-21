@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.setters_are_simulated",
-    "callable_line": 106,
+    "callable_line": 108,
     "code": 5002,
-    "line": 112,
+    "line": 114,
     "start": 16,
     "end": 19,
     "filename": "properties.py",
@@ -17,13 +17,13 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 110,
+              "line": 112,
               "start": 10,
               "end": 25
             },
             "tito": [
-              { "line": 112, "start": 16, "end": 17 },
-              { "line": 110, "start": 10, "end": 25 }
+              { "line": 114, "start": 16, "end": 17 },
+              { "line": 112, "start": 10, "end": 25 }
             ],
             "leaves": [
               {
@@ -45,7 +45,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 112,
+              "line": 114,
               "start": 16,
               "end": 19
             },
@@ -60,6 +60,63 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_issue_in_class_property",
+    "callable_line": 123,
+    "code": 5002,
+    "line": 124,
+    "start": 16,
+    "end": 47,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 124,
+              "start": 16,
+              "end": 47
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "properties.ClassProperty.my_class_property",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 124,
+              "start": 16,
+              "end": 47
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "string_concat_lhs" },
       { "always-via": "special_sink" }
     ]
   }
@@ -399,7 +456,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 23,
+                "line": 25,
                 "start": 19,
                 "end": 36
               },
@@ -426,7 +483,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 23, "start": 19, "end": 24 } ],
+            "tito": [ { "line": 25, "start": 19, "end": 24 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -446,11 +503,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 14,
+              "line": 16,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 15, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 17, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -467,7 +524,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 15,
+                "line": 17,
                 "start": 15,
                 "end": 31
               },
@@ -503,7 +560,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 19,
+                "line": 21,
                 "start": 15,
                 "end": 31
               },
@@ -530,13 +587,33 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 19, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 21, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.ClassProperty.my_class_property",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Test" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {
@@ -550,11 +627,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 30,
+              "line": 32,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 31, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 33, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -586,7 +663,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 35, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 37, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -607,7 +684,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 76,
+              "line": 78,
               "start": 20,
               "end": 25
             },
@@ -662,7 +739,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 41,
+              "line": 43,
               "start": 15,
               "end": 30
             },
@@ -694,7 +771,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 45,
+                "line": 47,
                 "start": 15,
                 "end": 31
               },
@@ -801,7 +878,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 54,
+              "line": 56,
               "start": 20,
               "end": 24
             },
@@ -831,7 +908,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 58,
+              "line": 60,
               "start": 20,
               "end": 24
             },
@@ -882,7 +959,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 62,
+              "line": 64,
               "start": 15,
               "end": 31
             },
@@ -905,7 +982,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 62,
+                "line": 64,
                 "start": 15,
                 "end": 19
               },
