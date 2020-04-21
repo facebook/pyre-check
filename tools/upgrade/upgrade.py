@@ -330,6 +330,11 @@ def run_global_version_update(
                     configuration_path,
                 )
                 continue
+            if contents.get("differential"):
+                LOG.info(
+                    "Skipping differential configuration at `%s`", configuration_path
+                )
+                continue
             contents["version"] = old_version
 
         with open(configuration_path, "w") as configuration_file:
