@@ -36,9 +36,7 @@ class VersionControl:
     LINTERS_TO_SKIP: List[str] = []
 
     @staticmethod
-    def commit_message(
-        directory: str, summary_override: Optional[str] = None, upgrade: bool = True
-    ) -> str:
+    def commit_message(title: str, summary_override: Optional[str] = None) -> str:
         return ""
 
     @staticmethod
