@@ -343,7 +343,8 @@ def run_global_version_update(
         version_control.submit_changes(
             arguments.submit,
             version_control.commit_message(
-                "global configuration", summary_override=commit_summary
+                "Update pyre global configuration version",
+                summary_override=commit_summary,
             ),
             ignore_failures=True,
         )
@@ -401,12 +402,14 @@ def _upgrade_project(
     try:
         project_root = root.resolve()
         local_root = configuration.get_directory().resolve()
+        title = "{} for {}".format(
+            "Update pyre version"
+            if arguments.upgrade_version
+            else "Suppress pyre errors",
+            str(local_root.relative_to(project_root)),
+        )
         version_control.submit_changes(
-            arguments.submit,
-            version_control.commit_message(
-                str(local_root.relative_to(project_root)),
-                upgrade=arguments.upgrade_version,
-            ),
+            arguments.submit, version_control.commit_message(title)
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
@@ -519,7 +522,7 @@ def run_fixme_targets(
             version_control.submit_changes(
                 arguments.submit,
                 version_control.commit_message(
-                    "{} (TARGETS)".format(search_root), upgrade=False
+                    "Upgrade pyre version for {} (TARGETS)".format(search_root)
                 ),
             )
     except subprocess.CalledProcessError:
