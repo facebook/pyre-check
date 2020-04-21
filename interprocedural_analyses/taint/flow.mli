@@ -37,12 +37,6 @@ type issue = {
 
 type triggered_sinks = String.Hash_set.t
 
-val partition_flows
-  :  ?sources:(Sources.t -> bool) ->
-  ?sinks:(Sinks.t -> bool) ->
-  flows ->
-  flow_state
-
 val generate_source_sink_matches
   :  location:Location.WithModule.t ->
   source_tree:ForwardState.Tree.t ->

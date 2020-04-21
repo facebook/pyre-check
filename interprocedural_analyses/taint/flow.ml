@@ -21,6 +21,11 @@ type candidate = {
   location: Location.WithModule.t;
 }
 
+type partitioned_flow = {
+  source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
+  sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
+}
+
 type issue = {
   code: int;
   flow: flow;
@@ -65,62 +70,6 @@ type flow_state = {
   rest: flows;
 }
 
-(* partition taint flow t according to sources/sinks filters into matching and rest flows. *)
-let partition_flow ?sources ?sinks flow =
-  let split ~default partition =
-    ( Map.Poly.find partition true |> Option.value ~default,
-      Map.Poly.find partition false |> Option.value ~default )
-  in
-  let included_source_taint, excluded_source_taint =
-    match sources with
-    | None -> flow.source_taint, ForwardTaint.bottom
-    | Some f ->
-        ForwardTaint.partition
-          ForwardTaint.leaf
-          ~f:(fun leaf -> f leaf |> Option.some)
-          flow.source_taint
-        |> split ~default:ForwardTaint.bottom
-  in
-  let included_sink_taint, excluded_sink_taint =
-    match sinks with
-    | None -> flow.sink_taint, BackwardTaint.bottom
-    | Some f ->
-        BackwardTaint.partition
-          BackwardTaint.leaf
-          ~f:(fun leaf -> f leaf |> Option.some)
-          flow.sink_taint
-        |> split ~default:BackwardTaint.bottom
-  in
-  if ForwardTaint.is_bottom included_source_taint || BackwardTaint.is_bottom included_sink_taint
-  then
-    { matched = []; rest = [flow] }
-  else
-    let matched = [{ source_taint = included_source_taint; sink_taint = included_sink_taint }] in
-    match
-      ForwardTaint.is_bottom excluded_source_taint, BackwardTaint.is_bottom excluded_sink_taint
-    with
-    | true, true -> { matched; rest = [] }
-    | true, false -> { matched; rest = [{ flow with sink_taint = excluded_sink_taint }] }
-    | false, true -> { matched; rest = [{ flow with source_taint = excluded_source_taint }] }
-    | false, false ->
-        {
-          matched;
-          rest =
-            [
-              { source_taint = excluded_source_taint; sink_taint = included_sink_taint };
-              { flow with sink_taint = excluded_sink_taint };
-            ];
-        }
-
-
-let partition_flows ?sources ?sinks flows =
-  let accumulate_matches { matched; rest } flow =
-    let { matched = new_matching; rest = new_rest } = partition_flow ?sources ?sinks flow in
-    { matched = new_matching @ matched; rest = new_rest @ rest }
-  in
-  List.fold flows ~init:{ matched = []; rest = [] } ~f:accumulate_matches
-
-
 let get_issue_features { source_taint; sink_taint } =
   let source_features =
     ForwardTaint.fold
@@ -140,37 +89,51 @@ let get_issue_features { source_taint; sink_taint } =
 
 
 let generate_issues ~define { location; flows } =
-  let apply_rule (issues, remaining_flows) { Rule.sources; sinks; code; _ } =
-    let any_sources source_list source = List.exists ~f:(( = ) source) source_list in
-    let any_sinks sink_list sink = List.exists ~f:(( = ) sink) sink_list in
-    let { matched; rest } =
-      partition_flows ~sources:(any_sources sources) ~sinks:(any_sinks sinks) remaining_flows
+  let partitions =
+    let partition { source_taint; sink_taint } =
+      {
+        source_partition =
+          ForwardTaint.partition ForwardTaint.leaf source_taint ~f:(fun leaf -> Some leaf);
+        sink_partition =
+          BackwardTaint.partition BackwardTaint.leaf sink_taint ~f:(fun leaf -> Some leaf);
+      }
     in
-    match matched with
-    | [] -> issues, rest
-    | matched ->
-        let join_flows flows =
-          let get_source_taint { source_taint; _ } = source_taint in
-          let get_sink_taint { sink_taint; _ } = sink_taint in
-          let join_source_taint source_taints =
-            List.fold source_taints ~init:ForwardTaint.bottom ~f:ForwardTaint.join
-          in
-          let join_sink_taint sink_taints =
-            List.fold sink_taints ~init:BackwardTaint.bottom ~f:BackwardTaint.join
-          in
-          {
-            source_taint = join_source_taint (List.map flows ~f:get_source_taint);
-            sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint);
-          }
-        in
-        let flow = join_flows matched in
-        let features = get_issue_features flow in
-        let issue = { code; flow; features; issue_location = location; define } in
-        issue :: issues, rest
+    List.map flows ~f:partition
+  in
+  let apply_rule { Rule.sources; sinks; code; _ } =
+    let get_source_taint { source_partition; _ } =
+      let add_source_taint source_taint source =
+        match Map.Poly.find source_partition source with
+        | Some taint -> ForwardTaint.join source_taint taint
+        | None -> source_taint
+      in
+      List.fold sources ~f:add_source_taint ~init:ForwardTaint.bottom
+    in
+    let get_sink_taint { sink_partition; _ } =
+      let add_sink_taint sink_taint sink =
+        match Map.Poly.find sink_partition sink with
+        | Some taint -> BackwardTaint.join sink_taint taint
+        | None -> sink_taint
+      in
+      List.fold sinks ~f:add_sink_taint ~init:BackwardTaint.bottom
+    in
+    let fold_source_taint taint partition = ForwardTaint.join taint (get_source_taint partition) in
+    let fold_sink_taint taint partition = BackwardTaint.join taint (get_sink_taint partition) in
+    let flow =
+      {
+        source_taint = List.fold partitions ~init:ForwardTaint.bottom ~f:fold_source_taint;
+        sink_taint = List.fold partitions ~init:BackwardTaint.bottom ~f:fold_sink_taint;
+      }
+    in
+    if ForwardTaint.is_bottom flow.source_taint || BackwardTaint.is_bottom flow.sink_taint then
+      None
+    else
+      let features = get_issue_features flow in
+      let issue = { code; flow; features; issue_location = location; define } in
+      Some issue
   in
   let configuration = Configuration.get () in
-  let issues, _ = List.fold ~f:apply_rule ~init:([], flows) configuration.rules in
-  issues
+  List.filter_map ~f:apply_rule configuration.rules
 
 
 let sinks_regexp = Str.regexp_string "{$sinks}"

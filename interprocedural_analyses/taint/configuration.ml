@@ -414,6 +414,14 @@ let default =
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";
         };
+        {
+          sources = [Sources.NamedSource "Demo"];
+          sinks = [Sinks.NamedSink "Demo"];
+          code = 6001;
+          name = "Duplicate demo flow.";
+          message_format =
+            "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+        };
       ];
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
