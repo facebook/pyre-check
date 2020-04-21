@@ -25,10 +25,11 @@ let test_parse_query context =
       | Meet (left_first, left_second), Meet (right_first, right_second) ->
           expression_equal left_first right_first && expression_equal left_second right_second
       | Methods left, Methods right
-      | NormalizeType left, NormalizeType right
-      | Superclasses left, Superclasses right
-      | Type left, Type right ->
+      | NormalizeType left, NormalizeType right ->
           expression_equal left right
+      | Superclasses left, Superclasses right ->
+          List.for_all2_exn ~f:(fun left right -> expression_equal left right) left right
+      | Type left, Type right -> expression_equal left right
       | _ -> TypeQuery.equal_request left right
     in
 
@@ -75,9 +76,8 @@ let test_parse_query context =
   assert_fails_to_parse "meet(int, int, int)";
   assert_fails_to_parse "meet(int)";
   assert_fails_to_parse "join(int)";
-  assert_parses "superclasses(int)" (Superclasses !"int");
-  assert_fails_to_parse "superclasses()";
-  assert_fails_to_parse "superclasses(int, bool)";
+  assert_parses "superclasses(int)" (Superclasses [!"int"]);
+  assert_parses "superclasses(int, bool)" (Superclasses [!"int"; !"bool"]);
   assert_parses "normalize_type(int)" (NormalizeType !"int");
   assert_fails_to_parse "normalizeType(int, str)";
   assert_parses

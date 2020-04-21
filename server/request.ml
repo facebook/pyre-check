@@ -677,18 +677,37 @@ let process_type_query_request
         | MissingFunction function_name ->
             TypeQuery.Error
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
-    | TypeQuery.Superclasses annotation ->
-        parse_and_validate annotation
-        |> Type.split
-        |> fst
-        |> Type.primitive_name
-        >>| GlobalResolution.successors ~resolution:global_resolution
-        >>| List.map ~f:(fun name -> Type.Primitive name)
-        >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
-        |> Option.value
-             ~default:
-               (TypeQuery.Error
-                  (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+    | TypeQuery.Superclasses class_names ->
+        let get_superclasses class_name =
+          let class_type = parse_and_validate class_name in
+          class_type
+          |> Type.split
+          |> fst
+          |> Type.primitive_name
+          >>| GlobalResolution.successors ~resolution:global_resolution
+          >>| List.map ~f:(fun name -> Type.Primitive name)
+          >>| (fun classes ->
+                `Fst { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
+          |> Option.value ~default:(`Snd class_name)
+        in
+        let results, errors = List.partition_map ~f:get_superclasses class_names in
+        if List.is_empty errors then
+          TypeQuery.Response (TypeQuery.Superclasses results)
+        else
+          let bad_annotations =
+            List.fold
+              ~init:""
+              ~f:(fun sofar annotation ->
+                Format.asprintf
+                  "%s`%a`"
+                  (if String.equal sofar "" then "" else sofar ^ ", ")
+                  Expression.pp
+                  annotation)
+              errors
+          in
+          let plural = if List.length errors > 1 then "s" else "" in
+          TypeQuery.Error
+            (Format.asprintf "No class definition%s found for %s" plural bad_annotations)
     | TypeQuery.Type expression ->
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         TypeQuery.Response (TypeQuery.Type annotation)

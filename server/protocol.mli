@@ -68,7 +68,7 @@ module TypeQuery : sig
       }
     | SaveServerState of Path.t
     | Signature of Reference.t list
-    | Superclasses of Expression.t
+    | Superclasses of Expression.t list
     | Type of Expression.t
     | TypeAtPosition of {
         path: Path.t;
@@ -195,6 +195,12 @@ module TypeQuery : sig
   }
   [@@deriving eq, show]
 
+  type superclasses_mapping = {
+    class_name: Reference.t;
+    superclasses: Type.t list;
+  }
+  [@@deriving eq, show]
+
   type base_response =
     | Boolean of bool
     | Callees of Callgraph.callee list
@@ -215,7 +221,7 @@ module TypeQuery : sig
     | Path of Pyre.Path.t
     | References of Reference.t list
     | Success of string
-    | Superclasses of Type.t list
+    | Superclasses of superclasses_mapping list
     | Type of Type.t
     | TypeAtLocation of type_at_location
     | TypesByFile of types_at_file list

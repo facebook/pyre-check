@@ -68,7 +68,7 @@ module TypeQuery = struct
       }
     | SaveServerState of Path.t
     | Signature of Reference.t list
-    | Superclasses of Expression.t
+    | Superclasses of Expression.t list
     | Type of Expression.t
     | TypeAtPosition of {
         path: Path.t;
@@ -196,6 +196,12 @@ module TypeQuery = struct
   }
   [@@deriving eq, show]
 
+  type superclasses_mapping = {
+    class_name: Reference.t;
+    superclasses: Type.t list;
+  }
+  [@@deriving eq, show, to_yojson]
+
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
@@ -218,7 +224,7 @@ module TypeQuery = struct
     | Path of Path.t
     | References of Reference.t list
     | Success of string
-    | Superclasses of Type.t list
+    | Superclasses of superclasses_mapping list
     | Type of Type.t
     | TypeAtLocation of type_at_location
     | TypesByFile of types_at_file list
@@ -353,7 +359,19 @@ module TypeQuery = struct
         in
         `Assoc ["references", `List json_references]
     | Success message -> `Assoc ["message", `String message]
-    | Superclasses classes -> `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
+    | Superclasses class_to_superclasses_mapping -> (
+        match class_to_superclasses_mapping with
+        | [{ superclasses; _ }] ->
+            `Assoc ["superclasses", `List (List.map superclasses ~f:Type.to_yojson)]
+        | _ ->
+            let superclasses_to_json { class_name; superclasses } =
+              `Assoc
+                [
+                  "class_name", `String (Reference.show class_name);
+                  "superclasses", `List (List.map superclasses ~f:Type.to_yojson);
+                ]
+            in
+            `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation
     | TypesByFile paths_to_annotations ->

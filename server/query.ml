@@ -51,7 +51,9 @@ let help () =
     | Signature _ ->
         Some "signature(a, b, ...): Gives a human-readable signature for the given function names."
     | Superclasses _ ->
-        Some "superclasses(class_name): Returns the list of superclasses for `class_name`."
+        Some
+          "superclasses(class_name1, class_name2, ...): Returns a mapping of class_name to the \
+           list of superclasses for `class_name`."
     | Type _ -> Some "type(expression): Evaluates the type of `expression`."
     | TypeAtPosition _ ->
         Some "type_at_position('path', line, column): Returns the type for the given cursor."
@@ -89,7 +91,7 @@ let help () =
       PathOfModule (Reference.create "");
       SaveServerState path;
       Signature [Reference.create ""];
-      Superclasses empty;
+      Superclasses [empty];
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { path; position = Location.any_position };
       TypesInFiles [path];
@@ -232,7 +234,7 @@ let parse_query
           Request.TypeQueryRequest
             (SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path)))
       | "signature", names -> Request.TypeQueryRequest (Signature (List.map names ~f:reference))
-      | "superclasses", [name] -> Request.TypeQueryRequest (Superclasses (access name))
+      | "superclasses", names -> Request.TypeQueryRequest (Superclasses (List.map ~f:access names))
       | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
       | ( "type_at_position",
           [

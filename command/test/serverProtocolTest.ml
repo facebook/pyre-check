@@ -7,6 +7,7 @@ open Core
 open OUnit2
 open Server
 open Protocol
+open Test
 
 let test_type_query_json _ =
   let open TypeQuery in
@@ -52,8 +53,42 @@ let test_type_query_json _ =
     |};
   assert_serializes (Response (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
   assert_serializes
-    (Response (Superclasses [Analysis.Type.integer; Analysis.Type.string]))
-    {|{"response": {"superclasses": ["int", "str"]}}|}
+    (Response
+       (Superclasses
+          [
+            {
+              Protocol.TypeQuery.class_name = !&"test.C";
+              superclasses = [Analysis.Type.integer; Analysis.Type.string];
+            };
+          ]))
+    {|{"response": {"superclasses": ["int", "str"]}}|};
+  assert_serializes
+    (Response
+       (Superclasses
+          [
+            {
+              Protocol.TypeQuery.class_name = !&"test.C";
+              superclasses = [Analysis.Type.integer; Analysis.Type.string];
+            };
+            {
+              Protocol.TypeQuery.class_name = !&"test.D";
+              superclasses = [Analysis.Type.integer; Analysis.Type.bool];
+            };
+          ]))
+    {|
+      {
+        "response": [
+          {
+            "class_name":"test.C",
+            "superclasses":["int","str"]
+          },
+          {
+            "class_name":"test.D",
+            "superclasses":["int","bool"]
+          }
+        ]
+      }
+    |}
 
 
 let () = "serverProtocol" >::: ["type_query_json" >:: test_type_query_json] |> Test.run

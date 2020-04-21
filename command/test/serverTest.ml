@@ -365,15 +365,37 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.Superclasses
           [
-            Type.integer;
-            Type.float;
-            Type.complex;
-            Primitive "numbers.Integral";
-            Primitive "numbers.Rational";
-            Primitive "numbers.Real";
-            Primitive "numbers.Complex";
-            Primitive "numbers.Number";
-            Type.object_primitive;
+            {
+              Protocol.TypeQuery.class_name = !&"test.C";
+              superclasses =
+                [
+                  Type.integer;
+                  Type.float;
+                  Type.complex;
+                  Primitive "numbers.Integral";
+                  Primitive "numbers.Rational";
+                  Primitive "numbers.Real";
+                  Primitive "numbers.Complex";
+                  Primitive "numbers.Number";
+                  Type.object_primitive;
+                ];
+            };
+          ]));
+  assert_type_query_response
+    ~source:{|
+    class C: pass
+
+    class D(C): pass
+  |}
+    ~query:"superclasses(test.C, test.D)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.Superclasses
+          [
+            { Protocol.TypeQuery.class_name = !&"test.C"; superclasses = [Type.object_primitive] };
+            {
+              Protocol.TypeQuery.class_name = !&"test.D";
+              superclasses = [Primitive "test.C"; Type.object_primitive];
+            };
           ]));
   let assert_compatibility_response ~source ~query ~actual ~expected result =
     assert_type_query_response
