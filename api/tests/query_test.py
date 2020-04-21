@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call, patch
 
 from .. import query
 
@@ -31,6 +31,64 @@ class QueryAPITest(unittest.TestCase):
                 )
             ],
         )
+        pyre_connection.query_server.side_effect = [
+            {
+                "response": [
+                    {
+                        "name": "a.foo",
+                        "parameters": [{"name": "x", "annotation": "int"}],
+                        "return_annotation": "int",
+                    }
+                ]
+            },
+            {
+                "response": [
+                    {
+                        "name": "b.bar",
+                        "parameters": [{"name": "y", "annotation": "str"}],
+                        "return_annotation": "int",
+                    }
+                ]
+            },
+        ]
+        self.assertEqual(
+            query.defines(pyre_connection, ["a", "b"], batch_size=1),
+            [
+                query.Define(
+                    name="a.foo",
+                    parameters=[query.DefineParameter(name="x", annotation="int")],
+                    return_annotation="int",
+                ),
+                query.Define(
+                    name="b.bar",
+                    parameters=[query.DefineParameter(name="y", annotation="str")],
+                    return_annotation="int",
+                ),
+            ],
+        )
+        with patch(f"{query.__name__}._defines") as defines_implementation:
+            defines_implementation.return_value = []
+            query.defines(pyre_connection, ["a", "b", "c", "d"], batch_size=2)
+            defines_implementation.assert_has_calls(
+                [call(pyre_connection, ["a", "b"]), call(pyre_connection, ["c", "d"])]
+            )
+            defines_implementation.reset_calls()
+            query.defines(
+                pyre_connection, ["a", "b", "c", "d", "e", "f", "g"], batch_size=2
+            )
+            defines_implementation.assert_has_calls(
+                [
+                    call(pyre_connection, ["a", "b"]),
+                    call(pyre_connection, ["c", "d"]),
+                    call(pyre_connection, ["e", "f"]),
+                    call(pyre_connection, ["g"]),
+                ]
+            )
+        with self.assertRaises(ValueError):
+            query.defines(pyre_connection, ["a", "b"], batch_size=0)
+
+        with self.assertRaises(ValueError):
+            query.defines(pyre_connection, ["a", "b"], batch_size=-1)
 
     def test_get_class_hierarchy(self) -> None:
         pyre_connection = MagicMock()

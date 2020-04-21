@@ -64,7 +64,7 @@ class ClassHierarchy:
         return self.hierarchy.get(class_name)
 
 
-def defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Define]:
+def _defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Define]:
     query = "defines({})".format(",".join(modules))
     result = pyre_connection.query_server(query)
     if result is None or "response" not in result:
@@ -82,6 +82,28 @@ def defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Def
         )
         for element in result["response"]
     ]
+
+
+def defines(
+    pyre_connection: PyreConnection,
+    modules: Iterable[str],
+    batch_size: Optional[int] = None,
+) -> List[Define]:
+    modules = list(modules)
+    if batch_size is None:
+        return _defines(pyre_connection, modules)
+    if batch_size <= 0:
+        raise ValueError(
+            "batch_size must a positive integer, provided: `{}`".format(batch_size)
+        )
+    found_defines: List[Define] = []
+    module_chunks = [
+        modules[index : index + batch_size]
+        for index in range(0, len(modules), batch_size)
+    ]
+    for modules in module_chunks:
+        found_defines.extend(_defines(pyre_connection, modules))
+    return found_defines
 
 
 def get_class_hierarchy(pyre_connection: PyreConnection) -> Optional[ClassHierarchy]:
