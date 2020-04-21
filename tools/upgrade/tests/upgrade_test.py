@@ -214,6 +214,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = False
         arguments.from_stdin = False
         arguments.upgrade_version = True
+        arguments.no_commit = False
         gather.return_value = []
         upgrade.run_fixme_all(arguments, VERSION_CONTROL)
         fix.assert_not_called()
@@ -343,6 +344,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = False
         arguments.from_stdin = False
         arguments.upgrade_version = True
+        arguments.no_commit = False
         gather.return_value = [
             upgrade.Configuration(
                 Path("local/.pyre_configuration.local"), {"version": 123}
@@ -531,6 +533,7 @@ class FixmeSingleTest(unittest.TestCase):
         arguments.path = Path("local")
         arguments.from_stdin = False
         arguments.lint = False
+        arguments.no_commit = False
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):

@@ -411,9 +411,10 @@ def _upgrade_project(
             else "Suppress pyre errors",
             str(local_root.relative_to(project_root)),
         )
-        version_control.submit_changes(
-            arguments.submit, version_control.commit_message(title)
-        )
+        if not arguments.no_commit:
+            version_control.submit_changes(
+                arguments.submit, version_control.commit_message(title)
+            )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
 
@@ -801,6 +802,9 @@ def run(version_control: VersionControl) -> None:
         "--from-stdin", action="store_true", help=argparse.SUPPRESS
     )
     fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+    fixme_single.add_argument(
+        "--no-commit", action="store_true", help=argparse.SUPPRESS
+    )
     fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in all projects with local configurations.
@@ -815,6 +819,7 @@ def run(version_control: VersionControl) -> None:
         help="Upgrade and clean projects with a version override set.",
     )
     fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+    fixme_all.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in targets running type checking
