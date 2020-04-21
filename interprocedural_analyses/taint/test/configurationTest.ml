@@ -370,8 +370,9 @@ let test_multiple_configurations _ =
 
 let test_validate _ =
   let assert_validation_error ~error configuration =
-    let configuration = Taint.TaintConfiguration.parse [Yojson.Safe.from_string configuration] in
-    assert_raises (Failure error) (fun () -> Taint.TaintConfiguration.validate configuration)
+    assert_raises (Failure error) (fun () ->
+        Taint.TaintConfiguration.parse [Yojson.Safe.from_string configuration]
+        |> Taint.TaintConfiguration.validate)
   in
   assert_validation_error
     ~error:"Duplicate entry for source: `UserControlled`"
@@ -458,6 +459,67 @@ let test_validate _ =
          name: "Test",
          multi_sink_labels: ["a", "b"]
        }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Multiple rules share the same code `2001`."
+    {|
+    {
+      sources: [
+        { name: "A" }
+      ],
+      sinks: [
+       { name: "B" },
+       { name: "C" }
+      ],
+      rules: [
+        {
+           name: "test rule",
+           sources: ["A"],
+           sinks: ["B"],
+           code: 2001,
+           message_format: "whatever"
+        },
+        {
+           name: "test rule",
+           sources: ["A"],
+           sinks: ["C"],
+           code: 2001,
+           message_format: "format"
+        }
+      ]
+    }
+    |};
+  assert_validation_error
+    ~error:"Multiple rules share the same code `2002`."
+    {|
+    {
+      sources: [
+        { name: "A" },
+        { name: "B" }
+      ],
+      sinks: [
+        { name: "C", multi_sink_labels: ["a", "b"] },
+        { name: "D" }
+      ],
+      rules: [
+        {
+           name: "test rule",
+           sources: ["A"],
+           sinks: ["D"],
+           code: 2002,
+           message_format: "whatever"
+        }
+      ],
+      combined_source_rules: [
+        {
+           name: "test combined rule",
+           sources: {"a": "A", "b": "B"},
+           sinks: ["C"],
+           code: 2002,
+           message_format: "some form"
+        }
       ]
     }
     |}

@@ -156,6 +156,12 @@ let parse source_jsons =
     let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
     array_member "features" json |> List.map ~f:parse_feature
   in
+  let seen_rules = Int.Hash_set.create () in
+  let validate_code_uniqueness code =
+    if Hash_set.mem seen_rules code then
+      failwith (Format.sprintf "Multiple rules share the same code `%d`." code);
+    Hash_set.add seen_rules code
+  in
   let parse_rules ~allowed_sources ~allowed_sinks ~acceptable_sink_labels json =
     let parse_rule json =
       let sources =
@@ -178,6 +184,7 @@ let parse source_jsons =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
       let code = Json.Util.member "code" json |> Json.Util.to_int in
+      validate_code_uniqueness code;
       { Rule.sources; sinks; name; code; message_format }
     in
     array_member "rules" json |> List.map ~f:parse_rule
@@ -187,6 +194,7 @@ let parse source_jsons =
       let name = Json.Util.member "name" json |> Json.Util.to_string in
       let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
       let code = Json.Util.member "code" json |> Json.Util.to_int in
+      validate_code_uniqueness code;
       let sources = Json.Util.member "sources" json in
       let keys = Json.Util.keys sources in
       match keys with
