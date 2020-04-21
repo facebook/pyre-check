@@ -1541,19 +1541,36 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
+
+        # No errors returned.
+        get_errors.side_effect = [errors.Errors([]), errors.Errors([])]
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
+            get_lint_status.assert_called()
+
+        # Do not attempt to create a configuration when no existing project-level
+        # configuration is found.
+        fix.reset_mock()
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        get_lint_status.reset_mock()
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
         ]
-
-        # Do not attempt to create a configuration when no existing project-level
-        # configuration is found.
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
         upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
         open_mock.assert_not_called()
         fix.assert_not_called()
         add_local_mode.assert_not_called()
+        get_lint_status.assert_not_called()
 
         # Add to existing project configuration if it lives at given subdirectory
         find_project_configuration.return_value = Path(
@@ -1604,6 +1621,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 ]
             )
             add_local_mode.assert_not_called()
+            get_lint_status.assert_called_once()
 
         # Create local project configuration
         fix.reset_mock()

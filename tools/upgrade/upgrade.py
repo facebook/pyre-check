@@ -665,8 +665,6 @@ def run_targets_to_configuration(
 
     all_errors = configuration.get_errors()
     error_threshold = arguments.fixme_threshold
-    if len(all_errors) == 0:
-        return
 
     for path, errors in all_errors:
         errors = list(errors)
