@@ -38,6 +38,7 @@ class MonitorTest(unittest.TestCase):
             project_root,
             original_directory,
             local_configuration_root,
+            [],
         ).daemonize()
         run.assert_not_called()
         fork.assert_has_calls([call()])
@@ -50,6 +51,7 @@ class MonitorTest(unittest.TestCase):
             project_root,
             original_directory,
             local_configuration_root,
+            [],
         ).daemonize()
         fork.assert_has_calls([call(), call()])
         run.assert_has_calls([call()])
@@ -63,6 +65,7 @@ class MonitorTest(unittest.TestCase):
             project_root,
             original_directory,
             local_configuration_root,
+            [],
         ).daemonize()
         _exit.assert_has_calls([call(0), call(1)])
 
@@ -96,6 +99,7 @@ class MonitorTest(unittest.TestCase):
                             project_root,
                             original_directory,
                             local_configuration_root,
+                            [],
                         )._run()
         except ImportError:
             pass
@@ -115,6 +119,7 @@ class MonitorTest(unittest.TestCase):
             project_root,
             original_directory,
             local_configuration_root,
+            [],
         )
 
         monitor_instance._project_root_path = Path("/ROOT/a/b")
@@ -159,6 +164,30 @@ class MonitorTest(unittest.TestCase):
         )
         stop_command.assert_not_called()
 
+        monitor_instance = configuration_monitor.ConfigurationMonitor(
+            arguments,
+            configuration,
+            analysis_directory,
+            project_root,
+            original_directory,
+            local_configuration_root,
+            ["critical.extension"],
+        )
+
+        stop_command.reset_mock()
+        monitor_instance._project_root_path = Path("/ROOT/a/b")
+        monitor_instance._handle_response(
+            {"files": ["a/b/critical.extension"], "root": "/ROOT"}
+        )
+        stop_command.assert_called_once()
+
+        stop_command.reset_mock()
+        monitor_instance._project_root_path = Path("/ROOT/a/b")
+        monitor_instance._handle_response(
+            {"files": ["a/b/c/critical.extension"], "root": "/ROOT"}
+        )
+        stop_command.assert_not_called()
+
     @patch.object(
         configuration_monitor.ConfigurationMonitor, "__init__", return_value=None
     )
@@ -166,9 +195,16 @@ class MonitorTest(unittest.TestCase):
     def test_subscriptions(self, watchman_client: MagicMock, init: MagicMock) -> None:
         watchman_client.query.return_value = {"roots": ["/a", "/b"]}
         monitor = configuration_monitor.ConfigurationMonitor(
-            MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock()
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            [],
         )
         monitor._project_root_path = Path("/b/project_two")
+        monitor._other_critical_files = []
         actual = monitor._subscriptions
         self.assertEqual(len(actual), 1)
         self.assertEqual(actual[0].root, "/b")

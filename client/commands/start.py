@@ -104,6 +104,8 @@ class Start(Reporting):
                 self._current_directory,
                 self._original_directory,
                 self.local_configuration,
+                # TODO: pass this in from a configuration option
+                [],
             ).daemonize()
 
     def _run(self) -> None:

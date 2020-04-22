@@ -36,6 +36,7 @@ class ConfigurationMonitor(Subscriber):
         project_root: str,
         original_directory: str,
         local_configuration_root: Optional[str],
+        other_critical_files: List[str],
     ) -> None:
         super(ConfigurationMonitor, self).__init__(self.base_path(configuration))
         self._arguments = arguments
@@ -44,6 +45,7 @@ class ConfigurationMonitor(Subscriber):
         self._project_root_path: Path = Path(project_root).resolve()
         self._original_directory = original_directory
         self._local_configuration_root = local_configuration_root
+        self._other_critical_files = other_critical_files
 
     NAME = "configuration_monitor"
 
@@ -73,6 +75,10 @@ class ConfigurationMonitor(Subscriber):
                             "anyof",
                             ["suffix", "pyre_configuration.local"],
                             ["suffix", "pyre_configuration"],
+                            *[
+                                ["match", critical]
+                                for critical in self._other_critical_files
+                            ],
                         ],
                     ],
                     "fields": ["name"],
@@ -83,6 +89,14 @@ class ConfigurationMonitor(Subscriber):
         LOG.debug("Configuration monitor is not subscribed to any paths.")
         return []
 
+    def _stop(self) -> None:
+        stop.Stop(
+            self._arguments,
+            self._original_directory,
+            configuration=self._configuration,
+            analysis_directory=self._analysis_directory,
+        ).run()
+
     def _handle_response(self, response: Dict[str, Any]) -> None:
         watchman_root = response.get("root", None)
         paths = response.get("files", None)
@@ -92,34 +106,30 @@ class ConfigurationMonitor(Subscriber):
             return
 
         absolute_paths = [Path(watchman_root, path).resolve() for path in paths]
-        LOG.info(f"Update to configuration at {absolute_paths}")
+        LOG.info(f"Update to configuration or other critical files at {absolute_paths}")
 
         root_configuration_path = self._project_root_path / CONFIGURATION_FILE
         local_configuration_root = self._local_configuration_root
         if root_configuration_path in absolute_paths:
             LOG.info("Pyre configuration changed. Stopping pyre server.")
-            stop.Stop(
-                self._arguments,
-                self._original_directory,
-                configuration=self._configuration,
-                analysis_directory=self._analysis_directory,
-            ).run()
             # TODO(T54088045): Find all local pyre servers running underneath
             # and stop them.
+            self._stop()
         elif (
             local_configuration_root is not None
             and Path(local_configuration_root, LOCAL_CONFIGURATION_FILE).resolve()
             in absolute_paths
         ):
             LOG.info("Local configuration changed. Stopping pyre server.")
-            stop.Stop(
-                self._arguments,
-                self._original_directory,
-                configuration=self._configuration,
-                analysis_directory=self._analysis_directory,
-            ).run()
+            self._stop()
+        elif any(
+            self._project_root_path / critical in absolute_paths
+            for critical in self._other_critical_files
+        ):
+            LOG.info("Critical file changed. Stopping pyre server.")
+            self._stop()
         else:
             LOG.info(
                 "None of the changed paths correspond to the root "
-                "configuration or a local pyre configuration."
+                "configuration, a local pyre configuration, or any other critical file."
             )
