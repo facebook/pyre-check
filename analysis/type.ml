@@ -2115,9 +2115,7 @@ let expression_contains_any = LiteralAnyVisitor.expression_contains_any
 
 let is_not_instantiated annotation =
   let predicate = function
-    | Bottom
-    | NoneType ->
-        true
+    | Bottom -> true
     | Variable { constraints = Unconstrained; _ } -> true
     | _ -> false
   in

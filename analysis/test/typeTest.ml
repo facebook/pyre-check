@@ -838,7 +838,7 @@ let test_is_concrete _ =
 let test_is_not_instantiated _ =
   assert_true (Type.is_not_instantiated Type.Bottom);
   assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
-  assert_true (Type.is_not_instantiated Type.NoneType);
+  assert_false (Type.is_not_instantiated Type.NoneType);
   assert_false (Type.is_not_instantiated Type.Top);
   assert_true (Type.is_not_instantiated (Type.variable "_T"))
 
