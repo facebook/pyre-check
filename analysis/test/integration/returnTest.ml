@@ -209,7 +209,7 @@ let test_check_return context =
       def bar(x: typing.Optional[typing.Any]) -> int:
           return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[typing.Any]`."];
+    [];
   assert_default_type_errors
     {|
       import typing

@@ -59,7 +59,7 @@ let test_default_builder context =
       class Foo:
         method: Callable("named")[[int], str]
     |}
-    ~target:(Optional (Primitive "test.Foo"))
+    ~target:(Type.optional (Primitive "test.Foo"))
     ~callables:None
     ~callee:"foo.method"
     [
@@ -78,7 +78,7 @@ let test_default_builder context =
       class Foo:
         bound_method: BoundMethod[Callable("named")[[int], str], Foo]
     |}
-    ~target:(Optional (Primitive "test.Foo"))
+    ~target:(Type.optional (Primitive "test.Foo"))
     ~callables:None
     ~callee:"foo.bound_method"
     [

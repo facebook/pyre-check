@@ -187,7 +187,7 @@ and t =
   | Callable of t Record.Callable.record
   | Any
   | Literal of literal
-  | Optional of t
+  | NoneType
   | Parametric of {
       name: Identifier.t;
       parameters: t Record.Parameter.record list;

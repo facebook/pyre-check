@@ -434,7 +434,7 @@ let test_assert_contains_none context =
       def foo(x: None) -> None:
         assert None not in x
     |}
-    ["Undefined attribute [16]: Optional type has no attribute `__getitem__`."];
+    ["Undefined attribute [16]: `None` has no attribute `__getitem__`."];
   assert_type_errors
     {|
       def foo(x: Derp) -> None:

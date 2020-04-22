@@ -178,22 +178,6 @@ module WeakenMutableLiterals = struct
               ~typed_dictionary_errors:(List.concat_map weakened_types ~f:typed_dictionary_errors)
               resolved
         | Unequal_lengths -> make_weakened_type resolved )
-    | _, _, Type.Optional expected_type ->
-        let { resolved; typed_dictionary_errors } =
-          weaken_mutable_literals
-            ~get_typed_dictionary
-            resolve
-            ~expression
-            ~resolved
-            ~expected:expected_type
-            ~comparator:comparator_without_override
-        in
-        make_weakened_type
-          ~typed_dictionary_errors
-          ( if comparator ~left:resolved ~right:expected_type then
-              expected
-          else
-            resolved )
     | ( Some { Node.value = Expression.List items; _ },
         Type.Parametric { name = "list" as container_name; parameters = [Single actual_item_type] },
         Type.Parametric { name = "list"; parameters = [Single expected_item_type] } )
@@ -2068,13 +2052,6 @@ module Implementation = struct
                      don't yet support Union[Ts] *)
                   | "typing.Union" ->
                       { Type.Callable.annotation = Type.meta Type.Any; parameters = Undefined }, []
-                  | "typing.Optional" ->
-                      ( {
-                          Type.Callable.annotation = Type.meta (Type.Optional synthetic);
-                          parameters =
-                            Defined [self_parameter; create_parameter (Type.meta synthetic)];
-                        },
-                        [] )
                   | "typing.Callable" ->
                       ( {
                           Type.Callable.annotation =
@@ -2780,6 +2757,7 @@ module Implementation = struct
             (* Constructor on concrete class or fully specified generic,
              * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
             Option.value (fully_specified_type callee) ~default:Top )
+    | Name (Identifier "None") -> Type.Top
     | Name _ when has_identifier_base expression -> (
         match fully_specified_type expression with
         | Some annotation ->

@@ -142,16 +142,13 @@ let test_create _ =
   assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
   assert_create
     "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
-    (Type.union
-       [
-         Type.Optional Type.Bottom; Type.integer; Type.string; Type.tuple [Type.integer; Type.string];
-       ]);
+    (Type.union [Type.NoneType; Type.integer; Type.string; Type.tuple [Type.integer; Type.string]]);
   assert_create
     "typing.Union[typing.Optional[int], typing.Optional[str]]"
-    (Type.union [Type.Optional Type.Bottom; Type.integer; Type.string]);
+    (Type.union [Type.NoneType; Type.integer; Type.string]);
   assert_create
     "typing.Union[typing.Optional[int], str]"
-    (Type.union [Type.Optional Type.Bottom; Type.integer; Type.string]);
+    (Type.union [Type.NoneType; Type.integer; Type.string]);
 
   (* Annotated. *)
   assert_create "typing.Annotated[int]" (Type.annotated Type.integer);
@@ -463,9 +460,9 @@ let test_instantiate _ =
 
   (* Union[_T, _VT] + (_T = int, _VT = None) -> Optional[int] *)
   assert_instantiate
-    [Type.variable "_T", Type.integer; Type.variable "_VT", Type.Optional Type.Bottom]
+    [Type.variable "_T", Type.integer; Type.variable "_VT", Type.NoneType]
     ~generic:(Type.Union [Type.variable "_T"; Type.variable "_VT"])
-    ~expected:(Type.Optional Type.integer)
+    ~expected:(Type.optional Type.integer)
 
 
 let test_expression _ =
@@ -664,8 +661,8 @@ let test_concise _ =
        ())
     "(callable: (x: int) -> float) -> int";
   assert_concise Type.Any "Any";
-  assert_concise (Type.Optional Type.Bottom) "None";
-  assert_concise (Type.Optional Type.integer) "Optional[int]";
+  assert_concise Type.NoneType "None";
+  assert_concise (Type.optional Type.integer) "Optional[int]";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.float]) "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
@@ -680,16 +677,16 @@ let test_union _ =
     assert_equal ~printer:Type.show ~cmp:Type.equal expected (Type.union arguments)
   in
   assert_union
-    [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
-    (Type.Union [Type.Optional Type.Bottom; Type.integer; Type.string]);
+    [Type.string; Type.optional (Type.Union [Type.integer; Type.string])]
+    (Type.Union [Type.optional Type.Bottom; Type.integer; Type.string]);
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
   assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);
   assert_union
     [Type.optional Type.string; Type.float]
-    (Type.Union [Type.Optional Type.Bottom; Type.float; Type.string]);
+    (Type.Union [Type.NoneType; Type.float; Type.string]);
   assert_union
     [Type.float; Type.string; Type.optional Type.float]
-    (Type.Union [Type.Optional Type.Bottom; Type.float; Type.string]);
+    (Type.Union [Type.NoneType; Type.float; Type.string]);
   assert_union [Type.float; Type.Any] Type.Any;
   assert_union [Type.float; Type.Top] Type.Top;
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
@@ -703,14 +700,14 @@ let test_union _ =
     [Type.float; Type.union [Type.string; Type.bytes]]
     (Type.Union [Type.bytes; Type.float; Type.string]);
   assert_union
-    [Type.Optional (Type.list Type.integer); Type.list Type.integer]
-    (Type.Optional (Type.list Type.integer));
+    [Type.optional (Type.list Type.integer); Type.list Type.integer]
+    (Type.optional (Type.list Type.integer));
   assert_union
-    [Type.Optional (Type.variable "A"); Type.variable "A"]
-    (Type.Optional (Type.variable "A"));
+    [Type.optional (Type.variable "A"); Type.variable "A"]
+    (Type.optional (Type.variable "A"));
   assert_union
-    [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
-    (Type.Union [Type.Optional Type.Bottom; Type.integer; Type.string]);
+    [Type.string; Type.optional (Type.Union [Type.integer; Type.string])]
+    (Type.Union [Type.NoneType; Type.integer; Type.string]);
   ()
 
 
@@ -821,7 +818,7 @@ let test_is_generator _ =
 let test_contains_callable _ =
   assert_true (Type.contains_callable (Type.Callable.create ~annotation:Type.integer ()));
   assert_true
-    (Type.contains_callable (Type.Optional (Type.Callable.create ~annotation:Type.integer ())));
+    (Type.contains_callable (Type.optional (Type.Callable.create ~annotation:Type.integer ())));
   assert_true
     (Type.contains_callable
        (Type.union [Type.string; Type.Callable.create ~annotation:Type.integer ()]));
@@ -841,7 +838,7 @@ let test_is_concrete _ =
 let test_is_not_instantiated _ =
   assert_true (Type.is_not_instantiated Type.Bottom);
   assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
-  assert_true (Type.is_not_instantiated (Type.Optional Type.Bottom));
+  assert_true (Type.is_not_instantiated Type.NoneType);
   assert_false (Type.is_not_instantiated Type.Top);
   assert_true (Type.is_not_instantiated (Type.variable "_T"))
 
@@ -857,7 +854,7 @@ let test_is_none _ =
   assert_false (Type.is_none (Type.Primitive "None"));
   assert_false (Type.is_none Type.integer);
   assert_false (Type.is_none (Type.Primitive "foo"));
-  assert_true (Type.is_none (Type.Optional Type.Bottom))
+  assert_true (Type.is_none Type.NoneType)
 
 
 let test_is_type_alias _ =
@@ -872,7 +869,7 @@ let test_contains_unknown _ =
   assert_false (Type.contains_unknown (Type.optional Type.integer));
   assert_true
     (Type.contains_unknown
-       (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })));
+       (Type.optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })));
   assert_true
     (Type.contains_unknown
        (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }));
@@ -940,7 +937,7 @@ let test_optional_value _ =
   assert_equal
     (Option.value_exn
        (Type.optional_value
-          (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }))))
+          (Type.optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }))))
     (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] });
   assert_true
     (Option.is_none
@@ -954,15 +951,9 @@ let test_async_generator_value _ =
     (Option.value_exn
        (Type.async_generator_value
           (Type.Parametric
-             {
-               name = "typing.AsyncGenerator";
-               parameters = ![Type.integer; Type.Optional Type.Bottom];
-             })))
+             { name = "typing.AsyncGenerator"; parameters = ![Type.integer; Type.NoneType] })))
     (Type.Parametric
-       {
-         name = "typing.Generator";
-         parameters = ![Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom];
-       })
+       { name = "typing.Generator"; parameters = ![Type.integer; Type.NoneType; Type.NoneType] })
 
 
 let test_dequalify _ =
@@ -1188,7 +1179,9 @@ let test_visit _ =
 
 
     let visit_children_before _ = function
-      | Type.Optional _ -> false
+      | Type.Union [Type.NoneType; _]
+      | Type.Union [_; Type.NoneType] ->
+          false
       | _ -> true
 
 
@@ -2169,9 +2162,8 @@ let test_infer_transform _ =
     ~expected:(Type.Primitive "string");
   assert_transform
     ~annotation:
-      (Type.Parametric
-         { name = "Union"; parameters = ![Type.Optional Bottom; Type.Primitive "string"] })
-    ~expected:(Type.Optional (Type.Primitive "string"))
+      (Type.Parametric { name = "Union"; parameters = ![Type.NoneType; Type.Primitive "string"] })
+    ~expected:(Type.optional (Type.Primitive "string"))
 
 
 let test_fields_from_constructor _ =

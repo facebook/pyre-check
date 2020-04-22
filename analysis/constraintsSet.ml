@@ -436,6 +436,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.Top, _ ->
         []
     | Type.Bottom, _ -> [constraints]
+    | _, Type.NoneType -> []
     | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
         if
           [%compare.equal: Type.Parameter.t list option]
@@ -456,16 +457,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Concrete lefts)
           ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
           ~constraints
-    | Type.Optional Bottom, Type.Optional _ -> [constraints]
-    | Type.Optional Bottom, Type.Union rights ->
+    | Type.NoneType, Type.Union rights when List.exists rights ~f:Type.is_none ->
+        (* Technically speaking, removing this special-case still leads to correct, but somewhat
+           redundant solutions, when `rights` contains both None and type varaibles *)
+        [constraints]
+    | Type.NoneType, Type.Union rights ->
         List.concat_map rights ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
-    | Type.Optional Bottom, _ -> []
-    | Type.Optional left, right ->
-        solve_ordered_types_less_or_equal
-          order
-          ~left:(Concrete [left; Type.Optional Type.Bottom])
-          ~right:(Concrete [right; right])
-          ~constraints
+    | Type.NoneType, _ -> []
     (* We have to consider both the variables' constraint and its full value against the union. *)
     | Type.Variable bound_variable, Type.Union union ->
         solve_less_or_equal
@@ -476,14 +474,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         @ List.concat_map
             ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
             union
-    (* We have to consider both the variables' constraint and its full value against the optional. *)
-    | Type.Variable variable, Type.Optional optional ->
-        solve_less_or_equal order ~constraints ~left ~right:optional
-        @ solve_less_or_equal
-            order
-            ~constraints
-            ~left:(Type.Variable.Unary.upper_bound variable)
-            ~right
     | Type.Variable bound_variable, _ ->
         solve_less_or_equal
           order
@@ -609,7 +599,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.Parametric { name = source; _ }, Type.Primitive target ->
         solve_less_or_equal_primitives ~source ~target
     (* A <= B -> A <= Optional[B].*)
-    | left, Optional right
     | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
         solve_less_or_equal order ~constraints ~left ~right
     | Type.Tuple (Type.Bounded lefts), Type.Tuple (Type.Unbounded right) ->

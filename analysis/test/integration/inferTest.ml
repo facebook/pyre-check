@@ -313,8 +313,8 @@ let test_check_missing_return context =
         return optional and int_to_bool(optional)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[typing.Union[bool, int]]` "
-      ^ "but type `Any` is specified.";
+      "Missing return annotation [3]: Returning `typing.Union[None, bool, int]` but type `Any` is \
+       specified.";
     ];
   assert_type_errors
     {|
@@ -359,7 +359,7 @@ let test_check_missing_return context =
           return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[typing.Union[int, str]]` "
+      "Missing return annotation [3]: Returning `typing.Union[int, None, int, str]` "
       ^ "but no return type is specified.";
     ];
   assert_type_errors

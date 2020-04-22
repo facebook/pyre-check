@@ -191,7 +191,6 @@ let resolve_target ~resolution ?receiver_type callee =
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, self_argument)
     | _, _, Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
-    | _, _, Type.Optional annotation, _, _ -> resolve_type annotation
     | _, _, _, _, _ when Type.is_meta callable_type -> (
         let class_type = Type.single_parameter callable_type in
         match Type.primitive_name class_type with

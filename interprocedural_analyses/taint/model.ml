@@ -75,7 +75,9 @@ let get_global_model ~resolution ~expression =
     | Name (Name.Attribute { base; attribute; _ }), _ ->
         let is_meta, annotation =
           let rec is_meta = function
-            | Type.Optional annotation -> is_meta annotation
+            | Type.Union [Type.NoneType; annotation]
+            | Type.Union [annotation; Type.NoneType] ->
+                is_meta annotation
             | annotation ->
                 if Type.is_meta annotation then
                   true, Type.single_parameter annotation

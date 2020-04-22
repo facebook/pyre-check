@@ -113,7 +113,8 @@ let add_type_breadcrumb ~resolution annotation =
       | Type.Any
       | Type.Bottom ->
           false
-      | Type.Optional annotation
+      | Type.Union [Type.NoneType; annotation]
+      | Type.Union [annotation; Type.NoneType]
       | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
           matches_at_leaves ~f annotation
       | Type.Tuple (Type.Unbounded annotation) -> matches_at_leaves ~f annotation

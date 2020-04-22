@@ -302,7 +302,7 @@ let test_check_globals context =
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, add \
        an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
-      "Incompatible return type [7]: Expected `str` but got `None`.";
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
     ];
   assert_type_errors {|
       A = typing.Mapping[int, str]

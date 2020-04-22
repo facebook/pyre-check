@@ -846,24 +846,24 @@ let test_less_or_equal_type_order context =
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "test.A"))
-       ~right:(Type.Optional (Type.Primitive "test.A")));
+       ~left:(Type.optional (Type.Primitive "test.A"))
+       ~right:(Type.optional (Type.Primitive "test.A")));
   assert_true
     (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Primitive "test.A")
-       ~right:(Type.Optional (Type.Primitive "test.A")));
+       ~right:(Type.optional (Type.Primitive "test.A")));
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "test.A"))
+       ~left:(Type.optional (Type.Primitive "test.A"))
        ~right:(Type.Primitive "test.A"));
 
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "test.A"))
+       ~left:(Type.optional (Type.Primitive "test.A"))
        ~right:(Type.Primitive "test.C"));
   assert_false
     (TypeOrder.always_less_or_equal
@@ -925,7 +925,7 @@ let test_less_or_equal_type_order context =
     (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"; Type.integer])
-       ~right:(Type.Union [Type.Top; Type.Any; Type.Optional Type.float]));
+       ~right:(Type.Union [Type.Top; Type.Any; Type.optional Type.float]));
   assert_false
     (TypeOrder.always_less_or_equal
        order

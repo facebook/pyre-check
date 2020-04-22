@@ -795,7 +795,10 @@ let test_forward_expression context =
   assert_forward "yield" (Type.generator Type.none);
 
   (* Meta-types *)
-  assert_forward "typing.Optional[int]" (Type.meta (Type.optional Type.integer));
+  assert_forward
+    "typing.Optional[int]"
+    (* TODO (T65870531): This should be typing.Union or typing._GenericAlias *)
+    (Type.meta (Type.parametric "typing.Optional" [Type.Parameter.Single Type.integer]));
   assert_forward
     "typing.Callable[[int, str], int]"
     (Type.meta (Type.Callable.create ~annotation:Type.integer ()));

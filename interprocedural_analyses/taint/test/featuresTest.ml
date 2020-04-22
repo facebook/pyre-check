@@ -34,8 +34,8 @@ let test_add_type_breadcrumb context =
   assert_type_based_breadcrumbs Type.Any [];
   assert_type_based_breadcrumbs (Type.awaitable Type.integer) ["scalar"];
   assert_type_based_breadcrumbs (Type.awaitable Type.bool) ["bool"; "scalar"];
-  assert_type_based_breadcrumbs (Type.awaitable (Type.Optional Type.bool)) ["bool"; "scalar"];
-  assert_type_based_breadcrumbs (Type.awaitable (Type.Optional Type.integer)) ["scalar"]
+  assert_type_based_breadcrumbs (Type.awaitable (Type.optional Type.bool)) ["bool"; "scalar"];
+  assert_type_based_breadcrumbs (Type.awaitable (Type.optional Type.integer)) ["scalar"]
 
 
 let () = "features" >::: ["add_type_breadcrumb" >:: test_add_type_breadcrumb] |> Test.run

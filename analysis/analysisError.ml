@@ -1953,8 +1953,7 @@ let inference_information
       in
       let annotation =
         match kind with
-        | MissingParameterAnnotation
-            { name = parameter_name; annotation = Some (Optional Bottom); _ }
+        | MissingParameterAnnotation { name = parameter_name; annotation = Some NoneType; _ }
           when Reference.equal_sanitized (Reference.create name) parameter_name ->
             `Null
         | MissingParameterAnnotation
@@ -1962,7 +1961,7 @@ let inference_information
           when Reference.equal_sanitized (Reference.create name) parameter_name
                && value_is_none
                && not (Type.is_optional parameter_annotation) ->
-            Type.Optional parameter_annotation |> print_annotation |> fun string -> `String string
+            Type.optional parameter_annotation |> print_annotation |> fun string -> `String string
         | MissingParameterAnnotation
             { name = parameter_name; annotation = Some parameter_annotation; _ }
           when Reference.equal_sanitized (Reference.create name) parameter_name ->
@@ -2023,8 +2022,7 @@ let inference_information
           "decorators", `List decorators;
           "async", `Bool async;
         ]
-  | MissingAttributeAnnotation
-      { missing_annotation = { annotation = Some (Optional Bottom); _ }; _ } ->
+  | MissingAttributeAnnotation { missing_annotation = { annotation = Some NoneType; _ }; _ } ->
       `Assoc []
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } -> (
       let attributes =
@@ -2037,7 +2035,7 @@ let inference_information
       | Some annotation ->
           `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
       | None -> `Assoc attributes )
-  | MissingGlobalAnnotation { annotation = Some (Optional Bottom); _ } -> `Assoc []
+  | MissingGlobalAnnotation { annotation = Some NoneType; _ } -> `Assoc []
   | MissingGlobalAnnotation { name; annotation; _ } -> (
       let attributes =
         ["parent", `Null; "attribute_name", `String (Reference.show_sanitized name)]

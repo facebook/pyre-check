@@ -51,7 +51,7 @@ module UnresolvedAlias = struct
       type state = unit
 
       let visit_children_before _ = function
-        | Type.Optional Bottom -> false
+        | Type.NoneType -> false
         | _ -> true
 
 

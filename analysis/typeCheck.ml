@@ -2073,14 +2073,23 @@ module State (Context : Context) = struct
         in
         let resolved =
           match resolved_left, resolved_right, operator with
-          | Optional resolved_left, resolved_right, BooleanOperator.Or ->
+          | ( Type.Union ([Type.NoneType; resolved_left] | [resolved_left; Type.NoneType]),
+              resolved_right,
+              BooleanOperator.Or ) ->
               GlobalResolution.join global_resolution resolved_left resolved_right
           (* Zero is also falsy. *)
-          | Optional integer, resolved_right, BooleanOperator.And
+          | Type.Union [Type.NoneType; integer], resolved_right, BooleanOperator.And
             when Type.equal integer Type.integer ->
               Type.optional
                 (GlobalResolution.join global_resolution (Type.literal_integer 0) resolved_right)
-          | Optional _, resolved_right, BooleanOperator.And -> Type.optional resolved_right
+          | Type.Union [integer; Type.NoneType], resolved_right, BooleanOperator.And
+            when Type.equal integer Type.integer ->
+              Type.optional
+                (GlobalResolution.join global_resolution (Type.literal_integer 0) resolved_right)
+          | ( Type.Union ([Type.NoneType; _] | [_; Type.NoneType]),
+              resolved_right,
+              BooleanOperator.And ) ->
+              Type.optional resolved_right
           | resolved_left, resolved_right, _ ->
               GlobalResolution.join global_resolution resolved_left resolved_right
         in
@@ -2564,6 +2573,7 @@ module State (Context : Context) = struct
           forward_expression ~resolution ~expression:right
         in
         let resolution, errors, resolved =
+          (* We should really error here if resolve_class fails *)
           Type.resolve_class resolved
           >>| List.fold ~f:resolve_in_call ~init:(resolution, errors, Type.Bottom)
           |> Option.value ~default:(resolution, errors, Type.Bottom)
@@ -4287,9 +4297,8 @@ module State (Context : Context) = struct
         in
         let partition annotation ~boundary =
           let consistent_with_boundary, not_consistent_with_boundary =
-            let rec extract_union_members = function
+            let extract_union_members = function
               | Type.Union parameters -> parameters
-              | Type.Optional optional -> Type.none :: extract_union_members optional
               | annotation -> [annotation]
             in
             extract_union_members annotation
@@ -4539,25 +4548,6 @@ module State (Context : Context) = struct
                   {
                     Annotation.annotation =
                       Type.Parametric
-                        { name = parametric_name; parameters = [Single (Type.Optional parameter)] }
-                      as annotation;
-                    _;
-                  }
-                when GlobalResolution.less_or_equal
-                       global_resolution
-                       ~left:annotation
-                       ~right:(Type.iterable (Type.Optional parameter)) ->
-                  Resolution.set_local_with_attributes
-                    resolution
-                    ~name
-                    ~annotation:
-                      (Annotation.create
-                         (Type.Parametric
-                            { name = parametric_name; parameters = [Single parameter] }))
-              | Some
-                  {
-                    Annotation.annotation =
-                      Type.Parametric
                         { name = parametric_name; parameters = [Single (Type.Union parameters)] };
                     _;
                   } ->
@@ -4579,15 +4569,20 @@ module State (Context : Context) = struct
             Some resolution, errors
         | Name name when is_simple_name name -> (
             match refinable_annotation name with
-            | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
+            | Some { Annotation.annotation = Type.NoneType; _ } ->
                 ( None,
                   emit_error
                     ~errors
                     ~location:(Node.location test)
                     ~kind:
                       (Error.ImpossibleAssertion
-                         { test; expression = test; annotation = Type.Optional Type.Bottom }) )
-            | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
+                         { test; expression = test; annotation = Type.NoneType }) )
+            | Some
+                ( {
+                    Annotation.annotation =
+                      Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]);
+                    _;
+                  } as annotation ) ->
                 let resolution =
                   Resolution.set_local_with_attributes
                     resolution
@@ -4651,7 +4646,7 @@ module State (Context : Context) = struct
               right = { Node.value = Name (Name.Identifier "None"); _ };
             }
           when is_simple_name name -> (
-            let refined = Annotation.create (Type.Optional Type.Bottom) in
+            let refined = Annotation.create Type.NoneType in
             match refinable_annotation name with
             | Some previous ->
                 if
@@ -4734,8 +4729,15 @@ module State (Context : Context) = struct
             match annotation with
             | Some annotation -> (
                 match Annotation.annotation annotation with
-                | Type.Parametric { name = "list"; parameters = [Single (Type.Optional parameter)] }
-                  ->
+                | Type.Parametric
+                    {
+                      name = "list";
+                      parameters =
+                        [
+                          Single
+                            (Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]));
+                        ];
+                    } ->
                     let resolution =
                       Resolution.set_local_with_attributes
                         resolution

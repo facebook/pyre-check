@@ -634,13 +634,12 @@ let test_less_or_equal context =
        ~right:(Type.parametric "tuple" ![Type.integer]));
 
   (* Union types *)
-  assert_true
-    (less_or_equal default ~left:(Type.Optional Type.Bottom) ~right:(Type.Optional Type.integer));
+  assert_true (less_or_equal default ~left:Type.NoneType ~right:(Type.optional Type.integer));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Optional Type.string)
-       ~right:(Type.Union [Type.integer; Type.Optional Type.string]));
+       ~left:(Type.optional Type.string)
+       ~right:(Type.Union [Type.integer; Type.optional Type.string]));
 
   (* Undeclared. *)
   assert_false (less_or_equal default ~left:Type.undeclared ~right:Type.Top);
@@ -1930,9 +1929,18 @@ let test_join context =
   assert_join "typing.Optional[$bottom]" "str" "typing.Optional[str]";
 
   (* Handles `[] or optional_list`. *)
-  assert_join "typing.List[$bottom]" "typing.Optional[typing.List[int]]" "typing.List[int]";
-  assert_join "typing.Optional[typing.List[int]]" "typing.List[$bottom]" "typing.List[int]";
-  assert_join "typing.Optional[typing.Set[int]]" "typing.Set[$bottom]" "typing.Set[int]";
+  assert_join
+    "typing.List[$bottom]"
+    "typing.Optional[typing.List[int]]"
+    "typing.Optional[typing.List[int]]";
+  assert_join
+    "typing.Optional[typing.List[int]]"
+    "typing.List[$bottom]"
+    "typing.Optional[typing.List[int]]";
+  assert_join
+    "typing.Optional[typing.Set[int]]"
+    "typing.Set[$bottom]"
+    "typing.Optional[typing.Set[int]]";
 
   (* Union types. *)
   assert_join

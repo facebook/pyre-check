@@ -130,15 +130,6 @@ let test_due_to_analysis_limitations _ =
        });
 
   (* Initialization *)
-  assert_due_to_analysis_limitations
-    (Error.UninitializedAttribute
-       {
-         name = "";
-         parent = mock_parent;
-         mismatch =
-           { Error.actual = Type.Top; expected = Type.Optional Type.Top; due_to_invariance = false };
-         kind = Class;
-       });
   assert_not_due_to_analysis_limitations
     (Error.UninitializedAttribute
        {
@@ -147,7 +138,7 @@ let test_due_to_analysis_limitations _ =
          mismatch =
            {
              Error.actual = Type.string;
-             expected = Type.Optional Type.string;
+             expected = Type.optional Type.string;
              due_to_invariance = false;
            };
          kind = Class;
@@ -697,8 +688,8 @@ let test_filter context =
   assert_filtered (undefined_attribute (Type.Primitive "test.MockChild"));
   assert_filtered (undefined_attribute (Type.Primitive "test.NonCallableChild"));
   assert_unfiltered (undefined_attribute (Type.Primitive "test.NonMockChild"));
-  assert_filtered (undefined_attribute (Type.Optional (Type.Primitive "test.NonCallableChild")));
-  assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
+  assert_filtered (undefined_attribute (Type.optional (Type.Primitive "test.NonCallableChild")));
+  assert_unfiltered (incompatible_return_type Type.NoneType Type.integer);
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
 
