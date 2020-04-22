@@ -1494,6 +1494,7 @@ class MigrateTest(unittest.TestCase):
 
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
     @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
     @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
     @patch(f"{upgrade.__name__}.find_targets")
@@ -1514,6 +1515,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_targets,
         find_local_configuration,
         find_project_configuration,
+        submit_changes,
         open_mock,
     ) -> None:
         arguments = MagicMock()
@@ -1521,6 +1523,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.lint = True
         arguments.glob = False
         arguments.fixme_threshold = None
+        arguments.no_commit = False
         find_targets.return_value = {
             "subdirectory/a": ["target_one"],
             "subdirectory/b/c": ["target_three", "target_two"],
@@ -1560,6 +1563,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         open_mock.reset_mock()
         dump_mock.reset_mock()
         get_lint_status.reset_mock()
+        submit_changes.reset_mock()
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
@@ -1622,6 +1626,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             )
             add_local_mode.assert_not_called()
             get_lint_status.assert_called_once()
+            submit_changes.assert_called_once()
 
         # Create local project configuration
         fix.reset_mock()

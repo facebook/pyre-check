@@ -692,6 +692,19 @@ def run_targets_to_configuration(
                 errors, arguments.comment, arguments.max_line_length, arguments.truncate
             )
 
+    try:
+        if not arguments.no_commit:
+            version_control.submit_changes(
+                arguments.submit,
+                version_control.commit_message(
+                    "Convert type check targets in {} to use configuration".format(
+                        subdirectory
+                    )
+                ),
+            )
+    except subprocess.CalledProcessError:
+        LOG.info("Error while running hg.")
+
 
 def run(version_control: VersionControl) -> None:
     parser = argparse.ArgumentParser()
@@ -877,6 +890,9 @@ def run(version_control: VersionControl) -> None:
         action="store_true",
         help="Ignore all errors in a file if fixme count exceeds threshold.",
         default=None,
+    )
+    targets_to_configuration.add_argument(
+        "--no-commit", action="store_true", help="Keep changes in working state."
     )
 
     # Initialize default values.
