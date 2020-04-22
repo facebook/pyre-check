@@ -210,6 +210,8 @@ class Configuration:
 
         self.autocomplete = False
 
+        self.other_critical_files: List[str] = []
+
         # Order matters. The values will only be updated if a field is None.
         self._read(CONFIGURATION_FILE)
         self._override_version_hash()
@@ -348,6 +350,11 @@ class Configuration:
             # Validate elements of the search path.
             for element in self._search_path:
                 assert_readable_directory(element.path())
+
+            if not is_list_of_strings(self.other_critical_files):
+                raise InvalidConfiguration(
+                    "`critical_files` field must be a list of strings."
+                )
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
@@ -582,6 +589,10 @@ class Configuration:
                     self._use_buck_builder = use_buck_builder
 
                 self.autocomplete = configuration.consume("autocomplete", default=False)
+
+                self.other_critical_files = configuration.consume(
+                    "critical_files", default=[]
+                )
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()

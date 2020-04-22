@@ -475,6 +475,13 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.autocomplete, True)
 
+        json_load.side_effect = [{}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.other_critical_files, [])
+        json_load.side_effect = [{"critical_files": ["critical", "files"]}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.other_critical_files, ["critical", "files"])
+
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")
