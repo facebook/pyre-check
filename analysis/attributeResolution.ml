@@ -1131,6 +1131,7 @@ module Implementation = struct
       include_generated_attributes:bool ->
       ?special_method:bool ->
       ?instantiated:Type.t ->
+      ?apply_descriptors:bool ->
       attribute_name:Identifier.t ->
       Type.Primitive.t ->
       AnnotatedAttribute.instantiated option;
@@ -1195,6 +1196,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       accessed_through_class:bool ->
       ?instantiated:Type.t ->
+      ?apply_descriptors:bool ->
       UninstantiatedAnnotation.t AnnotatedAttribute.t ->
       AnnotatedAttribute.instantiated;
     get_typed_dictionary:
@@ -1703,7 +1705,16 @@ module Implementation = struct
             ~class_metadata_environment
             ~create_attribute:(create_attribute ~assumptions)
             ~instantiate_attribute:
-              (instantiate_attribute ~assumptions ?instantiated:None ~accessed_through_class:false)
+              (instantiate_attribute
+                 ~assumptions
+                 ?instantiated:None
+                 ~accessed_through_class:
+                   false
+                   (* TODO(T65806273): Right now we're just ignoring `__set__`s on dataclass
+                      attributes. This avoids needing to explicitly break the loop that would
+                      otherwise result or to somehow separate these results from the main set of
+                      attributes *)
+                 ~apply_descriptors:false)
             ?dependency
             table
       in
@@ -1876,6 +1887,7 @@ module Implementation = struct
       ~include_generated_attributes
       ?(special_method = false)
       ?instantiated
+      ?apply_descriptors
       ~attribute_name
       class_name
     =
@@ -1906,7 +1918,11 @@ module Implementation = struct
           class_name
         >>= Sequence.find_map ~f:(fun table ->
                 UninstantiatedAttributeTable.lookup_name table attribute_name)
-        >>| instantiate_attribute ~assumptions ~accessed_through_class ?instantiated
+        >>| instantiate_attribute
+              ~assumptions
+              ~accessed_through_class
+              ?instantiated
+              ?apply_descriptors
 
 
   let all_attributes
@@ -1971,10 +1987,19 @@ module Implementation = struct
 
 
   let instantiate_attribute
-      { class_metadata_environment; dependency; constraints; full_order; _ }
+      {
+        class_metadata_environment;
+        dependency;
+        constraints;
+        full_order;
+        attribute = get_attribute;
+        signature_select;
+        _;
+      }
       ~assumptions
       ~accessed_through_class
       ?instantiated
+      ?(apply_descriptors = true)
       attribute
     =
     let class_name = AnnotatedAttribute.parent attribute in
@@ -2191,15 +2216,119 @@ module Implementation = struct
           | None ->
               let annotation = solve_property getter_annotation in
               annotation, annotation )
-      | Attribute annotation ->
+      | Attribute annotation -> (
           let order () = full_order ~assumptions in
-          callable_call_special_cases
-            ~instantiated:(Some instantiated)
-            ~class_name
-            ~attribute_name
-            ~order
-          >>| (fun callable -> callable, callable)
-          |> Option.value ~default:(annotation, annotation)
+          let special =
+            callable_call_special_cases
+              ~instantiated:(Some instantiated)
+              ~class_name
+              ~attribute_name
+              ~order
+            >>| fun callable -> callable, callable
+          in
+          match special with
+          | Some special -> special
+          | None
+            when AnnotatedAttribute.equal_initialized
+                   (AnnotatedAttribute.initialized attribute)
+                   OnClass
+                 && apply_descriptors ->
+              let get_descriptor_method { Type.instantiated; accessed_through_class; class_name } =
+                if accessed_through_class then
+                  (* descriptor methods are statically looked up on the class (in this case `type`),
+                     not on the instance. `type` is not a descriptor. *)
+                  `NotDescriptor (Type.meta instantiated)
+                else
+                  let attribute =
+                    (* descriptor methods are statically looked up on the class, and are not
+                       themselves subject to description *)
+                    get_attribute
+                      ~assumptions
+                      ~transitive:true
+                      ~accessed_through_class:true
+                      ~include_generated_attributes:true
+                      ?special_method:None
+                      ?instantiated:(Some instantiated)
+                      ?apply_descriptors:(Some false)
+                      ~attribute_name:"__get__"
+                      class_name
+                    >>| AnnotatedAttribute.annotation
+                    >>| Annotation.annotation
+                  in
+                  match attribute with
+                  | None -> `NotDescriptor instantiated
+                  | Some (Type.Callable callable) -> `Descriptor (instantiated, callable)
+                  | Some _ ->
+                      (* In theory we could support `__get__`s that are not just Callables, but for
+                         now lets just ignore that *)
+                      `DescriptorNotACallable
+              in
+
+              let call_dunder_get (descriptor, callable) =
+                let selection_result =
+                  signature_select
+                    ~assumptions
+                    ~arguments:
+                      (Resolved
+                         [
+                           { kind = Positional; expression = None; resolved = descriptor };
+                           {
+                             kind = Positional;
+                             expression = None;
+                             resolved = (if accessed_through_class then Type.none else instantiated);
+                           };
+                           {
+                             kind = Positional;
+                             expression = None;
+                             resolved = Type.meta instantiated;
+                           };
+                         ])
+                    ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
+                    ~callable
+                    ~self_argument:None
+                in
+                match selection_result with
+                | NotFound _ -> None
+                | Found { selected_return_annotation = return } -> Some return
+              in
+              let get_type =
+                let partitioned =
+                  let partition = function
+                    | `NotDescriptor element -> `Fst element
+                    | `Descriptor element -> `Snd element
+                    | `DescriptorNotACallable -> `Trd ()
+                  in
+                  Type.resolve_class annotation
+                  >>| List.map ~f:get_descriptor_method
+                  >>| List.partition3_map ~f:partition
+                in
+                match partitioned with
+                | Some (_, _, _ :: _) ->
+                    (* If we have broken descriptor methods we should error on them, not their
+                       usages *)
+                    Type.Any
+                | None ->
+                    (* This means we have a type that can't be `Type.split`, (most of) which aren't
+                       descriptors, so we should be usually safe to just ignore. In general we
+                       should fix resolve_class to always return something. *)
+                    annotation
+                | Some (_, [], _) ->
+                    (* If none of the components are descriptors, we don't need to worry about
+                       re-unioning together the components we split apart, we can just give back the
+                       original type *)
+                    annotation
+                | Some (normal, have_descriptors, _) ->
+                    List.map have_descriptors ~f:call_dunder_get
+                    |> Option.all
+                    >>| List.append normal
+                    >>| Type.union
+                    (* Every descriptor should accept all hosts (and all host types) as a matter of
+                       Liskov substitutibility with `object`. This means we need to error on these
+                       invalid definitions (T65807232), and not on usages *)
+                    |> Option.value ~default:Type.Any
+              in
+              get_type, annotation
+          | None -> annotation, annotation )
     in
     let annotation, original =
       match instantiated with
@@ -4080,10 +4209,13 @@ module ReadOnly = struct
 
 
   let instantiate_attribute =
-    add_both_caches_and_empty_assumptions Implementation.instantiate_attribute
+    add_both_caches_and_empty_assumptions
+      (Implementation.instantiate_attribute ?apply_descriptors:None)
 
 
-  let attribute = add_both_caches_and_empty_assumptions Implementation.attribute
+  let attribute =
+    add_both_caches_and_empty_assumptions (Implementation.attribute ?apply_descriptors:None)
+
 
   let all_attributes = add_both_caches_and_empty_assumptions Implementation.all_attributes
 

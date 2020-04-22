@@ -31,6 +31,7 @@
   coverageTest
   dataClassTest
   decoratorTest
+  descriptorTest
   deleteTest
   enumerationTest
   errorMessageTest
