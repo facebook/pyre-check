@@ -2233,13 +2233,21 @@ module Implementation = struct
                    (AnnotatedAttribute.initialized attribute)
                    OnClass
                  && apply_descriptors ->
-              let get_descriptor_method { Type.instantiated; accessed_through_class; class_name } =
+              let get_descriptor_method
+                  { Type.instantiated; accessed_through_class; class_name }
+                  ~kind
+                =
                 if accessed_through_class then
                   (* descriptor methods are statically looked up on the class (in this case `type`),
                      not on the instance. `type` is not a descriptor. *)
                   `NotDescriptor (Type.meta instantiated)
                 else
                   let attribute =
+                    let attribute_name =
+                      match kind with
+                      | `DunderGet -> "__get__"
+                      | `DunderSet -> "__set__"
+                    in
                     (* descriptor methods are statically looked up on the class, and are not
                        themselves subject to description *)
                     get_attribute
@@ -2250,7 +2258,7 @@ module Implementation = struct
                       ?special_method:None
                       ?instantiated:(Some instantiated)
                       ?apply_descriptors:(Some false)
-                      ~attribute_name:"__get__"
+                      ~attribute_name
                       class_name
                     >>| AnnotatedAttribute.annotation
                     >>| Annotation.annotation
@@ -2259,8 +2267,8 @@ module Implementation = struct
                   | None -> `NotDescriptor instantiated
                   | Some (Type.Callable callable) -> `Descriptor (instantiated, callable)
                   | Some _ ->
-                      (* In theory we could support `__get__`s that are not just Callables, but for
-                         now lets just ignore that *)
+                      (* In theory we could support `__get__`s or `__set__`s that are not just
+                         Callables, but for now lets just ignore that *)
                       `DescriptorNotACallable
               in
 
@@ -2291,7 +2299,31 @@ module Implementation = struct
                 | NotFound _ -> None
                 | Found { selected_return_annotation = return } -> Some return
               in
-              let get_type =
+              let invert_dunder_set (descriptor, callable) ~order =
+                let synthetic = Type.Variable.Unary.create "$synthetic_dunder_set_variable" in
+                let right =
+                  Type.Callable.create
+                    ~annotation:Type.none
+                    ~parameters:
+                      (Defined
+                         [
+                           PositionalOnly { index = 0; annotation = descriptor; default = false };
+                           PositionalOnly { index = 1; annotation = instantiated; default = false };
+                           PositionalOnly
+                             { index = 2; annotation = Variable synthetic; default = false };
+                         ])
+                    ()
+                in
+                TypeOrder.OrderedConstraintsSet.add
+                  ConstraintsSet.empty
+                  ~new_constraint:(LessOrEqual { left = Type.Callable callable; right })
+                  ~order
+                |> TypeOrder.OrderedConstraintsSet.solve ~order
+                >>= fun solution ->
+                ConstraintsSet.Solution.instantiate_single_variable solution synthetic
+              in
+
+              let apply_descriptor kind =
                 let partitioned =
                   let partition = function
                     | `NotDescriptor element -> `Fst element
@@ -2299,7 +2331,7 @@ module Implementation = struct
                     | `DescriptorNotACallable -> `Trd ()
                   in
                   Type.resolve_class annotation
-                  >>| List.map ~f:get_descriptor_method
+                  >>| List.map ~f:(get_descriptor_method ~kind)
                   >>| List.partition3_map ~f:partition
                 in
                 match partitioned with
@@ -2318,7 +2350,12 @@ module Implementation = struct
                        original type *)
                     annotation
                 | Some (normal, have_descriptors, _) ->
-                    List.map have_descriptors ~f:call_dunder_get
+                    let extractor =
+                      match kind with
+                      | `DunderGet -> call_dunder_get
+                      | `DunderSet -> invert_dunder_set ~order:(order ())
+                    in
+                    List.map have_descriptors ~f:extractor
                     |> Option.all
                     >>| List.append normal
                     >>| Type.union
@@ -2327,7 +2364,11 @@ module Implementation = struct
                        invalid definitions (T65807232), and not on usages *)
                     |> Option.value ~default:Type.Any
               in
-              get_type, annotation
+              let get_type = apply_descriptor `DunderGet in
+              let set_type =
+                if accessed_through_class then annotation else apply_descriptor `DunderSet
+              in
+              get_type, set_type
           | None -> annotation, annotation )
     in
     let annotation, original =

@@ -305,4 +305,115 @@ let test_non_data_descriptors context =
   ()
 
 
-let () = "descriptors" >::: ["check_non_data_descriptors" >:: test_non_data_descriptors] |> Test.run
+let test_data_descriptors context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import overload, Union
+      class Descriptor:
+        def __get__(self, o: object, t: object = None) -> int:
+          return 1
+        def __set__(self, o: object, v: str) -> None:
+          pass
+
+      class Host:
+        d: Descriptor = Descriptor()
+
+      def f() -> None:
+        x = Host().d
+        reveal_type(x)
+        y = Host.d
+        reveal_type(y)
+
+        Host().d = "A"
+        # assignments to the class always ignore __set__
+        Host.d = Descriptor()
+
+        Host().d = Descriptor()
+        Host.d = "A"
+
+        reveal_type(Host().d)
+        reveal_type(Host.d)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      (* This is not a great error message but it is correct *)
+      "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type `str` but \
+       is used as type `Descriptor`.";
+      "Incompatible attribute type [8]: Attribute `d` declared in class `Host` has type \
+       `Descriptor` but is used as type `str`.";
+      (* This is an even more confusing message, but is also correct *)
+      "Revealed type [-1]: Revealed type for `test.Host().d` is `str` (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `test.Host.d` is `Descriptor` (inferred: `int`).";
+    ];
+  (* Overloading based on host class *)
+  assert_type_errors
+    {|
+      from typing import overload, Union, NoReturn
+      class BaseA:
+        a_prop: int = 1
+      class BaseB:
+        b_prop: str = "A"
+      class Descriptor:
+        @overload
+        def __set__(self, o: BaseA, v: int) -> None: ...
+        @overload
+        def __set__(self, o: BaseB, v: str) -> None: ...
+        @overload
+        def __set__(self, o: object, v: bool) -> None: ...
+        def __set__(self, o: object, v: object) -> None:
+          pass
+
+      class HostA(BaseA):
+        d: Descriptor = Descriptor()
+      class HostB(BaseB):
+        d: Descriptor = Descriptor()
+      class HostC:
+        d: Descriptor = Descriptor()
+
+      def f() -> None:
+        reveal_type(HostA().d)
+        reveal_type(HostB().d)
+        reveal_type(HostC().d)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.HostA().d` is `int` (inferred: `Descriptor`).";
+      "Revealed type [-1]: Revealed type for `test.HostB().d` is `str` (inferred: `Descriptor`).";
+      "Revealed type [-1]: Revealed type for `test.HostC().d` is `bool` (inferred: `Descriptor`).";
+    ];
+  assert_type_errors
+    {|
+    from typing import overload, Union
+    from dataclasses import dataclass
+
+    class Descriptor:
+      x: str = ""
+      def __get__(self, o: object, t: object = None) -> str:
+        return "A" + self.x
+      def __set__(self, o: object, value: str) -> None:
+        self.x = value
+
+    @dataclass
+    class DC:
+      d: Descriptor = Descriptor()
+
+    def f() -> None:
+      DC("A")
+    |}
+    [
+      (* TODO(T65806273): This should be accepted, but we're currently ignoring descriptors when
+         building dataclass constructors for perf reasons *)
+      "Incompatible parameter type [6]: Expected `Descriptor` for 1st positional only parameter to \
+       call `DC.__init__` but got `str`.";
+    ];
+  ()
+
+
+let () =
+  "descriptors"
+  >::: [
+         "check_non_data_descriptors" >:: test_non_data_descriptors;
+         "check_data_descriptors" >:: test_data_descriptors;
+       ]
+  |> Test.run
