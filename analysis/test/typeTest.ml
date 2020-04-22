@@ -142,13 +142,16 @@ let test_create _ =
   assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
   assert_create
     "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
-    (Type.optional (Type.union [Type.integer; Type.string; Type.tuple [Type.integer; Type.string]]));
+    (Type.union
+       [
+         Type.Optional Type.Bottom; Type.integer; Type.string; Type.tuple [Type.integer; Type.string];
+       ]);
   assert_create
     "typing.Union[typing.Optional[int], typing.Optional[str]]"
-    (Type.optional (Type.union [Type.integer; Type.string]));
+    (Type.union [Type.Optional Type.Bottom; Type.integer; Type.string]);
   assert_create
     "typing.Union[typing.Optional[int], str]"
-    (Type.optional (Type.union [Type.integer; Type.string]));
+    (Type.union [Type.Optional Type.Bottom; Type.integer; Type.string]);
 
   (* Annotated. *)
   assert_create "typing.Annotated[int]" (Type.annotated Type.integer);
@@ -678,15 +681,15 @@ let test_union _ =
   in
   assert_union
     [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
-    (Type.Optional (Type.Union [Type.integer; Type.string]));
+    (Type.Union [Type.Optional Type.Bottom; Type.integer; Type.string]);
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
   assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);
   assert_union
     [Type.optional Type.string; Type.float]
-    (Type.Optional (Type.Union [Type.string; Type.float]));
+    (Type.Union [Type.Optional Type.Bottom; Type.float; Type.string]);
   assert_union
     [Type.float; Type.string; Type.optional Type.float]
-    (Type.Optional (Type.Union [Type.float; Type.string]));
+    (Type.Union [Type.Optional Type.Bottom; Type.float; Type.string]);
   assert_union [Type.float; Type.Any] Type.Any;
   assert_union [Type.float; Type.Top] Type.Top;
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
@@ -707,7 +710,7 @@ let test_union _ =
     (Type.Optional (Type.variable "A"));
   assert_union
     [Type.string; Type.Optional (Type.Union [Type.integer; Type.string])]
-    (Type.Optional (Type.Union [Type.integer; Type.string]));
+    (Type.Union [Type.Optional Type.Bottom; Type.integer; Type.string]);
   ()
 
 

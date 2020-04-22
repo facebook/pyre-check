@@ -635,6 +635,8 @@ let test_less_or_equal context =
 
   (* Union types *)
   assert_true
+    (less_or_equal default ~left:(Type.Optional Type.Bottom) ~right:(Type.Optional Type.integer));
+  assert_true
     (less_or_equal
        default
        ~left:(Type.Optional Type.string)
@@ -2420,9 +2422,14 @@ let test_meet _ =
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
 
-  (* TODO(T39185893): current implementation of meet has some limitations which need to be fixed *)
-  assert_meet "typing.Union[int, str]" "typing.Union[int, typing.Optional[str]]" "$bottom";
-  assert_meet "typing.Union[int, typing.Optional[str]]" "typing.Optional[str]" "$bottom";
+  assert_meet
+    "typing.Union[int, str]"
+    "typing.Union[int, typing.Optional[str]]"
+    "typing.Union[int, str]";
+  assert_meet
+    "typing.Union[int, typing.Optional[str]]"
+    "typing.Optional[str]"
+    "typing.Optional[str]";
 
   (* Parametric types. *)
   assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";

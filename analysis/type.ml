@@ -877,22 +877,17 @@ let undeclared = Primitive "typing.Undeclared"
 
 let union parameters =
   let parameters =
-    let rec flattened parameters ~in_optional =
-      let flatten sofar = function
-        | Optional parameter -> flattened [parameter] ~in_optional:true @ sofar
-        | Union parameters -> flattened parameters ~in_optional @ sofar
-        | parameter -> (if in_optional then Optional parameter else parameter) :: sofar
-      in
-      List.fold ~init:[] ~f:flatten parameters
+    let parameter_set = Hash_set.create () in
+    let rec add_parameter = function
+      | Optional parameter ->
+          add_parameter parameter;
+          Base.Hash_set.add parameter_set (Optional Bottom)
+      | Union parameters -> List.iter parameters ~f:add_parameter
+      | Bottom -> ()
+      | parameter -> Base.Hash_set.add parameter_set parameter
     in
-    let parameters = Set.of_list (flattened parameters ~in_optional:false) in
-    let filter_redundant_annotations sofar annotation =
-      match annotation with
-      | Optional _ -> annotation :: sofar
-      | _ when Set.mem parameters (Optional annotation) -> sofar
-      | _ -> annotation :: sofar
-    in
-    Set.fold ~init:[] ~f:filter_redundant_annotations parameters |> List.sort ~compare
+    List.iter parameters ~f:add_parameter;
+    Base.Hash_set.to_list parameter_set |> List.sort ~compare
   in
   if List.mem ~equal parameters undeclared then
     Union parameters
@@ -901,27 +896,13 @@ let union parameters =
   else if List.exists ~f:is_any parameters then
     Any
   else
-    let normalize parameters =
-      let parameters =
-        List.filter parameters ~f:(function parameter -> not (is_unbound parameter))
-      in
-      match parameters with
-      | [] -> Bottom
-      | [parameter] -> parameter
-      | parameters -> Union parameters
-    in
-    let extract_optional_parameter = function
-      | Optional parameter -> parameter
-      | parameter -> parameter
-    in
-    if List.exists parameters ~f:is_optional then
-      parameters
-      |> List.filter ~f:(fun parameter -> not (is_none parameter))
-      |> List.map ~f:extract_optional_parameter
-      |> normalize
-      |> fun union -> Optional union
-    else
-      normalize parameters
+    match parameters with
+    | [] -> Bottom
+    | [parameter] -> parameter
+    | [parameter; Optional Bottom]
+    | [Optional Bottom; parameter] ->
+        Optional parameter
+    | parameters -> Union parameters
 
 
 let variable ?constraints ?variance name =

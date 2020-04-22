@@ -4554,6 +4554,26 @@ module State (Context : Context) = struct
                       (Annotation.create
                          (Type.Parametric
                             { name = parametric_name; parameters = [Single parameter] }))
+              | Some
+                  {
+                    Annotation.annotation =
+                      Type.Parametric
+                        { name = parametric_name; parameters = [Single (Type.Union parameters)] };
+                    _;
+                  } ->
+                  let parameters =
+                    List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+                  in
+                  Resolution.set_local_with_attributes
+                    resolution
+                    ~name
+                    ~annotation:
+                      (Annotation.create
+                         (Type.Parametric
+                            {
+                              name = parametric_name;
+                              parameters = [Single (Type.union parameters)];
+                            }))
               | _ -> resolution
             in
             Some resolution, errors
