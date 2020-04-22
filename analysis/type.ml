@@ -904,9 +904,7 @@ let optional parameter =
   match parameter with
   | Top -> Top
   | Any -> Any
-  | Bottom ->
-      (* TODO (T65870442): This should be Bottom *)
-      NoneType
+  | Bottom -> Bottom
   | _ -> union [NoneType; parameter]
 
 

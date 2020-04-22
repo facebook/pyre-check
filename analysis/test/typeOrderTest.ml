@@ -1925,8 +1925,8 @@ let test_join context =
 
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
-  assert_join "str" "typing.Optional[$bottom]" "typing.Optional[str]";
-  assert_join "typing.Optional[$bottom]" "str" "typing.Optional[str]";
+  assert_join "str" "typing.Optional[$bottom]" "str";
+  assert_join "typing.Optional[$bottom]" "str" "str";
 
   (* Handles `[] or optional_list`. *)
   assert_join
@@ -1948,10 +1948,8 @@ let test_join context =
     "typing.Union[int, typing.Optional[bool]]"
     "typing.Union[int, typing.Optional[bool]]";
   assert_join "typing.Union[int, str]" "typing.Union[int, bytes]" "typing.Union[int, str, bytes]";
-  assert_join
-    "typing.Union[int, str]"
-    "typing.Optional[$bottom]"
-    "typing.Optional[typing.Union[int, str]]";
+  assert_join "typing.Union[int, str]" "typing.Optional[$bottom]" "typing.Union[int, str]";
+  assert_join "typing.Union[int, str]" "None" "typing.Union[int, str, None]";
   assert_join
     "typing.Dict[str, str]"
     "typing.Dict[str, typing.List[str]]"

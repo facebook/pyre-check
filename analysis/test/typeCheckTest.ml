@@ -1121,10 +1121,7 @@ let test_forward_statement context =
     ["x", Type.optional Type.integer; "y", Type.optional Type.float]
     "assert x or y"
     ["x", Type.optional Type.integer; "y", Type.optional Type.float];
-  assert_forward
-    ["x", Type.optional Type.integer]
-    "assert x is None"
-    ["x", Type.optional Type.Bottom];
+  assert_forward ["x", Type.optional Type.integer] "assert x is None" ["x", Type.none];
   assert_forward
     ["x", Type.optional Type.integer]
     "assert (not x) or 1"

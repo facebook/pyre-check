@@ -139,9 +139,10 @@ let test_create _ =
   assert_create "typing.Set[int]" (Type.set Type.integer);
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
   assert_create "typing.Union[int, typing.Any]" (Type.union [Type.integer; Type.Any]);
-  assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
+  assert_create "typing.Union[int, typing.Optional[$bottom]]" Type.integer;
+  assert_create "typing.Union[int, None]" (Type.optional Type.integer);
   assert_create
-    "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
+    "typing.Union[int, None, str, typing.Tuple[int, str]]"
     (Type.union [Type.NoneType; Type.integer; Type.string; Type.tuple [Type.integer; Type.string]]);
   assert_create
     "typing.Union[typing.Optional[int], typing.Optional[str]]"
@@ -678,7 +679,7 @@ let test_union _ =
   in
   assert_union
     [Type.string; Type.optional (Type.Union [Type.integer; Type.string])]
-    (Type.Union [Type.optional Type.Bottom; Type.integer; Type.string]);
+    (Type.Union [Type.none; Type.integer; Type.string]);
   assert_union [Type.string; Type.float] (Type.Union [Type.float; Type.string]);
   assert_union [Type.float; Type.string] (Type.Union [Type.float; Type.string]);
   assert_union
