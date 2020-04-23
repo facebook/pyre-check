@@ -152,7 +152,7 @@ class StartTest(unittest.TestCase):
         ) as prepare, patch.object(
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
-            arguments = mock_arguments(no_watchman=True)
+            arguments = mock_arguments()
             configuration = mock_configuration(version_hash="hash")
             Start(
                 arguments,
@@ -371,10 +371,12 @@ class StartTest(unittest.TestCase):
             set(command._flags()), {*flags, "-saved-state-project", "pyre/saved_state"}
         )
 
-        arguments = mock_arguments(no_saved_state=True)
-        arguments.load_initial_state_from = "/do/not/load"
-        arguments.save_initial_state_to = "/do/not/save"
-        arguments.changed_files_path = "/do/not/change"
+        arguments = mock_arguments(
+            no_saved_state=True,
+            load_initial_state_from="/do/not/load",
+            save_initial_state_to="/do/not/save",
+            changed_files_path="/do/not/change",
+        )
         command = Start(
             arguments,
             original_directory,
@@ -465,8 +467,7 @@ class StartTest(unittest.TestCase):
         self.assertEqual(set(command._flags()), {*flags, "-autocomplete"})
 
         # Test profiling options.
-        arguments = mock_arguments()
-        arguments.enable_profiling = True
+        arguments = mock_arguments(enable_profiling=True)
         configuration = mock_configuration(version_hash="hash")
         command = Start(
             arguments,
@@ -482,8 +483,7 @@ class StartTest(unittest.TestCase):
             set(command._flags()), {*flags, "-profiling-output", ".pyre/profiling.log"}
         )
 
-        arguments = mock_arguments()
-        arguments.enable_memory_profiling = True
+        arguments = mock_arguments(enable_memory_profiling=True)
         configuration = mock_configuration(version_hash="hash")
         command = Start(
             arguments,

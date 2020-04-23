@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .command import ExitCode, typeshed_search_path
+from .command import CommandArguments, ExitCode, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -22,14 +22,14 @@ class Check(Reporting):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Check, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
 
     @staticmethod
@@ -40,7 +40,7 @@ class Check(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Check":
         return Check(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

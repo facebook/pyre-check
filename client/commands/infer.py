@@ -24,7 +24,7 @@ from .. import apply_annotations, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from .command import JSON, Command, Result, typeshed_search_path
+from .command import JSON, Command, CommandArguments, Result, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -412,7 +412,7 @@ class Infer(Reporting):
 
     def __init__(
         self,
-        arguments,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -425,10 +425,8 @@ class Infer(Reporting):
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
     ) -> None:
-        arguments.show_error_traces = True
-        arguments.output = JSON
         super(Infer, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._print_errors = print_errors
         self._full_only = full_only
@@ -439,6 +437,9 @@ class Infer(Reporting):
         self._debug_infer = debug_infer
         self._ignore_infer: List[str] = self._configuration.ignore_infer
 
+        self._show_error_traces = True
+        self._output = JSON
+
     @staticmethod
     def from_arguments(
         arguments: argparse.Namespace,
@@ -447,7 +448,7 @@ class Infer(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Infer":
         return Infer(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

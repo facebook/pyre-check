@@ -85,7 +85,7 @@ class ServersCommandTest(unittest.TestCase):
         self, stop_class: MagicMock, make_directory: MagicMock
     ) -> None:
         servers = Servers(
-            arguments=mock_arguments(
+            command_arguments=mock_arguments(
                 dot_pyre_directory=Path("/dot-pyre-directory/.pyre")
             ),
             original_directory="/root",
@@ -119,9 +119,18 @@ class ServersCommandTest(unittest.TestCase):
         self.assertEqual(servers._current_directory, "/root")
         stop_class.assert_has_calls(
             [
-                call(arguments=servers._arguments, original_directory="/root"),
-                call(arguments=servers._arguments, original_directory="/root/bar/baz"),
-                call(arguments=servers._arguments, original_directory="/root/foo"),
+                call(
+                    command_arguments=servers._command_arguments,
+                    original_directory="/root",
+                ),
+                call(
+                    command_arguments=servers._command_arguments,
+                    original_directory="/root/bar/baz",
+                ),
+                call(
+                    command_arguments=servers._command_arguments,
+                    original_directory="/root/foo",
+                ),
             ],
             any_order=True,
         )

@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, IncrementalStyle
+from .command import Command, CommandArguments, IncrementalStyle
 from .start import Start
 
 
@@ -22,7 +22,7 @@ class Persistent(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -30,7 +30,7 @@ class Persistent(Command):
         no_watchman: bool,
     ) -> None:
         super(Persistent, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._no_watchman: bool = no_watchman
 
@@ -42,7 +42,7 @@ class Persistent(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Persistent":
         return Persistent(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -68,7 +68,7 @@ class Persistent(Command):
 
     def _run(self) -> None:
         Start(
-            self._arguments,
+            self._command_arguments,
             self._original_directory,
             terminal=False,
             store_type_check_resolution=False,

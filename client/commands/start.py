@@ -15,7 +15,7 @@ from typing_extensions import Final
 from .. import configuration_monitor, filesystem, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import IncrementalStyle, typeshed_search_path
+from .command import CommandArguments, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -27,7 +27,7 @@ class Start(Reporting):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -38,7 +38,7 @@ class Start(Reporting):
         incremental_style: IncrementalStyle,
     ) -> None:
         super(Start, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._terminal = terminal
         self._store_type_check_resolution = store_type_check_resolution
@@ -60,7 +60,7 @@ class Start(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Start":
         return Start(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -98,7 +98,7 @@ class Start(Reporting):
     def _start_configuration_monitor(self) -> None:
         if self._use_watchman:
             configuration_monitor.ConfigurationMonitor(
-                self._arguments,
+                self._command_arguments,
                 self._configuration,
                 self._analysis_directory,
                 self._current_directory,

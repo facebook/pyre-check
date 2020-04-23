@@ -218,12 +218,10 @@ class CommandParser(ABC):
     HIDDEN = False
     _exit_code: ExitCode = ExitCode.SUCCESS
 
-    def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
-        self._command_arguments: CommandArguments = CommandArguments.from_arguments(
-            arguments
-        )
-
-        self._arguments = arguments
+    def __init__(
+        self, command_arguments: CommandArguments, original_directory: str
+    ) -> None:
+        self._command_arguments = command_arguments
 
         self._version: bool = self._command_arguments.version
         self._debug: bool = self._command_arguments.debug
@@ -517,12 +515,12 @@ class Command(CommandParser, ABC):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Command, self).__init__(arguments, original_directory)
+        super(Command, self).__init__(command_arguments, original_directory)
         local_configuration = self._local_configuration
         if local_configuration:
             self._local_root = (

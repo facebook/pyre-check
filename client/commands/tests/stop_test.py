@@ -31,7 +31,6 @@ class StopTest(unittest.TestCase):
     def setUp(self) -> None:
         self.original_directory = "/original/directory"
         self.arguments = mock_arguments()
-        self.arguments.terminal = False
         self.configuration = mock_configuration()
         self.analysis_directory = AnalysisDirectory(".")
 
@@ -119,9 +118,8 @@ class StopTest(unittest.TestCase):
         stop_subscriptions: MagicMock,
         os_kill: MagicMock,
     ) -> None:
-        self.arguments.debug = True
         flags = Stop(
-            self.arguments,
+            mock_arguments(debug=True),
             self.original_directory,
             configuration=self.configuration,
             analysis_directory=self.analysis_directory,

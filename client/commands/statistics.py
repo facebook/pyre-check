@@ -27,7 +27,7 @@ from ..statistics_collectors import (
     StrictCountCollector,
     StrictIssueCollector,
 )
-from .command import Command
+from .command import Command, CommandArguments
 
 
 def _get_paths(target_directory: Path) -> List[Path]:
@@ -113,7 +113,7 @@ class Statistics(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -123,7 +123,7 @@ class Statistics(Command):
         log_results: bool,
     ) -> None:
         super(Statistics, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._filter_paths: Set[str] = set(filter_paths)
         self._strict: bool = self._configuration.strict
@@ -138,7 +138,7 @@ class Statistics(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Statistics":
         return Statistics(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

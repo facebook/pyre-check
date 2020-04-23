@@ -9,66 +9,64 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock
 
-from ..commands.command import TEXT
+from ..commands.command import TEXT, CommandArguments
 
 
 def mock_arguments(
-    build=False,
+    debug=False,
     changed_files_path=None,
-    command=None,
+    enable_profiling=False,
+    enable_memory_profiling=False,
+    features=None,
+    hide_parse_errors=False,
     load_initial_state_from=None,
+    local_configuration=None,
+    log_identifier="",
     no_saved_state=False,
-    no_verify=False,
-    no_watchman=False,
     output=TEXT,
     save_initial_state_to=None,
     saved_state_project=None,
+    sequential=False,
     source_directories=None,
-    store_type_check_resolution=False,
     targets=None,
-    terminal=False,
     dot_pyre_directory: Optional[Path] = None,
-) -> MagicMock:
-    arguments = MagicMock()
-    arguments.additional_check = []
-    arguments.analysis = "taint"
-    arguments.build = build
-    arguments.changed_files_path = changed_files_path
-    arguments.command = command
-    arguments.debug = False
-    arguments.enable_profiling = False
-    arguments.enable_memory_profiling = False
-    arguments.features = None
-    arguments.filter_directory = ["."]
-    arguments.hide_parse_errors = False
-    arguments.load_initial_state_from = load_initial_state_from
-    arguments.local = False
-    arguments.local_configuration = None
-    arguments.log_identifier = None
-    arguments.logger = None
-    arguments.logging_sections = None
-    arguments.no_saved_state = no_saved_state
-    arguments.no_start = False
-    arguments.no_verify = no_verify
-    arguments.no_watchman = no_watchman
-    arguments.nonblocking = False
-    arguments.output = output
-    arguments.dot_pyre_directory = dot_pyre_directory or Path(".pyre")
-    arguments.save_initial_state_to = save_initial_state_to
-    arguments.save_results_to = None
-    arguments.saved_state_project = saved_state_project
-    arguments.sequential = False
-    arguments.show_error_traces = False
-    arguments.source_directories = source_directories
-    arguments.store_type_check_resolution = store_type_check_resolution
-    arguments.strict = False
-    arguments.taint_models_path = []
-    arguments.targets = targets
-    arguments.terminal = terminal
-    arguments.verbose = False
-    arguments.repository_root = None
-    arguments.rule = None
-    return arguments
+) -> CommandArguments:
+    return CommandArguments(
+        local_configuration=local_configuration,
+        version=False,
+        debug=debug,
+        sequential=sequential,
+        strict=False,
+        additional_checks=[],
+        show_error_traces=False,
+        output=output,
+        verbose=False,
+        enable_profiling=enable_profiling,
+        enable_memory_profiling=enable_memory_profiling,
+        noninteractive=False,
+        hide_parse_errors=hide_parse_errors,
+        logging_sections=None,
+        log_identifier=log_identifier,
+        logger=None,
+        formatter=[],
+        targets=targets or [],
+        use_buck_builder=False,
+        source_directories=source_directories or [],
+        filter_directory=".",
+        buck_mode=None,
+        no_saved_state=no_saved_state,
+        search_path=["some_path"],
+        binary="/foo/binary.exe",
+        buck_builder_binary=None,
+        exclude=[],
+        typeshed="/typeshed",
+        save_initial_state_to=save_initial_state_to,
+        load_initial_state_from=load_initial_state_from,
+        changed_files_path=changed_files_path,
+        saved_state_project=saved_state_project,
+        dot_pyre_directory=dot_pyre_directory or Path(".pyre"),
+        features=features,
+    )
 
 
 def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:

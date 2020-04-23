@@ -21,7 +21,7 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import Command
+from .command import Command, CommandArguments
 from .rage import Rage
 
 
@@ -74,7 +74,7 @@ class Kill(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
@@ -82,7 +82,7 @@ class Kill(Command):
         with_fire: bool,
     ) -> None:
         super(Kill, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._with_fire = with_fire
 
@@ -94,7 +94,7 @@ class Kill(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Kill":
         return Kill(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory=original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -216,7 +216,7 @@ class Kill(Command):
         ) as output:
             LOG.warning("Saving the output of `pyre rage` into `%s`", output.name)
             Rage(
-                self._arguments,
+                self._command_arguments,
                 original_directory=self._original_directory,
                 configuration=self._configuration,
                 analysis_directory=self._analysis_directory,
@@ -224,7 +224,7 @@ class Kill(Command):
             ).run()
 
     def _run(self) -> None:
-        explicit_local = self._arguments.local_configuration
+        explicit_local = self.local_configuration
         if explicit_local:
             LOG.warning(
                 "Pyre kill will terminate all running servers. "

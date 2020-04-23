@@ -13,7 +13,7 @@ from typing import List, NamedTuple, Optional
 from .. import log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import JSON, Command
+from .command import JSON, Command, CommandArguments
 from .stop import Stop
 
 
@@ -54,7 +54,7 @@ class Servers(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -62,7 +62,7 @@ class Servers(Command):
         subcommand: Optional[str],
     ) -> None:
         super(Servers, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._subcommand = subcommand
 
@@ -74,7 +74,7 @@ class Servers(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Servers":
         return Servers(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -129,7 +129,7 @@ class Servers(Command):
         for server in servers:
             LOG.warning("Stopping server for `%s` with pid %d", server.name, server.pid)
             Stop(
-                arguments=self._arguments,
+                command_arguments=self._command_arguments,
                 original_directory=str(
                     Path(self._current_directory, server.local_root)
                 ),

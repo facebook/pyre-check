@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from .analysis_directory import AnalysisDirectory
 from .commands import stop
+from .commands.command import CommandArguments
 from .configuration import Configuration
 from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
@@ -30,7 +31,7 @@ class ConfigurationMonitor(Subscriber):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         configuration: Configuration,
         analysis_directory: AnalysisDirectory,
         project_root: str,
@@ -39,7 +40,7 @@ class ConfigurationMonitor(Subscriber):
         other_critical_files: List[str],
     ) -> None:
         super(ConfigurationMonitor, self).__init__(self.base_path(configuration))
-        self._arguments = arguments
+        self._command_arguments = command_arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
         self._project_root_path: Path = Path(project_root).resolve()
@@ -91,7 +92,7 @@ class ConfigurationMonitor(Subscriber):
 
     def _stop(self) -> None:
         stop.Stop(
-            self._arguments,
+            self._command_arguments,
             self._original_directory,
             configuration=self._configuration,
             analysis_directory=self._analysis_directory,

@@ -25,31 +25,32 @@ from .command_test import mock_arguments, mock_configuration
 
 class StatisticsTest(unittest.TestCase):
     def test_find_targets(self) -> None:
-        arguments = mock_arguments()
-        arguments.filter_paths = []
-        arguments.local_configuration = "example/path/client"
         self.assertEqual(
-            _find_paths(arguments.local_configuration, arguments.filter_paths),
+            _find_paths("example/path/client", set()), [Path("example/path/client")]
+        )
+
+        self.assertEqual(
+            _find_paths("example/path/client/.pyre_configuration.local", set()),
             [Path("example/path/client")],
         )
 
-        arguments.local_configuration = "example/path/client/.pyre_configuration.local"
+        # Sorting the lists because the set argument leads to non-deterministic
+        # ordering.
         self.assertEqual(
-            _find_paths(arguments.local_configuration, arguments.filter_paths),
-            [Path("example/path/client")],
-        )
-
-        arguments.filter_paths = ["a.py", "b.py"]
-        self.assertEqual(
-            _find_paths(arguments.local_configuration, arguments.filter_paths),
-            [Path("example/path/client/a.py"), Path("example/path/client/b.py")],
+            sorted(
+                _find_paths(
+                    "example/path/client/.pyre_configuration.local", {"a.py", "b.py"}
+                )
+            ),
+            sorted(
+                [Path("example/path/client/a.py"), Path("example/path/client/b.py")]
+            ),
         )
 
     @patch.object(Statistics, "_find_paths", return_value=[])
     @patch.object(Statistics, "_log_to_scuba")
     def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:
-        arguments = mock_arguments()
-        arguments.local_configuration = "example/path/client"
+        arguments = mock_arguments(local_configuration="example/path/client")
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
         original_directory = "/original/directory"

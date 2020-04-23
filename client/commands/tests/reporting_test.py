@@ -58,7 +58,7 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
 
-        arguments.targets = ["//f/g:target"]
+        arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
@@ -71,7 +71,7 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         original_directory = "/f/g/target"
-        arguments.targets = ["//f/g:target"]
+        arguments = mock_arguments(targets=["//f/g:target"])
         configuration.targets = []
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("/test/h/i")
@@ -174,9 +174,8 @@ class ReportingTest(unittest.TestCase):
         self, find_local_root, find_project_root, chdir, run
     ) -> None:
         original_directory = "/"
-        arguments = mock_arguments()
         find_project_root.return_value = "base"
-        arguments.source_directories = ["base"]
+        arguments = mock_arguments(source_directories=["base"])
         configuration = mock_configuration()
         handler = commands.Reporting(
             arguments, original_directory, configuration, AnalysisDirectory("base")
@@ -201,7 +200,7 @@ class ReportingTest(unittest.TestCase):
         self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
-        arguments.source_directories = None
+        arguments = mock_arguments(source_directories=[])
         handler = commands.Reporting(
             arguments,
             original_directory,

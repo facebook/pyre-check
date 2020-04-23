@@ -8,7 +8,7 @@ from typing import Optional
 
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
-from .command import Command, ExitCode, IncrementalStyle
+from .command import Command, CommandArguments, ExitCode, IncrementalStyle
 from .incremental import Incremental
 from .start import Start  # noqa
 from .stop import Stop
@@ -19,7 +19,7 @@ class Restart(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -30,7 +30,7 @@ class Restart(Command):
         incremental_style: IncrementalStyle,
     ) -> None:
         super(Restart, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._terminal: bool = terminal
         self._store_type_check_resolution: bool = store_type_check_resolution
@@ -45,7 +45,7 @@ class Restart(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Restart":
         return Restart(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -98,7 +98,7 @@ class Restart(Command):
     def _run(self) -> None:
         exit_code = (
             Stop(
-                self._arguments,
+                self._command_arguments,
                 self._original_directory,
                 configuration=self._configuration,
                 analysis_directory=self._analysis_directory,
@@ -112,7 +112,7 @@ class Restart(Command):
             return
         exit_code = (
             Incremental(
-                self._arguments,
+                self._command_arguments,
                 self._original_directory,
                 configuration=self._configuration,
                 analysis_directory=self._analysis_directory,

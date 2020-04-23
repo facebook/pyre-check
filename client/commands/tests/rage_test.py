@@ -59,8 +59,7 @@ class RageTest(unittest.TestCase):
     def test_terminal_output(
         self, call_client: MagicMock, run: MagicMock, stdout: MagicMock
     ) -> None:
-        arguments = mock_arguments()
-        arguments.local_configuration = "foo/bar"
+        arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
@@ -82,8 +81,7 @@ class RageTest(unittest.TestCase):
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
     def test_file_output(self, call_client: MagicMock, run: MagicMock) -> None:
-        arguments = mock_arguments()
-        arguments.local_configuration = "foo/bar"
+        arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
         original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")

@@ -108,8 +108,7 @@ class CheckTest(unittest.TestCase):
         realpath.side_effect = lambda x: x
 
         original_directory = "/original/directory"
-        arguments = mock_arguments()
-        arguments.sequential = True
+        arguments = mock_arguments(sequential=True)
         configuration = mock_configuration()
 
         with patch.object(
@@ -161,8 +160,7 @@ class CheckTest(unittest.TestCase):
         realpath.side_effect = lambda x: x
 
         original_directory = "/original/directory"
-        arguments = mock_arguments()
-        arguments.sequential = True
+        arguments = mock_arguments(sequential=True)
         configuration = mock_configuration()
 
         with patch.object(
@@ -215,7 +213,6 @@ class CheckTest(unittest.TestCase):
 
         original_directory = "/original/directory"
         arguments = mock_arguments()
-        arguments.capable_terminal = False
         configuration = mock_configuration()
 
         with patch.object(
@@ -265,8 +262,7 @@ class CheckTest(unittest.TestCase):
         realpath.side_effect = lambda x: x
 
         original_directory = "/original/directory"
-        arguments = mock_arguments()
-        arguments.hide_parse_errors = True
+        arguments = mock_arguments(hide_parse_errors=True)
         configuration = mock_configuration()
 
         with patch.object(

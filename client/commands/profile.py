@@ -17,7 +17,7 @@ from typing_extensions import Final
 
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from .command import Command, ProfileOutput
+from .command import Command, CommandArguments, ProfileOutput
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -270,7 +270,7 @@ class Profile(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -278,7 +278,7 @@ class Profile(Command):
         profile_output: ProfileOutput,
     ) -> None:
         super(Profile, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._profile_output: ProfileOutput = profile_output
 
@@ -290,7 +290,7 @@ class Profile(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Profile":
         return Profile(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

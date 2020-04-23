@@ -13,7 +13,7 @@ from typing_extensions import Final
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
-from .command import Command
+from .command import Command, CommandArguments
 from .servers import Servers
 
 
@@ -25,7 +25,7 @@ class Rage(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         *,
         original_directory: str,
         configuration: Optional[Configuration] = None,
@@ -33,7 +33,7 @@ class Rage(Command):
         output_path: Optional[str],
     ) -> None:
         super(Rage, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._log_directory_for_binary: str = self.log_directory
         self._output_path: Final[Optional[str]] = output_path
@@ -46,7 +46,7 @@ class Rage(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Rage":
         return Rage(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory=original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -85,7 +85,7 @@ class Rage(Command):
 
     def _call_client_for_root_project(self, output_file: IO[str]) -> None:
         all_servers = Servers(
-            self._arguments,
+            self._command_arguments,
             self._original_directory,
             configuration=self._configuration,
             analysis_directory=self._analysis_directory,

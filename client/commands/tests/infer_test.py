@@ -24,7 +24,7 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
-from ..command import __name__ as client_name
+from ..command import CommandArguments, __name__ as client_name
 from .command_test import (
     mock_arguments as general_mock_arguments,
     mock_configuration as general_mock_configuration,
@@ -554,23 +554,8 @@ class PyreTest(unittest.TestCase):
         )
 
 
-def mock_arguments() -> MagicMock:
-    arguments = general_mock_arguments()
-    arguments.debug = False
-    arguments.additional_check = []
-    arguments.sequential = False
-    arguments.show_error_traces = False
-    arguments.verbose = False
-    arguments.hide_parse_errors = True
-    arguments.local_configuration = None
-    arguments.logging_sections = None
-    arguments.logger = None
-    arguments.log_identifier = None
-    arguments.enable_profiling = None
-    arguments.json = False
-    arguments.annotate_from_existing_stubs = False
-
-    return arguments
+def mock_arguments() -> CommandArguments:
+    return general_mock_arguments(hide_parse_errors=True)
 
 
 def mock_configuration() -> MagicMock:
@@ -595,8 +580,6 @@ class InferTest(unittest.TestCase):
     ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
-        arguments.strict = False
-
         configuration = mock_configuration()
         configuration.get_typeshed.return_value = "stub"
 

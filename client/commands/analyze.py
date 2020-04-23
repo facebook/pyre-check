@@ -15,6 +15,7 @@ from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..filesystem import readable_directory, writable_directory
 from .check import Check
+from .command import CommandArguments
 
 
 class Analyze(Check):
@@ -22,7 +23,7 @@ class Analyze(Check):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -36,7 +37,7 @@ class Analyze(Check):
         rules: Optional[List[int]],
     ) -> None:
         super(Analyze, self).__init__(
-            arguments,
+            command_arguments,
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -59,7 +60,7 @@ class Analyze(Check):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Analyze":
         return Analyze(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

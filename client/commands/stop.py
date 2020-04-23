@@ -14,7 +14,7 @@ from .. import configuration_monitor, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import ClientException, Command, State
+from .command import ClientException, Command, CommandArguments, State
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class Stop(Command):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -33,7 +33,7 @@ class Stop(Command):
         from_restart: bool = False,
     ) -> None:
         super(Stop, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._from_restart = from_restart
 
@@ -45,7 +45,7 @@ class Stop(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Stop":
         return Stop(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,

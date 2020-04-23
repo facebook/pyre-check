@@ -12,7 +12,14 @@ from .. import json_rpc
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
-from .command import ExitCode, IncrementalStyle, Result, State, typeshed_search_path
+from .command import (
+    CommandArguments,
+    ExitCode,
+    IncrementalStyle,
+    Result,
+    State,
+    typeshed_search_path,
+)
 from .reporting import Reporting
 from .start import Start
 
@@ -25,7 +32,7 @@ class Incremental(Reporting):
 
     def __init__(
         self,
-        arguments: argparse.Namespace,
+        command_arguments: CommandArguments,
         original_directory: str,
         *,
         configuration: Optional[Configuration] = None,
@@ -36,7 +43,7 @@ class Incremental(Reporting):
         no_watchman: bool,
     ) -> None:
         super(Incremental, self).__init__(
-            arguments, original_directory, configuration, analysis_directory
+            command_arguments, original_directory, configuration, analysis_directory
         )
         self._nonblocking = nonblocking
         self._incremental_style = incremental_style
@@ -51,7 +58,7 @@ class Incremental(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> "Incremental":
         return Incremental(
-            arguments,
+            CommandArguments.from_arguments(arguments),
             original_directory,
             configuration=configuration,
             analysis_directory=analysis_directory,
@@ -102,7 +109,7 @@ class Incremental(Reporting):
             LOG.info("Starting server at `%s`.", self._analysis_directory.get_root())
             exit_code = (
                 Start(
-                    self._arguments,
+                    self._command_arguments,
                     self._original_directory,
                     configuration=self._configuration,
                     analysis_directory=self._analysis_directory,
