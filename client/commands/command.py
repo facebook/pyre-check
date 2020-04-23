@@ -81,9 +81,10 @@ class ProfileOutput(enum.Enum):
 
 
 class Result:
-    def __init__(self, code: int, output: str) -> None:
+    def __init__(self, code: int, output: str, error: Optional[str] = None) -> None:
         self.code: int = code
         self.output: str = output
+        self.error: Optional[str] = error
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
@@ -121,11 +122,16 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
 
 
 def _convert_json_response_to_result(response: json_rpc.Response) -> Result:
-    if response.error:
+    error = response.error
+    error_message = None
+    if error:
         error_code = ExitCode.FAILURE
+        error_message = json.dumps(error)
     else:
         error_code = ExitCode.SUCCESS
-    return Result(output=json.dumps(response.result), code=error_code)
+    return Result(
+        output=json.dumps(response.result), code=error_code, error=error_message
+    )
 
 
 def executable_file(file_path: str) -> str:
@@ -480,6 +486,9 @@ class CommandParser(ABC):
 
     def exit_code(self) -> ExitCode:
         return self._exit_code
+
+    def result(self) -> Optional[Result]:
+        return None
 
     @property
     def configuration(self) -> Optional[Configuration]:

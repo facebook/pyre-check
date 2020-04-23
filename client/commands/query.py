@@ -24,6 +24,11 @@ LOG: Logger = logging.getLogger(__name__)
 class Query(Command):
     NAME = "query"
 
+    _result: Optional[Result] = None
+
+    def result(self) -> Optional[Result]:
+        return self._result
+
     def _rewrite_paths(self, query: str) -> str:
         paths = re.findall(r"'[a-zA-Z_\-\.\/0-9]+\.py'", query)
         symbolic_link_mapping: Optional[Dict[str, str]] = None
@@ -99,6 +104,7 @@ class Query(Command):
         self._send_and_handle_socket_request(request, self._version_hash)
 
     def _socket_result_handler(self, result: Result) -> None:
+        self._result = result
         if self.query == "help":
             response = json.loads(result.output).get("response")
             log.stdout.write(response.get("help"))

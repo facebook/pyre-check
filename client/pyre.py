@@ -137,11 +137,13 @@ def main(argv: List[str]) -> int:
             LOG.error(client_exception_message)
         log.cleanup()
         if command:
+            result = command.result()
+            error_message = result.error if result else None
             command.cleanup()
             configuration = command.configuration
             if configuration and configuration.logger:
                 statistics.log(
-                    statistics.LoggerCategory.USAGE,
+                    category=statistics.LoggerCategory.USAGE,
                     arguments=arguments,
                     configuration=configuration,
                     integers={
@@ -154,6 +156,7 @@ def main(argv: List[str]) -> int:
                         "client_version": __version__,
                         "command": command.NAME,
                         "client_exception": client_exception_message,
+                        "error_message": error_message,
                     },
                 )
 
