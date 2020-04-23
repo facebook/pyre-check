@@ -421,7 +421,7 @@ class Infer(Reporting):
         full_only: bool,
         recursive: bool,
         in_place: Optional[List[str]],
-        json: bool,
+        errors_from_stdin: bool,
         annotate_from_existing_stubs: bool,
         debug_infer: bool,
     ) -> None:
@@ -432,7 +432,7 @@ class Infer(Reporting):
         self._full_only = full_only
         self._recursive = recursive
         self._in_place: Final[Optional[List[str]]] = in_place
-        self._json = json
+        self._errors_from_stdin = errors_from_stdin
         self._annotate_from_existing_stubs = annotate_from_existing_stubs
         self._debug_infer = debug_infer
         self._ignore_infer: List[str] = self._configuration.ignore_infer
@@ -456,7 +456,7 @@ class Infer(Reporting):
             full_only=arguments.full_only,
             recursive=arguments.recursive,
             in_place=arguments.in_place,
-            json=arguments.json,
+            errors_from_stdin=arguments.errors_from_stdin,
             annotate_from_existing_stubs=arguments.annotate_from_existing_stubs,
             debug_infer=arguments.debug_infer,
         )
@@ -499,6 +499,7 @@ class Infer(Reporting):
         infer.add_argument(
             "--json",
             action="store_true",
+            dest="errors_from_stdin",
             help="Accept JSON input instead of running full check.",
         )
         infer.add_argument(
@@ -530,12 +531,11 @@ class Infer(Reporting):
                 self._debug_infer,
             )
             return self
-        if self._json:
-            result = self._errors_from_stdin()
-            errors = self._get_errors(result, bypass_filtering=True)
+        if self._errors_from_stdin:
+            result = self._get_errors_from_stdin()
         else:
             result = self._call_client(command=Infer.NAME)
-            errors = self._get_errors(result, bypass_filtering=True)
+        errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
             self._print(errors)
         else:
@@ -569,6 +569,6 @@ class Infer(Reporting):
             flags.extend(["-ignore-infer", ";".join(self._ignore_infer)])
         return flags
 
-    def _errors_from_stdin(self) -> Result:
+    def _get_errors_from_stdin(self) -> Result:
         input = sys.stdin.read()
         return Result(0, input)

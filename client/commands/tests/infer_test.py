@@ -593,7 +593,7 @@ class InferTest(unittest.TestCase):
                 full_only=True,
                 recursive=False,
                 in_place=None,
-                json=False,
+                errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
             )
@@ -625,7 +625,7 @@ class InferTest(unittest.TestCase):
                 full_only=True,
                 recursive=False,
                 in_place=None,
-                json=False,
+                errors_from_stdin=False,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
             )
@@ -656,7 +656,7 @@ class InferTest(unittest.TestCase):
                 full_only=True,
                 recursive=False,
                 in_place=None,
-                json=True,
+                errors_from_stdin=True,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
             )
@@ -687,7 +687,7 @@ class InferTest(unittest.TestCase):
                 full_only=True,
                 recursive=False,
                 in_place=None,
-                json=True,
+                errors_from_stdin=True,
                 annotate_from_existing_stubs=False,
                 debug_infer=False,
             )
