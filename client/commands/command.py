@@ -162,7 +162,6 @@ class CommandParser(ABC):
         self._enable_memory_profiling: bool = arguments.enable_memory_profiling
         self._noninteractive: bool = arguments.noninteractive
         self._hide_parse_errors: bool = arguments.hide_parse_errors
-        self._logging_sections: str = arguments.logging_sections
         self._log_identifier: str = arguments.log_identifier
         self._formatter: List[str] = arguments.formatter
 
@@ -206,6 +205,7 @@ class CommandParser(ABC):
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
+        self._logging_sections: Optional[str] = arguments.logging_sections
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
 
@@ -529,15 +529,16 @@ class Command(CommandParser, ABC):
             flags.append("-verbose")
         if not self._hide_parse_errors:
             self._enable_logging_section("parser")
+        logging_sections = self._logging_sections
         if not self._capable_terminal:
             # Disable progress reporting for non-capable terminals.
             # This helps in reducing clutter.
-            if self._logging_sections:
-                self._logging_sections = self._logging_sections + ",-progress"
+            if logging_sections:
+                logging_sections = logging_sections + ",-progress"
             else:
-                self._logging_sections = "-progress"
-        if self._logging_sections:
-            flags.extend(["-logging-sections", self._logging_sections])
+                logging_sections = "-progress"
+        if logging_sections:
+            flags.extend(["-logging-sections", logging_sections])
         if self._enable_profiling:
             flags.extend(["-profiling-output", self.profiling_log_path()])
         if self._enable_memory_profiling:
@@ -703,7 +704,8 @@ class Command(CommandParser, ABC):
         return self._configuration
 
     def _enable_logging_section(self, section: str) -> None:
-        if self._logging_sections:
-            self._logging_sections = self._logging_sections + "," + section
+        logging_sections = self._logging_sections
+        if logging_sections:
+            self._logging_sections = logging_sections + "," + section
         else:
             self._logging_sections = section
