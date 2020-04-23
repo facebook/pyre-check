@@ -141,7 +141,7 @@ def main(argv: List[str]) -> int:
             configuration = command.configuration
             if configuration and configuration.logger:
                 statistics.log(
-                    "perfpipe_pyre_usage",
+                    statistics.LoggerCategory.USAGE,
                     arguments=arguments,
                     configuration=configuration,
                     integers={

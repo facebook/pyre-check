@@ -235,7 +235,7 @@ class Statistics(Command):
         if self._configuration and self._configuration.logger:
             root = str(_pyre_configuration_directory(self._local_configuration))
             statistics.log(
-                "perfpipe_pyre_annotation_counts",
+                statistics.LoggerCategory.ANNOTATION_COUNTS,
                 configuration=self._configuration,
                 integers=data["annotations"],
                 normals={"root": root},
@@ -243,7 +243,7 @@ class Statistics(Command):
             self._log_fixmes("fixme", data["fixmes"], root)
             self._log_fixmes("ignore", data["ignores"], root)
             statistics.log(
-                "perfpipe_pyre_strict_adoption",
+                statistics.LoggerCategory.STRICT_ADOPTION,
                 configuration=self._configuration,
                 integers=data["strict"],
                 normals={"root": root},
@@ -252,7 +252,7 @@ class Statistics(Command):
     def _log_fixmes(self, fixme_type: str, data: Dict[str, int], root: str) -> None:
         for error_code, count in data.items():
             statistics.log(
-                "perfpipe_pyre_fixme_counts",
+                statistics.LoggerCategory.FIXME_COUNTS,
                 configuration=self._configuration,
                 integers={"count": count},
                 normals={"root": root, "code": error_code, "type": fixme_type},

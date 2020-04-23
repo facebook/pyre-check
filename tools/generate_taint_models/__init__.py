@@ -129,7 +129,7 @@ def run_generators(
         if logger_executable is not None:
             elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
             statistics.log(
-                "perfpipe_pyre_performance",
+                statistics.LoggerCategory.PERFORMANCE,
                 integers={"time": elapsed_time_milliseconds},
                 normals={"name": "model generation", "model kind": mode},
                 logger=logger_executable,

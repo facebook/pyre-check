@@ -12,6 +12,7 @@ import sys
 import time
 import traceback
 from argparse import Namespace
+from enum import Enum
 from typing import Dict, Optional
 
 from .configuration import Configuration  # noqa
@@ -20,8 +21,16 @@ from .configuration import Configuration  # noqa
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class LoggerCategory(Enum):
+    PERFORMANCE = "perfpipe_pyre_performance"
+    USAGE = "perfpipe_pyre_usage"
+    ANNOTATION_COUNTS = "perfpipe_pyre_annotation_counts"
+    STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
+    FIXME_COUNTS = "perfpipe_pyre_fixme_counts"
+
+
 def log(
-    category: str,
+    category: LoggerCategory,
     arguments: Optional[Namespace] = None,
     configuration: Optional["Configuration"] = None,
     integers: Optional[Dict[str, int]] = None,
@@ -56,7 +65,7 @@ def log(
             },
         }
         statistics = json.dumps(statistics).encode("ascii", "strict")
-        subprocess.run([logger, category], input=statistics)
+        subprocess.run([logger, category.value], input=statistics)
     except Exception:
         LOG.warning("Unable to log using `%s`", logger)
         LOG.info(traceback.format_exc())
