@@ -384,7 +384,7 @@ def _upgrade_project(
             return
     errors = (
         errors_from_stdin(arguments.only_fix_error_code)
-        if arguments.from_stdin
+        if arguments.from_stdin and not arguments.upgrade_version
         else configuration.get_errors()
     )
     if len(errors) > 0:

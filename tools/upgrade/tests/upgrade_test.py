@@ -287,6 +287,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.reset_mock()
         arguments.from_stdin = True
         arguments.lint = True
+        arguments.upgrade_version = False
         errors_from_stdin.return_value = pyre_errors
         get_errors.return_value = pyre_errors
         upgrade._upgrade_project(
