@@ -14,6 +14,7 @@ import signal
 import subprocess
 import threading
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import IO, Iterable, List, Optional
 
@@ -135,58 +136,146 @@ def executable_file(file_path: str) -> str:
     return file_path
 
 
+@dataclass(frozen=True)
+class CommandArguments:
+    local_configuration: Optional[str]
+    version: bool
+    debug: bool
+    sequential: bool
+    strict: bool
+    additional_checks: List[str]
+    show_error_traces: bool
+    output: str
+    verbose: bool
+    enable_profiling: bool
+    enable_memory_profiling: bool
+    noninteractive: bool
+    hide_parse_errors: bool
+    logging_sections: Optional[str]
+    log_identifier: str
+    logger: Optional[str]
+    formatter: List[str]
+    targets: List[str]
+    use_buck_builder: bool
+    source_directories: List[str]
+    filter_directory: Optional[str]
+    buck_mode: Optional[str]
+    no_saved_state: bool
+    search_path: List[str]
+    binary: str
+    buck_builder_binary: Optional[str]
+    exclude: List[str]
+    typeshed: str
+    save_initial_state_to: Optional[str]
+    load_initial_state_from: Optional[str]
+    changed_files_path: Optional[str]
+    saved_state_project: Optional[str]
+    dot_pyre_directory: Optional[Path]
+    features: Optional[str]
+
+    @staticmethod
+    def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
+        return CommandArguments(
+            local_configuration=arguments.local_configuration,
+            version=arguments.version,
+            debug=arguments.debug,
+            sequential=arguments.sequential,
+            strict=arguments.strict,
+            additional_checks=arguments.additional_check,
+            show_error_traces=arguments.show_error_traces,
+            output=arguments.output,
+            verbose=arguments.verbose,
+            enable_profiling=arguments.enable_profiling,
+            enable_memory_profiling=arguments.enable_memory_profiling,
+            noninteractive=arguments.noninteractive,
+            hide_parse_errors=arguments.hide_parse_errors,
+            logging_sections=arguments.logging_sections,
+            log_identifier=arguments.log_identifier,
+            logger=arguments.logger,
+            formatter=arguments.formatter,
+            targets=arguments.targets,
+            use_buck_builder=arguments.use_buck_builder,
+            source_directories=arguments.source_directories,
+            filter_directory=arguments.filter_directory,
+            buck_mode=arguments.buck_mode,
+            no_saved_state=arguments.no_saved_state,
+            search_path=arguments.search_path,
+            binary=arguments.binary,
+            buck_builder_binary=arguments.buck_builder_binary,
+            exclude=arguments.exclude,
+            typeshed=arguments.typeshed,
+            save_initial_state_to=arguments.save_initial_state_to,
+            load_initial_state_from=arguments.load_initial_state_from,
+            changed_files_path=arguments.changed_files_path,
+            saved_state_project=arguments.saved_state_project,
+            dot_pyre_directory=arguments.dot_pyre_directory,
+            features=arguments.features,
+        )
+
+
 class CommandParser(ABC):
     NAME = ""
     HIDDEN = False
     _exit_code: ExitCode = ExitCode.SUCCESS
 
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
+        self._command_arguments: CommandArguments = CommandArguments.from_arguments(
+            arguments
+        )
+
         self._arguments = arguments
 
-        self._version: bool = arguments.version
-        self._debug: bool = arguments.debug
-        self._sequential: bool = arguments.sequential
-        self._strict: bool = arguments.strict
-        self._additional_checks: List[str] = arguments.additional_check
-        self._show_error_traces: bool = arguments.show_error_traces
-        self._output: str = arguments.output
-        self._verbose: bool = arguments.verbose
-        self._enable_profiling: bool = arguments.enable_profiling
-        self._enable_memory_profiling: bool = arguments.enable_memory_profiling
-        self._noninteractive: bool = arguments.noninteractive
-        self._hide_parse_errors: bool = arguments.hide_parse_errors
-        self._log_identifier: str = arguments.log_identifier
-        self._formatter: List[str] = arguments.formatter
+        self._version: bool = self._command_arguments.version
+        self._debug: bool = self._command_arguments.debug
+        self._sequential: bool = self._command_arguments.sequential
+        self._strict: bool = self._command_arguments.strict
+        self._additional_checks: List[str] = self._command_arguments.additional_checks
+        self._show_error_traces: bool = self._command_arguments.show_error_traces
+        self._output: str = self._command_arguments.output
+        self._verbose: bool = self._command_arguments.verbose
+        self._enable_profiling: bool = self._command_arguments.enable_profiling
+        self._enable_memory_profiling: bool = (
+            self._command_arguments.enable_memory_profiling
+        )
+        self._noninteractive: bool = self._command_arguments.noninteractive
+        self._hide_parse_errors: bool = self._command_arguments.hide_parse_errors
+        self._log_identifier: str = self._command_arguments.log_identifier
+        self._formatter: List[str] = self._command_arguments.formatter
 
-        self._targets: List[str] = arguments.targets
-        self._use_buck_builder: bool = arguments.use_buck_builder
+        self._targets: List[str] = self._command_arguments.targets
+        self._use_buck_builder: bool = self._command_arguments.use_buck_builder
 
-        self._source_directories: List[str] = arguments.source_directories
-        self._filter_directory: Optional[str] = arguments.filter_directory
-        self._buck_mode: Optional[str] = arguments.buck_mode
-        self._no_saved_state: bool = arguments.no_saved_state
+        self._source_directories: List[str] = self._command_arguments.source_directories
+        self._filter_directory: Optional[str] = self._command_arguments.filter_directory
+        self._buck_mode: Optional[str] = self._command_arguments.buck_mode
+        self._no_saved_state: bool = self._command_arguments.no_saved_state
 
-        self._search_path: List[str] = arguments.search_path
-        self._binary: str = arguments.binary
-        self._buck_builder_binary: Final[Optional[str]] = arguments.buck_builder_binary
-        self._exclude: List[str] = arguments.exclude
-        self._typeshed: str = arguments.typeshed
+        self._search_path: List[str] = self._command_arguments.search_path
+        self._binary: str = self._command_arguments.binary
+        self._buck_builder_binary: Final[
+            Optional[str]
+        ] = self._command_arguments.buck_builder_binary
+        self._exclude: List[str] = self._command_arguments.exclude
+        self._typeshed: str = self._command_arguments.typeshed
         self._save_initial_state_to: Final[
             Optional[str]
-        ] = arguments.save_initial_state_to
+        ] = self._command_arguments.save_initial_state_to
         self._load_initial_state_from: Final[
             Optional[str]
-        ] = arguments.load_initial_state_from
-        self._changed_files_path: Final[Optional[str]] = arguments.changed_files_path
-        self._saved_state_project: Final[Optional[str]] = arguments.saved_state_project
-        dot_pyre_directory: Final[Optional[Path]] = arguments.dot_pyre_directory
+        ] = self._command_arguments.load_initial_state_from
+        self._changed_files_path: Final[
+            Optional[str]
+        ] = self._command_arguments.changed_files_path
+        self._saved_state_project: Final[
+            Optional[str]
+        ] = self._command_arguments.saved_state_project
 
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
         self._current_directory: str = find_project_root(self._original_directory)
 
-        local_configuration = arguments.local_configuration
+        local_configuration = self._command_arguments.local_configuration
         if local_configuration and local_configuration.endswith(
             LOCAL_CONFIGURATION_FILE
         ):
@@ -194,8 +283,9 @@ class CommandParser(ABC):
         self._local_configuration: Final[Optional[str]] = find_local_root(
             self._original_directory, local_configuration
         )
-        self._dot_pyre_directory: Path = dot_pyre_directory or Path(
-            self._current_directory, LOG_DIRECTORY
+        self._dot_pyre_directory: Path = (
+            self._command_arguments.dot_pyre_directory
+            or Path(self._current_directory, LOG_DIRECTORY)
         )
         self._log_directory: str = find_log_directory(
             self._current_directory,
@@ -204,7 +294,8 @@ class CommandParser(ABC):
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
-        self._logging_sections: Optional[str] = arguments.logging_sections
+        self._logging_sections: Optional[str] = self._command_arguments.logging_sections
+        self._noninteractive: bool = self._command_arguments.noninteractive
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
 
@@ -442,13 +533,15 @@ class Command(CommandParser, ABC):
         else:
             self._local_root = self._original_directory
 
-        logger = arguments.logger
+        logger = self._command_arguments.logger
         if logger:
             logger = translate_path(self._original_directory, logger)
         self._configuration: Configuration = (
             configuration or self.generate_configuration(logger)
         )
-        self._strict: bool = arguments.strict or self._configuration.strict
+        self._strict: bool = (
+            self._command_arguments.strict or self._configuration.strict
+        )
         self._logger: Final[Optional[str]] = logger or (
             configuration and configuration.logger
         )
@@ -466,7 +559,7 @@ class Command(CommandParser, ABC):
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
         )
-        self._features: Final[Optional[str]] = arguments.features
+        self._features: Final[Optional[str]] = self._command_arguments.features
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
