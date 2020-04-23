@@ -164,7 +164,6 @@ class CommandParser(ABC):
         self._hide_parse_errors: bool = arguments.hide_parse_errors
         self._logging_sections: str = arguments.logging_sections
         self._log_identifier: str = arguments.log_identifier
-        self._logger: str = arguments.logger
         self._formatter: List[str] = arguments.formatter
 
         self._targets: List[str] = arguments.targets
@@ -207,9 +206,6 @@ class CommandParser(ABC):
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
-        logger = self._logger
-        if logger:
-            self._logger = translate_path(self._original_directory, logger)
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
 
@@ -442,11 +438,16 @@ class Command(CommandParser, ABC):
         else:
             self._local_root = self._original_directory
 
+        logger = arguments.logger
+        if logger:
+            logger = translate_path(self._original_directory, logger)
         self._configuration: Configuration = (
-            configuration or self.generate_configuration()
+            configuration or self.generate_configuration(logger)
         )
         self._strict: bool = arguments.strict or self._configuration.strict
-        self._logger: str = arguments.logger or (configuration and configuration.logger)
+        self._logger: Final[Optional[str]] = logger or (
+            configuration and configuration.logger
+        )
         self._ignore_all_errors_paths: Iterable[str] = (
             self._configuration.ignore_all_errors
         )
@@ -467,7 +468,7 @@ class Command(CommandParser, ABC):
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
 
-    def generate_configuration(self) -> Configuration:
+    def generate_configuration(self, logger: Optional[str]) -> Configuration:
         return Configuration(
             local_configuration=self._local_configuration,
             search_path=self._search_path,
@@ -475,7 +476,7 @@ class Command(CommandParser, ABC):
             typeshed=self._typeshed,
             buck_builder_binary=self._buck_builder_binary,
             excludes=self._exclude,
-            logger=self._logger,
+            logger=logger,
             formatter=self._formatter,
             log_directory=self._log_directory,
         )
