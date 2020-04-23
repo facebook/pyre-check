@@ -317,12 +317,12 @@ let create define =
         Node.connect predecessor split;
         create (preamble @ body) jumps split >>= create statements jumps
     | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->
-        (*       ____________
-         *       v          |
-         *       -> [split] -> [body]
-         *       | \_________
-         *       v          v
-         *       [orelse] -> [join] -> *)
+        (*       _____________
+         *       v           |
+         *  -> [split] -> [body]
+         *       |          :
+         *       v          :
+         *    [orelse] -> [join] -> *)
         let split = Node.empty graph (Node.While loop) in
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
@@ -337,7 +337,6 @@ let create define =
         Node.connect_option body split;
         let orelse = create orelse jumps split in
         Node.connect_option orelse join;
-        Node.connect split join;
         create statements jumps join
     | statement :: statements -> (
         (* -> [statement] ->

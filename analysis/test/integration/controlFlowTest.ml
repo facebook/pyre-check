@@ -492,6 +492,28 @@ let test_check_nested context =
     ]
 
 
+let test_check_while context =
+  let assert_type_errors = assert_type_errors ~context in
+
+  assert_type_errors
+    {|
+      def produce() -> bool: ...
+
+      def foo() -> int:
+        x = "A"
+        while(produce()):
+         if (produce()):
+          x = 1
+          break
+        else:
+          x = 2
+        reveal_type(x)
+        return x
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  ()
+
+
 let () =
   "controlFlow"
   >::: [
@@ -500,5 +522,6 @@ let () =
          "check_ternary" >:: test_check_ternary;
          "check_unbound_variables" >:: test_check_unbound_variables;
          "check_nested" >:: test_check_nested;
+         "check_while" >:: test_check_while;
        ]
   |> Test.run

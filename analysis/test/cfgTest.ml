@@ -690,8 +690,8 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 7] [6; 7; 8];
-      node 6 Node.Join [5; 8] [1];
+      node 5 (Node.While loop) [0; 7] [7; 8];
+      node 6 Node.Join [8] [1];
       node
         7
         (Node.Block [Statement.assume ~origin:Assert.Origin.While (+Expression.True); !!"body"])
@@ -715,8 +715,8 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 12] [6; 7; 13];
-      node 6 Node.Join [5; 10; 13] [1];
+      node 5 (Node.While loop) [0; 12] [7; 13];
+      node 6 Node.Join [10; 13] [1];
       node 7 (Node.Block [Statement.assume ~origin:Assert.Origin.While (+Expression.True)]) [5] [8];
       node 8 (Node.If conditional) [7] [10; 11];
       node 9 Node.Join [11] [12];
@@ -762,8 +762,8 @@ let test_while _ =
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 10; 12] [6; 7; 13];
-      node 6 Node.Join [5; 13] [1];
+      node 5 (Node.While loop) [0; 10; 12] [7; 13];
+      node 6 Node.Join [13] [1];
       node 7 (Node.Block [Statement.assume ~origin:Assert.Origin.While (+Expression.True)]) [5] [8];
       node 8 (Node.If conditional) [7] [10; 11];
       node 9 Node.Join [11] [12];
