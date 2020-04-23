@@ -276,7 +276,11 @@ class CommandParser(ABC):
         # Link tree determination.
         buck_arguments = parser.add_argument_group("buck")
         buck_arguments.add_argument(
-            "--target", action="append", dest="targets", help="The buck target to check"
+            "--target",
+            action="append",
+            dest="targets",
+            default=[],
+            help="The buck target to check",
         )
         buck_arguments.add_argument(
             "--use-buck-builder",
@@ -292,6 +296,7 @@ class CommandParser(ABC):
             "--source-directory",
             action="append",
             dest="source_directories",
+            default=[],
             help="The source directory to check",
             type=os.path.abspath,
         )
