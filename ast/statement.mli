@@ -61,7 +61,7 @@ module rec Assert : sig
           statement: Statement.t;
           true_branch: bool;
         }
-      | While
+      | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int

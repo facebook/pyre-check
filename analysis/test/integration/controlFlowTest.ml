@@ -494,7 +494,6 @@ let test_check_nested context =
 
 let test_check_while context =
   let assert_type_errors = assert_type_errors ~context in
-
   assert_type_errors
     {|
       def produce() -> bool: ...
@@ -511,6 +510,69 @@ let test_check_while context =
         return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = "A"
+        while True:
+          x = 1
+          break
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
+  assert_type_errors
+    {|
+      from typing import Optional
+      def produces() -> Optional[int]: ...
+      def foo() -> None:
+        x = None
+        while not x:
+          x = produces()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      from typing import Optional
+      def produces() -> Optional[int]: ...
+      def foo() -> None:
+        x = None
+        i = 0
+        while not x:
+          x = produces()
+          if i > 10:
+           break
+          i += 1
+        else:
+          reveal_type(x)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        while True:
+          print("infinity!")
+        beyond = impossible
+        reveal_type("never reached")
+    |}
+    [];
+  (* https://github.com/facebook/pyre-check/issues/251 *)
+  assert_type_errors
+    {|
+      def random() -> bool: ...
+
+      while True:
+          if random():
+              some_var = True
+              break
+
+      print(some_var)
+    |}
+    [];
   ()
 
 

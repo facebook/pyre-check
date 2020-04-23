@@ -213,11 +213,7 @@ let test_forward context =
         while x > 0:
           y = 1
     |}
-    (* TODO(T52796841): While condition should mark 'x' as used. *)
-    [
-      "Dead store [1003]: Value assigned to `x` is never used.";
-      "Dead store [1003]: Value assigned to `y` is never used.";
-    ];
+    ["Dead store [1003]: Value assigned to `y` is never used."];
   assert_liveness_errors
     {|
       def foo() -> None:

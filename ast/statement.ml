@@ -101,7 +101,7 @@ module rec Assert : sig
           statement: Statement.t;
           true_branch: bool;
         }
-      | While
+      | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
@@ -123,7 +123,7 @@ end = struct
           statement: Statement.t;
           true_branch: bool;
         }
-      | While
+      | While of { true_branch: bool }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right : int =
@@ -133,10 +133,10 @@ end = struct
           match Statement.location_insensitive_compare left.statement right.statement with
           | x when not (Int.equal x 0) -> x
           | _ -> Bool.compare left.true_branch right.true_branch )
-      | While, While -> 0
+      | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1
-      | While, _ -> 1
+      | While _, _ -> 1
   end
 
   type t = {

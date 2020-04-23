@@ -330,12 +330,22 @@ let create define =
         let body =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:Assert.Origin.While test :: body
+            Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) test :: body
           in
           create body_statements loop_jumps split
         in
         Node.connect_option body split;
-        let orelse = create orelse jumps split in
+        let orelse =
+          let orelse =
+            let test =
+              Expression.negate test
+              |> Expression.normalize
+              |> fun test -> { test with location = Location.synthetic }
+            in
+            Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) test :: orelse
+          in
+          create orelse jumps split
+        in
         Node.connect_option orelse join;
         create statements jumps join
     | statement :: statements -> (

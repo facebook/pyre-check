@@ -142,6 +142,8 @@ let test_widening _ =
          (* Join *)
          7, Int.max_value;
          (* Pass *)
+         8, Int.max_value;
+         (* Synthetic assert False *)
        ])
 
 
