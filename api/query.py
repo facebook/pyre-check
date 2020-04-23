@@ -32,11 +32,24 @@ class Location(NamedTuple):
     stop: Position
 
 
-class CallGraphTarget(NamedTuple):
-    target: str
-    # We might want to turn this into an enum in the future.
-    kind: str
-    locations: List[Location]
+class CallGraphTarget:
+    def __init__(self, call: Dict[str, Any]) -> None:
+        self.target: str = ""
+        if "target" in call:
+            self.target = call["target"]
+        else:
+            self.target = call["direct_target"]
+        self.kind: str = call["kind"]
+        self.locations: List[Location] = [
+            _parse_location(location) for location in call["locations"]
+        ]
+
+    def __eq__(self, other: "CallGraphTarget") -> bool:
+        return (
+            self.target == other.target
+            and self.kind == other.kind
+            and self.locations == other.locations
+        )
 
 
 class ClassHierarchy:
@@ -141,15 +154,9 @@ def get_call_graph(
     if result is None or "response" not in result:
         return None
     call_graph = {}
+
     for function, calls in result["response"].items():
-        call_graph[function] = [
-            CallGraphTarget(
-                target=call["target"],
-                kind=call["kind"],
-                locations=[_parse_location(location) for location in call["locations"]],
-            )
-            for call in calls
-        ]
+        call_graph[function] = [CallGraphTarget(call) for call in calls]
     return call_graph
 
 

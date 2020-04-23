@@ -177,6 +177,22 @@ class QueryAPITest(unittest.TestCase):
                         "target": "async_test.foo",
                     }
                 ],
+                "async_test.C.method": [
+                    {
+                        "locations": [
+                            {
+                                "path": "async_test.py",
+                                "start": {"line": 10, "column": 4},
+                                "stop": {"line": 10, "column": 7},
+                            }
+                        ],
+                        "kind": "method",
+                        "is_optional_class_attribute": False,
+                        "direct_target": "async_test.C.method",
+                        "class_name": "async_test.C",
+                        "dispatch": "dynamic",
+                    }
+                ],
             }
         }
 
@@ -186,15 +202,32 @@ class QueryAPITest(unittest.TestCase):
                 "async_test.foo": [],
                 "async_test.bar": [
                     query.CallGraphTarget(
-                        target="async_test.foo",
-                        kind="function",
-                        locations=[
-                            query.Location(
-                                path="async_test.py",
-                                start=query.Position(line=6, column=4),
-                                stop=query.Position(line=6, column=7),
-                            )
-                        ],
+                        {
+                            "target": "async_test.foo",
+                            "kind": "function",
+                            "locations": [
+                                {
+                                    "path": "async_test.py",
+                                    "start": {"line": 6, "column": 4},
+                                    "stop": {"line": 6, "column": 7},
+                                }
+                            ],
+                        }
+                    )
+                ],
+                "async_test.C.method": [
+                    query.CallGraphTarget(
+                        {
+                            "target": "async_test.C.method",
+                            "kind": "method",
+                            "locations": [
+                                {
+                                    "path": "async_test.py",
+                                    "start": {"line": 10, "column": 4},
+                                    "stop": {"line": 10, "column": 7},
+                                }
+                            ],
+                        }
                     )
                 ],
             },
