@@ -143,13 +143,6 @@ class CommandParser(ABC):
     def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         self._arguments = arguments
 
-        local_configuration = arguments.local_configuration
-        if local_configuration and local_configuration.endswith(
-            LOCAL_CONFIGURATION_FILE
-        ):
-            local_configuration = local_configuration[: -len(LOCAL_CONFIGURATION_FILE)]
-        self._local_configuration: Final[Optional[str]] = local_configuration
-
         self._version: bool = arguments.version
         self._debug: bool = arguments.debug
         self._sequential: bool = arguments.sequential
@@ -192,8 +185,14 @@ class CommandParser(ABC):
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
         self._current_directory: str = find_project_root(self._original_directory)
-        self._local_configuration = find_local_root(
-            self._original_directory, self._local_configuration
+
+        local_configuration = arguments.local_configuration
+        if local_configuration and local_configuration.endswith(
+            LOCAL_CONFIGURATION_FILE
+        ):
+            local_configuration = local_configuration[: -len(LOCAL_CONFIGURATION_FILE)]
+        self._local_configuration: Final[Optional[str]] = find_local_root(
+            self._original_directory, local_configuration
         )
         self._dot_pyre_directory: Path = dot_pyre_directory or Path(
             self._current_directory, LOG_DIRECTORY
