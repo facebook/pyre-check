@@ -40,6 +40,7 @@ type 'a t = {
 type instantiated_annotation = {
   annotation: Type.t;
   original_annotation: Type.t;
+  uninstantiated_annotation: Type.t option;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -58,9 +59,10 @@ let create
     ~visibility
     ~property
     ~static
+    ~uninstantiated_annotation
   =
   {
-    payload = { annotation; original_annotation };
+    payload = { annotation; original_annotation; uninstantiated_annotation };
     abstract;
     async;
     class_variable;
@@ -102,7 +104,7 @@ let create_uninstantiated
   }
 
 
-let annotation { payload = { annotation; original_annotation }; async; defined; visibility; _ } =
+let annotation { payload = { annotation; original_annotation; _ }; async; defined; visibility; _ } =
   let annotation, original =
     if async then
       Type.awaitable annotation, Type.awaitable original_annotation
@@ -157,8 +159,8 @@ let is_final { visibility; _ } =
   | _ -> false
 
 
-let instantiate attribute ~annotation ~original_annotation =
-  { attribute with payload = { annotation; original_annotation } }
+let instantiate attribute ~annotation ~original_annotation ~uninstantiated_annotation =
+  { attribute with payload = { annotation; original_annotation; uninstantiated_annotation } }
 
 
 let with_initialized attribute ~initialized = { attribute with initialized }

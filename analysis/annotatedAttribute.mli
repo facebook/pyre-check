@@ -40,6 +40,7 @@ val create
   visibility:visibility ->
   property:bool ->
   static:bool ->
+  uninstantiated_annotation:Type.t option ->
   instantiated
 
 val create_uninstantiated
@@ -86,4 +87,9 @@ val is_final : 'a t -> bool
 
 val with_initialized : 'a t -> initialized:initialized -> 'a t
 
-val instantiate : 'a t -> annotation:Type.t -> original_annotation:Type.t -> instantiated
+val instantiate
+  :  'a t ->
+  annotation:Type.t ->
+  original_annotation:Type.t ->
+  uninstantiated_annotation:Type.t option ->
+  instantiated

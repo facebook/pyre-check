@@ -313,6 +313,7 @@ let fallback_attribute ~resolution ~name class_name =
               (AnnotatedAttribute.create
                  ~annotation:return_annotation
                  ~original_annotation:return_annotation
+                 ~uninstantiated_annotation:(Some return_annotation)
                  ~abstract:false
                  ~async:false
                  ~class_variable:false

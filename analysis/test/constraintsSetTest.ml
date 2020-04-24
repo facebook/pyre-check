@@ -20,6 +20,7 @@ let make_attributes ~class_name =
     Attribute.create
       ~annotation
       ~original_annotation:annotation
+      ~uninstantiated_annotation:(Some annotation)
       ~visibility:ReadWrite
       ~abstract:false
       ~async:false

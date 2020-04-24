@@ -1872,6 +1872,7 @@ module Implementation = struct
         AnnotatedAttribute.create
           ~annotation:callable
           ~original_annotation:callable
+          ~uninstantiated_annotation:None
           ~visibility:ReadWrite
           ~abstract:false
           ~async:false
@@ -1984,6 +1985,13 @@ module Implementation = struct
     in
 
     let accessed_through_class = accessed_through_class && not accessed_via_metaclass in
+
+    let uninstantiated_annotation =
+      match annotation with
+      | Attribute annotation -> Some annotation
+      | _ -> None
+    in
+
     let annotation =
       match instantiated with
       | None -> annotation
@@ -2369,7 +2377,11 @@ module Implementation = struct
               get_type, set_type
           | None -> annotation, annotation )
     in
-    AnnotatedAttribute.instantiate attribute ~annotation ~original_annotation:original
+    AnnotatedAttribute.instantiate
+      attribute
+      ~annotation
+      ~original_annotation:original
+      ~uninstantiated_annotation
 
 
   let create_attribute

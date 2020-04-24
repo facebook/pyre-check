@@ -255,6 +255,7 @@ let attribute_from_class_name
             AnnotatedAttribute.create
               ~annotation:Type.Top
               ~original_annotation:Type.Top
+              ~uninstantiated_annotation:(Some Type.Top)
               ~abstract:false
               ~async:false
               ~class_variable:false

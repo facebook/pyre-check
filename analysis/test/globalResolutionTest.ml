@@ -374,6 +374,7 @@ let test_class_attributes context =
   in
   let create_simple_attribute
       ?(annotation = Type.integer)
+      ?(uninstantiated_annotation = Some Type.integer)
       ?(class_variable = false)
       ?(initialized = Attribute.OnClass)
       ~parent
@@ -383,6 +384,7 @@ let test_class_attributes context =
       ~abstract:false
       ~annotation
       ~original_annotation:annotation
+      ~uninstantiated_annotation
       ~async:false
       ~class_variable
       ~defined:true
@@ -447,6 +449,7 @@ let test_class_attributes context =
       create_simple_attribute
         ~parent:"test.foo"
         ~annotation:constructor
+        ~uninstantiated_annotation:None
         ~initialized:OnClass
         "__init__";
       create_simple_attribute
@@ -535,6 +538,7 @@ let test_class_attributes context =
       ?(defined = true)
       ?(class_variable = false)
       ?callable_name
+      ?uninstantiated_annotation
       name
       callable
     =
@@ -543,6 +547,7 @@ let test_class_attributes context =
       (Annotated.Attribute.create
          ~annotation
          ~original_annotation:annotation
+         ~uninstantiated_annotation
          ~abstract:false
          ~async:false
          ~class_variable
@@ -613,6 +618,7 @@ let test_class_attributes context =
          ~parent:"test.DC"
          ~visibility:ReadWrite
          ~initialized:OnlyOnInstance
+         ~uninstantiated_annotation:Type.integer
          "x"
          "int");
   assert_attribute
@@ -624,6 +630,7 @@ let test_class_attributes context =
          ~parent:"test.Parent"
          ~visibility:ReadWrite
          ~initialized:OnlyOnInstance
+         ~uninstantiated_annotation:Type.integer
          "inherited"
          "int");
   assert_attribute
@@ -635,6 +642,7 @@ let test_class_attributes context =
          ~parent:"test.NT"
          ~visibility:ReadWrite
          ~initialized:OnlyOnInstance
+         ~uninstantiated_annotation:Type.integer
          "x"
          "int");
   assert_attribute
@@ -691,6 +699,7 @@ let test_class_attributes context =
          ~parent:"typing.Callable"
          ~visibility:ReadWrite
          ~initialized:OnClass
+         ~uninstantiated_annotation:Type.object_primitive
          "__call__"
          "typing.Callable[[Named(x, str)], int]");
   assert_attribute
@@ -840,6 +849,7 @@ let test_typed_dictionary_individual_attributes context =
       ?(parent = "test.Attributes")
       ?(initialized = Annotated.Attribute.OnClass)
       ?(defined = true)
+      ?uninstantiated_annotation
       ~annotation
       name
     =
@@ -847,6 +857,7 @@ let test_typed_dictionary_individual_attributes context =
       (Annotated.Attribute.create
          ~annotation
          ~original_annotation:annotation
+         ~uninstantiated_annotation
          ~abstract:false
          ~async:false
          ~class_variable:false
@@ -866,6 +877,7 @@ let test_typed_dictionary_individual_attributes context =
          "non_existent"
          ~parent:"test.RegularClass"
          ~annotation:Type.Top
+         ~uninstantiated_annotation:Type.Top
          ~defined:false
          ~initialized:Annotated.Attribute.NotInitialized);
   assert_attribute
@@ -876,6 +888,7 @@ let test_typed_dictionary_individual_attributes context =
          "non_existent"
          ~parent:"test.Movie"
          ~annotation:Type.Top
+         ~uninstantiated_annotation:Type.Top
          ~defined:false
          ~initialized:Annotated.Attribute.NotInitialized);
   assert_attribute
@@ -886,6 +899,7 @@ let test_typed_dictionary_individual_attributes context =
          "name"
          ~parent:"test.Movie"
          ~annotation:Type.Top
+         ~uninstantiated_annotation:Type.Top
          ~defined:false
          ~initialized:Annotated.Attribute.NotInitialized);
   assert_attribute
@@ -896,6 +910,7 @@ let test_typed_dictionary_individual_attributes context =
          "year"
          ~parent:"test.Movie"
          ~annotation:Type.Top
+         ~uninstantiated_annotation:Type.Top
          ~defined:false
          ~initialized:Annotated.Attribute.NotInitialized);
   assert_attribute
@@ -906,6 +921,7 @@ let test_typed_dictionary_individual_attributes context =
          "year"
          ~parent:"test.ChildMovie"
          ~annotation:Type.Top
+         ~uninstantiated_annotation:Type.Top
          ~defined:false
          ~initialized:Annotated.Attribute.NotInitialized);
   assert_attribute
