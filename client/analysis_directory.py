@@ -575,7 +575,7 @@ def resolve_analysis_directory(
     filter_directory: Optional[str],
     use_buck_builder: bool,
     debug: bool,
-    buck_mode: Optional[str] = None,
+    buck_mode: Optional[str],
     isolate: bool = False,
     relative_local_root: Optional[str] = None,
 ) -> AnalysisDirectory:

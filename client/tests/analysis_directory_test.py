@@ -79,6 +79,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             current_directory=current_directory,
             filter_directory=None,
             use_buck_builder=False,
+            buck_mode=None,
             debug=False,
         )
         self.assertEqualRootAndFilterRoot(
@@ -96,6 +97,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             current_directory=current_directory,
             filter_directory="/real/directory",
             use_buck_builder=False,
+            buck_mode=None,
             debug=False,
         )
         self.assertEqualRootAndFilterRoot(
@@ -606,6 +608,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             current_directory=current_directory,
             filter_directory="/real/directory",
             use_buck_builder=False,
+            buck_mode=None,
             debug=False,
         )
         self.assertEqualRootAndFilterRoot(
@@ -626,6 +629,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             current_directory=current_directory,
             filter_directory="/filter",
             use_buck_builder=False,
+            buck_mode=None,
             debug=False,
         )
         self.assertEqualRootAndFilterRoot(
@@ -648,6 +652,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             current_directory=current_directory,
             filter_directory="/filter",
             use_buck_builder=False,
+            buck_mode=None,
             debug=False,
         )
         self.assertEqualRootAndFilterRoot(

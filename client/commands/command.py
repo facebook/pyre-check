@@ -599,6 +599,7 @@ class Command(CommandParser, ABC):
                 filter_directory=self._filter_directory,
                 use_buck_builder=self._use_buck_builder,
                 debug=self._debug,
+                buck_mode=self._buck_mode,
                 relative_local_root=self.relative_local_root,
             )
 

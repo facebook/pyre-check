@@ -66,6 +66,7 @@ class Check(Reporting):
             filter_directory=self._filter_directory,
             use_buck_builder=self._use_buck_builder,
             debug=self._debug,
+            buck_mode=self._buck_mode,
             isolate=True,
         )
 
