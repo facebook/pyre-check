@@ -380,6 +380,26 @@ let test_non_data_descriptors context =
 
     |}
     ["Revealed type [-1]: Revealed type for `z` is `Optional[int]`."];
+  assert_type_errors
+    {|
+      from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
+
+      def maker() -> Any: ...
+
+      class Host:
+        sm: StaticMethod[Callable[[int, str], bool]] = maker()
+
+      def f() -> None:
+        x = Host().sm
+        reveal_type(x)
+        y = Host.sm
+        reveal_type(y)
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int, str], bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int, str], bool]`.";
+    ];
   ()
 
 
