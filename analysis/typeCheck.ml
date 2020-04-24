@@ -3853,13 +3853,19 @@ module State (Context : Context) = struct
                           |> Option.value ~default:false
                           |> fun insufficient -> insufficient, true
                       | None when is_immutable && not is_reassignment ->
-                          let is_toplevel =
-                            Define.is_toplevel define
-                            || Define.is_class_toplevel define
-                            || Define.is_constructor define
+                          let thrown_at_source =
+                            match define, attribute with
+                            | _, None -> Define.is_toplevel define
+                            | ( { StatementDefine.signature = { parent = Some parent; _ }; _ },
+                                Some (attribute, _) ) ->
+                                Type.Primitive.equal
+                                  (Reference.show parent)
+                                  (AnnotatedAttribute.parent attribute)
+                                && (Define.is_class_toplevel define || Define.is_constructor define)
+                            | _ -> false
                           in
                           ( Type.equal expected Type.Top || Type.contains_prohibited_any expected,
-                            is_toplevel )
+                            thrown_at_source )
                       | _ -> false, false
                     in
                     let actual_annotation, evidence_locations =

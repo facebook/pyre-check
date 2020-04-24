@@ -261,6 +261,7 @@ let assert_infer ?(fields = ["description"]) ~context source errors =
   in
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
   let infer_errors = get_inference_errors ~context source in
+  Memory.reset_shared_memory ();
   assert_equal
     ~cmp:(List.equal String.equal)
     ~printer:(fun errors -> Format.asprintf "%a" Sexp.pp [%message (errors : string list)])
@@ -268,8 +269,7 @@ let assert_infer ?(fields = ["description"]) ~context source errors =
       (diff ~print:(fun format errors ->
            Format.fprintf format "%a" Sexp.pp [%message (errors : string list)]))
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
-    (List.map ~f:fields_of_error infer_errors |> List.concat |> List.map ~f:to_string);
-  Memory.reset_shared_memory ()
+    (List.map ~f:fields_of_error infer_errors |> List.concat |> List.map ~f:to_string)
 
 
 let test_infer context =

@@ -1148,6 +1148,29 @@ let test_check_missing_attribute context =
       "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized.";
     ];
+  assert_strict_type_errors
+    ~context
+    ~update_environment_with:
+      [
+        {
+          handle = "other.pyi";
+          source =
+            {|
+             from typing import Any
+             class O:
+               x: Any
+           |};
+        };
+      ]
+    {|
+      from other import O
+      class H:
+        o: O
+        def __init__(self, x: str) -> None:
+          self.o = O()
+          self.o.x = x
+    |}
+    [];
   ()
 
 
