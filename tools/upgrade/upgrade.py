@@ -40,6 +40,10 @@ class VersionControl:
         return ""
 
     @staticmethod
+    def add_paths(paths: List[Path]) -> None:
+        pass
+
+    @staticmethod
     def submit_changes(
         submit: bool, message: str, ignore_failures: bool = False
     ) -> None:
@@ -639,6 +643,9 @@ def run_targets_to_configuration(
                     local_configuration_path, configuration_contents
                 )
                 configuration.write()
+
+                # Add newly created configuration files to version control
+                version_control.add_paths([local_configuration_path])
     else:
         LOG.warning(
             "Could not find a project configuration with binary and typeshed \

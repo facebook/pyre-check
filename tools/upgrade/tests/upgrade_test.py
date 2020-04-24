@@ -1496,6 +1496,7 @@ class MigrateTest(unittest.TestCase):
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.ExternalVersionControl.add_paths")
     @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
     @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
     @patch(f"{upgrade.__name__}.find_targets")
@@ -1516,6 +1517,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_targets,
         find_local_configuration,
         find_project_configuration,
+        add_paths,
         submit_changes,
         open_mock,
     ) -> None:
@@ -1674,6 +1676,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 ]
             )
             add_local_mode.assert_not_called()
+            add_paths.assert_called_once_with(
+                [Path("subdirectory/.pyre_configuration.local")]
+            )
 
         # Add to existing local project configuration
         fix.reset_mock()
