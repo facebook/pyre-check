@@ -41,6 +41,8 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
 
 
 def main(argv: List[str]) -> int:
+    start = time.time()
+
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         # pyre-fixme[6]: Expected `_FormatterClass` for 2nd param but got
@@ -80,7 +82,6 @@ def main(argv: List[str]) -> int:
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
-    start = time.time()
     try:
         original_directory = os.getcwd()
         # TODO(T57959968): Stop changing the directory in the client
