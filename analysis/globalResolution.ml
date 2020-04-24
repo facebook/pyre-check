@@ -265,7 +265,6 @@ let attribute_from_class_name
               ~parent:class_name
               ~visibility:ReadWrite
               ~property:false
-              ~static:false
             |> Option.some
         | None -> None )
   in

@@ -322,8 +322,7 @@ let fallback_attribute ~resolution ~name class_name =
                  ~name
                  ~parent:(Reference.show class_name_reference)
                  ~visibility:ReadWrite
-                 ~property:false
-                 ~static:false)
+                 ~property:false)
         | _ -> None )
     | _ -> None
   in

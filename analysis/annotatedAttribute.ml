@@ -33,7 +33,6 @@ type 'a t = {
   parent: Type.Primitive.t;
   visibility: visibility;
   property: bool;
-  static: bool;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -58,7 +57,6 @@ let create
     ~parent
     ~visibility
     ~property
-    ~static
     ~uninstantiated_annotation
   =
   {
@@ -72,7 +70,6 @@ let create
     parent;
     visibility;
     property;
-    static;
   }
 
 
@@ -87,7 +84,6 @@ let create_uninstantiated
     ~parent
     ~visibility
     ~property
-    ~static
   =
   {
     payload = uninstantiated_annotation;
@@ -100,7 +96,6 @@ let create_uninstantiated
     parent;
     visibility;
     property;
-    static;
   }
 
 
@@ -147,7 +142,11 @@ let abstract { abstract; _ } = abstract
 
 let async { async; _ } = async
 
-let static { static; _ } = static
+let static { payload = { uninstantiated_annotation; _ }; _ } =
+  match uninstantiated_annotation with
+  | Some (Type.Parametric { name = "typing.StaticMethod"; _ }) -> true
+  | _ -> false
+
 
 let property { property; _ } = property
 

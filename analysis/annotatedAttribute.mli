@@ -39,7 +39,6 @@ val create
   parent:Type.Primitive.t ->
   visibility:visibility ->
   property:bool ->
-  static:bool ->
   uninstantiated_annotation:Type.t option ->
   instantiated
 
@@ -54,7 +53,6 @@ val create_uninstantiated
   parent:Type.Primitive.t ->
   visibility:visibility ->
   property:bool ->
-  static:bool ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -77,7 +75,7 @@ val defined : 'a t -> bool
 
 val class_variable : 'a t -> bool
 
-val static : 'a t -> bool
+val static : instantiated -> bool
 
 val property : 'a t -> bool
 

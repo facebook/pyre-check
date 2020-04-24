@@ -393,7 +393,6 @@ let test_class_attributes context =
       ~parent
       ~visibility:ReadWrite
       ~property:false
-      ~static:false
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -556,8 +555,7 @@ let test_class_attributes context =
          ~name
          ~parent
          ~property
-         ~visibility
-         ~static:false)
+         ~visibility)
   in
   assert_attribute
     ~parent:"test.Attributes"
@@ -866,8 +864,7 @@ let test_typed_dictionary_individual_attributes context =
          ~name
          ~parent
          ~property
-         ~visibility
-         ~static:false)
+         ~visibility)
   in
   assert_attribute
     ~parent_name:"test.RegularClass"

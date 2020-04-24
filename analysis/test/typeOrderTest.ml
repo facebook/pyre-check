@@ -47,7 +47,6 @@ let make_attributes ~class_name =
       ~initialized:OnClass
       ~parent:class_name
       ~property:false
-      ~static:false
       ~name
   in
   List.map ~f:parse_attribute

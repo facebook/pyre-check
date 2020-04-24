@@ -1062,7 +1062,6 @@ module Implementation = struct
                 ~name:attribute_name
                 ~parent:(Reference.show name)
                 ~visibility:ReadWrite
-                ~static:false
                 ~property:false
             in
             List.map generated_methods ~f:make_attribute
@@ -1595,7 +1594,6 @@ module Implementation = struct
           ~name:"__init__"
           ~parent:class_name
           ~visibility:ReadWrite
-          ~static:false
           ~property:false
       in
       let all_special_methods =
@@ -1656,7 +1654,6 @@ module Implementation = struct
                  ~name:attribute_name
                  ~parent:class_name
                  ~visibility:ReadWrite
-                 ~static:false
                  ~property:false)
           else
             ()
@@ -1881,7 +1878,6 @@ module Implementation = struct
           ~initialized:OnClass
           ~name:"__call__"
           ~parent:"typing.Callable"
-          ~static:false
           ~property:false
         |> Option.some
     | None ->
@@ -2167,11 +2163,7 @@ module Implementation = struct
                   parameters = [Single (Callable callable); Single self_type];
                 }
             in
-            if String.equal attribute_name "__new__" then
-              Type.Callable callable
-            else if AnnotatedAttribute.static attribute then
-              Type.Callable callable
-            else if accessed_through_class then
+            if accessed_through_class then
               (* Keep first argument around when calling instance methods from class attributes. *)
               Type.Callable callable
             else
@@ -2480,7 +2472,7 @@ module Implementation = struct
             | _ -> Type.Top
           in
           UninstantiatedAnnotation.Attribute annotation, class_variable, visibility
-      | Method { signatures; final; _ } ->
+      | Method { signatures; final; static; _ } ->
           (* Handle Callables *)
           let visibility =
             if final then
@@ -2512,10 +2504,11 @@ module Implementation = struct
                     overloads
                 in
                 let callable = { kind = Named name; implementation; overloads } in
-                if
-                  (not (String.equal attribute_name "__new__"))
-                  && Define.Signature.is_class_method define
-                then
+                if static || String.equal attribute_name "__new__" then
+                  UninstantiatedAnnotation.Attribute
+                    (Type.Parametric
+                       { name = "typing.StaticMethod"; parameters = [Single (Callable callable)] })
+                else if Define.Signature.is_class_method define then
                   UninstantiatedAnnotation.Attribute
                     (Type.Parametric
                        { name = "typing.ClassMethod"; parameters = [Single (Callable callable)] })
@@ -2595,10 +2588,6 @@ module Implementation = struct
       ~initialized
       ~name:attribute_name
       ~parent:parent_name
-      ~static:
-        ( match kind with
-        | Method { static; _ } -> static
-        | _ -> false )
       ~property:
         ( match kind with
         | Property _ -> true
