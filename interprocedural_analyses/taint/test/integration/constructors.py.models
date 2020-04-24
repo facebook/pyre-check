@@ -193,7 +193,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{object::__new__}",
+    "callable": "Ovr{type::__new__}",
     "sources": [],
     "sinks": [
       {

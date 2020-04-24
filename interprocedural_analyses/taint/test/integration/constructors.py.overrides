@@ -1,4 +1,5 @@
 @generated
 Overrides
 object::__init__ (override) -> [constructors.BothNewAndInit::__init__ (override) constructors.ParentWithInit::__init__ (override) constructors.SomeAPI::__init__ (override) constructors.SourceInConstructor::__init__ (override)]
-object::__new__ (override) -> [constructors.BothNewAndInit::__new__ (override) constructors.ChildWithNew::__new__ (override)]
+object::__new__ (override) -> [constructors.BothNewAndInit::__new__ (override)]
+type::__new__ (override) -> [constructors.ChildWithNew::__new__ (override)]

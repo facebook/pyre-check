@@ -667,7 +667,7 @@ let test_check_constructors context =
     {|
       from abc import ABCMeta, abstractmethod
 
-      class A(ABCMeta):
+      class A(metaclass=ABCMeta):
           @property
           @abstractmethod
           def foo(self) -> int:
