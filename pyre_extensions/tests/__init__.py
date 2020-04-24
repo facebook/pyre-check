@@ -1,1 +1,4 @@
-from . import simple_tests  # noqa F401
+from . import safe_json_test, simple_tests
+
+
+__all__ = ["safe_json_test", "simple_tests"]

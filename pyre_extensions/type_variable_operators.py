@@ -1,7 +1,7 @@
 # pyre-unsafe
 from typing import Any, Generic, TypeVar
 
-from . import GenericMeta
+from .generic import GenericMeta
 
 
 _T1 = TypeVar("_T1")

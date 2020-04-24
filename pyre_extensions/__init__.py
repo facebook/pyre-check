@@ -1,17 +1,26 @@
 # pyre-ignore-all-errors
 from typing import Any, Optional, Type, TypeVar
 
+# Surfacing `tests` is important for importers to be able to run our tests
+# in their own environment
+from . import safe_json, tests, type_variable_operators
+from .generic import Generic
+
+
+__all__ = [
+    "safe_json",
+    "type_variable_operators",
+    "tests",
+    "Generic",
+    "none_throws",
+    "assert_is_instance",
+    "safe_cast",
+    "ParameterSpecification",
+    "ListVariadic",
+]
+
 
 _T = TypeVar("_T")
-
-
-class GenericMeta(type):
-    def __getitem__(cls, *args) -> Any:
-        return cls.__class__(cls.__name__, cls.__bases__, dict(cls.__dict__))
-
-
-class Generic(metaclass=GenericMeta):
-    pass
 
 
 def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
