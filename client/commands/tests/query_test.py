@@ -23,6 +23,7 @@ class QueryTest(unittest.TestCase):
         with patch.object(SocketConnection, "connect") as connect:
             result = MagicMock()
             result.output = "{}"
+            # pyre-fixme[16]: Callable `read_response` has no attribute `return_value`.
             read_response.return_value = result
 
             commands.Query(

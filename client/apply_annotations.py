@@ -120,6 +120,7 @@ class TypeCollector(cst.CSTVisitor):
         #  `Union[Sequence[ImportAlias], ImportStar]`.
         # pyre-fixme[6]: Expected `str` for 1st param but got `Union[BaseExpression,
         #  str]`.
+        # pyre-fixme[16]: `None` has no attribute `value`.
         self._add_to_imports(node.names, cst.Name(module.value), module.value)
 
     def _add_annotation_to_imports(
@@ -410,6 +411,7 @@ class TypeTransformer(cst.CSTTransformer):
         module = original_node.module
         if (
             module is not None
+            # pyre-fixme[16]: `None` has no attribute `value`.
             and module.value in self.imports
             and not isinstance(import_names, cst.ImportStar)
         ):

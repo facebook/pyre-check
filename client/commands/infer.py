@@ -195,6 +195,7 @@ class Stub:
     def join_with(self, other) -> None:
         stub = self.stub
         if not self.is_field() and not other.is_field() and stub:
+            # pyre-fixme[16]: `None` has no attribute `join_with`.
             stub.join_with(other.stub)
         else:
             raise Exception("Tried to join incompatible stubs")

@@ -23,14 +23,20 @@ def run_missing_overridden_return_annotations(
         LOG.info("Patching errors in `%s`.", path)
         errors = sorted(errors, key=lambda error: error["line"], reverse=True)
 
+        # pyre-fixme[6]: Expected `Union[_PathLike[str], str]` for 1st param but got
+        #  `Union[typing.Iterator[typing.Dict[str, typing.Any]], str]`.
         path = pathlib.Path(path)
         lines = path.read_text().split("\n")
 
         for error in errors:
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             if error["code"] != 15:
                 continue
+            # pyre-fixme[6]: Expected `int` for 1st param but got `str`.
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             line = error["line"] - 1
 
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             match = re.match(r".*`(.*)`\.", error["description"])
             if not match:
                 continue
@@ -58,14 +64,20 @@ def run_missing_global_annotations(
         LOG.info("Patching errors in `%s`", path)
         errors = sorted(errors, key=lambda error: error["line"], reverse=True)
 
+        # pyre-fixme[6]: Expected `Union[_PathLike[str], str]` for 1st param but got
+        #  `Union[typing.Iterator[typing.Dict[str, typing.Any]], str]`.
         path = pathlib.Path(path)
         lines = path.read_text().split("\n")
 
         for error in errors:
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             if error["code"] != 5:
                 continue
+            # pyre-fixme[6]: Expected `int` for 1st param but got `str`.
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             line = error["line"] - 1
 
+            # pyre-fixme[6]: Expected `Union[int, slice]` for 1st param but got `str`.
             match = re.match(r".*`.*`.*`(.*)`.*", error["description"])
             if not match:
                 continue

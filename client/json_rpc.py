@@ -118,7 +118,6 @@ def read_request(file: BinaryIO) -> Optional[Request]:
     payload = _read_payload(file)
     if payload and Request.validate_payload(payload):
         return Request(
-            # pyre-fixme[6]: Expected `str` for 1st param but got `Optional[Any]`.
             method=payload.get("method"),
             id=payload.get("id"),
             parameters=payload.get("params"),

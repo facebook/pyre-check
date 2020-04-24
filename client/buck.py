@@ -109,6 +109,8 @@ class FastBuckBuilder(BuckBuilder):
             if return_code == 0:
                 LOG.info("Finished building targets.")
                 if self._debug_mode:
+                    # pyre-fixme[6]: Expected `_Reader` for 1st param but got
+                    #  `Optional[typing.IO[typing.Any]]`.
                     debug_output = json.load(buck_builder_process.stdout)
                     self.conflicting_files += debug_output["conflictingFiles"]
                     self.unsupported_files += debug_output["unsupportedFiles"]

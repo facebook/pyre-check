@@ -724,6 +724,8 @@ class Command(CommandParser, ABC):
                 stdout_reader.start()
 
             # Read the error output and print it.
+            # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but got
+            #  `Optional[IO[typing.Any]]`.
             with StreamLogger(process.stderr) as stream_logger:
                 with register_non_unique_process(
                     process.pid, self.NAME, self.log_directory
@@ -774,6 +776,8 @@ class Command(CommandParser, ABC):
                 try:
                     with SocketConnection(self._log_directory) as socket_connection:
                         socket_connection.perform_handshake(version_hash)
+                        # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but
+                        #  got `Optional[IO[typing.Any]]`.
                         with StreamLogger(stderr_tail.stdout):
                             socket_connection.send(request)
                             response = socket_connection.read()

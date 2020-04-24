@@ -253,12 +253,14 @@ class StatisticsOverTime:
     def graph_total_shared_memory_size_over_time(self) -> None:
         try:
             gnuplot = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
+            # pyre-fixme[16]: `Optional` has no attribute `write`.
             gnuplot.stdin.write(b"set term dumb 140 25\n")
             gnuplot.stdin.write(b"plot '-' using 1:2 title '' with linespoints \n")
             for (i, (_time, size)) in enumerate(self._data):
                 # This is graphing size against # of updates, not time
                 gnuplot.stdin.write(b"%f %f\n" % (i, size))
             gnuplot.stdin.write(b"e\n")
+            # pyre-fixme[16]: `Optional` has no attribute `flush`.
             gnuplot.stdin.flush()
         except FileNotFoundError:
             LOG.error("gnuplot is not installed")

@@ -19,6 +19,7 @@ def load_module(module_path: str) -> Optional[ast.Module]:
     try:
         with open(module_path, "r") as file:
             parsed = ast.parse(file.read())
+            # pyre-fixme[25]: Assertion will always fail.
             if not isinstance(parsed, ast.Module):
                 return None
             return parsed

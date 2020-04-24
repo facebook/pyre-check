@@ -88,6 +88,7 @@ class PyreTest(unittest.TestCase):
         elif FieldStub.is_instance(error.inference):
             stub = FieldStub(error.inference)
         assert stub is not None
+        # pyre-fixme[16]: `None` has no attribute `get_typing_imports`.
         self.assertEqual(sorted(list(stub.get_typing_imports())), expected_imports)
 
     def test_get_typing_imports(self) -> None:

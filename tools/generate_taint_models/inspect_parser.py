@@ -12,6 +12,7 @@ from typing import Callable, Optional
 
 def extract_qualified_name(view_function: Callable[..., object]) -> Optional[str]:
     if inspect.ismethod(view_function):
+        # pyre-fixme[16]: Anonymous callable has no attribute `__func__`.
         return extract_qualified_name(view_function.__func__)
     else:
         module_name = getattr(view_function, "__module__", None)

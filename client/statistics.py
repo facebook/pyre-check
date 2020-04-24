@@ -50,8 +50,6 @@ def log(
     if not logger:
         raise ValueError("Logger must either be given or in configuration")
     if arguments:
-        # pyre-fixme[9]: normals has type `Optional[Dict[str, Optional[str]]]`; used
-        #  as `Union[Dict[str, Optional[str]], Dict[str, str]]`.
         normals = {**normals, "arguments": str(arguments)}
     try:
         statistics = {
