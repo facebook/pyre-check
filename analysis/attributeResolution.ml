@@ -1991,6 +1991,35 @@ module Implementation = struct
     let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
       AnnotatedAttribute.uninstantiated_annotation attribute
     in
+    let annotation =
+      match instantiated with
+      | None -> annotation
+      | Some instantiated -> (
+          let solution = constraints ~target:class_name ~instantiated ~assumptions () in
+          let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
+          match annotation with
+          | Attribute annotation -> UninstantiatedAnnotation.Attribute (instantiate annotation)
+          | Method { callable; is_class_method } ->
+              let callable =
+                match instantiate (Callable callable) with
+                | Callable callable -> callable
+                | _ -> failwith "instantiate didn't return a callable"
+              in
+              Method { callable; is_class_method }
+          | Property { getter; setter } ->
+              let instantiate_property_annotation { UninstantiatedAnnotation.self; value } =
+                {
+                  UninstantiatedAnnotation.self = self >>| instantiate;
+                  value = value >>| instantiate;
+                }
+              in
+              Property
+                {
+                  getter = instantiate_property_annotation getter;
+                  setter = setter >>| instantiate_property_annotation;
+                } )
+    in
+
     let annotation, original =
       let instantiated =
         match instantiated with
@@ -2347,14 +2376,6 @@ module Implementation = struct
               in
               get_type, set_type
           | None -> annotation, annotation )
-    in
-    let annotation, original =
-      match instantiated with
-      | Some instantiated ->
-          let solution = constraints ~target:class_name ~instantiated ~assumptions () in
-          let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
-          instantiate annotation, instantiate original
-      | None -> annotation, original
     in
     AnnotatedAttribute.instantiate attribute ~annotation ~original_annotation:original
 
