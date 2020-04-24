@@ -365,6 +365,21 @@ let test_non_data_descriptors context =
       "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to \
        anonymous call but got `int`.";
     ];
+  assert_type_errors
+    {|
+     from typing import TypeVar, Type, Optional
+     T = TypeVar("T")
+     class X:
+       @classmethod
+       def x(cls, x: T) -> Optional[T]: ...
+
+       @classmethod
+       def foo(cls, y: int) -> None:
+         z = cls.x(y)
+         reveal_type(z)
+
+    |}
+    ["Revealed type [-1]: Revealed type for `z` is `Optional[int]`."];
   ()
 
 

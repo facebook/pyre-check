@@ -17,10 +17,7 @@ module UninstantiatedAnnotation = struct
   [@@deriving compare]
 
   type kind =
-    | Method of {
-        callable: Type.Callable.t;
-        is_class_method: bool;
-      }
+    | Method of { callable: Type.Callable.t }
     | Attribute of Type.t
     | Property of {
         getter: property_annotation;
@@ -39,12 +36,8 @@ type uninstantiated = UninstantiatedAnnotation.t
 
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
 
-let create_uninstantiated_method
-    ?(is_class_method = false)
-    ?(accessed_via_metaclass = false)
-    callable
-  =
-  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Method { callable; is_class_method } }
+let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
+  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Method { callable } }
 
 
 module UninstantiatedAttributeTable = struct
@@ -851,7 +844,6 @@ module Implementation = struct
                         parameters = Defined (Type.Callable.Parameter.create parameters);
                       };
                   };
-                is_class_method = false;
               } )
         in
         match options definition with
@@ -1566,8 +1558,7 @@ module Implementation = struct
       in
       let overload_method (attribute, _) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with
-        | { UninstantiatedAnnotation.kind = Method { callable; is_class_method }; _ } as
-          uninstantiated_annotation ->
+        | { UninstantiatedAnnotation.kind = Method { callable }; _ } as uninstantiated_annotation ->
             let overloaded_callable overloads =
               {
                 callable with
@@ -1585,7 +1576,7 @@ module Implementation = struct
                 {
                   uninstantiated_annotation with
                   UninstantiatedAnnotation.kind =
-                    Method { callable = overloaded_callable overloads; is_class_method };
+                    Method { callable = overloaded_callable overloads };
                 }
               attribute
         | _ -> None
@@ -1655,7 +1646,6 @@ module Implementation = struct
                                implementation = { annotation; parameters = Undefined };
                                overloads = [];
                              };
-                           is_class_method = false;
                          };
                    }
                  ~abstract:false
@@ -2002,13 +1992,13 @@ module Implementation = struct
           let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
           match annotation with
           | Attribute annotation -> UninstantiatedAnnotation.Attribute (instantiate annotation)
-          | Method { callable; is_class_method } ->
+          | Method { callable } ->
               let callable =
                 match instantiate (Callable callable) with
                 | Callable callable -> callable
                 | _ -> failwith "instantiate didn't return a callable"
               in
-              Method { callable; is_class_method }
+              Method { callable }
           | Property { getter; setter } ->
               let instantiate_property_annotation { UninstantiatedAnnotation.self; value } =
                 {
@@ -2031,7 +2021,7 @@ module Implementation = struct
       in
       let instantiated = if accessed_via_metaclass then Type.meta instantiated else instantiated in
       match annotation with
-      | Method { callable; is_class_method } ->
+      | Method { callable } ->
           (* Special cases *)
           let callable =
             let self_parameter =
@@ -2171,8 +2161,6 @@ module Implementation = struct
             in
             if String.equal attribute_name "__new__" then
               Type.Callable callable
-            else if is_class_method then
-              bound_method ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
               Type.Callable callable
             else if accessed_through_class then
@@ -2512,8 +2500,15 @@ module Implementation = struct
                     overloads
                 in
                 let callable = { kind = Named name; implementation; overloads } in
-                let is_class_method = Define.Signature.is_class_method define in
-                UninstantiatedAnnotation.Method { callable; is_class_method }
+                if
+                  (not (String.equal attribute_name "__new__"))
+                  && Define.Signature.is_class_method define
+                then
+                  UninstantiatedAnnotation.Attribute
+                    (Type.Parametric
+                       { name = "typing.ClassMethod"; parameters = [Single (Callable callable)] })
+                else
+                  UninstantiatedAnnotation.Method { callable }
             | [] -> failwith "impossible"
           in
           callable, false, visibility
