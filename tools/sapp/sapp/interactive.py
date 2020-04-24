@@ -508,17 +508,32 @@ details              show additional information about the current trace frame
 
             if codes is not None:
                 query = self._add_list_or_int_filter_to_query(
-                    codes, query, Issue.code, "codes"
+                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
+                    #  but got `Union[None, List[int], int]`.
+                    codes,
+                    query,
+                    Issue.code,
+                    "codes",
                 )
 
             if callables is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callables, query, CallableText.contents, "callables"
+                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
+                    #  but got `Union[None, List[str], str]`.
+                    callables,
+                    query,
+                    CallableText.contents,
+                    "callables",
                 )
 
             if filenames is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    filenames, query, FilenameText.contents, "filenames"
+                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
+                    #  but got `Union[None, List[str], str]`.
+                    filenames,
+                    query,
+                    FilenameText.contents,
+                    "filenames",
                 )
 
             if (exact_trace_length_to_sources is not None) and (
@@ -543,6 +558,8 @@ details              show additional information about the current trace frame
 
             if exact_trace_length_to_sources is not None:
                 query = self._add_list_or_int_filter_to_query(
+                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
+                    #  but got `Union[None, List[int], int]`.
                     exact_trace_length_to_sources,
                     query,
                     IssueInstance.min_trace_length_to_sources,
@@ -551,6 +568,8 @@ details              show additional information about the current trace frame
 
             if exact_trace_length_to_sinks is not None:
                 query = self._add_list_or_int_filter_to_query(
+                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
+                    #  but got `Union[None, List[int], int]`.
                     exact_trace_length_to_sinks,
                     query,
                     IssueInstance.min_trace_length_to_sinks,
@@ -674,12 +693,22 @@ details              show additional information about the current trace frame
 
             if callers is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callers, query, CallerText.contents, "callers"
+                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
+                    #  but got `Union[None, List[str], str]`.
+                    callers,
+                    query,
+                    CallerText.contents,
+                    "callers",
                 )
 
             if callees is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callees, query, CalleeText.contents, "callees"
+                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
+                    #  but got `Union[None, List[str], str]`.
+                    callees,
+                    query,
+                    CalleeText.contents,
+                    "callees",
                 )
 
             if kind is not None:

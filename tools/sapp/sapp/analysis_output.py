@@ -18,8 +18,6 @@ METADATA_GLOB = "*metadata.json"
 
 
 # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
-# pyre-fixme[8]: Attribute has type `Dict[int, typing.Any]`; used as
-#  `Dict[Variable[_KT], Variable[_VT]]`.
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None

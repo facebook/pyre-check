@@ -40,6 +40,7 @@ def cli(
 
 
 for command in commands:
+    # pyre-fixme[16]: Callable `cli` has no attribute `add_command`.
     cli.add_command(command)
 cli.add_command(lint)
 
