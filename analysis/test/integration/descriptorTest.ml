@@ -336,6 +336,35 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `y` is `str`.";
       "Revealed type [-1]: Revealed type for `z` is `int`.";
     ];
+
+  assert_type_errors
+    {|
+      from typing import overload, Union, TypeVar, List, ClassMethod, Callable, Type, Any
+
+      def maker() -> Any: ...
+
+      class Host:
+        cm: ClassMethod[Callable[[Type[Host], int, str], bool]] = maker()
+
+      def f() -> None:
+        x = Host().cm
+        reveal_type(x)
+        y = Host.cm
+        reveal_type(y)
+        z = Host().cm(1, "A")
+        reveal_type(z)
+        z = Host().cm(1, 2)
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[Type[Host], int, \
+       str], bool], Type[Host]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `BoundMethod[typing.Callable[[Type[Host], int, \
+       str], bool], Type[Host]]`.";
+      "Revealed type [-1]: Revealed type for `z` is `bool`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to \
+       anonymous call but got `int`.";
+    ];
   ()
 
 

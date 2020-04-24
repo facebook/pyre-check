@@ -404,6 +404,67 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     ]
     |> List.map ~f:Node.create_with_default_location
   in
+  let classmethod_body =
+    (*
+     * _T = TypeVar("_T")
+     * _S = TypeVar("_S")
+     * class ClassMethod(Generic[_T]):
+     *   def __get__(self, host: object, host_type: _S = None) -> BoundMethod[_T, _S]: ...
+     *)
+    [
+      Statement.Define
+        {
+          signature =
+            {
+              name =
+                Node.create_with_default_location (Reference.create "typing.ClassMethod.__get__");
+              parameters =
+                [
+                  Node.create_with_default_location
+                    { Ast.Expression.Parameter.name = "self"; value = None; annotation = None };
+                  Node.create_with_default_location
+                    {
+                      Ast.Expression.Parameter.name = "host";
+                      value = None;
+                      annotation = Some (Type.expression Type.object_primitive);
+                    };
+                  Node.create_with_default_location
+                    {
+                      Ast.Expression.Parameter.name = "host_type";
+                      value =
+                        Some
+                          (Node.create_with_default_location
+                             (Expression.Name
+                                (Ast.Expression.create_name ~location:Location.any "None")));
+                      annotation =
+                        Some (Type.expression (Variable (Type.Variable.Unary.create "typing._S")));
+                    };
+                ];
+              decorators = [];
+              return_annotation =
+                Some
+                  (Type.expression
+                     (Type.Parametric
+                        {
+                          name = "BoundMethod";
+                          parameters =
+                            [
+                              Single (Variable (Type.Variable.Unary.create "typing._T"));
+                              Single (Variable (Type.Variable.Unary.create "typing._S"));
+                            ];
+                        }));
+              async = false;
+              generator = false;
+              parent = Some (Reference.create "typing.ClassMethod");
+              nesting_define = None;
+            };
+          captures = [];
+          body = [];
+        };
+    ]
+    |> List.map ~f:Node.create_with_default_location
+  in
+
   let typing_classes =
     [
       make "typing.Optional" ~bases:single_unary_generic;
@@ -417,6 +478,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing.Final" ~bases:catch_all_generic;
       make "typing.Union" ~bases:catch_all_generic;
       make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
+      make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
     ]
   in
   let typing_extension_classes =
