@@ -302,6 +302,40 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `y` is `int`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, Union
+      class Descriptor:
+        @overload
+        def __get__(self, o: None, t: object = None) -> int: ...
+        @overload
+        def __get__(self, o: object, t: object = None) -> str: ...
+        def __get__(self, o: object, t: object = None) -> Union[int, str]:
+          if o:
+           return "A"
+          else:
+           return 1
+
+      class MetaclassHost(type):
+        d: Descriptor = Descriptor()
+
+      class C(metaclass=MetaclassHost):
+        pass
+
+      def f() -> None:
+        # This is str because Type[C] is an instance of MetaclassHost
+        x = C.d
+        reveal_type(x)
+        y = MetaclassHost("A", (), {}).d
+        reveal_type(y)
+        z = MetaclassHost.d
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+      "Revealed type [-1]: Revealed type for `z` is `int`.";
+    ];
   ()
 
 
@@ -406,6 +440,42 @@ let test_data_descriptors context =
          building dataclass constructors for perf reasons *)
       "Incompatible parameter type [6]: Expected `Descriptor` for 1st positional only parameter to \
        call `DC.__init__` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Union
+      class Descriptor:
+          def __set__(self, h: object, v: int) -> None:
+            pass
+
+      class MetaclassHost(type):
+          d: Descriptor = Descriptor()
+
+      class C(metaclass=MetaclassHost):
+          pass
+
+      def f() -> None:
+          # This is correct because Type[C] is an instance of MetaclassHost
+          C.d = 1
+          C.d = Descriptor()
+          reveal_type("separator")
+          MetaclassHost("A", (), {}).d = 2
+          MetaclassHost("A", (), {}).d = Descriptor()
+          reveal_type("separator")
+          MetaclassHost.d = 3
+          MetaclassHost.d = Descriptor()
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
+       `int` but is used as type `Descriptor`.";
+      "Revealed type [-1]: Revealed type for `\"separator\"` is \
+       `typing_extensions.Literal['separator']`.";
+      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
+       `int` but is used as type `Descriptor`.";
+      "Revealed type [-1]: Revealed type for `\"separator\"` is \
+       `typing_extensions.Literal['separator']`.";
+      "Incompatible attribute type [8]: Attribute `d` declared in class `MetaclassHost` has type \
+       `Descriptor` but is used as type `int`.";
     ];
   ()
 

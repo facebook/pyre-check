@@ -1991,6 +1991,8 @@ module Implementation = struct
     let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
       AnnotatedAttribute.uninstantiated_annotation attribute
     in
+
+    let accessed_through_class = accessed_through_class && not accessed_via_metaclass in
     let annotation =
       match instantiated with
       | None -> annotation
@@ -2172,7 +2174,7 @@ module Implementation = struct
               bound_method ~self_type:(Type.meta instantiated)
             else if AnnotatedAttribute.static attribute then
               Type.Callable callable
-            else if accessed_through_class && not accessed_via_metaclass then
+            else if accessed_through_class then
               (* Keep first argument around when calling instance methods from class attributes. *)
               Type.Callable callable
             else
