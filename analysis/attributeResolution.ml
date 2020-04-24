@@ -1161,6 +1161,7 @@ module Implementation = struct
       arguments:SignatureSelectionTypes.arguments ->
       callable:Type.Callable.t ->
       self_argument:Type.t option ->
+      skip_marking_escapees:bool ->
       SignatureSelectionTypes.sig_t;
     resolve_mutable_literals:
       assumptions:Assumptions.t ->
@@ -2302,6 +2303,7 @@ module Implementation = struct
                     ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
                     ~callable
                     ~self_argument:None
+                    ~skip_marking_escapees:true
                 in
                 match selection_result with
                 | NotFound _ -> None
@@ -2941,6 +2943,7 @@ module Implementation = struct
                         ~arguments:(Unresolved arguments)
                         ~callable
                         ~self_argument:None
+                        ~skip_marking_escapees:false
                     with
                     | SignatureSelectionTypes.Found
                         { selected_return_annotation = Type.Callable { implementation; _ }; _ } ->
@@ -3053,6 +3056,7 @@ module Implementation = struct
       ~arguments
       ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
       ~self_argument
+      ~skip_marking_escapees
     =
     let open SignatureSelectionTypes in
     let order = full_order ~assumptions in
@@ -3671,12 +3675,17 @@ module Implementation = struct
               ~order
             |> Option.value ~default:ConstraintsSet.Solution.empty
           in
-          ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
-          |> Type.Variable.mark_all_free_variables_as_escaped
-          (* We need to do transformations of the form Union[T_escaped, int] => int in order to
-             properly handle some typeshed stubs which only sometimes bind type variables and expect
-             them to fall out in this way (see Mapping.get) *)
-          |> Type.Variable.collapse_all_escaped_variable_unions
+          let instantiated =
+            ConstraintsSet.Solution.instantiate solution uninstantiated_return_annotation
+          in
+          if skip_marking_escapees then
+            instantiated
+          else
+            Type.Variable.mark_all_free_variables_as_escaped instantiated
+            (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+               properly handle some typeshed stubs which only sometimes bind type variables and
+               expect them to fall out in this way (see Mapping.get) *)
+            |> Type.Variable.collapse_all_escaped_variable_unions
         in
         let rev_filter_out_self_argument_errors =
           let is_not_self_argument = function
@@ -4297,7 +4306,9 @@ module ReadOnly = struct
     add_both_caches_and_empty_assumptions Implementation.get_typed_dictionary
 
 
-  let signature_select = add_both_caches_and_empty_assumptions Implementation.signature_select
+  let signature_select =
+    add_both_caches_and_empty_assumptions
+      (Implementation.signature_select ~skip_marking_escapees:false)
 end
 
 module AttributeReadOnly = ReadOnly
