@@ -361,7 +361,11 @@ let run_with_taint_models tests ~name =
     in
     let { Taint.Model.models; errors } =
       Model.parse
-        ~resolution:(TypeCheck.resolution global_resolution ())
+        ~resolution:
+          (TypeCheck.resolution
+             global_resolution
+             (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+             (module TypeCheck.DummyContext))
         ~source:model_source
         ~configuration:TaintConfiguration.default
         Callable.Map.empty
@@ -473,7 +477,11 @@ let initialize
       | Some source ->
           let { Taint.Model.models; errors } =
             Model.parse
-              ~resolution:(TypeCheck.resolution global_resolution ())
+              ~resolution:
+                (TypeCheck.resolution
+                   global_resolution
+                   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                   (module TypeCheck.DummyContext))
               ~source:(Test.trim_extra_indentation source)
               ~configuration:taint_configuration
               inferred_models

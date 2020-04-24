@@ -1684,7 +1684,9 @@ module ScratchProject = struct
   let build_resolution project =
     let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
     let global_resolution = GlobalResolution.create global_environment in
-    TypeCheck.resolution global_resolution ()
+    TypeCheck.resolution
+      global_resolution (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
 
 
   let build_global_resolution project =

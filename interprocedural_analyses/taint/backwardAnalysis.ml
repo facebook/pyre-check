@@ -975,7 +975,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ~local_annotations:FunctionContext.local_annotations
           ~parent
           ~key
+          (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+          (module TypeCheck.DummyContext)
       in
+
       analyze_statement ~resolution state statement
 
 

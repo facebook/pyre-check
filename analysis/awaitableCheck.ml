@@ -548,6 +548,8 @@ module State (Context : Context) = struct
         ~local_annotations:Context.local_annotations
         ~parent
         ~key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
     in
     let global_resolution = Resolution.global_resolution resolution in
     match value with

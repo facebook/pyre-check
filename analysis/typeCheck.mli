@@ -39,10 +39,12 @@ end
 
 module State (Context : Context) : Signature
 
+module DummyContext : Context
+
 val resolution
   :  GlobalResolution.t ->
   ?annotation_store:RefinementUnit.t Reference.Map.t ->
-  unit ->
+  (module Context) ->
   Resolution.t
 
 val get_or_recompute_local_annotations
@@ -55,6 +57,7 @@ val resolution_with_key
   local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   parent:Reference.t option ->
   key:int ->
+  (module Context) ->
   Resolution.t
 
 val name : string

@@ -1162,7 +1162,8 @@ let test_fallback_attribute context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let global_resolution = GlobalResolution.create global_environment in
-    let resolution = TypeCheck.resolution global_resolution () in
+    let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
+
     let attribute =
       let source =
         AstEnvironment.ReadOnly.get_source

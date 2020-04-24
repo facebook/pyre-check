@@ -760,7 +760,13 @@ let run
         } as source )
   =
   Log.debug "Checking %s..." relative;
-  let resolution = TypeCheck.resolution global_resolution () in
+  let resolution =
+    TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+  in
+
   let dequalify_map = Preprocessing.dequalify_map source in
   let check
       ( {

@@ -124,8 +124,15 @@ module State (Context : Context) = struct
     let resolution =
       let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } = define in
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution Context.environment in
-      TypeCheck.resolution_with_key ~global_resolution ~local_annotations ~parent ~key
+      TypeCheck.resolution_with_key
+        ~global_resolution
+        ~local_annotations
+        ~parent
+        ~key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
     in
+
     (* Check for bottomed out state. *)
     let bottom =
       match value with

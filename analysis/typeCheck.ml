@@ -291,8 +291,6 @@ module State (Context : Context) = struct
     errors, annotation
 
 
-  let resolution { resolution; _ } = resolution
-
   let all_errors { error_map; _ } = LocalErrorMap.all_errors error_map
 
   let less_or_equal ~left ~right =
@@ -335,14 +333,6 @@ module State (Context : Context) = struct
         (Resolution.annotation_store right_resolution)
     in
     Resolution.with_annotation_store left_resolution ~annotation_store
-
-
-  let join left right =
-    match left.resolution, right.resolution with
-    | None, _ -> right
-    | _, None -> left
-    | Some left_resolution, Some right_resolution ->
-        { left with resolution = Some (join_resolutions left_resolution right_resolution) }
 
 
   let widening_threshold = 10
@@ -397,7 +387,6 @@ module State (Context : Context) = struct
     | Class of Type.t
     | Instance of Type.t
     | Super of Type.t
-  [@@deriving show]
 
   module Resolved = struct
     type t = {
@@ -5008,21 +4997,24 @@ module CheckResult = struct
         List.append errors errors_sofar)
 end
 
-let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
+module DummyContext = struct
+  let qualifier = Reference.empty
+
+  let debug = false
+
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
-  in
-  (* TODO: Eliminate the need of creating a dummy state here *)
-  let module State = State (struct
-    let qualifier = Reference.empty
 
-    let debug = false
 
-    let define = define
+  module Builder = Callgraph.NullBuilder
+end
 
-    module Builder = Callgraph.NullBuilder
-  end)
-  in
+let resolution
+    global_resolution
+    ?(annotation_store = Reference.Map.empty)
+    (module Context : Context)
+  =
+  let module State = State (Context) in
   let resolve_expression ~resolution expression =
     State.forward_expression ~resolution ~expression
     |> fun { State.Resolved.resolved; resolved_annotation; resolution = new_resolution; _ } ->
@@ -5038,7 +5030,7 @@ let resolution global_resolution ?(annotation_store = Reference.Map.empty) () =
   Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
 
-let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
+let resolution_with_key ~global_resolution ~local_annotations ~parent ~key context =
   let annotation_store =
     Option.value_map
       local_annotations
@@ -5047,7 +5039,7 @@ let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
         |> Option.value ~default:Reference.Map.empty)
       ~default:Reference.Map.empty
   in
-  resolution global_resolution ~annotation_store () |> Resolution.with_parent ~parent
+  resolution global_resolution ~annotation_store context |> Resolution.with_parent ~parent
 
 
 let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () =
@@ -5702,7 +5694,8 @@ let get_or_recompute_local_annotations ~environment name =
       | None -> None
       | Some define_node ->
           let _, local_annotations, _ =
-            let resolution = resolution global_resolution () in
+            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+            let resolution = resolution global_resolution (module DummyContext) in
             let module Context = struct
               (* Doesn't matter what the qualifier is since we won't be using it *)
               let qualifier = Reference.empty
@@ -5776,7 +5769,8 @@ let run_on_define ~configuration ~environment ?call_graph_builder name =
         GlobalResolution.create global_environment ~dependency:(TypeCheckDefine name)
     | _ -> GlobalResolution.create global_environment
   in
-  let resolution = resolution global_resolution () in
+  (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+  let resolution = resolution global_resolution (module DummyContext) in
   match GlobalResolution.function_definition global_resolution name with
   | None -> ()
   | Some definition ->

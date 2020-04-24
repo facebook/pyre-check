@@ -468,8 +468,9 @@ let test_forward_expression context =
     let new_resolution, resolved =
       let resolution =
         let annotation_store = create_annotation_store precondition in
-        TypeCheck.resolution ~annotation_store global_resolution ()
+        TypeCheck.resolution ~annotation_store global_resolution (module TypeCheck.DummyContext)
       in
+
       Resolution.resolve_expression resolution expression
     in
     assert_annotation_store ~expected:(create_annotation_store postcondition) new_resolution;
@@ -858,8 +859,9 @@ let test_forward_expression context =
         |> ScratchProject.build_global_resolution
       in
       let annotation_store = create_annotation_store precondition in
-      TypeCheck.resolution ~annotation_store global_resolution ()
+      TypeCheck.resolution ~annotation_store global_resolution (module TypeCheck.DummyContext)
     in
+
     let resolved_annotation = Resolution.resolve_expression_to_annotation resolution expression in
     assert_equal ~cmp:Annotation.equal ~printer:Annotation.show annotation resolved_annotation
   in
@@ -926,8 +928,9 @@ let test_forward_statement context =
         let annotation_store =
           create_annotation_store ~immutables:precondition_immutables precondition
         in
-        TypeCheck.resolution global_resolution ~annotation_store ()
+        TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
       in
+
       let rec process_statement resolution = function
         | [] -> Some resolution
         | statement :: rest -> (

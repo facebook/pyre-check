@@ -350,7 +350,10 @@ let test_type_collection context =
         |> fun value -> Option.value_exn value
       in
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-      let resolution = TypeCheck.resolution global_resolution ~annotation_store () in
+      let resolution =
+        TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+      in
+
       let statement = List.nth_exn statements statement_index in
       Visit.collect_calls_and_names statement
       |> List.filter ~f:Expression.has_identifier_base

@@ -162,7 +162,13 @@ let process_type_query_request
   let process_request () =
     let global_resolution = TypeEnvironment.global_resolution environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
-    let resolution = TypeCheck.resolution global_resolution () in
+    let resolution =
+      TypeCheck.resolution
+        global_resolution
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
+    in
+
     let parse_and_validate
         ?(unknown_is_top = false)
         ?(fill_missing_type_parameters_with_any = false)
@@ -754,7 +760,11 @@ let process_type_query_request
           let get_model_errors sources =
             let model_errors (path, source) =
               Taint.Model.parse
-                ~resolution:(TypeCheck.resolution global_resolution ())
+                ~resolution:
+                  (TypeCheck.resolution
+                     global_resolution
+                     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                     (module TypeCheck.DummyContext))
                 ~path
                 ~source
                 ~configuration

@@ -38,7 +38,7 @@ let assert_taint ?models ~context source expect =
   >>| (fun model_source ->
         let { Model.models; errors } =
           Model.parse
-            ~resolution:(TypeCheck.resolution global_resolution ())
+            ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
             ~source:model_source
             ~configuration:TaintConfiguration.default
             Callable.Map.empty

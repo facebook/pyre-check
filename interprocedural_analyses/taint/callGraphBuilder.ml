@@ -21,7 +21,13 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
       Interprocedural.CallResolution.transform_special_calls { Expression.Call.callee; arguments }
     with
     | Some { Expression.Call.callee = transformed_call; arguments = transformed_arguments } ->
-        let resolution = Analysis.TypeCheck.resolution global_resolution () in
+        let resolution =
+          Analysis.TypeCheck.resolution
+            global_resolution
+            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+            (module TypeCheck.DummyContext)
+        in
+
         begin
           match Resolution.resolve_expression_to_type resolution transformed_call with
           | Type.Callable callable ->
@@ -44,7 +50,13 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                and add it manually. This is not perfect (__init__ might have been explicitly called,
                meaning that __new__ wasn't called), but will, in the worst case, lead to
                over-analysis, which will have a perf implication but not a consistency one. *)
-            let resolution = Analysis.TypeCheck.resolution global_resolution () in
+            let resolution =
+              Analysis.TypeCheck.resolution
+                global_resolution
+                (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                (module TypeCheck.DummyContext)
+            in
+
             Resolution.resolve_expression_to_type
               resolution
               (Node.create_with_default_location

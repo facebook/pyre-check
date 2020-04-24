@@ -237,7 +237,12 @@ let from_overrides overrides =
 
 let create_overrides ~environment ~source =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let resolution = TypeCheck.resolution global_resolution () in
+  let resolution =
+    TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+  in
   let resolution = Resolution.global_resolution resolution in
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty

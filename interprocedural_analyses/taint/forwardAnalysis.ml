@@ -1096,7 +1096,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           match value with
           | None -> ForwardState.Tree.bottom, state
           | Some expression ->
-              let resolution = TypeCheck.resolution FunctionContext.global_resolution () in
+              let resolution =
+                TypeCheck.resolution
+                  FunctionContext.global_resolution
+                  (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                  (module TypeCheck.DummyContext)
+              in
+
               analyze_expression ~resolution ~state ~expression
         in
         let root = AccessPath.Root.Variable name in
@@ -1122,8 +1128,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ~global_resolution:FunctionContext.global_resolution
           ~local_annotations:FunctionContext.local_annotations
           ~parent
-          ~key
+          ~key (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+          (module TypeCheck.DummyContext)
       in
+
       analyze_statement ~resolution statement state
 
 

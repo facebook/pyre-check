@@ -273,10 +273,18 @@ let create_of_module type_environment qualifier =
           |> Option.value ~default:Reference.Map.empty )
       in
       let pre_resolution =
-        TypeCheck.resolution global_resolution ~annotation_store:pre_annotations ()
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        TypeCheck.resolution
+          global_resolution
+          ~annotation_store:pre_annotations
+          (module TypeCheck.DummyContext)
       in
       let post_resolution =
-        TypeCheck.resolution global_resolution ~annotation_store:post_annotations ()
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        TypeCheck.resolution
+          global_resolution
+          ~annotation_store:post_annotations
+          (module TypeCheck.DummyContext)
       in
       Visit.visit
         { NodeVisitor.pre_resolution; post_resolution; annotations_lookup; definitions_lookup }

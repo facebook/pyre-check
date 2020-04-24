@@ -203,7 +203,13 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             (* This is the position of the item before DOT *)
             let item_position = { cursor_position with column = cursor_position.column - 2 } in
             let global_resolution = TypeEnvironment.global_resolution environment in
-            let resolution = TypeCheck.resolution global_resolution () in
+            let resolution =
+              TypeCheck.resolution
+                global_resolution
+                (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                (module TypeCheck.DummyContext)
+            in
+
             let global_resolution = Resolution.global_resolution resolution in
             let class_attributes_list =
               LookupCache.find_annotation
