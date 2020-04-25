@@ -4572,17 +4572,16 @@ module State (Context : Context) = struct
                     ~kind:
                       (Error.ImpossibleAssertion
                          { test; expression = test; annotation = Type.NoneType }) )
-            | Some
-                ( {
-                    Annotation.annotation =
-                      Type.Union ([Type.NoneType; parameter] | [parameter; Type.NoneType]);
-                    _;
-                  } as annotation ) ->
+            | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
+                let refined_annotation =
+                  List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+                in
                 let resolution =
                   Resolution.set_local_with_attributes
                     resolution
                     ~name
-                    ~annotation:{ annotation with Annotation.annotation = parameter }
+                    ~annotation:
+                      { annotation with Annotation.annotation = Type.union refined_annotation }
                 in
                 Some resolution, errors
             | _ -> Some resolution, errors )

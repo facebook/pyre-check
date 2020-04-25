@@ -318,6 +318,27 @@ let test_check_local_refinement context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
+      def foo(x: typing.Union[int, str, None]) -> None:
+        if x:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[None, int, str]` (inferred: \
+       `typing.Union[int, str]`).";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, str, None]) -> None:
+        if x is None:
+          x = 42
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[None, int, str]` (inferred: \
+       `typing.Union[int, str]`).";
+    ];
+  assert_type_errors
+    {|
       class FakeTest(unittest.TestCase):
         def foo(self, x: typing.Optional[int]) -> None:
           self.assertIsNotNone(x)
