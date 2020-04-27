@@ -6,18 +6,23 @@
 import argparse
 import asyncio
 import json
+import os
 import random
 import re
 import subprocess
 import sys
 from asyncio.events import AbstractEventLoop
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ..client.find_directories import find_local_root
 from ..client.json_rpc import JSON, Request, Response
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
+
+
+class AdapterException(Exception):
+    pass
 
 
 def _should_run_null_server(null_server_flag: bool) -> bool:
@@ -34,7 +39,7 @@ def _socket_exists(current_directory: str) -> bool:
 
 
 def _start_server(current_directory: str) -> None:
-    subprocess.run(["pyre", "start"], cwd=current_directory)
+    subprocess.run(["pyre", "start"], cwd=current_directory, env=os.environ, check=True)
 
 
 def _get_version(root: str) -> str:
@@ -91,10 +96,19 @@ class AdapterProtocol(asyncio.Protocol):
     def __init__(self, socket: SocketConnection, root: str) -> None:
         self.socket = socket
         self.root = root
+        self.transport: Optional[asyncio.transports.BaseTransport] = None
+
+    def connection_made(self, transport: asyncio.transports.BaseTransport) -> None:
+        self.transport = transport
 
     def data_received(self, data: bytes) -> None:
         json_body = _parse_json_rpc(data)
-        if not _should_restart(json_body):
+        if _should_restart(json_body):
+            transport = self.transport
+            if transport:
+                transport.close()
+            raise AdapterException
+        else:
             self.socket.output.write(data)
             self.socket.output.flush()
 
@@ -129,12 +143,19 @@ def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnectio
     return socket_connection
 
 
+def error_handler(loop: AbstractEventLoop, context: Dict[str, Any]) -> None:
+    if isinstance(context["exception"], AdapterException):
+        loop.stop()
+        loop.close()
+
+
 def run_server(loop: AbstractEventLoop, root: str) -> None:
     socket_connection = add_socket_connection(loop, root)
     stdin_pipe_reader = loop.connect_read_pipe(
         lambda: AdapterProtocol(socket_connection, root), sys.stdin
     )
     loop.run_until_complete(stdin_pipe_reader)
+    loop.set_exception_handler(error_handler)
     loop.run_forever()
 
 
@@ -144,8 +165,7 @@ def main(arguments: argparse.Namespace) -> None:
     try:
         if _should_run_null_server(arguments.null_server):
             return run_null_server(loop)
-        if not _socket_exists(root):
-            _start_server(root)
+        _start_server(root)
         run_server(loop, root)
     finally:
         loop.close()
