@@ -2,6 +2,45 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attach_features.HasMethods.method_with_optionals",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 51,
+              "start": 20,
+              "end": 21
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attach_features.attach_without_tito",
     "sources": [],
     "sinks": [],

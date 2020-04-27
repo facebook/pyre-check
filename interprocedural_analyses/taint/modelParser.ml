@@ -921,6 +921,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         |> Annotation.annotation
         |> function
         | Type.Callable t -> Some t
+        | Type.Parametric
+            { name = "BoundMethod"; parameters = [Type.Parameter.Single (Type.Callable t); _] } ->
+            Some t
         | _ -> None
       in
       let normalized_model_parameters =
