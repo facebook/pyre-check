@@ -155,7 +155,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       |>> ForwardState.Tree.join taint_accumulator
 
 
-    and apply_call_targets ~resolution ~callee call_location arguments state call_targets =
+    and apply_call_targets
+        ~resolution
+        ~callee
+        ?(collapse_tito = true)
+        call_location
+        arguments
+        state
+        call_targets
+      =
       (* We keep a table of kind -> set of triggered labels across all targets, and merge triggered
          sinks at the end. *)
       let triggered_sinks = String.Hash_set.create () in
@@ -219,12 +227,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               let add_features features = List.rev_append breadcrumbs features in
               let taint_to_propagate =
-                ForwardState.Tree.read path argument_taint
-                |> ForwardState.Tree.collapse
-                |> ForwardTaint.transform
-                     ForwardTaint.simple_feature_set
-                     Abstract.Domain.(Map add_features)
-                |> ForwardState.Tree.create_leaf
+                if collapse_tito then
+                  ForwardState.Tree.read path argument_taint
+                  |> ForwardState.Tree.collapse
+                  |> ForwardTaint.transform
+                       ForwardTaint.simple_feature_set
+                       Abstract.Domain.(Map add_features)
+                  |> ForwardState.Tree.create_leaf
+                else
+                  ForwardState.Tree.read path argument_taint
+                  |> ForwardState.Tree.transform
+                       ForwardTaint.simple_feature_set
+                       Abstract.Domain.(Map add_features)
               in
               let return_paths =
                 match kind with
@@ -602,6 +616,35 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let indirect_targets, receiver =
               Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
             in
+            let collapse_tito =
+              (* For most cases, it is simply incorrect to not collapse tito, as it will lead to
+               * incorrect mapping from input to output taint. However, the collapsing of tito
+               * adversely affects our analysis in the case of the builder pattern, i.e.
+               *
+               * class C:
+               *   def set_field(self, field) -> "C":
+               *   self.field = field
+               *   return self
+               *
+               * In this case, collapsing tito leads to field tainting the entire `self` for chained
+               * call. To prevent this problem, we special case builders to preserve the tito
+               * structure. *)
+              match Resolution.resolve_expression resolution callee with
+              | ( _,
+                  Type.Parametric
+                    {
+                      name = "BoundMethod";
+                      parameters =
+                        [
+                          Type.Parameter.Single (Type.Callable { Type.Callable.implementation; _ });
+                          Type.Parameter.Single implicit;
+                        ];
+                    } ) ->
+                  Type.Callable.Overload.return_annotation implementation
+                  |> Type.equal implicit
+                  |> not
+              | _ -> true
+            in
             let arguments = Option.to_list receiver @ arguments in
             let add_index_breadcrumb_if_necessary taint =
               if not (String.equal method_name "get") then
@@ -616,7 +659,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       taint
                 | _ -> taint
             in
-            apply_call_targets ~resolution ~callee location arguments state indirect_targets
+            apply_call_targets
+              ~resolution
+              ~callee
+              ~collapse_tito
+              location
+              arguments
+              state
+              indirect_targets
             |>> add_index_breadcrumb_if_necessary
         | None, Name (Name.Identifier _name) ->
             let constructor_targets =

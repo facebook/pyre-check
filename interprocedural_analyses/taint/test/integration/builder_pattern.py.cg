@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+builder_pattern.Builder::__init__ (method) -> []
+builder_pattern.Builder::async_save (method) -> [__test_sink (fun)]
+builder_pattern.Builder::set_not_saved (method) -> []
+builder_pattern.Builder::set_saved (method) -> []
+builder_pattern.test_issue (fun) -> [__test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved (method) builder_pattern.Builder::set_saved (method) object::__new__ (method)]
+builder_pattern.test_no_issue (fun) -> [__test_source (fun) builder_pattern.Builder::__init__ (method) builder_pattern.Builder::async_save (method) builder_pattern.Builder::set_not_saved (method) builder_pattern.Builder::set_saved (method) object::__new__ (method)]

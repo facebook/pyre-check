@@ -1,0 +1,189 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "builder_pattern.test_issue",
+    "callable_line": 26,
+    "code": 5002,
+    "line": 28,
+    "start": 4,
+    "end": 62,
+    "filename": "builder_pattern.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "builder_pattern.py",
+              "line": 28,
+              "start": 46,
+              "end": 61
+            },
+            "tito": [ { "line": 28, "start": 46, "end": 61 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "builder_pattern.py",
+                "line": 28,
+                "start": 4,
+                "end": 62
+              },
+              "resolves_to": [ "builder_pattern.Builder.async_save" ],
+              "port": "formal(self)[_saved]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builder_pattern.Builder.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builder_pattern.Builder.async_save",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(self)[_saved]",
+        "taint": [
+          {
+            "root": {
+              "filename": "builder_pattern.py",
+              "line": 18,
+              "start": 20,
+              "end": 31
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builder_pattern.Builder.set_not_saved",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(not_saved)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[_not_saved]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builder_pattern.Builder.set_saved",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(saved)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[_saved]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
