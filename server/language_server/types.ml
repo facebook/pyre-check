@@ -753,6 +753,14 @@ module InitializeRequest = struct
     (* A None type module is used for the experimental Any type possible in ClientCapabilities *)
     module ClientCapabilities = ClientCapabilities.Make (None)
 
+    module ClientInfo = struct
+      type t = {
+        name: string; [@key "name"]
+        version: string option; [@key "version"] [@default None]
+      }
+      [@@deriving yojson]
+    end
+
     module TraceSetting = struct
       type t =
         | Off
@@ -772,12 +780,14 @@ module InitializeRequest = struct
        to None if the JSON value is `Null.*)
     type t = {
       process_id: int option; [@default None] [@key "processId"]
+      client_info: ClientInfo.t option; [@default None] [@key "clientInfo"]
       root_path: string option; [@default None] [@key "rootPath"]
       root_uri: DocumentUri.t option; [@key "rootUri"]
       initialization_options: None.t option; [@default None] [@key "initializationOptions"]
       capabilities: ClientCapabilities.t; [@key "capabilities"]
       trace: TraceSetting.t option; [@default None] [@key "trace"]
       workspaceFolders: WorkspaceFolder.t list option; [@default None] [@key "workspaceFolders"]
+      work_done_token: string option; [@default None] [@key "workDoneToken"]
     }
     [@@deriving of_yojson]
   end
