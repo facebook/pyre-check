@@ -146,8 +146,12 @@ let computation_thread
             | _ -> () );
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
-            | Some (TypeCheckResponse response) ->
-                write_to_json_socket (Jsonrpc.Response.TypeErrors.to_json response)
+            | Some (TypeCheckResponse errors) ->
+                List.iter (errors_to_lsp_responses errors) ~f:(fun response ->
+                    Connections.broadcast_to_adapter_sockets
+                      ~response
+                      ~connections:state.connections);
+                write_to_json_socket (Jsonrpc.Response.TypeErrors.to_json errors)
             | Some (TypeQueryResponse response) ->
                 write_to_json_socket (TypeQuery.json_socket_response response)
             | Some (LanguageServerProtocolResponse response) ->
@@ -382,7 +386,8 @@ let request_handler_thread
       else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
         handle_readable_persistent socket
       else if
-        Mutex.critical_section lock ~f:(fun () -> List.mem ~equal:( = ) adapter_sockets socket)
+        Mutex.critical_section lock ~f:(fun () ->
+            List.mem ~equal:Unix.File_descr.equal adapter_sockets socket)
       then
         handle_readable_json_request ~remove_socket:Connections.remove_adapter_socket socket
       else

@@ -32,6 +32,11 @@ module type Connections = sig
   val add_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
   val remove_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val broadcast_to_adapter_sockets
+    :  connections:State.connections ->
+    response:Protocol.response ->
+    unit
 end
 
 module Make (Socket : sig

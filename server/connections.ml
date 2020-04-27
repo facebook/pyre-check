@@ -32,6 +32,11 @@ module type Connections = sig
   val add_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
 
   val remove_adapter_socket : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val broadcast_to_adapter_sockets
+    :  connections:State.connections ->
+    response:Protocol.response ->
+    unit
 end
 
 module Make (Socket : sig
@@ -155,6 +160,28 @@ end) : Connections = struct
           List.filter adapter_sockets ~f:(fun adapter_socket -> not (socket = adapter_socket))
         in
         connections := { cached_connections with adapter_sockets })
+
+
+  let broadcast_to_adapter_sockets ~connections:{ State.lock; connections; _ } ~response =
+    match response with
+    | Protocol.LanguageServerProtocolResponse response ->
+        Mutex.critical_section lock ~f:(fun () ->
+            let ({ State.adapter_sockets; _ } as cached_connections) = !connections in
+            let adapter_sockets =
+              List.filter adapter_sockets ~f:(fun socket ->
+                  try
+                    write_lsp_response_to_json_socket ~socket response;
+                    true
+                  with
+                  | Unix.Unix_error (name, kind, parameters) ->
+                      Log.log_unix_error (name, kind, parameters);
+                      false
+                  | _ ->
+                      Log.error "Socket error";
+                      false)
+            in
+            connections := { cached_connections with adapter_sockets })
+    | _ -> ()
 end
 
 module Unix = Make (struct
