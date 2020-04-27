@@ -18,6 +18,11 @@ let help () =
         Some
           "run_check('check_name', 'path1.py', 'path2.py'): Runs the `check_name` static analysis \
            on the provided list of paths."
+    | Batch _ ->
+        Some
+          "batch(query1(arg), query2(arg)): Runs a batch of queries and returns a map of \
+           responses. List of given queries may include any combination of other valid queries \
+           except for `batch` itself."
     | Attributes _ ->
         Some
           "attributes(class_name): Returns a list of attributes, including functions, for a class."
@@ -73,6 +78,7 @@ let help () =
     ~f:help
     [
       RunCheck { check_name = ""; paths = [] };
+      Batch [];
       Attributes (Reference.create "");
       Callees (Reference.create "");
       CalleesWithLocation (Reference.create "");
@@ -102,7 +108,7 @@ let help () =
   |> Format.sprintf "Possible queries:\n  %s"
 
 
-let parse_query
+let rec parse_query
     ~configuration:({ Configuration.Analysis.local_root = root; _ } as configuration)
     query
   =
@@ -137,6 +143,19 @@ let parse_query
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.TypeQueryRequest (Attributes (reference name))
+      | "batch", queries ->
+          let construct_batch batch_queries query =
+            match query with
+            | Request.TypeQueryRequest (Batch _) -> raise (InvalidQuery "cannot nest batch queries")
+            | Request.TypeQueryRequest query -> query :: batch_queries
+            | _ -> raise (InvalidQuery "unexpected query")
+          in
+          List.map ~f:expression queries
+          |> List.map ~f:Expression.show
+          |> List.map ~f:(parse_query ~configuration)
+          |> List.fold ~f:construct_batch ~init:[]
+          |> List.rev
+          |> fun query_list -> Request.TypeQueryRequest (Batch query_list)
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "callees_with_location", [name] ->
           Request.TypeQueryRequest (CalleesWithLocation (reference name))

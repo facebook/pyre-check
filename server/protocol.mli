@@ -46,6 +46,7 @@ module TypeQuery : sig
 
   type request =
     | Attributes of Reference.t
+    | Batch of request list
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
@@ -202,6 +203,7 @@ module TypeQuery : sig
   [@@deriving eq, show]
 
   type base_response =
+    | Batch of response list
     | Boolean of bool
     | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
@@ -227,7 +229,7 @@ module TypeQuery : sig
     | TypesByFile of types_at_file list
   [@@deriving eq, show, to_yojson]
 
-  type response =
+  and response =
     | Response of base_response
     | Error of string
   [@@deriving eq, show, to_yojson]

@@ -185,7 +185,18 @@ let test_parse_query context =
   assert_parses
     (Format.sprintf "run_check('cool_static_analysis', '%s')" (Path.absolute path))
     (RunCheck { check_name = "cool_static_analysis"; paths = [path] });
-  assert_parses "defines(a.b)" (Defines [Reference.create "a.b"])
+  assert_parses "defines(a.b)" (Defines [Reference.create "a.b"]);
+  assert_parses "batch()" (Batch []);
+  assert_fails_to_parse "batch(batch())";
+  assert_fails_to_parse "batch(defines(a.b), invalid(a))";
+  assert_parses "batch(defines(a.b))" (Batch [Defines [Reference.create "a.b"]]);
+  assert_parses
+    "batch(defines(a.b), types(path='a.py'))"
+    (Batch
+       [
+         Defines [Reference.create "a.b"];
+         TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"];
+       ])
 
 
 let test_to_yojson _ =

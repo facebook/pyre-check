@@ -46,6 +46,7 @@ module TypeQuery = struct
 
   type request =
     | Attributes of Reference.t
+    | Batch of request list
     | Callees of Reference.t
     | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
@@ -205,6 +206,7 @@ module TypeQuery = struct
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
+    | Batch of response list
     | Boolean of bool
     | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
@@ -230,7 +232,13 @@ module TypeQuery = struct
     | TypesByFile of types_at_file list
   [@@deriving eq, show]
 
-  let base_response_to_yojson = function
+  and response =
+    | Response of base_response
+    | Error of string
+  [@@deriving eq, show]
+
+  let rec base_response_to_yojson = function
+    | Batch responses -> `List (List.map ~f:response_to_yojson responses)
     | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
     | Callees callees -> `Assoc ["callees", `List (List.map callees ~f:Callgraph.callee_to_yojson)]
     | CalleesWithLocation callees ->
@@ -378,12 +386,7 @@ module TypeQuery = struct
         `List (List.map paths_to_annotations ~f:types_at_file_to_yojson)
 
 
-  type response =
-    | Response of base_response
-    | Error of string
-  [@@deriving eq, show]
-
-  let response_to_yojson = function
+  and response_to_yojson = function
     | Response base_response -> `Assoc ["response", base_response_to_yojson base_response]
     | Error message -> `Assoc ["error", `String message]
 

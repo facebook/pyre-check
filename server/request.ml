@@ -154,7 +154,7 @@ let process_client_shutdown_request ~state ~id =
   { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let process_type_query_request
+let rec process_type_query_request
     ~state:({ State.module_tracker; environment; _ } as state)
     ~configuration
     ~request
@@ -276,6 +276,16 @@ let process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
+    | TypeQuery.Batch requests ->
+        TypeQuery.Response
+          (TypeQuery.Batch
+             (List.map
+                ~f:(fun request ->
+                  let { response; _ } = process_type_query_request ~state ~configuration ~request in
+                  match response with
+                  | Some (TypeQueryResponse response) -> response
+                  | _ -> TypeQuery.Error "Invalid response for query.")
+                requests))
     | TypeQuery.Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         TypeQuery.Response
