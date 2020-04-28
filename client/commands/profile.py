@@ -247,10 +247,14 @@ class StatisticsOverTime:
     _data: List[Tuple[str, int]] = []
 
     def add(self, line: str) -> None:
-        divider = " MEMORY Shared memory size (size: "
-        if divider in line:
-            time, size = line.split(divider)
-            self._data.append((time, int(size[:-2])))
+        dividers = [
+            " MEMORY Shared memory size (size: ",
+            " MEMORY Shared memory size post-typecheck (size: ",
+        ]
+        for divider in dividers:
+            if divider in line:
+                time, size = line.split(divider)
+                self._data.append((time, int(size[:-2])))
 
     def graph_total_shared_memory_size_over_time(self) -> None:
         try:

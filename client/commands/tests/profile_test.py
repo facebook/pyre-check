@@ -362,6 +362,7 @@ class ProfileTest(unittest.TestCase):
     def test_statistics_over_time(self) -> None:
         statistics = StatisticsOverTime()
         lines = [
+            "2020-04-27 20:08:35 MEMORY Shared memory size post-typecheck (size: 42)",
             "2020-02-19 10:35:57 PERFORMANCE Check_TypeCheck: 1.767435s",
             "2020-02-19 10:35:57 PROGRESS Postprocessing 51 sources...",
             "2020-02-19 10:35:57 PROGRESS Postprocessed 51 of 51 sources",
@@ -395,5 +396,9 @@ class ProfileTest(unittest.TestCase):
             statistics.add(line + "\n")
         self.assertEqual(
             statistics._data,
-            [("2020-02-19 10:35:57", 2105), ("2020-02-19 10:36:09", 2106)],
+            [
+                ("2020-04-27 20:08:35", 42),
+                ("2020-02-19 10:35:57", 2105),
+                ("2020-02-19 10:36:09", 2106),
+            ],
         )
