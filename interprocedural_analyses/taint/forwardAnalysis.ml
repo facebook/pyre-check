@@ -1210,7 +1210,8 @@ let extract_features_to_attach existing_taint =
         | _ -> features
       in
       ForwardTaint.fold ForwardTaint.simple_feature_element ~f:gather_features ~init:[] taint
-  | None -> []
+      |> Features.SimpleSet.of_approximation
+  | None -> Features.SimpleSet.bottom
 
 
 let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
@@ -1235,11 +1236,8 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
     |> ForwardState.Tree.approximate_complex_access_paths
   in
   let attach_features taint =
-    if not (List.is_empty features_to_attach) then
-      ForwardState.transform
-        ForwardTaint.simple_feature_set
-        Abstract.Domain.(Map (List.rev_append features_to_attach))
-        taint
+    if not (Features.SimpleSet.is_bottom features_to_attach) then
+      ForwardState.transform Features.SimpleSet.Self Abstract.Domain.(Add features_to_attach) taint
     else
       taint
   in

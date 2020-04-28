@@ -1026,6 +1026,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       |> (fun map -> Map.Poly.find map true)
       >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
       |> Option.value ~default:[]
+      |> Features.SimpleSet.of_approximation
     in
     let taint_in_taint_out =
       let features_to_attach =
@@ -1037,12 +1038,12 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
         |> simplify annotation
       in
       let candidate_tree =
-        if List.is_empty features_to_attach then
+        if Features.SimpleSet.is_bottom features_to_attach then
           candidate_tree
         else
           BackwardState.Tree.transform
-            BackwardTaint.simple_feature_set
-            Abstract.Domain.(Map (List.rev_append features_to_attach))
+            Features.SimpleSet.Self
+            Abstract.Domain.(Add features_to_attach)
             candidate_tree
       in
       let number_of_paths =
@@ -1073,10 +1074,10 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
       let features_to_attach =
         compute_features_to_attach existing_backward.TaintResult.Backward.sink_taint
       in
-      if not (List.is_empty features_to_attach) then
+      if not (Features.SimpleSet.is_bottom features_to_attach) then
         BackwardState.Tree.transform
-          BackwardTaint.simple_feature_set
-          Abstract.Domain.(Map (List.rev_append features_to_attach))
+          Features.SimpleSet.Self
+          Abstract.Domain.(Add features_to_attach)
           sink_taint
       else
         sink_taint

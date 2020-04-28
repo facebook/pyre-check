@@ -68,6 +68,70 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.test_always_via_feature",
+    "callable_line": 125,
+    "code": 5002,
+    "line": 126,
+    "start": 16,
+    "end": 50,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 126,
+              "start": 34,
+              "end": 49
+            },
+            "tito": [ { "line": 126, "start": 34, "end": 49 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "taint_in_taint_out.py",
+              "line": 126,
+              "start": 16,
+              "end": 50
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "tito" },
+      { "always-via": "string_concat_rhs" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
@@ -175,6 +239,31 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.add_feature",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          },
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
           }
         ]
       }
@@ -563,6 +652,35 @@
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.tito_with_feature",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          },
+          {
+            "decl": null,
+            "tito": [ { "line": 122, "start": 27, "end": 30 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "string_concat_rhs" }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }
 {

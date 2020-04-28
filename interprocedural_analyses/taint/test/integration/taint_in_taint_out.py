@@ -109,3 +109,18 @@ async def test_tuple_tito_indices():
 
 def return_taint_in_list(tainted: str, a: str, b: str) -> List[str]:
     return [tainted, a, b]
+
+
+def add_feature(arg):
+    return arg
+
+
+def tito_with_feature(arg):
+    if arg:
+        return arg
+    else:
+        return add_feature(arg)
+
+
+def test_always_via_feature():
+    __test_sink(tito_with_feature(__test_source()))
