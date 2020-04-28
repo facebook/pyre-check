@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Tuple
+from typing import Any, Dict, Generic, Iterable, Mapping, Optional, Tuple, TypeVar, cast
 
 
 def dictionary_source():
@@ -184,3 +184,31 @@ def return_tito_literally(external):
 def test_with_issue_in_dict_comprehension():
     sources = [__test_source()]
     {"k": s for s in sources if __test_sink(s)}
+
+
+TV = TypeVar("_T")
+
+
+def to_map(x: Dict[str, TV]) -> Mapping[str, TV]:
+    return x
+
+
+class Service(Generic[TV]):
+    async def async_get_many_dict(self, keys: Iterable[str]) -> Dict[str, TV]:
+        return {key: cast(TV, key) for key in keys}
+
+    async def async_get_dict(self, key: str) -> Optional[TV]:
+        return (await self.async_get_many_dict(keys={key})).get(key)
+
+    async def async_get_mapping(self, key: str) -> Optional[TV]:
+        return to_map(await self.async_get_many_dict(keys={key})).get(key)
+
+
+def test_service_with_dict():
+    service = Service()
+    __test_sink(service.async_get_dict(__test_source()))
+
+
+def test_service_with_mapping():
+    service = Service()
+    __test_sink(service.async_get_mapping(__test_source()))
