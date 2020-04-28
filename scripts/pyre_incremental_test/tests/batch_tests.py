@@ -53,6 +53,10 @@ class BasicExecute:
             new_commit = command.split()[-1]
             self._current_commit = new_commit
             return self._clean_output
+        elif "total_shared_memory_size_over_time" in command:
+            return CommandOutput(return_code=0, stdout='[["time", 42]]', stderr="")
+        elif "cold_start_phases" in command:
+            return CommandOutput(return_code=0, stdout="{}", stderr="")
         elif " profile" in command:
             return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
         elif command.endswith("check"):
