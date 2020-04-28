@@ -267,6 +267,9 @@ class StatisticsOverTime:
         except FileNotFoundError:
             LOG.error("gnuplot is not installed")
 
+    def to_json(self) -> str:
+        return json.dumps(self._data)
+
 
 class Profile(Command):
     NAME = "profile"
@@ -322,6 +325,14 @@ class Profile(Command):
             )
         return server_stdout
 
+    def collect_memory_statistics_over_time(self) -> StatisticsOverTime:
+        server_stdout = self.get_stdout()
+        extracted = StatisticsOverTime()
+        with open(server_stdout) as server_stdout_file:
+            for line in server_stdout_file.readlines():
+                extracted.add(line)
+        return extracted
+
     def _run(self) -> None:
         output = self._profile_output
         if output == ProfileOutput.INDIVIDUAL_TABLE_SIZES:
@@ -349,12 +360,11 @@ class Profile(Command):
             )
             print(combined)
         elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
-            server_stdout = self.get_stdout()
-            extracted = StatisticsOverTime()
-            with open(server_stdout) as server_stdout_file:
-                for line in server_stdout_file.readlines():
-                    extracted.add(line)
-            extracted.graph_total_shared_memory_size_over_time()
+            memory_over_time = self.collect_memory_statistics_over_time().to_json()
+            print(memory_over_time)
+        elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH:
+            statistics = self.collect_memory_statistics_over_time()
+            statistics.graph_total_shared_memory_size_over_time()
         else:
             try:
                 profiling_output = Path(self.profiling_log_path())
