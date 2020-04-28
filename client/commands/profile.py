@@ -150,11 +150,11 @@ def split_pre_and_post_initialization(
 ) -> Tuple[Sequence[Event], Sequence[Event]]:
     initialization_point = next(
         (
-            index
+            index + 1
             for index, event in enumerate(events)
             if event.metadata.name == "initialization"
         ),
-        len(events) - 1,
+        len(events),
     )
     return events[:initialization_point], events[initialization_point:]
 
@@ -166,6 +166,8 @@ def to_cold_start_phases(events: Sequence[Event]) -> Dict[str, int]:
         if not isinstance(event, DurationEvent):
             continue
         event.add_phase_duration_to_result(result)
+        if event.metadata.name == "initialization":
+            result["total"] = event.duration
 
     return result
 

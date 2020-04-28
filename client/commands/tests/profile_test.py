@@ -13,6 +13,7 @@ from ..profile import (
     StatisticsOverTime,
     TableStatistics,
     parse_event,
+    to_cold_start_phases,
     to_incremental_updates,
 )
 
@@ -212,6 +213,75 @@ class ProfileTest(unittest.TestCase):
                 {"phase1": 11, "phase2": 12, "phase3": 13, "total": 1},
                 {"phase1": 21, "phase2": 22, "total": 2},
             ],
+        )
+
+    def test_to_cold_start_phases(self) -> None:
+        self.assertEqual(
+            to_cold_start_phases(
+                [
+                    DurationEvent(
+                        duration=11,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=14,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=12,
+                        metadata=EventMetadata(
+                            name="initialization",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=40,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase1"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=50,
+                        metadata=EventMetadata(
+                            name="SomeUpdate",
+                            worker_id=0,
+                            pid=400,
+                            timestamp=42,
+                            tags={"phase_name": "phase2"},
+                        ),
+                    ),
+                    DurationEvent(
+                        duration=1,
+                        metadata=EventMetadata(
+                            name="incremental check",
+                            worker_id=1,
+                            pid=400,
+                            timestamp=42,
+                            tags={},
+                        ),
+                    ),
+                ]
+            ),
+            {"phase1": 11, "phase2": 14, "total": 12},
         )
 
     def test_table_statistics(self) -> None:
