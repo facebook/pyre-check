@@ -486,6 +486,41 @@ let test_forward_expression context =
   assert_forward "undefined or 1" Type.Top;
   assert_forward "1 or undefined" Type.Top;
   assert_forward "undefined and undefined" Type.Top;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "0 or y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "False or y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "None or y"
+    Type.string;
+  assert_forward
+    ~precondition:["x", Type.NoneType; "y", Type.integer]
+    ~postcondition:["x", Type.NoneType; "y", Type.integer]
+    "x or y"
+    Type.integer;
+  assert_forward
+    ~precondition:["x", Type.literal_integer 0; "y", Type.integer]
+    ~postcondition:["x", Type.literal_integer 0; "y", Type.integer]
+    "x or y"
+    Type.integer;
+  assert_forward
+    ~precondition:["x", Type.Literal (Type.Boolean false); "y", Type.integer]
+    ~postcondition:["x", Type.Literal (Type.Boolean false); "y", Type.integer]
+    "x or y"
+    Type.integer;
+  assert_forward
+    ~precondition:["x", Type.union [Type.NoneType; Type.integer; Type.string]]
+    ~postcondition:["x", Type.union [Type.NoneType; Type.integer; Type.string]]
+    "x or 1"
+    (Type.Union [Type.integer; Type.string]);
   let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
     assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
   in

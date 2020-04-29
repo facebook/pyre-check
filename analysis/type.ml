@@ -605,6 +605,14 @@ let is_union = function
   | _ -> false
 
 
+let is_falsy = function
+  | NoneType
+  | Literal (Boolean false)
+  | Literal (Integer 0) ->
+      true
+  | _ -> false
+
+
 let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"
