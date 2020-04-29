@@ -14,12 +14,18 @@ let defining_attribute ~resolution parent_type attribute =
   Type.split parent_type
   |> fst
   |> Type.primitive_name
-  >>= GlobalResolution.attribute_from_class_name
-        ~transitive:true
-        ~resolution:global_resolution
-        ~name:attribute
-        ~instantiated:parent_type
-  >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
+  >>= fun class_name ->
+  GlobalResolution.attribute_from_class_name
+    ~transitive:true
+    ~resolution:global_resolution
+    ~name:attribute
+    ~instantiated:parent_type
+    class_name
+  >>= fun instantiated_attribute ->
+  if Annotated.Attribute.defined instantiated_attribute then
+    Some instantiated_attribute
+  else
+    Resolution.fallback_attribute ~resolution ~name:attribute class_name
 
 
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation

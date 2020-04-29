@@ -38,3 +38,10 @@ def maybe_rhs(b: bool):
     else:
         a = concatenate_rhs(__test_source())
     __test_sink(a)
+
+
+def through_iadd():
+    a = __test_source()
+    b = ""
+    b += a
+    __test_sink(b)
