@@ -727,7 +727,7 @@ def run_targets_to_configuration(
 
 
 def run(version_control: VersionControl) -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
         "--truncate",
