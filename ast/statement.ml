@@ -2010,47 +2010,7 @@ end = struct
       ]
     in
     match kind, name with
-    | Some ({ Node.location; value = Name _; _ } as annotation), Some name ->
-        assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
-    | Some { Node.location; value = Expression.Tuple values; _ }, Some name ->
-        let annotation =
-          {
-            Node.location;
-            value =
-              Expression.Call
-                {
-                  callee =
-                    {
-                      Node.location;
-                      value =
-                        Name
-                          (Name.Attribute
-                             {
-                               base =
-                                 {
-                                   Node.location;
-                                   value =
-                                     Name
-                                       (Name.Attribute
-                                          {
-                                            base =
-                                              {
-                                                Node.location;
-                                                value = Name (Name.Identifier "typing");
-                                              };
-                                            attribute = "Union";
-                                            special = false;
-                                          });
-                                 };
-                               attribute = "__getitem__";
-                               special = true;
-                             });
-                    };
-                  arguments =
-                    [{ Call.Argument.name = None; value = { Node.location; value = Tuple values } }];
-                };
-          }
-        in
+    | Some ({ Node.location; value = Name _ | Tuple _; _ } as annotation), Some name ->
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)

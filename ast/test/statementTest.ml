@@ -832,7 +832,7 @@ let test_preamble _ =
       except (IOError, ValueError) as error:
         pass
     |}
-    ["error=...\nassert isinstance(error, typing.Union[IOError, ValueError])"]
+    ["error=...\nassert isinstance(error, (IOError, ValueError))"]
 
 
 let test_assume _ =

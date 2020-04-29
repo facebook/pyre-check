@@ -136,6 +136,18 @@ let test_check_excepts context =
     [];
   assert_type_errors
     {|
+      class Exception: pass
+      class Foo(Exception): pass
+      class Bar(Exception): pass
+      def foo() -> None:
+        try:
+          pass
+        except (Foo, Bar) as e:
+          reveal_type(e)
+    |}
+    ["Revealed type [-1]: Revealed type for `e` is `typing.Union[Bar, Foo]`."];
+  assert_type_errors
+    {|
       def foo() -> typing.Optional[int]:
         try:
           x = 1
