@@ -427,7 +427,13 @@ def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) ->
     # Suppress errors in project with no local configurations.
     if arguments.run:
         errors = errors_from_run(arguments.only_fix_error_code)
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
+        fix(
+            errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+            arguments.unsafe,
+        )
 
         if arguments.lint:
             lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
@@ -439,10 +445,17 @@ def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) ->
                     arguments.comment,
                     arguments.max_line_length,
                     arguments.truncate,
+                    arguments.unsafe,
                 )
     else:
         errors = errors_from_stdin(arguments.only_fix_error_code)
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
+        fix(
+            errors,
+            arguments.comment,
+            arguments.max_line_length,
+            arguments.truncate,
+            arguments.unsafe,
+        )
 
 
 def run_fixme_single(
@@ -803,6 +816,9 @@ def run(version_control: VersionControl) -> None:
     fixme.set_defaults(function=run_fixme)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
     fixme.add_argument("--run", action="store_true")
+    fixme.add_argument(
+        "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
+    )
     fixme.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors for a single project.

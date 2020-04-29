@@ -202,6 +202,16 @@ def _fix_file(
     max_line_length: Optional[int] = None,
     truncate: bool = False,
 ) -> None:
+    _fix_file_unsafe(filename, errors, custom_comment, max_line_length, truncate)
+
+
+def _fix_file_unsafe(
+    filename: str,
+    errors: Dict[int, List[Dict[str, str]]],
+    custom_comment: Optional[str] = None,
+    max_line_length: Optional[int] = None,
+    truncate: bool = False,
+) -> None:
     path = Path(filename)
     text = path.read_text()
     if "@" "generated" in text:
@@ -283,14 +293,27 @@ def _build_error_map(
 
 
 def fix(
-    errors: Errors, comment: str = "", max_line_length: int = 0, truncate: bool = False
+    errors: Errors,
+    comment: str = "",
+    max_line_length: int = 0,
+    truncate: bool = False,
+    unsafe: bool = False,
 ) -> None:
     for path, errors in errors:
         LOG.info("Processing `%s`", path)
-        _fix_file(
-            path,
-            _build_error_map(errors),
-            comment,
-            max_line_length if max_line_length > 0 else None,
-            truncate,
-        )
+        if unsafe:
+            _fix_file_unsafe(
+                path,
+                _build_error_map(errors),
+                comment,
+                max_line_length if max_line_length > 0 else None,
+                truncate,
+            )
+        else:
+            _fix_file(
+                path,
+                _build_error_map(errors),
+                comment,
+                max_line_length if max_line_length > 0 else None,
+                truncate,
+            )
