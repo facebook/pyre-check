@@ -1282,6 +1282,13 @@ module Transform = struct
               | LiteralIntegers -> LiteralIntegers
             in
             Variable { variable with constraints }
+        | Literal (EnumerationMember ({ enumeration_type; _ } as enumeration_member)) ->
+            Literal
+              (EnumerationMember
+                 {
+                   enumeration_member with
+                   enumeration_type = visit_annotation ~state enumeration_type;
+                 })
         | ParameterVariadicComponent _
         | Literal _
         | Bottom

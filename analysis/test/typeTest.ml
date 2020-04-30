@@ -1030,6 +1030,13 @@ let test_dequalify _ =
   assert_dequalify
     (Type.parametric "A.B.C" ![Type.optional Type.integer])
     (Type.parametric "C" ![Type.parametric "Optional" ![Type.integer]]);
+  assert_dequalify
+    (Type.Literal
+       (Type.EnumerationMember
+          { enumeration_type = Type.Primitive "A.B.C.MyEnum"; member_name = "ONE" }))
+    (Type.Literal
+       (Type.EnumerationMember { enumeration_type = Type.Primitive "C.MyEnum"; member_name = "ONE" }));
+
   let assert_dequalify_variable source expected =
     assert_equal
       ~cmp:Type.Variable.equal
@@ -1210,6 +1217,10 @@ let test_visit _ =
   let end_state, transformed = CountTransform.visit 0 (create "Foo[Bar[Baz, Bop], Bang]") in
   assert_types_equal transformed Type.integer;
   assert_equal ~printer:string_of_int 5 end_state;
+  let end_state, transformed = CountTransform.visit 0 (create "typing.Literal[test.MyEnum.ONE]") in
+  assert_types_equal transformed Type.integer;
+  assert_equal ~printer:string_of_int 2 end_state;
+
   let module SubstitutionTransform = Type.Transform.Make (struct
     type state = int
 
