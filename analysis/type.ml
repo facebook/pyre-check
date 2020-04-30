@@ -2300,6 +2300,7 @@ let weaken_literals annotation =
     | Literal (Integer _) -> Some integer
     | Literal (String _) -> Some string
     | Literal (Boolean _) -> Some bool
+    | Literal (EnumerationMember { enumeration_type; _ }) -> Some enumeration_type
     | _ -> None
   in
   instantiate ~constraints annotation

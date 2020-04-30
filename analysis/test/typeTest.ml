@@ -700,6 +700,22 @@ let test_concise _ =
   ()
 
 
+let test_weaken_literals _ =
+  let assert_weakened_literal literal expected =
+    assert_equal ~printer:Type.show ~cmp:Type.equal expected (Type.weaken_literals literal)
+  in
+  assert_weakened_literal (Type.literal_integer 1) Type.integer;
+  assert_weakened_literal (Type.literal_string "foo") Type.string;
+  assert_weakened_literal (Type.Literal (Type.Boolean true)) Type.bool;
+  assert_weakened_literal
+    (Type.Literal
+       (Type.EnumerationMember
+          { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
+    (Type.Primitive "test.MyEnum");
+  assert_weakened_literal (Type.list (Type.literal_integer 1)) (Type.list Type.integer);
+  ()
+
+
 let test_union _ =
   let assert_union arguments expected =
     assert_equal ~printer:Type.show ~cmp:Type.equal expected (Type.union arguments)
@@ -2239,6 +2255,7 @@ let () =
          "instantiate" >:: test_instantiate;
          "expression" >:: test_expression;
          "concise" >:: test_concise;
+         "weaken_literals" >:: test_weaken_literals;
          "union" >:: test_union;
          "primitives" >:: test_primitives;
          "elements" >:: test_elements;
