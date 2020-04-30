@@ -1596,9 +1596,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
             expected_configuration_contents = {
                 "search_path": ["stubs"],
                 "targets": [
-                    "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_three",
-                    "subdirectory/b/c:target_two",
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
                 ],
                 "version": "abc",
             }
@@ -1650,9 +1650,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
             upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
             expected_configuration_contents = {
                 "targets": [
-                    "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_three",
-                    "subdirectory/b/c:target_two",
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
                 ],
                 "strict": True,
             }
@@ -1692,7 +1692,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_local_configuration.return_value = Path(
             "subdirectory/.pyre_configuration.local"
         )
-        configuration_contents = json.dumps({"targets": ["existing:target"]})
+        configuration_contents = json.dumps({"targets": ["//existing:target"]})
         with patch("json.dump") as dump_mock:
             mocks = [
                 mock_open(read_data=configuration_contents).return_value,
@@ -1702,10 +1702,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
             upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
             expected_configuration_contents = {
                 "targets": [
-                    "existing:target",
-                    "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_three",
-                    "subdirectory/b/c:target_two",
+                    "//existing:target",
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
                 ]
             }
             open_mock.assert_has_calls(
@@ -1742,7 +1742,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_local_configuration.return_value = Path(
             "subdirectory/.pyre_configuration.local"
         )
-        configuration_contents = json.dumps({"targets": ["existing:target"]})
+        configuration_contents = json.dumps({"targets": ["//existing:target"]})
         with patch("json.dump") as dump_mock:
             mocks = [
                 mock_open(read_data=configuration_contents).return_value,
@@ -1752,10 +1752,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
             upgrade.run_targets_to_configuration(arguments, VERSION_CONTROL)
             expected_configuration_contents = {
                 "targets": [
-                    "existing:target",
-                    "subdirectory/a:target_one",
-                    "subdirectory/b/c:target_three",
-                    "subdirectory/b/c:target_two",
+                    "//existing:target",
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
                 ]
             }
             open_mock.assert_has_calls(

@@ -602,7 +602,7 @@ def run_targets_to_configuration(
     else:
         new_targets = []
         for path, target_names in all_targets.items():
-            new_targets += [path + ":" + name for name in target_names]
+            new_targets += ["//" + path + ":" + name for name in target_names]
     project_configuration = Configuration.find_project_configuration(subdirectory)
     local_configuration = Configuration.find_local_configuration(subdirectory)
     if local_configuration:
