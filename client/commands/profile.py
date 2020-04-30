@@ -253,8 +253,10 @@ class StatisticsOverTime:
         ]
         for divider in dividers:
             if divider in line:
-                time, size = line.split(divider)
-                self._data.append((time, int(size[:-2])))
+                time, size_component = line.split(divider)
+                size_in_megabytes = int(size_component[:-2])
+                size_in_bytes = size_in_megabytes * (10 ** 6)
+                self._data.append((time, size_in_bytes))
 
     def graph_total_shared_memory_size_over_time(self) -> None:
         try:
