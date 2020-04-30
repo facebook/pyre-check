@@ -342,12 +342,24 @@ let test_check_impossible_assert context =
         assert not isinstance(42, Derp)
     |}
     [];
+
+  (* Fabricated asserts won't get the type error surfaced. *)
   assert_type_errors
     {|
      from typing import Union, Dict, Any
 
      def foo(x: Dict[str, Any]) -> None:
        if isinstance(x, dict):
+         pass
+   |}
+    [];
+  assert_type_errors
+    {|
+     from typing import Union, Dict, Any
+
+     def foo() -> None:
+       x = None
+       if x is None:
          pass
    |}
     [];

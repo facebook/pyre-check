@@ -4639,6 +4639,7 @@ module State (Context : Context) = struct
               operator = ComparisonOperator.IsNot;
               right = { Node.value = Name (Name.Identifier "None"); _ };
             } ->
+            let left = { left with location = Node.location test } in
             forward_statement ~resolution ~statement:(Statement.assume left)
         | ComparisonOperator
             {
