@@ -78,3 +78,12 @@ def catch_keyboard_interrupt():
         yield
     except KeyboardInterrupt:
         print("\nOperation aborted.", file=sys.stderr)
+
+
+# For use on enums to alias upper case value.
+#
+# FLAKE8 does not understand that this is a static property
+# flake8: noqa B902
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
