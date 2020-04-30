@@ -2903,8 +2903,10 @@ let filter ~resolution errors =
                       ~predecessor
                   in
                   is_transitive_successor ~successor:"unittest.mock.Base"
-                  || (* Special-case mypy's workaround for mocks. *)
-                  is_transitive_successor ~successor:"unittest.mock.NonCallableMock"
+                  || is_transitive_successor ~successor:"mock.Base"
+                  (* Special-case mypy's workaround for mocks. *)
+                  || is_transitive_successor ~successor:"unittest.mock.NonCallableMock"
+                  || is_transitive_successor ~successor:"mock.NonCallableMock"
               | _ -> false
             with
             | ClassHierarchy.Untracked _ -> false

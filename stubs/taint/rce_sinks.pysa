@@ -157,7 +157,7 @@ async def asyncio.subprocess.create_subprocess_exec(
 ): ...
 
 async def asyncio.subprocess.create_subprocess_shell(
-    *Args: TaintSink[RemoteCodeExecution],
+    cmd: TaintSink[RemoteCodeExecution],
     stdin = ...,
     stdout = ...,
     stderr = ...,
