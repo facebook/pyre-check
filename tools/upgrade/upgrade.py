@@ -186,7 +186,7 @@ class Configuration:
             deduplicated_targets = []
             expanded_targets = set()
             for target in all_targets:
-                if target.endswith("/..."):
+                if target.endswith("/...") or target.endswith(":"):
                     try:
                         expanded = (
                             subprocess.check_output(["buck", "query", target])

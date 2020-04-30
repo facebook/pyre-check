@@ -1952,6 +1952,14 @@ class TargetsToConfigurationTest(unittest.TestCase):
         expected_targets = ["//a/...", "//b/..."]
         self.assertEqual(expected_targets, configuration.targets)
 
+        mock_check_output.side_effect = [b"//a/b:x\n//a/b:y"]
+        configuration = upgrade.Configuration(
+            Path("test"), {"targets": ["//a/b:", "//a/b:x"]}
+        )
+        configuration.deduplicate_targets()
+        expected_targets = ["//a/b:"]
+        self.assertEqual(expected_targets, configuration.targets)
+
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
