@@ -127,7 +127,7 @@ source-directories:
 ```
 
 ## Positional Arguments
-If [Watchman](https://facebook.github.io/watchman/docs/install.html) is
+If [Watchman](https://facebook.github.io/watchman/docs/install/) is
 installed, running `pyre` with no positional arguments defaults to incremental,
 otherwise defaults to check.
 
