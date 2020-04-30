@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import tempfile
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -108,7 +110,20 @@ class PyreRunner:
         cold_start_time_phases = self.run_profile("cold_start_phases")
         shared_memory_over_time = self.run_profile("total_shared_memory_size_over_time")
         _, cold_start_total_memory = shared_memory_over_time[0]
-        return {**cold_start_time_phases, "heap_size": cold_start_total_memory}
+        with tempfile.NamedTemporaryFile() as temporary_file:
+            self._environment.checked_run(
+                working_directory=self._working_directory,
+                command=(
+                    f"{self._pyre_invocation} "
+                    f"query save_server_state('{temporary_file.name}')"
+                ),
+            )
+            saved_state_size = os.stat(temporary_file.name).st_size
+        return {
+            **cold_start_time_phases,
+            "heap_size": cold_start_total_memory,
+            "saved_state_size": saved_state_size,
+        }
 
     def run_stop(self) -> None:
         self._environment.checked_run(

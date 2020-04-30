@@ -3,6 +3,7 @@ import unittest
 from dataclasses import asdict
 from pathlib import Path
 from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
 from ..runner import (
     InconsistentOutput,
@@ -19,7 +20,20 @@ from .test_environment import (
 )
 
 
+def mock_stat(_path: str) -> MagicMock:
+    stat = MagicMock()
+    stat.st_size = 4002
+    return stat
+
+
+mock_temp_file_class: MagicMock = MagicMock()
+mock_temp_file_context_manager: MagicMock = mock_temp_file_class.return_value.__enter__
+mock_temp_file_context_manager.return_value.name = "tempfile"
+
+
 class RunnerTest(unittest.TestCase):
+    @patch("os.stat", new=mock_stat)
+    @patch("tempfile.NamedTemporaryFile", new=mock_temp_file_class)
     def assert_run(
         self,
         mock_execute: MockExecuteCallable,
@@ -73,6 +87,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("old_root"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=incremental_updates"
@@ -108,6 +123,7 @@ class RunnerTest(unittest.TestCase):
         )
         cold_start_logs = comparison.profile_logs.cold_start_log
         self.assertEqual(cold_start_logs["heap_size"], 42)
+        self.assertEqual(cold_start_logs["saved_state_size"], 4002)
 
         def consistent_not_clean_execute(command_input: CommandInput) -> CommandOutput:
             pyre_error = PyreError(
@@ -251,6 +267,11 @@ class RunnerTest(unittest.TestCase):
                 "client --binary bin --typeshed bikeshed profile "
                 "--profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed query "
+                "save_server_state('tempfile')",
+            ),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
             CommandInput(
                 Path("old_root"),
@@ -326,6 +347,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("old_root"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("old_root"), "patch -p1", patch_content),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=incremental_updates"
@@ -393,6 +415,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("old_root"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("old_root"), "mkdir -p foo"),
             CommandInput(Path("old_root"), f"tee {handle_a}", content_a),
             CommandInput(Path("old_root"), "mkdir -p foo"),
@@ -464,6 +487,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("old_root"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=incremental_updates"
@@ -539,6 +563,7 @@ class RunnerTest(unittest.TestCase):
                 Path("/mock/tmp"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("/mock/tmp"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("/mock/tmp"), f"rm -f {handle_a}"),
             CommandInput(
                 Path("/mock/tmp"), "pyre profile --profile-output=incremental_updates"
@@ -610,6 +635,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre profile --profile-output=total_shared_memory_size_over_time",
             ),
+            CommandInput(Path("old_root"), "pyre query save_server_state('tempfile')"),
             CommandInput(Path("old_root"), "hg update --clean new_hashC"),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=incremental_updates"
