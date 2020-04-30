@@ -173,7 +173,6 @@ class Statistics(Command):
 
     def _run(self) -> None:
         if self._collect is None:
-            self._analysis_directory.prepare()
             paths = self._find_paths()
             modules = []
             for path in _parse_paths(paths):
