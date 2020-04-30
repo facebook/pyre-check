@@ -16,6 +16,7 @@ from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
 from .context import Context, pass_context
+from .create_database import CreateDatabase
 from .database_saver import DatabaseSaver
 from .db import DB
 from .extensions import prompt_extension
@@ -186,6 +187,7 @@ def analyze(
     input_files = (AnalysisOutput.from_file(input_file), previous_input)
     pipeline_steps = [
         ctx.parser_class(),
+        CreateDatabase(ctx.database),
         ModelGenerator(),
         TrimTraceGraph(),
         # pyre-fixme[6]: Expected `bool` for 2nd param but got `PrimaryKeyGenerator`.

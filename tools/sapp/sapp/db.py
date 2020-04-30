@@ -16,7 +16,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import AssertionPool
 
-from . import errors, models
+from . import errors
 from .decorators import retryable
 
 
@@ -63,11 +63,6 @@ class DB(object):
             self._create_xdb_engine()
         else:
             raise errors.AIException("Invalid db type: " + dbtype)
-
-        try:
-            models.create(self.engine)
-        except sqlalchemy.exc.NoSuchTableError:
-            pass
 
     def _create_xdb_engine(self):
         raise NotImplementedError

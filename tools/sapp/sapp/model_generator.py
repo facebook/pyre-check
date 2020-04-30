@@ -27,6 +27,7 @@ from .models import (
     TraceFrame,
     TraceFrameAnnotation,
     TraceKind,
+    create as create_models,
 )
 from .pipeline import DictEntries, PipelineStep, Summary
 from .trace_graph import TraceGraph

@@ -32,6 +32,7 @@ from ..models import (
     TraceFrame,
     TraceFrameLeafAssoc,
     TraceKind,
+    create as create_models,
 )
 from ..pysa_taint_parser import Parser
 from .fake_object_generator import FakeObjectGenerator
@@ -40,6 +41,7 @@ from .fake_object_generator import FakeObjectGenerator
 class InteractiveTest(TestCase):
     def setUp(self) -> None:
         self.db = DB(DBType.MEMORY)
+        create_models(self.db)
         self.interactive = Interactive(
             database=self.db, repository_directory="", parser_class=Parser
         )

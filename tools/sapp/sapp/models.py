@@ -30,10 +30,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import mysql, sqlite
 from sqlalchemy.dialects.mysql import BIGINT, INTEGER
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship
 
+from .db import DB
 from .errors import AIException
 from .iterutil import split_every
 
@@ -1659,5 +1661,8 @@ class PrimaryKeyGenerator:
         return pk
 
 
-def create(engine):
-    Base.metadata.create_all(engine)
+def create(db: DB):
+    try:
+        Base.metadata.create_all(db.engine)  # pyre-ignore [16]
+    except NoSuchTableError:
+        pass
