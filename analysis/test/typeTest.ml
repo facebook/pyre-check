@@ -586,6 +586,11 @@ let test_expression _ =
            ];
        })
     "G[TParams]";
+  assert_expression
+    (Type.Literal
+       (Type.EnumerationMember
+          { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
+    "typing_extensions.Literal[test.MyEnum.ONE]";
   ()
 
 
@@ -670,7 +675,13 @@ let test_concise _ =
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
-  assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T"
+  assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T";
+  assert_concise
+    (Type.Literal
+       (Type.EnumerationMember
+          { enumeration_type = Type.Primitive "test.MyEnum"; member_name = "ONE" }))
+    "typing_extensions.Literal[test.MyEnum.ONE]";
+  ()
 
 
 let test_union _ =

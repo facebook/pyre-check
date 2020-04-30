@@ -176,6 +176,10 @@ type literal =
   | Boolean of bool
   | Integer of int
   | String of string
+  | EnumerationMember of {
+      enumeration_type: t;
+      member_name: Identifier.t;
+    }
 
 and tuple =
   | Bounded of t Record.OrderedTypes.record

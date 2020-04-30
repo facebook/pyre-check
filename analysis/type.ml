@@ -417,6 +417,10 @@ module T = struct
     | Boolean of bool
     | Integer of int
     | String of string
+    | EnumerationMember of {
+        enumeration_type: t;
+        member_name: Identifier.t;
+      }
 
   and tuple =
     | Bounded of t Record.OrderedTypes.record
@@ -694,6 +698,8 @@ let rec pp format annotation =
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (EnumerationMember { enumeration_type; member_name }) ->
+      Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let name = reverse_substitute name in
@@ -772,6 +778,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (EnumerationMember { enumeration_type; member_name }) ->
+      Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let name = strip_qualification (reverse_substitute name) in
@@ -1084,6 +1092,10 @@ let rec expression annotation =
           | Boolean false -> Expression.False
           | Integer literal -> Expression.Integer literal
           | String literal -> Expression.String { value = literal; kind = StringLiteral.String }
+          | EnumerationMember { enumeration_type; member_name } ->
+              Expression.Name
+                (Attribute
+                   { base = expression enumeration_type; attribute = member_name; special = false })
         in
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
     | NoneType -> create_name "None"
