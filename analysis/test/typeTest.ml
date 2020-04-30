@@ -445,6 +445,22 @@ let test_create _ =
        (Bounded
           (Concatenation
              (create_concatenation ~mappers:["list"] (Type.Variable.Variadic.List.create "Ts")))));
+
+  assert_create "typing_extensions.Literal['foo']" (Type.literal_string "foo");
+  assert_create
+    "typing_extensions.Literal[Foo.ONE]"
+    (Type.Literal
+       (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" }));
+  assert_create
+    "typing_extensions.Literal[Foo.ONE, Foo.TWO]"
+    (Type.union
+       [
+         Type.Literal
+           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" });
+         Type.Literal
+           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "TWO" });
+       ]);
+  assert_create "typing_extensions.Literal[ONE]" Type.Top;
   ()
 
 

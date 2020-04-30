@@ -1979,6 +1979,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           | Expression.Integer literal -> Some (literal_integer literal)
           | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
               Some (literal_string value)
+          | Expression.Name (Attribute { base; attribute; _ }) -> (
+              match create_logic base with
+              | Primitive _ as enumeration_type ->
+                  Some (Literal (EnumerationMember { enumeration_type; member_name = attribute }))
+              | _ -> None )
           | _ -> None
         in
         arguments >>| List.map ~f:parse >>= Option.all >>| union |> Option.value ~default:Top
