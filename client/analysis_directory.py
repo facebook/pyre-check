@@ -15,7 +15,7 @@ from time import time
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import buck, json_rpc, log
-from .buck import BuckBuilder
+from .buck import BuckBuilder, find_buck_root
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import (
@@ -199,8 +199,13 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def get_filter_root(self) -> Set[str]:
         current_project_directories = self._filter_paths or {os.getcwd()}
+        buck_root = find_buck_root(os.getcwd())
+        if buck_root is None:
+            raise EnvironmentException(
+                "Cannot find buck root when constructing filter directories"
+            )
         return {
-            translate_path(os.getcwd(), filter_root)
+            translate_path(buck_root, filter_root)
             for filter_root in current_project_directories
         }
 

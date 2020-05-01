@@ -18,6 +18,7 @@ from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
     UpdatedPaths,
+    __name__ as analysis_directory_name,
     _get_project_name,
     _resolve_filter_paths,
     resolve_analysis_directory,
@@ -128,6 +129,29 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 os.path.join(project_directory, relative_path)
             ],
             os.path.join(scratch_directory, relative_path),
+        )
+
+    @patch(f"{analysis_directory_name}.find_buck_root", return_value="/buck_root")
+    @patch.object(os.path, "exists", return_value=True)
+    def test_filter_root(self, exists: MagicMock, buck_root: MagicMock) -> None:
+        configuration = MagicMock()
+        configuration.targets = ["cell//pyre_root/local:target"]
+        configuration.local_configuration_root = "/buck_root/pyre_root/local"
+        analysis_directory = resolve_analysis_directory(
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory="/buck_root/pyre_root",
+            current_directory="/buck_root/pyre_root/local",
+            filter_directory=None,
+            use_buck_builder=True,
+            debug=False,
+            buck_mode=None,
+            isolate=False,
+            relative_local_root=None,
+        )
+        self.assertEqual(
+            analysis_directory.get_filter_root(), {"/buck_root/pyre_root/local"}
         )
 
     @patch.object(os, "getcwd", return_value="/root")
