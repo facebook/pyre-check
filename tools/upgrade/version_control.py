@@ -10,20 +10,16 @@ from typing import List, Optional
 class VersionControl:
     LINTERS_TO_SKIP: List[str] = []
 
-    @staticmethod
-    def get_changed_files() -> Optional[List[str]]:
+    def get_changed_files(self) -> Optional[List[str]]:
         return None
 
-    @staticmethod
-    def commit_message(title: str, summary_override: Optional[str] = None) -> str:
+    def commit_message(self, title: str, summary_override: Optional[str] = None) -> str:
         return ""
 
-    @staticmethod
-    def add_paths(paths: List[Path]) -> None:
+    def add_paths(self, paths: List[Path]) -> None:
         pass
 
-    @staticmethod
     def submit_changes(
-        submit: bool, message: str, ignore_failures: bool = False
+        self, submit: bool, message: str, ignore_failures: bool = False
     ) -> None:
         pass

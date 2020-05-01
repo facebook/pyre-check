@@ -954,13 +954,8 @@ def run(version_control: VersionControl) -> None:
     sys.exit(exit_code)
 
 
-class ExternalVersionControl(VersionControl):
-    pass
-
-
 def main() -> None:
-    version_control = ExternalVersionControl()
-    run(version_control)
+    run(VersionControl())
 
 
 if __name__ == "__main__":

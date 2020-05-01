@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import errors, filesystem, postprocess, upgrade
 from ..upgrade import (
-    ExternalVersionControl,
     Fixme,
     FixmeAll,
     FixmeSingle,
@@ -25,9 +24,10 @@ from ..upgrade import (
     TargetsToConfiguration,
     UpgradeAll,
 )
+from ..version_control import VersionControl
 
 
-VERSION_CONTROL = ExternalVersionControl()
+VERSION_CONTROL = VersionControl()
 
 
 class UpgradeAllTest(unittest.TestCase):
@@ -206,7 +206,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.errors_from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch(f"{upgrade.__name__}.fix")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     def test_upgrade_project(
         self,
         submit_changes,
@@ -337,7 +337,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch(f"{upgrade.__name__}.fix")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     def test_run_fixme_all(
         self,
         submit_changes,
@@ -527,7 +527,7 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{upgrade.__name__}.fix")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     def test_run_fixme_single(
         self,
         submit_changes,
@@ -594,7 +594,7 @@ class FixmeTest(unittest.TestCase):
     @patch.object(Path, "read_text")
     @patch(f"{upgrade.__name__}.errors_from_run")
     @patch(f"{upgrade.__name__}.errors_from_stdin")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     def test_run_fixme(
         self, submit_changes, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
@@ -663,7 +663,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            version_control_with_linters = ExternalVersionControl()
+            version_control_with_linters = VersionControl()
             version_control_with_linters.LINTERS_TO_SKIP = ["TESTLINTER"]
             Fixme(version_control_with_linters).run(arguments)
             calls = [
@@ -1156,7 +1156,7 @@ class FixmeTargetsTest(unittest.TestCase):
         return_value=Path(".pyre_configuration"),
     )
     @patch(f"{upgrade.__name__}.run_fixme_targets_file")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     def test_fixme_targets(
         self, submit_changes, fix_file, find_configuration, subprocess
     ) -> None:
@@ -1505,8 +1505,8 @@ class MigrateTest(unittest.TestCase):
 
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.add_paths")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.add_paths")
     @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
     @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
     @patch(f"{upgrade.__name__}.find_targets")
@@ -2001,7 +2001,7 @@ class DecodeTest(unittest.TestCase):
 
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.ExternalVersionControl.submit_changes")
+    @patch(f"{upgrade.__name__}.VersionControl.submit_changes")
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value="/root"
     )
