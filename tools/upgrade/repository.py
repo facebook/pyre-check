@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Optional
 
 
-class VersionControl:
+class Repository:
     LINTERS_TO_SKIP: List[str] = []
 
     def get_changed_files(self) -> Optional[List[str]]:

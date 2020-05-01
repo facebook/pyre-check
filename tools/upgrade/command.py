@@ -4,12 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 import argparse
 
-from .version_control import VersionControl
+from .repository import Repository
 
 
 class Command:
-    def __init__(self, version_control: VersionControl) -> None:
-        self._version_control: VersionControl = version_control
+    def __init__(self, repository: Repository) -> None:
+        self._repository: Repository = repository
 
     def run(self, arguments: argparse.Namespace) -> None:
         pass

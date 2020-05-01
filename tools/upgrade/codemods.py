@@ -11,7 +11,6 @@ from logging import Logger
 
 from .command import Command
 from .errors import errors_from_stdin
-from .version_control import VersionControl
 
 
 LOG: Logger = logging.getLogger(__name__)

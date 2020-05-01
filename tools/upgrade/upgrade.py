@@ -25,7 +25,7 @@ from .filesystem import (
     remove_non_pyre_ignores,
 )
 from .postprocess import apply_lint, get_lint_status
-from .version_control import VersionControl
+from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -262,9 +262,9 @@ class StrictDefault(Command):
                 add_local_mode(filename, LocalMode.UNSAFE)
 
             if arguments.lint:
-                lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
+                lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
                 if lint_status:
-                    apply_lint(self._version_control.LINTERS_TO_SKIP)
+                    apply_lint(self._repository.LINTERS_TO_SKIP)
 
 
 class GlobalVersionUpdate(Command):
@@ -332,9 +332,9 @@ class GlobalVersionUpdate(Command):
 
         try:
             commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
-            self._version_control.submit_changes(
+            self._repository.submit_changes(
                 arguments.submit,
-                self._version_control.commit_message(
+                self._repository.commit_message(
                     "Update pyre global configuration version",
                     summary_override=commit_summary,
                 ),
@@ -359,7 +359,7 @@ def _upgrade_project(
     arguments: argparse.Namespace,
     configuration: Configuration,
     root: Path,
-    version_control: VersionControl,
+    repository: Repository,
 ) -> None:
     LOG.info("Processing %s", configuration.get_directory())
     if not configuration.is_local:
@@ -380,12 +380,10 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            changed_files = version_control.get_changed_files()
-            lint_status = get_lint_status(
-                version_control.LINTERS_TO_SKIP, changed_files
-            )
+            changed_files = repository.get_changed_files()
+            lint_status = get_lint_status(repository.LINTERS_TO_SKIP, changed_files)
             if lint_status:
-                apply_lint(version_control.LINTERS_TO_SKIP, changed_files)
+                apply_lint(repository.LINTERS_TO_SKIP, changed_files)
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,
@@ -403,8 +401,8 @@ def _upgrade_project(
             str(local_root.relative_to(project_root)),
         )
         if not arguments.no_commit:
-            version_control.submit_changes(
-                arguments.submit, version_control.commit_message(title)
+            repository.submit_changes(
+                arguments.submit, repository.commit_message(title)
             )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
@@ -424,9 +422,9 @@ class Fixme(Command):
             )
 
             if arguments.lint:
-                lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
+                lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
                 if lint_status:
-                    apply_lint(self._version_control.LINTERS_TO_SKIP)
+                    apply_lint(self._repository.LINTERS_TO_SKIP)
                     errors = errors_from_run(arguments.only_fix_error_code)
                     fix(
                         errors,
@@ -458,10 +456,7 @@ class FixmeSingle(Command):
                 configuration_path, json.load(configuration_file)
             )
             _upgrade_project(
-                arguments,
-                configuration,
-                project_configuration.parent,
-                self._version_control,
+                arguments, configuration, project_configuration.parent, self._repository
             )
 
 
@@ -475,10 +470,7 @@ class FixmeAll(Command):
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
             _upgrade_project(
-                arguments,
-                configuration,
-                project_configuration.parent,
-                self._version_control,
+                arguments, configuration, project_configuration.parent, self._repository
             )
 
 
@@ -487,7 +479,7 @@ def run_fixme_targets_file(
     project_directory: Path,
     path: str,
     target_names: List[str],
-    version_control: VersionControl,
+    repository: Repository,
 ) -> None:
     LOG.info("Processing %s/TARGETS...", path)
     targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
@@ -500,9 +492,9 @@ def run_fixme_targets_file(
     fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
     if not arguments.lint:
         return
-    lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+    lint_status = get_lint_status(repository.LINTERS_TO_SKIP)
     if lint_status:
-        apply_lint(version_control.LINTERS_TO_SKIP)
+        apply_lint(repository.LINTERS_TO_SKIP)
         errors = errors_from_targets(project_directory, path, targets)
         if not errors:
             LOG.info("Errors unchanged after linting.")
@@ -529,13 +521,13 @@ class FixmeTargets(Command):
             return
         for path, target_names in all_targets.items():
             run_fixme_targets_file(
-                arguments, project_directory, path, target_names, self._version_control
+                arguments, project_directory, path, target_names, self._repository
             )
         try:
             if not arguments.no_commit:
-                self._version_control.submit_changes(
+                self._repository.submit_changes(
                     arguments.submit,
-                    self._version_control.commit_message(
+                    self._repository.commit_message(
                         "Upgrade pyre version for {} (TARGETS)".format(search_root)
                     ),
                 )
@@ -571,7 +563,7 @@ class MigrateTargets(Command):
         subprocess.check_output(remove_options_command)
 
         remove_non_pyre_ignores(subdirectory)
-        FixmeTargets(self._version_control).run(arguments)
+        FixmeTargets(self._repository).run(arguments)
 
 
 class TargetsToConfiguration(Command):
@@ -657,7 +649,7 @@ class TargetsToConfiguration(Command):
                     configuration.write()
 
                     # Add newly created configuration files to version control
-                    self._version_control.add_paths([local_configuration_path])
+                    self._repository.add_paths([local_configuration_path])
         else:
             LOG.warning(
                 "Could not find a project configuration with binary and typeshed \
@@ -705,9 +697,9 @@ class TargetsToConfiguration(Command):
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
+            lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
             if lint_status:
-                apply_lint(self._version_control.LINTERS_TO_SKIP)
+                apply_lint(self._repository.LINTERS_TO_SKIP)
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,
@@ -718,9 +710,9 @@ class TargetsToConfiguration(Command):
 
         try:
             if not arguments.no_commit:
-                self._version_control.submit_changes(
+                self._repository.submit_changes(
                     arguments.submit,
-                    self._version_control.commit_message(
+                    self._repository.commit_message(
                         "Convert type check targets in {} to use configuration".format(
                             subdirectory
                         )
@@ -730,7 +722,7 @@ class TargetsToConfiguration(Command):
             LOG.info("Error while running hg.")
 
 
-def run(version_control: VersionControl) -> None:
+def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
@@ -945,7 +937,7 @@ def run(version_control: VersionControl) -> None:
 
     try:
         exit_code = ExitCode.SUCCESS
-        arguments.command(version_control).run(arguments)
+        arguments.command(repository).run(arguments)
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
@@ -955,7 +947,7 @@ def run(version_control: VersionControl) -> None:
 
 
 def main() -> None:
-    run(VersionControl())
+    run(Repository())
 
 
 if __name__ == "__main__":
