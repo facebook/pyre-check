@@ -80,25 +80,29 @@ let test_parse _ =
   in
   assert_ignore
     ["def foo() -> int: return 1.0  # pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 32 1 43];
+    [create_ignore 1 [] PyreIgnore 1 30 1 43];
+  assert_ignore
+    ["def foo() -> int: return 1.0  #     pyre-ignore"]
+    [create_ignore 1 [] PyreIgnore 1 30 1 47];
+  assert_ignore ["def foo() -> int: return 1.0  # noqa pyre-ignore"] [];
   assert_ignore
     ["def foo() -> str: return 1.0  # pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 32 1 43];
+    [create_ignore 1 [] PyreIgnore 1 30 1 43];
   assert_ignore
     ["def foo() -> str: return  # pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 28 1 39];
+    [create_ignore 1 [] PyreIgnore 1 26 1 39];
   assert_ignore
     ["def foo() -> typing.List[str]: return 1  # pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 43 1 54];
+    [create_ignore 1 [] PyreIgnore 1 41 1 54];
   assert_ignore
     ["def foo() -> str: return 1.0  # pyre-ignore"; "def bar() -> int: return ''  # pyre-ignore"]
-    [create_ignore 2 [] PyreIgnore 2 31 2 42; create_ignore 1 [] PyreIgnore 1 32 1 43];
+    [create_ignore 2 [] PyreIgnore 2 29 2 42; create_ignore 1 [] PyreIgnore 1 30 1 43];
   assert_ignore
     ["class A: pass"; "def foo() -> A: return 1  # pyre-ignore"]
-    [create_ignore 2 [] PyreIgnore 2 28 2 39];
+    [create_ignore 2 [] PyreIgnore 2 26 2 39];
   assert_ignore
     ["def foo() -> str: return bar()  # pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 34 1 45];
+    [create_ignore 1 [] PyreIgnore 1 32 1 45];
   assert_ignore
     [
       "def foo() -> other:  # pyre-ignore";
@@ -107,60 +111,58 @@ let test_parse _ =
       "result = durp()";
       "return result";
     ]
-    [create_ignore 1 [] PyreIgnore 1 23 1 34];
+    [create_ignore 1 [] PyreIgnore 1 21 1 34];
   assert_ignore
     ["def foo() -> int: return 1.0  # type: ignore"]
-    [create_ignore 1 [] TypeIgnore 1 32 1 44];
+    [create_ignore 1 [] TypeIgnore 1 30 1 44];
   assert_ignore
     ["def foo() -> str: return 1.0  # type: ignore"]
-    [create_ignore 1 [] TypeIgnore 1 32 1 44];
+    [create_ignore 1 [] TypeIgnore 1 30 1 44];
   assert_ignore
     ["def foo() -> str: return 1.0  # pyre-ignore[7]"]
-    [create_ignore 1 [7] PyreIgnore 1 32 1 46];
+    [create_ignore 1 [7] PyreIgnore 1 30 1 46];
   assert_ignore
     ["def foo() -> str: return  # pyre-ignore[7]"]
-    [create_ignore 1 [7] PyreIgnore 1 28 1 42];
+    [create_ignore 1 [7] PyreIgnore 1 26 1 42];
   assert_ignore
     ["def foo() -> typing.List[str]: return 1  # pyre-ignore[7]"]
-    [create_ignore 1 [7] PyreIgnore 1 43 1 57];
+    [create_ignore 1 [7] PyreIgnore 1 41 1 57];
   assert_ignore
     [
       "def foo() -> str: return 1.0  # pyre-ignore[7]";
       "def bar() -> int: return ''  # pyre-ignore[7]";
     ]
-    [create_ignore 2 [7] PyreIgnore 2 31 2 45; create_ignore 1 [7] PyreIgnore 1 32 1 46];
+    [create_ignore 2 [7] PyreIgnore 2 29 2 45; create_ignore 1 [7] PyreIgnore 1 30 1 46];
   assert_ignore
     ["def foo() -> str: return 1  # pyre-ignore[7, 1, 2]"]
-    [create_ignore 1 [7; 1; 2] PyreIgnore 1 30 1 50];
+    [create_ignore 1 [7; 1; 2] PyreIgnore 1 28 1 50];
   assert_ignore
     ["def foo() -> str: return 1  # pyre-fixme[7, 1, 2]"]
-    [create_ignore 1 [7; 1; 2] PyreFixme 1 30 1 49];
+    [create_ignore 1 [7; 1; 2] PyreFixme 1 28 1 49];
   assert_ignore
     ["def foo() -> str: return 1  # pyre-fixme[7, 1, 2]: something about Class[Derp4]"]
-    [create_ignore 1 [7; 1; 2] PyreFixme 1 30 1 79];
+    [create_ignore 1 [7; 1; 2] PyreFixme 1 28 1 79];
 
   (* Comment on preceding line. *)
   assert_ignore
     ["# pyre-ignore[7]"; "def foo() -> str: return"]
-    [create_ignore 2 [7] PyreIgnore 1 2 1 16];
+    [create_ignore 2 [7] PyreIgnore 1 0 1 16];
 
   (* Don't include ignore keywords inside quotes *)
   assert_ignore ["def foo() -> int: return 1.0  # haha no 'pyre-ignore's here"] [];
-  assert_ignore
-    ["def foo() -> int: return 1.0  # 'quote before is OK' pyre-ignore"]
-    [create_ignore 1 [] PyreIgnore 1 53 1 64];
+  assert_ignore ["def foo() -> int: return 1.0  # 'quote before is not OK' pyre-ignore"] [];
   assert_ignore ["def foo() -> int: return 1.0  # 'still in quotes' 'pyre-ignore'"] [];
 
   (* Ignores apply to next non-comment line *)
   assert_ignore
     ["# pyre-ignore[7]"; "# another comment"; "def foo() -> str: return"]
-    [create_ignore 3 [7] PyreIgnore 1 2 1 16];
+    [create_ignore 3 [7] PyreIgnore 1 0 1 16];
   assert_ignore
     ["# pyre-ignore[7]"; "def foo() -> str: return  # applies to this line"]
-    [create_ignore 2 [7] PyreIgnore 1 2 1 16];
+    [create_ignore 2 [7] PyreIgnore 1 0 1 16];
   assert_ignore
     ["# pyre-ignore[6]"; "# pyre-ignore[7]"; "def foo() -> str: return"]
-    [create_ignore 3 [6] PyreIgnore 1 2 1 16; create_ignore 3 [7] PyreIgnore 2 2 2 16];
+    [create_ignore 3 [6] PyreIgnore 1 0 1 16; create_ignore 3 [7] PyreIgnore 2 0 2 16];
   assert_ignore
     [
       "# pyre-fixme[3]";
@@ -170,9 +172,9 @@ let test_parse _ =
       " return x";
     ]
     [
-      create_ignore 4 [3] PyreFixme 1 2 1 15;
-      create_ignore 4 [2] PyreFixme 2 2 2 15;
-      create_ignore 4 [2] PyreFixme 3 2 3 15;
+      create_ignore 4 [3] PyreFixme 1 0 1 15;
+      create_ignore 4 [2] PyreFixme 2 0 2 15;
+      create_ignore 4 [2] PyreFixme 3 0 3 15;
     ]
 
 

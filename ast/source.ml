@@ -68,9 +68,9 @@ module Metadata = struct
     Str.regexp "^ ?# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
 
 
-  let ignore_code_regex = Str.regexp "pyre-\\(ignore\\|fixme\\)\\[\\([0-9, ]+\\)\\]"
+  let ignore_code_regex = Str.regexp "# *pyre-\\(ignore\\|fixme\\)\\[\\([0-9, ]+\\)\\]"
 
-  let ignore_location_regex = Str.regexp "\\(pyre-\\(ignore\\|fixme\\)\\|type: ignore\\)"
+  let ignore_location_regex = Str.regexp "# *\\(pyre-\\(ignore\\|fixme\\)\\|type: ignore\\)"
 
   let is_pyre_comment comment_substring line =
     let comment_regex = Str.regexp ("^ ?# *" ^ comment_substring ^ " *$") in
@@ -118,46 +118,43 @@ module Metadata = struct
       let ignores =
         let line_index = index + 1 in
         let create_ignore ~line ~kind =
-          let codes =
-            try
-              Str.search_forward ignore_code_regex line 0 |> ignore;
-              Str.matched_group 2 line
-              |> Str.split (Str.regexp "[^0-9]+")
-              |> List.map ~f:Int.of_string
-            with
-            | Not_found -> []
-          in
-          let location =
-            let start_column = Str.search_forward ignore_location_regex line 0 in
-            let end_column = String.length line in
-            let start = { Location.line = line_index; column = start_column } in
-            let stop = { Location.line = line_index; column = end_column } in
-            { Location.start; stop }
-          in
-          Ignore.create ~ignored_line:line_index ~codes ~location ~kind
-        in
-        let contains_outside_quotes ~substring line =
-          let find_substring index characters =
-            String.is_substring ~substring characters && index mod 2 = 0
-          in
-          String.split_on_chars ~on:['\"'; '\''] line |> List.existsi ~f:find_substring
+          try
+            let location =
+              let start_column = Str.search_forward ignore_location_regex line 0 in
+              let end_column = String.length line in
+              let start = { Location.line = line_index; column = start_column } in
+              let stop = { Location.line = line_index; column = end_column } in
+              { Location.start; stop }
+            in
+            let codes =
+              try
+                Str.search_forward ignore_code_regex line 0 |> ignore;
+                Str.matched_group 2 line
+                |> Str.split (Str.regexp "[^0-9]+")
+                |> List.map ~f:Int.of_string
+              with
+              | Not_found -> []
+            in
+            Some (Ignore.create ~ignored_line:line_index ~codes ~location ~kind)
+          with
+          | Not_found -> None
         in
         let ignore_lines =
           let kind =
             if
-              contains_outside_quotes ~substring:"pyre-ignore" line
-              && not (contains_outside_quotes ~substring:"pyre-ignore-all-errors" line)
+              String.is_substring ~substring:"pyre-ignore" line
+              && not (String.is_substring ~substring:"pyre-ignore-all-errors" line)
             then
               Some Ignore.PyreIgnore
-            else if contains_outside_quotes ~substring:"pyre-fixme" line then
+            else if String.is_substring ~substring:"pyre-fixme" line then
               Some Ignore.PyreFixme
-            else if contains_outside_quotes ~substring:"type: ignore" line then
+            else if String.is_substring ~substring:"type: ignore" line then
               Some Ignore.TypeIgnore
             else
               None
           in
           kind
-          >>| (fun kind -> create_ignore ~line ~kind)
+          >>= (fun kind -> create_ignore ~line ~kind)
           >>| (fun data -> Int.Map.add_multi ~key:line_index ~data ignore_lines)
           |> Option.value ~default:ignore_lines
         in
