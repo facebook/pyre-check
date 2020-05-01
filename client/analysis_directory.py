@@ -27,6 +27,7 @@ from .filesystem import (
     is_empty,
     is_parent,
     remove_if_exists,
+    translate_path,
     translate_paths,
 )
 from .socket_connection import SocketConnection, SocketException
@@ -95,7 +96,11 @@ class AnalysisDirectory:
         return self._path
 
     def get_filter_root(self) -> Set[str]:
-        return self._filter_paths or {self.get_root()}
+        current_project_directories = self._filter_paths or {self.get_root()}
+        return {
+            translate_path(os.getcwd(), filter_root)
+            for filter_root in current_project_directories
+        }
 
     def prepare(self) -> None:
         pass
@@ -193,7 +198,11 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         )
 
     def get_filter_root(self) -> Set[str]:
-        return self._filter_paths or {os.getcwd()}
+        current_project_directories = self._filter_paths or {os.getcwd()}
+        return {
+            translate_path(os.getcwd(), filter_root)
+            for filter_root in current_project_directories
+        }
 
     # Exposed for testing.
     def _resolve_source_directories(self) -> None:

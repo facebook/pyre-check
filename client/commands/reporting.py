@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import argparse
 import fnmatch
 import json
 import logging
@@ -16,7 +15,6 @@ from .. import log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from ..filesystem import translate_path
 from .command import TEXT, ClientException, Command, CommandArguments, Result
 
 
@@ -50,13 +48,7 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        current_project_directories = self._analysis_directory.get_filter_root()
-        # The server may not exist in the same directory, so use absolute paths.
-        directories_to_analyze = {
-            translate_path(os.getcwd(), filter_root)
-            for filter_root in current_project_directories
-        }
-        return directories_to_analyze
+        return self._analysis_directory.get_filter_root()
 
     @staticmethod
     def _load_errors_from_json(json_output: str) -> List[Dict[str, Any]]:
