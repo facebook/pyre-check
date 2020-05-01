@@ -30,7 +30,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
         self, actual: AnalysisDirectory, expected: AnalysisDirectory
     ) -> None:
         self.assertEqual(expected.get_root(), actual.get_root())
-        self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
+        self.assertEqual(expected.get_filter_roots(), actual.get_filter_roots())
 
     @patch.object(os.path, "isfile")
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
@@ -111,7 +111,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self, actual: AnalysisDirectory, expected: AnalysisDirectory
     ) -> None:
         self.assertEqual(expected.get_root(), actual.get_root())
-        self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
+        self.assertEqual(expected.get_filter_roots(), actual.get_filter_roots())
 
     def assertFileIsLinkedBothWays(
         self,
@@ -151,7 +151,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             relative_local_root=None,
         )
         self.assertEqual(
-            analysis_directory.get_filter_root(), {"/buck_root/pyre_root/local"}
+            analysis_directory.get_filter_roots(), {"/buck_root/pyre_root/local"}
         )
 
     @patch.object(os, "getcwd", return_value="/root")

@@ -95,7 +95,7 @@ class AnalysisDirectory:
     def get_root(self) -> str:
         return self._path
 
-    def get_filter_root(self) -> Set[str]:
+    def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {self.get_root()}
         return {
             translate_path(os.getcwd(), filter_root)
@@ -197,7 +197,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
 
-    def get_filter_root(self) -> Set[str]:
+    def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {os.getcwd()}
         buck_root = find_buck_root(os.getcwd())
         if buck_root is None:
