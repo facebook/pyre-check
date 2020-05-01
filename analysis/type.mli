@@ -481,6 +481,8 @@ val contains_final : t -> bool
 
 val primitive_name : t -> Identifier.t option
 
+val create_literal : Expression.expression -> t option
+
 val primitives : t -> t list
 
 val elements : t -> Primitive.t list

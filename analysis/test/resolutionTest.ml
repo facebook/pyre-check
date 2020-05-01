@@ -298,10 +298,16 @@ let test_resolve_exports context =
 
 let test_resolve_mutable_literals context =
   let resolution =
-    make_resolution ~context {|
+    make_resolution
+      ~context
+      {|
+      import enum
       class C: ...
       class D(C): ...
       class Q: ...
+      class MyEnum(enum.Enum):
+        ONE = 1
+        TWO = 2
     |}
   in
   let assert_resolve_mutable_literals ~source ~against expected_output =
@@ -546,6 +552,40 @@ let test_resolve_mutable_literals context =
     ~source:"{test.Q()}"
     ~against:"typing.AbstractSet[test.C]"
     "typing.AbstractSet[test.Q]";
+
+  (* Literal literals. *)
+  assert_resolve_mutable_literals
+    ~source:"['a']"
+    ~against:"typing.List[typing_extensions.Literal['a']]"
+    "typing.List[typing_extensions.Literal['a']]";
+  assert_resolve_mutable_literals
+    ~source:"['a']"
+    ~against:"typing.List[typing_extensions.Literal['b']]"
+    "typing.List[typing_extensions.Literal['a']]";
+  assert_resolve_mutable_literals
+    ~source:"[1]"
+    ~against:"typing.List[typing_extensions.Literal[1]]"
+    "typing.List[typing_extensions.Literal[1]]";
+  assert_resolve_mutable_literals
+    ~source:"[1]"
+    ~against:"typing.List[typing_extensions.Literal[2]]"
+    "typing.List[typing_extensions.Literal[1]]";
+  assert_resolve_mutable_literals
+    ~source:"[True]"
+    ~against:"typing.List[typing_extensions.Literal[True]]"
+    "typing.List[typing_extensions.Literal[True]]";
+  assert_resolve_mutable_literals
+    ~source:"[True]"
+    ~against:"typing.List[typing_extensions.Literal[False]]"
+    "typing.List[typing_extensions.Literal[True]]";
+  assert_resolve_mutable_literals
+    ~source:"test.MyEnum.ONE"
+    ~against:"typing_extensions.Literal[test.MyEnum.ONE]"
+    "typing_extensions.Literal[test.MyEnum.ONE]";
+  assert_resolve_mutable_literals
+    ~source:"test.MyEnum.TWO"
+    ~against:"typing_extensions.Literal[test.MyEnum.ONE]"
+    "typing_extensions.Literal[test.MyEnum.TWO]";
   ()
 
 

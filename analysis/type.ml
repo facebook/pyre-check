@@ -1625,6 +1625,27 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
   | _ -> None
 
 
+let create_literal = function
+  | Expression.True -> Some (Literal (Boolean true))
+  | Expression.False -> Some (Literal (Boolean false))
+  | Expression.Integer literal -> Some (Literal (Integer literal))
+  | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+      Some (Literal (String value))
+  | Expression.Name
+      (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
+      match name_to_reference base_name with
+      | Some reference ->
+          Some
+            (Literal
+               (EnumerationMember
+                  {
+                    enumeration_type = Primitive (Reference.show_sanitized reference);
+                    member_name = attribute;
+                  }))
+      | _ -> None )
+  | _ -> None
+
+
 type alias =
   | TypeAlias of t
   | VariableAlias of t Record.Variable.record
@@ -1980,20 +2001,11 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] -> Some [argument]
           | _ -> None
         in
-        let parse = function
-          | Expression.True -> Some (Literal (Boolean true))
-          | Expression.False -> Some (Literal (Boolean false))
-          | Expression.Integer literal -> Some (literal_integer literal)
-          | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
-              Some (literal_string value)
-          | Expression.Name (Attribute { base; attribute; _ }) -> (
-              match create_logic base with
-              | Primitive _ as enumeration_type ->
-                  Some (Literal (EnumerationMember { enumeration_type; member_name = attribute }))
-              | _ -> None )
-          | _ -> None
-        in
-        arguments >>| List.map ~f:parse >>= Option.all >>| union |> Option.value ~default:Top
+        arguments
+        >>| List.map ~f:create_literal
+        >>= Option.all
+        >>| union
+        |> Option.value ~default:Top
     | Call { callee = { Node.value = callee; _ }; _ } when is_typing_callable callee ->
         parse_callable expression
     | Call

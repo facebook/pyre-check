@@ -450,6 +450,31 @@ module WeakenMutableLiterals = struct
       when comparator ~left:actual_key ~right:expected_key
            && comparator ~left:actual_value ~right:expected_value ->
         make_weakened_type expected
+    | ( Some
+          {
+            Node.value =
+              Expression.String { StringLiteral.kind = StringLiteral.String; value = _ } as
+              expression;
+            _;
+          },
+        Type.Primitive "str",
+        Type.Literal (Type.String _) )
+    | ( Some { Node.value = Expression.Integer _ as expression; _ },
+        Type.Primitive "int",
+        Type.Literal (Type.Integer _) )
+    | ( Some { Node.value = (Expression.True | Expression.False) as expression; _ },
+        Type.Primitive "bool",
+        Type.Literal (Type.Boolean _) )
+    | ( Some { Node.value = Expression.Name (Attribute _) as expression; _ },
+        Type.Primitive _,
+        Type.Literal (Type.EnumerationMember _) ) -> (
+        match Type.create_literal expression with
+        | Some (Type.Literal _ as actual_literal) ->
+            if Type.equal actual_literal expected then
+              make_weakened_type expected
+            else
+              make_weakened_type actual_literal
+        | _ -> make_weakened_type resolved )
     | _ -> make_weakened_type resolved
 
 
