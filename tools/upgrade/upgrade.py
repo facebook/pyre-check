@@ -13,10 +13,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from ...client.commands import ExitCode
-from .codemods import (
-    run_missing_global_annotations,
-    run_missing_overridden_return_annotations,
-)
+from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
+from .command import Command
 from .errors import Errors, errors_from_stdin, errors_from_targets, fix, json_to_errors
 from .filesystem import (
     LocalMode,
@@ -27,31 +25,10 @@ from .filesystem import (
     remove_non_pyre_ignores,
 )
 from .postprocess import apply_lint, get_lint_status
+from .version_control import VersionControl
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-class VersionControl:
-    LINTERS_TO_SKIP: List[str] = []
-
-    @staticmethod
-    def get_changed_files() -> Optional[List[str]]:
-        return None
-
-    @staticmethod
-    def commit_message(title: str, summary_override: Optional[str] = None) -> str:
-        return ""
-
-    @staticmethod
-    def add_paths(paths: List[Path]) -> None:
-        pass
-
-    @staticmethod
-    def submit_changes(
-        submit: bool, message: str, ignore_failures: bool = False
-    ) -> None:
-        pass
 
 
 class Configuration:
@@ -259,119 +236,128 @@ def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
         return configuration.get_errors(only_fix_error_code)
 
 
-def run_strict_default(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    project_configuration = Configuration.find_project_configuration()
-    if project_configuration is None:
-        LOG.info("No project configuration found for the given directory.")
-        return
-    local_configuration = arguments.local_configuration
-    if local_configuration:
-        configuration_path = local_configuration / ".pyre_configuration.local"
-    else:
-        configuration_path = project_configuration
-    with open(configuration_path) as configuration_file:
-        configuration = Configuration(configuration_path, json.load(configuration_file))
-        LOG.info("Processing %s", configuration.get_directory())
-        configuration.add_strict()
-        configuration.write()
-        errors = configuration.get_errors()
-
-        if len(errors) == 0:
+class StrictDefault(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        project_configuration = Configuration.find_project_configuration()
+        if project_configuration is None:
+            LOG.info("No project configuration found for the given directory.")
             return
-        for filename, _ in errors:
-            add_local_mode(filename, LocalMode.UNSAFE)
-
-        if arguments.lint:
-            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
-            if lint_status:
-                apply_lint(version_control.LINTERS_TO_SKIP)
-
-
-def run_global_version_update(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    global_configuration = Configuration.find_project_configuration()
-    if global_configuration is None:
-        LOG.error("No global configuration file found.")
-        return
-
-    with open(global_configuration, "r") as global_configuration_file:
-        configuration = json.load(global_configuration_file)
-        if "version" not in configuration:
-            LOG.error(
-                "Global configuration at %s has no version field.", global_configuration
-            )
-            return
-
-        old_version = configuration["version"]
-
-    # Rewrite.
-    with open(global_configuration, "w") as global_configuration_file:
-        configuration["version"] = arguments.hash
-
-        # This will sort the keys in the configuration - we won't be clobbering comments
-        # since Python's JSON parser disallows comments either way.
-        json.dump(configuration, global_configuration_file, sort_keys=True, indent=2)
-        global_configuration_file.write("\n")
-
-    paths = arguments.paths
-    configuration_paths = (
-        [path / ".pyre_configuration.local" for path in paths]
-        if paths
-        else [
-            configuration.get_path()
-            for configuration in Configuration.gather_local_configurations()
-            if configuration.is_local
-        ]
-    )
-    for configuration_path in configuration_paths:
-        if "mock_repository" in str(configuration_path):
-            # Skip local configurations we have for testing.
-            continue
+        local_configuration = arguments.local_configuration
+        if local_configuration:
+            configuration_path = local_configuration / ".pyre_configuration.local"
+        else:
+            configuration_path = project_configuration
         with open(configuration_path) as configuration_file:
-            contents = json.load(configuration_file)
-            if "version" in contents:
-                LOG.info(
-                    "Skipping %s as it already has a custom version field.",
-                    configuration_path,
-                )
-                continue
-            if contents.get("differential"):
-                LOG.info(
-                    "Skipping differential configuration at `%s`", configuration_path
-                )
-                continue
-            contents["version"] = old_version
+            configuration = Configuration(
+                configuration_path, json.load(configuration_file)
+            )
+            LOG.info("Processing %s", configuration.get_directory())
+            configuration.add_strict()
+            configuration.write()
+            errors = configuration.get_errors()
 
-        with open(configuration_path, "w") as configuration_file:
-            json.dump(contents, configuration_file, sort_keys=True, indent=2)
-            configuration_file.write("\n")
+            if len(errors) == 0:
+                return
+            for filename, _ in errors:
+                add_local_mode(filename, LocalMode.UNSAFE)
 
-    try:
-        commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
-        version_control.submit_changes(
-            arguments.submit,
-            version_control.commit_message(
-                "Update pyre global configuration version",
-                summary_override=commit_summary,
-            ),
-            ignore_failures=True,
+            if arguments.lint:
+                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+                if lint_status:
+                    apply_lint(version_control.LINTERS_TO_SKIP)
+
+
+class GlobalVersionUpdate(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        global_configuration = Configuration.find_project_configuration()
+        if global_configuration is None:
+            LOG.error("No global configuration file found.")
+            return
+
+        with open(global_configuration, "r") as global_configuration_file:
+            configuration = json.load(global_configuration_file)
+            if "version" not in configuration:
+                LOG.error(
+                    "Global configuration at %s has no version field.",
+                    global_configuration,
+                )
+                return
+
+            old_version = configuration["version"]
+
+        # Rewrite.
+        with open(global_configuration, "w") as global_configuration_file:
+            configuration["version"] = arguments.hash
+
+            # This will sort the keys in the configuration - we won't be clobbering
+            # comments since Python's JSON parser disallows comments either way.
+            json.dump(
+                configuration, global_configuration_file, sort_keys=True, indent=2
+            )
+            global_configuration_file.write("\n")
+
+        paths = arguments.paths
+        configuration_paths = (
+            [path / ".pyre_configuration.local" for path in paths]
+            if paths
+            else [
+                configuration.get_path()
+                for configuration in Configuration.gather_local_configurations()
+                if configuration.is_local
+            ]
         )
-    except subprocess.CalledProcessError:
-        LOG.info("Error while running hg.")
+        for configuration_path in configuration_paths:
+            if "mock_repository" in str(configuration_path):
+                # Skip local configurations we have for testing.
+                continue
+            with open(configuration_path) as configuration_file:
+                contents = json.load(configuration_file)
+                if "version" in contents:
+                    LOG.info(
+                        "Skipping %s as it already has a custom version field.",
+                        configuration_path,
+                    )
+                    continue
+                if contents.get("differential"):
+                    LOG.info(
+                        "Skipping differential configuration at `%s`",
+                        configuration_path,
+                    )
+                    continue
+                contents["version"] = old_version
+
+            with open(configuration_path, "w") as configuration_file:
+                json.dump(contents, configuration_file, sort_keys=True, indent=2)
+                configuration_file.write("\n")
+
+        try:
+            commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
+            version_control.submit_changes(
+                arguments.submit,
+                version_control.commit_message(
+                    "Update pyre global configuration version",
+                    summary_override=commit_summary,
+                ),
+                ignore_failures=True,
+            )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
 
 
-def run_upgrade_all(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    with open(arguments.sandcastle) as sandcastle_file:
-        sandcastle_command = json.load(sandcastle_file)
-    if arguments.hash:
-        sandcastle_command["args"]["hash"] = arguments.hash
-    command = ["scutil", "create"]
-    subprocess.run(command, input=json.dumps(sandcastle_command).encode())
+class UpgradeAll(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        with open(arguments.sandcastle) as sandcastle_file:
+            sandcastle_command = json.load(sandcastle_file)
+        if arguments.hash:
+            sandcastle_command["args"]["hash"] = arguments.hash
+        command = ["scutil", "create"]
+        subprocess.run(command, input=json.dumps(sandcastle_command).encode())
 
 
 # Exposed for testing.
@@ -430,69 +416,76 @@ def _upgrade_project(
         LOG.info("Error while running hg.")
 
 
-def run_fixme(arguments: argparse.Namespace, version_control: VersionControl) -> None:
-    # Suppress errors in project with no local configurations.
-    if arguments.run:
-        errors = errors_from_run(arguments.only_fix_error_code)
-        fix(
-            errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-            arguments.unsafe,
-        )
+class Fixme(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        # Suppress errors in project with no local configurations.
+        if arguments.run:
+            errors = errors_from_run(arguments.only_fix_error_code)
+            fix(
+                errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+                arguments.unsafe,
+            )
 
-        if arguments.lint:
-            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
-            if lint_status:
-                apply_lint(version_control.LINTERS_TO_SKIP)
-                errors = errors_from_run(arguments.only_fix_error_code)
-                fix(
-                    errors,
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
-                    arguments.unsafe,
-                )
-    else:
-        errors = errors_from_stdin(arguments.only_fix_error_code)
-        fix(
-            errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-            arguments.unsafe,
-        )
-
-
-def run_fixme_single(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    project_configuration = Configuration.find_project_configuration()
-    if project_configuration is None:
-        LOG.info("No project configuration found for the given directory.")
-        return
-    configuration_path = arguments.path / ".pyre_configuration.local"
-    with open(configuration_path) as configuration_file:
-        configuration = Configuration(configuration_path, json.load(configuration_file))
-        _upgrade_project(
-            arguments, configuration, project_configuration.parent, version_control
-        )
+            if arguments.lint:
+                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+                if lint_status:
+                    apply_lint(version_control.LINTERS_TO_SKIP)
+                    errors = errors_from_run(arguments.only_fix_error_code)
+                    fix(
+                        errors,
+                        arguments.comment,
+                        arguments.max_line_length,
+                        arguments.truncate,
+                        arguments.unsafe,
+                    )
+        else:
+            errors = errors_from_stdin(arguments.only_fix_error_code)
+            fix(
+                errors,
+                arguments.comment,
+                arguments.max_line_length,
+                arguments.truncate,
+                arguments.unsafe,
+            )
 
 
-def run_fixme_all(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    project_configuration = Configuration.find_project_configuration()
-    if project_configuration is None:
-        LOG.info("No project configuration found for the current directory.")
-        return
+class FixmeSingle(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        project_configuration = Configuration.find_project_configuration()
+        if project_configuration is None:
+            LOG.info("No project configuration found for the given directory.")
+            return
+        configuration_path = arguments.path / ".pyre_configuration.local"
+        with open(configuration_path) as configuration_file:
+            configuration = Configuration(
+                configuration_path, json.load(configuration_file)
+            )
+            _upgrade_project(
+                arguments, configuration, project_configuration.parent, version_control
+            )
 
-    configurations = Configuration.gather_local_configurations()
-    for configuration in configurations:
-        _upgrade_project(
-            arguments, configuration, project_configuration.parent, version_control
-        )
+
+class FixmeAll(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        project_configuration = Configuration.find_project_configuration()
+        if project_configuration is None:
+            LOG.info("No project configuration found for the current directory.")
+            return
+
+        configurations = Configuration.gather_local_configurations()
+        for configuration in configurations:
+            _upgrade_project(
+                arguments, configuration, project_configuration.parent, version_control
+            )
 
 
 def run_fixme_targets_file(
@@ -524,213 +517,229 @@ def run_fixme_targets_file(
         fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
 
 
-def run_fixme_targets(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    # Currently does not support sandcastle integration, or setting the global hash
-    # at the same time. As-is, run this locally after the global hash is updated.
-    subdirectory = arguments.subdirectory
-    subdirectory = Path(subdirectory) if subdirectory else None
-    project_configuration = Configuration.find_project_configuration(subdirectory)
-    if project_configuration is None:
-        LOG.error("No project configuration found for the given directory.")
-        return
-    project_directory = project_configuration.parent
-    search_root = subdirectory if subdirectory else project_directory
+class FixmeTargets(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        # Currently does not support sandcastle integration, or setting the global hash
+        # at the same time. As-is, run this locally after the global hash is updated.
+        subdirectory = arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else None
+        project_configuration = Configuration.find_project_configuration(subdirectory)
+        if project_configuration is None:
+            LOG.error("No project configuration found for the given directory.")
+            return
+        project_directory = project_configuration.parent
+        search_root = subdirectory if subdirectory else project_directory
 
-    all_targets = find_targets(search_root)
-    if not all_targets:
-        return
-    for path, target_names in all_targets.items():
-        run_fixme_targets_file(
-            arguments, project_directory, path, target_names, version_control
-        )
-    try:
-        if not arguments.no_commit:
-            version_control.submit_changes(
-                arguments.submit,
-                version_control.commit_message(
-                    "Upgrade pyre version for {} (TARGETS)".format(search_root)
-                ),
-            )
-    except subprocess.CalledProcessError:
-        LOG.info("Error while running hg.")
-
-
-def run_migrate_targets(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    subdirectory = arguments.subdirectory
-    subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-    LOG.info("Migrating typecheck targets in {}".format(subdirectory))
-
-    # Remove explicit check types options.
-    targets_files = [
-        str(subdirectory / path)
-        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/TARGETS"])
-    ]
-    LOG.info("...found {} targets files".format(len(targets_files)))
-    remove_check_types_command = [
-        "sed",
-        "-i",
-        r'/check_types_options \?= \?"mypy",/d',
-    ] + targets_files
-    remove_options_command = [
-        "sed",
-        "-i",
-        r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
-    ] + targets_files
-    subprocess.check_output(remove_check_types_command)
-    subprocess.check_output(remove_options_command)
-
-    remove_non_pyre_ignores(subdirectory)
-    run_fixme_targets(arguments, version_control)
-
-
-def run_targets_to_configuration(
-    arguments: argparse.Namespace, version_control: VersionControl
-) -> None:
-    # TODO(T62926437): Basic integration testing.
-    subdirectory = arguments.subdirectory
-    subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-    LOG.info("Converting typecheck targets to pyre configuration in `%s`", subdirectory)
-
-    # Create or amend to existing pyre configuration
-    all_targets = find_targets(subdirectory)
-    if not all_targets:
-        LOG.warning("No configuration created because no targets found.")
-        return
-    targets_files = [
-        str(subdirectory / path)
-        for path in get_filesystem().list(str(subdirectory), patterns=[r"**/TARGETS"])
-    ]
-    if arguments.glob:
-        new_targets = ["//" + str(subdirectory) + "/..."]
-    else:
-        new_targets = []
+        all_targets = find_targets(search_root)
+        if not all_targets:
+            return
         for path, target_names in all_targets.items():
-            new_targets += ["//" + path + ":" + name for name in target_names]
-    project_configuration = Configuration.find_project_configuration(subdirectory)
-    local_configuration = Configuration.find_local_configuration(subdirectory)
-    if local_configuration:
-        LOG.warning(
-            "Pyre project already exists at %s.\n\
-            Amending targets to existing configuration.",
-            local_configuration,
+            run_fixme_targets_file(
+                arguments, project_directory, path, target_names, version_control
+            )
+        try:
+            if not arguments.no_commit:
+                version_control.submit_changes(
+                    arguments.submit,
+                    version_control.commit_message(
+                        "Upgrade pyre version for {} (TARGETS)".format(search_root)
+                    ),
+                )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
+
+
+class MigrateTargets(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        subdirectory = arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+        LOG.info("Migrating typecheck targets in {}".format(subdirectory))
+
+        # Remove explicit check types options.
+        targets_files = [
+            str(subdirectory / path)
+            for path in get_filesystem().list(
+                str(subdirectory), patterns=[r"**/TARGETS"]
+            )
+        ]
+        LOG.info("...found {} targets files".format(len(targets_files)))
+        remove_check_types_command = [
+            "sed",
+            "-i",
+            r'/check_types_options \?= \?"mypy",/d',
+        ] + targets_files
+        remove_options_command = [
+            "sed",
+            "-i",
+            r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
+        ] + targets_files
+        subprocess.check_output(remove_check_types_command)
+        subprocess.check_output(remove_options_command)
+
+        remove_non_pyre_ignores(subdirectory)
+        FixmeTargets().run(arguments, version_control)
+
+
+class TargetsToConfiguration(Command):
+    def run(
+        self, arguments: argparse.Namespace, version_control: VersionControl
+    ) -> None:
+        # TODO(T62926437): Basic integration testing.
+        subdirectory = arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+        LOG.info(
+            "Converting typecheck targets to pyre configuration in `%s`", subdirectory
         )
-        with open(local_configuration) as configuration_file:
-            configuration = Configuration(
-                local_configuration, json.load(configuration_file)
+
+        # Create or amend to existing pyre configuration
+        all_targets = find_targets(subdirectory)
+        if not all_targets:
+            LOG.warning("No configuration created because no targets found.")
+            return
+        targets_files = [
+            str(subdirectory / path)
+            for path in get_filesystem().list(
+                str(subdirectory), patterns=[r"**/TARGETS"]
             )
-            configuration.add_targets(new_targets)
-            configuration.deduplicate_targets()
-            configuration.write()
-    elif project_configuration:
-        LOG.info("Found project configuration at %s.", project_configuration)
-        with open(project_configuration) as configuration_file:
-            configuration = Configuration(
-                project_configuration, json.load(configuration_file)
+        ]
+        if arguments.glob:
+            new_targets = ["//" + str(subdirectory) + "/..."]
+        else:
+            new_targets = []
+            for path, target_names in all_targets.items():
+                new_targets += ["//" + path + ":" + name for name in target_names]
+        project_configuration = Configuration.find_project_configuration(subdirectory)
+        local_configuration = Configuration.find_local_configuration(subdirectory)
+        if local_configuration:
+            LOG.warning(
+                "Pyre project already exists at %s.\n\
+                Amending targets to existing configuration.",
+                local_configuration,
             )
-            if (
-                configuration.targets
-                or configuration.source_directories
-                or configuration.get_path() == subdirectory / ".pyre_configuration"
-            ):
-                LOG.info("Amending targets to existing project configuration.")
+            with open(local_configuration) as configuration_file:
+                configuration = Configuration(
+                    local_configuration, json.load(configuration_file)
+                )
                 configuration.add_targets(new_targets)
                 configuration.deduplicate_targets()
                 configuration.write()
-            else:
-                local_configuration_path = subdirectory / ".pyre_configuration.local"
-                LOG.info(
-                    "Creating local configuration at %s.", local_configuration_path
-                )
-                configuration_contents = {"targets": new_targets, "strict": True}
-                # Heuristic: if all targets with type checked targets are setting
-                # a target to be strictly checked, let's turn on default strict.
-                for targets_file in targets_files:
-                    regex_patterns = [
-                        r"check_types_options \?=.*strict.*",
-                        r"typing_options \?=.*strict.*",
-                    ]
-                    result = subprocess.run(
-                        ["grep", "-x", r"\|".join(regex_patterns), targets_file]
-                    )
-                    if result.returncode != 0:
-                        configuration_contents["strict"] = False
-                        break
+        elif project_configuration:
+            LOG.info("Found project configuration at %s.", project_configuration)
+            with open(project_configuration) as configuration_file:
                 configuration = Configuration(
-                    local_configuration_path, configuration_contents
+                    project_configuration, json.load(configuration_file)
                 )
-                configuration.write()
-
-                # Add newly created configuration files to version control
-                version_control.add_paths([local_configuration_path])
-    else:
-        LOG.warning(
-            "Could not find a project configuration with binary and typeshed \
-            locations.\nPlease run `pyre init` before attempting to migrate."
-        )
-        return
-
-    # Remove all type-related target settings
-    LOG.info("Removing typing options from %s targets files", len(targets_files))
-    typing_options_regex = [
-        r"typing \?=.*",
-        r"check_types \?=.*",
-        r"check_types_options \?=.*",
-        r"typing_options \?=.*",
-    ]
-    remove_typing_fields_command = [
-        "sed",
-        "-i",
-        "/" + r"\|".join(typing_options_regex) + "/d",
-    ] + targets_files
-    subprocess.run(remove_typing_fields_command)
-
-    remove_non_pyre_ignores(subdirectory)
-
-    all_errors = configuration.get_errors()
-    error_threshold = arguments.fixme_threshold
-
-    for path, errors in all_errors:
-        errors = list(errors)
-        error_count = len(errors)
-        if error_threshold and error_count > error_threshold:
-            LOG.info(
-                "%d errors found in `%s`. Adding file-level ignore.", error_count, path
-            )
-            add_local_mode(path, LocalMode.IGNORE)
-        else:
-            fix(
-                Errors(errors),
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            )
-
-    # Lint and re-run pyre once to resolve most formatting issues
-    if arguments.lint:
-        lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
-        if lint_status:
-            apply_lint(version_control.LINTERS_TO_SKIP)
-            errors = configuration.get_errors(should_clean=False)
-            fix(
-                errors, arguments.comment, arguments.max_line_length, arguments.truncate
-            )
-
-    try:
-        if not arguments.no_commit:
-            version_control.submit_changes(
-                arguments.submit,
-                version_control.commit_message(
-                    "Convert type check targets in {} to use configuration".format(
-                        subdirectory
+                if (
+                    configuration.targets
+                    or configuration.source_directories
+                    or configuration.get_path() == subdirectory / ".pyre_configuration"
+                ):
+                    LOG.info("Amending targets to existing project configuration.")
+                    configuration.add_targets(new_targets)
+                    configuration.deduplicate_targets()
+                    configuration.write()
+                else:
+                    local_configuration_path = (
+                        subdirectory / ".pyre_configuration.local"
                     )
-                ),
+                    LOG.info(
+                        "Creating local configuration at %s.", local_configuration_path
+                    )
+                    configuration_contents = {"targets": new_targets, "strict": True}
+                    # Heuristic: if all targets with type checked targets are setting
+                    # a target to be strictly checked, let's turn on default strict.
+                    for targets_file in targets_files:
+                        regex_patterns = [
+                            r"check_types_options \?=.*strict.*",
+                            r"typing_options \?=.*strict.*",
+                        ]
+                        result = subprocess.run(
+                            ["grep", "-x", r"\|".join(regex_patterns), targets_file]
+                        )
+                        if result.returncode != 0:
+                            configuration_contents["strict"] = False
+                            break
+                    configuration = Configuration(
+                        local_configuration_path, configuration_contents
+                    )
+                    configuration.write()
+
+                    # Add newly created configuration files to version control
+                    version_control.add_paths([local_configuration_path])
+        else:
+            LOG.warning(
+                "Could not find a project configuration with binary and typeshed \
+                locations.\nPlease run `pyre init` before attempting to migrate."
             )
-    except subprocess.CalledProcessError:
-        LOG.info("Error while running hg.")
+            return
+
+        # Remove all type-related target settings
+        LOG.info("Removing typing options from %s targets files", len(targets_files))
+        typing_options_regex = [
+            r"typing \?=.*",
+            r"check_types \?=.*",
+            r"check_types_options \?=.*",
+            r"typing_options \?=.*",
+        ]
+        remove_typing_fields_command = [
+            "sed",
+            "-i",
+            "/" + r"\|".join(typing_options_regex) + "/d",
+        ] + targets_files
+        subprocess.run(remove_typing_fields_command)
+
+        remove_non_pyre_ignores(subdirectory)
+
+        all_errors = configuration.get_errors()
+        error_threshold = arguments.fixme_threshold
+
+        for path, errors in all_errors:
+            errors = list(errors)
+            error_count = len(errors)
+            if error_threshold and error_count > error_threshold:
+                LOG.info(
+                    "%d errors found in `%s`. Adding file-level ignore.",
+                    error_count,
+                    path,
+                )
+                add_local_mode(path, LocalMode.IGNORE)
+            else:
+                fix(
+                    Errors(errors),
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
+
+        # Lint and re-run pyre once to resolve most formatting issues
+        if arguments.lint:
+            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+            if lint_status:
+                apply_lint(version_control.LINTERS_TO_SKIP)
+                errors = configuration.get_errors(should_clean=False)
+                fix(
+                    errors,
+                    arguments.comment,
+                    arguments.max_line_length,
+                    arguments.truncate,
+                )
+
+        try:
+            if not arguments.no_commit:
+                version_control.submit_changes(
+                    arguments.submit,
+                    version_control.commit_message(
+                        "Convert type check targets in {} to use configuration".format(
+                            subdirectory
+                        )
+                    ),
+                )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
 
 
 def run(version_control: VersionControl) -> None:
@@ -763,18 +772,18 @@ def run(version_control: VersionControl) -> None:
         help="Add annotations according to errors inputted through stdin.",
     )
     missing_overridden_return_annotations.set_defaults(
-        function=run_missing_overridden_return_annotations
+        command=MissingOverrideReturnAnnotations
     )
 
     missing_global_annotations = commands.add_parser(
         "missing-global-annotations",
         help="Add annotations according to errors inputted through stdin.",
     )
-    missing_global_annotations.set_defaults(function=run_missing_global_annotations)
+    missing_global_annotations.set_defaults(command=MissingGlobalAnnotations)
 
     # Subcommand: Change default pyre mode to strict and adjust module headers.
     strict_default = commands.add_parser("strict-default")
-    strict_default.set_defaults(function=run_strict_default)
+    strict_default.set_defaults(command=StrictDefault)
     strict_default.add_argument(
         "-l",
         "--local-configuration",
@@ -792,7 +801,7 @@ def run(version_control: VersionControl) -> None:
     # Subcommand: Set global configuration to given hash, then upgrade and suppress
     # errors in all local configurations.
     upgrade_all = commands.add_parser("upgrade-all")
-    upgrade_all.set_defaults(function=run_upgrade_all)
+    upgrade_all.set_defaults(command=UpgradeAll)
     upgrade_all.add_argument("hash", help="Hash of new Pyre version")
     upgrade_all.add_argument(
         "-s",
@@ -805,7 +814,7 @@ def run(version_control: VersionControl) -> None:
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
-    update_global_version.set_defaults(function=run_global_version_update)
+    update_global_version.set_defaults(command=GlobalVersionUpdate)
     update_global_version.add_argument("hash", help="Hash of new Pyre version")
     update_global_version.add_argument(
         "--paths",
@@ -820,7 +829,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
-    fixme.set_defaults(function=run_fixme)
+    fixme.set_defaults(command=Fixme)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
     fixme.add_argument("--run", action="store_true")
     fixme.add_argument(
@@ -830,7 +839,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Fixme all errors for a single project.
     fixme_single = commands.add_parser("fixme-single")
-    fixme_single.set_defaults(function=run_fixme_single)
+    fixme_single.set_defaults(command=FixmeSingle)
     fixme_single.add_argument(
         "path", help="Path to project root with local configuration", type=path_exists
     )
@@ -850,7 +859,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
-    fixme_all.set_defaults(function=run_fixme_all)
+    fixme_all.set_defaults(command=FixmeAll)
     fixme_all.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
@@ -865,7 +874,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Fixme all errors in targets running type checking
     fixme_targets = commands.add_parser("fixme-targets")
-    fixme_targets.set_defaults(function=run_fixme_targets)
+    fixme_targets.set_defaults(command=FixmeTargets)
     fixme_targets.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
@@ -880,7 +889,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Migrate and fixme errors in targets running type checking
     migrate_targets = commands.add_parser("migrate-targets")
-    migrate_targets.set_defaults(function=run_migrate_targets)
+    migrate_targets.set_defaults(command=MigrateTargets)
     migrate_targets.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
@@ -897,7 +906,7 @@ def run(version_control: VersionControl) -> None:
 
     # Subcommand: Remove targets integration and replace with configuration
     targets_to_configuration = commands.add_parser("targets-to-configuration")
-    targets_to_configuration.set_defaults(function=run_targets_to_configuration)
+    targets_to_configuration.set_defaults(command=TargetsToConfiguration)
     targets_to_configuration.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
@@ -929,7 +938,7 @@ def run(version_control: VersionControl) -> None:
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
         arguments.run = False
-        arguments.function = run_fixme
+        arguments.command = Fixme
 
     # Initialize values that may be null-checked, but do not exist as a flag
     # for all subcommands
@@ -948,7 +957,7 @@ def run(version_control: VersionControl) -> None:
 
     try:
         exit_code = ExitCode.SUCCESS
-        arguments.function(arguments, version_control)
+        arguments.command().run(arguments, version_control)
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
