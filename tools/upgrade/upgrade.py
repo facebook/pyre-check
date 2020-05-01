@@ -237,9 +237,7 @@ def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
 
 
 class StrictDefault(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
@@ -264,15 +262,13 @@ class StrictDefault(Command):
                 add_local_mode(filename, LocalMode.UNSAFE)
 
             if arguments.lint:
-                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+                lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
                 if lint_status:
-                    apply_lint(version_control.LINTERS_TO_SKIP)
+                    apply_lint(self._version_control.LINTERS_TO_SKIP)
 
 
 class GlobalVersionUpdate(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         global_configuration = Configuration.find_project_configuration()
         if global_configuration is None:
             LOG.error("No global configuration file found.")
@@ -336,9 +332,9 @@ class GlobalVersionUpdate(Command):
 
         try:
             commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
-            version_control.submit_changes(
+            self._version_control.submit_changes(
                 arguments.submit,
-                version_control.commit_message(
+                self._version_control.commit_message(
                     "Update pyre global configuration version",
                     summary_override=commit_summary,
                 ),
@@ -349,9 +345,7 @@ class GlobalVersionUpdate(Command):
 
 
 class UpgradeAll(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         with open(arguments.sandcastle) as sandcastle_file:
             sandcastle_command = json.load(sandcastle_file)
         if arguments.hash:
@@ -417,9 +411,7 @@ def _upgrade_project(
 
 
 class Fixme(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         # Suppress errors in project with no local configurations.
         if arguments.run:
             errors = errors_from_run(arguments.only_fix_error_code)
@@ -432,9 +424,9 @@ class Fixme(Command):
             )
 
             if arguments.lint:
-                lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+                lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
                 if lint_status:
-                    apply_lint(version_control.LINTERS_TO_SKIP)
+                    apply_lint(self._version_control.LINTERS_TO_SKIP)
                     errors = errors_from_run(arguments.only_fix_error_code)
                     fix(
                         errors,
@@ -455,9 +447,7 @@ class Fixme(Command):
 
 
 class FixmeSingle(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
@@ -468,14 +458,15 @@ class FixmeSingle(Command):
                 configuration_path, json.load(configuration_file)
             )
             _upgrade_project(
-                arguments, configuration, project_configuration.parent, version_control
+                arguments,
+                configuration,
+                project_configuration.parent,
+                self._version_control,
             )
 
 
 class FixmeAll(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the current directory.")
@@ -484,7 +475,10 @@ class FixmeAll(Command):
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
             _upgrade_project(
-                arguments, configuration, project_configuration.parent, version_control
+                arguments,
+                configuration,
+                project_configuration.parent,
+                self._version_control,
             )
 
 
@@ -518,9 +512,7 @@ def run_fixme_targets_file(
 
 
 class FixmeTargets(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         # Currently does not support sandcastle integration, or setting the global hash
         # at the same time. As-is, run this locally after the global hash is updated.
         subdirectory = arguments.subdirectory
@@ -537,13 +529,13 @@ class FixmeTargets(Command):
             return
         for path, target_names in all_targets.items():
             run_fixme_targets_file(
-                arguments, project_directory, path, target_names, version_control
+                arguments, project_directory, path, target_names, self._version_control
             )
         try:
             if not arguments.no_commit:
-                version_control.submit_changes(
+                self._version_control.submit_changes(
                     arguments.submit,
-                    version_control.commit_message(
+                    self._version_control.commit_message(
                         "Upgrade pyre version for {} (TARGETS)".format(search_root)
                     ),
                 )
@@ -552,9 +544,7 @@ class FixmeTargets(Command):
 
 
 class MigrateTargets(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         subdirectory = arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
         LOG.info("Migrating typecheck targets in {}".format(subdirectory))
@@ -581,13 +571,11 @@ class MigrateTargets(Command):
         subprocess.check_output(remove_options_command)
 
         remove_non_pyre_ignores(subdirectory)
-        FixmeTargets().run(arguments, version_control)
+        FixmeTargets(self._version_control).run(arguments)
 
 
 class TargetsToConfiguration(Command):
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def run(self, arguments: argparse.Namespace) -> None:
         # TODO(T62926437): Basic integration testing.
         subdirectory = arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
@@ -669,7 +657,7 @@ class TargetsToConfiguration(Command):
                     configuration.write()
 
                     # Add newly created configuration files to version control
-                    version_control.add_paths([local_configuration_path])
+                    self._version_control.add_paths([local_configuration_path])
         else:
             LOG.warning(
                 "Could not find a project configuration with binary and typeshed \
@@ -717,9 +705,9 @@ class TargetsToConfiguration(Command):
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+            lint_status = get_lint_status(self._version_control.LINTERS_TO_SKIP)
             if lint_status:
-                apply_lint(version_control.LINTERS_TO_SKIP)
+                apply_lint(self._version_control.LINTERS_TO_SKIP)
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,
@@ -730,9 +718,9 @@ class TargetsToConfiguration(Command):
 
         try:
             if not arguments.no_commit:
-                version_control.submit_changes(
+                self._version_control.submit_changes(
                     arguments.submit,
-                    version_control.commit_message(
+                    self._version_control.commit_message(
                         "Convert type check targets in {} to use configuration".format(
                             subdirectory
                         )
@@ -957,7 +945,7 @@ def run(version_control: VersionControl) -> None:
 
     try:
         exit_code = ExitCode.SUCCESS
-        arguments.command().run(arguments, version_control)
+        arguments.command(version_control).run(arguments)
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())

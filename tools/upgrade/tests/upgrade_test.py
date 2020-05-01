@@ -67,7 +67,7 @@ class UpgradeAllTest(unittest.TestCase):
                     Path("b/.pyre_configuration.local"), {"version": 123}
                 ),
             ]
-            UpgradeAll().run(arguments, VERSION_CONTROL)
+            UpgradeAll(VERSION_CONTROL).run(arguments)
             find_configuration.assert_not_called()
             run.assert_called_once_with(
                 ["scutil", "create"], input=generate_sandcastle_command("abc")
@@ -81,7 +81,7 @@ class UpgradeAllTest(unittest.TestCase):
                     Path("local/.pyre_configuration.local"), {"version": 123}
                 )
             ]
-            UpgradeAll().run(arguments, VERSION_CONTROL)
+            UpgradeAll(VERSION_CONTROL).run(arguments)
             find_configuration.assert_not_called()
             run.assert_called_once_with(
                 ["scutil", "create"], input=generate_sandcastle_command(None)
@@ -226,7 +226,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = []
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         fix.assert_not_called()
         submit_changes.assert_not_called()
 
@@ -362,7 +362,7 @@ class FixmeAllTest(unittest.TestCase):
             )
         ]
         get_errors.return_value = []
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         run_global_version_update.assert_not_called()
         fix.assert_not_called()
         submit_changes.assert_called_once_with(
@@ -385,7 +385,7 @@ class FixmeAllTest(unittest.TestCase):
             }
         ]
         get_errors.return_value = pyre_errors
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         run_global_version_update.assert_not_called()
         fix.assert_called_once_with(
             pyre_errors,
@@ -403,14 +403,14 @@ class FixmeAllTest(unittest.TestCase):
         gather.return_value = [
             upgrade.Configuration(Path("local/.pyre_configuration.local"), {})
         ]
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         fix.assert_not_called()
         submit_changes.assert_not_called()
 
         arguments.upgrade_version = False
         fix.reset_mock()
         submit_changes.reset_mock()
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         fix.assert_called_once_with(
             pyre_errors,
             arguments.comment,
@@ -432,7 +432,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         arguments.hash = "abc"
         arguments.submit = True
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         run_global_version_update.assert_not_called()
         fix.assert_called_once_with(
             pyre_errors,
@@ -448,7 +448,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.reset_mock()
         submit_changes.reset_mock()
         arguments.lint = True
-        FixmeAll().run(arguments, VERSION_CONTROL)
+        FixmeAll(VERSION_CONTROL).run(arguments)
         run_global_version_update.assert_not_called()
         calls = [
             call(
@@ -548,13 +548,13 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle().run(arguments, VERSION_CONTROL)
+            FixmeSingle(VERSION_CONTROL).run(arguments)
             fix.assert_not_called()
             submit_changes.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle().run(arguments, VERSION_CONTROL)
+            FixmeSingle(VERSION_CONTROL).run(arguments)
             fix.assert_not_called()
             submit_changes.assert_called_once_with(
                 True, VERSION_CONTROL.commit_message("local")
@@ -577,7 +577,7 @@ class FixmeSingleTest(unittest.TestCase):
         ]
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle().run(arguments, VERSION_CONTROL)
+            FixmeSingle(VERSION_CONTROL).run(arguments)
             fix.assert_called_once_with(
                 pyre_errors,
                 arguments.comment,
@@ -606,7 +606,7 @@ class FixmeTest(unittest.TestCase):
 
         stdin_errors.return_value = errors.Errors.empty()
         run_errors.return_value = errors.Errors.empty()
-        Fixme().run(arguments, VERSION_CONTROL)
+        Fixme(VERSION_CONTROL).run(arguments)
 
         # Test single error.
         with patch.object(Path, "write_text") as path_write_text:
@@ -623,7 +623,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n1\n2"
             )
@@ -643,7 +643,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# @" "generated\n1\n2\n"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_not_called()
 
         # Test single error with lint.
@@ -665,7 +665,7 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = "1\n2"
             version_control_with_linters = ExternalVersionControl()
             version_control_with_linters.LINTERS_TO_SKIP = ["TESTLINTER"]
-            Fixme().run(arguments, version_control_with_linters)
+            Fixme(version_control_with_linters).run(arguments)
             calls = [
                 call("# pyre-fixme[1]: description\n1\n2"),
                 call("# pyre-fixme[1]: description\n1\n2"),
@@ -714,7 +714,7 @@ class FixmeTest(unittest.TestCase):
             run_errors.return_value = errors.Errors(pyre_errors)
             path_read_text.return_value = "1\n2"
             arguments.comment = "T1234"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("# pyre-fixme[1]: T1234\n1\n2")
 
@@ -734,7 +734,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# existing comment\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with(
                 "# existing comment\n# pyre-fixme[1]: description\n2"
@@ -765,7 +765,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n"
                 "1\n"
@@ -792,7 +792,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[10]: Description one.\n"
@@ -829,7 +829,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[1]: Description one.\n"
@@ -859,7 +859,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[2]: Maximum characters.\n"
                 "1\n"
@@ -899,7 +899,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[1]: Description one.\n"
@@ -933,7 +933,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.has_calls(
                 [
                     call("# pyre-fixme[1]: description\n1\n2"),
@@ -956,7 +956,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "  # pyre-ignore[0]: [1, 2, 3]\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("2")
 
@@ -978,7 +978,7 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  #  continuation comment\n2"
             )
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("2")
@@ -1001,7 +1001,7 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  # assumed continuation\n2"
             )
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("2")
@@ -1025,7 +1025,7 @@ class FixmeTest(unittest.TestCase):
                 "  # pyre-ignore[0]:\n  #  comment that doesn't fit on one line\n"
                 "# pyre-ignore[1]:\n2"
             )
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("# pyre-ignore[1]:\n2")
@@ -1044,7 +1044,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# pyre-fixme[1]\n# pyre-fixme[2]\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("# pyre-fixme[2]\n2")
 
@@ -1063,7 +1063,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("1\n2")
 
@@ -1094,7 +1094,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "line = 1\nline = 2\nline = 3"
-            Fixme().run(arguments_short, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments_short)
             path_write_text.assert_called_once_with(
                 """# FIXME[1]: description one...
                 line = 1
@@ -1123,7 +1123,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n1\n2"
             )
@@ -1144,7 +1144,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme().run(arguments, VERSION_CONTROL)
+            Fixme(VERSION_CONTROL).run(arguments)
             path_write_text.assert_called_once_with("# pyre-fixme[1]: Concise.\n1\n2")
 
 
@@ -1167,7 +1167,7 @@ class FixmeTargetsTest(unittest.TestCase):
         grep_return.returncode = 1
         grep_return.stderr = b"stderr"
         subprocess.return_value = grep_return
-        upgrade.FixmeTargets().run(arguments, VERSION_CONTROL)
+        upgrade.FixmeTargets(VERSION_CONTROL).run(arguments)
         fix_file.assert_not_called()
         submit_changes.assert_not_called()
 
@@ -1187,7 +1187,7 @@ class FixmeTargetsTest(unittest.TestCase):
             check_types_options = "mypy",
         """
         subprocess.return_value = grep_return
-        upgrade.FixmeTargets().run(arguments, VERSION_CONTROL)
+        upgrade.FixmeTargets(VERSION_CONTROL).run(arguments)
         fix_file.assert_called_once_with(
             arguments, Path("."), "a/b", ["derp", "herp", "merp"], VERSION_CONTROL
         )
@@ -1200,7 +1200,7 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.reset_mock()
         submit_changes.reset_mock()
         arguments.subdirectory = "derp"
-        upgrade.FixmeTargets().run(arguments, VERSION_CONTROL)
+        upgrade.FixmeTargets(VERSION_CONTROL).run(arguments)
         subprocess.assert_called_once_with(
             [
                 "grep",
@@ -1451,7 +1451,7 @@ class MigrateTest(unittest.TestCase):
         process = MagicMock()
         process.stdout = "a/TARGETS\nb/TARGETS\n".encode()
         with patch("subprocess.run", return_value=process) as subprocess_run:
-            MigrateTargets().run(arguments, VERSION_CONTROL)
+            MigrateTargets(VERSION_CONTROL).run(arguments)
             subprocess.assert_has_calls(
                 [
                     call(
@@ -1483,7 +1483,7 @@ class MigrateTest(unittest.TestCase):
                     ),
                 ]
             )
-            fix_targets.assert_called_once_with(arguments, VERSION_CONTROL)
+            fix_targets.assert_called_once_with(arguments)
             subprocess_run.assert_has_calls(
                 [
                     call(
@@ -1500,7 +1500,7 @@ class MigrateTest(unittest.TestCase):
                     ),
                 ]
             )
-            fix_targets.assert_called_once_with(arguments, VERSION_CONTROL)
+            fix_targets.assert_called_once_with(arguments)
 
 
 class TargetsToConfigurationTest(unittest.TestCase):
@@ -1567,7 +1567,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             get_lint_status.assert_called()
 
         # Do not attempt to create a configuration when no existing project-level
@@ -1583,7 +1583,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         ]
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
-        TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+        TargetsToConfiguration(VERSION_CONTROL).run(arguments)
         open_mock.assert_not_called()
         fix.assert_not_called()
         add_local_mode.assert_not_called()
@@ -1602,7 +1602,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             expected_configuration_contents = {
                 "search_path": ["stubs"],
                 "targets": [
@@ -1657,7 +1657,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             expected_configuration_contents = {
                 "targets": [
                     "//subdirectory/a:target_one",
@@ -1709,7 +1709,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -1759,7 +1759,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -1836,7 +1836,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+            TargetsToConfiguration(VERSION_CONTROL).run(arguments)
             expected_configuration_contents = {
                 "targets": ["//subdirectory/..."],
                 "strict": True,
@@ -1901,7 +1901,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         # Do not modify TARGETS when no existing project-level configuration is found.
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
-        TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+        TargetsToConfiguration(VERSION_CONTROL).run(arguments)
         subprocess_run.assert_not_called()
 
         # Clean up typing-related fields from TARGETS.
@@ -1909,7 +1909,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_project_configuration.return_value = Path(
             "subdirectory/.pyre_configuration"
         )
-        TargetsToConfiguration().run(arguments, VERSION_CONTROL)
+        TargetsToConfiguration(VERSION_CONTROL).run(arguments)
         subprocess_run.assert_has_calls(
             [
                 call(
@@ -2041,7 +2041,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate().run(arguments, VERSION_CONTROL)
+            GlobalVersionUpdate(VERSION_CONTROL).run(arguments)
             dump.assert_has_calls(
                 [
                     call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
@@ -2084,7 +2084,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate().run(arguments, VERSION_CONTROL)
+            GlobalVersionUpdate(VERSION_CONTROL).run(arguments)
             dump.assert_has_calls(
                 [call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True)]
             )
@@ -2184,7 +2184,7 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault().run(arguments, VERSION_CONTROL)
+            StrictDefault(VERSION_CONTROL).run(arguments)
             add_local_mode.assert_not_called()
 
         add_local_mode.reset_mock()
@@ -2205,7 +2205,7 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault().run(arguments, VERSION_CONTROL)
+            StrictDefault(VERSION_CONTROL).run(arguments)
             add_local_mode.assert_called_once()
 
         arguments.reset_mock()
@@ -2228,5 +2228,5 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault().run(arguments, VERSION_CONTROL)
+            StrictDefault(VERSION_CONTROL).run(arguments)
             add_local_mode.assert_called_once()

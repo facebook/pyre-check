@@ -8,7 +8,8 @@ from .version_control import VersionControl
 
 
 class Command:
-    def run(
-        self, arguments: argparse.Namespace, version_control: VersionControl
-    ) -> None:
+    def __init__(self, version_control: VersionControl) -> None:
+        self._version_control: VersionControl = version_control
+
+    def run(self, arguments: argparse.Namespace) -> None:
         pass
