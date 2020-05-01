@@ -36,6 +36,10 @@ class VersionControl:
     LINTERS_TO_SKIP: List[str] = []
 
     @staticmethod
+    def get_changed_files() -> Optional[List[str]]:
+        return None
+
+    @staticmethod
     def commit_message(title: str, summary_override: Optional[str] = None) -> str:
         return ""
 
@@ -396,9 +400,12 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = get_lint_status(version_control.LINTERS_TO_SKIP)
+            changed_files = version_control.get_changed_files()
+            lint_status = get_lint_status(
+                version_control.LINTERS_TO_SKIP, changed_files
+            )
             if lint_status:
-                apply_lint(version_control.LINTERS_TO_SKIP)
+                apply_lint(version_control.LINTERS_TO_SKIP, changed_files)
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,

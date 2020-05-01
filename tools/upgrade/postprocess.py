@@ -8,13 +8,15 @@
 import logging
 import subprocess
 from logging import Logger
-from typing import List
+from typing import List, Optional
 
 
 LOG: Logger = logging.getLogger(__name__)
 
 
-def get_lint_status(skip: List[str]) -> int:
+def get_lint_status(skip: List[str], changed_files: Optional[List[str]] = None) -> int:
+    if changed_files is not None:
+        LOG.debug(f"Only linting {', '.join(changed_files)}")
     lint_status = subprocess.run(
         [
             "arc",
@@ -26,6 +28,7 @@ def get_lint_status(skip: List[str]) -> int:
             "--output",
             "none",
         ]
+        + (changed_files if changed_files is not None else [])
     )
     if lint_status.returncode == 1:
         lint_status = subprocess.run(
@@ -38,12 +41,14 @@ def get_lint_status(skip: List[str]) -> int:
                 "--output",
                 "none",
             ]
+            + (changed_files if changed_files is not None else [])
         )
     return lint_status.returncode
 
 
-def apply_lint(skip: List[str]) -> None:
+def apply_lint(skip: List[str], changed_files: Optional[List[str]] = None) -> None:
     LOG.info("Lint was dirty after file modifications. Cleaning lint and re-checking.")
     subprocess.run(
         ["arc", "lint", "--apply-patches", "--skip", ",".join(skip), "--output", "none"]
+        + (changed_files if changed_files is not None else [])
     )
