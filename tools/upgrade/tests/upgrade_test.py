@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import errors, filesystem, postprocess, upgrade
+from .. import errors, filesystem, upgrade
 from ..repository import Repository
 from ..upgrade import (
     Fixme,
@@ -132,8 +132,10 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch(f"{upgrade.__name__}.fix")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
+    @patch(f"{upgrade.__name__}.Repository.format")
     def test_upgrade_project(
         self,
+        repository_format,
         submit_changes,
         fix,
         run_global_version_update,
@@ -213,6 +215,7 @@ class FixmeAllTest(unittest.TestCase):
         )
 
         # Test with from_stdin and lint
+        repository_format.return_value = True
         submit_changes.reset_mock()
         fix.reset_mock()
         get_errors.reset_mock()
@@ -359,29 +362,6 @@ class FixmeAllTest(unittest.TestCase):
             arguments.max_line_length,
             arguments.truncate,
         )
-        submit_changes.assert_called_once_with(True, repository.commit_message("local"))
-
-        # Test with linting
-        fix.reset_mock()
-        submit_changes.reset_mock()
-        arguments.lint = True
-        FixmeAll(repository).run(arguments)
-        run_global_version_update.assert_not_called()
-        calls = [
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-        ]
-        fix.assert_has_calls(calls)
         submit_changes.assert_called_once_with(True, repository.commit_message("local"))
 
     def test_preserve_ast(self) -> None:
@@ -561,58 +541,6 @@ class FixmeTest(unittest.TestCase):
             Fixme(repository).run(arguments)
             path_write_text.assert_not_called()
 
-        # Test single error with lint.
-        arguments.run = True
-        arguments.lint = True
-        with patch.object(Path, "write_text") as path_write_text:
-            pyre_errors = [
-                {
-                    "path": "path.py",
-                    "line": 1,
-                    "concise_description": "Error [1]: description",
-                }
-            ]
-            stdin_errors.return_value = errors.Errors(pyre_errors)
-            run_errors.side_effect = [
-                errors.Errors(pyre_errors),
-                errors.Errors(pyre_errors),
-            ]
-            path_read_text.return_value = "1\n2"
-            repository_with_linters = Repository()
-            repository_with_linters.LINTERS_TO_SKIP = ["TESTLINTER"]
-            Fixme(repository_with_linters).run(arguments)
-            calls = [
-                call("# pyre-fixme[1]: description\n1\n2"),
-                call("# pyre-fixme[1]: description\n1\n2"),
-            ]
-            path_write_text.assert_has_calls(calls)
-            calls = [
-                call(
-                    [
-                        "arc",
-                        "lint",
-                        "--never-apply-patches",
-                        "--enforce-lint-clean",
-                        "--skip",
-                        "TESTLINTER",
-                        "--output",
-                        "none",
-                    ]
-                ),
-                call().returncode.__bool__(),
-                call(
-                    [
-                        "arc",
-                        "lint",
-                        "--apply-patches",
-                        "--skip",
-                        "TESTLINTER",
-                        "--output",
-                        "none",
-                    ]
-                ),
-            ]
-            subprocess.assert_has_calls(calls, any_order=True)
         arguments.run = False
         arguments.lint = False
 
@@ -1430,10 +1358,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
     @patch(f"{upgrade.__name__}.fix")
-    @patch(f"{upgrade.__name__}.get_lint_status")
+    @patch(f"{upgrade.__name__}.Repository.format")
     def test_run_targets_to_configuration(
         self,
-        get_lint_status,
+        repository_format,
         fix,
         add_local_mode,
         get_errors,
@@ -1483,14 +1411,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
             TargetsToConfiguration(repository).run(arguments)
-            get_lint_status.assert_called()
 
         # Do not attempt to create a configuration when no existing project-level
         # configuration is found.
         fix.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
-        get_lint_status.reset_mock()
         submit_changes.reset_mock()
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
@@ -1502,7 +1428,6 @@ class TargetsToConfigurationTest(unittest.TestCase):
         open_mock.assert_not_called()
         fix.assert_not_called()
         add_local_mode.assert_not_called()
-        get_lint_status.assert_not_called()
 
         # Add to existing project configuration if it lives at given subdirectory
         find_project_configuration.return_value = Path(
@@ -1517,6 +1442,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
+            repository_format.return_value = True
             TargetsToConfiguration(repository).run(arguments)
             expected_configuration_contents = {
                 "search_path": ["stubs"],
@@ -1553,7 +1479,6 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 ]
             )
             add_local_mode.assert_not_called()
-            get_lint_status.assert_called_once()
             submit_changes.assert_called_once()
 
         # Create local project configuration
@@ -1779,10 +1704,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
     @patch(f"{upgrade.__name__}.fix")
-    @patch(f"{upgrade.__name__}.get_lint_status")
     def test_targets_file_cleanup(
         self,
-        get_lint_status,
         fix,
         add_local_mode,
         get_errors,
@@ -1888,30 +1811,15 @@ class TargetsToConfigurationTest(unittest.TestCase):
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
-        with patch.object(postprocess.LOG, "error") as mock_error:
-            self.assertEqual(
-                errors.json_to_errors('[{ "path": "test.py", "key": "value" }]'),
-                errors.Errors([{"path": "test.py", "key": "value"}]),
-            )
-            mock_error.assert_not_called()
-            mock_error.reset_mock()
-
-            self.assertEqual(errors.json_to_errors(None), errors.Errors([]))
-            mock_error.assert_called_once_with(
-                "Received no input. "
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-            mock_error.reset_mock()
-
-            self.assertEqual(
-                errors.json_to_errors('[{ "path": "test.py", "key": "value" }'),
-                errors.Errors([]),
-            )
-            mock_error.assert_called_once_with(
-                "Received invalid JSON as input. "
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-            mock_error.reset_mock()
+        self.assertEqual(
+            errors.json_to_errors('[{ "path": "test.py", "key": "value" }]'),
+            errors.Errors([{"path": "test.py", "key": "value"}]),
+        )
+        self.assertEqual(errors.json_to_errors(None), errors.Errors([]))
+        self.assertEqual(
+            errors.json_to_errors('[{ "path": "test.py", "key": "value" }'),
+            errors.Errors([]),
+        )
 
 
 class UpdateGlobalVersionTest(unittest.TestCase):
@@ -2083,10 +1991,8 @@ class DefaultStrictTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
-    @patch(f"{upgrade.__name__}.get_lint_status", return_value=0)
     def test_run_strict_default(
         self,
-        get_lint_status,
         add_local_mode,
         get_errors,
         add_strict,

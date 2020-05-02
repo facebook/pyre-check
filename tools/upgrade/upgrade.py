@@ -26,7 +26,6 @@ from .filesystem import (
     path_exists,
     remove_non_pyre_ignores,
 )
-from .postprocess import apply_lint, get_lint_status
 from .repository import Repository
 
 
@@ -69,9 +68,7 @@ class StrictDefault(Command):
                 add_local_mode(filename, LocalMode.UNSAFE)
 
             if arguments.lint:
-                lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
-                if lint_status:
-                    apply_lint(self._repository.LINTERS_TO_SKIP)
+                self._repository.format()
 
 
 class GlobalVersionUpdate(Command):
@@ -177,10 +174,7 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            changed_files = repository.get_changed_files()
-            lint_status = get_lint_status(repository.LINTERS_TO_SKIP, changed_files)
-            if lint_status:
-                apply_lint(repository.LINTERS_TO_SKIP, changed_files)
+            if repository.format():
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,
@@ -219,9 +213,7 @@ class Fixme(Command):
             )
 
             if arguments.lint:
-                lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
-                if lint_status:
-                    apply_lint(self._repository.LINTERS_TO_SKIP)
+                if self._repository.format():
                     errors = errors_from_run(arguments.only_fix_error_code)
                     fix(
                         errors,
@@ -318,9 +310,8 @@ class FixmeTargets(Command):
         fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
         if not arguments.lint:
             return
-        lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
-        if lint_status:
-            apply_lint(self._repository.LINTERS_TO_SKIP)
+
+        if self._repository.format():
             errors = errors_from_targets(project_directory, path, targets)
             if not errors:
                 LOG.info("Errors unchanged after linting.")
@@ -493,9 +484,7 @@ class TargetsToConfiguration(Command):
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
-            if lint_status:
-                apply_lint(self._repository.LINTERS_TO_SKIP)
+            if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,

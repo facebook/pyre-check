@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import re
 import subprocess
 from enum import Enum
@@ -11,7 +12,9 @@ from typing import Dict, List
 
 from ...client.filesystem import get_filesystem
 from .ast import verify_stable_ast
-from .postprocess import LOG
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class LocalMode(Enum):

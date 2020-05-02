@@ -8,11 +8,6 @@ from typing import List, Optional
 
 
 class Repository:
-    LINTERS_TO_SKIP: List[str] = []
-
-    def get_changed_files(self) -> Optional[List[str]]:
-        return None
-
     def commit_message(self, title: str, summary_override: Optional[str] = None) -> str:
         return ""
 
@@ -22,4 +17,7 @@ class Repository:
     def submit_changes(
         self, submit: bool, message: str, ignore_failures: bool = False
     ) -> None:
+        pass
+
+    def format(self) -> bool:
         pass

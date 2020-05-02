@@ -5,6 +5,7 @@
 
 import itertools
 import json
+import logging
 import re
 import subprocess
 import sys
@@ -13,7 +14,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from .ast import verify_stable_ast
-from .postprocess import LOG
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def error_path(error: Dict[str, Any]) -> str:
