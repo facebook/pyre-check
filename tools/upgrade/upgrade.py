@@ -344,16 +344,6 @@ class GlobalVersionUpdate(Command):
             LOG.info("Error while running hg.")
 
 
-class UpgradeAll(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
-        with open(arguments.sandcastle) as sandcastle_file:
-            sandcastle_command = json.load(sandcastle_file)
-        if arguments.hash:
-            sandcastle_command["args"]["hash"] = arguments.hash
-        command = ["scutil", "create"]
-        subprocess.run(command, input=json.dumps(sandcastle_command).encode())
-
-
 # Exposed for testing.
 def _upgrade_project(
     arguments: argparse.Namespace,
@@ -778,19 +768,6 @@ def run(repository: Repository) -> None:
         help="Delete unnecessary `# pyre-strict` headers.",
     )
     strict_default.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
-
-    # Subcommand: Set global configuration to given hash, then upgrade and suppress
-    # errors in all local configurations.
-    upgrade_all = commands.add_parser("upgrade-all")
-    upgrade_all.set_defaults(command=UpgradeAll)
-    upgrade_all.add_argument("hash", help="Hash of new Pyre version")
-    upgrade_all.add_argument(
-        "-s",
-        "--sandcastle",
-        help="Create upgrade stack on sandcastle.",
-        type=path_exists,
-        required=True,
-    )
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.

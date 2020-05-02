@@ -23,69 +23,10 @@ from ..upgrade import (
     MigrateTargets,
     StrictDefault,
     TargetsToConfiguration,
-    UpgradeAll,
 )
 
 
 repository = Repository()
-
-
-class UpgradeAllTest(unittest.TestCase):
-    @patch("subprocess.run")
-    @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch.object(upgrade.Configuration, "find_project_configuration")
-    def test_run_upgrade_all(self, find_configuration, gather, run) -> None:
-        command_json = """
-        {
-            "command": "CommandName",
-            "args": {"hash": null, "paths": null},
-            "hash": "repository/hash",
-            "priority": 0,
-            "user": "unixname",
-            "alias": "pyre-upgrade",
-            "capabilities": {"type": "type", "vcs": "vcs"},
-            "timeout": 18000,
-            "oncall": "pyre"
-        }
-        """
-
-        def generate_sandcastle_command(binary_hash) -> bytes:
-            command = json.loads(command_json)
-            if binary_hash:
-                command["args"]["hash"] = binary_hash
-            return json.dumps(command).encode()
-
-        arguments = MagicMock()
-        arguments.sandcastle = Path("sandcastle.json")
-        with patch("builtins.open", mock_open(read_data=command_json)):
-            arguments.hash = "abc"
-            gather.return_value = [
-                upgrade.Configuration(
-                    Path("a/.pyre_configuration.local"), {"version": 123}
-                ),
-                upgrade.Configuration(
-                    Path("b/.pyre_configuration.local"), {"version": 123}
-                ),
-            ]
-            UpgradeAll(repository).run(arguments)
-            find_configuration.assert_not_called()
-            run.assert_called_once_with(
-                ["scutil", "create"], input=generate_sandcastle_command("abc")
-            )
-
-        run.reset_mock()
-        with patch("builtins.open", mock_open(read_data=command_json)):
-            arguments.hash = None
-            gather.return_value = [
-                upgrade.Configuration(
-                    Path("local/.pyre_configuration.local"), {"version": 123}
-                )
-            ]
-            UpgradeAll(repository).run(arguments)
-            find_configuration.assert_not_called()
-            run.assert_called_once_with(
-                ["scutil", "create"], input=generate_sandcastle_command(None)
-            )
 
 
 class FixmeAllTest(unittest.TestCase):
