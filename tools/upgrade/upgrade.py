@@ -11,7 +11,7 @@ import sys
 import traceback
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import List, Optional
 
 from ...client.commands import ExitCode
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
