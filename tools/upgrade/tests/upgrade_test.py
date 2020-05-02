@@ -19,6 +19,7 @@ from ..upgrade import (
     Fixme,
     FixmeAll,
     FixmeSingle,
+    FixmeTargets,
     GlobalVersionUpdate,
     MigrateTargets,
     StrictDefault,
@@ -153,7 +154,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = []
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         fix.assert_not_called()
         submit_changes.assert_not_called()
 
@@ -284,7 +285,7 @@ class FixmeAllTest(unittest.TestCase):
             )
         ]
         get_errors.return_value = []
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
         fix.assert_not_called()
         submit_changes.assert_called_once_with(
@@ -307,7 +308,7 @@ class FixmeAllTest(unittest.TestCase):
             }
         ]
         get_errors.return_value = pyre_errors
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
         fix.assert_called_once_with(
             pyre_errors,
@@ -325,14 +326,14 @@ class FixmeAllTest(unittest.TestCase):
         gather.return_value = [
             upgrade.Configuration(Path("local/.pyre_configuration.local"), {})
         ]
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         fix.assert_not_called()
         submit_changes.assert_not_called()
 
         arguments.upgrade_version = False
         fix.reset_mock()
         submit_changes.reset_mock()
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         fix.assert_called_once_with(
             pyre_errors,
             arguments.comment,
@@ -354,7 +355,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         arguments.hash = "abc"
         arguments.submit = True
-        FixmeAll(repository).run(arguments)
+        FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
         fix.assert_called_once_with(
             pyre_errors,
@@ -443,13 +444,13 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle(repository).run(arguments)
+            FixmeSingle(arguments, repository).run()
             fix.assert_not_called()
             submit_changes.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle(repository).run(arguments)
+            FixmeSingle(arguments, repository).run()
             fix.assert_not_called()
             submit_changes.assert_called_once_with(
                 True, repository.commit_message("local")
@@ -472,7 +473,7 @@ class FixmeSingleTest(unittest.TestCase):
         ]
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle(repository).run(arguments)
+            FixmeSingle(arguments, repository).run()
             fix.assert_called_once_with(
                 pyre_errors,
                 arguments.comment,
@@ -501,7 +502,7 @@ class FixmeTest(unittest.TestCase):
 
         stdin_errors.return_value = errors.Errors.empty()
         run_errors.return_value = errors.Errors.empty()
-        Fixme(repository).run(arguments)
+        Fixme(arguments, repository).run()
 
         # Test single error.
         with patch.object(Path, "write_text") as path_write_text:
@@ -518,7 +519,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n1\n2"
             )
@@ -538,7 +539,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# @" "generated\n1\n2\n"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_not_called()
 
         arguments.run = False
@@ -557,7 +558,7 @@ class FixmeTest(unittest.TestCase):
             run_errors.return_value = errors.Errors(pyre_errors)
             path_read_text.return_value = "1\n2"
             arguments.comment = "T1234"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             path_write_text.assert_called_once_with("# pyre-fixme[1]: T1234\n1\n2")
 
@@ -577,7 +578,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# existing comment\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             path_write_text.assert_called_once_with(
                 "# existing comment\n# pyre-fixme[1]: description\n2"
@@ -608,7 +609,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n"
                 "1\n"
@@ -635,7 +636,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[10]: Description one.\n"
@@ -672,7 +673,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[1]: Description one.\n"
@@ -702,7 +703,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[2]: Maximum characters.\n"
                 "1\n"
@@ -742,7 +743,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[1]: Description one.\n"
@@ -776,7 +777,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.has_calls(
                 [
                     call("# pyre-fixme[1]: description\n1\n2"),
@@ -799,7 +800,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "  # pyre-ignore[0]: [1, 2, 3]\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             path_write_text.assert_called_once_with("2")
 
@@ -821,7 +822,7 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  #  continuation comment\n2"
             )
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("2")
@@ -844,7 +845,7 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n  # assumed continuation\n2"
             )
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("2")
@@ -868,7 +869,7 @@ class FixmeTest(unittest.TestCase):
                 "  # pyre-ignore[0]:\n  #  comment that doesn't fit on one line\n"
                 "# pyre-ignore[1]:\n2"
             )
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             arguments.truncate = True
             path_write_text.assert_called_once_with("# pyre-ignore[1]:\n2")
@@ -887,7 +888,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "# pyre-fixme[1]\n# pyre-fixme[2]\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             path_write_text.assert_called_once_with("# pyre-fixme[2]\n2")
 
@@ -906,7 +907,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             arguments.comment = None
             path_write_text.assert_called_once_with("1\n2")
 
@@ -937,7 +938,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "line = 1\nline = 2\nline = 3"
-            Fixme(repository).run(arguments_short)
+            Fixme(arguments_short, repository).run()
             path_write_text.assert_called_once_with(
                 """# FIXME[1]: description one...
                 line = 1
@@ -966,7 +967,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n1\n2"
             )
@@ -987,7 +988,7 @@ class FixmeTest(unittest.TestCase):
                 errors.Errors(pyre_errors),
             ]
             path_read_text.return_value = "1\n2"
-            Fixme(repository).run(arguments)
+            Fixme(arguments, repository).run()
             path_write_text.assert_called_once_with("# pyre-fixme[1]: Concise.\n1\n2")
 
 
@@ -1010,7 +1011,7 @@ class FixmeTargetsTest(unittest.TestCase):
         grep_return.returncode = 1
         grep_return.stderr = b"stderr"
         subprocess.return_value = grep_return
-        upgrade.FixmeTargets(repository).run(arguments)
+        FixmeTargets(arguments, repository).run()
         fix_file.assert_not_called()
         submit_changes.assert_not_called()
 
@@ -1030,10 +1031,8 @@ class FixmeTargetsTest(unittest.TestCase):
             check_types_options = "mypy",
         """
         subprocess.return_value = grep_return
-        upgrade.FixmeTargets(repository).run(arguments)
-        fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
-        )
+        FixmeTargets(arguments, repository).run()
+        fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
             arguments.submit, repository.commit_message(". (TARGETS)")
         )
@@ -1043,7 +1042,7 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.reset_mock()
         submit_changes.reset_mock()
         arguments.subdirectory = "derp"
-        upgrade.FixmeTargets(repository).run(arguments)
+        FixmeTargets(arguments, repository).run()
         subprocess.assert_called_once_with(
             [
                 "grep",
@@ -1055,9 +1054,7 @@ class FixmeTargetsTest(unittest.TestCase):
             stderr=-1,
             stdout=-1,
         )
-        fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
-        )
+        fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
             arguments.submit, repository.commit_message("derp (TARGETS)")
         )
@@ -1073,8 +1070,8 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"
         subprocess.return_value = buck_return
-        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+            Path("."), "a/b", ["derp", "herp"]
         )
         subprocess.assert_called_once_with(
             [
@@ -1093,8 +1090,8 @@ class FixmeTargetsTest(unittest.TestCase):
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
-        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+            Path("."), "a/b", ["derp", "herp"]
         )
         fix.assert_not_called()
 
@@ -1165,8 +1162,8 @@ class FixmeTargetsTest(unittest.TestCase):
                 },
             ]
         )
-        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"]
+        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+            Path("."), "a/b", ["derp", "herp"]
         )
         fix.assert_called_once_with(
             expected_errors,
@@ -1184,8 +1181,8 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_query_return = MagicMock()
         buck_query_return.stdout = b"//target/to:retry-pyre-typecheck"
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp"]
+        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+            Path("."), "a/b", ["derp"]
         )
         subprocess.assert_has_calls(
             [
@@ -1243,8 +1240,8 @@ class FixmeTargetsTest(unittest.TestCase):
           //target/to:retry_non_typecheck
         """
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp"]
+        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+            Path("."), "a/b", ["derp"]
         )
         subprocess.assert_has_calls(
             [
@@ -1294,7 +1291,7 @@ class MigrateTest(unittest.TestCase):
         process = MagicMock()
         process.stdout = "a/TARGETS\nb/TARGETS\n".encode()
         with patch("subprocess.run", return_value=process) as subprocess_run:
-            MigrateTargets(repository).run(arguments)
+            MigrateTargets(arguments, repository).run()
             subprocess.assert_has_calls(
                 [
                     call(
@@ -1326,7 +1323,7 @@ class MigrateTest(unittest.TestCase):
                     ),
                 ]
             )
-            fix_targets.assert_called_once_with(arguments)
+            fix_targets.assert_called_once_with()
             subprocess_run.assert_has_calls(
                 [
                     call(
@@ -1343,7 +1340,7 @@ class MigrateTest(unittest.TestCase):
                     ),
                 ]
             )
-            fix_targets.assert_called_once_with(arguments)
+            fix_targets.assert_called_once_with()
 
 
 class TargetsToConfigurationTest(unittest.TestCase):
@@ -1410,7 +1407,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
 
         # Do not attempt to create a configuration when no existing project-level
         # configuration is found.
@@ -1424,7 +1421,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         ]
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
-        TargetsToConfiguration(repository).run(arguments)
+        TargetsToConfiguration(arguments, repository).run()
         open_mock.assert_not_called()
         fix.assert_not_called()
         add_local_mode.assert_not_called()
@@ -1443,7 +1440,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
             repository_format.return_value = True
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
             expected_configuration_contents = {
                 "search_path": ["stubs"],
                 "targets": [
@@ -1497,7 +1494,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": [
                     "//subdirectory/a:target_one",
@@ -1549,7 +1546,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -1599,7 +1596,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -1676,7 +1673,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(repository).run(arguments)
+            TargetsToConfiguration(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//subdirectory/..."],
                 "strict": True,
@@ -1739,7 +1736,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         # Do not modify TARGETS when no existing project-level configuration is found.
         find_project_configuration.return_value = None
         find_local_configuration.return_value = None
-        TargetsToConfiguration(repository).run(arguments)
+        TargetsToConfiguration(arguments, repository).run()
         subprocess_run.assert_not_called()
 
         # Clean up typing-related fields from TARGETS.
@@ -1747,7 +1744,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_project_configuration.return_value = Path(
             "subdirectory/.pyre_configuration"
         )
-        TargetsToConfiguration(repository).run(arguments)
+        TargetsToConfiguration(arguments, repository).run()
         subprocess_run.assert_has_calls(
             [
                 call(
@@ -1864,7 +1861,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate(repository).run(arguments)
+            GlobalVersionUpdate(arguments, repository).run()
             dump.assert_has_calls(
                 [
                     call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
@@ -1907,7 +1904,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate(repository).run(arguments)
+            GlobalVersionUpdate(arguments, repository).run()
             dump.assert_has_calls(
                 [call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True)]
             )
@@ -2005,7 +2002,7 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(repository).run(arguments)
+            StrictDefault(arguments, repository).run()
             add_local_mode.assert_not_called()
 
         add_local_mode.reset_mock()
@@ -2026,7 +2023,7 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(repository).run(arguments)
+            StrictDefault(arguments, repository).run()
             add_local_mode.assert_called_once()
 
         arguments.reset_mock()
@@ -2049,5 +2046,5 @@ class DefaultStrictTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(repository).run(arguments)
+            StrictDefault(arguments, repository).run()
             add_local_mode.assert_called_once()

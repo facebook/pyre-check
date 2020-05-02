@@ -17,8 +17,8 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class MissingOverrideReturnAnnotations(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
-        errors = errors_from_stdin(arguments.only_fix_error_code)
+    def run(self) -> None:
+        errors = errors_from_stdin(self._arguments.only_fix_error_code)
         for path, errors in errors:
             LOG.info("Patching errors in `%s`.", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)
@@ -60,8 +60,8 @@ class MissingOverrideReturnAnnotations(Command):
 
 
 class MissingGlobalAnnotations(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
-        errors = errors_from_stdin(arguments.only_fix_error_code)
+    def run(self) -> None:
+        errors = errors_from_stdin(self._arguments.only_fix_error_code)
         for path, errors in errors:
             LOG.info("Patching errors in `%s`", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)

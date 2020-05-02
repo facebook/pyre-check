@@ -43,12 +43,12 @@ def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
 
 
 class StrictDefault(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
             return
-        local_configuration = arguments.local_configuration
+        local_configuration = self._arguments.local_configuration
         if local_configuration:
             configuration_path = local_configuration / ".pyre_configuration.local"
         else:
@@ -67,12 +67,12 @@ class StrictDefault(Command):
             for filename, _ in errors:
                 add_local_mode(filename, LocalMode.UNSAFE)
 
-            if arguments.lint:
+            if self._arguments.lint:
                 self._repository.format()
 
 
 class GlobalVersionUpdate(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
         if global_configuration is None:
             LOG.error("No global configuration file found.")
@@ -91,7 +91,7 @@ class GlobalVersionUpdate(Command):
 
         # Rewrite.
         with open(global_configuration, "w") as global_configuration_file:
-            configuration["version"] = arguments.hash
+            configuration["version"] = self._arguments.hash
 
             # This will sort the keys in the configuration - we won't be clobbering
             # comments since Python's JSON parser disallows comments either way.
@@ -100,7 +100,7 @@ class GlobalVersionUpdate(Command):
             )
             global_configuration_file.write("\n")
 
-        paths = arguments.paths
+        paths = self._arguments.paths
         configuration_paths = (
             [path / ".pyre_configuration.local" for path in paths]
             if paths
@@ -135,9 +135,11 @@ class GlobalVersionUpdate(Command):
                 configuration_file.write("\n")
 
         try:
-            commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
+            commit_summary = "Automatic upgrade to hash `{}`".format(
+                self._arguments.hash
+            )
             self._repository.submit_changes(
-                arguments.submit,
+                self._arguments.submit,
                 self._repository.commit_message(
                     "Update pyre global configuration version",
                     summary_override=commit_summary,
@@ -200,57 +202,60 @@ def _upgrade_project(
 
 
 class Fixme(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         # Suppress errors in project with no local configurations.
-        if arguments.run:
-            errors = errors_from_run(arguments.only_fix_error_code)
+        if self._arguments.run:
+            errors = errors_from_run(self._arguments.only_fix_error_code)
             fix(
                 errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-                arguments.unsafe,
+                self._arguments.comment,
+                self._arguments.max_line_length,
+                self._arguments.truncate,
+                self._arguments.unsafe,
             )
 
-            if arguments.lint:
+            if self._arguments.lint:
                 if self._repository.format():
-                    errors = errors_from_run(arguments.only_fix_error_code)
+                    errors = errors_from_run(self._arguments.only_fix_error_code)
                     fix(
                         errors,
-                        arguments.comment,
-                        arguments.max_line_length,
-                        arguments.truncate,
-                        arguments.unsafe,
+                        self._arguments.comment,
+                        self._arguments.max_line_length,
+                        self._arguments.truncate,
+                        self._arguments.unsafe,
                     )
         else:
-            errors = errors_from_stdin(arguments.only_fix_error_code)
+            errors = errors_from_stdin(self._arguments.only_fix_error_code)
             fix(
                 errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-                arguments.unsafe,
+                self._arguments.comment,
+                self._arguments.max_line_length,
+                self._arguments.truncate,
+                self._arguments.unsafe,
             )
 
 
 class FixmeSingle(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
             return
-        configuration_path = arguments.path / ".pyre_configuration.local"
+        configuration_path = self._arguments.path / ".pyre_configuration.local"
         with open(configuration_path) as configuration_file:
             configuration = Configuration(
                 configuration_path, json.load(configuration_file)
             )
             _upgrade_project(
-                arguments, configuration, project_configuration.parent, self._repository
+                self._arguments,
+                configuration,
+                project_configuration.parent,
+                self._repository,
             )
 
 
 class FixmeAll(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the current directory.")
@@ -259,13 +264,16 @@ class FixmeAll(Command):
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
             _upgrade_project(
-                arguments, configuration, project_configuration.parent, self._repository
+                self._arguments,
+                configuration,
+                project_configuration.parent,
+                self._repository,
             )
 
 
 class FixmeTargets(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
-        subdirectory = arguments.subdirectory
+    def run(self) -> None:
+        subdirectory = self._arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else None
         project_configuration = Configuration.find_project_configuration(subdirectory)
         if project_configuration is None:
@@ -278,13 +286,11 @@ class FixmeTargets(Command):
         if not all_targets:
             return
         for path, target_names in all_targets.items():
-            self._run_fixme_targets_file(
-                arguments, project_directory, path, target_names
-            )
+            self._run_fixme_targets_file(project_directory, path, target_names)
         try:
-            if not arguments.no_commit:
+            if not self._arguments.no_commit:
                 self._repository.submit_changes(
-                    arguments.submit,
+                    self._arguments.submit,
                     self._repository.commit_message(
                         "Upgrade pyre version for {} (TARGETS)".format(search_root)
                     ),
@@ -293,11 +299,7 @@ class FixmeTargets(Command):
             LOG.info("Error while running hg.")
 
     def _run_fixme_targets_file(
-        self,
-        arguments: argparse.Namespace,
-        project_directory: Path,
-        path: str,
-        target_names: List[str],
+        self, project_directory: Path, path: str, target_names: List[str]
     ) -> None:
         LOG.info("Processing %s/TARGETS...", path)
         targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
@@ -307,8 +309,13 @@ class FixmeTargets(Command):
         LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
         if not errors:
             return
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
-        if not arguments.lint:
+        fix(
+            errors,
+            self._arguments.comment,
+            self._arguments.max_line_length,
+            self._arguments.truncate,
+        )
+        if not self._arguments.lint:
             return
 
         if self._repository.format():
@@ -318,13 +325,16 @@ class FixmeTargets(Command):
                 return
             LOG.info("Found %d type errors after linting.", len(errors))
             fix(
-                errors, arguments.comment, arguments.max_line_length, arguments.truncate
+                errors,
+                self._arguments.comment,
+                self._arguments.max_line_length,
+                self._arguments.truncate,
             )
 
 
 class MigrateTargets(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
-        subdirectory = arguments.subdirectory
+    def run(self) -> None:
+        subdirectory = self._arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
         LOG.info("Migrating typecheck targets in {}".format(subdirectory))
 
@@ -350,13 +360,13 @@ class MigrateTargets(Command):
         subprocess.check_output(remove_options_command)
 
         remove_non_pyre_ignores(subdirectory)
-        FixmeTargets(self._repository).run(arguments)
+        FixmeTargets(self._arguments, self._repository).run()
 
 
 class TargetsToConfiguration(Command):
-    def run(self, arguments: argparse.Namespace) -> None:
+    def run(self) -> None:
         # TODO(T62926437): Basic integration testing.
-        subdirectory = arguments.subdirectory
+        subdirectory = self._arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
         LOG.info(
             "Converting typecheck targets to pyre configuration in `%s`", subdirectory
@@ -373,7 +383,7 @@ class TargetsToConfiguration(Command):
                 str(subdirectory), patterns=[r"**/TARGETS"]
             )
         ]
-        if arguments.glob:
+        if self._arguments.glob:
             new_targets = ["//" + str(subdirectory) + "/..."]
         else:
             new_targets = []
@@ -462,7 +472,7 @@ class TargetsToConfiguration(Command):
         remove_non_pyre_ignores(subdirectory)
 
         all_errors = configuration.get_errors()
-        error_threshold = arguments.fixme_threshold
+        error_threshold = self._arguments.fixme_threshold
 
         for path, errors in all_errors:
             errors = list(errors)
@@ -477,26 +487,26 @@ class TargetsToConfiguration(Command):
             else:
                 fix(
                     Errors(errors),
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
+                    self._arguments.comment,
+                    self._arguments.max_line_length,
+                    self._arguments.truncate,
                 )
 
         # Lint and re-run pyre once to resolve most formatting issues
-        if arguments.lint:
+        if self._arguments.lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
                 fix(
                     errors,
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
+                    self._arguments.comment,
+                    self._arguments.max_line_length,
+                    self._arguments.truncate,
                 )
 
         try:
-            if not arguments.no_commit:
+            if not self._arguments.no_commit:
                 self._repository.submit_changes(
-                    arguments.submit,
+                    self._arguments.submit,
                     self._repository.commit_message(
                         "Convert type check targets in {} to use configuration".format(
                             subdirectory
@@ -709,7 +719,7 @@ def run(repository: Repository) -> None:
 
     try:
         exit_code = ExitCode.SUCCESS
-        arguments.command(repository).run(arguments)
+        arguments.command(arguments, repository).run()
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
