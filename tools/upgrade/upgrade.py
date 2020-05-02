@@ -474,35 +474,6 @@ class FixmeAll(Command):
             )
 
 
-def run_fixme_targets_file(
-    arguments: argparse.Namespace,
-    project_directory: Path,
-    path: str,
-    target_names: List[str],
-    repository: Repository,
-) -> None:
-    LOG.info("Processing %s/TARGETS...", path)
-    targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
-    errors = errors_from_targets(project_directory, path, targets)
-    if not errors:
-        return
-    LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
-    if not errors:
-        return
-    fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
-    if not arguments.lint:
-        return
-    lint_status = get_lint_status(repository.LINTERS_TO_SKIP)
-    if lint_status:
-        apply_lint(repository.LINTERS_TO_SKIP)
-        errors = errors_from_targets(project_directory, path, targets)
-        if not errors:
-            LOG.info("Errors unchanged after linting.")
-            return
-        LOG.info("Found %d type errors after linting.", len(errors))
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
-
-
 class FixmeTargets(Command):
     def run(self, arguments: argparse.Namespace) -> None:
         # Currently does not support sandcastle integration, or setting the global hash
@@ -520,8 +491,8 @@ class FixmeTargets(Command):
         if not all_targets:
             return
         for path, target_names in all_targets.items():
-            run_fixme_targets_file(
-                arguments, project_directory, path, target_names, self._repository
+            self._run_fixme_targets_file(
+                arguments, project_directory, path, target_names
             )
         try:
             if not arguments.no_commit:
@@ -533,6 +504,36 @@ class FixmeTargets(Command):
                 )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")
+
+    def _run_fixme_targets_file(
+        self,
+        arguments: argparse.Namespace,
+        project_directory: Path,
+        path: str,
+        target_names: List[str],
+    ) -> None:
+        LOG.info("Processing %s/TARGETS...", path)
+        targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
+        errors = errors_from_targets(project_directory, path, targets)
+        if not errors:
+            return
+        LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
+        if not errors:
+            return
+        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
+        if not arguments.lint:
+            return
+        lint_status = get_lint_status(self._repository.LINTERS_TO_SKIP)
+        if lint_status:
+            apply_lint(self._repository.LINTERS_TO_SKIP)
+            errors = errors_from_targets(project_directory, path, targets)
+            if not errors:
+                LOG.info("Errors unchanged after linting.")
+                return
+            LOG.info("Found %d type errors after linting.", len(errors))
+            fix(
+                errors, arguments.comment, arguments.max_line_length, arguments.truncate
+            )
 
 
 class MigrateTargets(Command):

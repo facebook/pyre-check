@@ -1145,7 +1145,7 @@ class FixmeTargetsTest(unittest.TestCase):
         "find_project_configuration",
         return_value=Path(".pyre_configuration"),
     )
-    @patch(f"{upgrade.__name__}.run_fixme_targets_file")
+    @patch.object(upgrade.FixmeTargets, "_run_fixme_targets_file")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_fixme_targets(
         self, submit_changes, fix_file, find_configuration, subprocess
@@ -1179,7 +1179,7 @@ class FixmeTargetsTest(unittest.TestCase):
         subprocess.return_value = grep_return
         upgrade.FixmeTargets(repository).run(arguments)
         fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"], repository
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
         submit_changes.assert_called_once_with(
             arguments.submit, repository.commit_message(". (TARGETS)")
@@ -1203,7 +1203,7 @@ class FixmeTargetsTest(unittest.TestCase):
             stdout=-1,
         )
         fix_file.assert_called_once_with(
-            arguments, Path("."), "a/b", ["derp", "herp", "merp"], repository
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
         submit_changes.assert_called_once_with(
             arguments.submit, repository.commit_message("derp (TARGETS)")
@@ -1220,8 +1220,8 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"
         subprocess.return_value = buck_return
-        upgrade.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"], repository
+        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp", "herp"]
         )
         subprocess.assert_called_once_with(
             [
@@ -1240,8 +1240,8 @@ class FixmeTargetsTest(unittest.TestCase):
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
-        upgrade.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"], repository
+        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp", "herp"]
         )
         fix.assert_not_called()
 
@@ -1312,8 +1312,8 @@ class FixmeTargetsTest(unittest.TestCase):
                 },
             ]
         )
-        upgrade.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp", "herp"], repository
+        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp", "herp"]
         )
         fix.assert_called_once_with(
             expected_errors,
@@ -1331,8 +1331,8 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_query_return = MagicMock()
         buck_query_return.stdout = b"//target/to:retry-pyre-typecheck"
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        upgrade.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp"], repository
+        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp"]
         )
         subprocess.assert_has_calls(
             [
@@ -1390,8 +1390,8 @@ class FixmeTargetsTest(unittest.TestCase):
           //target/to:retry_non_typecheck
         """
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        upgrade.run_fixme_targets_file(
-            arguments, Path("."), "a/b", ["derp"], repository
+        upgrade.FixmeTargets(repository)._run_fixme_targets_file(
+            arguments, Path("."), "a/b", ["derp"]
         )
         subprocess.assert_has_calls(
             [
