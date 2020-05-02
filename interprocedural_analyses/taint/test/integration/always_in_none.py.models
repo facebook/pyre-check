@@ -1,0 +1,131 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "always_in_none.ComplicatedService.serve_tainted_request",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "string_concat_rhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "always_in_none.test",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(complicated_service)",
+        "taint": [
+          {
+            "root": {
+              "filename": "always_in_none.py",
+              "line": 27,
+              "start": 16,
+              "end": 22
+            },
+            "tito": [
+              { "line": 23, "start": 21, "end": 40 },
+              { "line": 15, "start": 17, "end": 36 }
+            ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "always_in_none.test",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 27,
+    "start": 16,
+    "end": 22,
+    "filename": "always_in_none.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "always_in_none.py",
+              "line": 15,
+              "start": 17,
+              "end": 60
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name":
+                  "always_in_none.ComplicatedService.serve_tainted_request",
+                "on_all_flows": true
+              }
+            ]
+          },
+          {
+            "root": {
+              "filename": "always_in_none.py",
+              "line": 23,
+              "start": 21,
+              "end": 64
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name":
+                  "always_in_none.ComplicatedService.serve_tainted_request",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "always_in_none.py",
+              "line": 27,
+              "start": 16,
+              "end": 22
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ]
+  }
+}

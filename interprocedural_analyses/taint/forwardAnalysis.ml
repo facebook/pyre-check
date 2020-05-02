@@ -1061,6 +1061,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
+      | Statement.Assign
+          { value = { Node.value = Expression.Name (Name.Identifier "None"); _ }; target; _ } -> (
+          match AccessPath.of_expression ~resolution target with
+          | Some { AccessPath.root; path } ->
+              (* We need to take some care to ensure we clear existing taint, without adding new
+                 taint. *)
+              let taint = ForwardState.read ~root ~path state.taint in
+              if not (ForwardState.Tree.is_bottom taint) then
+                { taint = ForwardState.assign ~root ~path ForwardState.Tree.bottom state.taint }
+              else
+                state
+          | _ -> state )
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
         -> (
           match target_value with
