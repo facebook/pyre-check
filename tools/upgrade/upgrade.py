@@ -191,7 +191,6 @@ class Configuration:
     def get_errors(
         self, only_fix_error_code: Optional[int] = None, should_clean: bool = True
     ) -> Errors:
-        # TODO(T37074129): Better parallelization or truncation needed for fbcode
         if self.targets and should_clean:
             try:
                 # If building targets, run clean or space may run out on device!
@@ -466,8 +465,6 @@ class FixmeAll(Command):
 
 class FixmeTargets(Command):
     def run(self, arguments: argparse.Namespace) -> None:
-        # Currently does not support sandcastle integration, or setting the global hash
-        # at the same time. As-is, run this locally after the global hash is updated.
         subdirectory = arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else None
         project_configuration = Configuration.find_project_configuration(subdirectory)
