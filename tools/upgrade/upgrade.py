@@ -150,92 +150,76 @@ class GlobalVersionUpdate(Command):
             LOG.info("Error while running hg.")
 
 
-# Exposed for testing.
-def _upgrade_project(
-    arguments: argparse.Namespace,
-    configuration: Configuration,
-    root: Path,
-    repository: Repository,
-) -> None:
-    LOG.info("Processing %s", configuration.get_directory())
-    if not configuration.is_local:
-        return
-    if arguments.upgrade_version:
-        if configuration.version:
-            configuration.remove_version()
-            configuration.write()
-        else:
+class ErrorSuppressingCommand(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._comment: str = arguments.comment
+        self._max_line_length: int = arguments.max_line_length
+        self._truncate: bool = arguments.truncate
+        self._unsafe: bool = getattr(arguments, "unsafe", False)
+
+    def _suppress_errors(self, errors: Errors) -> None:
+        fix(errors, self._comment, self._max_line_length, self._truncate, self._unsafe)
+
+    def _suppress_errors_in_project(
+        self, configuration: Configuration, root: Path
+    ) -> None:
+        LOG.info("Processing %s", configuration.get_directory())
+        if not configuration.is_local:
             return
-    errors = (
-        errors_from_stdin(arguments.only_fix_error_code)
-        if arguments.from_stdin and not arguments.upgrade_version
-        else configuration.get_errors()
-    )
-    if len(errors) > 0:
-        fix(errors, arguments.comment, arguments.max_line_length, arguments.truncate)
-
-        # Lint and re-run pyre once to resolve most formatting issues
-        if arguments.lint:
-            if repository.format():
-                errors = configuration.get_errors(should_clean=False)
-                fix(
-                    errors,
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
-                )
-    try:
-        project_root = root.resolve()
-        local_root = configuration.get_directory().resolve()
-        title = "{} for {}".format(
-            "Update pyre version"
-            if arguments.upgrade_version
-            else "Suppress pyre errors",
-            str(local_root.relative_to(project_root)),
+        if self._arguments.upgrade_version:
+            if configuration.version:
+                configuration.remove_version()
+                configuration.write()
+            else:
+                return
+        errors = (
+            errors_from_stdin(self._arguments.only_fix_error_code)
+            if self._arguments.from_stdin and not self._arguments.upgrade_version
+            else configuration.get_errors()
         )
-        if not arguments.no_commit:
-            repository.submit_changes(
-                arguments.submit, repository.commit_message(title)
+        if len(errors) > 0:
+            self._suppress_errors(errors)
+
+            # Lint and re-run pyre once to resolve most formatting issues
+            if self._arguments.lint:
+                if self._repository.format():
+                    errors = configuration.get_errors(should_clean=False)
+                    self._suppress_errors(errors)
+        try:
+            project_root = root.resolve()
+            local_root = configuration.get_directory().resolve()
+            title = "{} for {}".format(
+                "Update pyre version"
+                if self._arguments.upgrade_version
+                else "Suppress pyre errors",
+                str(local_root.relative_to(project_root)),
             )
-    except subprocess.CalledProcessError:
-        LOG.info("Error while running hg.")
+            if not self._arguments.no_commit:
+                self._repository.submit_changes(
+                    self._arguments.submit, self._repository.commit_message(title)
+                )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
 
 
-class Fixme(Command):
+class Fixme(ErrorSuppressingCommand):
     def run(self) -> None:
         # Suppress errors in project with no local configurations.
         if self._arguments.run:
             errors = errors_from_run(self._arguments.only_fix_error_code)
-            fix(
-                errors,
-                self._arguments.comment,
-                self._arguments.max_line_length,
-                self._arguments.truncate,
-                self._arguments.unsafe,
-            )
+            self._suppress_errors(errors)
 
             if self._arguments.lint:
                 if self._repository.format():
                     errors = errors_from_run(self._arguments.only_fix_error_code)
-                    fix(
-                        errors,
-                        self._arguments.comment,
-                        self._arguments.max_line_length,
-                        self._arguments.truncate,
-                        self._arguments.unsafe,
-                    )
+                    self._suppress_errors(errors)
         else:
             errors = errors_from_stdin(self._arguments.only_fix_error_code)
-            fix(
-                errors,
-                self._arguments.comment,
-                self._arguments.max_line_length,
-                self._arguments.truncate,
-                self._arguments.unsafe,
-            )
+            self._suppress_errors(errors)
 
 
-class FixmeSingle(Command):
+class FixmeSingle(ErrorSuppressingCommand):
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
@@ -246,15 +230,12 @@ class FixmeSingle(Command):
             configuration = Configuration(
                 configuration_path, json.load(configuration_file)
             )
-            _upgrade_project(
-                self._arguments,
-                configuration,
-                project_configuration.parent,
-                self._repository,
+            self._suppress_errors_in_project(
+                configuration, project_configuration.parent
             )
 
 
-class FixmeAll(Command):
+class FixmeAll(ErrorSuppressingCommand):
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
@@ -263,15 +244,12 @@ class FixmeAll(Command):
 
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
-            _upgrade_project(
-                self._arguments,
-                configuration,
-                project_configuration.parent,
-                self._repository,
+            self._suppress_errors_in_project(
+                configuration, project_configuration.parent
             )
 
 
-class FixmeTargets(Command):
+class FixmeTargets(ErrorSuppressingCommand):
     def run(self) -> None:
         subdirectory = self._arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else None
@@ -307,14 +285,12 @@ class FixmeTargets(Command):
         if not errors:
             return
         LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
+
         if not errors:
             return
-        fix(
-            errors,
-            self._arguments.comment,
-            self._arguments.max_line_length,
-            self._arguments.truncate,
-        )
+
+        self._suppress_errors(errors)
+
         if not self._arguments.lint:
             return
 
@@ -324,12 +300,7 @@ class FixmeTargets(Command):
                 LOG.info("Errors unchanged after linting.")
                 return
             LOG.info("Found %d type errors after linting.", len(errors))
-            fix(
-                errors,
-                self._arguments.comment,
-                self._arguments.max_line_length,
-                self._arguments.truncate,
-            )
+            self._suppress_errors(errors)
 
 
 class MigrateTargets(Command):
@@ -363,7 +334,7 @@ class MigrateTargets(Command):
         FixmeTargets(self._arguments, self._repository).run()
 
 
-class TargetsToConfiguration(Command):
+class TargetsToConfiguration(ErrorSuppressingCommand):
     def run(self) -> None:
         # TODO(T62926437): Basic integration testing.
         subdirectory = self._arguments.subdirectory
@@ -485,23 +456,13 @@ class TargetsToConfiguration(Command):
                 )
                 add_local_mode(path, LocalMode.IGNORE)
             else:
-                fix(
-                    Errors(errors),
-                    self._arguments.comment,
-                    self._arguments.max_line_length,
-                    self._arguments.truncate,
-                )
+                self._suppress_errors(Errors(errors))
 
         # Lint and re-run pyre once to resolve most formatting issues
         if self._arguments.lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
-                fix(
-                    errors,
-                    self._arguments.comment,
-                    self._arguments.max_line_length,
-                    self._arguments.truncate,
-                )
+                self._suppress_errors(errors)
 
         try:
             if not self._arguments.no_commit:

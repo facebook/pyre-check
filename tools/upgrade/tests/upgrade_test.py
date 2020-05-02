@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, call, mock_open, patch
 from .. import errors, filesystem, upgrade
 from ..repository import Repository
 from ..upgrade import (
+    ErrorSuppressingCommand,
     Fixme,
     FixmeAll,
     FixmeSingle,
@@ -131,14 +132,14 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch(f"{upgrade.__name__}.errors_from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch(f"{upgrade.__name__}.fix")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch(f"{upgrade.__name__}.Repository.format")
     def test_upgrade_project(
         self,
         repository_format,
         submit_changes,
-        fix,
+        suppress_errors,
         run_global_version_update,
         errors_from_stdin,
         gather,
@@ -155,7 +156,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.no_commit = False
         gather.return_value = []
         FixmeAll(arguments, repository).run()
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
         submit_changes.assert_not_called()
 
         pyre_errors = [
@@ -176,41 +177,27 @@ class FixmeAllTest(unittest.TestCase):
             Path("/root/local/.pyre_configuration.local"), {"version": 123}
         )
         configuration.get_path()
-        upgrade._upgrade_project(arguments, configuration, Path("/root"), repository)
-        run_global_version_update.assert_not_called()
-        fix.assert_called_once_with(
-            pyre_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
+        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
+            configuration, Path("/root")
         )
+        run_global_version_update.assert_not_called()
+        suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
 
         # Test with lint
         submit_changes.reset_mock()
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         arguments.from_stdin = False
         arguments.lint = True
-        upgrade._upgrade_project(arguments, configuration, Path("/root"), repository)
+        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
+            configuration, Path("/root")
+        )
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
-        calls = [
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-        ]
-        fix.assert_has_calls(calls)
+        calls = [call(pyre_errors), call(pyre_errors)]
+        suppress_errors.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
@@ -218,34 +205,23 @@ class FixmeAllTest(unittest.TestCase):
         # Test with from_stdin and lint
         repository_format.return_value = True
         submit_changes.reset_mock()
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         get_errors.reset_mock()
         arguments.from_stdin = True
         arguments.lint = True
         arguments.upgrade_version = False
         errors_from_stdin.return_value = pyre_errors
         get_errors.return_value = pyre_errors
-        upgrade._upgrade_project(arguments, configuration, Path("/root"), repository)
+        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
+            configuration, Path("/root")
+        )
         # Called in the first round to get initial errors
         errors_from_stdin.assert_called()
         # Called in the second round to get new errors after applying lint.
         get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
-        calls = [
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-            call(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            ),
-        ]
-        fix.assert_has_calls(calls)
+        calls = [call(pyre_errors), call(pyre_errors)]
+        suppress_errors.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
@@ -259,12 +235,12 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch(f"{upgrade.__name__}.fix")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_all(
         self,
         submit_changes,
-        fix,
+        suppress_errors,
         run_global_version_update,
         get_errors,
         remove_version,
@@ -287,12 +263,12 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = []
         FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
 
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         submit_changes.reset_mock()
         pyre_errors = [
             {
@@ -310,43 +286,33 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        fix.assert_called_once_with(
-            pyre_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
 
         # Test configuraton with no version set
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
             upgrade.Configuration(Path("local/.pyre_configuration.local"), {})
         ]
         FixmeAll(arguments, repository).run()
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
         submit_changes.assert_not_called()
 
         arguments.upgrade_version = False
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         submit_changes.reset_mock()
         FixmeAll(arguments, repository).run()
-        fix.assert_called_once_with(
-            pyre_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
             False, repository.commit_message("local")
         )
 
         # Test with given hash
         arguments.upgrade_version = True
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
             upgrade.Configuration(
@@ -357,12 +323,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.submit = True
         FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
-        fix.assert_called_once_with(
-            pyre_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(True, repository.commit_message("local"))
 
     def test_preserve_ast(self) -> None:
@@ -422,12 +383,12 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "write")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
-    @patch(f"{upgrade.__name__}.fix")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_single(
         self,
         submit_changes,
-        fix,
+        suppress_errors,
         get_errors,
         remove_version,
         configuration_write,
@@ -445,18 +406,18 @@ class FixmeSingleTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle(arguments, repository).run()
-            fix.assert_not_called()
+            suppress_errors.assert_not_called()
             submit_changes.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle(arguments, repository).run()
-            fix.assert_not_called()
+            suppress_errors.assert_not_called()
             submit_changes.assert_called_once_with(
                 True, repository.commit_message("local")
             )
 
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         submit_changes.reset_mock()
         pyre_errors = [
             {
@@ -474,12 +435,7 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             FixmeSingle(arguments, repository).run()
-            fix.assert_called_once_with(
-                pyre_errors,
-                arguments.comment,
-                arguments.max_line_length,
-                arguments.truncate,
-            )
+            suppress_errors.assert_called_once_with(pyre_errors)
             submit_changes.assert_called_once_with(
                 True, repository.commit_message("local")
             )
@@ -1060,8 +1016,8 @@ class FixmeTargetsTest(unittest.TestCase):
         )
 
     @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.fix")
-    def test_run_fixme_targets_file(self, fix, subprocess) -> None:
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    def test_run_fixme_targets_file(self, suppress_errors, subprocess) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
@@ -1086,14 +1042,14 @@ class FixmeTargetsTest(unittest.TestCase):
             stdout=-1,
             stderr=-1,
         )
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
         FixmeTargets(arguments, repository)._run_fixme_targets_file(
             Path("."), "a/b", ["derp", "herp"]
         )
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
 
         buck_return.returncode = 32
         buck_return.stdout = b"""
@@ -1165,16 +1121,11 @@ class FixmeTargetsTest(unittest.TestCase):
         FixmeTargets(arguments, repository)._run_fixme_targets_file(
             Path("."), "a/b", ["derp", "herp"]
         )
-        fix.assert_called_once_with(
-            expected_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(expected_errors)
 
         # Test fallback to type check targets with modified names
         subprocess.reset_mock()
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
         failed_buck_return.stdout = b""
@@ -1215,15 +1166,10 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        fix.assert_called_once_with(
-            expected_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(expected_errors)
 
         subprocess.reset_mock()
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         failed_buck_return = MagicMock()
         failed_buck_return.returncode = 5
         failed_buck_return.stdout = b""
@@ -1274,12 +1220,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 ),
             ]
         )
-        fix.assert_called_once_with(
-            expected_errors,
-            arguments.comment,
-            arguments.max_line_length,
-            arguments.truncate,
-        )
+        suppress_errors.assert_called_once_with(expected_errors)
 
 
 class MigrateTest(unittest.TestCase):
@@ -1354,12 +1295,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.remove_non_pyre_ignores")
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
-    @patch(f"{upgrade.__name__}.fix")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.format")
     def test_run_targets_to_configuration(
         self,
         repository_format,
-        fix,
+        suppress_errors,
         add_local_mode,
         get_errors,
         remove_non_pyre_ignores,
@@ -1411,7 +1352,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
 
         # Do not attempt to create a configuration when no existing project-level
         # configuration is found.
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         submit_changes.reset_mock()
@@ -1423,7 +1364,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_local_configuration.return_value = None
         TargetsToConfiguration(arguments, repository).run()
         open_mock.assert_not_called()
-        fix.assert_not_called()
+        suppress_errors.assert_not_called()
         add_local_mode.assert_not_called()
 
         # Add to existing project configuration if it lives at given subdirectory
@@ -1459,27 +1400,14 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-            fix.assert_has_calls(
-                [
-                    call(
-                        errors.Errors(pyre_errors),
-                        arguments.comment,
-                        arguments.max_line_length,
-                        arguments.truncate,
-                    ),
-                    call(
-                        errors.Errors(pyre_errors),
-                        arguments.comment,
-                        arguments.max_line_length,
-                        arguments.truncate,
-                    ),
-                ]
+            suppress_errors.assert_has_calls(
+                [call(errors.Errors(pyre_errors)), call(errors.Errors(pyre_errors))]
             )
             add_local_mode.assert_not_called()
             submit_changes.assert_called_once()
 
         # Create local project configuration
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         get_errors.side_effect = [
@@ -1512,23 +1440,14 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-            fix.assert_has_calls(
-                [
-                    call(
-                        errors.Errors(pyre_errors),
-                        arguments.comment,
-                        arguments.max_line_length,
-                        arguments.truncate,
-                    )
-                ]
-            )
+            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
             add_local_mode.assert_not_called()
             add_paths.assert_called_once_with(
                 [Path("subdirectory/.pyre_configuration.local")]
             )
 
         # Add to existing local project configuration
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         get_errors.side_effect = [
@@ -1564,21 +1483,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-        fix.assert_has_calls(
-            [
-                call(
-                    errors.Errors(pyre_errors),
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
-                )
-            ]
-        )
+        suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
         add_local_mode.assert_not_called()
 
         # Refuse to nest local configurations
         arguments.subdirectory = "nested/subdirectory"
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         get_errors.side_effect = [
@@ -1614,20 +1524,11 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-        fix.assert_has_calls(
-            [
-                call(
-                    errors.Errors(pyre_errors),
-                    arguments.comment,
-                    arguments.max_line_length,
-                    arguments.truncate,
-                )
-            ]
-        )
+        suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
         add_local_mode.assert_not_called()
 
         # Glob target with error threshold set
-        fix.reset_mock()
+        suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
         pyre_errors = [
@@ -1687,7 +1588,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             dump_mock.assert_called_once_with(
                 expected_configuration_contents, mocks[1], indent=2, sort_keys=True
             )
-            fix.assert_not_called()
+            suppress_errors.assert_not_called()
             add_local_mode.assert_called_once_with(
                 "local.py", filesystem.LocalMode.IGNORE
             )
@@ -1700,10 +1601,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.get_filesystem")
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
-    @patch(f"{upgrade.__name__}.fix")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     def test_targets_file_cleanup(
         self,
-        fix,
+        suppress_errors,
         add_local_mode,
         get_errors,
         get_filesystem,
