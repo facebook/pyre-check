@@ -679,9 +679,8 @@ def run(repository: Repository) -> None:
     )
     targets_to_configuration.add_argument(
         "--fixme-threshold",
-        action="store_true",
+        type=int,
         help="Ignore all errors in a file if fixme count exceeds threshold.",
-        default=None,
     )
     targets_to_configuration.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
