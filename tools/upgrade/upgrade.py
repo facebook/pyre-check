@@ -206,7 +206,7 @@ class ErrorSuppressingCommand(Command):
 class Fixme(ErrorSuppressingCommand):
     def run(self) -> None:
         # Suppress errors in project with no local configurations.
-        if self._arguments.run:
+        if not self._arguments.from_stdin:
             errors = errors_from_run(self._arguments.only_fix_error_code)
             self._suppress_errors(errors)
 
@@ -553,8 +553,8 @@ def run(repository: Repository) -> None:
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
     fixme.set_defaults(command=Fixme)
+    fixme.add_argument("--from-stdin", action="store_true", default=True)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
-    fixme.add_argument("--run", action="store_true")
     fixme.add_argument(
         "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
     )
@@ -659,9 +659,9 @@ def run(repository: Repository) -> None:
 
     # Initialize default values.
     arguments = parser.parse_args()
-    if not hasattr(arguments, "function"):
-        arguments.run = False
+    if not hasattr(arguments, "command"):
         arguments.command = Fixme
+        arguments.from_stdin = True
 
     # Initialize values that may be null-checked, but do not exist as a flag
     # for all subcommands

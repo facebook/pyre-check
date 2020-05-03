@@ -453,7 +453,7 @@ class FixmeTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.comment = None
         arguments.max_line_length = 88
-        arguments.run = False
+        arguments.from_stdin = True
         arguments.truncate = True
 
         stdin_errors.return_value = errors.Errors.empty()
@@ -498,7 +498,7 @@ class FixmeTest(unittest.TestCase):
             Fixme(arguments, repository).run()
             path_write_text.assert_not_called()
 
-        arguments.run = False
+        arguments.from_stdin = True
         arguments.lint = False
 
         # Test error with custom message.
