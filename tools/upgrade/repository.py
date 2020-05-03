@@ -19,5 +19,8 @@ class Repository:
     ) -> None:
         pass
 
+    def revert_all(self) -> None:
+        pass
+
     def format(self) -> bool:
         pass

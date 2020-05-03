@@ -1286,6 +1286,7 @@ class MigrateTest(unittest.TestCase):
 
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
+    @patch(f"{upgrade.__name__}.Repository.revert_all")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch(f"{upgrade.__name__}.Repository.add_paths")
     @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
@@ -1312,12 +1313,13 @@ class TargetsToConfigurationTest(unittest.TestCase):
         find_project_configuration,
         add_paths,
         submit_changes,
+        revert_all,
         open_mock,
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
         arguments.lint = True
-        arguments.glob = False
+        arguments.glob = None
         arguments.fixme_threshold = None
         arguments.no_commit = False
         find_targets.return_value = {
@@ -1574,7 +1576,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
         arguments.subdirectory = "subdirectory"
         arguments.lint = False
-        arguments.glob = True
+        arguments.glob = 100
         arguments.fixme_threshold = 1
         with patch("json.dump") as dump_mock:
             mocks = [
@@ -1600,6 +1602,86 @@ class TargetsToConfigurationTest(unittest.TestCase):
             add_local_mode.assert_called_once_with(
                 "local.py", filesystem.LocalMode.IGNORE
             )
+
+        # Glob target with glob threshold and fallback
+        suppress_errors.reset_mock()
+        open_mock.reset_mock()
+        dump_mock.reset_mock()
+        pyre_errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            },
+            {
+                "line": 3,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            },
+        ]
+        get_errors.side_effect = [
+            errors.Errors(pyre_errors),
+            errors.Errors(pyre_errors),
+        ]
+        find_local_configuration.return_value = None
+        find_project_configuration.return_value = Path(".pyre_configuration")
+        configuration_contents = json.dumps(
+            {"version": "abc", "search_path": ["stubs"]}
+        )
+        arguments.subdirectory = "subdirectory"
+        arguments.lint = False
+        arguments.glob = 1
+        arguments.fixme_threshold = None
+        with patch("json.dump") as dump_mock:
+            mocks = [
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data=configuration_contents).return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+            TargetsToConfiguration(arguments, repository).run()
+            expected_glob_configuration_contents = {
+                "targets": ["//subdirectory/..."],
+                "strict": True,
+            }
+            expected_fallback_configuration_contents = {
+                "targets": [
+                    "//subdirectory/a:target_one",
+                    "//subdirectory/b/c:target_three",
+                    "//subdirectory/b/c:target_two",
+                ],
+                "strict": True,
+            }
+            dump_mock.assert_has_calls(
+                [
+                    call(
+                        expected_glob_configuration_contents,
+                        mocks[1],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                    call(
+                        expected_fallback_configuration_contents,
+                        mocks[3],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                ]
+            )
+            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
 
     @patch("subprocess.run")
     @patch("builtins.open")

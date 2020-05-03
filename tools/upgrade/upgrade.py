@@ -457,10 +457,21 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
         all_errors = configuration.get_errors()
         error_threshold = self._arguments.fixme_threshold
+        glob_threshold = self._arguments.glob
 
         for path, errors in all_errors:
             errors = list(errors)
             error_count = len(errors)
+            if glob_threshold and error_count > glob_threshold:
+                # Fall back to non-glob codemod.
+                LOG.info(
+                    "Exceeding error threshold of %d; falling back to listing "
+                    "individual targets.",
+                    glob_threshold,
+                )
+                self._repository.revert_all()
+                self._arguments.glob = None
+                return self.run()
             if error_threshold and error_count > error_threshold:
                 LOG.info(
                     "%d errors found in `%s`. Adding file-level ignore.",
@@ -674,8 +685,9 @@ def run(repository: Repository) -> None:
     )
     targets_to_configuration.add_argument(
         "--glob",
-        action="store_true",
-        help="Use a toplevel glob target and suppress unchecked files.",
+        type=int,
+        help="Use a toplevel glob target instead of listing individual targets. \
+        Fall back to individual targets if errors per file ever hits given threshold.",
     )
     targets_to_configuration.add_argument(
         "--fixme-threshold",
