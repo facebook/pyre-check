@@ -135,3 +135,17 @@ def remove_non_pyre_ignores(subdirectory: Path) -> None:
             r"s/# \?type: \?ignore$//g",
         ] + python_files
         subprocess.check_output(remove_type_ignore_command)
+
+
+def find_files(directory: Path, name: str) -> List[str]:
+    output = (
+        subprocess.check_output(
+            ["find", str(directory), "-name", name], stderr=subprocess.DEVNULL
+        )
+        .decode("utf-8")
+        .strip()
+    )
+    if output == "":
+        return []
+    files = output.split("\n")
+    return [file.strip() for file in files]

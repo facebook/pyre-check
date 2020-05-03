@@ -21,6 +21,7 @@ from .errors import Errors, errors_from_stdin, errors_from_targets, fix
 from .filesystem import (
     LocalMode,
     add_local_mode,
+    find_files,
     find_targets,
     get_filesystem,
     path_exists,
@@ -339,6 +340,18 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         # TODO(T62926437): Basic integration testing.
         subdirectory = self._arguments.subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+
+        # Do not convert if configurations exist below given root
+        existing_configurations = find_files(subdirectory, ".pyre_configuration.local")
+        if existing_configurations and not existing_configurations == [
+            str(subdirectory / ".pyre_configuration.local")
+        ]:
+            LOG.warning(
+                "Cannot convert targets because nested configurations exist:\n%s",
+                "\n".join(existing_configurations),
+            )
+            return
+
         LOG.info(
             "Converting typecheck targets to pyre configuration in `%s`", subdirectory
         )

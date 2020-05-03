@@ -1297,8 +1297,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.add_local_mode")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.format")
+    @patch(f"{upgrade.__name__}.find_files")
     def test_run_targets_to_configuration(
         self,
+        find_files,
         repository_format,
         suppress_errors,
         add_local_mode,
@@ -1339,7 +1341,13 @@ class TargetsToConfigurationTest(unittest.TestCase):
             }
         ]
 
+        # Skip if nested configurations found
+        find_files.return_value = ["nested/.pyre_configuration.local"]
+        TargetsToConfiguration(arguments, repository).run()
+        find_targets.assert_not_called()
+
         # No errors returned.
+        find_files.return_value = []
         get_errors.side_effect = [errors.Errors([]), errors.Errors([])]
         find_project_configuration.return_value = Path(".pyre_configuration")
         with patch("json.dump") as dump_mock:
@@ -1602,8 +1610,10 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch(f"{upgrade.__name__}.find_files", return_value=[])
     def test_targets_file_cleanup(
         self,
+        find_files,
         suppress_errors,
         add_local_mode,
         get_errors,
