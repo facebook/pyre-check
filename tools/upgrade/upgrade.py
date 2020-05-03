@@ -479,12 +479,29 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
         try:
             if not self._arguments.no_commit:
+                summary = (
+                    "Migrating buck integration to use configurations, which is more "
+                    "performant and is the primary supported way to run Pyre."
+                )
+                if local_configuration:
+                    summary += (
+                        f"\n\nNote: Targets were added to or were already covered by "
+                        f"existing configuration at {local_configuration}."
+                    )
+                glob = self._arguments.glob
+                if glob:
+                    summary += (
+                        f"\n\nConfiguration target automatically expanded to include "
+                        f"all subtargets, expanding type coverage while introducing "
+                        f"no more than {glob} fixmes per file."
+                    )
                 self._repository.submit_changes(
                     self._arguments.submit,
                     self._repository.commit_message(
                         "Convert type check targets in {} to use configuration".format(
                             subdirectory
-                        )
+                        ),
+                        summary_override=summary,
                     ),
                 )
         except subprocess.CalledProcessError:
