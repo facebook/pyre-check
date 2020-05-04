@@ -40,4 +40,119 @@ let test_boolean_literal context =
     ]
 
 
-let () = "literal" >::: ["boolean_literal" >:: test_boolean_literal] |> Test.run
+let test_enumeration_literal context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      import enum
+      from typing_extensions import Literal
+
+      class MyEnum(enum.Enum):
+        HELLO = "hello"
+        WORLD = "world"
+
+      x1: Literal[MyEnum.HELLO] = MyEnum.HELLO
+
+      x2: Literal[MyEnum.HELLO] = "hello"
+      x3: Literal[MyEnum.HELLO] = MyEnum.WORLD
+      x4: Literal[MyEnum.HELLO] = "world"
+      x5: Literal[MyEnum.HELLO] = 1
+    |}
+    [
+      "Incompatible variable type [9]: x2 is declared to have type \
+       `typing_extensions.Literal[MyEnum.HELLO]` but is used as type \
+       `typing_extensions.Literal['hello']`.";
+      "Incompatible variable type [9]: x3 is declared to have type \
+       `typing_extensions.Literal[MyEnum.HELLO]` but is used as type \
+       `typing_extensions.Literal[MyEnum.WORLD]`.";
+      "Incompatible variable type [9]: x4 is declared to have type \
+       `typing_extensions.Literal[MyEnum.HELLO]` but is used as type \
+       `typing_extensions.Literal['world']`.";
+      "Incompatible variable type [9]: x5 is declared to have type \
+       `typing_extensions.Literal[MyEnum.HELLO]` but is used as type \
+       `typing_extensions.Literal[1]`.";
+    ];
+  assert_type_errors
+    {|
+      import enum
+      from typing_extensions import Literal
+
+      class MyIntEnum(enum.Enum):
+        ONE = 1
+        TWO = 2
+      x1: Literal[MyIntEnum.ONE] = MyIntEnum.ONE
+
+      x2: Literal[MyIntEnum.ONE] = 1
+      x3: Literal[MyIntEnum.ONE] = MyIntEnum.TWO
+      x4: Literal[MyIntEnum.ONE] = 2
+      x5: Literal[MyIntEnum.ONE] = "foo"
+    |}
+    [
+      "Incompatible variable type [9]: x2 is declared to have type \
+       `typing_extensions.Literal[MyIntEnum.ONE]` but is used as type \
+       `typing_extensions.Literal[1]`.";
+      "Incompatible variable type [9]: x3 is declared to have type \
+       `typing_extensions.Literal[MyIntEnum.ONE]` but is used as type \
+       `typing_extensions.Literal[MyIntEnum.TWO]`.";
+      "Incompatible variable type [9]: x4 is declared to have type \
+       `typing_extensions.Literal[MyIntEnum.ONE]` but is used as type \
+       `typing_extensions.Literal[2]`.";
+      "Incompatible variable type [9]: x5 is declared to have type \
+       `typing_extensions.Literal[MyIntEnum.ONE]` but is used as type \
+       `typing_extensions.Literal['foo']`.";
+    ];
+  assert_type_errors
+    {|
+      import enum
+      from typing_extensions import Literal
+
+      class MyEnum(enum.Enum):
+        HELLO = "hello"
+        WORLD = "world"
+
+      def foo(x: Literal[MyEnum.HELLO]) -> None: ...
+
+      foo(MyEnum.HELLO)
+      foo(MyEnum.WORLD)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[MyEnum.HELLO]` for 1st \
+       positional only parameter to call `foo` but got `typing_extensions.Literal[MyEnum.WORLD]`.";
+    ];
+  assert_type_errors
+    {|
+      import enum
+      from typing_extensions import Literal
+
+      class MyEnum(enum.Enum):
+        HELLO = "hello"
+        WORLD = "world"
+
+      x1: Literal[MyEnum.HELLO, MyEnum.WORLD] = MyEnum.HELLO
+      x2: Literal[MyEnum.HELLO, MyEnum.WORLD] = MyEnum.WORLD
+    |}
+    [];
+  assert_type_errors
+    {|
+      import enum
+      class A(enum.Enum):
+          ONE = 1
+          TWO = 2
+      def expects_string(x: str) -> None: ...
+
+      expects_string(A.ONE)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
+       `expects_string` but got `A`.";
+    ];
+  ()
+
+
+let () =
+  "literal"
+  >::: [
+         "boolean_literal" >:: test_boolean_literal;
+         "enumeration_literal" >:: test_enumeration_literal;
+       ]
+  |> Test.run

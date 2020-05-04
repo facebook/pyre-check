@@ -2457,7 +2457,11 @@ module Implementation = struct
               && defined
               && not implicit
             then
-              Some class_annotation, AnnotatedAttribute.ReadOnly (Refinable { overridable = true })
+              ( Some
+                  (Type.Literal
+                     (Type.EnumerationMember
+                        { enumeration_type = class_annotation; member_name = attribute_name })),
+                AnnotatedAttribute.ReadOnly (Refinable { overridable = true }) )
             else
               let visibility =
                 if final then

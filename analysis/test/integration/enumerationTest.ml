@@ -17,7 +17,7 @@ let test_enumeration_methods context =
       reveal_type(C.__members__)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
+      "Revealed type [-1]: Revealed type for `test.C.A` is `typing_extensions.Literal[C.A]`.";
       "Revealed type [-1]: Revealed type for `test.C.__members__` is \
        `BoundMethod[typing.Callable(enum.EnumMeta.__members__)[[Named(self, \
        typing.Type[Variable[enum._T]])], typing.Mapping[str, Variable[enum._T]]], \
@@ -32,7 +32,7 @@ let test_enumeration_methods context =
       reveal_type(C.__members__)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
+      "Revealed type [-1]: Revealed type for `test.C.A` is `typing_extensions.Literal[C.A]`.";
       "Revealed type [-1]: Revealed type for `test.C.__members__` is \
        `BoundMethod[typing.Callable(enum.EnumMeta.__members__)[[Named(self, \
        typing.Type[Variable[enum._T]])], typing.Mapping[str, Variable[enum._T]]], \
@@ -108,8 +108,8 @@ let test_check_enumeration_attributes context =
         a: int
     |}
     [
-      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type `C` but \
-       is never initialized.";
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type \
+       `typing_extensions.Literal[C.a]` but is never initialized.";
     ];
   assert_type_errors
     {|
@@ -176,7 +176,7 @@ let test_check_enumeration_attributes context =
               self.x: str = "another string"
       reveal_type(A.x)
     |}
-    ["Revealed type [-1]: Revealed type for `test.A.x` is `A`."];
+    ["Revealed type [-1]: Revealed type for `test.A.x` is `typing_extensions.Literal[A.x]`."];
   ()
 
 
