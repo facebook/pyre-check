@@ -8,6 +8,18 @@
 from typing import NamedTuple, Optional, Set
 
 
+class AnnotationSpecification(NamedTuple):
+    arg: Optional[str] = None
+    vararg: Optional[str] = None
+    kwarg: Optional[str] = None
+    returns: Optional[str] = None
+
+
+class WhitelistSpecification(NamedTuple):
+    parameter_type: Optional[Set[str]] = None
+    parameter_name: Optional[Set[str]] = None
+
+
 class DecoratorAnnotationSpecification(NamedTuple):
     decorator: str
     arg_annotation: Optional[str] = None

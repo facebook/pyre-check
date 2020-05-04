@@ -17,6 +17,7 @@ import _ast
 from typing_extensions import Final
 
 from ...api import query
+from .generator_specifications import AnnotationSpecification, WhitelistSpecification
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
 
 
@@ -59,8 +60,8 @@ class Parameter(NamedTuple):
 class RawCallableModel(Model):
     callable_name: str
     parameters: List[Parameter]
-    parameter_type_whitelist: Optional[Iterable[str]]
-    parameter_name_whitelist: Optional[Set[str]]
+    annotations: AnnotationSpecification
+    whitelist: WhitelistSpecification
     returns: Optional[str] = None
 
     def __init__(
@@ -71,14 +72,25 @@ class RawCallableModel(Model):
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
+        annotations: Optional[AnnotationSpecification] = None,
+        whitelist: Optional[WhitelistSpecification] = None,
     ) -> None:
-        self.arg = arg
-        self.vararg = vararg
-        self.kwarg = kwarg
-        self.returns = returns
+        if annotations:
+            self.annotations = annotations
+        else:
+            self.annotations = AnnotationSpecification(
+                arg=arg, vararg=vararg, kwarg=kwarg, returns=returns
+            )
 
-        self.parameter_type_whitelist = parameter_type_whitelist
-        self.parameter_name_whitelist = parameter_name_whitelist
+        if whitelist:
+            self.whitelist = whitelist
+        else:
+            self.whitelist = WhitelistSpecification(
+                parameter_type=set(parameter_type_whitelist)
+                if parameter_type_whitelist
+                else None,
+                parameter_name=parameter_name_whitelist,
+            )
 
         callable_name = self._get_fully_qualified_callable_name()
         # Object construction should fail if any child class passes in a None.
@@ -99,8 +111,8 @@ class RawCallableModel(Model):
     def __str__(self) -> str:
         serialized_parameters = []
 
-        name_whitelist = self.parameter_name_whitelist
-        type_whitelist = self.parameter_type_whitelist
+        name_whitelist = self.whitelist.parameter_name
+        type_whitelist = self.whitelist.parameter_type
         for parameter_name, annotation, kind in self.parameters:
             should_annotate = True
             if name_whitelist is not None and parameter_name in name_whitelist:
@@ -111,11 +123,11 @@ class RawCallableModel(Model):
 
             if should_annotate:
                 if kind == ArgumentKind.KWARG:
-                    taint = self.kwarg
+                    taint = self.annotations.kwarg
                 elif kind == ArgumentKind.VARARG:
-                    taint = self.vararg
+                    taint = self.annotations.vararg
                 else:  # kind == ArgumentKind.ARG:
-                    taint = self.arg
+                    taint = self.annotations.arg
             else:
                 taint = None
 
@@ -126,7 +138,7 @@ class RawCallableModel(Model):
             else:
                 serialized_parameters.append(parameter_name)
 
-        returns = self.returns
+        returns = self.annotations.returns
         if returns:
             return_annotation = f" -> {returns}"
         else:
@@ -170,6 +182,8 @@ class CallableModel(RawCallableModel):
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
+        annotations: Optional[AnnotationSpecification] = None,
+        whitelist: Optional[WhitelistSpecification] = None,
     ) -> None:
         self.callable_object = callable_object
         super().__init__(
@@ -179,6 +193,8 @@ class CallableModel(RawCallableModel):
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
+            annotations=annotations,
+            whitelist=whitelist,
         )
 
     def _generate_parameters(self) -> List[Parameter]:
@@ -223,6 +239,8 @@ class FunctionDefinitionModel(RawCallableModel):
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
+        annotations: Optional[AnnotationSpecification] = None,
+        whitelist: Optional[WhitelistSpecification] = None,
     ) -> None:
         self.definition = definition
         self.qualifier = qualifier
@@ -233,6 +251,8 @@ class FunctionDefinitionModel(RawCallableModel):
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
+            annotations=annotations,
+            whitelist=whitelist,
         )
 
     @staticmethod
@@ -310,6 +330,8 @@ class PyreFunctionDefinitionModel(RawCallableModel):
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
+        annotations: Optional[AnnotationSpecification] = None,
+        whitelist: Optional[WhitelistSpecification] = None,
     ) -> None:
         self.definition = definition
         super().__init__(
@@ -319,6 +341,8 @@ class PyreFunctionDefinitionModel(RawCallableModel):
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
+            annotations=annotations,
+            whitelist=whitelist,
         )
 
     def _generate_parameters(self) -> List[Parameter]:

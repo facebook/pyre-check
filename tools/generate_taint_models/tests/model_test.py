@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from .. import model
+from ..generator_specifications import AnnotationSpecification, WhitelistSpecification
 
 
 def test_function(argument: str, *variable: str, **keyword: str) -> None:
@@ -53,6 +54,24 @@ class ModelTest(unittest.TestCase):
             f"def {name}(argument, *variable, **keyword) -> TaintSink[returned]: ...",
         )
 
+        # We handle the combined AnnotationSpecification
+        annotations = AnnotationSpecification(
+            arg="TaintSource[tainted]",
+            vararg="TaintSource[tainted]",
+            kwarg="TaintSource[tainted]",
+            returns="TaintSink[returned]",
+        )
+        self.assertEqual(
+            str(
+                model.CallableModel(
+                    callable_object=test_function, annotations=annotations
+                )
+            ),
+            f"def {name}(argument: TaintSource[tainted],"
+            + " *variable: TaintSource[tainted],"
+            + " **keyword: TaintSource[tainted]) -> TaintSink[returned]: ...",
+        )
+
         # We don't generate models for local functions.
         def local_function(x: int, *args: str) -> None:
             ...
@@ -80,6 +99,24 @@ class ModelTest(unittest.TestCase):
             # 2nd positional only parameter to call
             # `model.FunctionDefinitionModel.__init__` but got `str`.
             str(model.FunctionDefinitionModel(definition=parsed_function, **kwargs)),
+            expected,
+        )
+
+        # We handle the combined AnnotationSpecification
+        annotations = AnnotationSpecification(
+            arg=kwargs.get("arg"),
+            vararg=kwargs.get("vararg"),
+            kwarg=kwargs.get("kwarg"),
+            returns=kwargs.get("returns"),
+        )
+        self.assertEqual(
+            str(
+                model.FunctionDefinitionModel(
+                    definition=parsed_function,
+                    annotations=annotations,
+                    qualifier=kwargs.get("qualifier"),
+                )
+            ),
             expected,
         )
 
@@ -306,6 +343,44 @@ class ModelTest(unittest.TestCase):
                         # pyre-ignore[45]: Cannot instantiate abstract class
                         model.RawCallableModel(
                             arg="TaintSource[UC]", parameter_name_whitelist={"b"}
+                        )
+                    ),
+                    "def qualified.C.name(a: TaintSource[UC], b): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", "int", model.ArgumentKind.ARG),
+                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                self.assertEqual(
+                    str(
+                        # pyre-ignore[45]: Cannot instantiate abstract class
+                        model.RawCallableModel(
+                            arg="TaintSource[UC]",
+                            whitelist=WhitelistSpecification(parameter_type={"int"}),
+                        )
+                    ),
+                    "def qualified.C.name(a, b: TaintSource[UC]): ...",
+                )
+
+            with patch.object(
+                model.RawCallableModel,
+                "_generate_parameters",
+                return_value=[
+                    model.Parameter("a", None, model.ArgumentKind.ARG),
+                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                ],
+            ):
+                self.assertEqual(
+                    str(
+                        # pyre-ignore[45]: Cannot instantiate abstract class
+                        model.RawCallableModel(
+                            arg="TaintSource[UC]",
+                            whitelist=WhitelistSpecification(parameter_name={"b"}),
                         )
                     ),
                     "def qualified.C.name(a: TaintSource[UC], b): ...",
