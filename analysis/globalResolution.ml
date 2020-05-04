@@ -461,8 +461,6 @@ let constraints_solution_exists ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let solve_constraints resolution = TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
-
 let extract_type_parameters resolution ~source ~target =
   match source with
   | Type.Top
