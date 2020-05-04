@@ -24,6 +24,7 @@ from .get_class_sources import ClassSourceGenerator  # noqa
 from .get_exit_nodes import ExitNodeGenerator  # noqa
 from .get_filtered_sources import FilteredSourceGenerator  # noqa
 from .get_globals import GlobalModelGenerator  # noqa
+from .get_graphene_models import GrapheneModelsGenerator  # noqa
 from .get_graphql_sources import GraphQLSourceGenerator  # noqa
 from .get_methods_of_subclasses import MethodsOfSubclassesGenerator  # noqa
 from .get_request_specific_data import RequestSpecificDataGenerator  # noqa
