@@ -469,7 +469,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     "individual targets.",
                     glob_threshold,
                 )
-                self._repository.revert_all()
+                self._repository.revert_all(remove_untracked=True)
                 self._arguments.glob = None
                 return self.run()
             if error_threshold and error_count > error_threshold:

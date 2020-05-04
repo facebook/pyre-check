@@ -19,7 +19,7 @@ class Repository:
     ) -> None:
         pass
 
-    def revert_all(self) -> None:
+    def revert_all(self, remove_untracked: bool) -> None:
         pass
 
     def format(self) -> bool:
