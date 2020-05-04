@@ -6,10 +6,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import logging
 import subprocess
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Dict, List, NamedTuple, Optional
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 # We use NamedTuple instead of dataclasses for Python3.5/6 support.
@@ -68,6 +72,7 @@ class PyreConnection:
     def query_server(self, query: str) -> Optional[PyreQueryResult]:
         if not self.server_initialized:
             self.start_server()
+        LOG.debug(f"Running query: `pyre query '{query}'`")
         result = subprocess.run(
             ["pyre", "query", query],
             stdout=subprocess.PIPE,
