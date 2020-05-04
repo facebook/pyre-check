@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "builder_pattern.test_issue",
-    "callable_line": 26,
+    "callable_line": 37,
     "code": 5002,
-    "line": 28,
+    "line": 39,
     "start": 4,
     "end": 62,
     "filename": "builder_pattern.py",
@@ -17,11 +17,11 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 28,
+              "line": 39,
               "start": 46,
               "end": 61
             },
-            "tito": [ { "line": 28, "start": 46, "end": 61 } ],
+            "tito": [ { "line": 39, "start": 46, "end": 61 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -43,9 +43,143 @@
             "call": {
               "position": {
                 "filename": "builder_pattern.py",
-                "line": 28,
+                "line": 39,
                 "start": 4,
                 "end": 62
+              },
+              "resolves_to": [ "builder_pattern.Builder.async_save" ],
+              "port": "formal(self)[_saved]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "builder_pattern.test_issue_with_sub_builder",
+    "callable_line": 67,
+    "code": 5002,
+    "line": 69,
+    "start": 4,
+    "end": 5,
+    "filename": "builder_pattern.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "builder_pattern.py",
+              "line": 70,
+              "start": 8,
+              "end": 23
+            },
+            "tito": [ { "line": 70, "start": 8, "end": 23 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "builder_pattern.py",
+                "line": 69,
+                "start": 4,
+                "end": 5
+              },
+              "resolves_to": [ "builder_pattern.Builder.async_save" ],
+              "port": "formal(self)[_saved]",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "builder_pattern.test_issue_with_type_var",
+    "callable_line": 49,
+    "code": 5002,
+    "line": 51,
+    "start": 4,
+    "end": 5,
+    "filename": "builder_pattern.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "builder_pattern.py",
+              "line": 52,
+              "start": 8,
+              "end": 23
+            },
+            "tito": [ { "line": 52, "start": 8, "end": 23 } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "builder_pattern.py",
+                "line": 51,
+                "start": 4,
+                "end": 5
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self)[_saved]",
@@ -116,7 +250,7 @@
           {
             "root": {
               "filename": "builder_pattern.py",
-              "line": 18,
+              "line": 21,
               "start": 20,
               "end": 31
             },
@@ -162,7 +296,63 @@
 {
   "kind": "model",
   "data": {
+    "callable": "builder_pattern.Builder.set_not_saved_through_typevar",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(not_saved)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[_not_saved]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "builder_pattern.Builder.set_saved",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(saved)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[_saved]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builder_pattern.Builder.set_saved_through_typevar",
     "sources": [],
     "sinks": [],
     "tito": [

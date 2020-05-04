@@ -632,17 +632,23 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               match Resolution.resolve_expression resolution callee with
               | ( _,
                   Type.Parametric
-                    {
-                      name = "BoundMethod";
-                      parameters =
-                        [
-                          Type.Parameter.Single (Type.Callable { Type.Callable.implementation; _ });
-                          Type.Parameter.Single implicit;
-                        ];
-                    } ) ->
-                  Type.Callable.Overload.return_annotation implementation
-                  |> Type.equal implicit
-                  |> not
+                    { name = "BoundMethod"; parameters = [_; Type.Parameter.Single implicit] } ) ->
+                  let return_annotation =
+                    (* To properly substitute type variables, we simulate `callee.__call__` for the
+                       bound method. *)
+                    let to_simulate =
+                      Node.create_with_default_location
+                        (Expression.Name
+                           (Name.Attribute { base = callee; attribute = "__call__"; special = true }))
+                    in
+                    Resolution.resolve_expression resolution to_simulate
+                    |> snd
+                    |> function
+                    | Type.Callable { Type.Callable.implementation; _ } ->
+                        Type.Callable.Overload.return_annotation implementation
+                    | _ -> Type.Top
+                  in
+                  not (Type.equal implicit return_annotation)
               | _ -> true
             in
             let arguments = Option.to_list receiver @ arguments in
