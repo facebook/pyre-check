@@ -108,13 +108,13 @@ def run_generators(
     verbose: bool = False,
     logger_executable: Optional[str] = None,
 ) -> None:
+    arguments = _parse_arguments(generator_options)
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.DEBUG if verbose else logging.INFO,
+        level=logging.DEBUG if verbose or arguments.verbose else logging.INFO,
     )
 
-    arguments = _parse_arguments(generator_options)
     modes = arguments.mode or default_modes
     generated_models: Dict[str, Set[Model]] = {}
     for mode in modes:
