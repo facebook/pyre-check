@@ -7,23 +7,10 @@
 
 import logging
 import os
-import time
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Callable, Generic, Iterable, TypeVar
 
-from .generator_specifications import DecoratorAnnotationSpecification
-from .model import CallableModel, Model
+from .model import Model
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -41,27 +28,19 @@ def qualifier(root: str, path: str) -> str:
     return qualifier
 
 
-class ModelGenerator(ABC):
+T = TypeVar("T", bound=Model, covariant=True)
+
+
+class ModelGenerator(ABC, Generic[T]):
     @abstractmethod
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Iterable[T]:
         pass
 
     @abstractmethod
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         pass
 
-    def generate_models(self) -> Iterable[Model]:
-        return self.compute_models(self.gather_functions_to_model())
-
-
-class CallableModelGenerator(ModelGenerator):
-    @abstractmethod
-    def compute_models(
-        self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[CallableModel]:
-        pass
-
-    def generate_models(self) -> Iterable[CallableModel]:
+    def generate_models(self) -> Iterable[T]:
         return self.compute_models(self.gather_functions_to_model())

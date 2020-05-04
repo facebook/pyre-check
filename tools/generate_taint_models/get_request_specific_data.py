@@ -8,13 +8,12 @@
 from typing import Callable, Iterable, List, Optional
 
 from .function_tainter import taint_callable_functions
-from .inspect_parser import extract_qualified_name
-from .model import CallableModel, Model
+from .model import CallableModel
 from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, get_all_views
 
 
-class RequestSpecificDataGenerator(ModelGenerator):
+class RequestSpecificDataGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
         django_urls: DjangoUrls,
@@ -33,7 +32,7 @@ class RequestSpecificDataGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> List[CallableModel]:
         taint_annotation = "TaintSource[RequestSpecificData]"
         return taint_callable_functions(
             functions_to_model,

@@ -9,12 +9,12 @@
 from typing import Callable, Iterable, List, Optional
 
 from .inspect_parser import extract_qualified_name
-from .model import CallableModel, Model
+from .model import CallableModel
 from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, get_all_views
 
 
-class ExitNodeGenerator(ModelGenerator):
+class ExitNodeGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
         django_urls: DjangoUrls,
@@ -30,7 +30,7 @@ class ExitNodeGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Iterable[CallableModel]:
         exit_nodes = set()
 
         for view_function in functions_to_model:

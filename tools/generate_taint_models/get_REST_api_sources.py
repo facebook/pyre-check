@@ -10,11 +10,11 @@ from typing import Callable, Iterable, List, Optional
 
 from .function_tainter import taint_callable_functions
 from .model import CallableModel
-from .model_generator import CallableModelGenerator
+from .model_generator import ModelGenerator
 from .view_generator import DjangoUrls, get_all_views
 
 
-class RESTApiSourceGenerator(CallableModelGenerator):
+class RESTApiSourceGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
         django_urls: DjangoUrls,

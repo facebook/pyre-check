@@ -23,7 +23,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
-class GlobalModelGenerator(ModelGenerator):
+class GlobalModelGenerator(ModelGenerator[Model]):
     def __init__(
         self,
         root: str,

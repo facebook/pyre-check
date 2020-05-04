@@ -19,7 +19,7 @@ from .subclass_generator import get_all_subclass_defines_from_pyre
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class MethodsOfSubclassesGenerator(ModelGenerator):
+class MethodsOfSubclassesGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
     def __init__(
         self,
         base_classes: List[str],

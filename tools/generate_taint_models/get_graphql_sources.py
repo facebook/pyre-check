@@ -7,9 +7,9 @@
 
 import os
 from importlib import import_module
-from typing import Any, Callable, Iterable, List, Optional, Type, Union
+from typing import Any, Callable, Iterable, List, Type, Union
 
-from .model import CallableModel, Model
+from .model import CallableModel
 from .model_generator import ModelGenerator
 
 
@@ -17,7 +17,7 @@ from .model_generator import ModelGenerator
 GraphQLObjectType = Type[Any]
 
 
-class GraphQLSourceGenerator(ModelGenerator):
+class GraphQLSourceGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
         graphql_module: Union[List[str], str],
@@ -75,7 +75,7 @@ class GraphQLSourceGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Iterable[CallableModel]:
         graphql_models = set()
         for view_function in functions_to_model:
             try:

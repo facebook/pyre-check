@@ -1,20 +1,20 @@
 import inspect
 import logging
 from importlib import import_module
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable, List, Set
 
 from .generator_specifications import DecoratorAnnotationSpecification
 from .get_annotated_free_functions_with_decorator import (
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
-from .model import Model
-from .model_generator import CallableModelGenerator, ModelGenerator
+from .model import CallableModel
+from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class UndecoratedSourceGenerator(ModelGenerator):
+class UndecoratedSourceGenerator(ModelGenerator[CallableModel]):
     """
     This generator allows you to filter the results of `source_generator` by callables
     that do not implement the specified decorator annotations.
@@ -34,7 +34,7 @@ class UndecoratedSourceGenerator(ModelGenerator):
 
     def __init__(
         self,
-        source_generator: CallableModelGenerator,
+        source_generator: ModelGenerator[CallableModel],
         root: str,
         decorators_to_filter: List[DecoratorAnnotationSpecification],
     ) -> None:
@@ -47,7 +47,7 @@ class UndecoratedSourceGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Set[CallableModel]:
         unfiltered_models = self.source_generator.generate_models()
         modules_to_filter = set()
         for callable_model in unfiltered_models:

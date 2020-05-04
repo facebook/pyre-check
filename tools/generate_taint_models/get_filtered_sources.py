@@ -13,9 +13,11 @@ from .model_generator import ModelGenerator
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class FilteredSourceGenerator(ModelGenerator):
+class FilteredSourceGenerator(ModelGenerator[Model]):
     def __init__(
-        self, superset_generator: ModelGenerator, subset_generator: ModelGenerator
+        self,
+        superset_generator: ModelGenerator[Model],
+        subset_generator: ModelGenerator[Model],
     ) -> None:
         self.superset_generator = superset_generator
         self.subset_generator = subset_generator

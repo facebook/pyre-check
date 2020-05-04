@@ -56,7 +56,7 @@ def _file_exists(path: str) -> str:
 
 
 def _parse_arguments(
-    generator_options: Dict[str, ModelGenerator]
+    generator_options: Dict[str, ModelGenerator[Model]]
 ) -> GenerationArguments:
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
@@ -104,7 +104,7 @@ def _report_results(
 
 
 def run_generators(
-    generator_options: Dict[str, ModelGenerator],
+    generator_options: Dict[str, ModelGenerator[Model]],
     default_modes: List[str],
     verbose: bool = False,
     logger_executable: Optional[str] = None,

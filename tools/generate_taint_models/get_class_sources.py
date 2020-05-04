@@ -11,14 +11,14 @@ from typing import Callable, Iterable, List, Optional
 
 from .constructor_generator import gather_all_constructors_in_hierarchy
 from .function_tainter import taint_callable_functions
-from .model import Model
+from .model import CallableModel
 from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class ClassSourceGenerator(ModelGenerator):
+class ClassSourceGenerator(ModelGenerator[CallableModel]):
     """
     This Generator uses classes_to_taint to taint the __init__
     functions of the classes passed as fully qualified strings. All recursive
@@ -45,7 +45,7 @@ class ClassSourceGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Iterable[CallableModel]:
         return taint_callable_functions(
             functions_to_model,
             taint_annotation=self.taint_annotation,

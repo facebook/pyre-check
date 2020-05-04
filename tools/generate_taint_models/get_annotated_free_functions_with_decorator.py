@@ -19,7 +19,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
-class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
+class AnnotatedFreeFunctionWithDecoratorGenerator(
+    ModelGenerator[FunctionDefinitionModel]
+):
     def __init__(
         self,
         root: str,
@@ -42,7 +44,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
 
     def _annotate_functions(
         self, specification: DecoratorAnnotationSpecification, path: str
-    ) -> Iterable[Model]:
+    ) -> Iterable[FunctionDefinitionModel]:
 
         module = load_module(path)
 
@@ -96,7 +98,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
 
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[Model]:
+    ) -> Iterable[FunctionDefinitionModel]:
         annotated_functions = set()
 
         for path in self.paths:
