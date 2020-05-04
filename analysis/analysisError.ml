@@ -26,6 +26,7 @@ type missing_annotation = {
 
 type class_kind =
   | Class
+  | Enumeration
   | Protocol of Reference.t
   | Abstract of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
@@ -1857,7 +1858,14 @@ let messages ~concise ~signature location kind =
           Format.asprintf "Attribute `%a` is never initialized." pp_identifier name
         else
           match kind with
-          | Class ->
+          | Class
+          | Enumeration ->
+              let expected =
+                match kind with
+                | Class -> expected
+                | Enumeration -> Type.weaken_literals expected
+                | _ -> failwith "impossible"
+              in
               Format.asprintf
                 "Attribute `%a` is declared in class `%a` to have type `%a` but is never \
                  initialized."
@@ -1873,7 +1881,9 @@ let messages ~concise ~signature location kind =
                 match kind with
                 | Protocol protocol_name -> "protocol", protocol_name
                 | Abstract class_name -> "abstract class", class_name
-                | Class -> failwith "impossible"
+                | Class
+                | Enumeration ->
+                    failwith "impossible"
               in
               Format.asprintf
                 "Attribute `%a` inherited from %s `%a` in class `%a` to have type `%a` but is \
@@ -3113,7 +3123,9 @@ let dequalify
   let dequalify_annotation = Annotation.dequalify dequalify_map in
   let dequalify_class_kind (kind : class_kind) =
     match kind with
-    | Class -> kind
+    | Class
+    | Enumeration ->
+        kind
     | Protocol reference -> Protocol (dequalify_reference reference)
     | Abstract reference -> Abstract (dequalify_reference reference)
   in

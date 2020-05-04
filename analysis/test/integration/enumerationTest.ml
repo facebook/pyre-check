@@ -108,8 +108,8 @@ let test_check_enumeration_attributes context =
         a: int
     |}
     [
-      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type \
-       `typing_extensions.Literal[C.a]` but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have type `C` but \
+       is never initialized.";
     ];
   assert_type_errors
     {|

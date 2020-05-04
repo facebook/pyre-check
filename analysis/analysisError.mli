@@ -17,6 +17,7 @@ type missing_annotation = {
 
 type class_kind =
   | Class
+  | Enumeration
   | Protocol of Reference.t
   | Abstract of Reference.t
 [@@deriving compare, eq, sexp, show, hash]

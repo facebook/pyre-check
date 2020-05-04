@@ -5199,6 +5199,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                          (annotation, { class_name = original_class_name; is_protocol; is_abstract })
                        )
                        ->
+                 let parent = Type.Primitive (ClassSummary.name definition |> Reference.show) in
                  let expected = annotation in
                  if Type.is_top expected then
                    None
@@ -5208,6 +5209,13 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                        Error.Protocol (Reference.create original_class_name)
                      else if is_abstract then
                        Error.Abstract (Reference.create original_class_name)
+                     else if
+                       GlobalResolution.less_or_equal
+                         global_resolution
+                         ~left:parent
+                         ~right:Type.enumeration
+                     then
+                       Error.Enumeration
                      else
                        Error.Class
                    in
@@ -5218,8 +5226,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                           (Error.UninitializedAttribute
                              {
                                name;
-                               parent =
-                                 Type.Primitive (ClassSummary.name definition |> Reference.show);
+                               parent;
                                mismatch =
                                  { Error.expected; actual = expected; due_to_invariance = false };
                                kind = error_kind;
