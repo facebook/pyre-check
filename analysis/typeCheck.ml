@@ -860,7 +860,15 @@ module State (Context : Context) = struct
                           ~given_annotation:(Some annotation)
                           None,
                         Annotation.create_immutable annotation )
-                  | Some annotation, _ -> errors, Annotation.create_immutable annotation
+                  | Some annotation, _ ->
+                      let errors =
+                        emit_invalid_enumeration_literal_errors
+                          ~resolution
+                          ~location
+                          ~errors
+                          annotation
+                      in
+                      errors, Annotation.create_immutable annotation
                   | None, Some value_annotation ->
                       ( add_missing_parameter_annotation_error
                           ~errors
@@ -3816,60 +3824,8 @@ module State (Context : Context) = struct
                           | _ -> errors
                         in
                         let check_enumeration_literal errors =
-                          let emit_invalid_enumeration_errors annotation =
-                            let invalid_enumeration_literals =
-                              let is_invalid_enumeration_member = function
-                                | Type.Literal
-                                    (Type.EnumerationMember { enumeration_type; member_name }) ->
-                                    let is_enumeration =
-                                      GlobalResolution.class_exists
-                                        global_resolution
-                                        (Type.show enumeration_type)
-                                      && GlobalResolution.less_or_equal
-                                           global_resolution
-                                           ~left:enumeration_type
-                                           ~right:Type.enumeration
-                                    in
-                                    let is_member_of_enumeration =
-                                      let literal_expression =
-                                        Node.create
-                                          ~location
-                                          (Expression.Name
-                                             (Attribute
-                                                {
-                                                  base = Type.expression enumeration_type;
-                                                  attribute = member_name;
-                                                  special = false;
-                                                }))
-                                      in
-                                      let { Resolved.resolved = resolved_member_type; _ } =
-                                        forward_expression
-                                          ~resolution
-                                          ~expression:literal_expression
-                                      in
-                                      GlobalResolution.less_or_equal
-                                        global_resolution
-                                        ~left:resolved_member_type
-                                        ~right:enumeration_type
-                                    in
-                                    not (is_enumeration && is_member_of_enumeration)
-                                | _ -> false
-                              in
-                              Type.collect annotation ~predicate:is_invalid_enumeration_member
-                            in
-                            List.fold
-                              invalid_enumeration_literals
-                              ~init:errors
-                              ~f:(fun errors annotation ->
-                                emit_error
-                                  ~errors
-                                  ~location
-                                  ~kind:
-                                    (Error.InvalidType
-                                       (InvalidType { annotation; expected = "an Enum member" })))
-                          in
                           original_annotation
-                          >>| emit_invalid_enumeration_errors
+                          >>| emit_invalid_enumeration_literal_errors ~resolution ~location ~errors
                           |> Option.value ~default:errors
                         in
                         let errors =
@@ -5035,6 +4991,50 @@ module State (Context : Context) = struct
 
   and resolve_reference_type ~resolution reference =
     from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
+
+
+  and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
+    let invalid_enumeration_literals =
+      let is_invalid_enumeration_member = function
+        | Type.Literal (Type.EnumerationMember { enumeration_type; member_name }) ->
+            let global_resolution = Resolution.global_resolution resolution in
+            let is_enumeration =
+              GlobalResolution.class_exists global_resolution (Type.show enumeration_type)
+              && GlobalResolution.less_or_equal
+                   global_resolution
+                   ~left:enumeration_type
+                   ~right:Type.enumeration
+            in
+            let is_member_of_enumeration =
+              let literal_expression =
+                Node.create
+                  ~location
+                  (Expression.Name
+                     (Attribute
+                        {
+                          base = Type.expression enumeration_type;
+                          attribute = member_name;
+                          special = false;
+                        }))
+              in
+              let { Resolved.resolved = resolved_member_type; _ } =
+                forward_expression ~resolution ~expression:literal_expression
+              in
+              GlobalResolution.less_or_equal
+                global_resolution
+                ~left:resolved_member_type
+                ~right:enumeration_type
+            in
+            not (is_enumeration && is_member_of_enumeration)
+        | _ -> false
+      in
+      Type.collect annotation ~predicate:is_invalid_enumeration_member
+    in
+    List.fold invalid_enumeration_literals ~init:errors ~f:(fun errors annotation ->
+        emit_error
+          ~errors
+          ~location
+          ~kind:(Error.InvalidType (InvalidType { annotation; expected = "an Enum member" })))
 
 
   let forward ~key ({ resolution; _ } as state) ~statement =

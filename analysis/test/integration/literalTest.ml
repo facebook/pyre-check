@@ -177,6 +177,15 @@ let test_enumeration_literal context =
       "Invalid type [31]: Expression `typing_extensions.Literal[ActualEnum.NON_EXISTENT_MEMBER3]` \
        is not a valid type.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final, List
+      from typing_extensions import Literal
+      class NotEnum:
+          ONE: int = 1
+      def foo(x: Literal[NotEnum.ONE]) -> None: ...
+    |}
+    ["Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.ONE]` is not a valid type."];
   ()
 
 
