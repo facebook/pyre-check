@@ -7,7 +7,7 @@
 
 from typing import Callable, Iterable, List, Optional
 
-from .function_tainter import taint_functions
+from .function_tainter import taint_callable_functions
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, Model
 from .model_generator import ModelGenerator
@@ -35,7 +35,7 @@ class RequestSpecificDataGenerator(ModelGenerator):
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[Model]:
         taint_annotation = "TaintSource[RequestSpecificData]"
-        return taint_functions(
+        return taint_callable_functions(
             functions_to_model,
             taint_annotation=taint_annotation,
             whitelisted_views=self.whitelisted_views,

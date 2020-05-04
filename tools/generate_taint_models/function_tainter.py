@@ -7,11 +7,13 @@
 
 from typing import Callable, Iterable, List, Optional, Set
 
+from ...api import query
+from .generator_specifications import AnnotationSpecification, WhitelistSpecification
 from .inspect_parser import extract_qualified_name
-from .model import CallableModel
+from .model import CallableModel, PyreFunctionDefinitionModel
 
 
-def taint_functions(
+def taint_callable_functions(
     functions_to_taint: Iterable[Callable[..., object]],
     taint_annotation: str = "TaintSource[UserControlled]",
     whitelisted_views: Optional[List[str]] = None,
@@ -40,3 +42,18 @@ def taint_functions(
             pass
 
     return sorted(entry_points)
+
+
+def taint_pyre_functions(
+    functions_to_taint: Iterable[query.Define],
+    annotations: AnnotationSpecification,
+    whitelist: Optional[WhitelistSpecification],
+) -> List[PyreFunctionDefinitionModel]:
+    tainted_functions = []
+    for definition in functions_to_taint:
+        tainted_functions.append(
+            PyreFunctionDefinitionModel(
+                definition, annotations=annotations, whitelist=whitelist
+            )
+        )
+    return tainted_functions
