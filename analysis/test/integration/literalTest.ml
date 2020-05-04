@@ -146,6 +146,37 @@ let test_enumeration_literal context =
       "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
        `expects_string` but got `A`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from typing_extensions import Literal
+      import enum
+      class NotEnum:
+          ONE: int = 1
+          TWO: int = 2
+      class ActualEnum(enum.Enum):
+        ONE = 1
+      x1: Literal[NonExistentClass]
+      x2: Literal[NonExistentClass.ONE]
+      x3: Literal[NotEnum.ONE]
+      x4: Tuple[Literal[NotEnum.ONE], Tuple[Literal[NotEnum.TWO]]]
+      x5: Literal[ActualEnum.NON_EXISTENT_MEMBER]
+      x6: Literal[ActualEnum.NON_EXISTENT_MEMBER2, ActualEnum.NON_EXISTENT_MEMBER3]
+    |}
+    [
+      "Invalid type [31]: Expression `typing_extensions.Literal[NonExistentClass]` is not a valid \
+       type.";
+      "Undefined or invalid type [11]: Annotation `NonExistentClass` is not defined as a type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.ONE]` is not a valid type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.ONE]` is not a valid type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[NotEnum.TWO]` is not a valid type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[ActualEnum.NON_EXISTENT_MEMBER]` \
+       is not a valid type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[ActualEnum.NON_EXISTENT_MEMBER2]` \
+       is not a valid type.";
+      "Invalid type [31]: Expression `typing_extensions.Literal[ActualEnum.NON_EXISTENT_MEMBER3]` \
+       is not a valid type.";
+    ];
   ()
 
 

@@ -3815,6 +3815,63 @@ module State (Context : Context) = struct
                                 ~kind:(Error.InvalidType (NestedAlias identifier))
                           | _ -> errors
                         in
+                        let check_enumeration_literal errors =
+                          let emit_invalid_enumeration_errors annotation =
+                            let invalid_enumeration_literals =
+                              let is_invalid_enumeration_member = function
+                                | Type.Literal
+                                    (Type.EnumerationMember { enumeration_type; member_name }) ->
+                                    let is_enumeration =
+                                      GlobalResolution.class_exists
+                                        global_resolution
+                                        (Type.show enumeration_type)
+                                      && GlobalResolution.less_or_equal
+                                           global_resolution
+                                           ~left:enumeration_type
+                                           ~right:Type.enumeration
+                                    in
+                                    let is_member_of_enumeration =
+                                      let literal_expression =
+                                        Node.create
+                                          ~location
+                                          (Expression.Name
+                                             (Attribute
+                                                {
+                                                  base = Type.expression enumeration_type;
+                                                  attribute = member_name;
+                                                  special = false;
+                                                }))
+                                      in
+                                      let { Resolved.resolved = resolved_member_type; _ } =
+                                        forward_expression
+                                          ~resolution
+                                          ~expression:literal_expression
+                                      in
+                                      GlobalResolution.less_or_equal
+                                        global_resolution
+                                        ~left:resolved_member_type
+                                        ~right:enumeration_type
+                                    in
+                                    not (is_enumeration && is_member_of_enumeration)
+                                | _ -> false
+                              in
+                              Type.collect annotation ~predicate:is_invalid_enumeration_member
+                            in
+                            List.fold
+                              invalid_enumeration_literals
+                              ~init:errors
+                              ~f:(fun errors annotation ->
+                                emit_error
+                                  ~errors
+                                  ~location
+                                  ~kind:
+                                    (Error.InvalidType
+                                       (InvalidType { annotation; expected = "an Enum member" })))
+                          in
+                          original_annotation
+                          >>| emit_invalid_enumeration_errors
+                          |> Option.value ~default:errors
+                        in
                         let errors =
                           match modifying_read_only_error with
                           | Some error ->
@@ -3828,6 +3885,7 @@ module State (Context : Context) = struct
                         |> check_final_is_outermost_qualifier
                         |> check_undefined_attribute_target
                         |> check_nested_explicit_type_alias
+                        |> check_enumeration_literal
                     | _ -> errors
                   in
 

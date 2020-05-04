@@ -477,6 +477,8 @@ val is_not_instantiated : t -> bool
 
 val contains_literal : t -> bool
 
+val collect : t -> predicate:(t -> bool) -> t list
+
 val contains_final : t -> bool
 
 val primitive_name : t -> Identifier.t option
