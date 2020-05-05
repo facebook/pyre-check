@@ -176,7 +176,8 @@ class ErrorSuppressingCommand(Command):
                 return
         errors = (
             errors_from_stdin(self._arguments.only_fix_error_code)
-            if self._arguments.from_stdin and not self._arguments.upgrade_version
+            if self._arguments.error_source == "stdin"
+            and not self._arguments.upgrade_version
             else configuration.get_errors()
         )
         if len(errors) > 0:
@@ -207,7 +208,7 @@ class ErrorSuppressingCommand(Command):
 class Fixme(ErrorSuppressingCommand):
     def run(self) -> None:
         # Suppress errors in project with no local configurations.
-        if not self._arguments.from_stdin:
+        if self._arguments.error_source == "generate":
             errors = errors_from_run(self._arguments.only_fix_error_code)
             self._suppress_errors(errors)
 
@@ -594,7 +595,7 @@ def run(repository: Repository) -> None:
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
     fixme.set_defaults(command=Fixme)
-    fixme.add_argument("--from-stdin", action="store_true", default=True)
+    fixme.add_argument("--error-source", choices=["stdin", "generate"], default="stdin")
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
     fixme.add_argument(
         "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
@@ -613,7 +614,7 @@ def run(repository: Repository) -> None:
         help="Upgrade and clean project if a version override set.",
     )
     fixme_single.add_argument(
-        "--from-stdin", action="store_true", help=argparse.SUPPRESS
+        "--error-source", choices=["stdin", "generate"], default="generate"
     )
     fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_single.add_argument(
@@ -702,14 +703,14 @@ def run(repository: Repository) -> None:
     arguments = parser.parse_args()
     if not hasattr(arguments, "command"):
         arguments.command = Fixme
-        arguments.from_stdin = True
+        arguments.error_source = "stdin"
 
     # Initialize values that may be null-checked, but do not exist as a flag
     # for all subcommands
     if not hasattr(arguments, "paths"):
         arguments.paths = None
-    if not hasattr(arguments, "from_stdin"):
-        arguments.from_stdin = None
+    if not hasattr(arguments, "error_source"):
+        arguments.error_source = None
     if not hasattr(arguments, "comment"):
         arguments.comment = None
 

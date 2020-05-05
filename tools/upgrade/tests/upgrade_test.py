@@ -151,7 +151,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.submit = False
         arguments.lint = False
-        arguments.from_stdin = False
+        arguments.error_source = "generate"
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = []
@@ -189,7 +189,7 @@ class FixmeAllTest(unittest.TestCase):
         # Test with lint
         submit_changes.reset_mock()
         suppress_errors.reset_mock()
-        arguments.from_stdin = False
+        arguments.error_source = "generate"
         arguments.lint = True
         ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
             configuration, Path("/root")
@@ -207,7 +207,7 @@ class FixmeAllTest(unittest.TestCase):
         submit_changes.reset_mock()
         suppress_errors.reset_mock()
         get_errors.reset_mock()
-        arguments.from_stdin = True
+        arguments.error_source = "stdin"
         arguments.lint = True
         arguments.upgrade_version = False
         errors_from_stdin.return_value = pyre_errors
@@ -252,7 +252,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.submit = False
         arguments.lint = False
-        arguments.from_stdin = False
+        arguments.error_source = "generate"
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = [
@@ -399,7 +399,7 @@ class FixmeSingleTest(unittest.TestCase):
         arguments.submit = False
         arguments.submit = True
         arguments.path = Path("local")
-        arguments.from_stdin = False
+        arguments.error_source = "generate"
         arguments.lint = False
         arguments.no_commit = False
         get_errors.return_value = []
@@ -453,7 +453,7 @@ class FixmeTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.comment = None
         arguments.max_line_length = 88
-        arguments.from_stdin = True
+        arguments.error_source = "stdin"
         arguments.truncate = True
 
         stdin_errors.return_value = errors.Errors.empty()
@@ -498,7 +498,7 @@ class FixmeTest(unittest.TestCase):
             Fixme(arguments, repository).run()
             path_write_text.assert_not_called()
 
-        arguments.from_stdin = True
+        arguments.error_source = "stdin"
         arguments.lint = False
 
         # Test error with custom message.
