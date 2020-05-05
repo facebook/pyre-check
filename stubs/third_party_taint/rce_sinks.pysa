@@ -9,3 +9,25 @@ def paramiko.client.SSHClient.exec_command(
     environment = ...,
 ): ...
 def paramiko.Channel.exec_command(self, command: TaintSink[RemoteCodeExecution]): ...
+
+# pexepct module
+def pexpect.spawn.__init__(
+        self,
+        command: TaintSink[RemoteCodeExecution],
+        args: TaintSink[RemoteCodeExecution, Via[command_line_args]]=...,
+        timeout: int = ...,
+        maxread: int = ...,
+        searchwindowsize: bool = ...,
+        logfile=...,
+        cwd=...,
+        env=...,
+        ignore_sighup=...,
+        echo=...,
+        preexec_fn=...,
+        encoding=...,
+        codec_errors: str = ...,
+        dimensions=...,
+        use_poll=...,
+    ): ...
+def pexpect.spawn.sendline(self, s: TaintSink[RemoteCodeExecution] = ...): ...
+def pexpect.spawn.send(self, s: TaintSink[RemoteCodeExecution]): ...
