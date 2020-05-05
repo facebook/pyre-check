@@ -13,7 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-from .ast import verify_stable_ast
+from .ast import UnstableAST, verify_stable_ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -302,6 +302,8 @@ def fix(
     truncate: bool = False,
     unsafe: bool = False,
 ) -> None:
+    exceptions = []
+
     for path, errors in errors:
         LOG.info("Processing `%s`", path)
         if unsafe:
@@ -313,10 +315,16 @@ def fix(
                 truncate,
             )
         else:
-            _fix_file(
-                path,
-                _build_error_map(errors),
-                comment,
-                max_line_length if max_line_length > 0 else None,
-                truncate,
-            )
+            try:
+                _fix_file(
+                    path,
+                    _build_error_map(errors),
+                    comment,
+                    max_line_length if max_line_length > 0 else None,
+                    truncate,
+                )
+            except UnstableAST as exception:
+                exceptions.append(exception)
+
+    if exceptions:
+        raise UnstableAST(", ".join(str(exception) for exception in exceptions))
