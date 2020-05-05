@@ -58,6 +58,7 @@ from .models import (
     TraceFrame,
     TraceFrameLeafAssoc,
     TraceKind,
+    create as create_models,
 )
 
 
@@ -216,6 +217,7 @@ details              show additional information about the current trace frame
         self.prompt_history: Dict[str, History] = {}
 
     def setup(self) -> Dict[str, Callable]:
+        create_models(self.db)
         with self.db.make_session() as session:
             latest_run_id = (
                 session.query(func.max(Run.id))
