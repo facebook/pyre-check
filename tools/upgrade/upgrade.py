@@ -725,7 +725,7 @@ def run(repository: Repository) -> None:
         arguments.command(arguments, repository).run()
     except Exception as error:
         LOG.error(str(error))
-        LOG.info(traceback.format_exc())
+        LOG.debug(traceback.format_exc())
         exit_code = ExitCode.FAILURE
 
     sys.exit(exit_code)

@@ -19,6 +19,10 @@ Ts = ListVariadic("Ts")
 LOG: Logger = logging.getLogger(__name__)
 
 
+class UnstableAST(Exception):
+    pass
+
+
 # pyre-fixme[11]: Annotation `Ts` is not defined as a type.
 # pyre-fixme[11]: Annotation `Ts` is not defined as a type.
 # pyre-fixme[11]: Annotation `Ts` is not defined as a type.
@@ -48,6 +52,10 @@ def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], Non
                 LOG.warning("Could not parse file %s. Undoing.", filename)
                 LOG.warning(e)
                 path.write_text(text)
+                raise UnstableAST(
+                    f"Could not safely transform `{filename}`. "
+                    "Run with `--unsafe` to apply changes anyways."
+                )
         except FileNotFoundError:
             LOG.warning("File %s cannot be found, skipping.", filename)
             return
