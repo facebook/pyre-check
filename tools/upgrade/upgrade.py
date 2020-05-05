@@ -515,6 +515,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                         ),
                         summary_override=summary,
                     ),
+                    set_dependencies=False,
                 )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")

@@ -15,7 +15,11 @@ class Repository:
         pass
 
     def submit_changes(
-        self, submit: bool, message: str, ignore_failures: bool = False
+        self,
+        submit: bool,
+        message: str,
+        ignore_failures: bool = False,
+        set_dependencies: bool = True,
     ) -> None:
         pass
 
