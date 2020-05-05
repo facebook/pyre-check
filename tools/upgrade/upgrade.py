@@ -491,10 +491,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
         try:
             if not self._arguments.no_commit:
-                summary = (
-                    "Migrating buck integration to use configurations, which is more "
-                    "performant and is the primary supported way to run Pyre."
-                )
+                summary = self._repository.MIGRATION_SUMMARY
                 if local_configuration:
                     summary += (
                         f"\n\nNote: Targets were added to or were already covered by "

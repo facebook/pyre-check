@@ -8,6 +8,8 @@ from typing import List, Optional
 
 
 class Repository:
+    MIGRATION_SUMMARY: str = "Migrating buck integration to use configurations"
+
     def commit_message(self, title: str, summary_override: Optional[str] = None) -> str:
         return ""
 
