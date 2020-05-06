@@ -161,13 +161,12 @@ let once_per_worker scheduler ~configuration:_ ~f =
   match scheduler with
   | SequentialScheduler -> ()
   | ParallelScheduler workers ->
-      let number_of_workers = List.length workers in
-      MultiWorker.call
-        (Some workers)
-        ~job:(fun _ _ -> f ())
-        ~merge:(fun _ _ -> ())
-        ~neutral:()
-        ~next:
-          (Bucket.make
-             ~num_workers:number_of_workers
-             (List.init number_of_workers ~f:(fun _ -> ())))
+      let handles = List.map workers ~f:(fun worker -> Worker.call worker f ()) in
+      let rec collect_all = function
+        | [] -> ()
+        | handles ->
+            let { Worker.readys; waiters } = Worker.select handles in
+            List.iter readys ~f:Worker.get_result;
+            collect_all waiters
+      in
+      collect_all handles
