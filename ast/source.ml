@@ -65,7 +65,7 @@ module Metadata = struct
 
 
   let default_with_suppress_regex =
-    Str.regexp "^ ?# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+    Str.regexp "^ ?# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\]"
 
 
   let ignore_code_regex = Str.regexp "# *pyre-\\(ignore\\|fixme\\)\\[\\([0-9, ]+\\)\\]"

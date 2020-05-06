@@ -60,6 +60,7 @@ let test_parse _ =
     assert_equal ignore_codes expected_codes
   in
   assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15] " [42; 7; 15];
+  assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15]: Comment" [42; 7; 15];
 
   (* Prevent typos from being treated as error suppressors. *)
   assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15" [];
