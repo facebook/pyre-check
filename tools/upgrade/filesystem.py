@@ -132,7 +132,7 @@ def remove_non_pyre_ignores(subdirectory: Path) -> None:
         remove_type_ignore_command = [
             "sed",
             "-i",
-            r"s/# \?type: \?ignore$//g",
+            r"s/\s*# \?type: \?ignore$//g",
         ] + python_files
         subprocess.check_output(remove_type_ignore_command)
 

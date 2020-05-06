@@ -1257,7 +1257,7 @@ class MigrateTest(unittest.TestCase):
                         [
                             "sed",
                             "-i",
-                            r"s/# \?type: \?ignore$//g",
+                            r"s/\s*# \?type: \?ignore$//g",
                             "subdirectory/a/TARGETS",
                             "subdirectory/b/TARGETS",
                         ]
