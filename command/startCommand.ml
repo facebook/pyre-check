@@ -121,7 +121,7 @@ let computation_thread
                         ~response)
                 |> ignore
             | Some (TypeCheckResponse error_map) ->
-                StatusUpdate.information ~message:"Done recheck." ~state ~short_message:None;
+                StatusUpdate.information ~message:"Done recheck." ~state;
                 broadcast_response state (TypeCheckResponse error_map)
             | Some _ -> Log.error "Unexpected response for persistent client request"
             | None -> () );

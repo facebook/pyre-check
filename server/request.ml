@@ -1098,14 +1098,14 @@ let rec process
           LookupCache.evict_path ~state ~configuration path;
           let configuration = { configuration with include_hints = true } in
           process_type_check_request ~state ~configuration [path]
-      | ShowStatusRequest { message; shortMessage; type_; _ } ->
+      | ShowStatusRequest { message; type_; _ } ->
           let update_function =
             let open LanguageServer.Types in
             match ShowMessageParameters.fromMessageTypeNumber type_ with
             | ShowMessageParameters.InfoMessage -> StatusUpdate.information
             | _ -> StatusUpdate.warning
           in
-          update_function ~message ~state ~short_message:shortMessage;
+          update_function ~message ~state;
 
           { state; response = None }
       | GetServerUuid ->

@@ -29,7 +29,6 @@ let recheck
   Log.info "Parsing %d updated modules..." (List.length module_updates);
   StatusUpdate.write
     ~message:"Reparsing updated modules..."
-    ~short_message:(Some "[Reparsing]")
     ~connections
     ~message_type:WarningMessage;
   Log.log
@@ -57,7 +56,6 @@ let recheck
     (Set.length invalidated_environment_qualifiers);
   StatusUpdate.write
     ~message:"Repopulating the environment"
-    ~short_message:(Some "[Repopulating]")
     ~connections
     ~message_type:WarningMessage;
   let ast_environment = AstEnvironment.read_only ast_environment in
@@ -221,11 +219,7 @@ let recheck
         "number of re-checked functions", total_rechecked_functions;
       ]
     ();
-  StatusUpdate.write
-    ~message:"Done recheck."
-    ~short_message:(Some "Done recheck.")
-    ~connections
-    ~message_type:InfoMessage;
+  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
   environment, new_errors
 
 
