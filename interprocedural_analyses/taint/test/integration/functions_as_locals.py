@@ -47,5 +47,6 @@ def a_or_b():
         f = barA
     else:
         f = barB
+
     f(__test_source(), 0)
     f(0, __test_source())

@@ -184,7 +184,12 @@ module DefaultBuilder : Builder = struct
               | None -> []
               | Some list -> list )
           | _ -> [] )
-      | None, Some [Named define] -> [Function define]
+      | None, Some defines ->
+          List.map defines ~f:(function
+              | Named define -> Some (Function define)
+              | _ -> None)
+          |> Option.all
+          |> Option.value ~default:[]
       | _ -> []
     in
     let key = Location.with_module ~qualifier (Node.location callee) in

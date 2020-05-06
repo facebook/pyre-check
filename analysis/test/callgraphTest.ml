@@ -10,7 +10,7 @@ open Ast
 open Test
 
 let test_default_builder context =
-  let assert_registers ~source ~target ~callables ~callee expected =
+  let assert_registers ~source ?target ~callables ~callee expected =
     Callgraph.DefaultBuilder.initialize ();
     let global_resolution =
       ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:true ~context
@@ -18,7 +18,7 @@ let test_default_builder context =
     in
     Callgraph.DefaultBuilder.add_callee
       ~global_resolution
-      ~target:(Some target)
+      ~target
       ~callables
       ~arguments:[]
       ~dynamic:false
@@ -90,6 +90,16 @@ let test_default_builder context =
           is_optional_class_attribute = true;
         };
     ];
+  assert_registers
+    ~source:{|
+        def a():
+          pass
+        def b():
+          pass
+      |}
+    ~callables:(Some [make_named "foo.a"; make_named "foo.b"])
+    ~callee:"foo.a if 1 else foo.b"
+    [Function !&"foo.a"; Function !&"foo.b"];
   ()
 
 
