@@ -624,9 +624,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Tuple _ ->
         []
     | ( Type.Callable { Callable.kind = Callable.Named left; _ },
-        Type.Callable { Callable.kind = Callable.Named right; _ } )
-      when Reference.equal left right ->
-        [constraints]
+        Type.Callable { Callable.kind = Callable.Named right; _ } ) ->
+        if Reference.equal left right then
+          [constraints]
+        else
+          []
     | ( Type.Callable
           {
             Callable.kind = Callable.Anonymous;

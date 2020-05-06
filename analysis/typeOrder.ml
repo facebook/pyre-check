@@ -278,10 +278,12 @@ module OrderImplementation = struct
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]
-        | ( (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
-            Type.Callable { Callable.kind = Callable.Named right; _ } )
-          when Reference.equal left right ->
-            callable
+        | ( (Type.Callable { Callable.kind = Callable.Named left_name; _ } as callable),
+            Type.Callable { Callable.kind = Callable.Named right_name; _ } ) ->
+            if Reference.equal left_name right_name then
+              callable
+            else
+              Type.union [left; right]
         | Type.Callable left, Type.Callable right ->
             if List.is_empty left.Callable.overloads && List.is_empty right.Callable.overloads then
               let kind =

@@ -277,6 +277,63 @@
 {
   "kind": "model",
   "data": {
+    "callable": "functions_as_locals.barA",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg1)",
+        "taint": [
+          {
+            "root": {
+              "filename": "functions_as_locals.py",
+              "line": 38,
+              "start": 16,
+              "end": 20
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "functions_as_locals.barB",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg2)",
+        "taint": [
+          {
+            "root": {
+              "filename": "functions_as_locals.py",
+              "line": 42,
+              "start": 16,
+              "end": 20
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "functions_as_locals.foo",
     "sources": [],
     "sinks": [

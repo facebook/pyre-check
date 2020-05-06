@@ -1007,7 +1007,7 @@ let test_less_or_equal context =
        order
        ~left:"typing.Callable('bar')[[str], int]"
        ~right:"typing.Callable('foo')[[int], int]");
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:"typing.Callable('foo')[[int], int]"
@@ -2063,7 +2063,7 @@ let test_join context =
   assert_join
     "typing.Callable('derp')[..., int]"
     "typing.Callable('other')[..., int]"
-    "typing.Callable[..., int]";
+    "typing.Union[typing.Callable(derp)[..., int], typing.Callable(other)[..., int]]";
 
   (* Do not join with overloads. *)
   assert_join

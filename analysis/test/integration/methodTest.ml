@@ -1287,8 +1287,9 @@ let test_check_callables context =
       x()
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `x` "
-      ^ "has type `typing.Callable[[], None]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `x` has type \
+       `typing.Union[typing.Callable(bar)[[], None], typing.Callable(foo)[[], None]]` but no type \
+       is specified.";
     ];
   assert_type_errors
     {|
@@ -1303,9 +1304,11 @@ let test_check_callables context =
       x()
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `x` "
-      ^ "has type `typing.Callable[[], None]` but no type is specified.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], None]`.";
+      "Missing global annotation [5]: Globally accessible variable `x` has type \
+       `typing.Union[typing.Callable(bar)[[], None], typing.Callable(foo)[[], None]]` but no type \
+       is specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[typing.Callable(bar)[[], None], \
+       typing.Callable(foo)[[], None]]`.";
     ];
   assert_type_errors
     {|
