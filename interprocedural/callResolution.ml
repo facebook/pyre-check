@@ -172,6 +172,11 @@ let resolve_target ~resolution ?receiver_type callee =
     is_super callee
   in
   let is_all_names = is_all_names (Node.value callee) in
+  let is_local_variable =
+    match Node.value callee with
+    | Expression.Name (Name.Identifier name) -> is_local name
+    | _ -> false
+  in
   let rec resolve_type callable_type =
     let underlying_callable, self_argument =
       match callable_type with
@@ -197,6 +202,10 @@ let resolve_target ~resolution ?receiver_type callee =
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, self_argument)
     | _, _, Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
+    | Some { kind = Named name; _ }, _, _, _, _ when is_local_variable -> (
+        match self_argument with
+        | Some _ -> [Callable.create_method name, self_argument]
+        | None -> [Callable.create_function name, None] )
     | _ -> []
   in
   resolve_type callable_type

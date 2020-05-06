@@ -517,19 +517,44 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               state
               taint
               indirect_targets
-        | None, Name (Name.Identifier _name) ->
-            let constructor_targets =
-              Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
-            in
-            analyze_constructor_call
-              ~resolution
-              ~call_expression
-              ~location
-              ~callee
-              ~arguments
-              ~state
-              ~taint
-              ~constructor_targets
+        | None, Name (Name.Identifier _name) -> (
+            match Interprocedural.CallResolution.resolve_target ~resolution callee with
+            | (_, implicit) :: _ as targets ->
+                let arguments =
+                  match implicit with
+                  | None -> arguments
+                  | Some _ ->
+                      {
+                        Call.Argument.name = None;
+                        value =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier "None"));
+                      }
+                      :: arguments
+                in
+                apply_call_targets
+                  ~resolution
+                  ~call_expression:(Expression.Call call_expression)
+                  location
+                  arguments
+                  state
+                  taint
+                  targets
+            | [] ->
+                let constructor_targets =
+                  Interprocedural.CallResolution.get_constructor_targets
+                    ~resolution
+                    ~receiver:callee
+                in
+                analyze_constructor_call
+                  ~resolution
+                  ~call_expression
+                  ~location
+                  ~callee
+                  ~arguments
+                  ~state
+                  ~taint
+                  ~constructor_targets )
         | _ ->
             (* No targets, treat call as obscure *)
             let obscure_taint =

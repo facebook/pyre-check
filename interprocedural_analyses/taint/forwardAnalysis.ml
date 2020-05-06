@@ -674,17 +674,38 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               state
               indirect_targets
             |>> add_index_breadcrumb_if_necessary
-        | None, Name (Name.Identifier _name) ->
-            let constructor_targets =
-              Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
-            in
-            analyze_constructor_call
-              ~resolution
-              ~location
-              ~arguments
-              ~state
-              ~constructor_targets
-              ~callee
+        | None, Name (Name.Identifier _name) -> (
+            match Interprocedural.CallResolution.resolve_target ~resolution callee with
+            | (_, implicit) :: _ as targets ->
+                (* If a method was assigned to a local, we no longer have taint on self. If that's
+                   the case, we need to add a dummy receiver with no taint (since we're not storing
+                   this information in the earlier assignment. *)
+                let arguments =
+                  match implicit with
+                  | None -> arguments
+                  | Some _ ->
+                      {
+                        Call.Argument.name = None;
+                        value =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier "None"));
+                      }
+                      :: arguments
+                in
+                apply_call_targets ~resolution ~callee location arguments state targets
+            | [] ->
+                let constructor_targets =
+                  Interprocedural.CallResolution.get_constructor_targets
+                    ~resolution
+                    ~receiver:callee
+                in
+                analyze_constructor_call
+                  ~resolution
+                  ~location
+                  ~arguments
+                  ~state
+                  ~constructor_targets
+                  ~callee )
         | _ ->
             (* No target, treat call as obscure *)
             let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in

@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+functions_as_locals.C::m (method) -> [__test_sink (fun)]
+functions_as_locals.foo (fun) -> [__test_sink (fun)]
+functions_as_locals.foo_as_local (fun) -> [__test_source (fun) functions_as_locals.foo (fun)]
+functions_as_locals.local_function_with_method_sink (fun) -> [__test_source (fun) functions_as_locals.C.m (fun) functions_as_locals.C::m (method)]
+functions_as_locals.local_tito (fun) -> [functions_as_locals.foo (fun)]
+functions_as_locals.method_tito (fun) -> [functions_as_locals.C.m (fun)]
