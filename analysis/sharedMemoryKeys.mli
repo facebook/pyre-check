@@ -74,13 +74,8 @@ type dependency =
   | ParseAnnotation of ParseAnnotationKey.t
 [@@deriving show, compare, sexp]
 
-module DependencySet : Set.S with type elt = dependency
-
 module DependencyKey : sig
-  include
-    DependencyTrackedMemory.DependencyKey.S
-      with type key = dependency
-       and module KeySet = DependencySet
+  include DependencyTrackedMemory.DependencyKey.S with type key = dependency
 
   val get_key : registered -> key
 
