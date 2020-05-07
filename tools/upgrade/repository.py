@@ -18,8 +18,10 @@ class Repository:
 
     def submit_changes(
         self,
+        commit: bool,
         submit: bool,
-        message: str,
+        title: Optional[str] = None,
+        summary: Optional[str] = None,
         ignore_failures: bool = False,
         set_dependencies: bool = True,
     ) -> None:

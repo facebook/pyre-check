@@ -184,7 +184,7 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update.assert_not_called()
         suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Update pyre version for local"
         )
 
         # Test with lint
@@ -200,7 +200,7 @@ class FixmeAllTest(unittest.TestCase):
         calls = [call(pyre_errors), call(pyre_errors)]
         suppress_errors.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Update pyre version for local"
         )
 
         # Test with from_stdin and lint
@@ -224,7 +224,7 @@ class FixmeAllTest(unittest.TestCase):
         calls = [call(pyre_errors), call(pyre_errors)]
         suppress_errors.assert_has_calls(calls)
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Suppress pyre errors for local"
         )
 
     @patch("subprocess.run")
@@ -266,7 +266,7 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update.assert_not_called()
         suppress_errors.assert_not_called()
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Update pyre version for local"
         )
 
         suppress_errors.reset_mock()
@@ -289,7 +289,7 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update.assert_not_called()
         suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Update pyre version for local"
         )
 
         # Test configuraton with no version set
@@ -308,7 +308,7 @@ class FixmeAllTest(unittest.TestCase):
         FixmeAll(arguments, repository).run()
         suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
-            False, repository.commit_message("local")
+            commit=True, submit=False, title="Suppress pyre errors for local"
         )
 
         # Test with given hash
@@ -325,7 +325,9 @@ class FixmeAllTest(unittest.TestCase):
         FixmeAll(arguments, repository).run()
         run_global_version_update.assert_not_called()
         suppress_errors.assert_called_once_with(pyre_errors)
-        submit_changes.assert_called_once_with(True, repository.commit_message("local"))
+        submit_changes.assert_called_once_with(
+            commit=True, submit=True, title="Update pyre version for local"
+        )
 
     def test_preserve_ast(self) -> None:
         error_map = {7: [{"code": "6", "description": "Foo"}]}
@@ -397,7 +399,6 @@ class FixmeSingleTest(unittest.TestCase):
         subprocess,
     ) -> None:
         arguments = MagicMock()
-        arguments.submit = False
         arguments.submit = True
         arguments.path = Path("local")
         arguments.error_source = "generate"
@@ -415,7 +416,7 @@ class FixmeSingleTest(unittest.TestCase):
             FixmeSingle(arguments, repository).run()
             suppress_errors.assert_not_called()
             submit_changes.assert_called_once_with(
-                True, repository.commit_message("local")
+                commit=True, submit=True, title="Update pyre version for local"
             )
 
         suppress_errors.reset_mock()
@@ -438,7 +439,7 @@ class FixmeSingleTest(unittest.TestCase):
             FixmeSingle(arguments, repository).run()
             suppress_errors.assert_called_once_with(pyre_errors)
             submit_changes.assert_called_once_with(
-                True, repository.commit_message("local")
+                commit=True, submit=True, title="Update pyre version for local"
             )
 
 
@@ -991,7 +992,9 @@ class FixmeTargetsTest(unittest.TestCase):
         FixmeTargets(arguments, repository).run()
         fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
-            arguments.submit, repository.commit_message(". (TARGETS)")
+            commit=True,
+            submit=arguments.submit,
+            title="Upgrade pyre version for . (TARGETS)",
         )
 
         # Test subdirectory
@@ -1013,7 +1016,9 @@ class FixmeTargetsTest(unittest.TestCase):
         )
         fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
-            arguments.submit, repository.commit_message("derp (TARGETS)")
+            commit=True,
+            submit=arguments.submit,
+            title="Upgrade pyre version for derp (TARGETS)",
         )
 
     @patch("subprocess.run")
@@ -2022,11 +2027,10 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 ]
             )
             submit_changes.assert_called_once_with(
-                False,
-                repository.commit_message(
-                    "global configuration",
-                    summary_override="Automatic upgrade to hash `abcd`",
-                ),
+                commit=True,
+                submit=False,
+                title="Update pyre global configuration version",
+                summary="Automatic upgrade to hash `abcd`",
                 ignore_failures=True,
             )
 

@@ -137,15 +137,11 @@ class GlobalVersionUpdate(Command):
                 configuration_file.write("\n")
 
         try:
-            commit_summary = "Automatic upgrade to hash `{}`".format(
-                self._arguments.hash
-            )
             self._repository.submit_changes(
-                self._arguments.submit,
-                self._repository.commit_message(
-                    "Update pyre global configuration version",
-                    summary_override=commit_summary,
-                ),
+                commit=True,
+                submit=self._arguments.submit,
+                title="Update pyre global configuration version",
+                summary=f"Automatic upgrade to hash `{self._arguments.hash}`",
                 ignore_failures=True,
             )
         except subprocess.CalledProcessError:
@@ -198,10 +194,11 @@ class ErrorSuppressingCommand(Command):
                 else "Suppress pyre errors",
                 str(local_root.relative_to(project_root)),
             )
-            if not self._arguments.no_commit:
-                self._repository.submit_changes(
-                    self._arguments.submit, self._repository.commit_message(title)
-                )
+            self._repository.submit_changes(
+                commit=(not self._arguments.no_commit),
+                submit=self._arguments.submit,
+                title=title,
+            )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")
 
@@ -269,13 +266,11 @@ class FixmeTargets(ErrorSuppressingCommand):
         for path, target_names in all_targets.items():
             self._run_fixme_targets_file(project_directory, path, target_names)
         try:
-            if not self._arguments.no_commit:
-                self._repository.submit_changes(
-                    self._arguments.submit,
-                    self._repository.commit_message(
-                        "Upgrade pyre version for {} (TARGETS)".format(search_root)
-                    ),
-                )
+            self._repository.submit_changes(
+                commit=(not self._arguments.no_commit),
+                submit=self._arguments.submit,
+                title=f"Upgrade pyre version for {search_root} (TARGETS)",
+            )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")
 
@@ -491,30 +486,27 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 self._suppress_errors(errors)
 
         try:
-            if not self._arguments.no_commit:
-                summary = self._repository.MIGRATION_SUMMARY
-                if local_configuration:
-                    summary += (
-                        f"\n\nNote: Targets were added to or were already covered by "
-                        f"existing configuration at {local_configuration}."
-                    )
-                glob = self._arguments.glob
-                if glob:
-                    summary += (
-                        f"\n\nConfiguration target automatically expanded to include "
-                        f"all subtargets, expanding type coverage while introducing "
-                        f"no more than {glob} fixmes per file."
-                    )
-                self._repository.submit_changes(
-                    self._arguments.submit,
-                    self._repository.commit_message(
-                        "Convert type check targets in {} to use configuration".format(
-                            subdirectory
-                        ),
-                        summary_override=summary,
-                    ),
-                    set_dependencies=False,
+            summary = self._repository.MIGRATION_SUMMARY
+            if local_configuration:
+                summary += (
+                    f"\n\nNote: Targets were added to or were already covered by "
+                    f"existing configuration at {local_configuration}."
                 )
+            glob = self._arguments.glob
+            if glob:
+                summary += (
+                    f"\n\nConfiguration target automatically expanded to include "
+                    f"all subtargets, expanding type coverage while introducing "
+                    f"no more than {glob} fixmes per file."
+                )
+            title = f"Convert type check targets in {subdirectory} to use configuration"
+            self._repository.submit_changes(
+                commit=(not self._arguments.no_commit),
+                submit=self._arguments.submit,
+                title=title,
+                summary=summary,
+                set_dependencies=False,
+            )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")
 
@@ -573,16 +565,13 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 self._suppress_errors(errors)
 
         try:
-            if not self._arguments.no_commit:
-                summary = "Expanding type coverage of targets in configuration."
-                self._repository.submit_changes(
-                    self._arguments.submit,
-                    self._repository.commit_message(
-                        "Expand target type coverage in {}".format(local_configuration),
-                        summary_override=summary,
-                    ),
-                    set_dependencies=False,
-                )
+            self._repository.submit_changes(
+                commit=(not self._arguments.no_commit),
+                submit=self._arguments.submit,
+                title=f"Expand target type coverage in {local_configuration}",
+                summary="Expanding type coverage of targets in configuration.",
+                set_dependencies=False,
+            )
         except subprocess.CalledProcessError:
             LOG.info("Error while running hg.")
 
