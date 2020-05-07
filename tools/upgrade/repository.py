@@ -16,6 +16,9 @@ class Repository:
     def add_paths(self, paths: List[Path]) -> None:
         pass
 
+    def remove_paths(self, paths: List[Path]) -> None:
+        pass
+
     def submit_changes(
         self,
         commit: bool,

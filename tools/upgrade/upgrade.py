@@ -576,6 +576,85 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             LOG.info("Error while running hg.")
 
 
+class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
+    def run(self) -> None:
+        subdirectory = self._arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+
+        # Find configurations
+        configurations = find_files(subdirectory, ".pyre_configuration.local")
+        if not configurations:
+            LOG.warning(
+                f"Skipping consolidation. No configurations found in {subdirectory}"
+            )
+            return
+        if len(configurations) == 1:
+            configuration = configurations[0]
+            LOG.warning(
+                f"Skipping consolidation. Only one configuration found: {configuration}"
+            )
+            return
+
+        # Gather targets and topmost configuration
+        total_targets = []
+        topmost_configurations = []
+        nested_configurations = []
+        for configuration in configurations:
+            with open(configuration) as configuration_file:
+                targets = Configuration(
+                    Path(configuration), json.load(configuration_file)
+                ).targets
+                if targets:
+                    total_targets.extend(targets)
+            if len(topmost_configurations) == 0 or topmost_configurations[0].count(
+                "/"
+            ) == configuration.count("/"):
+                topmost_configurations.append(configuration)
+            elif topmost_configurations[0].count("/") > configuration.count("/"):
+                nested_configurations.extend(topmost_configurations)
+                topmost_configurations = [configuration]
+            else:
+                nested_configurations.append(configuration)
+
+        # Create consolidated topmost configuration
+        if len(topmost_configurations) == 1:
+            topmost_configuration = topmost_configurations[0]
+            with open(topmost_configuration) as configuration_file:
+                configuration = Configuration(
+                    Path(topmost_configuration), json.load(configuration_file)
+                )
+                configuration.add_targets(total_targets)
+                configuration.deduplicate_targets()
+                configuration.write()
+        else:
+            nested_configurations.extend(topmost_configurations)
+            topmost_configuration = subdirectory / ".pyre_configuration.local"
+            with open(topmost_configuration, "w+") as configuration_file:
+                configuration = Configuration(topmost_configuration, {})
+                configuration.add_targets(total_targets)
+                configuration.deduplicate_targets()
+                configuration.write()
+
+        # Remove nested configurations
+        self._repository.remove_paths(nested_configurations)
+
+        # Suppress errors
+        all_errors = configuration.get_errors()
+        for _, errors in all_errors:
+            self._suppress_errors(Errors(list(errors)))
+
+        try:
+            self._repository.submit_changes(
+                commit=(not self._arguments.no_commit),
+                submit=self._arguments.submit,
+                title=f"Consolidate configurations in {subdirectory}",
+                summary="Consolidating nested configurations.",
+                set_dependencies=False,
+            )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
+
+
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -779,6 +858,25 @@ def run(repository: Repository) -> None:
         help="Ignore all errors in a file if fixme count exceeds threshold.",
     )
     expand_target_coverage.add_argument(
+        "--no-commit", action="store_true", help="Keep changes in working state."
+    )
+
+    # Subcommand: Consolidate nested local configurations
+    consolidate_nested_configurations = commands.add_parser("consolidate-nested")
+    consolidate_nested_configurations.set_defaults(
+        command=ConsolidateNestedConfigurations
+    )
+    consolidate_nested_configurations.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    consolidate_nested_configurations.add_argument(
+        "--submit", action="store_true", help=argparse.SUPPRESS
+    )
+    consolidate_nested_configurations.add_argument(
+        "--lint", action="store_true", help=argparse.SUPPRESS
+    )
+    consolidate_nested_configurations.add_argument("--subdirectory")
+    consolidate_nested_configurations.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
     )
 
