@@ -20,6 +20,7 @@ from .command import Command
 from .configuration import Configuration
 from .errors import Errors, errors_from_stdin, errors_from_targets, fix
 from .filesystem import (
+    FilesystemException,
     LocalMode,
     add_local_mode,
     find_files,
@@ -145,7 +146,8 @@ class GlobalVersionUpdate(Command):
                 ignore_failures=True,
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class ErrorSuppressingCommand(Command):
@@ -200,7 +202,8 @@ class ErrorSuppressingCommand(Command):
                 title=title,
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class Fixme(ErrorSuppressingCommand):
@@ -272,7 +275,8 @@ class FixmeTargets(ErrorSuppressingCommand):
                 title=f"Upgrade pyre version for {search_root} (TARGETS)",
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
     def _run_fixme_targets_file(
         self, project_directory: Path, path: str, target_names: List[str]
@@ -508,7 +512,8 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 set_dependencies=False,
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class ExpandTargetCoverage(ErrorSuppressingCommand):
@@ -573,7 +578,8 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 set_dependencies=False,
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
@@ -652,7 +658,8 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                 set_dependencies=False,
             )
         except subprocess.CalledProcessError:
-            LOG.info("Error while running hg.")
+            action = "submit" if self._arguments.submit else "commit"
+            raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 def run(repository: Repository) -> None:
