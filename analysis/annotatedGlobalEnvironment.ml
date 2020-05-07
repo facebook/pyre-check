@@ -36,7 +36,7 @@ module GlobalValueValue = struct
 end
 
 module GlobalLocationValue = struct
-  type t = Location.t option
+  type t = Location.WithModule.t option
 
   let prefix = Prefix.make ()
 
@@ -44,7 +44,7 @@ module GlobalLocationValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 
-  let compare = Option.compare Location.compare
+  let compare = Option.compare Location.WithModule.compare
 end
 
 let produce_global_annotation attribute_resolution name ~dependency =
@@ -247,16 +247,17 @@ let produce_global_location global_value_table name ~dependency =
     |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
          (unannotated_global_environment class_metadata_environment)
          ?dependency
-    >>| Node.location
+    >>| fun { Node.location; value = { ClassSummary.qualifier; _ } } ->
+    Location.with_module ~qualifier location
   in
   match class_location with
   | Some location -> Some location
   | None ->
       let extract_location = function
         | UnannotatedGlobalEnvironment.Define ({ UnannotatedGlobalEnvironment.location; _ } :: _) ->
-            Some (Location.strip_module location)
-        | SimpleAssign { target_location; _ } -> Some (Location.strip_module target_location)
-        | TupleAssign { target_location; _ } -> Some (Location.strip_module target_location)
+            Some location
+        | SimpleAssign { target_location; _ } -> Some target_location
+        | TupleAssign { target_location; _ } -> Some target_location
         | _ -> None
       in
       UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
@@ -292,11 +293,11 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
   let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobalLocation name
 
   let serialize_value = function
-    | Some location -> Location.sexp_of_t location |> Sexp.to_string
+    | Some location -> Location.WithModule.sexp_of_t location |> Sexp.to_string
     | None -> "None"
 
 
-  let equal_value = Option.equal Location.equal
+  let equal_value = Option.equal Location.WithModule.equal
 end)
 
 include GlobalLocationTable

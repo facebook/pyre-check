@@ -3923,6 +3923,7 @@ module State (Context : Context) = struct
                           let global_location =
                             Reference.delocalize reference
                             |> GlobalResolution.global_location global_resolution
+                            >>| Location.strip_module
                             |> Option.value ~default:location
                           in
                           ( emit_error

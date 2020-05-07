@@ -54,6 +54,7 @@ module NodeVisitor = struct
       let resolve_definition ~expression =
         let find_definition reference =
           GlobalResolution.global_location (Resolution.global_resolution resolution) reference
+          >>| Location.strip_module
           >>= fun location -> if Location.equal location Location.any then None else Some location
         in
         match Node.value expression with

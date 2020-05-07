@@ -16,7 +16,7 @@ module AnnotatedReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    Location.t option
+    Location.WithModule.t option
 
   val attribute_resolution : t -> AttributeResolution.ReadOnly.t
 
