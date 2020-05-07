@@ -5,7 +5,7 @@
 module EmptyStubReadOnly : sig
   include Environment.ReadOnly
 
-  val from_empty_stub : t -> ?dependency:SharedMemoryKeys.DependencyKey.t -> Ast.Reference.t -> bool
+  val from_empty_stub : t -> ?dependency:SharedMemoryKeys.dependency -> Ast.Reference.t -> bool
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end

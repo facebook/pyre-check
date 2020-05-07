@@ -152,9 +152,9 @@ module EnvironmentTable = struct
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
 
-    val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
+    val get : ?dependency:SharedMemoryKeys.dependency -> key -> t option
 
-    val mem : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> bool
+    val mem : ?dependency:SharedMemoryKeys.dependency -> key -> bool
   end
 
   module type S = sig

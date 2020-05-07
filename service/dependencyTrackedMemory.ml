@@ -8,21 +8,24 @@ module Hashtbl = Caml.Hashtbl
 module Set = Caml.Set
 open Memory
 
-module Dependency = struct
-  type t = int
+module EncodedDependency = struct
+  type t = int [@@deriving compare, sexp]
 
-  let compare = compare_int
+  let to_string = Int.to_string
 
-  let sexp_of_t = sexp_of_int
+  let of_string = Int.of_string
 
-  let t_of_sexp = int_of_sexp
+  let increment encoded = encoded + 1
 
   let make v =
     let mask = (1 lsl 31) - 1 in
     Hashtbl.hash v land mask
+
+
+  module Table = Int.Table
 end
 
-module DependencySet = Core.Set.Make (Dependency)
+module EncodedDependencySet = Core.Set.Make (EncodedDependency)
 
 module DependencyGraph = struct
   external hh_add_dep : int -> unit = "hh_add_dep"
@@ -46,9 +49,9 @@ module DependencyGraph = struct
 
   let get x =
     hh_assert_allow_dependency_table_reads ();
-    let deps = DependencySet.empty in
-    let deps = List.fold_left ~init:deps ~f:DependencySet.add (hh_get_dep x) in
-    let deps = List.fold_left ~init:deps ~f:DependencySet.add (hh_get_dep_sqlite x) in
+    let deps = EncodedDependencySet.empty in
+    let deps = List.fold_left ~init:deps ~f:EncodedDependencySet.add (hh_get_dep x) in
+    let deps = List.fold_left ~init:deps ~f:EncodedDependencySet.add (hh_get_dep_sqlite x) in
     deps
 end
 
@@ -63,22 +66,26 @@ type 'keyset transaction_element = {
 
 module DependencyKey = struct
   module type S = sig
-    include KeyType
+    type key
 
-    module KeySet : Set.S with type elt = t
+    type registered
 
-    val encode : t -> int
+    module RegisteredSet : Set.S with type elt = registered
 
-    val decode : int -> t option
+    module KeySet : Set.S with type elt = key
+
+    val mark : registered -> depends_on:EncodedDependency.t -> unit
+
+    val query : EncodedDependency.t -> RegisteredSet.t
 
     module Transaction : sig
       type t
 
       val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
 
-      val add : t -> KeySet.t transaction_element -> t
+      val add : t -> RegisteredSet.t transaction_element -> t
 
-      val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+      val execute : t -> update:(unit -> 'a) -> 'a * RegisteredSet.t
 
       val scheduler : t -> Scheduler.t
 
@@ -86,72 +93,45 @@ module DependencyKey = struct
     end
   end
 
-  module Make (Key : KeyType) = struct
-    include Key
-    module KeySet = Set.Make (Key)
+  module type In = sig
+    type key [@@deriving compare, sexp]
 
-    module IntegerKey = struct
-      type t = int
+    type registered [@@deriving compare, sexp]
 
-      let to_string = Int.to_string
+    module RegisteredSet : Set.S with type elt = registered
 
-      let compare = Int.compare
+    module KeySet : Set.S with type elt = key
 
-      type out = int
+    module Registry : sig
+      val encode : registered -> EncodedDependency.t
 
-      let from_string = Int.of_string
+      val decode : EncodedDependency.t -> registered list option
     end
+  end
 
-    module DependencyValue = struct
-      type t = Key.t
+  module Make (In : In) = struct
+    type key = In.key
 
-      let prefix = Prefix.make ()
+    type registered = In.registered
 
-      let description = "Dependency Decoder"
+    module KeySet = In.KeySet
+    module RegisteredSet = In.RegisteredSet
 
-      let unmarshall value = Marshal.from_string value 0
-    end
+    let mark registered ~depends_on = DependencyGraph.add depends_on (In.Registry.encode registered)
 
-    module IntegerValue = struct
-      type t = int
+    let query trigger =
+      DependencyGraph.get trigger
+      |> EncodedDependencySet.fold ~init:RegisteredSet.empty ~f:(fun sofar hash ->
+             match In.Registry.decode hash with
+             | Some keys ->
+                 let add sofar key = RegisteredSet.add key sofar in
+                 List.fold keys ~init:sofar ~f:add
+             | None -> sofar)
 
-      let prefix = Prefix.make ()
-
-      let description = "Dependency Encoder"
-
-      let unmarshall value = Marshal.from_string value 0
-    end
-
-    module DecodeTable = WithCache.Make (IntegerKey) (DependencyValue)
-    module EncodeTable = WithCache.Make (Key) (IntegerValue)
-
-    let encode dependency =
-      match EncodeTable.get dependency with
-      | Some encoded -> encoded
-      | None ->
-          let rec claim_free_id current =
-            DecodeTable.write_through current dependency;
-            match DecodeTable.get_no_cache current with
-            (* Successfully claimed the id *)
-            | Some decoded when Int.equal 0 (Key.compare decoded dependency) -> current
-            (* Someone else claimed the id first *)
-            | Some _non_equal_decoded_dependency -> claim_free_id (current + 1)
-            | None -> failwith "read-your-own-write consistency was violated"
-          in
-          let encoded = claim_free_id (Dependency.make dependency) in
-          (* Theoretically someone else racing this should be benign since having a different
-             dependency <-> id pair in the tables is perfectly fine, as long as it's a unique id,
-             which is ensured by claim_free_id. However, this should not matter, since we should
-             only be working on a dependency in a single worker *)
-          EncodeTable.add dependency encoded;
-          encoded
-
-
-    let decode encoded = DecodeTable.get encoded
 
     module Transaction = struct
       type t = {
-        elements: KeySet.t transaction_element list;
+        elements: RegisteredSet.t transaction_element list;
         scheduler: Scheduler.t;
         configuration: Configuration.Analysis.t;
       }
@@ -165,8 +145,8 @@ module DependencyKey = struct
       let execute { elements; _ } ~update =
         List.iter elements ~f:(fun { before; _ } -> before ());
         let update_result = update () in
-        let f sofar { after; _ } = KeySet.union sofar (after ()) in
-        update_result, List.fold elements ~init:KeySet.empty ~f
+        let f sofar { after; _ } = RegisteredSet.union sofar (after ()) in
+        update_result, List.fold elements ~init:RegisteredSet.empty ~f
 
 
       let scheduler { scheduler; _ } = scheduler
@@ -190,26 +170,26 @@ module DependencyTracking = struct
   end
 
   module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct
-    let add_dependency ~(kind : DependencyKind.t) (key : Table.key) (value : DependencyKey.t) =
-      DependencyKey.encode value
-      |> DependencyGraph.add (Dependency.make (Table.Value.prefix, key, kind))
+    let add_dependency
+        ~(kind : DependencyKind.t)
+        (key : Table.key)
+        (value : DependencyKey.registered)
+      =
+      DependencyKey.mark value ~depends_on:(EncodedDependency.make (Table.Value.prefix, key, kind))
 
 
     let get_dependents ~(kind : DependencyKind.t) (key : Table.key) =
-      DependencyGraph.get (Dependency.make (Table.Value.prefix, key, kind))
-      |> DependencySet.fold ~init:DependencyKey.KeySet.empty ~f:(fun sofar encoded ->
-             match DependencyKey.decode encoded with
-             | Some decoded -> DependencyKey.KeySet.add decoded sofar
-             | None -> sofar)
+      DependencyKey.query (EncodedDependency.make (Table.Value.prefix, key, kind))
 
 
     let get_all_dependents keys =
       let keys = Table.KeySet.elements keys in
       let init =
         List.map keys ~f:(get_dependents ~kind:Get)
-        |> List.fold ~init:DependencyKey.KeySet.empty ~f:DependencyKey.KeySet.union
+        |> List.fold ~init:DependencyKey.RegisteredSet.empty ~f:DependencyKey.RegisteredSet.union
       in
-      List.map keys ~f:(get_dependents ~kind:Mem) |> List.fold ~init ~f:DependencyKey.KeySet.union
+      List.map keys ~f:(get_dependents ~kind:Mem)
+      |> List.fold ~init ~f:DependencyKey.RegisteredSet.union
 
 
     let get ?dependency key =
@@ -238,12 +218,12 @@ module DependencyTracking = struct
           in
           let sofar =
             if value_has_changed then
-              get_dependents ~kind:Get key |> DependencyKey.KeySet.union sofar
+              get_dependents ~kind:Get key |> DependencyKey.RegisteredSet.union sofar
             else
               sofar
           in
           if presence_has_changed then
-            get_dependents ~kind:Mem key |> DependencyKey.KeySet.union sofar
+            get_dependents ~kind:Mem key |> DependencyKey.RegisteredSet.union sofar
           else
             sofar
         in
@@ -259,9 +239,9 @@ module DependencyTracking = struct
                ~preferred_chunks_per_worker:1
                ())
           ~configuration
-          ~initial:DependencyKey.KeySet.empty
+          ~initial:DependencyKey.RegisteredSet.empty
           ~map:add_dependencies
-          ~reduce:DependencyKey.KeySet.union
+          ~reduce:DependencyKey.RegisteredSet.union
           ~inputs:(Table.KeySet.elements keys)
           ()
       in

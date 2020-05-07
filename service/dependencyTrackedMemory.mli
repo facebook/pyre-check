@@ -11,25 +11,42 @@ open Memory
    module *)
 type 'keyset transaction_element
 
+module EncodedDependency : sig
+  type t [@@deriving compare, sexp]
+
+  val to_string : t -> string
+
+  val of_string : string -> t
+
+  val make : 'a -> t
+
+  val increment : t -> t
+
+  module Table : Hashtbl.S with type key = t
+end
+
 module DependencyKey : sig
   module type S = sig
-    include KeyType
+    type key
 
-    module KeySet : Set.S with type elt = t
+    type registered
 
-    val encode : t -> int
+    module RegisteredSet : Set.S with type elt = registered
 
-    val decode : int -> t option
+    module KeySet : Set.S with type elt = key
+
+    val mark : registered -> depends_on:EncodedDependency.t -> unit
+
+    val query : EncodedDependency.t -> RegisteredSet.t
 
     module Transaction : sig
       type t
 
       val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
 
-      (* Cannot be called from outside this module *)
-      val add : t -> KeySet.t transaction_element -> t
+      val add : t -> RegisteredSet.t transaction_element -> t
 
-      val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+      val execute : t -> update:(unit -> 'a) -> 'a * RegisteredSet.t
 
       val scheduler : t -> Scheduler.t
 
@@ -37,7 +54,28 @@ module DependencyKey : sig
     end
   end
 
-  module Make (Key : KeyType) : S with type t = Key.t
+  module type In = sig
+    type key [@@deriving compare, sexp]
+
+    type registered [@@deriving compare, sexp]
+
+    module RegisteredSet : Set.S with type elt = registered
+
+    module KeySet : Set.S with type elt = key
+
+    module Registry : sig
+      val encode : registered -> EncodedDependency.t
+
+      val decode : EncodedDependency.t -> registered list option
+    end
+  end
+
+  module Make (In : In) :
+    S
+      with type key = In.key
+       and type registered = In.registered
+       and module RegisteredSet = In.RegisteredSet
+       and module KeySet = In.KeySet
 end
 
 module DependencyKind : sig
@@ -58,13 +96,13 @@ module DependencyTrackedTableWithCache
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.t -> key -> t option
+  val get : ?dependency:DependencyKey.registered -> key -> t option
 
-  val mem : ?dependency:DependencyKey.t -> key -> bool
+  val mem : ?dependency:DependencyKey.registered -> key -> bool
 
-  val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.KeySet.t
+  val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.RegisteredSet.t
 
-  val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
+  val get_all_dependents : KeySet.t -> DependencyKey.RegisteredSet.t
 
   val add_to_transaction
     :  DependencyKey.Transaction.t ->
@@ -89,13 +127,13 @@ module DependencyTrackedTableNoCache
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.t -> key -> t option
+  val get : ?dependency:DependencyKey.registered -> key -> t option
 
-  val mem : ?dependency:DependencyKey.t -> key -> bool
+  val mem : ?dependency:DependencyKey.registered -> key -> bool
 
-  val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.KeySet.t
+  val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.RegisteredSet.t
 
-  val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
+  val get_all_dependents : KeySet.t -> DependencyKey.RegisteredSet.t
 
   val add_to_transaction
     :  DependencyKey.Transaction.t ->

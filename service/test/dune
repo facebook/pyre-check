@@ -7,7 +7,10 @@
   staticAnalysisTest
   typeCheckTest)
  (preprocess
-  (pps ppx_sexp_message ppx_hash))
+  (pps
+   ppx_sexp_conv
+   ppx_compare
+   ppx_sexp_message ppx_hash))
  (libraries
   oUnit
   pyrelib.ast

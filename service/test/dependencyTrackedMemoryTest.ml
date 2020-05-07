@@ -4,9 +4,21 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
+open Core
+open Pyre
 
 module StringKey = struct
   type t = string
+
+  type key = string [@@deriving sexp, compare]
+
+  module KeySet = Caml.Set.Make (struct
+    type t = key [@@deriving compare, sexp]
+  end)
+
+  type registered = string [@@deriving sexp, compare]
+
+  module RegisteredSet = KeySet
 
   let to_string x = x
 
@@ -15,6 +27,23 @@ module StringKey = struct
   type out = string
 
   let from_string x = x
+
+  module Registry = struct
+    let table = DependencyTrackedMemory.EncodedDependency.Table.create ()
+
+    let encode key =
+      let add = function
+        | None -> String.Set.singleton key
+        | Some existing -> String.Set.add existing key
+      in
+      let encoded = DependencyTrackedMemory.EncodedDependency.make key in
+      DependencyTrackedMemory.EncodedDependency.Table.update table encoded ~f:add;
+      encoded
+
+
+    let decode hash =
+      DependencyTrackedMemory.EncodedDependency.Table.find table hash >>| Set.to_list
+  end
 end
 
 module StringDependencyKey = DependencyTrackedMemory.DependencyKey.Make (StringKey)
@@ -53,10 +82,10 @@ module TableB =
     (OtherStringValue)
 
 let assert_dependency ~expected actual =
-  let expected_set = StringDependencyKey.KeySet.of_list expected in
+  let expected_set = StringDependencyKey.RegisteredSet.of_list expected in
   assert_bool
     "Check if the actual dependency overapproximate the expected one"
-    (StringDependencyKey.KeySet.subset expected_set actual)
+    (StringDependencyKey.RegisteredSet.subset expected_set actual)
 
 
 let test_dependency_table _ =
