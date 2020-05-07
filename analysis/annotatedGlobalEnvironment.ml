@@ -114,6 +114,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
             };
           target_location = location;
         } ->
+        let location = Location.strip_module location in
         Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
         |> Node.create ~location
         |> AttributeResolution.ReadOnly.parse_annotation
@@ -249,8 +250,8 @@ let produce_global_location global_value_table name ~dependency =
   | None ->
       let extract_location = function
         | UnannotatedGlobalEnvironment.Define (head :: _) -> Some (Node.location head)
-        | SimpleAssign { target_location; _ } -> Some target_location
-        | TupleAssign { target_location; _ } -> Some target_location
+        | SimpleAssign { target_location; _ } -> Some (Location.strip_module target_location)
+        | TupleAssign { target_location; _ } -> Some (Location.strip_module target_location)
         | _ -> None
       in
       UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global

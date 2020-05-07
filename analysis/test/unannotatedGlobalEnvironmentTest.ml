@@ -282,6 +282,7 @@ let test_simple_global_registration context =
   in
   let target_location =
     { Location.start = { line = 2; column = 0 }; stop = { line = 2; column = 3 } }
+    |> Location.with_module ~qualifier:(Reference.create "test")
   in
   let value_location =
     { Location.start = { line = 2; column = 6 }; stop = { line = 2; column = 7 } }
@@ -316,7 +317,8 @@ let test_simple_global_registration context =
             explicit_annotation = None;
             value = create_with_location (Expression.Expression.Integer 8) (3, 8) (3, 9);
             target_location =
-              { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } };
+              { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } }
+              |> Location.with_module ~qualifier:(Reference.create "test");
           }));
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
@@ -415,10 +417,10 @@ let test_updates context =
           let remove_target_location = function
             | UnannotatedGlobalEnvironment.SimpleAssign assign ->
                 UnannotatedGlobalEnvironment.SimpleAssign
-                  { assign with target_location = Location.any }
+                  { assign with target_location = Location.WithModule.any }
             | UnannotatedGlobalEnvironment.TupleAssign assign ->
                 UnannotatedGlobalEnvironment.TupleAssign
-                  { assign with target_location = Location.any }
+                  { assign with target_location = Location.WithModule.any }
             | global -> global
           in
           UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
@@ -651,7 +653,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "7") with location = location (2, 9) (2, 10) };
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                  }) );
       ]
     ~expected_triggers:[dependency]
@@ -666,7 +668,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                  }) );
       ]
     ();
@@ -756,7 +758,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 0;
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                    total_length = 3;
                  }) );
         `Global
@@ -767,7 +769,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 1;
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                    total_length = 3;
                  }) );
         `Global
@@ -778,7 +780,7 @@ let test_updates context =
                  {
                    value = tuple_expression;
                    index = 2;
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                    total_length = 3;
                  }) );
       ]
@@ -806,7 +808,7 @@ let test_updates context =
                    explicit_annotation = None;
                    value =
                      { (parse_single_expression "int") with location = location (2, 4) (2, 7) };
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                  }) );
       ]
     ~expected_triggers:[]
@@ -837,7 +839,7 @@ let test_updates context =
                    explicit_annotation = None;
                    value =
                      { (parse_single_expression "int") with location = location (3, 6) (3, 9) };
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                  }) );
       ]
     ~expected_triggers:[]
@@ -886,7 +888,7 @@ let test_updates context =
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
                    value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
-                   target_location = Location.any;
+                   target_location = Location.WithModule.any;
                  }) );
       ]
     ();

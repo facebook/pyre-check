@@ -89,3 +89,5 @@ end
 val with_path : path:string -> t -> WithPath.t
 
 val with_module : qualifier:Reference.t -> t -> WithModule.t
+
+val strip_module : WithModule.t -> t

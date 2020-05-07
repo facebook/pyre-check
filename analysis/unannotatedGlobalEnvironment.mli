@@ -12,11 +12,11 @@ type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
       value: Expression.t;
-      target_location: Location.t;
+      target_location: Location.WithModule.t;
     }
   | TupleAssign of {
       value: Expression.t;
-      target_location: Location.t;
+      target_location: Location.WithModule.t;
       index: int;
       total_length: int;
     }

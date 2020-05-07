@@ -141,3 +141,5 @@ end
 let with_path ~path { start; stop } = { WithPath.path; start; stop }
 
 let with_module ~qualifier { start; stop } = { WithModule.path = qualifier; start; stop }
+
+let strip_module { WithModule.start; stop; _ } = { start; stop }

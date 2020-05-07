@@ -14,11 +14,11 @@ type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
       value: Expression.t;
-      target_location: Location.t;
+      target_location: Location.WithModule.t;
     }
   | TupleAssign of {
       value: Expression.t;
-      target_location: Location.t;
+      target_location: Location.WithModule.t;
       index: int;
       total_length: int;
     }
@@ -620,7 +620,7 @@ let missing_builtin_globals =
       SimpleAssign
         {
           explicit_annotation = Some (Type.expression annotation);
-          target_location = Location.any;
+          target_location = Location.WithModule.any;
           value = Node.create_with_default_location Expression.Ellipsis;
         } )
   in
@@ -635,26 +635,34 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     in
     match value with
     | Statement.Assign
-        {
-          Assign.target = { Node.value = Name target; location = target_location };
-          annotation;
-          value;
-          _;
-        }
+        { Assign.target = { Node.value = Name target; location }; annotation; value; _ }
       when is_simple_name target ->
         qualified_name target
         >>| (fun qualified ->
-              (qualified, SimpleAssign { explicit_annotation = annotation; value; target_location })
+              ( qualified,
+                SimpleAssign
+                  {
+                    explicit_annotation = annotation;
+                    value;
+                    target_location = Location.with_module ~qualifier location;
+                  } )
               :: globals)
         |> Option.value ~default:globals
     | Statement.Assign { Assign.target = { Node.value = Tuple elements; _ }; value; _ } ->
         let valid =
           let total_length = List.length elements in
           let is_simple_name index = function
-            | { Node.value = Expression.Name name; location = target_location }
-              when is_simple_name name ->
+            | { Node.value = Expression.Name name; location } when is_simple_name name ->
                 qualified_name name
-                >>| fun name -> name, TupleAssign { value; target_location; index; total_length }
+                >>| fun name ->
+                ( name,
+                  TupleAssign
+                    {
+                      value;
+                      target_location = Location.with_module ~qualifier location;
+                      index;
+                      total_length;
+                    } )
             | _ -> None
           in
           List.mapi elements ~f:is_simple_name
