@@ -5886,7 +5886,7 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
     number_defines
   in
   let _ =
-    Scheduler.map_reduce
+    SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
       scheduler
       ~policy:
         (Scheduler.Policy.fixed_chunk_size

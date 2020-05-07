@@ -210,39 +210,132 @@ type dependency =
   | ParseAnnotation of ParseAnnotationKey.t
 [@@deriving show, compare, sexp, hash]
 
-module DependencySet = Caml.Set.Make (struct
-  type t = dependency [@@deriving compare, sexp]
-end)
+module In = struct
+  type key = dependency [@@deriving compare, sexp]
+
+  module KeySet = Caml.Set.Make (struct
+    type t = dependency [@@deriving compare, sexp]
+  end)
+
+  type registered = {
+    hash: DependencyTrackedMemory.EncodedDependency.t;
+    key: key;
+  }
+  [@@deriving compare, sexp]
+
+  module RegisteredSet = Caml.Set.Make (struct
+    type t = registered [@@deriving compare, sexp]
+  end)
+
+  let get_key { key; _ } = key
+
+  module Table = DependencyTrackedMemory.EncodedDependency.Table
+
+  module Registry = struct
+    type table = key list Table.t
+
+    let add_to_table table ~hash ~key =
+      let append dependency = function
+        | Some existing ->
+            let equal left right = Int.equal (compare_key left right) 0 in
+            if List.mem existing dependency ~equal then
+              existing
+            else
+              dependency :: existing
+        | None -> [dependency]
+      in
+      Table.update table hash ~f:(append key)
+
+
+    type t =
+      | Master of table
+      | Worker of key list
+
+    module Serializable = struct
+      module Serialized = struct
+        type nonrec t = key list
+
+        let unmarshall value = Marshal.from_string value 0
+
+        let prefix = Prefix.make ()
+
+        let description = "Decoder storage"
+      end
+
+      type t = table
+
+      let serialize table = Table.data table |> List.concat_no_order
+
+      let deserialize keys =
+        let table = Table.create ~size:(List.length keys) () in
+        let add key =
+          add_to_table
+            table
+            ~hash:(DependencyTrackedMemory.EncodedDependency.make ~hash:hash_dependency key)
+            ~key
+        in
+        List.iter keys ~f:add;
+        table
+    end
+
+    module Storage = Memory.Serializer (Serializable)
+
+    let global : t ref = ref (Master (Table.create ()))
+
+    let store () =
+      match !global with
+      | Master table -> Storage.store table
+      | Worker _ -> failwith "trying to store from worker"
+
+
+    let load () = global := Master (Storage.load ())
+
+    let register key =
+      let hash = DependencyTrackedMemory.EncodedDependency.make ~hash:hash_dependency key in
+      let () =
+        match !global with
+        | Master table -> add_to_table table ~key ~hash
+        | Worker keys -> global := Worker (key :: keys)
+      in
+      { hash; key }
+
+
+    type serialized = Serializable.Serialized.t
+
+    let encode { hash; _ } = hash
+
+    let decode hash =
+      match !global with
+      | Master table -> Table.find table hash >>| List.map ~f:(fun key -> { hash; key })
+      | Worker _ -> failwith "Can only decode from master"
+
+
+    let collected_map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs () =
+      let map sofar inputs =
+        if Scheduler.is_master () then
+          map sofar inputs, []
+        else (
+          global := Worker [];
+          let payload = map sofar inputs in
+          match !global with
+          | Worker keys -> payload, keys
+          | Master _ -> failwith "can't set worker back to master" )
+      in
+      let reduce (payload, keys) sofar =
+        let register key =
+          let (_ : registered) = register key in
+          ()
+        in
+        List.iter keys ~f:register;
+        reduce payload sofar
+      in
+      Scheduler.map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs ()
+  end
+end
 
 module DependencyKey = struct
-  module Registry = struct
-    let register = Fn.id
-
-    include TraditionalRegistry.Make (struct
-      type t = dependency [@@deriving compare, sexp, hash]
-
-      let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-      let compare = compare_dependency
-
-      type out = dependency
-
-      let from_string string = Sexp.of_string string |> dependency_of_sexp
-    end)
-  end
-
-  let get_key = Fn.id
-
-  include DependencyTrackedMemory.DependencyKey.Make (struct
-    type key = dependency [@@deriving compare, sexp]
-
-    module KeySet = DependencySet
-
-    type registered = dependency [@@deriving compare, sexp]
-
-    module RegisteredSet = DependencySet
-    module Registry = Registry
-  end)
+  include In
+  include DependencyTrackedMemory.DependencyKey.Make (In)
 end
 
 module LocationKey = struct

@@ -260,7 +260,7 @@ module EnvironmentTable = struct
     let update_only_this_environment ~scheduler ~configuration upstream_update =
       Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
       let update ~names_to_update () =
-        let register =
+        let register () =
           let set (name, dependency) =
             In.produce_value
               (In.PreviousEnvironment.UpdateResult.read_only upstream_update)
@@ -270,17 +270,23 @@ module EnvironmentTable = struct
           in
           List.iter ~f:set
         in
-        Scheduler.iter
-          scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:100
-               ~preferred_chunks_per_worker:5
-               ())
-          ~configuration
-          ~f:register
-          ~inputs:names_to_update
+        let () =
+          SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
+            scheduler
+            ~policy:
+              (Scheduler.Policy.fixed_chunk_count
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:100
+                 ~preferred_chunks_per_worker:5
+                 ())
+            ~configuration
+            ~map:register
+            ~reduce:(fun () () -> ())
+            ~inputs:names_to_update
+            ~initial:()
+            ()
+        in
+        ()
       in
       match configuration with
       | { incremental_style = FineGrained; _ } ->

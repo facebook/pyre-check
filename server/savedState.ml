@@ -213,6 +213,7 @@ let load
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
   let symlink_targets_to_sources = SymlinkTargetsToSources.load () in
+  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
   let changed_paths =
     match changed_paths with
     | Some changed_paths ->
@@ -268,4 +269,5 @@ let save
   AstEnvironment.store ast_environment;
   StoredConfiguration.store configuration;
   ServerErrors.store errors;
+  Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
   Memory.save_shared_memory ~path:saved_state_path ~configuration

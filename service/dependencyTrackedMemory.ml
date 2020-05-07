@@ -207,7 +207,7 @@ module DependencyTracking = struct
 
     let deprecate_keys = Table.oldify_batch
 
-    let dependencies_since_last_deprecate keys ~scheduler ~configuration =
+    let dependencies_since_last_deprecate keys ~scheduler:_ ~configuration:_ =
       let add_dependencies init keys =
         let add_dependency sofar key =
           let value_has_changed, presence_has_changed =
@@ -233,20 +233,7 @@ module DependencyTracking = struct
         List.fold ~f:add_dependency keys ~init
       in
       let dependencies =
-        Scheduler.map_reduce
-          scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunk_size:5
-               ~minimum_chunks_per_worker:1
-               ~preferred_chunks_per_worker:1
-               ())
-          ~configuration
-          ~initial:DependencyKey.RegisteredSet.empty
-          ~map:add_dependencies
-          ~reduce:DependencyKey.RegisteredSet.union
-          ~inputs:(Table.KeySet.elements keys)
-          ()
+        add_dependencies DependencyKey.RegisteredSet.empty (Table.KeySet.elements keys)
       in
       Table.remove_old_batch keys;
       dependencies

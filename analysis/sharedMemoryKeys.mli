@@ -86,6 +86,23 @@ module DependencyKey : sig
 
   module Registry : sig
     val register : key -> registered
+
+    type serialized
+
+    val store : unit -> unit
+
+    val load : unit -> unit
+
+    val collected_map_reduce
+      :  Scheduler.t ->
+      policy:Scheduler.Policy.t ->
+      configuration:Configuration.Analysis.t ->
+      initial:'state ->
+      map:('state -> 'input list -> 'intermediate) ->
+      reduce:('intermediate -> 'state -> 'state) ->
+      inputs:'input list ->
+      unit ->
+      'state
   end
 end
 
