@@ -6,7 +6,7 @@
 import os  # noqa
 import textwrap
 import unittest
-from typing import Set
+from typing import List, Set
 from unittest.mock import mock_open, patch
 
 from ..generator_specifications import DecoratorAnnotationSpecification
@@ -19,25 +19,23 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
     def assert_expected_annotations(
         self,
         source: str,
-        annotation_specification: DecoratorAnnotationSpecification,
+        annotation_specifications: List[DecoratorAnnotationSpecification],
         expected: Set[str],
     ) -> None:
         cleaned_source = textwrap.dedent(source)
         with patch("builtins.open", mock_open(read_data=cleaned_source)):
             generator = AnnotatedFreeFunctionWithDecoratorGenerator(
-                root="/root", annotation_specifications=[annotation_specification]
+                root="/root", annotation_specifications=annotation_specifications
             )
             self.assertSetEqual(
                 {
                     str(model)
-                    for model in generator._annotate_functions(
-                        annotation_specification, "/root/module.py"
-                    )
+                    for model in generator._annotate_functions("/root/module.py")
                 },
                 set(expected),
             )
 
-    def test_globals(self) -> None:
+    def test_model_generation(self) -> None:
 
         # Test argument annotations only.
         self.assert_expected_annotations(
@@ -46,9 +44,11 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator", arg_annotation="Arg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator", arg_annotation="Arg"
+                )
+            ],
             {"def module.decorated(arg1: Arg, arg2: Arg, *v, **kw): ..."},
         )
 
@@ -59,9 +59,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_unnamed_attributes(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator='@target_decorator("some_attribute")', arg_annotation="Arg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator='@target_decorator("some_attribute")',
+                    arg_annotation="Arg",
+                )
+            ],
             {
                 "def module.decorated_unnamed_attributes(arg1: Arg, arg2: Arg, "
                 "*v, **kw): ..."
@@ -75,9 +78,11 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_named_attributes(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator='@target_decorator(key="value")', arg_annotation="Arg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator='@target_decorator(key="value")', arg_annotation="Arg"
+                )
+            ],
             {
                 "def module.decorated_named_attributes(arg1: Arg, arg2: Arg, *v, "
                 "**kw): ..."
@@ -92,13 +97,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_multiple_filter_attributes(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator=(
-                    '@target_decorator("some_attribute", "another_attribute", '
-                    'key2="another_value")'
-                ),
-                arg_annotation="Arg",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator=(
+                        '@target_decorator("some_attribute", "another_attribute", '
+                        'key2="another_value")'
+                    ),
+                    arg_annotation="Arg",
+                )
+            ],
             {
                 "def module.decorated_multiple_filter_attributes(arg1: Arg, "
                 "arg2: Arg, *v, **kw): ..."
@@ -112,10 +119,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_attributes_not_found(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator('some_attribute_not_found')",
-                arg_annotation="Arg",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator('some_attribute_not_found')",
+                    arg_annotation="Arg",
+                )
+            ],
             set(),
         )
 
@@ -126,9 +135,11 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator", vararg_annotation="Vararg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator", vararg_annotation="Vararg"
+                )
+            ],
             {"def module.decorated(arg1, arg2, *v: Vararg, **kw): ..."},
         )
 
@@ -139,9 +150,11 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator", kwarg_annotation="Kwarg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator", kwarg_annotation="Kwarg"
+                )
+            ],
             {"def module.decorated(arg1, arg2, *v, **kw: Kwarg): ..."},
         )
 
@@ -152,9 +165,11 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator", return_annotation="Return"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator", return_annotation="Return"
+                )
+            ],
             {"def module.decorated(arg1, arg2, *v, **kw) -> Return: ..."},
         )
 
@@ -165,13 +180,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             async def decorated_async(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator",
-                arg_annotation="Arg",
-                vararg_annotation="Vararg",
-                kwarg_annotation="Kwarg",
-                return_annotation="Return",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    vararg_annotation="Vararg",
+                    kwarg_annotation="Kwarg",
+                    return_annotation="Return",
+                )
+            ],
             {
                 "def module.decorated_async(arg1: Arg, arg2: Arg, *v: Vararg, "
                 "**kw: Kwarg) -> Return: ..."
@@ -187,13 +204,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_multi(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator",
-                arg_annotation="Arg",
-                vararg_annotation="Vararg",
-                kwarg_annotation="Kwarg",
-                return_annotation="Return",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    vararg_annotation="Vararg",
+                    kwarg_annotation="Kwarg",
+                    return_annotation="Return",
+                )
+            ],
             {
                 "def module.decorated_multi(arg1: Arg, arg2: Arg, *v: Vararg, "
                 "**kw: Kwarg) -> Return: ..."
@@ -215,13 +234,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 def my_fn():
                     pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator",
-                arg_annotation="Arg",
-                vararg_annotation="Vararg",
-                kwarg_annotation="Kwarg",
-                return_annotation="Return",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    vararg_annotation="Vararg",
+                    kwarg_annotation="Kwarg",
+                    return_annotation="Return",
+                )
+            ],
             set(),
         )
 
@@ -232,9 +253,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def target_decorator_attributes(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator('some_attribute')", arg_annotation="Arg"
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator('some_attribute')",
+                    arg_annotation="Arg",
+                )
+            ],
             set(),
         )
 
@@ -245,12 +269,14 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator",
-                arg_annotation="Arg",
-                vararg_annotation="Vararg",
-                kwarg_annotation="Kwarg",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    vararg_annotation="Vararg",
+                    kwarg_annotation="Kwarg",
+                )
+            ],
             {
                 "def module.decorated(arg1: Arg, arg2: Arg, *v: Vararg, "
                 "**kw: Kwarg): ..."
@@ -281,13 +307,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             def decorated_multi(arg1: str, arg2, *v, **kw):
                 pass
             """,
-            DecoratorAnnotationSpecification(
-                decorator="@target_decorator",
-                arg_annotation="Arg",
-                vararg_annotation="Vararg",
-                kwarg_annotation="Kwarg",
-                return_annotation="Return",
-            ),
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    vararg_annotation="Vararg",
+                    kwarg_annotation="Kwarg",
+                    return_annotation="Return",
+                )
+            ],
             {
                 "def module.decorated(arg1: Arg, arg2: Arg, *v: Vararg, "
                 "**kw: Kwarg) -> Return: ...",
@@ -295,5 +323,41 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 "**kw: Kwarg) -> Return: ...",
                 "def module.decorated_multi(arg1: Arg, arg2: Arg, *v: Vararg, "
                 "**kw: Kwarg) -> Return: ...",
+            },
+        )
+
+        # Test more than one specification.
+        self.assert_expected_annotations(
+            """
+            def undecorated():
+                pass
+            @target_decorator1
+            def decorated1(arg: str, *v, **kw):
+                pass
+            @target_decorator2
+            def decorated2(arg: str, *v, **kw):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator1",
+                    arg_annotation="Arg1",
+                    vararg_annotation="Vararg1",
+                    kwarg_annotation="Kwarg1",
+                    return_annotation="Return1",
+                ),
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator2",
+                    arg_annotation="Arg2",
+                    vararg_annotation="Vararg2",
+                    kwarg_annotation="Kwarg2",
+                    return_annotation="Return2",
+                ),
+            ],
+            {
+                "def module.decorated1(arg: Arg1, *v: Vararg1, "
+                "**kw: Kwarg1) -> Return1: ...",
+                "def module.decorated2(arg: Arg2, *v: Vararg2, "
+                "**kw: Kwarg2) -> Return2: ...",
             },
         )

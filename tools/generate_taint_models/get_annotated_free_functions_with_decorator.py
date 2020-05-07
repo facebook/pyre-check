@@ -5,12 +5,12 @@
 
 import ast
 import logging
-from dataclasses import dataclass
-from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
+from collections import defaultdict
+from typing import Callable, Dict, Iterable, List, Optional, Set, Union
 
 from .decorator_parser import DecoratorParser
 from .generator_specifications import DecoratorAnnotationSpecification
-from .model import FunctionDefinitionModel, Model
+from .model import FunctionDefinitionModel
 from .model_generator import ModelGenerator, qualifier
 from .module_loader import find_all_paths, load_module
 
@@ -30,9 +30,9 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
     ) -> None:
         self._paths: Optional[List[str]] = paths
         self.root = root
-        self.annotation_specifications: List[DecoratorAnnotationSpecification] = (
-            annotation_specifications
-        )
+        self.annotation_specifications: List[
+            DecoratorAnnotationSpecification
+        ] = annotation_specifications
 
     @property
     def paths(self) -> List[str]:
@@ -42,9 +42,7 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
             self._paths = paths
         return paths
 
-    def _annotate_functions(
-        self, specification: DecoratorAnnotationSpecification, path: str
-    ) -> Iterable[FunctionDefinitionModel]:
+    def _annotate_functions(self, path: str) -> Iterable[FunctionDefinitionModel]:
 
         module = load_module(path)
 
@@ -52,44 +50,57 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
             return []
 
         class FreeFunctionVisitor(ast.NodeVisitor):
-            def __init__(self, target_decorator: str) -> None:
-                self.decorator_parser = DecoratorParser(target_decorator)
-                self.found_functions: List[FunctionDefinition] = []
+            def __init__(
+                self, target_decorators: List[DecoratorAnnotationSpecification]
+            ) -> None:
+                self.decorator_parsers: Dict[
+                    DecoratorAnnotationSpecification, DecoratorParser
+                ] = {
+                    target_decorator: DecoratorParser(target_decorator.decorator)
+                    for target_decorator in target_decorators
+                }
+
+                self.found_functions: Dict[
+                    DecoratorAnnotationSpecification, List[FunctionDefinition]
+                ] = defaultdict(list)
 
             def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-                if self.decorator_parser.function_matches_target_decorators(node):
-                    self.found_functions.append(node)
+                for decorator_specification, parser in self.decorator_parsers.items():
+                    if parser.function_matches_target_decorators(node):
+                        self.found_functions[decorator_specification].append(node)
 
             def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-                if self.decorator_parser.function_matches_target_decorators(node):
-                    self.found_functions.append(node)
+                for decorator_specification, parser in self.decorator_parsers.items():
+                    if parser.function_matches_target_decorators(node):
+                        self.found_functions[decorator_specification].append(node)
 
             def visit_ClassDef(self, node: ast.ClassDef) -> None:
                 # We only want free functions, so we should stop traversing the
                 # tree once we see a class definition
                 pass
 
-        visitor = FreeFunctionVisitor(specification.decorator)
+        visitor = FreeFunctionVisitor(self.annotation_specifications)
         visitor.visit(module)
 
         module_qualifier = qualifier(self.root, path)
 
         models: Set[FunctionDefinitionModel] = set()
-        for found_function in visitor.found_functions:
-            try:
-                function_definition_model = FunctionDefinitionModel(
-                    qualifier=module_qualifier,
-                    definition=found_function,
-                    arg=specification.arg_annotation,
-                    vararg=specification.vararg_annotation,
-                    kwarg=specification.kwarg_annotation,
-                    returns=specification.return_annotation,
-                    parameter_type_whitelist=specification.parameter_type_whitelist,
-                    parameter_name_whitelist=specification.parameter_name_whitelist,
-                )
-                models.add(function_definition_model)
-            except ValueError:
-                pass
+        for specification, found_functions in visitor.found_functions.items():
+            for found_function in found_functions:
+                try:
+                    function_definition_model = FunctionDefinitionModel(
+                        qualifier=module_qualifier,
+                        definition=found_function,
+                        arg=specification.arg_annotation,
+                        vararg=specification.vararg_annotation,
+                        kwarg=specification.kwarg_annotation,
+                        returns=specification.return_annotation,
+                        parameter_type_whitelist=specification.parameter_type_whitelist,
+                        parameter_name_whitelist=specification.parameter_name_whitelist,
+                    )
+                    models.add(function_definition_model)
+                except ValueError:
+                    pass
 
         return models
 
@@ -102,9 +113,6 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
         annotated_functions = set()
 
         for path in self.paths:
-            for annotation_specification in self.annotation_specifications:
-                annotated_functions.update(
-                    self._annotate_functions(annotation_specification, path)
-                )
+            annotated_functions.update(self._annotate_functions(path))
 
         return sorted(annotated_functions)
