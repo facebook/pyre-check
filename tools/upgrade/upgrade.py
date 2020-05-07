@@ -620,6 +620,9 @@ def run(repository: Repository) -> None:
         "--no-commit", action="store_true", help=argparse.SUPPRESS
     )
     fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+    fixme_single.add_argument(
+        "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
+    )
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
