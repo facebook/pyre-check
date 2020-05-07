@@ -18,7 +18,7 @@ module EncodedDependency : sig
 
   val of_string : string -> t
 
-  val make : 'a -> t
+  val make : 'a -> hash:('a -> int) -> t
 
   val increment : t -> t
 

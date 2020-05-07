@@ -17,9 +17,9 @@ module EncodedDependency = struct
 
   let increment encoded = encoded + 1
 
-  let make v =
+  let make v ~hash =
     let mask = (1 lsl 31) - 1 in
-    Hashtbl.hash v land mask
+    hash v land mask
 
 
   module Table = Int.Table
@@ -175,11 +175,14 @@ module DependencyTracking = struct
         (key : Table.key)
         (value : DependencyKey.registered)
       =
-      DependencyKey.mark value ~depends_on:(EncodedDependency.make (Table.Value.prefix, key, kind))
+      DependencyKey.mark
+        value
+        ~depends_on:(EncodedDependency.make ~hash:Hashtbl.hash (Table.Value.prefix, key, kind))
 
 
     let get_dependents ~(kind : DependencyKind.t) (key : Table.key) =
-      DependencyKey.query (EncodedDependency.make (Table.Value.prefix, key, kind))
+      DependencyKey.query
+        (EncodedDependency.make ~hash:Hashtbl.hash (Table.Value.prefix, key, kind))
 
 
     let get_all_dependents keys =

@@ -36,7 +36,7 @@ module StringKey = struct
         | None -> String.Set.singleton key
         | Some existing -> String.Set.add existing key
       in
-      let encoded = DependencyTrackedMemory.EncodedDependency.make key in
+      let encoded = DependencyTrackedMemory.EncodedDependency.make key ~hash:String.hash in
       DependencyTrackedMemory.EncodedDependency.Table.update table encoded ~f:add;
       encoded
 

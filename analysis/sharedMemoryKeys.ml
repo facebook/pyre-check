@@ -8,7 +8,13 @@ open Ast
 open Pyre
 
 module TraditionalRegistry = struct
-  module Make (Key : Memory.KeyType) = struct
+  module type KeyType = sig
+    type t [@@deriving hash]
+
+    include Memory.KeyType with type t := t
+  end
+
+  module Make (Key : KeyType) = struct
     module EncodedDependencyKey = struct
       type t = DependencyTrackedMemory.EncodedDependency.t
 
@@ -68,7 +74,9 @@ module TraditionalRegistry = struct
                 claim_free_id (DependencyTrackedMemory.EncodedDependency.increment current)
             | None -> failwith "read-your-own-write consistency was violated"
           in
-          let encoded = claim_free_id (DependencyTrackedMemory.EncodedDependency.make dependency) in
+          let encoded =
+            claim_free_id (DependencyTrackedMemory.EncodedDependency.make ~hash:Key.hash dependency)
+          in
           (* Theoretically someone else racing this should be benign since having a different
              dependency <-> id pair in the tables is perfectly fine, as long as it's a unique id,
              which is ensured by claim_free_id. However, this should not matter, since we should
@@ -177,7 +185,7 @@ module ReferenceDependencyKey = DependencyTrackedMemory.DependencyKey.Make (stru
   module RegisteredSet = ReferenceSet
 
   module Registry = TraditionalRegistry.Make (struct
-    type t = Reference.t
+    type t = Reference.t [@@deriving hash]
 
     let to_string = Reference.show
 
@@ -200,7 +208,7 @@ type dependency =
   | FromEmptyStub of Reference.t
   | AttributeTable of AttributeTableKey.t
   | ParseAnnotation of ParseAnnotationKey.t
-[@@deriving show, compare, sexp]
+[@@deriving show, compare, sexp, hash]
 
 module DependencySet = Caml.Set.Make (struct
   type t = dependency [@@deriving compare, sexp]
@@ -211,7 +219,7 @@ module DependencyKey = struct
     let register = Fn.id
 
     include TraditionalRegistry.Make (struct
-      type t = dependency [@@deriving compare, sexp]
+      type t = dependency [@@deriving compare, sexp, hash]
 
       let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
 
