@@ -1961,12 +1961,14 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
     @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.Configuration.deduplicate_targets")
+    @patch(f"{upgrade.__name__}.Configuration.add_strict")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.find_files")
     def test_consolidate_nested_configurations(
         self,
         find_files,
         suppress_errors,
+        add_strict,
         deduplicate_targets,
         get_errors,
         find_local_configuration,
@@ -2027,6 +2029,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 expected_configuration_contents, mocks[4], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
+        add_strict.assert_not_called()
         remove_paths.assert_called_once_with(
             [
                 "subdirectory/a/.pyre_configuration.local",
@@ -2043,8 +2046,12 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         ]
         with patch("json.dump") as dump_mock:
             mocks = [
-                mock_open(read_data=json.dumps({"targets": ["//a/..."]})).return_value,
-                mock_open(read_data=json.dumps({"targets": ["//b/..."]})).return_value,
+                mock_open(
+                    read_data=json.dumps({"targets": ["//a/..."], "strict": "true"})
+                ).return_value,
+                mock_open(
+                    read_data=json.dumps({"targets": ["//b/..."], "strict": "true"})
+                ).return_value,
                 mock_open(read_data=json.dumps({})).return_value,
                 mock_open(read_data="{}").return_value,
             ]
@@ -2063,6 +2070,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 expected_configuration_contents, mocks[3], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
+        add_strict.assert_called_once()
         remove_paths.assert_called_once_with(
             [
                 "subdirectory/a/.pyre_configuration.local",

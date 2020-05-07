@@ -605,13 +605,16 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         total_targets = []
         topmost_configurations = []
         nested_configurations = []
+        all_strict = True
         for configuration in configurations:
             with open(configuration) as configuration_file:
-                targets = Configuration(
+                open_configuration = Configuration(
                     Path(configuration), json.load(configuration_file)
-                ).targets
+                )
+                targets = open_configuration.targets
                 if targets:
                     total_targets.extend(targets)
+                all_strict = all_strict and open_configuration.strict
             if len(topmost_configurations) == 0 or topmost_configurations[0].count(
                 "/"
             ) == configuration.count("/"):
@@ -639,6 +642,8 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                 configuration = Configuration(topmost_configuration, {})
                 configuration.add_targets(total_targets)
                 configuration.deduplicate_targets()
+                if all_strict:
+                    configuration.add_strict()
                 configuration.write()
 
         # Remove nested configurations
