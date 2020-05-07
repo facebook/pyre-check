@@ -8,13 +8,14 @@ open Statement
 
 type t = {
   name: Reference.t;
+  qualifier: Reference.t;
   bases: Expression.Call.Argument.t list;
   decorators: Expression.t list;
   attribute_components: Class.AttributeComponents.t;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-val create : Class.t -> t
+val create : qualifier:Reference.t -> Class.t -> t
 
 val is_protocol : t -> bool
 

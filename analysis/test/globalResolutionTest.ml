@@ -67,7 +67,7 @@ let test_get_decorator context =
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
             Node.create_with_default_location definition
-            |> Node.map ~f:ClassSummary.create
+            |> Node.map ~f:(ClassSummary.create ~qualifier:Reference.empty)
             |> AstEnvironment.ReadOnly.get_decorator
                  (GlobalResolution.ast_environment resolution)
                  ~decorator
@@ -327,7 +327,7 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
       { StatementClass.name = + !&"Derp"; bases; body = []; decorators = [] }
-      |> ClassSummary.create
+      |> ClassSummary.create ~qualifier:Reference.empty
       |> ClassSummary.is_protocol
     in
     assert_equal expected (is_protocol bases)
@@ -1755,6 +1755,7 @@ let test_constraints context =
 
 let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
+    let qualifier = Reference.create "test" in
     let target = "test." ^ target in
     let metaclass =
       if metaclass = "type" then
@@ -1766,9 +1767,7 @@ let test_metaclasses context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
+      AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
     in
     let source = Option.value_exn source in
     let { Source.statements; _ } = source in
@@ -1776,7 +1775,9 @@ let test_metaclasses context =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show (Node.value name) = target ->
-            { Node.location; value = definition } |> Node.map ~f:ClassSummary.create |> Option.some
+            { Node.location; value = definition }
+            |> Node.map ~f:(ClassSummary.create ~qualifier)
+            |> Option.some
         | _ -> None
       in
       List.find_map ~f:target statements

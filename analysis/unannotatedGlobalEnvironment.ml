@@ -606,7 +606,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
     in
     WriteOnly.set_class_definition
       ~name:primitive
-      ~definition:{ Node.location; value = ClassSummary.create definition };
+      ~definition:{ Node.location; value = ClassSummary.create ~qualifier definition };
     Set.add new_annotations primitive
   in
   List.fold classes ~init:Type.Primitive.Set.empty ~f:register

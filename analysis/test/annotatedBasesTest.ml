@@ -19,13 +19,12 @@ let value option = Option.value_exn option
 
 let test_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
+    let qualifier = Reference.create "test" in
     let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
+      AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
     in
     let source = Option.value_exn source in
     let { Source.statements; _ } = source in
@@ -36,7 +35,7 @@ let test_inferred_generic_base context =
             Some { Node.location; value = definition }
         | _ -> None
       in
-      List.find_map ~f:target statements |> value |> Node.map ~f:ClassSummary.create
+      List.find_map ~f:target statements |> value |> Node.map ~f:(ClassSummary.create ~qualifier)
     in
     let resolution = GlobalResolution.create global_environment in
     let parse_annotation =

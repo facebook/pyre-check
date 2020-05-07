@@ -1205,10 +1205,9 @@ let test_fallback_attribute context =
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
 
     let attribute =
+      let qualifier = Reference.create "test" in
       let source =
-        AstEnvironment.ReadOnly.get_source
-          (AstEnvironment.read_only ast_environment)
-          (Reference.create "test")
+        AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
       in
       let last_statement_exn = function
         | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
@@ -1219,7 +1218,7 @@ let test_fallback_attribute context =
       last_statement_exn source
       |> Node.value
       |> (function
-           | Statement.Class definition -> ClassSummary.create definition
+           | Statement.Class definition -> ClassSummary.create ~qualifier definition
            | _ -> failwith "Last statement was not a class")
       |> ClassSummary.name
       |> Reference.show

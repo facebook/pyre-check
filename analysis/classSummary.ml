@@ -9,6 +9,7 @@ open Statement
 
 type t = {
   name: Reference.t;
+  qualifier: Reference.t;
   bases: Expression.Call.Argument.t list;
   decorators: Expression.t list;
   attribute_components: Class.AttributeComponents.t;
@@ -16,9 +17,16 @@ type t = {
 [@@deriving compare, eq, sexp, show, hash]
 
 let create
+    ~qualifier
     ({ Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as definition)
   =
-  { name; bases; decorators; attribute_components = Class.AttributeComponents.create definition }
+  {
+    name;
+    qualifier;
+    bases;
+    decorators;
+    attribute_components = Class.AttributeComponents.create definition;
+  }
 
 
 let is_protocol { bases; _ } =
