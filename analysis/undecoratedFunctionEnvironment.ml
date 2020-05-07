@@ -35,7 +35,7 @@ let produce_undecorated_function class_hierarchy_environment name ~dependency =
   in
   let handle = function
     | UnannotatedGlobalEnvironment.Define signatures ->
-        let handle { Node.value = signature; _ } =
+        let handle { UnannotatedGlobalEnvironment.define = signature; _ } =
           let parse_annotation =
             AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               ?dependency
@@ -61,8 +61,8 @@ let produce_undecorated_function class_hierarchy_environment name ~dependency =
           in
           AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
         in
-        List.find signatures ~f:(fun signature ->
-            not (Define.Signature.is_overloaded_function (Node.value signature)))
+        List.find signatures ~f:(fun { UnannotatedGlobalEnvironment.define; _ } ->
+            not (Define.Signature.is_overloaded_function define))
         >>| handle
     | _ -> None
   in

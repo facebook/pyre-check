@@ -10,6 +10,12 @@ open Statement
 open Expression
 open SharedMemoryKeys
 
+type unannotated_define = {
+  define: Define.Signature.t;
+  location: Location.WithModule.t;
+}
+[@@deriving compare, show, equal, sexp]
+
 type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
@@ -23,7 +29,7 @@ type unannotated_global =
       total_length: int;
     }
   | Imported of Reference.t
-  | Define of Define.Signature.t Node.t list
+  | Define of unannotated_define list
 [@@deriving compare, show, equal, sexp]
 
 module ReadOnly = struct
@@ -692,7 +698,9 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         in
         List.rev_append (List.map ~f:import_to_global imports) globals
     | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
-        (Node.value name, Define [Node.create signature ~location]) :: globals
+        ( Node.value name,
+          Define [{ define = signature; location = Location.with_module ~qualifier location }] )
+        :: globals
     | If { If.body; orelse; _ } ->
         (* TODO(T28732125): Properly take an intersection here. *)
         List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)

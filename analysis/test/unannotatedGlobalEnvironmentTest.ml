@@ -323,7 +323,10 @@ let test_simple_global_registration context =
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
-        Node.create signature ~location
+        {
+          UnannotatedGlobalEnvironment.define = signature;
+          location = Location.with_module ~qualifier:(Reference.create "test") location;
+        }
     | _ -> failwith "not define"
   in
   assert_registers
@@ -925,21 +928,33 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
-  let create_simple_signature ~start ~stop name return_annotation =
-    node
-      ~start
-      ~stop
-      {
-        Define.Signature.name;
-        parameters = [];
-        decorators = [];
-        return_annotation;
-        async = false;
-        generator = false;
-        parent = None;
-        nesting_define = None;
-      }
+  let create_simple_signature
+      ~start:(start_line, start_column)
+      ~stop:(stop_line, stop_column)
+      name
+      return_annotation
+    =
+    {
+      UnannotatedGlobalEnvironment.define =
+        {
+          Define.Signature.name;
+          parameters = [];
+          decorators = [];
+          return_annotation;
+          async = false;
+          generator = false;
+          parent = None;
+          nesting_define = None;
+        };
+      location =
+        {
+          Location.WithModule.start = { Location.line = start_line; column = start_column };
+          stop = { Location.line = stop_line; column = stop_column };
+          path = Reference.create "test";
+        };
+    }
   in
+
   assert_updates
     ~original_source:{|
       def foo() -> None:

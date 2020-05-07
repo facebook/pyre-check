@@ -69,7 +69,11 @@ let produce_global_annotation attribute_resolution name ~dependency =
     match global with
     | UnannotatedGlobalEnvironment.Define defines ->
         let create_overload
-            { Node.value = { Define.Signature.name = { Node.value = name; _ }; _ } as signature; _ }
+            {
+              UnannotatedGlobalEnvironment.define =
+                { Define.Signature.name = { Node.value = name; _ }; _ } as signature;
+              _;
+            }
           =
           let overload =
             AttributeResolution.ReadOnly.create_overload attribute_resolution ?dependency signature
@@ -249,7 +253,8 @@ let produce_global_location global_value_table name ~dependency =
   | Some location -> Some location
   | None ->
       let extract_location = function
-        | UnannotatedGlobalEnvironment.Define (head :: _) -> Some (Node.location head)
+        | UnannotatedGlobalEnvironment.Define ({ UnannotatedGlobalEnvironment.location; _ } :: _) ->
+            Some (Location.strip_module location)
         | SimpleAssign { target_location; _ } -> Some (Location.strip_module target_location)
         | TupleAssign { target_location; _ } -> Some (Location.strip_module target_location)
         | _ -> None

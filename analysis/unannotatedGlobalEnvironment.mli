@@ -8,6 +8,12 @@ open Statement
 open SharedMemoryKeys
 open Core
 
+type unannotated_define = {
+  define: Define.Signature.t;
+  location: Location.WithModule.t;
+}
+[@@deriving compare, show, equal, sexp]
+
 type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
@@ -21,7 +27,7 @@ type unannotated_global =
       total_length: int;
     }
   | Imported of Reference.t
-  | Define of Define.Signature.t Node.t list
+  | Define of unannotated_define list
 [@@deriving compare, show, sexp]
 
 module ReadOnly : sig
