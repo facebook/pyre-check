@@ -8,7 +8,10 @@ open Statement
 
 type t
 
-val create : ?dependency:SharedMemoryKeys.dependency -> AnnotatedGlobalEnvironment.ReadOnly.t -> t
+val create
+  :  ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+  AnnotatedGlobalEnvironment.ReadOnly.t ->
+  t
 
 val resolve_literal : t -> Expression.t -> Type.t
 

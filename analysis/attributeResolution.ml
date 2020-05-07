@@ -1103,7 +1103,7 @@ module Implementation = struct
       |> List.iter ~f:(UninstantiatedAttributeTable.add table)
   end
 
-  type dependency = SharedMemoryKeys.dependency
+  type dependency = SharedMemoryKeys.DependencyKey.registered
 
   type open_recurser = {
     class_metadata_environment: ClassMetadataEnvironment.MetadataReadOnly.t;
@@ -4138,12 +4138,9 @@ module ParseAnnotationCache = struct
 
     let produce_value
         class_metadata_environment
-        ({ SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression } as key)
-        ~track_dependencies
+        { SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression }
+        ~dependency
       =
-      let dependency =
-        if track_dependencies then Some (SharedMemoryKeys.ParseAnnotation key) else None
-      in
       let uncached_open_recurser =
         make_open_recurser
           ~given_single_uninstantiated_attribute_table:
@@ -4158,6 +4155,9 @@ module ParseAnnotationCache = struct
     let filter_upstream_dependency = function
       | SharedMemoryKeys.ParseAnnotation key -> Some key
       | _ -> None
+
+
+    let trigger_to_dependency key = SharedMemoryKeys.ParseAnnotation key
   end)
 
   include Cache
@@ -4200,18 +4200,15 @@ module Cache = ManagedCache.Make (struct
 
   let produce_value
       parse_annotation_cache
-      ( {
-          SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
-          in_test;
-          accessed_via_metaclass;
-          name;
-          assumptions;
-        } as key )
-      ~track_dependencies
+      {
+        SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
+        in_test;
+        accessed_via_metaclass;
+        name;
+        assumptions;
+      }
+      ~dependency
     =
-    let dependency =
-      if track_dependencies then Some (SharedMemoryKeys.AttributeTable key) else None
-    in
     let class_metadata_environment =
       ParseAnnotationCache.ReadOnly.upstream_environment parse_annotation_cache
     in
@@ -4236,6 +4233,9 @@ module Cache = ManagedCache.Make (struct
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AttributeTable key -> Some key
     | _ -> None
+
+
+  let trigger_to_dependency key = SharedMemoryKeys.AttributeTable key
 end)
 
 module PreviousEnvironment = ClassMetadataEnvironment

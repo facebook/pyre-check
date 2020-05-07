@@ -47,11 +47,10 @@ module GlobalLocationValue = struct
   let compare = Option.compare Location.compare
 end
 
-let produce_global_annotation attribute_resolution name ~track_dependencies =
+let produce_global_annotation attribute_resolution name ~dependency =
   let class_metadata_environment =
     AttributeResolution.ReadOnly.class_metadata_environment attribute_resolution
   in
-  let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let process_unannotated_global global =
     let produce_assignment_global ~is_explicit annotation =
       let original =
@@ -206,7 +205,7 @@ module GlobalValueTable = Environment.EnvironmentTable.WithCache (struct
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalValueValue
 
-  type trigger = Reference.t
+  type trigger = Reference.t [@@deriving sexp, compare]
 
   let convert_trigger = Fn.id
 
@@ -223,6 +222,8 @@ module GlobalValueTable = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
+  let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobal name
+
   let serialize_value = function
     | Some annotation -> Annotation.sexp_of_t annotation |> Sexp.to_string
     | None -> "None"
@@ -231,13 +232,10 @@ module GlobalValueTable = Environment.EnvironmentTable.WithCache (struct
   let equal_value = Option.equal Annotation.equal
 end)
 
-let produce_global_location global_value_table name ~track_dependencies =
+let produce_global_location global_value_table name ~dependency =
   let class_metadata_environment =
     GlobalValueTable.ReadOnly.upstream_environment global_value_table
     |> AttributeResolution.ReadOnly.class_metadata_environment
-  in
-  let dependency =
-    Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobalLocation name)
   in
   let class_location =
     Reference.show name
@@ -268,7 +266,7 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalLocationValue
 
-  type trigger = Reference.t
+  type trigger = Reference.t [@@deriving sexp, compare]
 
   let convert_trigger = Fn.id
 
@@ -284,6 +282,8 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
     | SharedMemoryKeys.AnnotateGlobalLocation name -> Some name
     | _ -> None
 
+
+  let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobalLocation name
 
   let serialize_value = function
     | Some location -> Location.sexp_of_t location |> Sexp.to_string

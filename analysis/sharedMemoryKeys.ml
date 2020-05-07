@@ -206,27 +206,36 @@ module DependencySet = Caml.Set.Make (struct
   type t = dependency [@@deriving compare, sexp]
 end)
 
-module DependencyKey = DependencyTrackedMemory.DependencyKey.Make (struct
-  type key = dependency [@@deriving compare, sexp]
+module DependencyKey = struct
+  module Registry = struct
+    let register = Fn.id
 
-  module KeySet = DependencySet
+    include TraditionalRegistry.Make (struct
+      type t = dependency [@@deriving compare, sexp]
 
-  type registered = dependency [@@deriving compare, sexp]
+      let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
 
-  module RegisteredSet = DependencySet
+      let compare = compare_dependency
 
-  module Registry = TraditionalRegistry.Make (struct
-    type t = dependency [@@deriving compare, sexp]
+      type out = dependency
 
-    let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
+      let from_string string = Sexp.of_string string |> dependency_of_sexp
+    end)
+  end
 
-    let compare = compare_dependency
+  let get_key = Fn.id
 
-    type out = dependency
+  include DependencyTrackedMemory.DependencyKey.Make (struct
+    type key = dependency [@@deriving compare, sexp]
 
-    let from_string string = Sexp.of_string string |> dependency_of_sexp
+    module KeySet = DependencySet
+
+    type registered = dependency [@@deriving compare, sexp]
+
+    module RegisteredSet = DependencySet
+    module Registry = Registry
   end)
-end)
+end
 
 module LocationKey = struct
   type t = Location.t

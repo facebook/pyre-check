@@ -10,7 +10,7 @@ module UndecoratedReadOnly : sig
 
   val get_undecorated_function
     :  t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     Reference.t ->
     Type.t Type.Callable.overload option
 

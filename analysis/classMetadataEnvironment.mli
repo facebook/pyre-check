@@ -18,15 +18,19 @@ type class_metadata = {
 module MetadataReadOnly : sig
   include Environment.ReadOnly
 
-  val get_class_metadata : t -> ?dependency:dependency -> Type.Primitive.t -> class_metadata option
+  val get_class_metadata
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Type.Primitive.t ->
+    class_metadata option
 
-  val is_typed_dictionary : t -> ?dependency:dependency -> Type.Primitive.t -> bool
+  val is_typed_dictionary : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> bool
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
   val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
 
-  val successors : t -> ?dependency:dependency -> Type.Primitive.t -> string list
+  val successors : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> string list
 end
 
 include

@@ -1263,8 +1263,12 @@ let test_update_and_compute_dependencies context =
       |}]
       ()
   in
-  let dependency_A = SharedMemoryKeys.TypeCheckDefine (Reference.create "A") in
-  let dependency_B = SharedMemoryKeys.TypeCheckDefine (Reference.create "B") in
+  let dependency_A =
+    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "A"))
+  in
+  let dependency_B =
+    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "B"))
+  in
   (* Establish dependencies *)
   let untracked_global_resolution = GlobalResolution.create environment in
   let dependency_tracked_global_resolution_A =
@@ -1322,16 +1326,19 @@ let test_update_and_compute_dependencies context =
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold
-           ~f:SharedMemoryKeys.DependencyKey.KeySet.union
-           ~init:SharedMemoryKeys.DependencyKey.KeySet.empty
-      |> SharedMemoryKeys.DependencyKey.KeySet.filter (function
+           ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
+           ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
+      |> SharedMemoryKeys.DependencyKey.RegisteredSet.filter (function registered ->
+             ( match SharedMemoryKeys.DependencyKey.get_key registered with
              | SharedMemoryKeys.TypeCheckDefine _ -> true
-             | _ -> false)
+             | _ -> false ))
     in
     List.iter expected_state_after_update ~f:assert_state;
     assert_equal
-      ~printer:(List.to_string ~f:SharedMemoryKeys.show_dependency)
-      (SharedMemoryKeys.DependencyKey.KeySet.elements dependents)
+      ~printer:
+        (List.to_string ~f:(fun registered ->
+             SharedMemoryKeys.DependencyKey.get_key registered |> SharedMemoryKeys.show_dependency))
+      (SharedMemoryKeys.DependencyKey.RegisteredSet.elements dependents)
       expected_dependencies
   in
   (* Removes source without replacing it, triggers dependency *)

@@ -35,9 +35,9 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
-  val class_exists : t -> ?dependency:dependency -> string -> bool
+  val class_exists : t -> ?dependency:DependencyKey.registered -> string -> bool
 
-  val contains_untracked : t -> ?dependency:dependency -> Type.t -> bool
+  val contains_untracked : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 
   val unannotated_global_environment : t -> t
 
@@ -54,19 +54,31 @@ module ReadOnly : sig
 
   val all_defines_in_module : t -> Reference.t -> Reference.t list
 
-  val get_class_definition : t -> ?dependency:dependency -> string -> ClassSummary.t Node.t option
+  val get_class_definition
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    string ->
+    ClassSummary.t Node.t option
 
   val get_unannotated_global
     :  t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     Reference.t ->
     unannotated_global option
 
-  val get_define : t -> ?dependency:dependency -> Reference.t -> FunctionDefinition.t option
+  val get_define
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    FunctionDefinition.t option
 
-  val get_define_body : t -> ?dependency:dependency -> Reference.t -> Define.t Node.t option
+  val get_define_body
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    Define.t Node.t option
 
-  val is_protocol : t -> ?dependency:dependency -> Type.t -> bool
+  val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 end
 
 module UpdateResult : sig
@@ -84,11 +96,11 @@ module UpdateResult : sig
 
   val define_additions : t -> Reference.Set.t
 
-  val locally_triggered_dependencies : t -> DependencyKey.KeySet.t
+  val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
   val upstream : t -> AstEnvironment.UpdateResult.t
 
-  val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
+  val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
   val unannotated_global_environment_update_result : t -> t
 

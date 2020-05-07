@@ -81,31 +81,46 @@ let recheck
         in
         let function_triggers =
           let filter_union sofar keyset =
-            SharedMemoryKeys.DependencyKey.KeySet.elements keyset
-            |> List.filter_map ~f:(function
-                   | SharedMemoryKeys.TypeCheckDefine name -> Some name
-                   | _ -> None)
-            |> List.fold ~init:sofar ~f:Reference.Set.add
+            let filter registered sofar =
+              match SharedMemoryKeys.DependencyKey.get_key registered with
+              | SharedMemoryKeys.TypeCheckDefine name -> (
+                  match Reference.Map.add sofar ~key:name ~data:registered with
+                  | `Duplicate -> sofar
+                  | `Ok updated -> updated )
+              | _ -> sofar
+            in
+            SharedMemoryKeys.DependencyKey.RegisteredSet.fold filter keyset sofar
           in
           AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
             annotated_global_environment_update_result
-          |> List.fold ~init:Reference.Set.empty ~f:filter_union
+          |> List.fold ~init:Reference.Map.empty ~f:filter_union
         in
         let recheck_functions =
-          Set.union
-            function_triggers
-            (UnannotatedGlobalEnvironment.UpdateResult.define_additions
-               unannotated_global_environment_update_result)
-          |> Set.to_list
+          let register_and_add sofar trigger =
+            let register = function
+              | Some existing -> existing
+              | None ->
+                  SharedMemoryKeys.DependencyKey.Registry.register
+                    (SharedMemoryKeys.TypeCheckDefine trigger)
+            in
+            Reference.Map.update sofar trigger ~f:register
+          in
+          UnannotatedGlobalEnvironment.UpdateResult.define_additions
+            unannotated_global_environment_update_result
+          |> Set.fold ~init:function_triggers ~f:register_and_add
         in
+        let recheck_functions_list = Map.to_alist recheck_functions in
+        let recheck_function_names = List.map recheck_functions_list ~f:fst in
         Log.log
           ~section:`Server
           "Rechecked functions %s"
-          (List.to_string ~f:Reference.show recheck_functions);
+          (List.to_string ~f:Reference.show recheck_function_names);
 
         (* Rerun type checking for triggered functions. *)
-        TypeEnvironment.invalidate environment recheck_functions;
-        TypeCheck.run_on_defines ~scheduler ~configuration ~environment recheck_functions;
+        TypeEnvironment.invalidate environment recheck_function_names;
+        recheck_functions_list
+        |> List.map ~f:(fun (define, registered) -> define, Some registered)
+        |> TypeCheck.run_on_defines ~scheduler ~configuration ~environment;
 
         (* Rerun postprocessing for triggered modules. *)
         let recheck_modules =
@@ -113,7 +128,7 @@ let recheck
              postprocessing *)
           List.fold
             ~init:invalidated_environment_qualifiers
-            (Set.to_list function_triggers)
+            (Reference.Map.keys function_triggers)
             ~f:(fun sofar define_name ->
               let unannotated_global_environment =
                 UnannotatedGlobalEnvironment.UpdateResult.read_only
@@ -141,7 +156,7 @@ let recheck
             recheck_modules
         in
 
-        recheck_modules, errors, List.length recheck_functions
+        recheck_modules, errors, Map.length recheck_functions
     | _ ->
         let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
         Log.log

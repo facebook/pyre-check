@@ -9,20 +9,20 @@ module HierarchyReadOnly : sig
 
   val get_edges
     :  t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     IndexTracker.t ->
     ClassHierarchy.Target.t list option
 
-  val extends_placeholder_stub : t -> ?dependency:dependency -> IndexTracker.t -> bool
+  val extends_placeholder_stub : t -> ?dependency:DependencyKey.registered -> IndexTracker.t -> bool
 
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
 
-  val class_hierarchy : ?dependency:dependency -> t -> (module ClassHierarchy.Handler)
+  val class_hierarchy : ?dependency:DependencyKey.registered -> t -> (module ClassHierarchy.Handler)
 
   val variables
     :  ?default:Type.Variable.t list option ->
     t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     Type.Primitive.t ->
     Type.Variable.t list option
 end

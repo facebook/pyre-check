@@ -5,10 +5,20 @@
 
 open Core
 
+module type SexpableKeyType = sig
+  type t [@@deriving sexp, compare]
+
+  val to_string : t -> string
+
+  type out
+
+  val from_string : string -> out
+end
+
 module type In = sig
   module PreviousEnvironment : Environment.PreviousEnvironment
 
-  module Key : Memory.KeyType
+  module Key : SexpableKeyType
 
   module Value : Memory.ComparableValueType
 
@@ -18,9 +28,15 @@ module type In = sig
 
   val lazy_incremental : bool
 
-  val produce_value : PreviousEnvironment.ReadOnly.t -> Key.t -> track_dependencies:bool -> Value.t
+  val produce_value
+    :  PreviousEnvironment.ReadOnly.t ->
+    Key.t ->
+    dependency:SharedMemoryKeys.DependencyKey.registered option ->
+    Value.t
 
   val filter_upstream_dependency : SharedMemoryKeys.dependency -> Key.t option
+
+  val trigger_to_dependency : Key.t -> SharedMemoryKeys.dependency
 end
 
 module Make (In : In) = struct
@@ -36,7 +52,7 @@ module Make (In : In) = struct
 
     (* I'd like to remove the distinction between triggers and values in general, but for now we can
        just make sure that any new managed caches don't rely on it *)
-    type trigger = In.Key.t
+    type trigger = In.Key.t [@@deriving sexp, compare]
 
     let convert_trigger = Fn.id
 
@@ -92,9 +108,7 @@ module Make (In : In) = struct
       | Some { incremental_style = FineGrained; _ } ->
           get read_only ?dependency key
       | _ ->
-          let default () =
-            In.produce_value (upstream_environment read_only) key ~track_dependencies:false
-          in
+          let default () = In.produce_value (upstream_environment read_only) key ~dependency:None in
           Hashtbl.find_or_add UnmanagedCache.cache key ~default
   end
 end

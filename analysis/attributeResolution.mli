@@ -152,28 +152,28 @@ module AttributeReadOnly : sig
 
   val get_typed_dictionary
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     Type.t ->
     Type.t Type.Record.TypedDictionary.record option
 
-  val full_order : ?dependency:dependency -> t -> TypeOrder.order
+  val full_order : ?dependency:DependencyKey.registered -> t -> TypeOrder.order
 
   val check_invalid_type_parameters
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     Type.t ->
     type_parameters_mismatch list * Type.t
 
   val parse_annotation
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
     Expression.expression Node.t ->
     Type.t
 
   val attribute
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
@@ -185,7 +185,7 @@ module AttributeReadOnly : sig
 
   val attribute_names
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
@@ -195,7 +195,7 @@ module AttributeReadOnly : sig
 
   val all_attributes
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     transitive:bool ->
     accessed_through_class:bool ->
     include_generated_attributes:bool ->
@@ -203,11 +203,11 @@ module AttributeReadOnly : sig
     string ->
     uninstantiated_attribute list option
 
-  val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
+  val metaclass : t -> ?dependency:DependencyKey.registered -> ClassSummary.t Node.t -> Type.t
 
   val constraints
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     target:Type.Primitive.t ->
     ?parameters:Type.Parameter.t list ->
     instantiated:Type.t ->
@@ -216,19 +216,19 @@ module AttributeReadOnly : sig
 
   val resolve_literal
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     Expression.expression Node.t ->
     Type.t
 
   val create_overload
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     Define.Signature.t ->
     Type.t Type.Callable.overload
 
   val signature_select
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     resolve_with_locals:
       (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
     arguments:arguments ->
@@ -238,7 +238,7 @@ module AttributeReadOnly : sig
 
   val resolve_mutable_literals
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     resolve:(Expression.expression Node.t -> Type.t) ->
     expression:Expression.expression Node.t option ->
     resolved:Type.t ->
@@ -247,7 +247,7 @@ module AttributeReadOnly : sig
 
   val constraints_solution_exists
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
     left:Type.t ->
     right:Type.t ->
@@ -255,14 +255,14 @@ module AttributeReadOnly : sig
 
   val constructor
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     Type.Primitive.t ->
     instantiated:Type.t ->
     Type.t
 
   val instantiate_attribute
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:DependencyKey.registered ->
     accessed_through_class:bool ->
     ?instantiated:Type.t ->
     uninstantiated_attribute ->

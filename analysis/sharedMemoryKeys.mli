@@ -9,7 +9,11 @@ module IntKey : Memory.KeyType with type t = int and type out = int
 
 module StringKey : Memory.KeyType with type t = string and type out = string
 
-module ReferenceKey : Memory.KeyType with type t = Reference.t and type out = Reference.t
+module ReferenceKey : sig
+  type t = Reference.t [@@deriving sexp]
+
+  include Memory.KeyType with type t := Reference.t and type out = Reference.t
+end
 
 module AttributeTableKey : sig
   type t = {
@@ -19,6 +23,7 @@ module AttributeTableKey : sig
     name: Type.Primitive.t;
     assumptions: Assumptions.t;
   }
+  [@@deriving sexp]
 
   include Memory.KeyType with type t := t
 
@@ -38,6 +43,7 @@ module ParseAnnotationKey : sig
     validation: type_validation_policy;
     expression: Expression.t;
   }
+  [@@deriving sexp]
 
   include Memory.KeyType with type t := t
 
@@ -70,11 +76,17 @@ type dependency =
 
 module DependencySet : Set.S with type elt = dependency
 
-module DependencyKey :
-  DependencyTrackedMemory.DependencyKey.S
-    with type key = dependency
-     and type registered = dependency
-     and module RegisteredSet = DependencySet
-     and module KeySet = DependencySet
+module DependencyKey : sig
+  include
+    DependencyTrackedMemory.DependencyKey.S
+      with type key = dependency
+       and module KeySet = DependencySet
+
+  val get_key : registered -> key
+
+  module Registry : sig
+    val register : key -> registered
+  end
+end
 
 module LocationKey : Memory.KeyType with type t = Location.t

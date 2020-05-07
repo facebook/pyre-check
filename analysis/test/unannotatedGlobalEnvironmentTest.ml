@@ -492,18 +492,23 @@ let test_updates context =
         (Reference.Set.singleton (Reference.create "test"))
     in
     let printer set =
-      let f x = SharedMemoryKeys.sexp_of_dependency x |> Sexp.to_string_hum in
-      SharedMemoryKeys.DependencyKey.KeySet.elements set |> List.to_string ~f
+      SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
+      |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
+      |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
+    let expected_triggers =
+      SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
+    in
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:();
     assert_equal
-      ~cmp:SharedMemoryKeys.DependencyKey.KeySet.equal
+      ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
       ~printer
       expected_triggers
       (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result)
   in
-  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
+  let dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+  in
   (* get_class_definition *)
   assert_updates
     ~original_source:{|
@@ -625,7 +630,9 @@ let test_updates context =
     ();
 
   (* get_unannotated_global *)
-  let dependency = SharedMemoryKeys.AliasRegister (Reference.create "dep") in
+  let dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register (AliasRegister (Reference.create "dep"))
+  in
   assert_updates
     ~original_source:{|
       x: int = 7
@@ -837,8 +844,14 @@ let test_updates context =
     ();
 
   (* Keep different dependencies straight *)
-  let alias_dependency = SharedMemoryKeys.AliasRegister (Reference.create "same_dep") in
-  let check_dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "same_dep") in
+  let alias_dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register
+      (SharedMemoryKeys.AliasRegister (Reference.create "same_dep"))
+  in
+  let check_dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register
+      (SharedMemoryKeys.TypeCheckDefine (Reference.create "same_dep"))
+  in
   assert_updates
     ~original_source:{|
       class Foo:
@@ -976,7 +989,9 @@ let test_updates context =
     ();
 
   (* Get typecheck unit *)
-  let dependency = SharedMemoryKeys.TypeCheckDefine !&"test" in
+  let dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.TypeCheckDefine !&"test")
+  in
   let create_simple_return ~start ~stop expression =
     node
       ~start

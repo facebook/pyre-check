@@ -17,8 +17,8 @@ module ReadOnly : sig
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
-    ?get_module_metadata:(?dependency:dependency -> Reference.t -> Module.t option) ->
-    ?module_exists:(?dependency:dependency -> Reference.t -> bool) ->
+    ?get_module_metadata:(?dependency:DependencyKey.registered -> Reference.t -> Module.t option) ->
+    ?module_exists:(?dependency:DependencyKey.registered -> Reference.t -> bool) ->
     unit ->
     t
 
@@ -46,11 +46,15 @@ module ReadOnly : sig
 
   val all_explicit_modules : t -> Reference.t list
 
-  val get_module_metadata : t -> ?dependency:dependency -> Reference.t -> Module.t option
+  val get_module_metadata
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    Module.t option
 
-  val module_exists : t -> ?dependency:dependency -> Reference.t -> bool
+  val module_exists : t -> ?dependency:DependencyKey.registered -> Reference.t -> bool
 
-  val resolve_exports : t -> ?dependency:dependency -> Reference.t -> Reference.t
+  val resolve_exports : t -> ?dependency:DependencyKey.registered -> Reference.t -> Reference.t
 
   type decorator = {
     name: string;
@@ -60,14 +64,14 @@ module ReadOnly : sig
 
   val matches_decorator
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Expression.expression Node.t ->
     target:string ->
     decorator option
 
   val get_decorator
     :  t ->
-    ?dependency:SharedMemoryKeys.dependency ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     ClassSummary.t Node.t ->
     decorator:string ->
     decorator list
@@ -91,7 +95,7 @@ val create : ModuleTracker.t -> t
 module UpdateResult : sig
   type t
 
-  val triggered_dependencies : t -> DependencyKey.KeySet.t
+  val triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
   val reparsed : t -> Reference.t list
 

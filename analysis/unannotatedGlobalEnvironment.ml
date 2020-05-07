@@ -29,16 +29,18 @@ type unannotated_global =
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
-    class_exists: ?dependency:dependency -> string -> bool;
+    class_exists: ?dependency:DependencyKey.registered -> string -> bool;
     all_classes: unit -> Type.Primitive.t list;
     all_indices: unit -> IndexTracker.t list;
     all_unannotated_globals: unit -> Reference.t list;
     all_defines: unit -> Reference.t list;
     all_defines_in_module: Reference.t -> Reference.t list;
-    get_class_definition: ?dependency:dependency -> string -> ClassSummary.t Node.t option;
-    get_unannotated_global: ?dependency:dependency -> Reference.t -> unannotated_global option;
-    get_define: ?dependency:dependency -> Reference.t -> FunctionDefinition.t option;
-    get_define_body: ?dependency:dependency -> Reference.t -> Define.t Node.t option;
+    get_class_definition:
+      ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
+    get_unannotated_global:
+      ?dependency:DependencyKey.registered -> Reference.t -> unannotated_global option;
+    get_define: ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
+    get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
     hash_to_key_map: unit -> string String.Map.t;
     serialize_decoded: Memory.decodable -> (string * string * string option) option;
     decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
@@ -174,7 +176,7 @@ module WriteOnly : sig
     :  class_additions:string list ->
     unannotated_global_additions:Reference.t list ->
     define_additions:Reference.t list ->
-    DependencyKey.KeySet.t
+    DependencyKey.RegisteredSet.t
 
   val direct_data_purge
     :  previous_classes_list:Type.Primitive.t list ->
@@ -266,12 +268,12 @@ end = struct
 
   let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
     let function_and_class_dependents =
-      DependencyKey.KeySet.union
+      DependencyKey.RegisteredSet.union
         (ClassDefinitions.KeySet.of_list class_additions |> ClassDefinitions.get_all_dependents)
         ( FunctionDefinitions.KeySet.of_list define_additions
         |> FunctionDefinitions.get_all_dependents )
     in
-    DependencyKey.KeySet.union
+    DependencyKey.RegisteredSet.union
       function_and_class_dependents
       ( UnannotatedGlobals.KeySet.of_list unannotated_global_additions
       |> UnannotatedGlobals.get_all_dependents )
@@ -751,7 +753,7 @@ module UpdateResult = struct
     previous_unannotated_globals: Reference.Set.t;
     previous_defines: Reference.Set.t;
     define_additions: Reference.Set.t;
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: DependencyKey.RegisteredSet.t;
     upstream: AstEnvironment.UpdateResult.t;
     read_only: ReadOnly.t;
   }
@@ -860,11 +862,11 @@ let update_this_and_all_preceding_environments
                 ~define_additions:(Set.to_list define_additions)
             in
             let triggered_dependencies =
-              DependencyKey.KeySet.union addition_triggers mutation_triggers
+              DependencyKey.RegisteredSet.union addition_triggers mutation_triggers
             in
             let tags () =
               let triggered_dependencies_size =
-                SharedMemoryKeys.DependencyKey.KeySet.cardinal triggered_dependencies
+                SharedMemoryKeys.DependencyKey.RegisteredSet.cardinal triggered_dependencies
                 |> Format.sprintf "%d"
               in
               [
@@ -894,7 +896,7 @@ let update_this_and_all_preceding_environments
               ~previous_unannotated_globals_list
               ~previous_defines_list;
             update ();
-            DependencyKey.KeySet.empty)
+            DependencyKey.RegisteredSet.empty)
       in
       {
         previous_classes;

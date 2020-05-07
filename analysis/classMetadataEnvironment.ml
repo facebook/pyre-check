@@ -31,10 +31,7 @@ module ClassMetadataValue = struct
   let compare = Option.compare compare_class_metadata
 end
 
-let produce_class_metadata undecorated_function_environment class_name ~track_dependencies =
-  let unannotated_global_environment_dependency =
-    Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
-  in
+let produce_class_metadata undecorated_function_environment class_name ~dependency =
   let class_hierarchy_environment =
     UndecoratedFunctionEnvironment.ReadOnly.class_hierarchy_environment
       undecorated_function_environment
@@ -48,9 +45,6 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
   let add definition =
     let successors annotation =
       let linearization =
-        let dependency =
-          Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
-        in
         ClassHierarchy.method_resolution_order_linearize
           ~get_successors:
             (ClassHierarchyEnvironment.ReadOnly.get_edges class_hierarchy_environment ?dependency)
@@ -65,9 +59,6 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
     let in_test = List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors) in
-    let dependency =
-      Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
-    in
     let extends_placeholder_stub_class =
       let empty_stub_environment =
         AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
@@ -99,7 +90,7 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
   UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
     unannotated_global_environment
     class_name
-    ?dependency:unannotated_global_environment_dependency
+    ?dependency
   >>| add
 
 
@@ -108,7 +99,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   module Key = SharedMemoryKeys.StringKey
   module Value = ClassMetadataValue
 
-  type trigger = string
+  type trigger = string [@@deriving sexp, compare]
 
   let convert_trigger = Fn.id
 
@@ -124,6 +115,8 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
     | SharedMemoryKeys.RegisterClassMetadata name -> Some name
     | _ -> None
 
+
+  let trigger_to_dependency name = SharedMemoryKeys.RegisterClassMetadata name
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 

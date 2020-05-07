@@ -318,17 +318,22 @@ let test_updates context =
     in
     let update_result = update ~ast_environment_update_result () in
     let printer set =
-      SharedMemoryKeys.DependencyKey.KeySet.elements set
+      SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
+      |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
       |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
+    let expected_triggers =
+      SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
+    in
     assert_equal
       ~printer
       expected_triggers
       (ClassHierarchyEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
+  let dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+  in
   assert_updates
     ~original_source:{|
       class C:

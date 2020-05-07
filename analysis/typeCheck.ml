@@ -5839,13 +5839,10 @@ let check_function_definition
   result
 
 
-let run_on_define ~configuration ~environment ?call_graph_builder name =
+let run_on_define ~configuration ~environment ?call_graph_builder (name, dependency) =
   let global_resolution =
     let global_environment = TypeEnvironment.global_environment environment in
-    match configuration with
-    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-        GlobalResolution.create global_environment ~dependency:(TypeCheckDefine name)
-    | _ -> GlobalResolution.create global_environment
+    GlobalResolution.create global_environment ?dependency
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
   let resolution = resolution global_resolution (module DummyContext) in
@@ -5877,8 +5874,8 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
-    let analyze_define number_defines define_name =
-      run_on_define ~configuration ~environment ?call_graph_builder define_name;
+    let analyze_define number_defines define_name_and_dependency =
+      run_on_define ~configuration ~environment ?call_graph_builder define_name_and_dependency;
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -5936,6 +5933,16 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_bui
       ~reduce:List.append
       ~inputs:qualifiers
       ()
+  in
+  let all_defines =
+    match configuration with
+    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+        List.map all_defines ~f:(fun define ->
+            ( define,
+              Some
+                (SharedMemoryKeys.DependencyKey.Registry.register
+                   (SharedMemoryKeys.TypeCheckDefine define)) ))
+    | _ -> List.map all_defines ~f:(fun define -> define, None)
   in
 
   run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder all_defines;

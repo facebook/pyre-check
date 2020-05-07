@@ -23,9 +23,9 @@ module type PreviousUpdateResult = sig
 
   type read_only
 
-  val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t
+  val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
 
-  val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t list
+  val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
 
   val read_only : t -> read_only
 
@@ -64,7 +64,7 @@ module UpdateResult = struct
 
     type t = {
       upstream: upstream;
-      triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
+      triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
       read_only: ReadOnly.t;
     }
 
@@ -110,7 +110,7 @@ module EnvironmentTable = struct
 
     module Value : Memory.ComparableValueType
 
-    type trigger
+    type trigger [@@deriving sexp, compare]
 
     val convert_trigger : trigger -> Key.t
 
@@ -122,12 +122,14 @@ module EnvironmentTable = struct
 
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
+    val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
+
     val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
 
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->
       trigger ->
-      track_dependencies:bool ->
+      dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
     val all_keys : UnannotatedGlobalEnvironment.ReadOnly.t -> Key.t list
@@ -152,9 +154,9 @@ module EnvironmentTable = struct
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
 
-    val get : ?dependency:SharedMemoryKeys.dependency -> key -> t option
+    val get : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> t option
 
-    val mem : ?dependency:SharedMemoryKeys.dependency -> key -> bool
+    val mem : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> bool
   end
 
   module type S = sig
@@ -163,7 +165,7 @@ module EnvironmentTable = struct
     module ReadOnly : sig
       type t
 
-      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t
+      val get : t -> ?dependency:SharedMemoryKeys.DependencyKey.registered -> In.Key.t -> In.Value.t
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
@@ -207,9 +209,10 @@ module EnvironmentTable = struct
         match Table.get ?dependency key with
         | Some hit -> hit
         | None ->
-            let value =
-              In.produce_value upstream_environment (In.key_to_trigger key) ~track_dependencies:true
-            in
+            let trigger = In.key_to_trigger key in
+            let dependency = In.trigger_to_dependency trigger in
+            let dependency = Some (SharedMemoryKeys.DependencyKey.Registry.register dependency) in
+            let value = In.produce_value upstream_environment trigger ~dependency in
             Table.add key value;
             value
 
@@ -250,15 +253,19 @@ module EnvironmentTable = struct
       }
 
 
+    module TriggerMap = Map.Make (struct
+      type t = In.trigger [@@deriving sexp, compare]
+    end)
+
     let update_only_this_environment ~scheduler ~configuration upstream_update =
       Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
-      let update ~names_to_update ~track_dependencies () =
+      let update ~names_to_update () =
         let register =
-          let set name =
+          let set (name, dependency) =
             In.produce_value
               (In.PreviousEnvironment.UpdateResult.read_only upstream_update)
               name
-              ~track_dependencies
+              ~dependency:(Some dependency)
             |> Table.add (In.convert_trigger name)
           in
           List.iter ~f:set
@@ -282,19 +289,27 @@ module EnvironmentTable = struct
             Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
                 let names_to_update =
                   In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-                  |> List.fold ~init:In.TriggerSet.empty ~f:(fun triggers upstream_dependencies ->
-                         SharedMemoryKeys.DependencyKey.KeySet.fold
+                  |> List.fold ~init:TriggerMap.empty ~f:(fun triggers upstream_dependencies ->
+                         SharedMemoryKeys.DependencyKey.RegisteredSet.fold
                            (fun dependency triggers ->
-                             match In.filter_upstream_dependency dependency with
-                             | Some trigger -> In.TriggerSet.add triggers trigger
+                             match
+                               In.filter_upstream_dependency
+                                 (SharedMemoryKeys.DependencyKey.get_key dependency)
+                             with
+                             | Some trigger -> (
+                                 match TriggerMap.add triggers ~key:trigger ~data:dependency with
+                                 | `Duplicate -> triggers
+                                 | `Ok updated -> updated )
                              | None -> triggers)
                            upstream_dependencies
                            triggers)
-                  |> Set.to_list
+                  |> Map.to_alist
                 in
                 let (), triggered_dependencies =
                   let keys =
-                    List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list
+                    List.map names_to_update ~f:fst
+                    |> List.map ~f:In.convert_trigger
+                    |> Table.KeySet.of_list
                   in
                   let transaction =
                     SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
@@ -305,11 +320,11 @@ module EnvironmentTable = struct
                   else
                     Table.add_to_transaction ~keys transaction
                     |> SharedMemoryKeys.DependencyKey.Transaction.execute
-                         ~update:(update ~names_to_update ~track_dependencies:true)
+                         ~update:(update ~names_to_update)
                 in
                 let tags () =
                   let triggered_dependencies_size =
-                    SharedMemoryKeys.DependencyKey.KeySet.cardinal triggered_dependencies
+                    SharedMemoryKeys.DependencyKey.RegisteredSet.cardinal triggered_dependencies
                     |> Format.sprintf "%d"
                   in
                   [
@@ -340,7 +355,7 @@ module EnvironmentTable = struct
                 |> Table.remove_batch)
           in
           {
-            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
+            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             upstream = upstream_update;
             read_only = read_only upstream_update;
           }

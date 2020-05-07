@@ -10,9 +10,13 @@ type global = Annotation.t [@@deriving eq, show, compare, sexp]
 module AnnotatedReadOnly : sig
   include Environment.ReadOnly
 
-  val get_global : t -> ?dependency:dependency -> Reference.t -> global option
+  val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> global option
 
-  val get_global_location : t -> ?dependency:dependency -> Reference.t -> Location.t option
+  val get_global_location
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    Location.t option
 
   val attribute_resolution : t -> AttributeResolution.ReadOnly.t
 

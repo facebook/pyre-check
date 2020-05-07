@@ -268,10 +268,9 @@ let extract_alias unannotated_global_environment name ~dependency =
   >>= extract_alias
 
 
-let produce_alias empty_stub_environment global_name ~track_dependencies =
+let produce_alias empty_stub_environment global_name ~dependency =
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
-  let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name) in
   let rec get_aliased_type_for current ~visited =
     (* This means we're in a loop *)
     if Set.mem visited current then
@@ -310,7 +309,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   module Key = SharedMemoryKeys.StringKey
   module Value = AliasValue
 
-  type trigger = Reference.t
+  type trigger = Reference.t [@@deriving sexp, compare]
 
   let convert_trigger = Reference.show
 
@@ -326,6 +325,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
     | SharedMemoryKeys.AliasRegister name -> Some name
     | _ -> None
 
+
+  let trigger_to_dependency name = SharedMemoryKeys.AliasRegister name
 
   let legacy_invalidated_keys upstream_update =
     UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream_update

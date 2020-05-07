@@ -154,23 +154,29 @@ let test_updates context =
         ()
     in
     let printer set =
-      SharedMemoryKeys.DependencyKey.KeySet.elements set
+      SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
+      |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
       |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
+    let expected_triggers =
+      SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
+    in
     let triggered_type_check_define_dependencies =
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold
-           ~f:SharedMemoryKeys.DependencyKey.KeySet.union
-           ~init:SharedMemoryKeys.DependencyKey.KeySet.empty
-      |> SharedMemoryKeys.DependencyKey.KeySet.filter (function
+           ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
+           ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
+      |> SharedMemoryKeys.DependencyKey.RegisteredSet.filter (function registered ->
+             ( match SharedMemoryKeys.DependencyKey.get_key registered with
              | SharedMemoryKeys.TypeCheckDefine _ -> true
-             | _ -> false)
+             | _ -> false ))
     in
     assert_equal ~printer expected_triggers triggered_type_check_define_dependencies;
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
+  let dependency =
+    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+  in
   assert_updates
     ~original_source:{|
       x = 7

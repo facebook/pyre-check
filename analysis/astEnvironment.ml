@@ -410,7 +410,7 @@ let log_parse_errors ~syntax_error ~system_error =
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
     reparsed: Reference.t list;
     syntax_error: SourcePath.t list;
     system_error: SourcePath.t list;
@@ -426,7 +426,7 @@ module UpdateResult = struct
 
   let create_for_testing () =
     {
-      triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
+      triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
       reparsed = [];
       syntax_error = [];
       system_error = [];
@@ -461,7 +461,7 @@ let update
             parse_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
           in
           {
-            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
+            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             reparsed = List.append updated_submodules parsed;
             syntax_error;
             system_error;
@@ -531,7 +531,7 @@ let update
         ();
       {
         UpdateResult.reparsed = parsed;
-        triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
+        triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
         syntax_error;
         system_error;
       }
@@ -597,8 +597,9 @@ module ReadOnly = struct
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
-    get_module_metadata: ?dependency:SharedMemoryKeys.dependency -> Reference.t -> Module.t option;
-    module_exists: ?dependency:SharedMemoryKeys.dependency -> Reference.t -> bool;
+    get_module_metadata:
+      ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> Module.t option;
+    module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
   }
 
   let create

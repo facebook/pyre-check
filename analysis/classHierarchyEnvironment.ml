@@ -35,15 +35,13 @@ module EdgesValue = struct
   let compare = Option.compare compare_edges
 end
 
-let get_parents alias_environment name ~track_dependencies =
+let get_parents alias_environment name ~dependency =
   let object_index = IndexTracker.index "object" in
   let parse_annotation =
-    let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
     AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
       ?dependency
       alias_environment
   in
-  let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
   (* Register normal annotations. *)
   let extract_supertype { Call.Argument.value; _ } =
     let value = delocalize value in
@@ -143,7 +141,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
   module Key = IndexTracker.IndexKey
   module Value = EdgesValue
 
-  type trigger = string
+  type trigger = string [@@deriving sexp, compare]
 
   let convert_trigger = IndexTracker.index
 
@@ -159,6 +157,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     | SharedMemoryKeys.ClassConnect name -> Some name
     | _ -> None
 
+
+  let trigger_to_dependency name = SharedMemoryKeys.ClassConnect name
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 

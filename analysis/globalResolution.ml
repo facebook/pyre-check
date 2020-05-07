@@ -9,7 +9,7 @@ open Ast
 open Statement
 
 type t = {
-  dependency: SharedMemoryKeys.dependency option;
+  dependency: SharedMemoryKeys.DependencyKey.registered option;
   annotated_global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
 }
 

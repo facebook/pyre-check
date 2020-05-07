@@ -23,14 +23,11 @@ let unannotated_global_environment alias_environment =
   AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
 
 
-let produce_undecorated_function class_hierarchy_environment name ~track_dependencies =
+let produce_undecorated_function class_hierarchy_environment name ~dependency =
   let alias_environment =
     ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
   in
   let global =
-    let dependency =
-      Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
-    in
     UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
       ?dependency
       (unannotated_global_environment alias_environment)
@@ -39,9 +36,6 @@ let produce_undecorated_function class_hierarchy_environment name ~track_depende
   let handle = function
     | UnannotatedGlobalEnvironment.Define signatures ->
         let handle { Node.value = signature; _ } =
-          let dependency =
-            Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
-          in
           let parse_annotation =
             AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               ?dependency
@@ -80,7 +74,7 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = UndecoratedFunctionValue
 
-  type trigger = Reference.t
+  type trigger = Reference.t [@@deriving sexp, compare]
 
   let convert_trigger = Fn.id
 
@@ -96,6 +90,8 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
     | SharedMemoryKeys.UndecoratedFunction name -> Some name
     | _ -> None
 
+
+  let trigger_to_dependency name = SharedMemoryKeys.UndecoratedFunction name
 
   let legacy_invalidated_keys =
     UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals

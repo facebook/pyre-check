@@ -5,10 +5,20 @@
 
 open Core
 
+module type SexpableKeyType = sig
+  type t [@@deriving sexp, compare]
+
+  val to_string : t -> string
+
+  type out
+
+  val from_string : string -> out
+end
+
 module type In = sig
   module PreviousEnvironment : Environment.PreviousEnvironment
 
-  module Key : Memory.KeyType
+  module Key : SexpableKeyType
 
   module Value : Memory.ComparableValueType
 
@@ -18,13 +28,19 @@ module type In = sig
 
   val lazy_incremental : bool
 
-  val produce_value : PreviousEnvironment.ReadOnly.t -> Key.t -> track_dependencies:bool -> Value.t
+  val produce_value
+    :  PreviousEnvironment.ReadOnly.t ->
+    Key.t ->
+    dependency:SharedMemoryKeys.DependencyKey.registered option ->
+    Value.t
 
   val filter_upstream_dependency : SharedMemoryKeys.dependency -> Key.t option
+
+  val trigger_to_dependency : Key.t -> SharedMemoryKeys.dependency
 end
 
 module Make (In : In) :
   Environment.EnvironmentTable.S
-    with module In.Key = In.Key
+    with type In.Key.t = In.Key.t
      and module In.PreviousEnvironment = In.PreviousEnvironment
      and module In.Value = In.Value

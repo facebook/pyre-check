@@ -8,7 +8,7 @@ open SharedMemoryKeys
 module AliasReadOnly : sig
   include Environment.ReadOnly
 
-  val get_alias : t -> ?dependency:dependency -> Type.Primitive.t -> Type.alias option
+  val get_alias : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.alias option
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
@@ -17,21 +17,21 @@ module AliasReadOnly : sig
   val parse_annotation_without_validating_type_parameters
     :  t ->
     ?modify_aliases:(Type.alias -> Type.alias) ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     ?allow_untracked:bool ->
     Expression.t ->
     Type.t
 
   val parse_as_concatenation
     :  t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     Expression.t ->
     (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
     option
 
   val parse_as_parameter_specification_instance_annotation
     :  t ->
-    ?dependency:dependency ->
+    ?dependency:DependencyKey.registered ->
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->
     Type.Variable.Variadic.Parameters.t option
