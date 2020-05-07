@@ -7,6 +7,8 @@ open Hack_parallel.Std
 module Daemon = Daemon
 open Core
 
+let is_master () = Int.equal 0 (Worker.current_worker_id ())
+
 type t =
   | SequentialScheduler
   | ParallelScheduler of Worker.t list

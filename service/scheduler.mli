@@ -6,6 +6,8 @@
 open Hack_parallel.Std
 module Daemon = Daemon
 
+val is_master : unit -> bool
+
 module Policy : sig
   type t
 
