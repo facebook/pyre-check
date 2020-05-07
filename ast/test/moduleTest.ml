@@ -86,16 +86,17 @@ let test_aliased_export _ =
     |}
     ["thing", "other.thing"];
 
-  (* Exports through assignments. *)
+  (* Global assignments should not be counted *)
   assert_aliased_exports
     ~handle:"requests.py"
     {|
       from . import api
-      $local_requests$post = requests.api.post
-      $local_requests$call = requests.api.call()
-      $local_requests$not_exported = other.assignment
+      post = requests.api.post
+      call = requests.api.call()
+      not_exported = other.assignment
     |}
-    ["post", "requests.api.post"; "call", "$not_exported"; "not_exported", "$not_exported"]
+    [];
+  ()
 
 
 let () =

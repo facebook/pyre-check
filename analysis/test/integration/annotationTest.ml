@@ -1261,9 +1261,6 @@ let test_check_aliases context =
       foo(FOO())
     |}
     [
-      "Redefined class [50]: Class `FOO` conflicts with class `BAR`.";
-      "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
-      "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`.";
       "Incompatible parameter type [6]: Expected `BAR` for 1st positional only parameter to call \

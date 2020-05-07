@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Expression
 open Statement
 open Pyre
 
@@ -64,17 +63,7 @@ let create
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
-      | Statement.Assign
-          {
-            Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Name value; _ };
-            _;
-          } -> (
-          match name_to_reference value with
-          | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
-              Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
-          | _ -> aliases )
-      | Import { Import.from = Some from; imports } ->
+      | Statement.Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import source ~from in
           let export aliases { Import.name = { Node.value = name; _ }; alias } =
             let alias = alias >>| Node.value |> Option.value ~default:name in
