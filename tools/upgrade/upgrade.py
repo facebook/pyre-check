@@ -519,6 +519,74 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             LOG.info("Error while running hg.")
 
 
+class ExpandTargetCoverage(ErrorSuppressingCommand):
+    def run(self) -> None:
+        subdirectory = self._arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+
+        # Do not change if configurations exist below given root
+        existing_configurations = find_files(subdirectory, ".pyre_configuration.local")
+        if existing_configurations and not existing_configurations == [
+            str(subdirectory / ".pyre_configuration.local")
+        ]:
+            LOG.warning(
+                "Cannot expand targets because nested configurations exist:\n%s",
+                "\n".join(existing_configurations),
+            )
+            return
+
+        # Expand coverage
+        local_configuration = Configuration.find_local_configuration(subdirectory)
+        if not local_configuration:
+            LOG.warning("Could not find a local configuration to codemod.")
+            return
+        LOG.info("Expanding typecheck targets in `%s`", local_configuration)
+        with open(local_configuration) as configuration_file:
+            configuration = Configuration(
+                local_configuration, json.load(configuration_file)
+            )
+            configuration.add_targets(["//" + str(subdirectory) + "/..."])
+            configuration.deduplicate_targets()
+            configuration.write()
+
+        # Suppress errors
+        all_errors = configuration.get_errors()
+        error_threshold = self._arguments.fixme_threshold
+
+        for path, errors in all_errors:
+            errors = list(errors)
+            error_count = len(errors)
+            if error_threshold and error_count > error_threshold:
+                LOG.info(
+                    "%d errors found in `%s`. Adding file-level ignore.",
+                    error_count,
+                    path,
+                )
+                add_local_mode(path, LocalMode.IGNORE)
+            else:
+                self._suppress_errors(Errors(errors))
+
+        # Lint and re-run pyre once to resolve most formatting issues
+        if self._arguments.lint:
+            if self._repository.format():
+                errors = configuration.get_errors(should_clean=False)
+                self._suppress_errors(errors)
+
+        try:
+            if not self._arguments.no_commit:
+                summary = "Expanding type coverage of targets in configuration."
+                self._repository.submit_changes(
+                    self._arguments.submit,
+                    self._repository.commit_message(
+                        "Expand target type coverage in {}".format(local_configuration),
+                        summary_override=summary,
+                    ),
+                    set_dependencies=False,
+                )
+        except subprocess.CalledProcessError:
+            LOG.info("Error while running hg.")
+
+
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -698,6 +766,30 @@ def run(repository: Repository) -> None:
         help="Ignore all errors in a file if fixme count exceeds threshold.",
     )
     targets_to_configuration.add_argument(
+        "--no-commit", action="store_true", help="Keep changes in working state."
+    )
+
+    # Subcommand: Expand target coverage in configuration up to given error limit
+    expand_target_coverage = commands.add_parser("expand-target-coverage")
+    expand_target_coverage.set_defaults(command=ExpandTargetCoverage)
+    expand_target_coverage.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    expand_target_coverage.add_argument(
+        "--submit", action="store_true", help=argparse.SUPPRESS
+    )
+    expand_target_coverage.add_argument(
+        "--lint", action="store_true", help=argparse.SUPPRESS
+    )
+    expand_target_coverage.add_argument(
+        "--subdirectory", help="Only upgrade TARGETS files within this directory."
+    )
+    expand_target_coverage.add_argument(
+        "--fixme-threshold",
+        type=int,
+        help="Ignore all errors in a file if fixme count exceeds threshold.",
+    )
+    expand_target_coverage.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
     )
 
