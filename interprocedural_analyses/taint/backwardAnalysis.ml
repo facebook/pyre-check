@@ -439,8 +439,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> analyze_expression ~resolution ~taint ~state ~expression
 
 
-    and analyze_call ~resolution location ~taint ~state callee arguments =
-      let analyze_regular_call ~taint state callee arguments =
+    and analyze_call ~resolution location ~taint ~state ~callee ~arguments =
+      let analyze_regular_call ~taint state ~callee ~arguments =
         let ({ Call.callee; arguments } as call_expression) =
           Interprocedural.CallResolution.redirect_special_calls
             ~resolution
@@ -597,7 +597,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.sort ~compare:compare_by_index
           |> List.map ~f:snd
         in
-        let state = analyze_regular_call ~taint state callee higher_order_function_arguments in
+        let state =
+          analyze_regular_call ~taint state ~callee ~arguments:higher_order_function_arguments
+        in
         let result_taint =
           BackwardState.Tree.join
             taint
@@ -611,7 +613,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         in
 
         let state =
-          analyze_regular_call ~taint:result_taint state lambda_callee arguments_with_all_value
+          analyze_regular_call
+            ~taint:result_taint
+            state
+            ~callee:lambda_callee
+            ~arguments:arguments_with_all_value
         in
         (* Simulate `$all = {q, x, y}`. *)
         let all_taint =
@@ -635,7 +641,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
       } ->
           (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
-          let state = analyze_regular_call ~taint state callee arguments in
+          let state = analyze_regular_call ~taint state ~callee ~arguments in
           (* Handle base[index] = value. *)
           analyze_assignment
             ~resolution
@@ -779,7 +785,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               analyze_lambda_call
                 ~lambda_argument
                 ~non_lambda_arguments:(List.rev reversed_non_lambda_arguments)
-          | _ -> analyze_regular_call ~taint state callee arguments )
+          | _ -> analyze_regular_call ~taint state ~callee ~arguments )
 
 
     and analyze_expression
@@ -801,7 +807,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               analyze_expression ~resolution ~taint ~state ~expression:right
               |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left )
       | Call { callee; arguments } ->
-          analyze_call ~resolution location ~taint ~state callee arguments
+          analyze_call ~resolution location ~taint ~state ~callee ~arguments
       | Complex _ -> state
       | Dictionary { Dictionary.entries; keywords } ->
           let state =

@@ -570,8 +570,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       apply_call_targets state init_targets
 
 
-    and analyze_call ~resolution ~location ~state callee arguments =
-      let analyze_regular_call ~state callee arguments =
+    and analyze_call ~resolution ~location ~state ~callee ~arguments =
+      let analyze_regular_call ~state ~callee ~arguments =
         (* reveal_taint(). *)
         begin
           match Node.value callee, arguments with
@@ -746,7 +746,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               ~resolution
               { Call.callee = lambda_callee; arguments }
           in
-          let taint, state = analyze_regular_call ~state callee arguments in
+          let taint, state = analyze_regular_call ~state ~callee ~arguments in
           analyze_assignment ~resolution result taint taint state
         in
         (* Simulate `hof(q, $result, x, y)`. *)
@@ -761,7 +761,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.sort ~compare:compare_by_index
           |> List.map ~f:snd
         in
-        analyze_regular_call ~state callee higher_order_function_arguments
+        analyze_regular_call ~state ~callee ~arguments:higher_order_function_arguments
       in
       match { Call.callee; arguments } with
       | {
@@ -800,7 +800,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
              tainted. *)
-          analyze_regular_call ~state callee arguments
+          analyze_regular_call ~state ~callee ~arguments
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)
       | {
@@ -931,7 +931,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~callee
                 ~lambda_argument
                 ~non_lambda_arguments:(List.rev reversed_non_lambda_arguments)
-          | _ -> analyze_regular_call ~state callee arguments )
+          | _ -> analyze_regular_call ~state ~callee ~arguments )
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
@@ -1005,7 +1005,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
               let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
               ForwardState.Tree.join left_taint right_taint, state )
-      | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
+      | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary { Dictionary.entries; keywords } ->
           let taint, state =
