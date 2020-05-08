@@ -11,14 +11,15 @@ import sys
 import traceback
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from ...client.commands import ExitCode
 from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
 from .commands.command import Command, ErrorSuppressingCommand
+from .commands.fixme import Fixme
 from .configuration import Configuration
-from .errors import Errors, errors_from_stdin, errors_from_targets
+from .errors import Errors, errors_from_targets
 from .filesystem import (
     FilesystemException,
     LocalMode,
@@ -33,16 +34,6 @@ from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-def errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
-    configuration_path = Configuration.find_project_configuration()
-    if not configuration_path:
-        LOG.warning("Could not find pyre configuration.")
-        return Errors.empty()
-    with open(configuration_path) as configuration_file:
-        configuration = Configuration(configuration_path, json.load(configuration_file))
-        return configuration.get_errors(only_fix_error_code)
 
 
 class StrictDefault(Command):
@@ -148,22 +139,6 @@ class GlobalVersionUpdate(Command):
         except subprocess.CalledProcessError:
             action = "submit" if self._arguments.submit else "commit"
             raise FilesystemException(f"Error while attempting to {action} changes.")
-
-
-class Fixme(ErrorSuppressingCommand):
-    def run(self) -> None:
-        # Suppress errors in project with no local configurations.
-        if self._arguments.error_source == "generate":
-            errors = errors_from_run(self._arguments.only_fix_error_code)
-            self._suppress_errors(errors)
-
-            if self._arguments.lint:
-                if self._repository.format():
-                    errors = errors_from_run(self._arguments.only_fix_error_code)
-                    self._suppress_errors(errors)
-        else:
-            errors = errors_from_stdin(self._arguments.only_fix_error_code)
-            self._suppress_errors(errors)
 
 
 class FixmeSingle(ErrorSuppressingCommand):
