@@ -21,7 +21,7 @@ repository = Repository()
 class FixmeTest(unittest.TestCase):
     @patch.object(Path, "read_text")
     @patch(f"{fixme.__name__}._errors_from_run")
-    @patch(f"{fixme.__name__}.errors_from_stdin")
+    @patch(f"{fixme.__name__}.Errors.from_stdin")
     @patch(f"{command.__name__}.Repository.submit_changes")
     def test_run_fixme(
         self, submit_changes, stdin_errors, run_errors, path_read_text

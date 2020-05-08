@@ -8,7 +8,7 @@ import logging
 from typing import Optional
 
 from ..configuration import Configuration
-from ..errors import Errors, errors_from_stdin
+from ..errors import Errors
 from .command import ErrorSuppressingCommand
 
 
@@ -37,5 +37,5 @@ class Fixme(ErrorSuppressingCommand):
                     errors = _errors_from_run(self._arguments.only_fix_error_code)
                     self._suppress_errors(errors)
         else:
-            errors = errors_from_stdin(self._arguments.only_fix_error_code)
+            errors = Errors.from_stdin(self._arguments.only_fix_error_code)
             self._suppress_errors(errors)

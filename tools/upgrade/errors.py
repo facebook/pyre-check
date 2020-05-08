@@ -48,6 +48,11 @@ class Errors:
             )
         return Errors.empty()
 
+    @staticmethod
+    def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":
+        input = sys.stdin.read()
+        return Errors.from_json(input)
+
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors
         self.error_iterator: Iterator[
@@ -74,11 +79,6 @@ def _filter_errors(
     if only_fix_error_code is not None:
         errors = [error for error in errors if error["code"] == only_fix_error_code]
     return errors
-
-
-def errors_from_stdin(only_fix_error_code: Optional[int] = None) -> Errors:
-    input = sys.stdin.read()
-    return Errors.from_json(input)
 
 
 def errors_from_targets(

@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..errors import Errors, errors_from_stdin, suppress
+from ..errors import Errors, suppress
 from ..filesystem import FilesystemException
 from ..repository import Repository
 
@@ -52,7 +52,7 @@ class ErrorSuppressingCommand(Command):
             else:
                 return
         errors = (
-            errors_from_stdin(self._arguments.only_fix_error_code)
+            Errors.from_stdin(self._arguments.only_fix_error_code)
             if self._arguments.error_source == "stdin"
             and not self._arguments.upgrade_version
             else configuration.get_errors()

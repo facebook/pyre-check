@@ -132,7 +132,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch(f"{command.__name__}.errors_from_stdin")
+    @patch(f"{command.__name__}.Errors.from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
