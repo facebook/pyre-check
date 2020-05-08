@@ -8,7 +8,7 @@ import pathlib
 import re
 from logging import Logger
 
-from .command import Command
+from .commands.command import Command
 from .errors import errors_from_stdin
 
 

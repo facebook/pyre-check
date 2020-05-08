@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import errors, filesystem, upgrade
+from ..commands import command
 from ..repository import Repository
 from ..upgrade import (
     ConsolidateNestedConfigurations,
@@ -132,7 +133,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch(f"{upgrade.__name__}.errors_from_stdin")
+    @patch(f"{command.__name__}.errors_from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")

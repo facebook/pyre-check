@@ -16,9 +16,9 @@ from typing import List, Optional
 from ...client.commands import ExitCode
 from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
-from .command import Command
+from .commands.command import Command, ErrorSuppressingCommand
 from .configuration import Configuration
-from .errors import Errors, errors_from_stdin, errors_from_targets, fix
+from .errors import Errors, errors_from_stdin, errors_from_targets
 from .filesystem import (
     FilesystemException,
     LocalMode,
@@ -144,62 +144,6 @@ class GlobalVersionUpdate(Command):
                 title="Update pyre global configuration version",
                 summary=f"Automatic upgrade to hash `{self._arguments.hash}`",
                 ignore_failures=True,
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
-
-
-class ErrorSuppressingCommand(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._comment: str = arguments.comment
-        self._max_line_length: int = arguments.max_line_length
-        self._truncate: bool = arguments.truncate
-        self._unsafe: bool = getattr(arguments, "unsafe", False)
-
-    def _suppress_errors(self, errors: Errors) -> None:
-        fix(errors, self._comment, self._max_line_length, self._truncate, self._unsafe)
-
-    def _suppress_errors_in_project(
-        self, configuration: Configuration, root: Path
-    ) -> None:
-        LOG.info("Processing %s", configuration.get_directory())
-        if not configuration.is_local:
-            return
-        if self._arguments.upgrade_version:
-            if configuration.version:
-                configuration.remove_version()
-                configuration.write()
-            else:
-                return
-        errors = (
-            errors_from_stdin(self._arguments.only_fix_error_code)
-            if self._arguments.error_source == "stdin"
-            and not self._arguments.upgrade_version
-            else configuration.get_errors()
-        )
-        if len(errors) > 0:
-            self._suppress_errors(errors)
-
-            # Lint and re-run pyre once to resolve most formatting issues
-            if self._arguments.lint:
-                if self._repository.format():
-                    errors = configuration.get_errors(should_clean=False)
-                    self._suppress_errors(errors)
-        try:
-            project_root = root.resolve()
-            local_root = configuration.get_directory().resolve()
-            title = "{} for {}".format(
-                "Update pyre version"
-                if self._arguments.upgrade_version
-                else "Suppress pyre errors",
-                str(local_root.relative_to(project_root)),
-            )
-            self._repository.submit_changes(
-                commit=(not self._arguments.no_commit),
-                submit=self._arguments.submit,
-                title=title,
             )
         except subprocess.CalledProcessError:
             action = "submit" if self._arguments.submit else "commit"
