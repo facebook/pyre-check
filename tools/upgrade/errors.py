@@ -24,6 +24,30 @@ def error_path(error: Dict[str, Any]) -> str:
 
 
 class Errors:
+    @classmethod
+    def empty(cls) -> "Errors":
+        return cls([])
+
+    @staticmethod
+    def from_json(
+        json_string: Optional[str], only_fix_error_code: Optional[int] = None
+    ) -> "Errors":
+        if json_string:
+            try:
+                errors = json.loads(json_string)
+                return Errors(_filter_errors(errors, only_fix_error_code))
+            except json.decoder.JSONDecodeError:
+                LOG.error(
+                    "Received invalid JSON as input. "
+                    "If piping from `pyre check` be sure to use `--output=json`."
+                )
+        else:
+            LOG.error(
+                "Received no input. "
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+        return Errors.empty()
+
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors
         self.error_iterator: Iterator[
@@ -43,10 +67,6 @@ class Errors:
     def __eq__(self, other: "Errors") -> bool:
         return self.errors == other.errors
 
-    @classmethod
-    def empty(cls) -> "Errors":
-        return cls([])
-
 
 def _filter_errors(
     errors: List[Dict[str, Any]], only_fix_error_code: Optional[int] = None
@@ -56,29 +76,9 @@ def _filter_errors(
     return errors
 
 
-def json_to_errors(
-    json_string: Optional[str], only_fix_error_code: Optional[int] = None
-) -> Errors:
-    if json_string:
-        try:
-            errors = json.loads(json_string)
-            return Errors(_filter_errors(errors, only_fix_error_code))
-        except json.decoder.JSONDecodeError:
-            LOG.error(
-                "Received invalid JSON as input. "
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-    else:
-        LOG.error(
-            "Received no input. "
-            "If piping from `pyre check` be sure to use `--output=json`."
-        )
-    return Errors.empty()
-
-
 def errors_from_stdin(only_fix_error_code: Optional[int] = None) -> Errors:
     input = sys.stdin.read()
-    return json_to_errors(input)
+    return Errors.from_json(input)
 
 
 def errors_from_targets(

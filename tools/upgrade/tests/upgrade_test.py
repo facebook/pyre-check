@@ -1572,19 +1572,6 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         )
 
 
-class DecodeTest(unittest.TestCase):
-    def test_json_to_errors(self) -> None:
-        self.assertEqual(
-            errors.json_to_errors('[{ "path": "test.py", "key": "value" }]'),
-            errors.Errors([{"path": "test.py", "key": "value"}]),
-        )
-        self.assertEqual(errors.json_to_errors(None), errors.Errors([]))
-        self.assertEqual(
-            errors.json_to_errors('[{ "path": "test.py", "key": "value" }'),
-            errors.Errors([]),
-        )
-
-
 class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")

@@ -10,7 +10,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from .errors import Errors, json_to_errors
+from .errors import Errors
 from .filesystem import get_filesystem
 
 
@@ -203,7 +203,7 @@ class Configuration:
                     stderr=subprocess.PIPE,
                 )
             json_string = process.stdout.decode().strip()
-            errors = json_to_errors(json_string, only_fix_error_code)
+            errors = Errors.from_json(json_string, only_fix_error_code)
             LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
             return errors
         except subprocess.CalledProcessError as error:
