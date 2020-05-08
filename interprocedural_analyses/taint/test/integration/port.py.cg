@@ -6,7 +6,7 @@ port.match_star_arg_directly (fun) -> [port.source_field (fun) port.star_arg_wra
 port.match_star_arg_with_star (fun) -> [port.source_field (fun) port.star_arg_wrapper (fun)]
 port.match_star_star_arg_directly (fun) -> [port.source_field (fun) port.star_star_arg_wrapper (fun)]
 port.match_star_star_arg_with_star (fun) -> [port.source_field (fun) port.star_star_arg_wrapper (fun)]
-port.refer_to_method_as_field (fun) -> [__test_sink (fun)]
+port.refer_to_method_as_field (fun) -> [__test_sink (fun) port.Foo::some_source (method)]
 port.sink_field (fun) -> [__test_sink (fun)]
 port.source_field (fun) -> [__test_source (fun)]
 port.star_arg (fun) -> [port.sink_field (fun) tuple::__getitem__ (method)]

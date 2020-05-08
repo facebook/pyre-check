@@ -572,10 +572,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution ~location ~state callee arguments =
       let analyze_regular_call ~state callee arguments =
-        let call = { Call.callee; arguments } in
-        let { Call.callee; arguments } =
-          Interprocedural.CallResolution.redirect_special_calls ~resolution call
-        in
         (* reveal_taint(). *)
         begin
           match Node.value callee, arguments with
@@ -714,7 +710,59 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   ForwardTaint.simple_feature
                   Abstract.Domain.(Add Features.obscure)
       in
-
+      let analyze_lambda_call ~callee ~lambda_argument ~non_lambda_arguments =
+        (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
+         * hof(q, fn, x, y) gets translated into the following block: (analyzed backwards)
+         * $all = {q, x, y}
+         * $result = fn( *all, **all)
+         * hof(q, $result, x, y)
+         *)
+        let lambda_index, { Call.Argument.value = lambda_callee; name = lambda_name } =
+          lambda_argument
+        in
+        let location = lambda_callee.Node.location in
+        let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
+        (* Simulate `$all = {q, x, y}`. *)
+        let state =
+          let all_assignee =
+            Node.create
+              ~location
+              (Expression.Set
+                 (List.map non_lambda_arguments ~f:(fun (_, argument) ->
+                      argument.Call.Argument.value)))
+          in
+          let taint, state = analyze_expression ~resolution ~state ~expression:all_assignee in
+          analyze_assignment ~resolution all_argument taint taint state
+        in
+        (* Simulate `$result = fn( *all, **all)`. *)
+        let result = Node.create ~location (Expression.Name (Name.Identifier "$result")) in
+        let state =
+          let arguments =
+            List.map non_lambda_arguments ~f:(fun (_, argument) ->
+                { argument with Call.Argument.value = all_argument })
+          in
+          let { Call.callee; arguments } =
+            Interprocedural.CallResolution.redirect_special_calls
+              ~resolution
+              { Call.callee = lambda_callee; arguments }
+          in
+          let taint, state = analyze_regular_call ~state callee arguments in
+          analyze_assignment ~resolution result taint taint state
+        in
+        (* Simulate `hof(q, $result, x, y)`. *)
+        let higher_order_function_arguments =
+          let lambda_argument_with_index =
+            lambda_index, { Call.Argument.value = result; name = lambda_name }
+          in
+          let compare_by_index (left_index, _) (right_index, _) =
+            Int.compare left_index right_index
+          in
+          lambda_argument_with_index :: non_lambda_arguments
+          |> List.sort ~compare:compare_by_index
+          |> List.map ~f:snd
+        in
+        analyze_regular_call ~state callee higher_order_function_arguments
+      in
       match { Call.callee; arguments } with
       | {
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
@@ -854,7 +902,36 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
-      | _ -> analyze_regular_call ~state callee arguments
+      | _ -> (
+          let call = { Call.callee; arguments } in
+          let { Call.callee; arguments } =
+            Interprocedural.CallResolution.redirect_special_calls ~resolution call
+          in
+          let lambda_arguments, reversed_non_lambda_arguments =
+            let is_callable argument =
+              match Resolution.resolve_expression resolution argument.Call.Argument.value with
+              | _, Type.Callable _
+              | _, Type.Parametric { name = "BoundMethod"; _ } ->
+                  true
+              | _ -> false
+            in
+            let classify_argument index (lambdas, non_lambdas) argument =
+              if is_callable argument then
+                (index, argument) :: lambdas, non_lambdas
+              else
+                lambdas, (index, argument) :: non_lambdas
+            in
+
+            List.foldi arguments ~f:classify_argument ~init:([], [])
+          in
+
+          match lambda_arguments with
+          | [lambda_argument] ->
+              analyze_lambda_call
+                ~callee
+                ~lambda_argument
+                ~non_lambda_arguments:(List.rev reversed_non_lambda_arguments)
+          | _ -> analyze_regular_call ~state callee arguments )
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =

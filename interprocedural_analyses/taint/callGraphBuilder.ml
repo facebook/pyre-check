@@ -16,18 +16,46 @@ let initialize () =
 
 
 let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualifier ~callee =
+  let resolution =
+    Analysis.TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+  in
+  (* Add argument callables. *)
+  let () =
+    let add_callables_of_argument argument =
+      let callable_and_implicit =
+        Resolution.resolve_expression_to_type resolution argument.Expression.Call.Argument.value
+        |> function
+        | Type.Callable callable -> Some (callable, None)
+        | Type.Parametric
+            {
+              name = "BoundMethod";
+              parameters = [Single (Type.Callable callable); Single implicit];
+            } ->
+            Some (callable, Some implicit)
+        | _ -> None
+      in
+      match callable_and_implicit with
+      | Some (callable, implicit) ->
+          DefaultBuilder.add_callee
+            ~global_resolution
+            ~target:implicit
+            ~callables:(Some [callable])
+            ~arguments
+            ~dynamic:false
+            ~qualifier
+            ~callee:argument.Expression.Call.Argument.value
+      | _ -> ()
+    in
+    List.iter arguments ~f:add_callables_of_argument
+  in
   let callables =
     match
       Interprocedural.CallResolution.transform_special_calls { Expression.Call.callee; arguments }
     with
     | Some { Expression.Call.callee = transformed_call; arguments = transformed_arguments } ->
-        let resolution =
-          Analysis.TypeCheck.resolution
-            global_resolution
-            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-            (module TypeCheck.DummyContext)
-        in
-
         begin
           match Resolution.resolve_expression_to_type resolution transformed_call with
           | Type.Callable callable ->
@@ -50,13 +78,6 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                and add it manually. This is not perfect (__init__ might have been explicitly called,
                meaning that __new__ wasn't called), but will, in the worst case, lead to
                over-analysis, which will have a perf implication but not a consistency one. *)
-            let resolution =
-              Analysis.TypeCheck.resolution
-                global_resolution
-                (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                (module TypeCheck.DummyContext)
-            in
-
             Resolution.resolve_expression_to_type
               resolution
               (Node.create_with_default_location

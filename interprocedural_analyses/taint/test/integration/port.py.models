@@ -335,64 +335,6 @@
   }
 }
 {
-  "kind": "model",
-  "data": {
-    "callable": "port.Foo.some_source",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "root": {
-              "filename": "port.py",
-              "line": 53,
-              "start": 15,
-              "end": 30
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      }
-    ],
-    "sinks": [],
-    "tito": []
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "port.refer_to_method_as_field",
-    "sources": [],
-    "sinks": [
-      {
-        "port": "formal(foo)[some_source]",
-        "taint": [
-          {
-            "root": {
-              "filename": "port.py",
-              "line": 59,
-              "start": 16,
-              "end": 21
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "tito": []
-  }
-}
-{
   "kind": "issue",
   "data": {
     "callable": "port.refer_to_method_as_field",
@@ -452,6 +394,37 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "port.Foo.some_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "port.py",
+              "line": 53,
+              "start": 15,
+              "end": 30
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {

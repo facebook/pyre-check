@@ -48,7 +48,7 @@ def match_star_star_arg_directly():
 
 
 class Foo:
-    # @cached_property
+    @property
     def some_source():
         return __test_source()
 
