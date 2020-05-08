@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..errors import Errors, errors_from_stdin, fix
+from ..errors import Errors, errors_from_stdin, suppress
 from ..filesystem import FilesystemException
 from ..repository import Repository
 
@@ -35,7 +35,9 @@ class ErrorSuppressingCommand(Command):
         self._unsafe: bool = getattr(arguments, "unsafe", False)
 
     def _suppress_errors(self, errors: Errors) -> None:
-        fix(errors, self._comment, self._max_line_length, self._truncate, self._unsafe)
+        suppress(
+            errors, self._comment, self._max_line_length, self._truncate, self._unsafe
+        )
 
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path

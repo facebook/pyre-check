@@ -295,7 +295,7 @@ def _build_error_map(
     return error_map
 
 
-def fix(
+def suppress(
     errors: Errors,
     comment: str = "",
     max_line_length: int = 0,
