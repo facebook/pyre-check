@@ -27,6 +27,9 @@ def tornado.web.RequestHandler.add_header(self, name: TaintSink[ResponseHeaderNa
 
 def tornado.web.RequestHandler.redirect(self, url: TaintSink[Redirect], permanent = ..., status = ...): ...
 
+tornado.web.RequestHandler.path_args: TaintSource[UserControlled, UserControlled_Payload]
+tornado.web.RequestHandler.path_kwargs: TaintSource[UserControlled, UserControlled_Payload]
+
 tornado.httputil.HTTPServerRequest.path: TaintSource[URL]
 tornado.httputil.HTTPServerRequest.uri: TaintSource[URL]
 
