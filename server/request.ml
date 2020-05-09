@@ -871,6 +871,21 @@ let rec process
       ~flush:true
       ()
   in
+  let update_open_documents ~state path =
+    let { State.open_documents; _ } = state in
+    match ModuleTracker.lookup_path ~configuration module_tracker path with
+    | Some { SourcePath.qualifier; _ } ->
+        Reference.Table.set
+          open_documents
+          ~key:qualifier
+          ~data:(File.create path |> File.content |> Option.value ~default:"")
+    | _ ->
+        Statistics.event
+          ~flush:true
+          ~name:"ModuleTracker failed lookup"
+          ~normals:["reason", "Unable to find path in ModuleTracker"; "path", Path.show path]
+          ()
+  in
   let result =
     try
       match request with
@@ -1041,16 +1056,7 @@ let rec process
 
           (* Make sure the IDE flushes its state about this file, by sending back all the errors for
              this file. *)
-          let { State.open_documents; _ } = state in
-          let _ =
-            match ModuleTracker.lookup_path ~configuration module_tracker path with
-            | Some { SourcePath.qualifier; _ } ->
-                Reference.Table.set
-                  open_documents
-                  ~key:qualifier
-                  ~data:(File.create path |> File.content |> Option.value ~default:"")
-            | _ -> ()
-          in
+          update_open_documents ~state path;
           (* We do not recheck dependencies because nothing changes when we open a document, and we
              do the type checking here just to make type checking resolution appear in shared
              memory. *)
@@ -1069,16 +1075,7 @@ let rec process
           { state; response = None }
       | DocumentChange file ->
           (* On change, update open document's content but do not trigger recheck. *)
-          let { State.open_documents; _ } = state in
-          let _ =
-            match ModuleTracker.lookup_path ~configuration module_tracker (File.path file) with
-            | Some { SourcePath.qualifier; _ } ->
-                Reference.Table.set
-                  open_documents
-                  ~key:qualifier
-                  ~data:(File.content file |> Option.value ~default:"")
-            | _ -> ()
-          in
+          update_open_documents ~state (File.path file);
           { state; response = None }
       | SaveDocument path ->
           ( if Random.bool () then
