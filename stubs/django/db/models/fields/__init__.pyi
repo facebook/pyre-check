@@ -1,7 +1,7 @@
 # pyre-unsafe
 
 import datetime
-from typing import Callable, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
 # This stub is a lie. These are all actually classes that inherit from a common
 # base Field class. But their usage is to be attached to Model classes like this:
@@ -45,6 +45,7 @@ def CharField(
     error_messages: Mapping[str, str] = ...,
 ) -> str: ...
 
+EmailField = CharField
 TextField = CharField
 
 def DateTimeField(
@@ -59,7 +60,7 @@ def DateTimeField(
     null: bool = ...,
     db_index: bool = ...,
     rel: object = ...,
-    default: Optional[datetime.datetime] = ...,
+    default: Optional[Union[Callable[[], datetime.datetime], datetime.datetime]] = ...,
     editable: bool = ...,
     serialize: bool = ...,
     unique_for_date: datetime.date = ...,
@@ -158,3 +159,7 @@ def NullBooleanField(
     validators: Sequence[Callable[[Optional[bool]], None]] = ...,
     error_messages: Mapping[str, str] = ...,
 ) -> Optional[bool]: ...
+
+# This is a workaround for the field types being functions and not
+# actual types.
+Field = Any

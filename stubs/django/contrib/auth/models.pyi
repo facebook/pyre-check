@@ -10,7 +10,10 @@ class AnonymousUser(object):
     def is_anonymous(self) -> bool: ...
     def is_authenticated(self) -> bool: ...
 
-class AbstractUser(models.Model):
+class AbstractBaseUser(models.Model):
+    pass
+
+class AbstractUser(AbstractBaseUser):
     pass
 
 class User(AbstractUser):
