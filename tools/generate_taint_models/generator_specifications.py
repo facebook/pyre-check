@@ -21,6 +21,21 @@ class WhitelistSpecification(NamedTuple):
 
 
 class DecoratorAnnotationSpecification(NamedTuple):
+    def __hash__(self) -> int:
+        parameter_type_whitelist = self.parameter_type_whitelist
+        parameter_name_whitelist = self.parameter_name_whitelist
+        return hash(
+            (
+                self.decorator,
+                self.arg_annotation,
+                self.vararg_annotation,
+                self.kwarg_annotation,
+                self.return_annotation,
+                parameter_type_whitelist and tuple(sorted(parameter_type_whitelist)),
+                parameter_name_whitelist and tuple(sorted(parameter_name_whitelist)),
+            )
+        )
+
     decorator: str
     arg_annotation: Optional[str] = None
     vararg_annotation: Optional[str] = None

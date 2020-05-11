@@ -173,6 +173,48 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             {"def module.decorated(arg1, arg2, *v, **kw) -> Return: ..."},
         )
 
+        # Test parameter type whitelist
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            async def decorated_async(arg1: str, arg2: int, arg3: bool, arg4):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    return_annotation="Return",
+                    parameter_type_whitelist={"str", "int"},
+                )
+            ],
+            {
+                "def module.decorated_async(arg1, arg2, arg3: Arg, arg4: Arg"
+                ") -> Return: ..."
+            },
+        )
+
+        # Test parameter name whitelist
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            async def decorated_async(arg1: str, arg2: int, arg3: bool, arg4):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    return_annotation="Return",
+                    parameter_name_whitelist={"arg1", "arg4"},
+                )
+            ],
+            {
+                "def module.decorated_async(arg1, arg2: Arg, arg3: Arg, arg4"
+                ") -> Return: ..."
+            },
+        )
+
         # Test async functions.
         self.assert_expected_annotations(
             """
