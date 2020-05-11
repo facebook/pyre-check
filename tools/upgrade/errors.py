@@ -77,23 +77,13 @@ class Errors:
 
         for path, errors in self:
             LOG.info("Processing `%s`", path)
+            error_map = _build_error_map(errors)
+            line_length = max_line_length if max_line_length > 0 else None
             if unsafe:
-                _fix_file_unsafe(
-                    path,
-                    _build_error_map(errors),
-                    comment,
-                    max_line_length if max_line_length > 0 else None,
-                    truncate,
-                )
+                _fix_file_unsafe(path, error_map, comment, line_length, truncate)
             else:
                 try:
-                    _fix_file(
-                        path,
-                        _build_error_map(errors),
-                        comment,
-                        max_line_length if max_line_length > 0 else None,
-                        truncate,
-                    )
+                    _fix_file(path, error_map, comment, line_length, truncate)
                 except UnstableAST as exception:
                     exceptions.append(exception)
 
