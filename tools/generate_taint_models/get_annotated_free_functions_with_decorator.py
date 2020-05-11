@@ -88,15 +88,29 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(
         for specification, found_functions in visitor.found_functions.items():
             for found_function in found_functions:
                 try:
+                    annotations = specification.annotations
+                    whitelist = specification.whitelist
                     function_definition_model = FunctionDefinitionModel(
                         qualifier=module_qualifier,
                         definition=found_function,
-                        arg=specification.arg_annotation,
-                        vararg=specification.vararg_annotation,
-                        kwarg=specification.kwarg_annotation,
-                        returns=specification.return_annotation,
-                        parameter_type_whitelist=specification.parameter_type_whitelist,
-                        parameter_name_whitelist=specification.parameter_name_whitelist,
+                        arg=annotations.arg
+                        if annotations
+                        else specification.arg_annotation,
+                        vararg=annotations.vararg
+                        if annotations
+                        else specification.vararg_annotation,
+                        kwarg=annotations.kwarg
+                        if annotations
+                        else specification.kwarg_annotation,
+                        returns=annotations.returns
+                        if annotations
+                        else specification.return_annotation,
+                        parameter_type_whitelist=whitelist.parameter_type
+                        if whitelist
+                        else specification.parameter_type_whitelist,
+                        parameter_name_whitelist=whitelist.parameter_name
+                        if whitelist
+                        else specification.parameter_name_whitelist,
                     )
                     models.add(function_definition_model)
                 except ValueError:

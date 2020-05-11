@@ -16,6 +16,16 @@ class AnnotationSpecification(NamedTuple):
 
 
 class WhitelistSpecification(NamedTuple):
+    def __hash__(self) -> int:
+        parameter_type = self.parameter_type
+        parameter_name = self.parameter_name
+        return hash(
+            (
+                parameter_type and tuple(parameter_type),
+                parameter_name and tuple(parameter_name),
+            )
+        )
+
     parameter_type: Optional[Set[str]] = None
     parameter_name: Optional[Set[str]] = None
 
@@ -33,6 +43,8 @@ class DecoratorAnnotationSpecification(NamedTuple):
                 self.return_annotation,
                 parameter_type_whitelist and tuple(sorted(parameter_type_whitelist)),
                 parameter_name_whitelist and tuple(sorted(parameter_name_whitelist)),
+                self.annotations,
+                self.whitelist,
             )
         )
 
@@ -43,3 +55,5 @@ class DecoratorAnnotationSpecification(NamedTuple):
     return_annotation: Optional[str] = None
     parameter_type_whitelist: Optional[Set[str]] = None
     parameter_name_whitelist: Optional[Set[str]] = None
+    annotations: Optional[AnnotationSpecification] = None
+    whitelist: Optional[WhitelistSpecification] = None

@@ -9,7 +9,11 @@ import unittest
 from typing import List, Set
 from unittest.mock import mock_open, patch
 
-from ..generator_specifications import DecoratorAnnotationSpecification
+from ..generator_specifications import (
+    AnnotationSpecification,
+    DecoratorAnnotationSpecification,
+    WhitelistSpecification,
+)
 from ..get_annotated_free_functions_with_decorator import (
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
@@ -401,5 +405,49 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 "**kw: Kwarg1) -> Return1: ...",
                 "def module.decorated2(arg: Arg2, *v: Vararg2, "
                 "**kw: Kwarg2) -> Return2: ...",
+            },
+        )
+
+        # Test unified annotations.
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            def decorated(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg", returns="Return"
+                    ),
+                )
+            ],
+            {
+                "def module.decorated(arg1: Arg, arg2: Arg, *v: Vararg, "
+                "**kw: Kwarg) -> Return: ..."
+            },
+        )
+
+        # Test unified whitelist
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            async def decorated_async(arg1: str, arg2: int, arg3: bool, arg4):
+                pass
+            """,
+            [
+                DecoratorAnnotationSpecification(
+                    decorator="@target_decorator",
+                    arg_annotation="Arg",
+                    return_annotation="Return",
+                    whitelist=WhitelistSpecification(
+                        parameter_type={"str", "int"}, parameter_name={"arg1", "arg4"}
+                    ),
+                )
+            ],
+            {
+                "def module.decorated_async(arg1, arg2, arg3: Arg, arg4"
+                ") -> Return: ..."
             },
         )
