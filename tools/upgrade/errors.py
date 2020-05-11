@@ -72,6 +72,40 @@ class Errors:
     def __eq__(self, other: "Errors") -> bool:
         return self.errors == other.errors
 
+    def suppress(
+        self,
+        comment: str = "",
+        max_line_length: int = 0,
+        truncate: bool = False,
+        unsafe: bool = False,
+    ) -> None:
+        exceptions = []
+
+        for path, errors in self:
+            LOG.info("Processing `%s`", path)
+            if unsafe:
+                _fix_file_unsafe(
+                    path,
+                    _build_error_map(errors),
+                    comment,
+                    max_line_length if max_line_length > 0 else None,
+                    truncate,
+                )
+            else:
+                try:
+                    _fix_file(
+                        path,
+                        _build_error_map(errors),
+                        comment,
+                        max_line_length if max_line_length > 0 else None,
+                        truncate,
+                    )
+                except UnstableAST as exception:
+                    exceptions.append(exception)
+
+        if exceptions:
+            raise UnstableAST(", ".join(str(exception) for exception in exceptions))
+
 
 def _filter_errors(
     errors: List[Dict[str, Any]], only_fix_error_code: Optional[int] = None
@@ -293,38 +327,3 @@ def _build_error_map(
                 {"code": match.group(1), "description": match.group(2)}
             )
     return error_map
-
-
-def suppress(
-    errors: Errors,
-    comment: str = "",
-    max_line_length: int = 0,
-    truncate: bool = False,
-    unsafe: bool = False,
-) -> None:
-    exceptions = []
-
-    for path, errors in errors:
-        LOG.info("Processing `%s`", path)
-        if unsafe:
-            _fix_file_unsafe(
-                path,
-                _build_error_map(errors),
-                comment,
-                max_line_length if max_line_length > 0 else None,
-                truncate,
-            )
-        else:
-            try:
-                _fix_file(
-                    path,
-                    _build_error_map(errors),
-                    comment,
-                    max_line_length if max_line_length > 0 else None,
-                    truncate,
-                )
-            except UnstableAST as exception:
-                exceptions.append(exception)
-
-    if exceptions:
-        raise UnstableAST(", ".join(str(exception) for exception in exceptions))
