@@ -78,7 +78,7 @@ class Errors:
             LOG.info("Processing `%s`", path)
             try:
                 _suppress_errors_in_path(
-                    path,
+                    Path(path),
                     _build_error_map(errors),
                     comment,
                     max_line_length if max_line_length > 0 else None,
@@ -217,17 +217,16 @@ def _split_across_lines(
 
 
 def _suppress_errors_in_path(
-    filename: str,
+    path: Path,
     errors: Dict[int, List[Dict[str, str]]],
     custom_comment: Optional[str] = None,
     max_line_length: Optional[int] = None,
     truncate: bool = False,
     unsafe: bool = False,
 ) -> None:
-    path = Path(filename)
     text = path.read_text()
     if "@" "generated" in text:
-        LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
+        LOG.warning("Attempting to upgrade generated file %s, skipping.", str(path))
         return
     lines = text.split("\n")  # type: List[str]
 
