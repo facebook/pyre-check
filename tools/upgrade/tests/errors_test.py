@@ -5,6 +5,7 @@
 
 import unittest
 
+from .. import UserError
 from ..errors import Errors
 
 
@@ -14,7 +15,5 @@ class ErrorsTest(unittest.TestCase):
             Errors.from_json('[{ "path": "test.py", "key": "value" }]'),
             Errors([{"path": "test.py", "key": "value"}]),
         )
-        self.assertEqual(Errors.from_json(None), Errors([]))
-        self.assertEqual(
-            Errors.from_json('[{ "path": "test.py", "key": "value" }'), Errors([])
-        )
+        with self.assertRaises(UserError):
+            Errors.from_json('[{ "path": "test.py", "key": "value" }')

@@ -13,6 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
+from . import UserError
 from .ast import UnstableAST, verify_stable_ast
 
 
@@ -30,23 +31,16 @@ class Errors:
 
     @staticmethod
     def from_json(
-        json_string: Optional[str], only_fix_error_code: Optional[int] = None
+        json_string: str, only_fix_error_code: Optional[int] = None
     ) -> "Errors":
-        if json_string:
-            try:
-                errors = json.loads(json_string)
-                return Errors(_filter_errors(errors, only_fix_error_code))
-            except json.decoder.JSONDecodeError:
-                LOG.error(
-                    "Received invalid JSON as input. "
-                    "If piping from `pyre check` be sure to use `--output=json`."
-                )
-        else:
-            LOG.error(
-                "Received no input. "
+        try:
+            errors = json.loads(json_string)
+            return Errors(_filter_errors(errors, only_fix_error_code))
+        except json.decoder.JSONDecodeError:
+            raise UserError(
+                "Received invalid JSON as input. "
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
-        return Errors.empty()
 
     @staticmethod
     def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":

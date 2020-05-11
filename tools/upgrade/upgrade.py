@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import List
 
 from ...client.commands import ExitCode
+from . import UserError
 from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
 from .commands.command import Command, ErrorSuppressingCommand
@@ -838,6 +839,9 @@ def run(repository: Repository) -> None:
     except UnstableAST as error:
         LOG.error(str(error))
         exit_code = ExitCode.FOUND_ERRORS
+    except UserError as error:
+        LOG.error(str(error))
+        exit_code = ExitCode.FAILURE
     except Exception as error:
         LOG.error(str(error))
         LOG.debug(traceback.format_exc())
