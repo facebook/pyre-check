@@ -13,8 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-from . import UserError
-from .ast import UnstableAST, verify_stable_ast
+from . import UserError, ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -77,18 +76,20 @@ class Errors:
 
         for path, errors in self:
             LOG.info("Processing `%s`", path)
-            error_map = _build_error_map(errors)
-            line_length = max_line_length if max_line_length > 0 else None
-            if unsafe:
-                _fix_file_unsafe(path, error_map, comment, line_length, truncate)
-            else:
-                try:
-                    _fix_file(path, error_map, comment, line_length, truncate)
-                except UnstableAST as exception:
-                    exceptions.append(exception)
+            try:
+                _suppress_errors_in_path(
+                    path,
+                    _build_error_map(errors),
+                    comment,
+                    max_line_length if max_line_length > 0 else None,
+                    truncate,
+                    unsafe,
+                )
+            except ast.UnstableAST as exception:
+                exceptions.append(exception)
 
         if exceptions:
-            raise UnstableAST(", ".join(str(exception) for exception in exceptions))
+            raise ast.UnstableAST(", ".join(str(exception) for exception in exceptions))
 
 
 def _filter_errors(
@@ -215,23 +216,13 @@ def _split_across_lines(
     return result
 
 
-@verify_stable_ast
-def _fix_file(
+def _suppress_errors_in_path(
     filename: str,
     errors: Dict[int, List[Dict[str, str]]],
     custom_comment: Optional[str] = None,
     max_line_length: Optional[int] = None,
     truncate: bool = False,
-) -> None:
-    _fix_file_unsafe(filename, errors, custom_comment, max_line_length, truncate)
-
-
-def _fix_file_unsafe(
-    filename: str,
-    errors: Dict[int, List[Dict[str, str]]],
-    custom_comment: Optional[str] = None,
-    max_line_length: Optional[int] = None,
-    truncate: bool = False,
+    unsafe: bool = False,
 ) -> None:
     path = Path(filename)
     text = path.read_text()
@@ -293,6 +284,8 @@ def _fix_file_unsafe(
         new_lines.extend(comments)
         new_lines.append(line)
     new_text = "\n".join(new_lines)
+    if not unsafe:
+        ast.check_stable(text, new_text)
     path.write_text(new_text)
 
 

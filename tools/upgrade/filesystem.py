@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from ...client.filesystem import get_filesystem
-from .ast import verify_stable_ast
+from . import ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -86,7 +86,6 @@ def find_targets(search_root: Path) -> Dict[str, List[str]]:
     return target_names
 
 
-@verify_stable_ast
 def add_local_mode(filename: str, mode: LocalMode) -> None:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
@@ -123,6 +122,7 @@ def add_local_mode(filename: str, mode: LocalMode) -> None:
             new_lines.append(mode.get_comment())
         new_lines.append(line)
     new_text = "\n".join(new_lines)
+    ast.check_stable(text, new_text)
     path.write_text(new_text)
 
 

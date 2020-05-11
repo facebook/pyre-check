@@ -330,54 +330,6 @@ class FixmeAllTest(unittest.TestCase):
             commit=True, submit=True, title="Update pyre version for local"
         )
 
-    def test_preserve_ast(self) -> None:
-        error_map = {7: [{"code": "6", "description": "Foo"}]}
-        with tempfile.NamedTemporaryFile(delete=False) as file:
-            contents = """
-                def foo(x: int) -> str:
-                    return str(x)
-
-                def bar(x: str) -> str:
-                    return f\'\'\'
-                    first line
-                    second {foo(x)}
-                    \'\'\'
-                """
-            contents = textwrap.dedent(contents)
-            file.write(contents.encode())
-            errors._fix_file(
-                file.name,
-                error_map,
-                custom_comment=None,
-                max_line_length=88,
-                truncate=True,
-            )
-
-            file.seek(0)
-            updated_contents = file.read().decode()
-            file.close()
-            self.assertEqual(updated_contents, contents)
-
-        with tempfile.NamedTemporaryFile(delete=False) as file:
-            contents = """
-                def foo(x: int) -> str:
-                    return str(x)
-
-                def bar(x: str) -> str:
-                    if True \
-                        and True \
-                        and foo(x):
-                        return x
-                """
-            contents = textwrap.dedent(contents)
-            file.write(contents.encode())
-            errors._fix_file(file.name, error_map)
-
-            file.seek(0)
-            updated_contents = file.read().decode()
-            file.close()
-            self.assertEqual(updated_contents, contents)
-
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("subprocess.run")
