@@ -77,14 +77,19 @@ class Errors:
         for path, errors in self:
             LOG.info("Processing `%s`", path)
             try:
-                _suppress_errors_in_path(
-                    Path(path),
+                path = Path(path)
+                input = path.read_text()
+                output = _suppress_errors(
+                    input,
                     _build_error_map(errors),
                     comment,
                     max_line_length if max_line_length > 0 else None,
                     truncate,
                     unsafe,
                 )
+                path.write_text(output)
+            except SkippingGeneratedFileException:
+                LOG.warning(f"Skipping generated file at {str(path)}")
             except ast.UnstableAST as exception:
                 exceptions.append(exception)
 
@@ -216,19 +221,22 @@ def _split_across_lines(
     return result
 
 
-def _suppress_errors_in_path(
-    path: Path,
+class SkippingGeneratedFileException(Exception):
+    pass
+
+
+def _suppress_errors(
+    input: str,
     errors: Dict[int, List[Dict[str, str]]],
     custom_comment: Optional[str] = None,
     max_line_length: Optional[int] = None,
     truncate: bool = False,
     unsafe: bool = False,
-) -> None:
-    text = path.read_text()
-    if "@" "generated" in text:
-        LOG.warning("Attempting to upgrade generated file %s, skipping.", str(path))
-        return
-    lines = text.split("\n")  # type: List[str]
+) -> str:
+    if "@" "generated" in input:
+        raise SkippingGeneratedFileException()
+
+    lines = input.split("\n")  # type: List[str]
 
     # Replace lines in file.
     new_lines = []
@@ -282,10 +290,10 @@ def _suppress_errors_in_path(
         )
         new_lines.extend(comments)
         new_lines.append(line)
-    new_text = "\n".join(new_lines)
+    output = "\n".join(new_lines)
     if not unsafe:
-        ast.check_stable(text, new_text)
-    path.write_text(new_text)
+        ast.check_stable(input, output)
+    return output
 
 
 def _build_error_map(
