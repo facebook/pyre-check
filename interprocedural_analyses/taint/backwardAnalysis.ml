@@ -605,13 +605,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             taint
             (get_taint (Some (AccessPath.create (Root.Variable result) [])) state)
         in
+
         (* Simulate $result = fn( all, all). *)
         let all_argument = Node.create ~location (Expression.Name (Name.Identifier "$all")) in
         let arguments_with_all_value =
           List.map non_lambda_arguments ~f:snd
           |> List.map ~f:(fun argument -> { argument with Call.Argument.value = all_argument })
         in
-
         let state =
           analyze_regular_call
             ~taint:result_taint
@@ -624,6 +624,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.join
             taint
             (get_taint (Some (AccessPath.create (Root.Variable "$all") [])) state)
+          |> BackwardState.Tree.transform
+               BackwardTaint.simple_feature
+               Abstract.Domain.(Add Features.lambda)
         in
         let all_assignee =
           Node.create

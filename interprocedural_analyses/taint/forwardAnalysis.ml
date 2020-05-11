@@ -747,6 +747,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               { Call.callee = lambda_callee; arguments }
           in
           let taint, state = analyze_regular_call ~state ~callee ~arguments in
+          let taint =
+            ForwardState.Tree.transform
+              ForwardTaint.simple_feature
+              Abstract.Domain.(Add Features.lambda)
+              taint
+          in
           analyze_assignment ~resolution result taint taint state
         in
         (* Simulate `hof(q, $result, x, y)`. *)

@@ -23,6 +23,7 @@ module Breadcrumb = struct
     | FormatString (* Via f"{something}" *)
     | HasFirst of first_kind
     | Obscure
+    | Lambda
     | SimpleVia of string (* Declared breadcrumbs *)
     | ViaValue of string (* Via inferred from ViaValueOf. *)
     | Tito
@@ -38,6 +39,7 @@ module Breadcrumb = struct
     | HasFirst FirstField -> `Assoc [prefix ^ "has", `String "first-field"]
     | HasFirst FirstIndex -> `Assoc [prefix ^ "has", `String "first-index"]
     | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
+    | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
     | ViaValue name -> `Assoc [prefix ^ "via-value", `String name]
     | Tito -> `Assoc [prefix ^ "via", `String "tito"]
@@ -105,6 +107,8 @@ end
 module ComplexSet = Abstract.ElementSetDomain.Make (Complex)
 
 let obscure = Simple.Breadcrumb Breadcrumb.Obscure
+
+let lambda = Simple.Breadcrumb Breadcrumb.Lambda
 
 let add_type_breadcrumb ~resolution annotation =
   let matches_at_leaves ~f annotation =

@@ -238,14 +238,18 @@
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],
-            "features": [ { "always-via": "special_sink" } ]
+            "features": [
+              { "always-via": "special_sink" },
+              { "always-via": "lambda" }
+            ]
           }
         ]
       }
     ],
     "features": [
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "lambda" }
     ]
   }
 }
@@ -492,7 +496,10 @@
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],
-            "features": [ { "always-via": "special_sink" } ]
+            "features": [
+              { "always-via": "special_sink" },
+              { "always-via": "lambda" }
+            ]
           }
         ]
       }
@@ -529,6 +536,7 @@
             "features": [
               { "always-via": "tito" },
               { "always-via": "special_source" },
+              { "via": "lambda" },
               { "always-via": "obscure" }
             ]
           }
@@ -553,7 +561,7 @@
             "decl": null,
             "tito": [ { "line": 48, "start": 11, "end": 45 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "always-via": "lambda" } ]
           }
         ]
       }
