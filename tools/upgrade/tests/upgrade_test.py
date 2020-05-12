@@ -739,32 +739,28 @@ class MigrateTest(unittest.TestCase):
 class TargetsToConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch(f"{upgrade.__name__}.Repository.revert_all")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch(f"{upgrade.__name__}.Repository.add_paths")
-    @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
-    @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
     @patch(f"{upgrade.__name__}.find_targets")
     @patch(f"{upgrade.__name__}.get_filesystem")
+    @patch(f"{upgrade.__name__}.path_exists")
     @patch(f"{upgrade.__name__}.remove_non_pyre_ignores")
     @patch(f"{upgrade.__name__}.Configuration.get_errors")
     @patch(f"{upgrade.__name__}.add_local_mode")
     @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.format")
-    @patch(f"{upgrade.__name__}.find_files")
-    def test_run_targets_to_configuration(
+    @patch(f"{upgrade.__name__}.TargetsToConfiguration.remove_target_typing_fields")
+    def test_convert_directory(
         self,
-        find_files,
+        remove_target_typing_fields,
         repository_format,
         suppress_errors,
         add_local_mode,
         get_errors,
         remove_non_pyre_ignores,
+        path_exists,
         get_filesystem,
         find_targets,
-        find_local_configuration,
-        find_project_configuration,
         add_paths,
-        submit_changes,
         revert_all,
         open_mock,
     ) -> None:
@@ -781,6 +777,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         filesystem_list = MagicMock()
         filesystem_list.return_value = []
         get_filesystem.list = filesystem_list
+        path_exists.return_value = False
         pyre_errors = [
             {
                 "line": 2,
@@ -795,96 +792,17 @@ class TargetsToConfigurationTest(unittest.TestCase):
             }
         ]
 
-        # Skip if nested configurations found
-        find_files.return_value = ["nested/.pyre_configuration.local"]
-        TargetsToConfiguration(arguments, repository).run()
-        find_targets.assert_not_called()
-
-        # No errors returned.
-        find_files.return_value = []
-        get_errors.side_effect = [errors.Errors([]), errors.Errors([])]
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
-
-        # Do not attempt to create a configuration when no existing project-level
-        # configuration is found.
-        suppress_errors.reset_mock()
-        open_mock.reset_mock()
-        dump_mock.reset_mock()
-        submit_changes.reset_mock()
-        get_errors.side_effect = [
-            errors.Errors(pyre_errors),
-            errors.Errors(pyre_errors),
-        ]
-        find_project_configuration.return_value = None
-        find_local_configuration.return_value = None
-        TargetsToConfiguration(arguments, repository).run()
-        open_mock.assert_not_called()
-        suppress_errors.assert_not_called()
-        add_local_mode.assert_not_called()
-
-        # Add to existing project configuration if it lives at given subdirectory
-        find_project_configuration.return_value = Path(
-            "subdirectory/.pyre_configuration"
-        )
-        configuration_contents = json.dumps(
-            {"version": "abc", "search_path": ["stubs"]}
-        )
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            repository_format.return_value = True
-            TargetsToConfiguration(arguments, repository).run()
-            expected_configuration_contents = {
-                "search_path": ["stubs"],
-                "targets": [
-                    "//subdirectory/a:target_one",
-                    "//subdirectory/b/c:target_three",
-                    "//subdirectory/b/c:target_two",
-                ],
-                "version": "abc",
-            }
-            open_mock.assert_has_calls(
-                [
-                    call(Path("subdirectory/.pyre_configuration")),
-                    call(Path("subdirectory/.pyre_configuration"), "w"),
-                ]
-            )
-            dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
-            )
-            suppress_errors.assert_has_calls(
-                [call(errors.Errors(pyre_errors)), call(errors.Errors(pyre_errors))]
-            )
-            add_local_mode.assert_not_called()
-            submit_changes.assert_called_once()
-
         # Create local project configuration
-        suppress_errors.reset_mock()
-        open_mock.reset_mock()
-        dump_mock.reset_mock()
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
         ]
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        arguments.lint = False
         with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
+            mocks = [mock_open(read_data="{}").return_value]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
+            TargetsToConfiguration(arguments, repository).convert_directory(
+                Path("subdirectory")
+            )
             expected_configuration_contents = {
                 "targets": [
                     "//subdirectory/a:target_one",
@@ -894,32 +812,28 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 "strict": True,
             }
             open_mock.assert_has_calls(
-                [
-                    call(Path(".pyre_configuration")),
-                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
-                ]
+                [call(Path("subdirectory/.pyre_configuration.local"), "w")]
             )
             dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
+                expected_configuration_contents, mocks[0], indent=2, sort_keys=True
             )
             suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
             add_local_mode.assert_not_called()
             add_paths.assert_called_once_with(
                 [Path("subdirectory/.pyre_configuration.local")]
             )
+            remove_target_typing_fields.assert_called_once()
 
         # Add to existing local project configuration
         suppress_errors.reset_mock()
         open_mock.reset_mock()
         dump_mock.reset_mock()
+        remove_target_typing_fields.reset_mock()
+        path_exists.return_value = True
         get_errors.side_effect = [
             errors.Errors(pyre_errors),
             errors.Errors(pyre_errors),
         ]
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        find_local_configuration.return_value = Path(
-            "subdirectory/.pyre_configuration.local"
-        )
         configuration_contents = json.dumps({"targets": ["//existing:target"]})
         with patch("json.dump") as dump_mock:
             mocks = [
@@ -927,7 +841,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
+            TargetsToConfiguration(arguments, repository).convert_directory(
+                Path("subdirectory")
+            )
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -947,261 +863,43 @@ class TargetsToConfigurationTest(unittest.TestCase):
             )
         suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
         add_local_mode.assert_not_called()
+        remove_target_typing_fields.assert_called_once()
 
-        # Refuse to nest local configurations
-        arguments.subdirectory = "nested/subdirectory"
-        suppress_errors.reset_mock()
-        open_mock.reset_mock()
-        dump_mock.reset_mock()
-        get_errors.side_effect = [
-            errors.Errors(pyre_errors),
-            errors.Errors(pyre_errors),
-        ]
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        find_local_configuration.return_value = Path(
-            "subdirectory/.pyre_configuration.local"
-        )
-        configuration_contents = json.dumps({"targets": ["//existing:target"]})
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
-            expected_configuration_contents = {
-                "targets": [
-                    "//existing:target",
-                    "//subdirectory/a:target_one",
-                    "//subdirectory/b/c:target_three",
-                    "//subdirectory/b/c:target_two",
-                ]
-            }
-            open_mock.assert_has_calls(
-                [
-                    call(Path("subdirectory/.pyre_configuration.local")),
-                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
-                ]
-            )
-            dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
-            )
-        suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
-        add_local_mode.assert_not_called()
-
-        # Glob target with error threshold set
-        suppress_errors.reset_mock()
-        open_mock.reset_mock()
-        dump_mock.reset_mock()
-        pyre_errors = [
-            {
-                "line": 2,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            },
-            {
-                "line": 3,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            },
-        ]
-        get_errors.side_effect = [
-            errors.Errors(pyre_errors),
-            errors.Errors(pyre_errors),
-        ]
-        find_local_configuration.return_value = None
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        configuration_contents = json.dumps(
-            {"version": "abc", "search_path": ["stubs"]}
-        )
-        arguments.subdirectory = "subdirectory"
-        arguments.lint = False
-        arguments.glob = 100
-        arguments.fixme_threshold = 1
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
-            expected_configuration_contents = {
-                "targets": ["//subdirectory/..."],
-                "strict": True,
-            }
-            open_mock.assert_has_calls(
-                [
-                    call(Path(".pyre_configuration")),
-                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
-                ]
-            )
-            dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[1], indent=2, sort_keys=True
-            )
-            suppress_errors.assert_not_called()
-            add_local_mode.assert_called_once_with(
-                "local.py", filesystem.LocalMode.IGNORE
-            )
-
-        # Glob target with glob threshold and fallback
-        suppress_errors.reset_mock()
-        open_mock.reset_mock()
-        dump_mock.reset_mock()
-        pyre_errors = [
-            {
-                "line": 2,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            },
-            {
-                "line": 3,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            },
-        ]
-        get_errors.side_effect = [
-            errors.Errors(pyre_errors),
-            errors.Errors(pyre_errors),
-        ]
-        find_local_configuration.return_value = None
-        find_project_configuration.return_value = Path(".pyre_configuration")
-        configuration_contents = json.dumps(
-            {"version": "abc", "search_path": ["stubs"]}
-        )
-        arguments.subdirectory = "subdirectory"
-        arguments.lint = False
-        arguments.glob = 1
-        arguments.fixme_threshold = None
-        with patch("json.dump") as dump_mock:
-            mocks = [
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data=configuration_contents).return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).run()
-            expected_glob_configuration_contents = {
-                "targets": ["//subdirectory/..."],
-                "strict": True,
-            }
-            expected_fallback_configuration_contents = {
-                "targets": [
-                    "//subdirectory/a:target_one",
-                    "//subdirectory/b/c:target_three",
-                    "//subdirectory/b/c:target_two",
-                ],
-                "strict": True,
-            }
-            dump_mock.assert_has_calls(
-                [
-                    call(
-                        expected_glob_configuration_contents,
-                        mocks[1],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                    call(
-                        expected_fallback_configuration_contents,
-                        mocks[3],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                ]
-            )
-            suppress_errors.assert_has_calls([call(errors.Errors(pyre_errors))])
-
-    @patch("subprocess.run")
-    @patch("builtins.open")
-    @patch(f"{upgrade.__name__}.Configuration.find_project_configuration")
-    @patch(f"{upgrade.__name__}.Configuration.find_local_configuration")
-    @patch(f"{upgrade.__name__}.find_targets")
-    @patch(f"{upgrade.__name__}.get_filesystem")
-    @patch(f"{upgrade.__name__}.Configuration.get_errors")
-    @patch(f"{upgrade.__name__}.add_local_mode")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
-    @patch(f"{upgrade.__name__}.find_files", return_value=[])
-    def test_targets_file_cleanup(
-        self,
-        find_files,
-        suppress_errors,
-        add_local_mode,
-        get_errors,
-        get_filesystem,
-        find_targets,
-        find_local_configuration,
-        find_project_configuration,
-        open_mock,
-        subprocess_run,
+    @patch(f"{upgrade.__name__}.find_files")
+    @patch(f"{upgrade.__name__}.Repository.submit_changes")
+    @patch(f"{upgrade.__name__}.TargetsToConfiguration.convert_directory")
+    def test_run_targets_to_configuration(
+        self, convert_directory, submit_changes, find_files
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
-        find_targets.return_value = {
-            "subdirectory/a": ["target_one"],
-            "subdirectory/b/c": ["target_two", "target_three"],
-        }
+        arguments.lint = True
+        arguments.glob = None
+        arguments.fixme_threshold = None
+        arguments.no_commit = False
 
-        filesystem_list = MagicMock()
-        filesystem_list.return_value = []
-        get_filesystem.list = filesystem_list
+        find_files.return_value = ["subdirectory/.pyre_configuration.local"]
+        TargetsToConfiguration(arguments, repository).run()
+        convert_directory.assert_called_once_with(Path("subdirectory"))
+        submit_changes.assert_called_once()
 
-        configuration_contents = json.dumps(
-            {"version": "abc", "search_path": ["stubs"]}
-        )
-        mocks = [
-            mock_open(read_data=configuration_contents).return_value,
-            mock_open(read_data="{}").return_value,
+        convert_directory.reset_mock()
+        find_files.return_value = [
+            "subdirectory/a/.pyre_configuration.local",
+            "subdirectory/b/.pyre_configuration.local",
         ]
-        open_mock.side_effect = mocks
-
-        # Do not modify TARGETS when no existing project-level configuration is found.
-        find_project_configuration.return_value = None
-        find_local_configuration.return_value = None
         TargetsToConfiguration(arguments, repository).run()
-        subprocess_run.assert_not_called()
+        convert_directory.assert_has_calls(
+            [call(Path("subdirectory/a")), call(Path("subdirectory/b"))]
+        )
 
-        # Clean up typing-related fields from TARGETS.
-        subprocess_run.reset_mock()
-        find_project_configuration.return_value = Path(
-            "subdirectory/.pyre_configuration"
-        )
+        convert_directory.reset_mock()
+        find_files.return_value = [
+            "subdirectory/a/.pyre_configuration.local",
+            "subdirectory/a/nested/.pyre_configuration.local",
+        ]
         TargetsToConfiguration(arguments, repository).run()
-        subprocess_run.assert_has_calls(
-            [
-                call(
-                    [
-                        "sed",
-                        "-i",
-                        "/typing \\?=.*\\|check_types \\?=.*\\|"
-                        "check_types_options \\?=.*\\|typing_options \\?=.*/d",
-                    ]
-                )
-            ]
-        )
+        convert_directory.assert_called_once_with(Path("subdirectory/a"))
 
     @patch("subprocess.check_output")
     def test_deduplicate_targets(self, mock_check_output) -> None:

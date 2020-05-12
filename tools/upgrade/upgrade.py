@@ -257,110 +257,8 @@ class MigrateTargets(Command):
 
 
 class TargetsToConfiguration(ErrorSuppressingCommand):
-    def run(self) -> None:
-        # TODO(T62926437): Basic integration testing.
-        subdirectory = self._arguments.subdirectory
-        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-
-        # Do not convert if configurations exist below given root
-        existing_configurations = find_files(subdirectory, ".pyre_configuration.local")
-        if existing_configurations and not existing_configurations == [
-            str(subdirectory / ".pyre_configuration.local")
-        ]:
-            LOG.warning(
-                "Cannot convert targets because nested configurations exist:\n%s",
-                "\n".join(existing_configurations),
-            )
-            return
-
-        LOG.info(
-            "Converting typecheck targets to pyre configuration in `%s`", subdirectory
-        )
-
-        # Create or amend to existing pyre configuration
-        all_targets = find_targets(subdirectory)
-        if not all_targets:
-            LOG.warning("No configuration created because no targets found.")
-            return
-        targets_files = [
-            str(subdirectory / path)
-            for path in get_filesystem().list(
-                str(subdirectory), patterns=[r"**/TARGETS"]
-            )
-        ]
-        if self._arguments.glob:
-            new_targets = ["//" + str(subdirectory) + "/..."]
-        else:
-            new_targets = []
-            for path, target_names in all_targets.items():
-                new_targets += ["//" + path + ":" + name for name in target_names]
-        project_configuration = Configuration.find_project_configuration(subdirectory)
-        local_configuration = Configuration.find_local_configuration(subdirectory)
-        if local_configuration:
-            LOG.warning(
-                "Pyre project already exists at %s.\n\
-                Amending targets to existing configuration.",
-                local_configuration,
-            )
-            with open(local_configuration) as configuration_file:
-                configuration = Configuration(
-                    local_configuration, json.load(configuration_file)
-                )
-                configuration.add_targets(new_targets)
-                configuration.deduplicate_targets()
-                configuration.write()
-        elif project_configuration:
-            LOG.info("Found project configuration at %s.", project_configuration)
-            with open(project_configuration) as configuration_file:
-                configuration = Configuration(
-                    project_configuration, json.load(configuration_file)
-                )
-                if (
-                    configuration.targets
-                    or configuration.source_directories
-                    or configuration.get_path() == subdirectory / ".pyre_configuration"
-                ):
-                    LOG.info("Amending targets to existing project configuration.")
-                    configuration.add_targets(new_targets)
-                    configuration.deduplicate_targets()
-                    configuration.write()
-                else:
-                    local_configuration_path = (
-                        subdirectory / ".pyre_configuration.local"
-                    )
-                    LOG.info(
-                        "Creating local configuration at %s.", local_configuration_path
-                    )
-                    configuration_contents = {"targets": new_targets, "strict": True}
-                    # Heuristic: if all targets with type checked targets are setting
-                    # a target to be strictly checked, let's turn on default strict.
-                    for targets_file in targets_files:
-                        regex_patterns = [
-                            r"check_types_options \?=.*strict.*",
-                            r"typing_options \?=.*strict.*",
-                        ]
-                        result = subprocess.run(
-                            ["grep", "-x", r"\|".join(regex_patterns), targets_file]
-                        )
-                        if result.returncode != 0:
-                            configuration_contents["strict"] = False
-                            break
-                    configuration = Configuration(
-                        local_configuration_path, configuration_contents
-                    )
-                    configuration.write()
-
-                    # Add newly created configuration files to version control
-                    self._repository.add_paths([local_configuration_path])
-        else:
-            LOG.warning(
-                "Could not find a project configuration with binary and typeshed \
-                locations.\nPlease run `pyre init` before attempting to migrate."
-            )
-            return
-
-        # Remove all type-related target settings
-        LOG.info("Removing typing options from %s targets files", len(targets_files))
+    def remove_target_typing_fields(self, files: List[str]) -> None:
+        LOG.info("Removing typing options from %s targets files", len(files))
         typing_options_regex = [
             r"typing \?=.*",
             r"check_types \?=.*",
@@ -371,10 +269,64 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             "sed",
             "-i",
             "/" + r"\|".join(typing_options_regex) + "/d",
-        ] + targets_files
+        ] + files
         subprocess.run(remove_typing_fields_command)
 
-        remove_non_pyre_ignores(subdirectory)
+    def convert_directory(self, directory: Path) -> None:
+        all_targets = find_targets(directory)
+        if not all_targets:
+            LOG.warning("No configuration created because no targets found.")
+            return
+        targets_files = [
+            str(directory / path)
+            for path in get_filesystem().list(str(directory), patterns=[r"**/TARGETS"])
+        ]
+        if self._arguments.glob:
+            new_targets = ["//" + str(directory) + "/..."]
+        else:
+            new_targets = []
+            for path, target_names in all_targets.items():
+                new_targets += ["//" + path + ":" + name for name in target_names]
+
+        configuration_path = directory / ".pyre_configuration.local"
+        if path_exists(str(configuration_path)):
+            LOG.warning(
+                "Pyre project already exists at %s.\n\
+                Amending targets to existing configuration.",
+                configuration_path,
+            )
+            with open(configuration_path) as configuration_file:
+                configuration = Configuration(
+                    configuration_path, json.load(configuration_file)
+                )
+                configuration.add_targets(new_targets)
+                configuration.deduplicate_targets()
+                configuration.write()
+        else:
+            LOG.info("Creating local configuration at %s.", configuration_path)
+            configuration_contents = {"targets": new_targets, "strict": True}
+            # Heuristic: if all targets with type checked targets are setting
+            # a target to be strictly checked, let's turn on default strict.
+            for targets_file in targets_files:
+                regex_patterns = [
+                    r"check_types_options \?=.*strict.*",
+                    r"typing_options \?=.*strict.*",
+                ]
+                result = subprocess.run(
+                    ["grep", "-x", r"\|".join(regex_patterns), targets_file]
+                )
+                if result.returncode != 0:
+                    configuration_contents["strict"] = False
+                    break
+            configuration = Configuration(configuration_path, configuration_contents)
+            configuration.write()
+
+            # Add newly created configuration files to version control
+            self._repository.add_paths([configuration_path])
+
+        # Remove all type-related target settings
+        self.remove_target_typing_fields(targets_files)
+        remove_non_pyre_ignores(directory)
 
         all_errors = configuration.get_errors()
         error_threshold = self._arguments.fixme_threshold
@@ -409,13 +361,32 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 errors = configuration.get_errors(should_clean=False)
                 self._suppress_errors(errors)
 
+    def run(self) -> None:
+        # TODO(T62926437): Basic integration testing.
+        subdirectory = self._arguments.subdirectory
+        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
+        LOG.info(
+            "Converting typecheck targets to pyre configurations in `%s`", subdirectory
+        )
+
+        configurations = find_files(subdirectory, ".pyre_configuration.local")
+        configuration_directories = sorted(
+            Path(configuration.replace("/.pyre_configuration.local", ""))
+            for configuration in configurations
+        )
+        if len(configuration_directories) == 0:
+            configuration_directories = [subdirectory]
+        converted = []
+        for directory in configuration_directories:
+            if all(
+                str(directory).startswith(str(converted_directory)) is False
+                for converted_directory in converted
+            ):
+                self.convert_directory(directory)
+                converted.append(directory)
+
         try:
             summary = self._repository.MIGRATION_SUMMARY
-            if local_configuration:
-                summary += (
-                    f"\n\nNote: Targets were added to or were already covered by "
-                    f"existing configuration at {local_configuration}."
-                )
             glob = self._arguments.glob
             if glob:
                 summary += (
