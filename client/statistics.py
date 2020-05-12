@@ -27,6 +27,7 @@ class LoggerCategory(Enum):
     ANNOTATION_COUNTS = "perfpipe_pyre_annotation_counts"
     STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
     FIXME_COUNTS = "perfpipe_pyre_fixme_counts"
+    QUALITY_ANALYZER = "perfpipe_pyre_quality_analyzer"
 
 
 def log(
