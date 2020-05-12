@@ -508,7 +508,7 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         # Find configurations
-        configurations = find_files(subdirectory, ".pyre_configuration.local")
+        configurations = sorted(find_files(subdirectory, ".pyre_configuration.local"))
         if not configurations:
             LOG.warning(
                 f"Skipping consolidation. No configurations found in {subdirectory}"
@@ -521,58 +521,58 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
             )
             return
 
-        # Gather targets and topmost configuration
-        total_targets = []
-        topmost_configurations = []
-        nested_configurations = []
-        all_strict = True
+        # Gather nesting structure of configurations
+        nested_configurations = {}
         for configuration in configurations:
-            with open(configuration) as configuration_file:
-                open_configuration = Configuration(
-                    Path(configuration), json.load(configuration_file)
+            if len(nested_configurations) == 0:
+                nested_configurations[configuration] = []
+                continue
+            inserted = False
+            for topmost_configuration in nested_configurations.keys():
+                existing = topmost_configuration.replace(
+                    "/.pyre_configuration.local", ""
                 )
-                targets = open_configuration.targets
-                if targets:
-                    total_targets.extend(targets)
-                all_strict = all_strict and open_configuration.strict
-            if len(topmost_configurations) == 0 or topmost_configurations[0].count(
-                "/"
-            ) == configuration.count("/"):
-                topmost_configurations.append(configuration)
-            elif topmost_configurations[0].count("/") > configuration.count("/"):
-                nested_configurations.extend(topmost_configurations)
-                topmost_configurations = [configuration]
-            else:
-                nested_configurations.append(configuration)
+                current = configuration.replace("/.pyre_configuration.local", "")
+                if current.startswith(existing):
+                    nested_configurations[topmost_configuration].append(configuration)
+                    inserted = True
+                    break
+                elif existing.startswith(current):
+                    nested_configurations[configuration] = nested_configurations[
+                        topmost_configuration
+                    ] + [topmost_configuration]
+                    del nested_configurations[topmost_configuration]
+                    inserted = True
+                    break
+            if not inserted:
+                nested_configurations[configuration] = []
 
-        # Create consolidated topmost configuration
-        if len(topmost_configurations) == 1:
-            topmost_configuration = topmost_configurations[0]
-            with open(topmost_configuration) as configuration_file:
+        # Consolidate targets
+        for topmost, nested in nested_configurations.items():
+            if len(nested) == 0:
+                continue
+            total_targets = []
+            for nested_configuration in nested:
+                with open(nested_configuration) as configuration_file:
+                    configuration = Configuration(
+                        Path(nested_configuration), json.load(configuration_file)
+                    )
+                    targets = configuration.targets
+                    if targets:
+                        total_targets.extend(targets)
+            with open(topmost) as configuration_file:
                 configuration = Configuration(
-                    Path(topmost_configuration), json.load(configuration_file)
+                    Path(topmost), json.load(configuration_file)
                 )
                 configuration.add_targets(total_targets)
                 configuration.deduplicate_targets()
                 configuration.write()
-        else:
-            nested_configurations.extend(topmost_configurations)
-            topmost_configuration = subdirectory / ".pyre_configuration.local"
-            with open(topmost_configuration, "w+") as configuration_file:
-                configuration = Configuration(topmost_configuration, {})
-                configuration.add_targets(total_targets)
-                configuration.deduplicate_targets()
-                if all_strict:
-                    configuration.add_strict()
-                configuration.write()
+            self._repository.remove_paths(nested)
 
-        # Remove nested configurations
-        self._repository.remove_paths(nested_configurations)
-
-        # Suppress errors
-        all_errors = configuration.get_errors()
-        for _, errors in all_errors:
-            self._suppress_errors(Errors(list(errors)))
+            # Suppress errors
+            all_errors = configuration.get_errors()
+            for _, errors in all_errors:
+                self._suppress_errors(Errors(list(errors)))
 
         try:
             self._repository.submit_changes(

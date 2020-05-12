@@ -1450,7 +1450,6 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         get_errors.return_value = errors.Errors([])
         with patch("json.dump") as dump_mock:
             mocks = [
-                mock_open(read_data=json.dumps({"targets": ["//x/..."]})).return_value,
                 mock_open(read_data=json.dumps({"targets": ["//a/..."]})).return_value,
                 mock_open(read_data=json.dumps({"targets": ["//b/..."]})).return_value,
                 mock_open(read_data=json.dumps({"targets": ["//x/..."]})).return_value,
@@ -1459,11 +1458,10 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             open_mock.side_effect = mocks
             ConsolidateNestedConfigurations(arguments, repository).run()
             expected_configuration_contents = {
-                "targets": ["//x/...", "//x/...", "//a/...", "//b/..."]
+                "targets": ["//x/...", "//a/...", "//b/..."]
             }
             open_mock.assert_has_calls(
                 [
-                    call("subdirectory/.pyre_configuration.local"),
                     call("subdirectory/a/.pyre_configuration.local"),
                     call("subdirectory/b/.pyre_configuration.local"),
                     call("subdirectory/.pyre_configuration.local"),
@@ -1471,10 +1469,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 ]
             )
             dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[4], indent=2, sort_keys=True
+                expected_configuration_contents, mocks[3], indent=2, sort_keys=True
             )
         deduplicate_targets.assert_called_once()
-        add_strict.assert_not_called()
         remove_paths.assert_called_once_with(
             [
                 "subdirectory/a/.pyre_configuration.local",
@@ -1502,26 +1499,14 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
             ConsolidateNestedConfigurations(arguments, repository).run()
-            expected_configuration_contents = {"targets": ["//a/...", "//b/..."]}
             open_mock.assert_has_calls(
                 [
                     call("subdirectory/a/.pyre_configuration.local"),
                     call("subdirectory/b/.pyre_configuration.local"),
-                    call("subdirectory/.pyre_configuration.local"),
-                    call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
-            dump_mock.assert_called_once_with(
-                expected_configuration_contents, mocks[3], indent=2, sort_keys=True
-            )
-        deduplicate_targets.assert_called_once()
-        add_strict.assert_called_once()
-        remove_paths.assert_called_once_with(
-            [
-                "subdirectory/a/.pyre_configuration.local",
-                "subdirectory/b/.pyre_configuration.local",
-            ]
-        )
+            dump_mock.assert_not_called()
+        remove_paths.assert_not_called()
 
 
 class UpdateGlobalVersionTest(unittest.TestCase):
