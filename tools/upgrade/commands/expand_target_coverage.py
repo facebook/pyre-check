@@ -7,6 +7,9 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Optional
+
+from typing_extensions import Final
 
 from ..configuration import Configuration
 from ..errors import Errors
@@ -21,7 +24,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class ExpandTargetCoverage(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
-        self._subdirectory: str = arguments.subdirectory
+        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._fixme_threshold: bool = arguments.fixme_threshold
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit

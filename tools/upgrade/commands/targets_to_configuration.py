@@ -8,7 +8,9 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
+from typing_extensions import Final
 
 from ..configuration import Configuration
 from ..errors import Errors
@@ -31,7 +33,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class TargetsToConfiguration(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
-        self._subdirectory: str = arguments.subdirectory
+        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._glob: int = arguments.glob
         self._lint: bool = arguments.lint
         self._fixme_threshold: int = arguments.fixme_threshold

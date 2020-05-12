@@ -10,7 +10,9 @@ import sys
 import traceback
 from logging import Logger
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
+from typing_extensions import Final
 
 from ...client.commands import ExitCode
 from . import UserError
@@ -146,7 +148,7 @@ class FixmeAll(ErrorSuppressingCommand):
 class FixmeTargets(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
-        self._subdirectory: str = arguments.subdirectory
+        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
         self._lint: bool = arguments.lint
