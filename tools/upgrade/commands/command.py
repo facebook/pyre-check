@@ -5,12 +5,10 @@
 
 import argparse
 import logging
-import subprocess
 from pathlib import Path
 
 from ..configuration import Configuration
 from ..errors import Errors
-from ..filesystem import FilesystemException
 from ..repository import Repository
 
 
@@ -65,20 +63,17 @@ class ErrorSuppressingCommand(Command):
                 if self._repository.format():
                     errors = configuration.get_errors(should_clean=False)
                     self._suppress_errors(errors)
-        try:
-            project_root = root.resolve()
-            local_root = configuration.get_directory().resolve()
-            title = "{} for {}".format(
-                "Update pyre version"
-                if self._arguments.upgrade_version
-                else "Suppress pyre errors",
-                str(local_root.relative_to(project_root)),
-            )
-            self._repository.submit_changes(
-                commit=(not self._arguments.no_commit),
-                submit=self._arguments.submit,
-                title=title,
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+
+        project_root = root.resolve()
+        local_root = configuration.get_directory().resolve()
+        title = "{} for {}".format(
+            "Update pyre version"
+            if self._arguments.upgrade_version
+            else "Suppress pyre errors",
+            str(local_root.relative_to(project_root)),
+        )
+        self._repository.submit_changes(
+            commit=(not self._arguments.no_commit),
+            submit=self._arguments.submit,
+            title=title,
+        )

@@ -23,7 +23,6 @@ from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
 from .errors import Errors, errors_from_targets
 from .filesystem import (
-    FilesystemException,
     LocalMode,
     add_local_mode,
     find_files,
@@ -141,17 +140,13 @@ class GlobalVersionUpdate(Command):
                 json.dump(contents, configuration_file, sort_keys=True, indent=2)
                 configuration_file.write("\n")
 
-        try:
-            self._repository.submit_changes(
-                commit=True,
-                submit=self._submit,
-                title="Update pyre global configuration version",
-                summary=f"Automatic upgrade to hash `{self._hash}`",
-                ignore_failures=True,
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+        self._repository.submit_changes(
+            commit=True,
+            submit=self._submit,
+            title="Update pyre global configuration version",
+            summary=f"Automatic upgrade to hash `{self._hash}`",
+            ignore_failures=True,
+        )
 
 
 class FixmeSingle(ErrorSuppressingCommand):
@@ -211,15 +206,12 @@ class FixmeTargets(ErrorSuppressingCommand):
             return
         for path, target_names in all_targets.items():
             self._run_fixme_targets_file(project_directory, path, target_names)
-        try:
-            self._repository.submit_changes(
-                commit=(not self._no_commit),
-                submit=self._submit,
-                title=f"Upgrade pyre version for {search_root} (TARGETS)",
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+
+        self._repository.submit_changes(
+            commit=(not self._no_commit),
+            submit=self._submit,
+            title=f"Upgrade pyre version for {search_root} (TARGETS)",
+        )
 
     def _run_fixme_targets_file(
         self, project_directory: Path, path: str, target_names: List[str]
@@ -344,17 +336,13 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 errors = configuration.get_errors(should_clean=False)
                 self._suppress_errors(errors)
 
-        try:
-            self._repository.submit_changes(
-                commit=(not self._no_commit),
-                submit=self._submit,
-                title=f"Expand target type coverage in {local_configuration}",
-                summary="Expanding type coverage of targets in configuration.",
-                set_dependencies=False,
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+        self._repository.submit_changes(
+            commit=(not self._no_commit),
+            submit=self._submit,
+            title=f"Expand target type coverage in {local_configuration}",
+            summary="Expanding type coverage of targets in configuration.",
+            set_dependencies=False,
+        )
 
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
@@ -435,17 +423,13 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
             for _, errors in all_errors:
                 self._suppress_errors(Errors(list(errors)))
 
-        try:
-            self._repository.submit_changes(
-                commit=(not self._no_commit),
-                submit=self._submit,
-                title=f"Consolidate configurations in {subdirectory}",
-                summary="Consolidating nested configurations.",
-                set_dependencies=False,
-            )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+        self._repository.submit_changes(
+            commit=(not self._no_commit),
+            submit=self._submit,
+            title=f"Consolidate configurations in {subdirectory}",
+            summary="Consolidating nested configurations.",
+            set_dependencies=False,
+        )
 
 
 def run(repository: Repository) -> None:

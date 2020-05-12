@@ -13,7 +13,6 @@ from typing import List
 from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import (
-    FilesystemException,
     LocalMode,
     add_local_mode,
     find_files,
@@ -167,23 +166,19 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 self.convert_directory(directory)
                 converted.append(directory)
 
-        try:
-            summary = self._repository.MIGRATION_SUMMARY
-            glob = self._glob
-            if glob:
-                summary += (
-                    f"\n\nConfiguration target automatically expanded to include "
-                    f"all subtargets, expanding type coverage while introducing "
-                    f"no more than {glob} fixmes per file."
-                )
-            title = f"Convert type check targets in {subdirectory} to use configuration"
-            self._repository.submit_changes(
-                commit=(not self._no_commit),
-                submit=self._submit,
-                title=title,
-                summary=summary,
-                set_dependencies=False,
+        summary = self._repository.MIGRATION_SUMMARY
+        glob = self._glob
+        if glob:
+            summary += (
+                f"\n\nConfiguration target automatically expanded to include "
+                f"all subtargets, expanding type coverage while introducing "
+                f"no more than {glob} fixmes per file."
             )
-        except subprocess.CalledProcessError:
-            action = "submit" if self._submit else "commit"
-            raise FilesystemException(f"Error while attempting to {action} changes.")
+        title = f"Convert type check targets in {subdirectory} to use configuration"
+        self._repository.submit_changes(
+            commit=(not self._no_commit),
+            submit=self._submit,
+            title=title,
+            summary=summary,
+            set_dependencies=False,
+        )

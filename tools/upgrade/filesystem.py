@@ -17,10 +17,6 @@ from . import ast
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class FilesystemException(Exception):
-    pass
-
-
 class LocalMode(Enum):
     IGNORE = "pyre-ignore-all-errors"
     UNSAFE = "pyre-unsafe"
