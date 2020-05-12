@@ -20,6 +20,7 @@ from .commands.command import Command, ErrorSuppressingCommand
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fixme import Fixme
+from .commands.strict_default import StrictDefault
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
 from .errors import errors_from_targets
@@ -28,40 +29,6 @@ from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-class StrictDefault(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._local_configuration: Path = arguments.local_configuration
-        self._lint: bool = arguments.lint
-
-    def run(self) -> None:
-        project_configuration = Configuration.find_project_configuration()
-        if project_configuration is None:
-            LOG.info("No project configuration found for the given directory.")
-            return
-        local_configuration = self._local_configuration
-        if local_configuration:
-            configuration_path = local_configuration / ".pyre_configuration.local"
-        else:
-            configuration_path = project_configuration
-        with open(configuration_path) as configuration_file:
-            configuration = Configuration(
-                configuration_path, json.load(configuration_file)
-            )
-            LOG.info("Processing %s", configuration.get_directory())
-            configuration.add_strict()
-            configuration.write()
-            errors = configuration.get_errors()
-
-            if len(errors) == 0:
-                return
-            for filename, _ in errors:
-                add_local_mode(filename, LocalMode.UNSAFE)
-
-            if self._lint:
-                self._repository.format()
 
 
 class GlobalVersionUpdate(Command):
