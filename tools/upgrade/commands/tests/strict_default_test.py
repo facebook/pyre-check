@@ -72,6 +72,7 @@ class StrictDefaultTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.local_configuration = Path("local")
+        arguments.fixme_threshold = 1
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
@@ -97,9 +98,9 @@ class StrictDefaultTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             StrictDefault(arguments, repository).run()
-            add_local_mode.assert_called_once()
+            add_local_mode.assert_not_called()
 
-        arguments.reset_mock()
+        # Exceeding error threshold
         get_errors.return_value = []
         add_local_mode.reset_mock()
         get_errors.reset_mock()
@@ -114,7 +115,18 @@ class StrictDefaultTest(unittest.TestCase):
                 "inference": {},
                 "ignore_error": False,
                 "external_to_global_root": False,
-            }
+            },
+            {
+                "line": 3,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            },
         ]
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'

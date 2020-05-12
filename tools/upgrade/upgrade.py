@@ -254,6 +254,12 @@ def run(repository: Repository) -> None:
         action="store_true",
         help="Delete unnecessary `# pyre-strict` headers.",
     )
+    strict_default.add_argument(
+        "--fixme-threshold",
+        type=int,
+        default=0,
+        help="Mark file as unsafe if fixme count exceeds threshold.",
+    )
     strict_default.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Set global configuration to given hash, and add version override

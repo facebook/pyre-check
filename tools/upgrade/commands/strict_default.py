@@ -21,6 +21,7 @@ class StrictDefault(Command):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
         self._local_configuration: Path = arguments.local_configuration
+        self._fixme_threshold: int = arguments.fixme_threshold
         self._lint: bool = arguments.lint
 
     def run(self) -> None:
@@ -40,12 +41,16 @@ class StrictDefault(Command):
             LOG.info("Processing %s", configuration.get_directory())
             configuration.add_strict()
             configuration.write()
-            errors = configuration.get_errors()
+            all_errors = configuration.get_errors()
 
-            if len(errors) == 0:
+            if len(all_errors) == 0:
                 return
-            for filename, _ in errors:
-                add_local_mode(filename, LocalMode.UNSAFE)
+
+            for path, errors in all_errors:
+                errors = list(errors)
+                error_count = len(errors)
+                if error_count > self._fixme_threshold:
+                    add_local_mode(path, LocalMode.UNSAFE)
 
             if self._lint:
                 self._repository.format()
