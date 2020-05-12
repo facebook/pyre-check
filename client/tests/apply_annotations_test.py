@@ -479,7 +479,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
             """,
             expected="""
-            from typing import Any, Dict, List
+            from typing import Dict, List, Any
 
             def foo() -> List[Any]:
                 return []
@@ -502,6 +502,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
             expected="""
             from c import bar, A
+            from b.b import A
 
             def foo() -> A:
                 return bar()
@@ -521,6 +522,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             expected="""
             from a import *
             from c import bar, A
+            from b.b import A
 
             def foo() -> A:
                 return bar()
@@ -557,7 +559,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
             expected=f"""
             # @{generated}
-            def foo():
+            def foo() -> int:
                 return 1
             """,
         )
