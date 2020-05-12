@@ -19,14 +19,14 @@ from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
 from .commands.command import Command, ErrorSuppressingCommand
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
+from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fixme import Fixme
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
-from .errors import Errors, errors_from_targets
+from .errors import errors_from_targets
 from .filesystem import (
     LocalMode,
     add_local_mode,
-    find_files,
     find_targets,
     get_filesystem,
     path_exists,
@@ -275,75 +275,6 @@ class MigrateTargets(Command):
         remove_non_pyre_ignores(subdirectory)
         FixmeTargets(self._arguments, self._repository).run()
 
-
-class ExpandTargetCoverage(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._subdirectory: str = arguments.subdirectory
-        self._fixme_threshold: bool = arguments.fixme_threshold
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
-        self._lint: bool = arguments.lint
-
-    def run(self) -> None:
-        subdirectory = self._subdirectory
-        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-
-        # Do not change if configurations exist below given root
-        existing_configurations = find_files(subdirectory, ".pyre_configuration.local")
-        if existing_configurations and not existing_configurations == [
-            str(subdirectory / ".pyre_configuration.local")
-        ]:
-            LOG.warning(
-                "Cannot expand targets because nested configurations exist:\n%s",
-                "\n".join(existing_configurations),
-            )
-            return
-
-        # Expand coverage
-        local_configuration = Configuration.find_local_configuration(subdirectory)
-        if not local_configuration:
-            LOG.warning("Could not find a local configuration to codemod.")
-            return
-        LOG.info("Expanding typecheck targets in `%s`", local_configuration)
-        with open(local_configuration) as configuration_file:
-            configuration = Configuration(
-                local_configuration, json.load(configuration_file)
-            )
-            configuration.add_targets(["//" + str(subdirectory) + "/..."])
-            configuration.deduplicate_targets()
-            configuration.write()
-
-        # Suppress errors
-        all_errors = configuration.get_errors()
-        error_threshold = self._fixme_threshold
-
-        for path, errors in all_errors:
-            errors = list(errors)
-            error_count = len(errors)
-            if error_threshold and error_count > error_threshold:
-                LOG.info(
-                    "%d errors found in `%s`. Adding file-level ignore.",
-                    error_count,
-                    path,
-                )
-                add_local_mode(path, LocalMode.IGNORE)
-            else:
-                self._suppress_errors(Errors(errors))
-
-        # Lint and re-run pyre once to resolve most formatting issues
-        if self._lint:
-            if self._repository.format():
-                errors = configuration.get_errors(should_clean=False)
-                self._suppress_errors(errors)
-
-        self._repository.submit_changes(
-            commit=(not self._no_commit),
-            submit=self._submit,
-            title=f"Expand target type coverage in {local_configuration}",
-            summary="Expanding type coverage of targets in configuration.",
-            set_dependencies=False,
-        )
 
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
