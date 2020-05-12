@@ -136,6 +136,7 @@ def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnectio
     )
     socket_connection.connect()
     socket_connection.perform_handshake(_get_version(root))
+    # pyre-fixme[16]: `AbstractEventLoop` has no attribute `connect_accepted_socket`.
     socket_reader = loop.connect_accepted_socket(
         SocketProtocol, socket_connection.socket
     )

@@ -17,7 +17,10 @@ def extract_qualified_name(view_function: Callable[..., object]) -> Optional[str
     else:
         module_name = getattr(view_function, "__module__", None)
         view_name = getattr(
-            view_function, "__qualname__", view_function.__class__.__qualname__
+            view_function,
+            "__qualname__",
+            # pyre-fixme[16]: Anonymous callable has no attribute `__qualname__`.
+            view_function.__class__.__qualname__,
         )
     if "<locals>" in view_name:
         return None
