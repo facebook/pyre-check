@@ -39,12 +39,17 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class StrictDefault(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._local_configuration: Path = arguments.local_configuration
+        self._lint: bool = arguments.lint
+
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
             return
-        local_configuration = self._arguments.local_configuration
+        local_configuration = self._local_configuration
         if local_configuration:
             configuration_path = local_configuration / ".pyre_configuration.local"
         else:
@@ -63,11 +68,17 @@ class StrictDefault(Command):
             for filename, _ in errors:
                 add_local_mode(filename, LocalMode.UNSAFE)
 
-            if self._arguments.lint:
+            if self._lint:
                 self._repository.format()
 
 
 class GlobalVersionUpdate(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._hash: str = self._arguments.hash
+        self._paths: List[Path] = self._arguments.paths
+        self._submit: bool = self._arguments.submit
+
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
         if global_configuration is None:
@@ -87,7 +98,7 @@ class GlobalVersionUpdate(Command):
 
         # Rewrite.
         with open(global_configuration, "w") as global_configuration_file:
-            configuration["version"] = self._arguments.hash
+            configuration["version"] = self._hash
 
             # This will sort the keys in the configuration - we won't be clobbering
             # comments since Python's JSON parser disallows comments either way.
@@ -96,7 +107,7 @@ class GlobalVersionUpdate(Command):
             )
             global_configuration_file.write("\n")
 
-        paths = self._arguments.paths
+        paths = self._paths
         configuration_paths = (
             [path / ".pyre_configuration.local" for path in paths]
             if paths
@@ -133,23 +144,27 @@ class GlobalVersionUpdate(Command):
         try:
             self._repository.submit_changes(
                 commit=True,
-                submit=self._arguments.submit,
+                submit=self._submit,
                 title="Update pyre global configuration version",
-                summary=f"Automatic upgrade to hash `{self._arguments.hash}`",
+                summary=f"Automatic upgrade to hash `{self._hash}`",
                 ignore_failures=True,
             )
         except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
+            action = "submit" if self._submit else "commit"
             raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class FixmeSingle(ErrorSuppressingCommand):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._path: Path = Path(arguments.path)
+
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
             LOG.info("No project configuration found for the given directory.")
             return
-        configuration_path = self._arguments.path / ".pyre_configuration.local"
+        configuration_path = self._path / ".pyre_configuration.local"
         with open(configuration_path) as configuration_file:
             configuration = Configuration(
                 configuration_path, json.load(configuration_file)
@@ -174,8 +189,15 @@ class FixmeAll(ErrorSuppressingCommand):
 
 
 class FixmeTargets(ErrorSuppressingCommand):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._subdirectory: str = arguments.subdirectory
+        self._no_commit: bool = arguments.no_commit
+        self._submit: bool = arguments.submit
+        self._lint: bool = arguments.lint
+
     def run(self) -> None:
-        subdirectory = self._arguments.subdirectory
+        subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else None
         project_configuration = Configuration.find_project_configuration(subdirectory)
         if project_configuration is None:
@@ -191,12 +213,12 @@ class FixmeTargets(ErrorSuppressingCommand):
             self._run_fixme_targets_file(project_directory, path, target_names)
         try:
             self._repository.submit_changes(
-                commit=(not self._arguments.no_commit),
-                submit=self._arguments.submit,
+                commit=(not self._no_commit),
+                submit=self._submit,
                 title=f"Upgrade pyre version for {search_root} (TARGETS)",
             )
         except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
+            action = "submit" if self._submit else "commit"
             raise FilesystemException(f"Error while attempting to {action} changes.")
 
     def _run_fixme_targets_file(
@@ -214,7 +236,7 @@ class FixmeTargets(ErrorSuppressingCommand):
 
         self._suppress_errors(errors)
 
-        if not self._arguments.lint:
+        if not self._lint:
             return
 
         if self._repository.format():
@@ -227,8 +249,12 @@ class FixmeTargets(ErrorSuppressingCommand):
 
 
 class MigrateTargets(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._subdirectory: str = arguments.subdirectory
+
     def run(self) -> None:
-        subdirectory = self._arguments.subdirectory
+        subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
         LOG.info("Migrating typecheck targets in {}".format(subdirectory))
 
@@ -258,8 +284,16 @@ class MigrateTargets(Command):
 
 
 class ExpandTargetCoverage(ErrorSuppressingCommand):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._subdirectory: str = arguments.subdirectory
+        self._fixme_threshold: bool = arguments.fixme_threshold
+        self._no_commit: bool = arguments.no_commit
+        self._submit: bool = arguments.submit
+        self._lint: bool = arguments.lint
+
     def run(self) -> None:
-        subdirectory = self._arguments.subdirectory
+        subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         # Do not change if configurations exist below given root
@@ -289,7 +323,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
 
         # Suppress errors
         all_errors = configuration.get_errors()
-        error_threshold = self._arguments.fixme_threshold
+        error_threshold = self._fixme_threshold
 
         for path, errors in all_errors:
             errors = list(errors)
@@ -305,27 +339,33 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
                 self._suppress_errors(Errors(errors))
 
         # Lint and re-run pyre once to resolve most formatting issues
-        if self._arguments.lint:
+        if self._lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
                 self._suppress_errors(errors)
 
         try:
             self._repository.submit_changes(
-                commit=(not self._arguments.no_commit),
-                submit=self._arguments.submit,
+                commit=(not self._no_commit),
+                submit=self._submit,
                 title=f"Expand target type coverage in {local_configuration}",
                 summary="Expanding type coverage of targets in configuration.",
                 set_dependencies=False,
             )
         except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
+            action = "submit" if self._submit else "commit"
             raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._subdirectory: str = arguments.subdirectory
+        self._no_commit: bool = arguments.no_commit
+        self._submit: bool = arguments.submit
+
     def run(self) -> None:
-        subdirectory = self._arguments.subdirectory
+        subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
 
         # Find configurations
@@ -397,14 +437,14 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
 
         try:
             self._repository.submit_changes(
-                commit=(not self._arguments.no_commit),
-                submit=self._arguments.submit,
+                commit=(not self._no_commit),
+                submit=self._submit,
                 title=f"Consolidate configurations in {subdirectory}",
                 summary="Consolidating nested configurations.",
                 set_dependencies=False,
             )
         except subprocess.CalledProcessError:
-            action = "submit" if self._arguments.submit else "commit"
+            action = "submit" if self._submit else "commit"
             raise FilesystemException(f"Error while attempting to {action} changes.")
 
 
