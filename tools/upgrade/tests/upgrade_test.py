@@ -20,7 +20,6 @@ from ..upgrade import (
     FixmeSingle,
     FixmeTargets,
     GlobalVersionUpdate,
-    MigrateTargets,
     StrictDefault,
 )
 
@@ -668,67 +667,6 @@ class FixmeTargetsTest(unittest.TestCase):
             ]
         )
         suppress_errors.assert_called_once_with(expected_errors)
-
-
-class MigrateTest(unittest.TestCase):
-    @patch("subprocess.check_output")
-    @patch.object(upgrade.FixmeTargets, "run")
-    def test_run_migrate_targets(self, fix_targets, subprocess) -> None:
-        arguments = MagicMock()
-        arguments.subdirectory = "subdirectory"
-        process = MagicMock()
-        process.stdout = "a/TARGETS\nb/TARGETS\n".encode()
-        with patch("subprocess.run", return_value=process) as subprocess_run:
-            MigrateTargets(arguments, repository).run()
-            subprocess.assert_has_calls(
-                [
-                    call(
-                        [
-                            "sed",
-                            "-i",
-                            r'/check_types_options \?= \?"mypy",/d',
-                            "subdirectory/a/TARGETS",
-                            "subdirectory/b/TARGETS",
-                        ]
-                    ),
-                    call(
-                        [
-                            "sed",
-                            "-i",
-                            r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
-                            "subdirectory/a/TARGETS",
-                            "subdirectory/b/TARGETS",
-                        ]
-                    ),
-                    call(
-                        [
-                            "sed",
-                            "-i",
-                            r"s/\s*# \?type: \?ignore$//g",
-                            "subdirectory/a/TARGETS",
-                            "subdirectory/b/TARGETS",
-                        ]
-                    ),
-                ]
-            )
-            fix_targets.assert_called_once_with()
-            subprocess_run.assert_has_calls(
-                [
-                    call(
-                        ["hg", "files", "--include", r"**/TARGETS"],
-                        cwd="subdirectory",
-                        stderr=-3,
-                        stdout=-1,
-                    ),
-                    call(
-                        ["hg", "files", "--include", r"**/*.py"],
-                        cwd="subdirectory",
-                        stderr=-3,
-                        stdout=-1,
-                    ),
-                ]
-            )
-            fix_targets.assert_called_once_with()
 
 
 class UpdateGlobalVersionTest(unittest.TestCase):

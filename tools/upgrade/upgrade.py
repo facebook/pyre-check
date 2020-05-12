@@ -6,7 +6,6 @@
 import argparse
 import json
 import logging
-import subprocess
 import sys
 import traceback
 from logging import Logger
@@ -24,14 +23,7 @@ from .commands.fixme import Fixme
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
 from .errors import errors_from_targets
-from .filesystem import (
-    LocalMode,
-    add_local_mode,
-    find_targets,
-    get_filesystem,
-    path_exists,
-    remove_non_pyre_ignores,
-)
+from .filesystem import LocalMode, add_local_mode, find_targets, path_exists
 from .repository import Repository
 
 
@@ -241,41 +233,6 @@ class FixmeTargets(ErrorSuppressingCommand):
             self._suppress_errors(errors)
 
 
-class MigrateTargets(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._subdirectory: str = arguments.subdirectory
-
-    def run(self) -> None:
-        subdirectory = self._subdirectory
-        subdirectory = Path(subdirectory) if subdirectory else Path.cwd()
-        LOG.info("Migrating typecheck targets in {}".format(subdirectory))
-
-        # Remove explicit check types options.
-        targets_files = [
-            str(subdirectory / path)
-            for path in get_filesystem().list(
-                str(subdirectory), patterns=[r"**/TARGETS"]
-            )
-        ]
-        LOG.info("...found {} targets files".format(len(targets_files)))
-        remove_check_types_command = [
-            "sed",
-            "-i",
-            r'/check_types_options \?= \?"mypy",/d',
-        ] + targets_files
-        remove_options_command = [
-            "sed",
-            "-i",
-            r's/typing_options \?= \?".*strict",/check_types_options = "strict",/g',
-        ] + targets_files
-        subprocess.check_output(remove_check_types_command)
-        subprocess.check_output(remove_options_command)
-
-        remove_non_pyre_ignores(subdirectory)
-        FixmeTargets(self._arguments, self._repository).run()
-
-
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -408,23 +365,6 @@ def run(repository: Repository) -> None:
         "--subdirectory", help="Only upgrade TARGETS files within this directory."
     )
     fixme_targets.add_argument(
-        "--no-commit", action="store_true", help="Keep changes in working state."
-    )
-
-    # Subcommand: Migrate and fixme errors in targets running type checking
-    migrate_targets = commands.add_parser("migrate-targets")
-    migrate_targets.set_defaults(command=MigrateTargets)
-    migrate_targets.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
-    migrate_targets.add_argument(
-        "--submit", action="store_true", help=argparse.SUPPRESS
-    )
-    migrate_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
-    migrate_targets.add_argument(
-        "--subdirectory", help="Only upgrade TARGETS files within this directory."
-    )
-    migrate_targets.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
     )
 
