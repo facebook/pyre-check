@@ -139,16 +139,22 @@ module Metadata = struct
           with
           | Not_found -> None
         in
+        let contains_outside_quotes ~substring line =
+          let find_substring index characters =
+            String.is_substring ~substring characters && index mod 2 = 0
+          in
+          String.split_on_chars ~on:['\"'; '\''] line |> List.existsi ~f:find_substring
+        in
         let ignore_lines =
           let kind =
             if
-              String.is_substring ~substring:"pyre-ignore" line
-              && not (String.is_substring ~substring:"pyre-ignore-all-errors" line)
+              contains_outside_quotes ~substring:"pyre-ignore" line
+              && not (contains_outside_quotes ~substring:"pyre-ignore-all-errors" line)
             then
               Some Ignore.PyreIgnore
-            else if String.is_substring ~substring:"pyre-fixme" line then
+            else if contains_outside_quotes ~substring:"pyre-fixme" line then
               Some Ignore.PyreFixme
-            else if String.is_substring ~substring:"type: ignore" line then
+            else if contains_outside_quotes ~substring:"type: ignore" line then
               Some Ignore.TypeIgnore
             else
               None
