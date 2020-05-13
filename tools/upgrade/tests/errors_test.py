@@ -11,7 +11,13 @@ from typing import Dict, List, Optional
 from unittest.mock import call, patch
 
 from .. import UserError, errors
-from ..errors import Errors, SkippingGeneratedFileException, _suppress_errors
+from ..ast import UnstableAST
+from ..errors import (
+    Errors,
+    PartialErrorSuppression,
+    SkippingGeneratedFileException,
+    _suppress_errors,
+)
 
 
 class ErrorsTest(unittest.TestCase):
@@ -45,6 +51,26 @@ class ErrorsTest(unittest.TestCase):
             path_read_text.assert_has_calls([call(), call()])
             path_write_text.assert_has_calls(
                 [call("<transformed>"), call("<transformed>")]
+            )
+
+        with patch(f"{errors.__name__}._suppress_errors", side_effect=UnstableAST()):
+            with self.assertRaises(PartialErrorSuppression) as context:
+                Errors(
+                    [
+                        {
+                            "path": "path.py",
+                            "line": 1,
+                            "concise_description": "Error [1]: description",
+                        },
+                        {
+                            "path": "other.py",
+                            "line": 2,
+                            "concise_description": "Error [2]: description",
+                        },
+                    ]
+                ).suppress()
+            self.assertEqual(
+                set(context.exception.unsuppressed_paths), {"path.py", "other.py"}
             )
 
     def assertSuppressErrors(

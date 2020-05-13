@@ -19,6 +19,12 @@ from . import UserError, ast
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class PartialErrorSuppression(Exception):
+    def __init__(self, message: str, unsuppressed_paths: List[str]) -> None:
+        super().__init__(message)
+        self.unsuppressed_paths: List[str] = unsuppressed_paths
+
+
 def error_path(error: Dict[str, Any]) -> str:
     return error["path"]
 
@@ -72,12 +78,12 @@ class Errors:
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
-        exceptions = []
+        unsuppressed_paths = []
 
-        for path, errors in self:
-            LOG.info("Processing `%s`", path)
+        for path_to_suppress, errors in self:
+            LOG.info("Processing `%s`", path_to_suppress)
             try:
-                path = Path(path)
+                path = Path(path_to_suppress)
                 input = path.read_text()
                 output = _suppress_errors(
                     input,
@@ -89,12 +95,14 @@ class Errors:
                 )
                 path.write_text(output)
             except SkippingGeneratedFileException:
-                LOG.warning(f"Skipping generated file at {str(path)}")
-            except ast.UnstableAST as exception:
-                exceptions.append(exception)
+                LOG.warning(f"Skipping generated file at {path_to_suppress}")
+            except ast.UnstableAST:
+                unsuppressed_paths.append(path_to_suppress)
 
-        if exceptions:
-            raise ast.UnstableAST(", ".join(str(exception) for exception in exceptions))
+        if unsuppressed_paths:
+            raise PartialErrorSuppression(
+                "Could not fully suppress errors.", unsuppressed_paths
+            )
 
 
 def _filter_errors(

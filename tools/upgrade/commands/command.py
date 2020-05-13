@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..errors import Errors
+from ..errors import Errors, PartialErrorSuppression
 from ..repository import Repository
 
 
@@ -31,11 +31,22 @@ class ErrorSuppressingCommand(Command):
         self._max_line_length: int = arguments.max_line_length
         self._truncate: bool = arguments.truncate
         self._unsafe: bool = getattr(arguments, "unsafe", False)
+        self._force_format_unsuppressed: bool = getattr(
+            arguments, "force_format_unsuppressed", False
+        )
 
     def _suppress_errors(self, errors: Errors) -> None:
-        errors.suppress(
-            self._comment, self._max_line_length, self._truncate, self._unsafe
-        )
+        try:
+            errors.suppress(
+                self._comment, self._max_line_length, self._truncate, self._unsafe
+            )
+        except PartialErrorSuppression as partial_error_suppression:
+            if not self._force_format_unsuppressed:
+                raise partial_error_suppression
+            self._repository.force_format(partial_error_suppression.unsuppressed_paths)
+            errors.suppress(
+                self._comment, self._max_line_length, self._truncate, self._unsafe
+            )
 
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path

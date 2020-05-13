@@ -289,6 +289,9 @@ def run(repository: Repository) -> None:
         "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
     )
     fixme.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+    fixme.add_argument(
+        "--force-format-unsuppressed", action="store_true", help=argparse.SUPPRESS
+    )
 
     # Subcommand: Fixme all errors for a single project.
     fixme_single = commands.add_parser("fixme-single")
