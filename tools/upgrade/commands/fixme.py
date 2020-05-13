@@ -18,13 +18,6 @@ from .command import ErrorSuppressingCommand
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
-    configuration_path = Configuration.find_project_configuration()
-    with open(configuration_path) as configuration_file:
-        configuration = Configuration(configuration_path, json.load(configuration_file))
-        return configuration.get_errors(only_fix_error_code)
-
-
 class ErrorSource(Enum):
     STDIN = "stdin"
     GENERATE = "generate"
@@ -48,13 +41,21 @@ class Fixme(ErrorSuppressingCommand):
 
     def run(self) -> None:
         if self._error_source == ErrorSource.GENERATE:
-            errors = _errors_from_run(self._only_fix_error_code)
+            errors = self._generate_errors()
             self._suppress_errors(errors)
 
             if self._lint:
                 if self._repository.format():
-                    errors = _errors_from_run(self._only_fix_error_code)
+                    errors = self._generate_errors()
                     self._suppress_errors(errors)
         else:
             errors = Errors.from_stdin(self._only_fix_error_code)
             self._suppress_errors(errors)
+
+    def _generate_errors(self) -> Errors:
+        configuration_path = Configuration.find_project_configuration()
+        with open(configuration_path) as configuration_file:
+            configuration = Configuration(
+                configuration_path, json.load(configuration_file)
+            )
+            return configuration.get_errors(self._only_fix_error_code)

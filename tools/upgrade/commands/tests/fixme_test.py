@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 
 from ... import errors
 from ...repository import Repository
-from .. import fixme
 from ..command import ErrorSuppressingCommand
 from ..fixme import ErrorSource, Fixme
 
@@ -24,6 +23,7 @@ class FixmeTest(unittest.TestCase):
 
         arguments.error_source = "stdin"
         mock_errors = MagicMock()
+
         with patch.object(
             errors.Errors, "from_stdin", return_value=mock_errors
         ) as errors_from_stdin, patch.object(
@@ -36,11 +36,11 @@ class FixmeTest(unittest.TestCase):
         arguments.error_source = ErrorSource.GENERATE
         arguments.lint = False
 
-        with patch(
-            f"{fixme.__name__}._errors_from_run", return_value=mock_errors
-        ) as errors_from_run, patch.object(
+        with patch.object(
+            Fixme, "_generate_errors", return_value=mock_errors
+        ) as generate_errors, patch.object(
             ErrorSuppressingCommand, "_suppress_errors"
         ) as suppress_errors:
             Fixme(arguments, repository).run()
-            errors_from_run.assert_called_once()
+            generate_errors.assert_called_once()
             suppress_errors.assert_called_once_with(mock_errors)
