@@ -33,5 +33,5 @@ class Repository:
     def revert_all(self, remove_untracked: bool) -> None:
         pass
 
-    def format(self, skip: Optional[List[str]] = None) -> bool:
+    def format(self) -> bool:
         pass
