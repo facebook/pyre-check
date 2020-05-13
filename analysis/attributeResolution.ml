@@ -2049,145 +2049,134 @@ module Implementation = struct
         | None -> Type.Primitive class_name
       in
       let instantiated = if accessed_via_metaclass then Type.meta instantiated else instantiated in
-      match annotation with
-      | Method { callable } ->
-          (* Special cases *)
-          let callable =
-            let self_parameter =
-              Type.Callable.Parameter.Named
-                { name = "self"; annotation = Type.Top; default = false }
+      let special_case_methods callable =
+        (* Certain callables' types can't be expressed directly and need to be special cased *)
+        let self_parameter =
+          Type.Callable.Parameter.Named { name = "self"; annotation = Type.Top; default = false }
+        in
+        match instantiated, attribute_name, callable with
+        | ( Type.Tuple (Bounded (Concrete members)),
+            "__getitem__",
+            ({ Type.Callable.overloads; _ } as callable) ) ->
+            let overload index member =
+              {
+                Type.Callable.annotation = member;
+                parameters =
+                  Defined
+                    [
+                      self_parameter;
+                      Named { name = "x"; annotation = Type.literal_integer index; default = false };
+                    ];
+              }
             in
-            match instantiated, attribute_name, callable with
-            | Type.Tuple (Bounded (Concrete members)), "__getitem__", ({ overloads; _ } as callable)
-              ->
-                let overload index member =
-                  {
-                    Type.Callable.annotation = member;
-                    parameters =
-                      Defined
-                        [
-                          self_parameter;
-                          Named
-                            { name = "x"; annotation = Type.literal_integer index; default = false };
-                        ];
-                  }
-                in
-                let overloads = List.mapi ~f:overload members @ overloads in
-                { callable with overloads }
-            | ( Parametric { name = "type"; parameters = [Single (Type.Primitive name)] },
-                "__getitem__",
-                ({ kind = Named callable_name; _ } as callable) )
-              when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
-                let implementation, overloads =
-                  let generics =
-                    ClassHierarchyEnvironment.ReadOnly.variables
-                      (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-                         class_metadata_environment)
-                      ?dependency
-                      name
-                    |> Option.value ~default:[]
+            let overloads = List.mapi ~f:overload members @ overloads in
+            { callable with overloads }
+        | ( Parametric { name = "type"; parameters = [Single (Type.Primitive name)] },
+            "__getitem__",
+            ({ kind = Named callable_name; _ } as callable) )
+          when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
+            let implementation, overloads =
+              let generics =
+                ClassHierarchyEnvironment.ReadOnly.variables
+                  (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                     class_metadata_environment)
+                  ?dependency
+                  name
+                |> Option.value ~default:[]
+              in
+              let create_parameter annotation =
+                Type.Callable.Parameter.PositionalOnly { index = 0; annotation; default = false }
+              in
+              let synthetic =
+                Type.Variable
+                  (Type.Variable.Unary.create "$synthetic_attribute_resolution_variable")
+              in
+              match name with
+              (* This can't be expressed without IntVars, StrVars, and corresponding ListVariadic
+                 variants of them *)
+              | "typing_extensions.Literal"
+              (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we don't
+                 yet support Union[Ts] *)
+              | "typing.Union" ->
+                  { Type.Callable.annotation = Type.meta Type.Any; parameters = Undefined }, []
+              | "typing.Callable" ->
+                  ( {
+                      Type.Callable.annotation =
+                        Type.meta (Type.Callable.create ~annotation:synthetic ());
+                      parameters =
+                        Defined
+                          [
+                            self_parameter;
+                            create_parameter
+                              (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
+                          ];
+                    },
+                    [] )
+              | _ -> (
+                  let overload parameter =
+                    let generics = List.map generics ~f:Type.Variable.to_parameter in
+                    {
+                      Type.Callable.annotation =
+                        Type.meta (Type.Parametric { name; parameters = generics });
+                      parameters = Defined [self_parameter; parameter];
+                    }
                   in
-                  let create_parameter annotation =
-                    Type.Callable.Parameter.PositionalOnly
-                      { index = 0; annotation; default = false }
-                  in
-                  let synthetic =
-                    Type.Variable
-                      (Type.Variable.Unary.create "$synthetic_attribute_resolution_variable")
-                  in
-                  match name with
-                  (* This can't be expressed without IntVars, StrVars, and corresponding
-                     ListVariadic variants of them *)
-                  | "typing_extensions.Literal"
-                  (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
-                     don't yet support Union[Ts] *)
-                  | "typing.Union" ->
-                      { Type.Callable.annotation = Type.meta Type.Any; parameters = Undefined }, []
-                  | "typing.Callable" ->
+                  match generics with
+                  | [ListVariadic variable] ->
+                      let meta_generics =
+                        Type.OrderedTypes.Concatenation.Middle.create ~variable ~mappers:["type"]
+                        |> Type.OrderedTypes.Concatenation.create
+                      in
+                      let single_type_case =
+                        (* In the case of VariadicClass[int], it's being called with a Type[int],
+                           not a Tuple[Type[int]].*)
+                        overload (Variable (Concatenation meta_generics))
+                      in
+                      let multiple_type_case =
+                        overload
+                          (create_parameter (Type.Tuple (Bounded (Concatenation meta_generics))))
+                      in
+                      single_type_case, [multiple_type_case; single_type_case]
+                  | [Unary generic] ->
+                      overload (create_parameter (Type.meta (Variable generic))), []
+                  | _ ->
+                      let handle_variadics = function
+                        | Type.Variable.Unary single ->
+                            ( Type.Parameter.Single (Type.Variable single),
+                              Type.meta (Variable single) )
+                        | ListVariadic _ ->
+                            (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but without
+                               that we can't actually return the correct metatype, which is a bummer *)
+                            Type.Parameter.Group Any, Type.Any
+                        | ParameterVariadic _ ->
+                            (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but without
+                               that we can't actually return the correct metatype, which is a bummer *)
+                            Type.Parameter.CallableParameters Undefined, Type.Any
+                      in
+                      let return_parameters, parameter_parameters =
+                        List.map generics ~f:handle_variadics |> List.unzip
+                      in
                       ( {
                           Type.Callable.annotation =
-                            Type.meta (Type.Callable.create ~annotation:synthetic ());
+                            Type.meta (Type.Parametric { name; parameters = return_parameters });
                           parameters =
                             Defined
-                              [
-                                self_parameter;
-                                create_parameter
-                                  (Type.Tuple (Bounded (Concrete [Type.Any; Type.meta synthetic])));
-                              ];
+                              [self_parameter; create_parameter (Type.tuple parameter_parameters)];
                         },
-                        [] )
-                  | _ -> (
-                      let overload parameter =
-                        let generics = List.map generics ~f:Type.Variable.to_parameter in
-                        {
-                          Type.Callable.annotation =
-                            Type.meta (Type.Parametric { name; parameters = generics });
-                          parameters = Defined [self_parameter; parameter];
-                        }
-                      in
-                      match generics with
-                      | [ListVariadic variable] ->
-                          let meta_generics =
-                            Type.OrderedTypes.Concatenation.Middle.create
-                              ~variable
-                              ~mappers:["type"]
-                            |> Type.OrderedTypes.Concatenation.create
-                          in
-                          let single_type_case =
-                            (* In the case of VariadicClass[int], it's being called with a
-                               Type[int], not a Tuple[Type[int]].*)
-                            overload (Variable (Concatenation meta_generics))
-                          in
-                          let multiple_type_case =
-                            overload
-                              (create_parameter
-                                 (Type.Tuple (Bounded (Concatenation meta_generics))))
-                          in
-                          single_type_case, [multiple_type_case; single_type_case]
-                      | [Unary generic] ->
-                          overload (create_parameter (Type.meta (Variable generic))), []
-                      | _ ->
-                          let handle_variadics = function
-                            | Type.Variable.Unary single ->
-                                ( Type.Parameter.Single (Type.Variable single),
-                                  Type.meta (Variable single) )
-                            | ListVariadic _ ->
-                                (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
-                                   without that we can't actually return the correct metatype, which
-                                   is a bummer *)
-                                Type.Parameter.Group Any, Type.Any
-                            | ParameterVariadic _ ->
-                                (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
-                                   without that we can't actually return the correct metatype, which
-                                   is a bummer *)
-                                Type.Parameter.CallableParameters Undefined, Type.Any
-                          in
-                          let return_parameters, parameter_parameters =
-                            List.map generics ~f:handle_variadics |> List.unzip
-                          in
-                          ( {
-                              Type.Callable.annotation =
-                                Type.meta (Type.Parametric { name; parameters = return_parameters });
-                              parameters =
-                                Defined
-                                  [
-                                    self_parameter;
-                                    create_parameter (Type.tuple parameter_parameters);
-                                  ];
-                            },
-                            [] ) )
-                in
-                { callable with implementation; overloads }
-            | _ -> callable
+                        [] ) )
+            in
+            { callable with implementation; overloads }
+        | _ -> callable
+      in
+
+      match annotation with
+      | Method { callable } ->
+          let callable = special_case_methods callable in
+          let bound_method ~self_type =
+            Type.Parametric
+              { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] }
           in
           let callable =
-            let bound_method ~self_type =
-              Type.Parametric
-                {
-                  name = "BoundMethod";
-                  parameters = [Single (Callable callable); Single self_type];
-                }
-            in
             if accessed_through_class then
               (* Keep first argument around when calling instance methods from class attributes. *)
               Type.Callable callable
@@ -2207,7 +2196,6 @@ module Implementation = struct
               else
                 bound_method ~self_type:instantiated
           in
-
           callable, callable
       | Property { getter = getter_annotation; setter = setter_annotation } -> (
           (* Special case properties with type variables. *)
@@ -2238,6 +2226,11 @@ module Implementation = struct
               let annotation = solve_property getter_annotation in
               annotation, annotation )
       | Attribute annotation -> (
+          let annotation =
+            match annotation with
+            | Type.Callable callable -> Type.Callable (special_case_methods callable)
+            | other -> other
+          in
           let order () = full_order ~assumptions in
           let special =
             callable_call_special_cases
@@ -2305,6 +2298,29 @@ module Implementation = struct
                 >>= fun solution ->
                 ConstraintsSet.Solution.instantiate_single_variable solution synthetic
               in
+              let function_dunder_get callable =
+                let instantiated_is_protocol () =
+                  Type.split instantiated
+                  |> fst
+                  |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
+                       (unannotated_global_environment class_metadata_environment)
+                       ?dependency
+                in
+                if accessed_through_class then
+                  Type.Callable callable
+                else if (not (String.equal class_name "object")) && instantiated_is_protocol () then
+                  (* TODO(T66895305): Find a way to remove this without tanking Pysa perf *)
+                  let order = full_order ~assumptions in
+                  partial_apply_self callable ~order ~self_type:instantiated
+                  |> fun callable -> Type.Callable { callable with kind = Anonymous }
+                else
+                  Type.Parametric
+                    {
+                      name = "BoundMethod";
+                      parameters = [Single (Callable callable); Single instantiated];
+                    }
+              in
+
               let get_descriptor_method
                   { Type.instantiated; accessed_through_class; class_name }
                   ~kind
@@ -2314,42 +2330,52 @@ module Implementation = struct
                      not on the instance. `type` is not a descriptor. *)
                   `NotDescriptor (Type.meta instantiated)
                 else
-                  let attribute =
-                    let attribute_name =
+                  match instantiated with
+                  | Callable callable -> (
                       match kind with
-                      | `DunderGet -> "__get__"
-                      | `DunderSet -> "__set__"
-                    in
-                    (* descriptor methods are statically looked up on the class, and are not
-                       themselves subject to description *)
-                    get_attribute
-                      ~assumptions
-                      ~transitive:true
-                      ~accessed_through_class:true
-                      ~include_generated_attributes:true
-                      ?special_method:None
-                      ?instantiated:(Some instantiated)
-                      ?apply_descriptors:(Some false)
-                      ~attribute_name
-                      class_name
-                    >>| AnnotatedAttribute.annotation
-                    >>| Annotation.annotation
-                  in
-                  match attribute with
-                  | None -> `NotDescriptor instantiated
-                  | Some (Type.Callable callable) ->
-                      let extracted =
-                        match kind with
-                        | `DunderGet -> call_dunder_get (instantiated, callable)
-                        | `DunderSet -> invert_dunder_set ~order:(order ()) (instantiated, callable)
+                      | `DunderGet ->
+                          (* We unsoundly assume all callables are callables with the `function`
+                             `__get__` *)
+                          `HadDescriptor (function_dunder_get callable)
+                      | `DunderSet -> `NotDescriptor instantiated )
+                  | _ -> (
+                      let attribute =
+                        let attribute_name =
+                          match kind with
+                          | `DunderGet -> "__get__"
+                          | `DunderSet -> "__set__"
+                        in
+                        (* descriptor methods are statically looked up on the class, and are not
+                           themselves subject to description *)
+                        get_attribute
+                          ~assumptions
+                          ~transitive:true
+                          ~accessed_through_class:true
+                          ~include_generated_attributes:true
+                          ?special_method:None
+                          ?instantiated:(Some instantiated)
+                          ?apply_descriptors:(Some false)
+                          ~attribute_name
+                          class_name
+                        >>| AnnotatedAttribute.annotation
+                        >>| Annotation.annotation
                       in
-                      extracted
-                      >>| (fun extracted -> `HadDescriptor extracted)
-                      |> Option.value ~default:`FailedToExtract
-                  | Some _ ->
-                      (* In theory we could support `__get__`s or `__set__`s that are not just
-                         Callables, but for now lets just ignore that *)
-                      `DescriptorNotACallable
+                      match attribute with
+                      | None -> `NotDescriptor instantiated
+                      | Some (Type.Callable callable) ->
+                          let extracted =
+                            match kind with
+                            | `DunderGet -> call_dunder_get (instantiated, callable)
+                            | `DunderSet ->
+                                invert_dunder_set ~order:(order ()) (instantiated, callable)
+                          in
+                          extracted
+                          >>| (fun extracted -> `HadDescriptor extracted)
+                          |> Option.value ~default:`FailedToExtract
+                      | Some _ ->
+                          (* In theory we could support `__get__`s or `__set__`s that are not just
+                             Callables, but for now lets just ignore that *)
+                          `DescriptorNotACallable )
               in
 
               match Type.resolve_class annotation with

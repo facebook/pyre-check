@@ -398,6 +398,81 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int, str], bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int, str], bool]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
+
+      def free_function(h: object, x: int) -> str:
+        return "A"
+
+      class Host:
+        m: Callable[[object, int], str] = free_function
+
+      def f() -> None:
+        x = Host().m
+        reveal_type(x)
+        y = Host.m
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[object, int], \
+       str], Host]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[object, int], str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
+
+      class CallableClass:
+        def __call__(self, h: object, x: int) -> str:
+          return "A"
+
+      class Host:
+        direct: CallableClass = CallableClass()
+        as_callable: Callable[[object, int], str] = CallableClass()
+
+      def f() -> None:
+        x = Host().direct
+        reveal_type(x)
+        y = Host.direct
+        reveal_type(y)
+
+        a = Host().as_callable
+        reveal_type(a)
+        b = Host.as_callable
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `CallableClass`.";
+      "Revealed type [-1]: Revealed type for `y` is `CallableClass`.";
+      (* This is wrong. Unfortunately its currently avoidable as long as we resolve defs to
+         Callables *)
+      "Revealed type [-1]: Revealed type for `a` is `BoundMethod[typing.Callable[[object, int], \
+       str], Host]`.";
+      "Revealed type [-1]: Revealed type for `b` is `typing.Callable[[object, int], str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Union, TypeVar, List, StaticMethod, Callable, Type, Any
+
+      def free_function(h: object, x: int) -> str:
+        return "A"
+
+      class Host:
+       m: Union[Callable[[object, int], str], int] = free_function
+
+      def f() -> None:
+        x = Host().m
+        reveal_type(x)
+        y = Host.m
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Union[BoundMethod[typing.Callable[[object, \
+       int], str], Host], int]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Union[typing.Callable[[object, int], str], \
+       int]`.";
+    ];
   ()
 
 
