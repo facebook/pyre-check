@@ -34,6 +34,23 @@ class Fixme(ErrorSuppressingCommand):
         self._error_source: str = arguments.error_source
         self._only_fix_error_code: Optional[int] = arguments.only_fix_error_code
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        parser.set_defaults(command=Fixme)
+        parser.add_argument(
+            "--error-source", choices=["stdin", "generate"], default="stdin"
+        )
+        parser.add_argument("--comment", help="Custom comment after fixme comments")
+        parser.add_argument(
+            "--unsafe",
+            action="store_true",
+            help="Don't check syntax when applying fixmes.",
+        )
+        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--force-format-unsuppressed", action="store_true", help=argparse.SUPPRESS
+        )
+
     def run(self) -> None:
         # Suppress errors in project with no local configurations.
         if self._error_source == "generate":

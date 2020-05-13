@@ -20,6 +20,10 @@ class Command:
         self._arguments: argparse.Namespace = arguments
         self._repository: Repository = repository
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        pass
+
     def run(self) -> None:
         pass
 
