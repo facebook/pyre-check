@@ -18,7 +18,11 @@ from ...client.commands import ExitCode
 from . import UserError
 from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
-from .commands.command import Command, ErrorSuppressingCommand
+from .commands.command import (
+    Command,
+    ErrorSuppressingCommand,
+    ProjectErrorSuppressingCommand,
+)
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fixme import Fixme
@@ -111,7 +115,7 @@ class GlobalVersionUpdate(Command):
         )
 
 
-class FixmeSingle(ErrorSuppressingCommand):
+class FixmeSingle(ProjectErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
         self._path: Path = Path(arguments.path)
@@ -131,7 +135,7 @@ class FixmeSingle(ErrorSuppressingCommand):
             )
 
 
-class FixmeAll(ErrorSuppressingCommand):
+class FixmeAll(ProjectErrorSuppressingCommand):
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:

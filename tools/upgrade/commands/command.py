@@ -52,6 +52,8 @@ class ErrorSuppressingCommand(Command):
                 self._comment, self._max_line_length, self._truncate, self._unsafe
             )
 
+
+class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path
     ) -> None:

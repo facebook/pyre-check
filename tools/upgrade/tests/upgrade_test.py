@@ -20,6 +20,7 @@ from ..upgrade import (
     FixmeSingle,
     FixmeTargets,
     GlobalVersionUpdate,
+    ProjectErrorSuppressingCommand,
 )
 
 
@@ -172,9 +173,9 @@ class FixmeAllTest(unittest.TestCase):
             Path("/root/local/.pyre_configuration.local"), {"version": 123}
         )
         configuration.get_path()
-        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
-            configuration, Path("/root")
-        )
+        ProjectErrorSuppressingCommand(
+            arguments, repository
+        )._suppress_errors_in_project(configuration, Path("/root"))
         run_global_version_update.assert_not_called()
         suppress_errors.assert_called_once_with(pyre_errors)
         submit_changes.assert_called_once_with(
@@ -186,9 +187,9 @@ class FixmeAllTest(unittest.TestCase):
         suppress_errors.reset_mock()
         arguments.error_source = "generate"
         arguments.lint = True
-        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
-            configuration, Path("/root")
-        )
+        ProjectErrorSuppressingCommand(
+            arguments, repository
+        )._suppress_errors_in_project(configuration, Path("/root"))
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
         calls = [call(pyre_errors), call(pyre_errors)]
@@ -207,9 +208,9 @@ class FixmeAllTest(unittest.TestCase):
         arguments.upgrade_version = False
         errors_from_stdin.return_value = pyre_errors
         get_errors.return_value = pyre_errors
-        ErrorSuppressingCommand(arguments, repository)._suppress_errors_in_project(
-            configuration, Path("/root")
-        )
+        ProjectErrorSuppressingCommand(
+            arguments, repository
+        )._suppress_errors_in_project(configuration, Path("/root"))
         # Called in the first round to get initial errors
         errors_from_stdin.assert_called()
         # Called in the second round to get new errors after applying lint.
