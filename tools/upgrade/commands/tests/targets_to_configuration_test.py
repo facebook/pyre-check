@@ -25,7 +25,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(f"{targets_to_configuration.__name__}.Repository.add_paths")
     @patch(f"{targets_to_configuration.__name__}.find_targets")
     @patch(f"{targets_to_configuration.__name__}.get_filesystem")
-    @patch(f"{targets_to_configuration.__name__}.path_exists")
+    @patch.object(Path, "exists")
     @patch(f"{targets_to_configuration.__name__}.remove_non_pyre_ignores")
     @patch(f"{targets_to_configuration.__name__}.Configuration.get_errors")
     @patch(f"{targets_to_configuration.__name__}.add_local_mode")

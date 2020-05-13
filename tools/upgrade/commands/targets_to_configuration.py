@@ -72,7 +72,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 new_targets += ["//" + path + ":" + name for name in target_names]
 
         configuration_path = directory / ".pyre_configuration.local"
-        if path_exists(str(configuration_path)):
+        if configuration_path.exists():
             LOG.warning(
                 "Pyre project already exists at %s.\n\
                 Amending targets to existing configuration.",
