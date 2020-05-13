@@ -6,6 +6,7 @@
 import argparse
 import json
 import logging
+from enum import Enum
 from typing import Optional
 
 from ..configuration import Configuration
@@ -24,6 +25,11 @@ def _errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
         return configuration.get_errors(only_fix_error_code)
 
 
+class ErrorSource(Enum):
+    STDIN = "stdin"
+    GENERATE = "generate"
+
+
 class Fixme(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
@@ -36,13 +42,12 @@ class Fixme(ErrorSuppressingCommand):
         ErrorSuppressingCommand.add_arguments(parser)
         parser.set_defaults(command=Fixme)
         parser.add_argument(
-            "--error-source", choices=["stdin", "generate"], default="stdin"
+            "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN
         )
         parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
-        # Suppress errors in project with no local configurations.
-        if self._error_source == "generate":
+        if self._error_source == ErrorSource.GENERATE:
             errors = _errors_from_run(self._only_fix_error_code)
             self._suppress_errors(errors)
 

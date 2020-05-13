@@ -12,7 +12,7 @@ from ... import errors
 from ...repository import Repository
 from .. import fixme
 from ..command import ErrorSuppressingCommand
-from ..fixme import Fixme
+from ..fixme import ErrorSource, Fixme
 
 
 repository = Repository()
@@ -33,7 +33,7 @@ class FixmeTest(unittest.TestCase):
             errors_from_stdin.assert_called_once()
             suppress_errors.assert_called_once_with(mock_errors)
 
-        arguments.error_source = "generate"
+        arguments.error_source = ErrorSource.GENERATE
         arguments.lint = False
 
         with patch(
