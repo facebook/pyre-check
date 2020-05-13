@@ -70,10 +70,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         if self.summary.get("store_unused_models"):
             for trace_kind, traces in self.summary["trace_entries"].items():
                 for _key, entry in traces:
-                    if trace_kind is TraceKind.POSTCONDITION:
-                        self._generate_postcondition(self.summary["run"], entry)
-                    if trace_kind is TraceKind.PRECONDITION:
-                        self._generate_precondition(self.summary["run"], entry)
+                    self._generate_trace_frame(trace_kind, self.summary["run"], entry)
 
         return self.graph, self.summary
 
@@ -125,11 +122,15 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         trace_frames = []
 
         for p in entry["preconditions"]:
-            tf = self._generate_issue_precondition(run, entry, p)
+            tf = self._generate_issue_traces(
+                TraceKind.PRECONDITION, run, entry, p, terminator="sink"
+            )
             trace_frames.append(tf)
 
         for p in entry["postconditions"]:
-            tf = self._generate_issue_postcondition(run, entry, p)
+            tf = self._generate_issue_traces(
+                TraceKind.POSTCONDITION, run, entry, p, terminator="source"
+            )
             trace_frames.append(tf)
 
         features = set()
@@ -237,171 +238,68 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos = titos[:200]
         return titos
 
-    def _generate_issue_postcondition(self, run, issue, callinfo):
-        # Generates a synthetic postcondition from the forward_trace in callinfo
+    def _generate_issue_traces(
+        self, kind: TraceKind, run, issue, callinfo, terminator: str
+    ):
+        # Generates a synthetic trace frame from a forward or backward trace in callinfo
         # that represents a call edge from the issue callable to the start of a
-        # forward trace.
-        # Generate all dependencies of this postcondition as well.
+        # a trace.
+        # Generate all dependencies of this frame as well.
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
         titos = self._generate_tito(issue["filename"], callinfo, caller)
-        call_tf = self._generate_raw_postcondition(
-            run,
-            issue["filename"],
-            caller,
-            "root",
-            callee,
-            callee_port,
-            callinfo["location"],
-            callinfo["leaves"],  # sources
-            callinfo["type_interval"],
+        call_tf = self._generate_raw_trace_frame(
+            kind,
+            run=run,
+            filename=issue["filename"],
+            caller=caller,
+            caller_port="root",
+            callee=callee,
+            callee_port=callee_port,
+            callee_location=callinfo["location"],
+            leaves=callinfo["leaves"],
+            type_interval=callinfo["type_interval"],
             titos=titos,
             annotations=callinfo.get("annotations", []),
         )
-        keys = [(call_tf.callee_id, callee_port)]
-        while len(keys) > 0:
-            key = keys.pop()
-            if self.graph.has_postconditions_with_caller(key[0], key[1]):
-                continue
-
-            key = (self.graph.get_text(key[0]), key[1])
-            new = [
-                self._generate_postcondition(run, e)
-                for e in self.summary["trace_entries"][TraceKind.POSTCONDITION].pop(
-                    key, []
-                )
-            ]
-            if len(new) == 0 and key[1] != "source":
-                self.summary["missing_traces"][TraceKind.POSTCONDITION].add(key)
-
-            keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
-
+        self._generate_transitive_trace_frames(run, call_tf, terminator)
         return call_tf
 
-    def _generate_postcondition(self, run, entry):
-        callee_location = entry["callee_location"]
-        assert "caller_port" in entry, str(entry)
-        assert "callee_port" in entry, str(entry)
-        titos = self._generate_tito(entry["filename"], entry, entry["caller"])
-
-        return self._generate_raw_postcondition(
-            run,
-            filename=entry["filename"],
-            caller=entry["caller"],
-            caller_port=entry["caller_port"],
-            callee=entry["callee"],
-            callee_port=entry["callee_port"],
-            callee_location=callee_location,
-            sources=entry["sources"],
-            type_interval=entry["type_interval"],
-            titos=titos,
-            annotations=entry.get("annotations", []),
-        )
-
-    def _generate_raw_postcondition(
-        self,
-        run,
-        filename,
-        caller,
-        caller_port,
-        callee,
-        callee_port,
-        callee_location,
-        sources,
-        type_interval,
-        titos,
-        annotations,
+    def _generate_transitive_trace_frames(
+        self, run, start_frame: TraceFrame, terminator: str
     ):
-        lb, ub, preserves_type_context = self._get_interval(type_interval)
-
-        caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
-        callee_record = self._get_shared_text(SharedTextKind.CALLABLE, callee)
-        filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
-        trace_frame = TraceFrame.Record(
-            id=DBID(),
-            kind=TraceKind.POSTCONDITION,
-            caller_id=caller_record.id,
-            callee_id=callee_record.id,
-            callee_location=SourceLocation(
-                callee_location["line"],
-                callee_location["start"],
-                callee_location["end"],
-            ),
-            filename_id=filename_record.id,
-            run_id=run.id,
-            caller_port=caller_port,
-            callee_port=callee_port,
-            preserves_type_context=preserves_type_context,
-            type_interval_lower=lb,
-            type_interval_upper=ub,
-            migrated_id=None,
-            titos=titos,
-        )
-
-        for (source, depth) in sources:
-            source_record = self._get_shared_text(SharedTextKind.SOURCE, source)
-            self.graph.add_trace_frame_leaf_assoc(trace_frame, source_record, depth)
-
-        self.graph.add_trace_frame(trace_frame)
-        self._generate_trace_annotations(
-            trace_frame.id, filename, caller, annotations, run
-        )
-        return trace_frame
-
-    def _generate_issue_precondition(self, run, issue, callinfo):
-        # Generates a synthetic precondition from the backward_trace in callinfo
-        # that represents a call edge from the issue callable to the start of a
-        # backward trace.
-        # Generate all dependencies of this precondition as well.
-        caller = issue["callable"]
-        callee = callinfo["callee"]
-        callee_port = callinfo["port"]
-        titos = self._generate_tito(issue["filename"], callinfo, caller)
-        call_tf = self._generate_raw_precondition(
-            run,
-            issue["filename"],
-            caller,
-            "root",
-            callee,
-            callee_port,
-            callinfo["location"],
-            titos,  # titos
-            callinfo["leaves"],  # sinks
-            callinfo["type_interval"],
-            callinfo.get("annotations", []),
-        )
-        self._generate_transitive_preconditions(run, [(call_tf.callee_id, callee_port)])
-        return call_tf
-
-    def _generate_transitive_preconditions(self, run, initial_keys):
-        """Generates all reachable preconditions starting from the ones given
+        """Generates all reachable frames starting from the ones given
         in initial_keys. Keys contain a (caller_id, caller_port) pair.
         """
-        keys = initial_keys.copy()
+        kind = start_frame.kind
+        keys = [(start_frame.callee_id, start_frame.callee_port)]
         while len(keys) > 0:
             key = keys.pop()
-            if self.graph.has_preconditions_with_caller(key[0], key[1]):
+            if self.graph.has_trace_frames_with_caller(kind, key[0], key[1]):
                 continue
 
             key = (self.graph.get_text(key[0]), key[1])
             new = [
-                self._generate_precondition(run, e)
-                for e in self.summary["trace_entries"][TraceKind.PRECONDITION].pop(
-                    key, []
-                )
+                self._generate_trace_frame(kind, run, e)
+                for e in self.summary["trace_entries"][kind].pop(key, [])
             ]
-            if len(new) == 0 and key[1] != "sink":
-                self.summary["missing_traces"][TraceKind.PRECONDITION].add(key)
+            if len(new) == 0 and key[1] != "leaf" and key[1] != terminator:
+                self.summary["missing_traces"][kind].add(key)
 
             keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
 
-    def _generate_precondition(self, run, entry):
+    def _generate_trace_frame(self, kind: TraceKind, run, entry):
         callee_location = entry["callee_location"]
         titos = self._generate_tito(entry["filename"], entry, entry["caller"])
-
-        return self._generate_raw_precondition(
-            run,
+        leaves = entry.get("leaves", None)
+        if not leaves:
+            leaves = (
+                entry["sources"] if kind is TraceKind.POSTCONDITION else entry["sinks"]
+            )
+        return self._generate_raw_trace_frame(
+            kind,
+            run=run,
             filename=entry["filename"],
             caller=entry["caller"],
             caller_port=entry["caller_port"],
@@ -409,13 +307,14 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callee_port=entry["callee_port"],
             callee_location=callee_location,
             titos=titos,
-            sinks=entry["sinks"],
+            leaves=leaves,
             type_interval=entry["type_interval"],
             annotations=entry.get("annotations", []),
         )
 
-    def _generate_raw_precondition(
+    def _generate_raw_trace_frame(
         self,
+        kind,
         run,
         filename,
         caller,
@@ -424,17 +323,22 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         callee_port,
         callee_location,
         titos,
-        sinks,
+        leaves,
         type_interval,
         annotations,
     ):
+        leaf_kind = (
+            SharedTextKind.SOURCE
+            if kind is TraceKind.POSTCONDITION
+            else SharedTextKind.SINK
+        )
         lb, ub, preserves_type_context = self._get_interval(type_interval)
         caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
         callee_record = self._get_shared_text(SharedTextKind.CALLABLE, callee)
         filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
         trace_frame = TraceFrame.Record(
             id=DBID(),
-            kind=TraceKind.PRECONDITION,
+            kind=kind,
             caller_id=caller_record.id,
             caller_port=caller_port,
             callee_id=callee_record.id,
@@ -453,9 +357,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             migrated_id=None,
         )
 
-        for (sink, depth) in sinks:
-            sink_record = self._get_shared_text(SharedTextKind.SINK, sink)
-            self.graph.add_trace_frame_leaf_assoc(trace_frame, sink_record, depth)
+        for (leaf, depth) in leaves:
+            leaf_record = self._get_shared_text(leaf_kind, leaf)
+            self.graph.add_trace_frame_leaf_assoc(trace_frame, leaf_record, depth)
 
         self.graph.add_trace_frame(trace_frame)
         self._generate_trace_annotations(
@@ -522,7 +426,8 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         # and depth are specified.
         callee = trace["callee"]
         callee_port = trace["port"]
-        call_tf = self._generate_raw_precondition(
+        call_tf = self._generate_raw_trace_frame(
+            TraceKind.PRECONDITION,
             run,
             parent_filename,
             parent_caller,
@@ -535,7 +440,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             annotation["type_interval"],
             [],  # no more annotations for a precond coming from an annotation
         )
-        self._generate_transitive_preconditions(run, [(call_tf.callee_id, callee_port)])
+        self._generate_transitive_trace_frames(run, call_tf, "sink")
         return call_tf
 
     def _get_issue_handle(self, entry):
