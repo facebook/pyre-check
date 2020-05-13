@@ -47,22 +47,20 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
     def run(self, input: DictEntries, summary: Summary) -> Tuple[TraceGraph, Summary]:
         self.summary = summary
 
-        self.summary["precondition_entries"] = defaultdict(
-            list
-        )  # Dict[Tuple[str, str], Any]
-        self.summary["postcondition_entries"] = defaultdict(
-            list
-        )  # Dict[Tuple[str, str], Any]
-        self.summary["missing_preconditions"] = set()  # Set[Tuple[str, str]]
-        self.summary["missing_postconditions"] = set()  # Set[Tuple[str, str]]
+        self.summary["trace_entries"] = defaultdict(
+            lambda: defaultdict(list)
+        )  # : Dict[TraceKind, Dict[Tuple[str, str], Any]]
+        self.summary["missing_traces"] = defaultdict(
+            set
+        )  # Dict[TraceKind, Set[Tuple[str, str]]]
         self.summary["big_tito"] = set()  # Set[Tuple[str, str, int]]
 
         self.graph = TraceGraph()
         self.summary["run"] = self._create_empty_run(status=RunStatus.INCOMPLETE)
         self.summary["run"].id = DBID()
 
-        self.summary["precondition_entries"] = input["preconditions"]
-        self.summary["postcondition_entries"] = input["postconditions"]
+        self.summary["trace_entries"][TraceKind.precondition] = input["preconditions"]
+        self.summary["trace_entries"][TraceKind.postcondition] = input["postconditions"]
         callables = self._compute_callables_count(input)
 
         log.info("Generating instances")
@@ -70,13 +68,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self._generate_issue(self.summary["run"], entry, callables)
 
         if self.summary.get("store_unused_models"):
-            for _key, entries in self.summary["postcondition_entries"].items():
-                for entry in entries:
-                    self._generate_postcondition(self.summary["run"], entry)
-
-            for _key, entries in self.summary["precondition_entries"].items():
-                for entry in entries:
-                    self._generate_precondition(self.summary["run"], entry)
+            for trace_kind, traces in self.summary["trace_entries"].items():
+                for _key, entry in traces:
+                    if trace_kind is TraceKind.POSTCONDITION:
+                        self._generate_postcondition(self.summary["run"], entry)
+                    if trace_kind is TraceKind.PRECONDITION:
+                        self._generate_precondition(self.summary["run"], entry)
 
         return self.graph, self.summary
 
@@ -271,10 +268,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             key = (self.graph.get_text(key[0]), key[1])
             new = [
                 self._generate_postcondition(run, e)
-                for e in self.summary["postcondition_entries"].pop(key, [])
+                for e in self.summary["trace_entries"][TraceKind.POSTCONDITION].pop(
+                    key, []
+                )
             ]
             if len(new) == 0 and key[1] != "source":
-                self.summary["missing_postconditions"].add(key)
+                self.summary["missing_traces"][TraceKind.POSTCONDITION].add(key)
 
             keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
 
@@ -388,10 +387,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             key = (self.graph.get_text(key[0]), key[1])
             new = [
                 self._generate_precondition(run, e)
-                for e in self.summary["precondition_entries"].pop(key, [])
+                for e in self.summary["trace_entries"][TraceKind.PRECONDITION].pop(
+                    key, []
+                )
             ]
             if len(new) == 0 and key[1] != "sink":
-                self.summary["missing_preconditions"].add(key)
+                self.summary["missing_traces"][TraceKind.PRECONDITION].add(key)
 
             keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
 

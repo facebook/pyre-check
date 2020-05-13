@@ -63,18 +63,14 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
         log.info("Preparing bulk save.")
         self.graph.update_bulk_saver(self.bulk_saver)
 
-        log.info(
-            "Dropped %d unused preconditions, %d are missing",
-            sum(len(v) for v in self.summary["precondition_entries"].values()),
-            len(self.summary["missing_preconditions"]),
-        )
-
-        log.info(
-            "Dropped %d unused postconditions, %d are missing",
-            sum(len(v) for v in self.summary["postcondition_entries"].values()),
-            len(self.summary["missing_postconditions"]),
-        )
-        del self.summary["postcondition_entries"]
+        for trace_kind, unused in self.summary["trace_entries"].items():
+            log.info(
+                "Dropped %d unused %s, %d are missing",
+                sum(len(v) for v in unused.values()),
+                trace_kind,
+                len(self.summary["missing_traces"][trace_kind]),
+            )
+        del self.summary["trace_entries"]
 
     def _save(self) -> RunSummary:
         """ Saves bulk saver's info into the databases in bulk.
@@ -134,10 +130,10 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
 
         run_summary.num_invisible_issues = 0
         run_summary.num_missing_preconditions = len(
-            self.summary["missing_preconditions"]
+            self.summary["missing_traces"][TraceKind.precondition]
         )
         run_summary.num_missing_postconditions = len(
-            self.summary["missing_postconditions"]
+            self.summary["missing_traces"][TraceKind.postcondition]
         )
 
         return run_summary

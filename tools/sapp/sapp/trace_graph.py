@@ -37,16 +37,16 @@ class TraceGraph(object):
 
         # Create a mapping of (caller_id, caller_port) to the corresponding
         # trace frame's id.
-        self._trace_frames_map: DefaultDict[Tuple[int, str], Set[int]] = defaultdict(
-            set
-        )
+        self._trace_frames_map: DefaultDict[  # pyre-fixme[8]
+            TraceKind, DefaultDict[Tuple[int, str], Set[int]]
+        ] = defaultdict(lambda: defaultdict(set))
 
         # Similar to _trace_frames_map, but maps the reverse direction
         # of the trace graph, i.e. (callee_id, callee_port) to the
         # trace_frame_id.
-        self._trace_frames_rev_map: DefaultDict[
-            Tuple[int, str], Set[int]
-        ] = defaultdict(set)
+        self._trace_frames_rev_map: DefaultDict[  # pyre-fixme[8]
+            TraceKind, DefaultDict[Tuple[int, str], Set[int]]
+        ] = defaultdict(lambda: defaultdict(set))
 
         self._trace_frames: Dict[int, TraceFrame] = {}
 
@@ -130,23 +130,24 @@ class TraceGraph(object):
                 return self._shared_texts[contents[content]]
         return None
 
+    def has_trace_frames_with_caller(
+        self, kind: TraceKind, caller_id: DBID, caller_port: str
+    ) -> bool:
+        if self._trace_frames_map[kind]:
+            key = (caller_id.local_id, caller_port)
+            return key in self._trace_frames_map[kind]
+        else:
+            return False
+
     def has_postconditions_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
-        key = (caller_id.local_id, caller_port)
-        post_ids = {
-            tf_id
-            for tf_id in self._trace_frames_map[key]
-            if self._trace_frames[tf_id].kind == TraceKind.POSTCONDITION
-        }
-        return len(post_ids) != 0
+        return self.has_trace_frames_with_caller(
+            TraceKind.postcondition, caller_id, caller_port
+        )
 
     def has_preconditions_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
-        key = (caller_id.local_id, caller_port)
-        pre_ids = {
-            tf_id
-            for tf_id in self._trace_frames_map[key]
-            if self._trace_frames[tf_id].kind == TraceKind.PRECONDITION
-        }
-        return len(pre_ids) != 0
+        return self.has_trace_frames_with_caller(
+            TraceKind.precondition, caller_id, caller_port
+        )
 
     def add_trace_annotation(self, annotation: TraceFrameAnnotation) -> None:
         self._trace_annotations[annotation.id.local_id] = annotation
@@ -170,25 +171,20 @@ class TraceGraph(object):
     def add_trace_frame(self, trace_frame: TraceFrame) -> None:
         key = (trace_frame.caller_id.local_id, trace_frame.caller_port)
         rev_key = (trace_frame.callee_id.local_id, trace_frame.callee_port)
-        self._trace_frames_map[key].add(trace_frame.id.local_id)
-        self._trace_frames_rev_map[rev_key].add(trace_frame.id.local_id)
+        self._trace_frames_map[trace_frame.kind][key].add(trace_frame.id.local_id)
+        self._trace_frames_rev_map[trace_frame.kind][rev_key].add(
+            trace_frame.id.local_id
+        )
         self._trace_frames[trace_frame.id.local_id] = trace_frame
 
-    def has_trace_frame_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
-        key = (caller_id.local_id, caller_port)
-        return key in self._trace_frames_map
-
     def get_trace_frames_from_caller(
-        self, caller_id: DBID, caller_port: str
+        self, kind: TraceKind, caller_id: DBID, caller_port: str
     ) -> List[TraceFrame]:
-        if self.has_trace_frame_with_caller(caller_id, caller_port):
-            key = (caller_id.local_id, caller_port)
-            return [
-                self._trace_frames[trace_frame_id]
-                for trace_frame_id in self._trace_frames_map[key]
-            ]
-        else:
-            return []
+        key = (caller_id.local_id, caller_port)
+        return [
+            self._trace_frames[trace_frame_id]
+            for trace_frame_id in self._trace_frames_map[kind][key]
+        ]
 
     def get_trace_frame_from_id(self, id: int) -> TraceFrame:
         return self._trace_frames[id]
@@ -260,13 +256,9 @@ class TraceGraph(object):
             return []
 
     def get_next_trace_frames(self, trace_frame: TraceFrame) -> Iterable[TraceFrame]:
-        return [
-            next_frame
-            for next_frame in self.get_trace_frames_from_caller(
-                trace_frame.callee_id, trace_frame.callee_port
-            )
-            if next_frame.kind == trace_frame.kind
-        ]
+        return self.get_trace_frames_from_caller(
+            trace_frame.kind, trace_frame.callee_id, trace_frame.callee_port
+        )
 
     def add_issue_instance_shared_text_assoc(
         self, instance: IssueInstance, shared_text: SharedText

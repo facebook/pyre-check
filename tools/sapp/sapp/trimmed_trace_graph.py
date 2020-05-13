@@ -228,10 +228,9 @@ class TrimmedTraceGraph(TraceGraph):
             lambda trace_frame: (
                 [
                     graph._trace_frames[trace_frame_id]
-                    for trace_frame_id in graph._trace_frames_rev_map[
+                    for trace_frame_id in graph._trace_frames_rev_map[trace_frame.kind][
                         (trace_frame.caller_id.local_id, trace_frame.caller_port)
                     ]
-                    if graph._trace_frames[trace_frame_id].kind == trace_frame.kind
                 ]
             ),
             lambda instance_id: (self._get_leaf_names(graph, instance_id)),
