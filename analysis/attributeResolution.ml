@@ -17,7 +17,6 @@ module UninstantiatedAnnotation = struct
   [@@deriving compare]
 
   type kind =
-    | Method of { callable: Type.Callable.t }
     | Attribute of Type.t
     | Property of {
         getter: property_annotation;
@@ -2007,7 +2006,6 @@ module Implementation = struct
     let uninstantiated_annotation =
       match annotation with
       | Attribute annotation -> Some annotation
-      | Method { callable } -> Some (Callable callable)
       | Property _ -> None
     in
 
@@ -2019,13 +2017,6 @@ module Implementation = struct
           let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
           match annotation with
           | Attribute annotation -> UninstantiatedAnnotation.Attribute (instantiate annotation)
-          | Method { callable } ->
-              let callable =
-                match instantiate (Callable callable) with
-                | Callable callable -> callable
-                | _ -> failwith "instantiate didn't return a callable"
-              in
-              Method { callable }
           | Property { getter; setter } ->
               let instantiate_property_annotation { UninstantiatedAnnotation.self; value } =
                 {
@@ -2168,33 +2159,6 @@ module Implementation = struct
       in
 
       match annotation with
-      | Method { callable } ->
-          let callable = special_case_methods callable in
-          let bound_method ~self_type =
-            Type.Parametric
-              { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] }
-          in
-          let callable =
-            if accessed_through_class then
-              (* Keep first argument around when calling instance methods from class attributes. *)
-              Type.Callable callable
-            else
-              let instantiated_is_protocol =
-                Type.split instantiated
-                |> fst
-                |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol
-                     (unannotated_global_environment class_metadata_environment)
-                     ?dependency
-              in
-              if (not (String.equal class_name "object")) && instantiated_is_protocol then
-                (* TODO(T66895305): Find a way to remove this without tanking Pysa perf *)
-                let order = full_order ~assumptions in
-                partial_apply_self callable ~order ~self_type:instantiated
-                |> fun callable -> Type.Callable { callable with kind = Anonymous }
-              else
-                bound_method ~self_type:instantiated
-          in
-          callable, callable
       | Property { getter = getter_annotation; setter = setter_annotation } -> (
           (* Special case properties with type variables. *)
           let solve_property
