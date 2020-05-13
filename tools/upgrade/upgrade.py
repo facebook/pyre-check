@@ -323,33 +323,7 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Remove targets integration and replace with configuration
     targets_to_configuration = commands.add_parser("targets-to-configuration")
-    targets_to_configuration.set_defaults(command=TargetsToConfiguration)
-    targets_to_configuration.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
-    targets_to_configuration.add_argument(
-        "--submit", action="store_true", help=argparse.SUPPRESS
-    )
-    targets_to_configuration.add_argument(
-        "--lint", action="store_true", help=argparse.SUPPRESS
-    )
-    targets_to_configuration.add_argument(
-        "--subdirectory", help="Only upgrade TARGETS files within this directory."
-    )
-    targets_to_configuration.add_argument(
-        "--glob",
-        type=int,
-        help="Use a toplevel glob target instead of listing individual targets. \
-        Fall back to individual targets if errors per file ever hits given threshold.",
-    )
-    targets_to_configuration.add_argument(
-        "--fixme-threshold",
-        type=int,
-        help="Ignore all errors in a file if fixme count exceeds threshold.",
-    )
-    targets_to_configuration.add_argument(
-        "--no-commit", action="store_true", help="Keep changes in working state."
-    )
+    TargetsToConfiguration.add_arguments(targets_to_configuration)
 
     # Subcommand: Expand target coverage in configuration up to given error limit
     expand_target_coverage = commands.add_parser("expand-target-coverage")

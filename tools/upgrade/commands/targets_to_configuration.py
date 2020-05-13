@@ -40,6 +40,32 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ErrorSuppressingCommand.add_arguments(parser)
+        parser.set_defaults(command=TargetsToConfiguration)
+        parser.add_argument(
+            "--subdirectory", help="Only upgrade TARGETS files within this directory."
+        )
+        parser.add_argument(
+            "--glob",
+            type=int,
+            help="Use a toplevel glob target instead of listing individual targets. \
+            Fall back to individual targets if errors per file ever hits given \
+            threshold.",
+        )
+        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--fixme-threshold",
+            type=int,
+            help="Ignore all errors in a file if fixme count exceeds threshold.",
+        )
+        parser.add_argument(
+            "--no-commit", action="store_true", help="Keep changes in working state."
+        )
+        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+
+
     def remove_target_typing_fields(self, files: List[str]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
         typing_options_regex = [
