@@ -70,7 +70,6 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
                 trace_kind,
                 len(self.summary["missing_traces"][trace_kind]),
             )
-        del self.summary["trace_entries"]
 
     def _save(self) -> RunSummary:
         """ Saves bulk saver's info into the databases in bulk.
