@@ -37,7 +37,7 @@ type uninstantiated = UninstantiatedAnnotation.t
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
 
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
-  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Method { callable } }
+  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Attribute (Callable callable) }
 
 
 module UninstantiatedAttributeTable = struct
@@ -857,19 +857,17 @@ module Implementation = struct
             :: parameters
           in
           ( attribute_name,
-            UninstantiatedAnnotation.Method
-              {
-                callable =
-                  {
-                    kind = Named (Reference.combine name (Reference.create attribute_name));
-                    overloads = [];
-                    implementation =
-                      {
-                        annotation;
-                        parameters = Defined (Type.Callable.Parameter.create parameters);
-                      };
-                  };
-              } )
+            UninstantiatedAnnotation.Attribute
+              (Callable
+                 {
+                   kind = Named (Reference.combine name (Reference.create attribute_name));
+                   overloads = [];
+                   implementation =
+                     {
+                       annotation;
+                       parameters = Defined (Type.Callable.Parameter.create parameters);
+                     };
+                 }) )
         in
         match options definition with
         | None -> []
@@ -1582,7 +1580,8 @@ module Implementation = struct
       in
       let overload_method (attribute, _) =
         match AnnotatedAttribute.uninstantiated_annotation attribute with
-        | { UninstantiatedAnnotation.kind = Method { callable }; _ } as uninstantiated_annotation ->
+        | { UninstantiatedAnnotation.kind = Attribute (Callable callable); _ } as
+          uninstantiated_annotation ->
             let overloaded_callable overloads =
               {
                 callable with
@@ -1600,7 +1599,7 @@ module Implementation = struct
                 {
                   uninstantiated_annotation with
                   UninstantiatedAnnotation.kind =
-                    Method { callable = overloaded_callable overloads };
+                    Attribute (Callable (overloaded_callable overloads));
                 }
               attribute
         | _ -> None
@@ -1661,15 +1660,13 @@ module Implementation = struct
                    {
                      UninstantiatedAnnotation.accessed_via_metaclass;
                      kind =
-                       Method
-                         {
-                           callable =
-                             {
-                               kind = Anonymous;
-                               implementation = { annotation; parameters = Undefined };
-                               overloads = [];
-                             };
-                         };
+                       Attribute
+                         (Callable
+                            {
+                              kind = Anonymous;
+                              implementation = { annotation; parameters = Undefined };
+                              overloads = [];
+                            });
                    }
                  ~abstract:false
                  ~async:false
@@ -2580,7 +2577,7 @@ module Implementation = struct
                     (Type.Parametric
                        { name = "typing.ClassMethod"; parameters = [Single (Callable callable)] })
                 else
-                  UninstantiatedAnnotation.Method { callable }
+                  UninstantiatedAnnotation.Attribute (Callable callable)
             | [] -> failwith "impossible"
           in
           callable, false, visibility
