@@ -62,5 +62,5 @@ class Fixme(ErrorSuppressingCommand):
                     errors = _errors_from_run(self._only_fix_error_code)
                     self._suppress_errors(errors)
         else:
-            errors = Errors.from_stdin(self._arguments.only_fix_error_code)
+            errors = Errors.from_stdin(self._only_fix_error_code)
             self._suppress_errors(errors)
