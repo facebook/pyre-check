@@ -292,15 +292,13 @@ let test_non_data_descriptors context =
         h = Host()
         x = Host.a
         reveal_type(x)
-        # TODO(T65809479): This needs to be banned, since the instance attribute would
-        # take precedence over the non-data descriptor on the class
-        Host.a = Descriptor()
-        y = Host.a # Technically here it will return the `Descriptor` from above
-        reveal_type(y)
+        h.a = 5
+        h.a = Descriptor()
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `int`.";
+      "Incompatible attribute type [8]: Attribute `a` declared in class `Host` has type `int` but \
+       is used as type `Descriptor`.";
     ];
   assert_type_errors
     {|

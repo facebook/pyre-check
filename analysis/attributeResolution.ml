@@ -2253,46 +2253,7 @@ module Implementation = struct
             when AnnotatedAttribute.equal_initialized
                    (AnnotatedAttribute.initialized attribute)
                    OnClass
-                 && apply_descriptors ->
-              let get_descriptor_method
-                  { Type.instantiated; accessed_through_class; class_name }
-                  ~kind
-                =
-                if accessed_through_class then
-                  (* descriptor methods are statically looked up on the class (in this case `type`),
-                     not on the instance. `type` is not a descriptor. *)
-                  `NotDescriptor (Type.meta instantiated)
-                else
-                  let attribute =
-                    let attribute_name =
-                      match kind with
-                      | `DunderGet -> "__get__"
-                      | `DunderSet -> "__set__"
-                    in
-                    (* descriptor methods are statically looked up on the class, and are not
-                       themselves subject to description *)
-                    get_attribute
-                      ~assumptions
-                      ~transitive:true
-                      ~accessed_through_class:true
-                      ~include_generated_attributes:true
-                      ?special_method:None
-                      ?instantiated:(Some instantiated)
-                      ?apply_descriptors:(Some false)
-                      ~attribute_name
-                      class_name
-                    >>| AnnotatedAttribute.annotation
-                    >>| Annotation.annotation
-                  in
-                  match attribute with
-                  | None -> `NotDescriptor instantiated
-                  | Some (Type.Callable callable) -> `Descriptor (instantiated, callable)
-                  | Some _ ->
-                      (* In theory we could support `__get__`s or `__set__`s that are not just
-                         Callables, but for now lets just ignore that *)
-                      `DescriptorNotACallable
-              in
-
+                 && apply_descriptors -> (
               let call_dunder_get (descriptor, callable) =
                 let selection_result =
                   signature_select
@@ -2344,53 +2305,104 @@ module Implementation = struct
                 >>= fun solution ->
                 ConstraintsSet.Solution.instantiate_single_variable solution synthetic
               in
-
-              let apply_descriptor kind =
-                let partitioned =
-                  let partition = function
-                    | `NotDescriptor element -> `Fst element
-                    | `Descriptor element -> `Snd element
-                    | `DescriptorNotACallable -> `Trd ()
-                  in
-                  Type.resolve_class annotation
-                  >>| List.map ~f:(get_descriptor_method ~kind)
-                  >>| List.partition3_map ~f:partition
-                in
-                match partitioned with
-                | Some (_, _, _ :: _) ->
-                    (* If we have broken descriptor methods we should error on them, not their
-                       usages *)
-                    Type.Any
-                | None ->
-                    (* This means we have a type that can't be `Type.split`, (most of) which aren't
-                       descriptors, so we should be usually safe to just ignore. In general we
-                       should fix resolve_class to always return something. *)
-                    annotation
-                | Some (_, [], _) ->
-                    (* If none of the components are descriptors, we don't need to worry about
-                       re-unioning together the components we split apart, we can just give back the
-                       original type *)
-                    annotation
-                | Some (normal, have_descriptors, _) ->
-                    let extractor =
+              let get_descriptor_method
+                  { Type.instantiated; accessed_through_class; class_name }
+                  ~kind
+                =
+                if accessed_through_class then
+                  (* descriptor methods are statically looked up on the class (in this case `type`),
+                     not on the instance. `type` is not a descriptor. *)
+                  `NotDescriptor (Type.meta instantiated)
+                else
+                  let attribute =
+                    let attribute_name =
                       match kind with
-                      | `DunderGet -> call_dunder_get
-                      | `DunderSet -> invert_dunder_set ~order:(order ())
+                      | `DunderGet -> "__get__"
+                      | `DunderSet -> "__set__"
                     in
-                    List.map have_descriptors ~f:extractor
-                    |> Option.all
-                    >>| List.append normal
-                    >>| Type.union
-                    (* Every descriptor should accept all hosts (and all host types) as a matter of
-                       Liskov substitutibility with `object`. This means we need to error on these
-                       invalid definitions (T65807232), and not on usages *)
-                    |> Option.value ~default:Type.Any
+                    (* descriptor methods are statically looked up on the class, and are not
+                       themselves subject to description *)
+                    get_attribute
+                      ~assumptions
+                      ~transitive:true
+                      ~accessed_through_class:true
+                      ~include_generated_attributes:true
+                      ?special_method:None
+                      ?instantiated:(Some instantiated)
+                      ?apply_descriptors:(Some false)
+                      ~attribute_name
+                      class_name
+                    >>| AnnotatedAttribute.annotation
+                    >>| Annotation.annotation
+                  in
+                  match attribute with
+                  | None -> `NotDescriptor instantiated
+                  | Some (Type.Callable callable) ->
+                      let extracted =
+                        match kind with
+                        | `DunderGet -> call_dunder_get (instantiated, callable)
+                        | `DunderSet -> invert_dunder_set ~order:(order ()) (instantiated, callable)
+                      in
+                      extracted
+                      >>| (fun extracted -> `HadDescriptor extracted)
+                      |> Option.value ~default:`FailedToExtract
+                  | Some _ ->
+                      (* In theory we could support `__get__`s or `__set__`s that are not just
+                         Callables, but for now lets just ignore that *)
+                      `DescriptorNotACallable
               in
-              let get_type = apply_descriptor `DunderGet in
-              let set_type =
-                if accessed_through_class then annotation else apply_descriptor `DunderSet
-              in
-              get_type, set_type
+
+              match Type.resolve_class annotation with
+              | None ->
+                  (* This means we have a type that can't be `Type.split`, (most of) which aren't
+                     descriptors, so we should be usually safe to just ignore. In general we should
+                     fix resolve_class to always return something. *)
+                  annotation, annotation
+              | Some elements ->
+                  let collect x =
+                    let partitioner = function
+                      | `NotDescriptor element -> `Fst element
+                      | `HadDescriptor element -> `Snd element
+                      (* Every descriptor should accept all hosts (and all host types) as a matter
+                         of Liskov substitutibility with `object`. This means we need to error on
+                         these invalid definitions (T65807232), and not on usages *)
+                      | `FailedToExtract
+                      | `DescriptorNotACallable ->
+                          `Trd ()
+                    in
+                    match List.partition3_map x ~f:partitioner with
+                    | _, _, _ :: _ ->
+                        (* If we have broken descriptor methods we should error on them, not their
+                           usages *)
+                        Type.Any
+                    | _, [], _ ->
+                        (* If none of the components are descriptors, we don't need to worry about
+                           re-unioning together the components we split apart, we can just give back
+                           the original type *)
+                        annotation
+                    | normal, had_descriptors, _ -> Type.union (normal @ had_descriptors)
+                  in
+
+                  let elements_and_get_results =
+                    List.map elements ~f:(fun element ->
+                        element, get_descriptor_method element ~kind:`DunderGet)
+                  in
+
+                  let get_type = List.unzip elements_and_get_results |> snd |> collect in
+                  let set_type =
+                    if accessed_through_class then
+                      annotation
+                    else
+                      let process (element, get_result) =
+                        match get_descriptor_method element ~kind:`DunderSet, get_result with
+                        | `NotDescriptor _, `HadDescriptor element ->
+                            (* non-data descriptors set type should be their get type *)
+                            `HadDescriptor element
+                        | other, _ -> other
+                      in
+                      List.map elements_and_get_results ~f:process |> collect
+                  in
+                  get_type, set_type )
           | None -> annotation, annotation )
     in
     AnnotatedAttribute.instantiate
