@@ -722,7 +722,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration._binary, None)
 
     @patch.object(Configuration, "_validate")
-    def test_get_binary_version(self, _validate):
+    def test_get_binary_version(self, _validate) -> None:
         configuration = Configuration()
         configuration._binary = "<binary>"
 
