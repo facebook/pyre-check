@@ -2010,7 +2010,8 @@ module Implementation = struct
     let uninstantiated_annotation =
       match annotation with
       | Attribute annotation -> Some annotation
-      | _ -> None
+      | Method { callable } -> Some (Callable callable)
+      | Property _ -> None
     in
 
     let annotation =
