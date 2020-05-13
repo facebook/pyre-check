@@ -220,11 +220,12 @@ module AttributeReadOnly : sig
     Expression.expression Node.t ->
     Type.t
 
-  val create_overload
+  val resolve_define
     :  t ->
     ?dependency:DependencyKey.registered ->
-    Define.Signature.t ->
-    Type.t Type.Callable.overload
+    implementation:Define.Signature.t option ->
+    overloads:Define.Signature.t list ->
+    Type.t
 
   val signature_select
     :  t ->

@@ -53,69 +53,73 @@ let decorate
   =
   match decorators with
   | [] -> define_node
-  | _ ->
-      let { Type.Callable.parameters; annotation; _ } =
-        GlobalResolution.create_overload ~resolution signature
-      in
-      let parameters =
-        match parameters with
-        | Defined parameters ->
-            let convert (placed_single_star, sofar) parameter =
-              let location = Location.any in
-              let placed_single_star, sofar =
-                match placed_single_star, parameter with
-                | false, Type.Callable.Parameter.KeywordOnly _ ->
-                    true, Expression.Parameter.create ~location ~name:"*" () :: sofar
-                | _ -> placed_single_star, sofar
-              in
-              let new_parameter =
-                match parameter with
-                | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
-                    (* This means it will be read back in as an anonymous *)
-                    Expression.Parameter.create
-                      ~location
-                      ~annotation:(Type.expression annotation)
-                      ~name:"__"
-                      ()
-                | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
-                | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                    Expression.Parameter.create
-                      ~location
-                      ~annotation:(Type.expression annotation)
-                      ~name
-                      ()
-                | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                    Expression.Parameter.create
-                      ~location
-                      ~annotation:(Type.expression annotation)
-                      ~name:"*args"
-                      ()
-                | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
-                    Expression.Parameter.create
-                      ~location
-                      ~annotation:(Type.OrderedTypes.Concatenation.expression concatenation)
-                      ~name:"*args"
-                      ()
-                | Type.Callable.Parameter.Keywords annotation ->
-                    Expression.Parameter.create
-                      ~location
-                      ~annotation:(Type.expression annotation)
-                      ~name:"**kwargs"
-                      ()
-              in
-              placed_single_star, new_parameter :: sofar
-            in
-            List.fold parameters ~f:convert ~init:(false, []) |> snd |> List.rev
-        | ParameterVariadicTypeVariable _
-        | Undefined ->
-            original_parameters
-      in
-      let return_annotation = Some (Type.expression annotation) in
-      {
-        define with
-        Define.signature = { signature with Define.Signature.parameters; return_annotation };
-      }
-      |> Node.create ~location
+  | _ -> (
+      match
+        GlobalResolution.resolve_define ~resolution ~implementation:(Some signature) ~overloads:[]
+      with
+      | Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ } ->
+          let parameters =
+            match parameters with
+            | Defined parameters ->
+                let convert (placed_single_star, sofar) parameter =
+                  let location = Location.any in
+                  let placed_single_star, sofar =
+                    match placed_single_star, parameter with
+                    | false, Type.Callable.Parameter.KeywordOnly _ ->
+                        true, Expression.Parameter.create ~location ~name:"*" () :: sofar
+                    | _ -> placed_single_star, sofar
+                  in
+                  let new_parameter =
+                    match parameter with
+                    | Type.Callable.Parameter.PositionalOnly { annotation; _ } ->
+                        (* This means it will be read back in as an anonymous *)
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:(Type.expression annotation)
+                          ~name:"__"
+                          ()
+                    | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
+                    | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:(Type.expression annotation)
+                          ~name
+                          ()
+                    | Type.Callable.Parameter.Variable (Concrete annotation) ->
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:(Type.expression annotation)
+                          ~name:"*args"
+                          ()
+                    | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:(Type.OrderedTypes.Concatenation.expression concatenation)
+                          ~name:"*args"
+                          ()
+                    | Type.Callable.Parameter.Keywords annotation ->
+                        Expression.Parameter.create
+                          ~location
+                          ~annotation:(Type.expression annotation)
+                          ~name:"**kwargs"
+                          ()
+                  in
+                  placed_single_star, new_parameter :: sofar
+                in
+                List.fold parameters ~f:convert ~init:(false, []) |> snd |> List.rev
+            | ParameterVariadicTypeVariable _
+            | Undefined ->
+                original_parameters
+          in
+          let return_annotation = Some (Type.expression annotation) in
+          {
+            define with
+            Define.signature = { signature with Define.Signature.parameters; return_annotation };
+          }
+          |> Node.create ~location
+      | _ ->
+          (* We should really signal this somehow *)
+          define_node )
 
 
 let is_constructor

@@ -68,30 +68,16 @@ let produce_global_annotation attribute_resolution name ~dependency =
     in
     match global with
     | UnannotatedGlobalEnvironment.Define defines ->
-        let create_overload
-            {
-              UnannotatedGlobalEnvironment.define =
-                { Define.Signature.name = { Node.value = name; _ }; _ } as signature;
-              _;
-            }
-          =
-          let overload =
-            AttributeResolution.ReadOnly.create_overload attribute_resolution ?dependency signature
-          in
-          if Define.Signature.is_overloaded_function signature then
-            {
-              Type.Callable.kind = Named name;
-              implementation = { annotation = Type.Top; parameters = Undefined };
-              overloads = [overload];
-            }
-          else
-            { Type.Callable.kind = Named name; implementation = overload; overloads = [] }
-        in
-
-        List.map defines ~f:create_overload
-        |> Type.Callable.from_overloads
-        >>| (fun callable -> Type.Callable callable)
-        >>| Annotation.create_immutable
+        List.map defines ~f:(fun { define; _ } -> define)
+        |> List.partition_tf ~f:Define.Signature.is_overloaded_function
+        |> (fun (overloads, implementations) ->
+             AttributeResolution.ReadOnly.resolve_define
+               attribute_resolution
+               ?dependency
+               ~implementation:(List.last implementations)
+               ~overloads)
+        |> Annotation.create_immutable
+        |> Option.some
     | SimpleAssign
         {
           explicit_annotation = None;

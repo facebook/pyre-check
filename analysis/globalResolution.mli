@@ -220,7 +220,11 @@ val signature_select
   self_argument:Type.t option ->
   AttributeResolution.sig_t
 
-val create_overload : resolution:t -> Define.Signature.t -> Type.t Type.Callable.overload
+val resolve_define
+  :  resolution:t ->
+  implementation:Define.Signature.t option ->
+  overloads:Define.Signature.t list ->
+  Type.t
 
 val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Type.t
 

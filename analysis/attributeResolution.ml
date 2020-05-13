@@ -1165,8 +1165,11 @@ module Implementation = struct
       unit ->
       ConstraintsSet.Solution.t;
     resolve_literal: assumptions:Assumptions.t -> Expression.expression Node.t -> Type.t;
-    create_overload:
-      assumptions:Assumptions.t -> Define.Signature.t -> Type.t Type.Callable.overload;
+    resolve_define:
+      assumptions:Assumptions.t ->
+      implementation:Define.Signature.t option ->
+      overloads:Define.Signature.t list ->
+      Type.t;
     signature_select:
       assumptions:Assumptions.t ->
       resolve_with_locals:
@@ -2406,7 +2409,7 @@ module Implementation = struct
         dependency;
         parse_annotation;
         resolve_literal;
-        create_overload;
+        resolve_define;
         _;
       }
       ~assumptions
@@ -2510,12 +2513,10 @@ module Implementation = struct
           in
           let callable =
             match signatures with
-            | ({ Define.Signature.name = { Node.value = name; _ }; _ } as define) :: _ as defines ->
-                let open Type.Callable in
+            | define :: _ as defines ->
                 let overloads =
                   let create_overload define =
-                    ( Define.Signature.is_overloaded_function define,
-                      create_overload ~assumptions define )
+                    Define.Signature.is_overloaded_function define, define
                   in
                   List.map defines ~f:create_overload
                 in
@@ -2524,24 +2525,20 @@ module Implementation = struct
                     if is_overload then
                       implementation, signature :: overloads
                     else
-                      signature, overloads
+                      Some signature, overloads
                   in
-                  List.fold
-                    ~init:({ annotation = Type.Top; parameters = Type.Callable.Undefined }, [])
-                    ~f:to_signature
-                    overloads
+                  List.fold ~init:(None, []) ~f:to_signature overloads
                 in
-                let callable = { kind = Named name; implementation; overloads } in
+                let resolved = resolve_define ~implementation ~overloads ~assumptions in
                 if static || String.equal attribute_name "__new__" then
                   UninstantiatedAnnotation.Attribute
                     (Type.Parametric
-                       { name = "typing.StaticMethod"; parameters = [Single (Callable callable)] })
+                       { name = "typing.StaticMethod"; parameters = [Single resolved] })
                 else if Define.Signature.is_class_method define then
                   UninstantiatedAnnotation.Attribute
-                    (Type.Parametric
-                       { name = "typing.ClassMethod"; parameters = [Single (Callable callable)] })
+                    (Type.Parametric { name = "typing.ClassMethod"; parameters = [Single resolved] })
                 else
-                  UninstantiatedAnnotation.Attribute (Callable callable)
+                  UninstantiatedAnnotation.Attribute resolved
             | [] -> failwith "impossible"
           in
           callable, false, visibility
@@ -2865,7 +2862,7 @@ module Implementation = struct
     | _ -> Type.Any
 
 
-  let create_overload
+  let resolve_define
       {
         class_metadata_environment;
         dependency;
@@ -2876,7 +2873,8 @@ module Implementation = struct
         _;
       }
       ~assumptions
-      ({ Define.Signature.decorators; _ } as signature)
+      ~implementation
+      ~overloads
     =
     let apply_decorator
         ({ Type.Callable.annotation; parameters; _ } as overload)
@@ -3049,7 +3047,7 @@ module Implementation = struct
       | Expression.Name name -> resolve_decorators name ~arguments:None
       | _ -> overload
     in
-    let init =
+    let parse =
       let parser =
         {
           AnnotatedCallable.parse_annotation = parse_annotation ~assumptions;
@@ -3068,9 +3066,29 @@ module Implementation = struct
           (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment)
           ?dependency
       in
-      AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
+      AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
     in
-    decorators |> List.rev |> List.fold ~init ~f:apply_decorator
+    let parse_and_apply_decorators ({ Define.Signature.decorators; _ } as signature) =
+      let parsed = parse signature in
+      decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator
+    in
+    let kind =
+      match implementation, overloads with
+      | Some { Define.Signature.name; _ }, _
+      | _, { Define.Signature.name; _ } :: _ ->
+          Type.Callable.Named (Node.value name)
+      | None, [] ->
+          (* Should never happen, but not worth crashing over *)
+          Type.Callable.Anonymous
+    in
+    let implementation =
+      implementation
+      >>| parse_and_apply_decorators
+      |> Option.value
+           ~default:{ Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
+    in
+    let overloads = List.map overloads ~f:parse_and_apply_decorators in
+    Type.Callable { Type.Callable.implementation; overloads; kind }
 
 
   let signature_select
@@ -4071,7 +4089,7 @@ let make_open_recurser
       metaclass;
       constraints;
       resolve_literal;
-      create_overload;
+      resolve_define;
       signature_select;
       resolve_mutable_literals;
       constraints_solution_exists;
@@ -4093,7 +4111,7 @@ let make_open_recurser
   and metaclass ~assumptions = Implementation.metaclass open_recurser ~assumptions
   and constraints ~assumptions = Implementation.constraints open_recurser ~assumptions
   and resolve_literal ~assumptions = Implementation.resolve_literal open_recurser ~assumptions
-  and create_overload ~assumptions = Implementation.create_overload open_recurser ~assumptions
+  and resolve_define ~assumptions = Implementation.resolve_define open_recurser ~assumptions
   and signature_select ~assumptions = Implementation.signature_select open_recurser ~assumptions
   and resolve_mutable_literals ~assumptions =
     Implementation.resolve_mutable_literals open_recurser ~assumptions
@@ -4308,7 +4326,7 @@ module ReadOnly = struct
 
   let resolve_literal = add_both_caches_and_empty_assumptions Implementation.resolve_literal
 
-  let create_overload = add_both_caches_and_empty_assumptions Implementation.create_overload
+  let resolve_define = add_both_caches_and_empty_assumptions Implementation.resolve_define
 
   let resolve_mutable_literals =
     add_both_caches_and_empty_assumptions Implementation.resolve_mutable_literals

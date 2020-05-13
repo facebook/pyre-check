@@ -29,8 +29,10 @@ let test_apply_decorators context =
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
     let applied_return_annotation =
-      GlobalResolution.create_overload ~resolution define
-      |> fun { Type.Callable.annotation; _ } -> annotation
+      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
+      |> function
+      | Callable { implementation = { Type.Callable.annotation; _ }; _ } -> annotation
+      | _ -> failwith "impossible"
     in
     assert_equal
       ~cmp:Type.equal
@@ -40,8 +42,10 @@ let test_apply_decorators context =
 
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      GlobalResolution.create_overload ~resolution define
-      |> fun { Type.Callable.annotation; _ } -> annotation
+      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
+      |> function
+      | Callable { implementation = { Type.Callable.annotation; _ }; _ } -> annotation
+      | _ -> failwith "impossible"
     in
     assert_equal
       ~cmp:Type.equal
@@ -70,9 +74,11 @@ let test_apply_decorators context =
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
       let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-      GlobalResolution.create_overload ~resolution define
-      |> fun { Type.Callable.parameters; _ } ->
-      match parameters with
+      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
+      |> (function
+           | Callable { implementation = { Type.Callable.parameters; _ }; _ } -> parameters
+           | _ -> failwith "impossible")
+      |> function
       | Undefined -> 0
       | ParameterVariadicTypeVariable _ -> 0
       | Defined parameters -> List.length parameters
@@ -103,8 +109,12 @@ let test_apply_decorators context =
     ~decorators:["$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
-  |> (fun define -> GlobalResolution.create_overload ~resolution define)
-  |> fun { Type.Callable.parameters; _ } ->
+  |> (fun define ->
+       GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[])
+  |> (function
+       | Callable { implementation = { Type.Callable.parameters; _ }; _ } -> parameters
+       | _ -> failwith "impossible")
+  |> fun parameters ->
   assert_equal
     ~printer:Type.Callable.show_parameters
     ~cmp:Type.Callable.equal_parameters

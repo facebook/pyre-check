@@ -404,8 +404,8 @@ let resolve_mutable_literals ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let create_overload ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.create_overload ?dependency (attribute_resolution resolution)
+let resolve_define ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
 
 
 let signature_select ~global_resolution:({ dependency; _ } as resolution) =
