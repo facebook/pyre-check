@@ -39,6 +39,31 @@ class ErrorSuppressingCommand(Command):
             arguments, "force_format_unsuppressed", False
         )
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        Command.add_arguments(parser)
+        parser.add_argument("--comment", help="Custom comment after fixme comments")
+        parser.add_argument(
+            "--max-line-length",
+            default=88,
+            type=int,
+            help="Enforce maximum line length on new comments "
+            + "(default: %(default)s, use 0 to set no maximum line length)",
+        )
+        parser.add_argument(
+            "--truncate",
+            action="store_true",
+            help="Truncate error messages to maximum line length.",
+        )
+        parser.add_argument(
+            "--unsafe",
+            action="store_true",
+            help="Don't check syntax when applying fixmes.",
+        )
+        parser.add_argument(
+            "--force-format-unsuppressed", action="store_true", help=argparse.SUPPRESS
+        )
+
     def _suppress_errors(self, errors: Errors) -> None:
         try:
             errors.suppress(
@@ -54,6 +79,10 @@ class ErrorSuppressingCommand(Command):
 
 
 class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ErrorSuppressingCommand.add_arguments(parser)
+
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path
     ) -> None:

@@ -120,6 +120,10 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
         super().__init__(arguments, repository)
         self._path: Path = Path(arguments.path)
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ProjectErrorSuppressingCommand.add_arguments(parser)
+
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
@@ -136,6 +140,10 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
 
 
 class FixmeAll(ProjectErrorSuppressingCommand):
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ProjectErrorSuppressingCommand.add_arguments(parser)
+
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         if project_configuration is None:
@@ -156,6 +164,10 @@ class FixmeTargets(ErrorSuppressingCommand):
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
         self._lint: bool = arguments.lint
+
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ErrorSuppressingCommand.add_arguments(parser)
 
     def run(self) -> None:
         subdirectory = self._subdirectory
@@ -209,18 +221,6 @@ class FixmeTargets(ErrorSuppressingCommand):
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--truncate",
-        action="store_true",
-        help="Truncate error messages to maximum line length.",
-    )
-    parser.add_argument(
-        "--max-line-length",
-        default=88,
-        type=int,
-        help="Enforce maximum line length on new comments "
-        + "(default: %(default)s, use 0 to set no maximum line length)",
-    )
     parser.add_argument(
         "--only-fix-error-code",
         type=int,
@@ -290,6 +290,7 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Fixme all errors for a single project.
     fixme_single = commands.add_parser("fixme-single")
+    FixmeSingle.add_arguments(fixme_single)
     fixme_single.set_defaults(command=FixmeSingle)
     fixme_single.add_argument(
         "path", help="Path to project root with local configuration", type=path_exists
@@ -307,16 +308,11 @@ def run(repository: Repository) -> None:
         "--no-commit", action="store_true", help=argparse.SUPPRESS
     )
     fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
-    fixme_single.add_argument(
-        "--unsafe", action="store_true", help="Don't check syntax when applying fixmes."
-    )
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
+    FixmeAll.add_arguments(fixme_all)
     fixme_all.set_defaults(command=FixmeAll)
-    fixme_all.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
     fixme_all.add_argument(
         "--upgrade-version",
         action="store_true",
@@ -328,10 +324,8 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Fixme all errors in targets running type checking
     fixme_targets = commands.add_parser("fixme-targets")
+    FixmeTargets.add_arguments(fixme_targets)
     fixme_targets.set_defaults(command=FixmeTargets)
-    fixme_targets.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
     fixme_targets.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
     fixme_targets.add_argument(
