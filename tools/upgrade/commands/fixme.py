@@ -19,9 +19,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 def _errors_from_run(only_fix_error_code: Optional[int] = None) -> Errors:
     configuration_path = Configuration.find_project_configuration()
-    if not configuration_path:
-        LOG.warning("Could not find pyre configuration.")
-        return Errors.empty()
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         return configuration.get_errors(only_fix_error_code)

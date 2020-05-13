@@ -46,10 +46,6 @@ class GlobalVersionUpdate(Command):
 
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
-        if global_configuration is None:
-            LOG.error("No global configuration file found.")
-            return
-
         with open(global_configuration, "r") as global_configuration_file:
             configuration = json.load(global_configuration_file)
             if "version" not in configuration:
@@ -126,9 +122,6 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
-        if project_configuration is None:
-            LOG.info("No project configuration found for the given directory.")
-            return
         configuration_path = self._path / ".pyre_configuration.local"
         with open(configuration_path) as configuration_file:
             configuration = Configuration(
@@ -146,10 +139,6 @@ class FixmeAll(ProjectErrorSuppressingCommand):
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
-        if project_configuration is None:
-            LOG.info("No project configuration found for the current directory.")
-            return
-
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
             self._suppress_errors_in_project(
@@ -173,9 +162,6 @@ class FixmeTargets(ErrorSuppressingCommand):
         subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else None
         project_configuration = Configuration.find_project_configuration(subdirectory)
-        if project_configuration is None:
-            LOG.error("No project configuration found for the given directory.")
-            return
         project_directory = project_configuration.parent
         search_root = subdirectory if subdirectory else project_directory
 

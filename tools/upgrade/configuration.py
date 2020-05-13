@@ -10,6 +10,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
+from . import UserError
 from .errors import Errors
 from .filesystem import get_filesystem
 
@@ -68,8 +69,11 @@ class Configuration:
         return None
 
     @staticmethod
-    def find_project_configuration(directory: Optional[Path] = None) -> Optional[Path]:
-        return Configuration.find_parent_file(".pyre_configuration", directory)
+    def find_project_configuration(directory: Optional[Path] = None) -> Path:
+        path = Configuration.find_parent_file(".pyre_configuration", directory)
+        if path is None:
+            raise UserError("No root with a `.pyre_configuration` found.")
+        return path
 
     @staticmethod
     def find_local_configuration(directory: Optional[Path] = None) -> Optional[Path]:

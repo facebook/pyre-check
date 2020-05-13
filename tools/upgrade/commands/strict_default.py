@@ -26,9 +26,6 @@ class StrictDefault(Command):
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
-        if project_configuration is None:
-            LOG.info("No project configuration found for the given directory.")
-            return
         local_configuration = self._local_configuration
         if local_configuration:
             configuration_path = local_configuration / ".pyre_configuration.local"
