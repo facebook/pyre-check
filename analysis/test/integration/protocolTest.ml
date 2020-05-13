@@ -423,6 +423,41 @@ let test_check_protocol context =
       "Private protocol property [52]: Protocol `P` has private property `__bar`.";
       "Private protocol property [52]: Protocol `P` has private property `__foo`.";
     ];
+
+  assert_type_errors
+    {|
+      from typing import Protocol, Type, TypeVar
+
+      T = TypeVar("T")
+
+      class P(Protocol):
+          @classmethod
+          def cm(cls: Type[T], x: int) -> T: ...
+
+      class I:
+          @classmethod
+          def cm(cls: Type[T], x: int) -> T: ...
+
+      x: P = I()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      from typing import Protocol, Type, TypeVar
+
+      class P(Protocol):
+          @classmethod
+          def cm(cls, x: int) -> str: ...
+
+      class I:
+          @classmethod
+          def cm(cls, x: int) -> str: ...
+
+      # this is technically unsound since P().cm.__func__ =/= I().cm.__func__
+      x: P = I()
+    |}
+    [];
   ()
 
 

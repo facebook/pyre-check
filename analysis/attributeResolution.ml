@@ -2200,8 +2200,7 @@ module Implementation = struct
                      ?dependency
               in
               if (not (String.equal class_name "object")) && instantiated_is_protocol then
-                (* We don't have a way of tracing taint through protocols, so maintaining a name and
-                   implicit for methods of protocols isn't valuable. *)
+                (* TODO(T66895305): Find a way to remove this without tanking Pysa perf *)
                 let order = full_order ~assumptions in
                 partial_apply_self callable ~order ~self_type:instantiated
                 |> fun callable -> Type.Callable { callable with kind = Anonymous }

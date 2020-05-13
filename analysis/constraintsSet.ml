@@ -964,11 +964,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                         ~name:(AnnotatedAttribute.name protocol_attribute)
                       >>| attribute_annotation
                       >>| (fun left ->
+                            let right =
+                              match attribute_annotation protocol_attribute with
+                              | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
+                                  attribute ~assumptions bound_method ~name:"__call__"
+                                  >>| attribute_annotation
+                                  |> Option.value ~default:Type.object_primitive
+                              | annotation -> annotation
+                            in
+
                             List.concat_map constraints_set ~f:(fun constraints ->
                                 solve_less_or_equal
                                   order_with_new_assumption
                                   ~left
-                                  ~right:(attribute_annotation protocol_attribute)
+                                  ~right
                                   ~constraints))
                       |> Option.value ~default:[]
                 in

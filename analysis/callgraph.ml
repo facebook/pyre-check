@@ -143,8 +143,11 @@ module DefaultBuilder : Builder = struct
     (* Store callees. *)
     let callees =
       let method_callee ?(is_optional_class_attribute = false) annotation callable_kind =
+        let is_protocol () =
+          Type.split annotation |> fst |> GlobalResolution.is_protocol global_resolution
+        in
         match callable_kind with
-        | Type.Callable.Named direct_target ->
+        | Type.Callable.Named direct_target when not (is_protocol ()) ->
             let class_name =
               if Type.is_meta annotation then
                 Type.single_parameter annotation
