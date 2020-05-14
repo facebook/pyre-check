@@ -1,3 +1,6 @@
+from builtins import __test_source
+
+
 class C:
     def update(self, parameter):
         ...
@@ -21,6 +24,7 @@ def test_obscure_tito():
 
 
 def test_obscure_return():
+    c = C()
     return c.update(__test_source())
 
 

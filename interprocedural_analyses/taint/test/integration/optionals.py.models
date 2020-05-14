@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "optionals.test",
-    "callable_line": 17,
+    "callable_line": 18,
     "code": 5002,
-    "line": 18,
+    "line": 19,
     "start": 32,
     "end": 47,
     "filename": "optionals.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "optionals.py",
-              "line": 18,
+              "line": 19,
               "start": 32,
               "end": 47
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "optionals.py",
-                "line": 18,
+                "line": 19,
                 "start": 32,
                 "end": 47
               },
@@ -73,7 +73,7 @@
           {
             "root": {
               "filename": "optionals.py",
-              "line": 6,
+              "line": 7,
               "start": 20,
               "end": 27
             },

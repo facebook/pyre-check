@@ -1,3 +1,8 @@
+from builtins import __test_source
+
+import django
+
+
 def view_entry_field(request):
     eval(request.payload)
 

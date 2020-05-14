@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "constructor_inheritance.test",
-    "callable_line": 13,
+    "callable_line": 14,
     "code": 5002,
-    "line": 15,
+    "line": 16,
     "start": 29,
     "end": 44,
     "filename": "constructor_inheritance.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "constructor_inheritance.py",
-              "line": 15,
+              "line": 16,
               "start": 29,
               "end": 44
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "constructor_inheritance.py",
-                "line": 15,
+                "line": 16,
                 "start": 29,
                 "end": 44
               },
@@ -112,7 +112,7 @@
           {
             "root": {
               "filename": "constructor_inheritance.py",
-              "line": 6,
+              "line": 7,
               "start": 20,
               "end": 28
             },

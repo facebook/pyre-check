@@ -1,3 +1,6 @@
+from builtins import __test_sink, __test_source
+
+
 def goes_to_sink(arg):
     __test_sink(arg)
 

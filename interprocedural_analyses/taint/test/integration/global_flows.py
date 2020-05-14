@@ -1,3 +1,6 @@
+from builtins import __test_source
+
+
 def update_arg1(arg1, arg2):
     ...
 

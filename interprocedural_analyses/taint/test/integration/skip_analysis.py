@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # flake8: noqa
+from builtins import __test_sink, __test_source
 
 
 class SkipMe:

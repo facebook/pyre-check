@@ -1,3 +1,6 @@
+from builtins import __test_sink
+
+
 def source():
     return 0
 

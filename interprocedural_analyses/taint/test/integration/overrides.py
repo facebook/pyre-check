@@ -1,4 +1,5 @@
-from typing import overload
+from builtins import __test_sink, __test_source
+from typing import Type, overload
 
 
 class Base:
@@ -68,7 +69,7 @@ class D(C):
         return __test_source()
 
 
-def testBase(o: Base, cls: typing.Type[Base]):
+def testBase(o: Base, cls: Type[Base]):
     y = o.methodB()
     o.methodA(y)
     cls.classMethod(y)
@@ -84,7 +85,7 @@ def testMakeBase():
     x = o.methodB()
 
 
-def testA(o: A, cls: typing.Type[A]):
+def testA(o: A, cls: Type[A]):
     y = o.methodB()
     o.methodA(y)
     cls.classMethod(y)
@@ -100,7 +101,7 @@ def testMakeA():
     x = o.methodB()
 
 
-def testB(o: B, cls: typing.Type[B]):
+def testB(o: B, cls: Type[B]):
     y = o.methodB()
     o.methodA(y)
     cls.classMethod(y)
@@ -116,7 +117,7 @@ def testMakeB():
     x = o.methodB()
 
 
-def testC(o: C, cls: typing.Type[C]):
+def testC(o: C, cls: Type[C]):
     y = o.methodB()
     o.methodA(y)
     cls.classMethod(y)
@@ -132,7 +133,7 @@ def testMakeC():
     x = o.methodB()
 
 
-def testD(o: D, cls: typing.Type[D]):
+def testD(o: D, cls: Type[D]):
     y = o.methodB()
     o.methodA(y)
     cls.classMethod(y)
@@ -148,7 +149,7 @@ def testMakeD():
     x = o.methodB()
 
 
-def constructorTest(cls: typing.Type[D]) -> D:
+def constructorTest(cls: Type[D]) -> D:
     return cls(__test_source())
 
 

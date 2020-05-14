@@ -1,3 +1,6 @@
+from builtins import __test_source
+
+
 class C:
     def foo():
         return __test_source()

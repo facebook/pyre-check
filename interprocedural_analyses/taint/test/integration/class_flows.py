@@ -1,5 +1,6 @@
+from builtins import __test_sink, __test_source
 from contextlib import contextmanager
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Type
 
 
 class C:
@@ -41,7 +42,7 @@ def tainted_class_attribute_through_double_underscore_class_issue(c: C) -> None:
 
 
 def tainted_class_attribute_through_optional_class_issue(
-    class_object: Optional[Type[C]]
+    class_object: Optional[Type[C]],
 ) -> None:
     if class_object is not None:
         class_object.tainted_class_attribute = __test_source()

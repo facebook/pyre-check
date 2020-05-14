@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_function",
-    "callable_line": 13,
+    "callable_line": 16,
     "code": 5002,
-    "line": 14,
+    "line": 17,
     "start": 26,
     "end": 38,
     "filename": "higher_order_functions.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 14,
+              "line": 17,
               "start": 40,
               "end": 55
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 14,
+                "line": 17,
                 "start": 26,
                 "end": 38
               },
@@ -65,11 +65,11 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_function_and_sink",
-    "callable_line": 43,
+    "callable_line": 46,
     "code": 5002,
-    "line": 44,
-    "start": 49,
-    "end": 64,
+    "line": 47,
+    "start": 35,
+    "end": 47,
     "filename": "higher_order_functions.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -79,7 +79,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 44,
+              "line": 47,
               "start": 49,
               "end": 64
             },
@@ -101,7 +101,69 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 44,
+                "line": 47,
+                "start": 35,
+                "end": 47
+              },
+              "resolves_to": [ "higher_order_functions.goes_to_sink" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_higher_order_function_and_sink",
+    "callable_line": 46,
+    "code": 5002,
+    "line": 47,
+    "start": 49,
+    "end": 64,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "higher_order_functions.py",
+              "line": 47,
+              "start": 49,
+              "end": 64
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 47,
                 "start": 49,
                 "end": 64
               },
@@ -128,72 +190,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_higher_order_function_and_sink",
-    "callable_line": 43,
-    "code": 5002,
-    "line": 44,
-    "start": 35,
-    "end": 47,
-    "filename": "higher_order_functions.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "higher_order_functions.py",
-              "line": 44,
-              "start": 49,
-              "end": 64
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 44,
-                "start": 35,
-                "end": 47
-              },
-              "resolves_to": [ "higher_order_functions.goes_to_sink" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "higher_order_functions.test_higher_order_method",
-    "callable_line": 29,
+    "callable_line": 32,
     "code": 5002,
-    "line": 30,
+    "line": 33,
     "start": 29,
     "end": 44,
     "filename": "higher_order_functions.py",
@@ -205,7 +205,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 30,
+              "line": 33,
               "start": 29,
               "end": 44
             },
@@ -227,7 +227,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 30,
+                "line": 33,
                 "start": 29,
                 "end": 44
               },
@@ -257,9 +257,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_higher_order_method_self",
-    "callable_line": 33,
+    "callable_line": 36,
     "code": 5002,
-    "line": 35,
+    "line": 38,
     "start": 26,
     "end": 27,
     "filename": "higher_order_functions.py",
@@ -271,7 +271,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 34,
+              "line": 37,
               "start": 11,
               "end": 26
             },
@@ -293,7 +293,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 35,
+                "line": 38,
                 "start": 26,
                 "end": 27
               },
@@ -327,7 +327,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 19,
+              "line": 22,
               "start": 20,
               "end": 23
             },
@@ -354,7 +354,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 22,
+              "line": 25,
               "start": 20,
               "end": 24
             },
@@ -411,7 +411,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 2,
+              "line": 5,
               "start": 16,
               "end": 19
             },
@@ -457,7 +457,7 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 40,
+              "line": 43,
               "start": 16,
               "end": 19
             },
@@ -485,7 +485,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 26,
+                "line": 29,
                 "start": 4,
                 "end": 48
               },
@@ -518,13 +518,13 @@
           {
             "root": {
               "filename": "higher_order_functions.py",
-              "line": 56,
+              "line": 59,
               "start": 8,
               "end": 23
             },
             "tito": [
-              { "line": 57, "start": 24, "end": 25 },
-              { "line": 57, "start": 14, "end": 22 }
+              { "line": 60, "start": 24, "end": 25 },
+              { "line": 60, "start": 14, "end": 22 }
             ],
             "leaves": [
               {
@@ -559,7 +559,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 48, "start": 11, "end": 45 } ],
+            "tito": [ { "line": 51, "start": 11, "end": 45 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "always-via": "lambda" } ]
           }

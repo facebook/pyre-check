@@ -1,10 +1,11 @@
+from builtins import __test_sink, __test_source
 from typing import Optional
 
 from pyre_extensions import classproperty
 
 
 class Class:
-    def __init__():
+    def __init__(self):
         self.tainted = ""
         self.untainted = ""
 

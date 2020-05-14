@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "static_methods.run_test",
-    "callable_line": 11,
+    "callable_line": 14,
     "code": 5002,
-    "line": 12,
+    "line": 15,
     "start": 9,
     "end": 24,
     "filename": "static_methods.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "static_methods.py",
-              "line": 12,
+              "line": 15,
               "start": 9,
               "end": 24
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "static_methods.py",
-                "line": 12,
+                "line": 15,
                 "start": 9,
                 "end": 24
               },
@@ -73,7 +73,7 @@
           {
             "root": {
               "filename": "static_methods.py",
-              "line": 4,
+              "line": 7,
               "start": 20,
               "end": 24
             },
@@ -101,7 +101,7 @@
             "call": {
               "position": {
                 "filename": "static_methods.py",
-                "line": 8,
+                "line": 11,
                 "start": 28,
                 "end": 34
               },

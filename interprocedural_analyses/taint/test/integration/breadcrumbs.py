@@ -1,3 +1,6 @@
+from builtins import __test_sink, __test_source
+
+
 def int_source() -> int:
     return __test_source()
 

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.a_or_b",
-    "callable_line": 45,
+    "callable_line": 46,
     "code": 5002,
-    "line": 52,
+    "line": 53,
     "start": 9,
     "end": 24,
     "filename": "functions_as_locals.py",
@@ -17,7 +17,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 52,
+              "line": 53,
               "start": 9,
               "end": 24
             },
@@ -39,7 +39,7 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 52,
+                "line": 53,
                 "start": 9,
                 "end": 24
               },
@@ -69,9 +69,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.a_or_b",
-    "callable_line": 45,
+    "callable_line": 46,
     "code": 5002,
-    "line": 51,
+    "line": 52,
     "start": 6,
     "end": 21,
     "filename": "functions_as_locals.py",
@@ -83,7 +83,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 51,
+              "line": 52,
               "start": 6,
               "end": 21
             },
@@ -105,7 +105,7 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 51,
+                "line": 52,
                 "start": 6,
                 "end": 21
               },
@@ -131,11 +131,11 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.foo_as_local",
-    "callable_line": 8,
+    "callable_line": 9,
     "code": 5002,
-    "line": 11,
-    "start": 8,
-    "end": 9,
+    "line": 13,
+    "start": 6,
+    "end": 7,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -145,7 +145,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 9,
+              "line": 10,
               "start": 8,
               "end": 23
             },
@@ -167,9 +167,9 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 11,
-                "start": 8,
-                "end": 9
+                "line": 13,
+                "start": 6,
+                "end": 7
               },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg)",
@@ -193,11 +193,11 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.foo_as_local",
-    "callable_line": 8,
+    "callable_line": 9,
     "code": 5002,
     "line": 12,
-    "start": 6,
-    "end": 7,
+    "start": 8,
+    "end": 9,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -207,7 +207,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 9,
+              "line": 10,
               "start": 8,
               "end": 23
             },
@@ -230,8 +230,8 @@
               "position": {
                 "filename": "functions_as_locals.py",
                 "line": 12,
-                "start": 6,
-                "end": 7
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg)",
@@ -255,11 +255,11 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.local_function_with_method_sink",
-    "callable_line": 25,
+    "callable_line": 26,
     "code": 5002,
     "line": 29,
-    "start": 6,
-    "end": 7,
+    "start": 8,
+    "end": 9,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -269,7 +269,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 27,
+              "line": 28,
               "start": 8,
               "end": 23
             },
@@ -292,8 +292,8 @@
               "position": {
                 "filename": "functions_as_locals.py",
                 "line": 29,
-                "start": 6,
-                "end": 7
+                "start": 8,
+                "end": 9
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg)",
@@ -317,11 +317,11 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.local_function_with_method_sink",
-    "callable_line": 25,
+    "callable_line": 26,
     "code": 5002,
-    "line": 28,
-    "start": 8,
-    "end": 9,
+    "line": 30,
+    "start": 6,
+    "end": 7,
     "filename": "functions_as_locals.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -331,7 +331,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 27,
+              "line": 28,
               "start": 8,
               "end": 23
             },
@@ -353,9 +353,9 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 28,
-                "start": 8,
-                "end": 9
+                "line": 30,
+                "start": 6,
+                "end": 7
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg)",
@@ -387,7 +387,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 22,
+              "line": 23,
               "start": 20,
               "end": 23
             },
@@ -414,7 +414,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 38,
+              "line": 39,
               "start": 16,
               "end": 20
             },
@@ -441,7 +441,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 42,
+              "line": 43,
               "start": 16,
               "end": 20
             },
@@ -471,7 +471,7 @@
           {
             "root": {
               "filename": "functions_as_locals.py",
-              "line": 5,
+              "line": 6,
               "start": 16,
               "end": 19
             },
@@ -499,7 +499,7 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 17,
+                "line": 18,
                 "start": 6,
                 "end": 9
               },
@@ -531,7 +531,7 @@
             "call": {
               "position": {
                 "filename": "functions_as_locals.py",
-                "line": 34,
+                "line": 35,
                 "start": 6,
                 "end": 9
               },

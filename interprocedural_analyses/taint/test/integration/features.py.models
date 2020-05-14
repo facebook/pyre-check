@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.async_issue_bools",
-    "callable_line": 87,
+    "callable_line": 88,
     "code": 5002,
-    "line": 89,
+    "line": 90,
     "start": 16,
     "end": 17,
     "filename": "features.py",
@@ -18,7 +18,7 @@
             "call": {
               "position": {
                 "filename": "features.py",
-                "line": 88,
+                "line": 89,
                 "start": 17,
                 "end": 39
               },
@@ -47,7 +47,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 89,
+              "line": 90,
               "start": 16,
               "end": 17
             },
@@ -71,9 +71,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_from_tuple",
-    "callable_line": 71,
+    "callable_line": 72,
     "code": 5002,
-    "line": 73,
+    "line": 74,
     "start": 16,
     "end": 17,
     "filename": "features.py",
@@ -86,7 +86,7 @@
             "call": {
               "position": {
                 "filename": "features.py",
-                "line": 72,
+                "line": 73,
                 "start": 11,
                 "end": 34
               },
@@ -115,7 +115,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 73,
+              "line": 74,
               "start": 16,
               "end": 17
             },
@@ -139,9 +139,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_via_bool",
-    "callable_line": 51,
+    "callable_line": 52,
     "code": 5002,
-    "line": 54,
+    "line": 55,
     "start": 16,
     "end": 17,
     "filename": "features.py",
@@ -153,7 +153,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 52,
+              "line": 53,
               "start": 8,
               "end": 23
             },
@@ -179,7 +179,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 54,
+              "line": 55,
               "start": 16,
               "end": 17
             },
@@ -204,9 +204,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_via_equality",
-    "callable_line": 61,
+    "callable_line": 62,
     "code": 5002,
-    "line": 64,
+    "line": 65,
     "start": 16,
     "end": 31,
     "filename": "features.py",
@@ -219,7 +219,7 @@
             "call": {
               "position": {
                 "filename": "features.py",
-                "line": 62,
+                "line": 63,
                 "start": 8,
                 "end": 32
               },
@@ -249,7 +249,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 64,
+              "line": 65,
               "start": 16,
               "end": 31
             },
@@ -281,7 +281,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 84,
+              "line": 85,
               "start": 11,
               "end": 26
             },
@@ -306,7 +306,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 84,
+              "line": 85,
               "start": 28,
               "end": 43
             },
@@ -410,7 +410,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 68,
+              "line": 69,
               "start": 11,
               "end": 26
             },
@@ -435,7 +435,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 68,
+              "line": 69,
               "start": 28,
               "end": 43
             },
@@ -470,7 +470,7 @@
           {
             "root": {
               "filename": "features.py",
-              "line": 58,
+              "line": 59,
               "start": 11,
               "end": 26
             },
@@ -525,7 +525,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 17, "start": 15, "end": 16 } ],
+            "tito": [ { "line": 18, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },
@@ -549,7 +549,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 21, "start": 15, "end": 16 } ],
+            "tito": [ { "line": 22, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },
@@ -573,7 +573,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 34, "start": 19, "end": 20 } ],
+            "tito": [ { "line": 35, "start": 19, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }
@@ -594,7 +594,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 25, "start": 18, "end": 19 } ],
+            "tito": [ { "line": 26, "start": 18, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -615,7 +615,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 29, "start": 33, "end": 34 } ],
+            "tito": [ { "line": 30, "start": 33, "end": 34 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },
@@ -640,8 +640,8 @@
           {
             "decl": null,
             "tito": [
-              { "line": 78, "start": 34, "end": 35 },
-              { "line": 78, "start": 19, "end": 20 }
+              { "line": 79, "start": 34, "end": 35 },
+              { "line": 79, "start": 19, "end": 20 }
             ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[1]" },

@@ -1,3 +1,6 @@
+from builtins import __test_sink, __test_source
+
+
 def concatenate_lhs(source: str):
     return source + "A"
 

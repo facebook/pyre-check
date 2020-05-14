@@ -1,4 +1,5 @@
-from typing import Any, Dict, Generic, Iterable, Mapping, Optional, Tuple, TypeVar, cast
+from builtins import __test_sink, __test_source
+from typing import Any, Dict, Generic, Iterable, Mapping, Optional, TypeVar, cast
 
 
 def dictionary_source():
@@ -122,7 +123,7 @@ def copy_untainted_values_with_tainted_keys():
     d = {__test_source(): 1}
     values_not_tainted = {}
     for key in d:
-        res[key] = d[key]
+        values_not_tainted[key] = d[key]
     return values_not_tainted
 
 

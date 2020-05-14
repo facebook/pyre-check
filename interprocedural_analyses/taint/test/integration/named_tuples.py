@@ -1,4 +1,5 @@
 import collections
+from builtins import __test_sink, __test_source
 from typing import NamedTuple
 
 

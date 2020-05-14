@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.append_directly",
-    "callable_line": 56,
+    "callable_line": 59,
     "code": 5002,
-    "line": 57,
+    "line": 60,
     "start": 4,
     "end": 5,
     "filename": "global_flows.py",
@@ -17,11 +17,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 57,
+              "line": 60,
               "start": 13,
               "end": 28
             },
-            "tito": [ { "line": 57, "start": 13, "end": 28 } ],
+            "tito": [ { "line": 60, "start": 13, "end": 28 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -42,7 +42,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 57,
+              "line": 60,
               "start": 4,
               "end": 5
             },
@@ -67,9 +67,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.append_indirectly",
-    "callable_line": 64,
+    "callable_line": 67,
     "code": 5002,
-    "line": 65,
+    "line": 68,
     "start": 20,
     "end": 35,
     "filename": "global_flows.py",
@@ -81,7 +81,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 65,
+              "line": 68,
               "start": 20,
               "end": 35
             },
@@ -103,7 +103,7 @@
             "call": {
               "position": {
                 "filename": "global_flows.py",
-                "line": 65,
+                "line": 68,
                 "start": 20,
                 "end": 35
               },
@@ -133,9 +133,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.update_x_at_arg1",
-    "callable_line": 12,
+    "callable_line": 15,
     "code": 5002,
-    "line": 13,
+    "line": 16,
     "start": 16,
     "end": 17,
     "filename": "global_flows.py",
@@ -147,11 +147,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 13,
+              "line": 16,
               "start": 19,
               "end": 34
             },
-            "tito": [ { "line": 13, "start": 19, "end": 34 } ],
+            "tito": [ { "line": 16, "start": 19, "end": 34 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -172,7 +172,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 13,
+              "line": 16,
               "start": 16,
               "end": 17
             },
@@ -197,9 +197,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.update_x_at_arg2",
-    "callable_line": 20,
+    "callable_line": 23,
     "code": 5002,
-    "line": 21,
+    "line": 24,
     "start": 33,
     "end": 34,
     "filename": "global_flows.py",
@@ -211,11 +211,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 21,
+              "line": 24,
               "start": 16,
               "end": 31
             },
-            "tito": [ { "line": 21, "start": 16, "end": 31 } ],
+            "tito": [ { "line": 24, "start": 16, "end": 31 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -236,7 +236,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 21,
+              "line": 24,
               "start": 33,
               "end": 34
             },
@@ -261,9 +261,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.x_tainted_indirectly_arg1",
-    "callable_line": 32,
+    "callable_line": 35,
     "code": 5002,
-    "line": 33,
+    "line": 36,
     "start": 29,
     "end": 44,
     "filename": "global_flows.py",
@@ -275,7 +275,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 33,
+              "line": 36,
               "start": 29,
               "end": 44
             },
@@ -297,7 +297,7 @@
             "call": {
               "position": {
                 "filename": "global_flows.py",
-                "line": 33,
+                "line": 36,
                 "start": 29,
                 "end": 44
               },
@@ -327,9 +327,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.x_tainted_indirectly_arg2",
-    "callable_line": 44,
+    "callable_line": 47,
     "code": 5002,
-    "line": 45,
+    "line": 48,
     "start": 29,
     "end": 44,
     "filename": "global_flows.py",
@@ -341,7 +341,7 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 45,
+              "line": 48,
               "start": 29,
               "end": 44
             },
@@ -363,7 +363,7 @@
             "call": {
               "position": {
                 "filename": "global_flows.py",
-                "line": 45,
+                "line": 48,
                 "start": 29,
                 "end": 44
               },
@@ -417,11 +417,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 61,
+              "line": 64,
               "start": 4,
               "end": 5
             },
-            "tito": [ { "line": 61, "start": 13, "end": 16 } ],
+            "tito": [ { "line": 64, "start": 13, "end": 16 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -449,11 +449,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 29,
+              "line": 32,
               "start": 16,
               "end": 17
             },
-            "tito": [ { "line": 29, "start": 19, "end": 22 } ],
+            "tito": [ { "line": 32, "start": 19, "end": 22 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -481,11 +481,11 @@
           {
             "root": {
               "filename": "global_flows.py",
-              "line": 41,
+              "line": 44,
               "start": 21,
               "end": 22
             },
-            "tito": [ { "line": 41, "start": 16, "end": 19 } ],
+            "tito": [ { "line": 44, "start": 16, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",

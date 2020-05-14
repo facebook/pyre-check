@@ -1,3 +1,6 @@
+from builtins import __test_sink, __test_source
+
+
 def source_field():
     result = {}
     result.a = __test_source()

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "remote_code_execution.rce_problem",
-    "callable_line": 1,
+    "callable_line": 4,
     "code": 5001,
-    "line": 3,
+    "line": 6,
     "start": 9,
     "end": 10,
     "filename": "remote_code_execution.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "remote_code_execution.py",
-              "line": 2,
+              "line": 5,
               "start": 8,
               "end": 27
             },
@@ -38,7 +38,7 @@
           {
             "root": {
               "filename": "remote_code_execution.py",
-              "line": 3,
+              "line": 6,
               "start": 9,
               "end": 10
             },

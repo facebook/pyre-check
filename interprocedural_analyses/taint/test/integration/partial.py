@@ -1,6 +1,6 @@
 # flake8: noqa
-
 import multiprocessing
+from builtins import __test_sink, __test_source
 from functools import partial
 
 

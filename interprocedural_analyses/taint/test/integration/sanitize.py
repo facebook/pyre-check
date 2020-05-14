@@ -1,5 +1,5 @@
 # flake8: noqa
-
+from builtins import __test_sink, __test_source
 from typing import Sequence, TypeVar
 
 

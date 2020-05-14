@@ -46,6 +46,7 @@ let test_fixpoint context =
   assert_fixpoint
     ~context
     {|
+      from builtins import __test_source, __test_sink, __user_controlled
       def bar():
         return __test_source()
 
@@ -287,6 +288,7 @@ let test_combined_analysis context =
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
+      from builtins import __test_sink, __user_controlled
       def combined_model(x, y, z):
         __test_sink(x)
         return x or __user_controlled()
@@ -318,6 +320,7 @@ let test_skipped_analysis context =
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> SkipAnalysis: ...
     |}
     {|
+      from builtins import __test_sink, __user_controlled
       def skipped_model(x, y, z):
         __test_sink(x)
         return x or __user_controlled()
@@ -345,6 +348,7 @@ let test_sanitized_analysis context =
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> Sanitize: ...
     |}
     {|
+      from builtins import __test_sink, __user_controlled
       def sanitized_model(x, y, z):
         eval(__user_controlled())
         __test_sink(x)
@@ -428,6 +432,7 @@ let test_overrides context =
   assert_fixpoint
     ~context
     {|
+      from builtins import __test_source, __test_sink, __user_controlled
       class Base:
         def split(self):
           pass

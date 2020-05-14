@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, TypeVar
+from builtins import __test_sink, __test_source
+from typing import Optional, TypeVar
 
 
 T = TypeVar("T")

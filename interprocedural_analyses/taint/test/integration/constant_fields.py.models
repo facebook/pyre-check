@@ -10,7 +10,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 47,
+              "line": 48,
               "start": 28,
               "end": 43
             },
@@ -45,7 +45,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 35,
+              "line": 36,
               "start": 20,
               "end": 35
             },
@@ -80,7 +80,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 41,
+              "line": 42,
               "start": 20,
               "end": 35
             },
@@ -115,7 +115,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 12,
+              "line": 13,
               "start": 34,
               "end": 49
             },
@@ -150,7 +150,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 18,
+              "line": 19,
               "start": 36,
               "end": 51
             },
@@ -185,7 +185,7 @@
           {
             "root": {
               "filename": "constant_fields.py",
-              "line": 24,
+              "line": 25,
               "start": 36,
               "end": 51
             },

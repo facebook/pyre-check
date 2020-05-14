@@ -1,4 +1,5 @@
 # Integration test illustrating flows through an inherited constructor
+from builtins import __test_sink, __test_source
 
 
 class MyBaseClass:

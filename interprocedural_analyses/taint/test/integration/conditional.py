@@ -9,7 +9,7 @@ def no_precondition_for_condition(x):
     return 0 if x else 1
 
 
-def some_source(name,):
+def some_source(name):
     pass
 
 

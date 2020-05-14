@@ -1,3 +1,6 @@
+from builtins import __test_sink, __test_source
+
+
 class StaticClass:
     @staticmethod
     def sink(oops):

@@ -1,4 +1,17 @@
+from builtins import __test_sink, __test_source
 from typing import List, Tuple
+
+
+def some_service(id):
+    ...
+
+
+def _unpack(tuple):
+    ...
+
+
+class DataRecord:
+    ...
 
 
 class Data:

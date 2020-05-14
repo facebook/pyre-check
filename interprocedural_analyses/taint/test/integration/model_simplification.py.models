@@ -11,7 +11,7 @@
           {
             "root": {
               "filename": "model_simplification.py",
-              "line": 36,
+              "line": 37,
               "start": 47,
               "end": 53
             },
@@ -24,7 +24,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 36,
+                "line": 37,
                 "start": 34,
                 "end": 54
               },
@@ -32,7 +32,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
+            "tito": [ { "line": 37, "start": 42, "end": 45 } ],
             "leaves": [
               { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
             ],
@@ -46,7 +46,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 43,
+                "line": 44,
                 "start": 56,
                 "end": 57
               },
@@ -67,7 +67,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 48,
+                "line": 49,
                 "start": 34,
                 "end": 35
               },
@@ -88,7 +88,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 58,
+                "line": 59,
                 "start": 34,
                 "end": 35
               },
@@ -114,7 +114,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 43, "start": 59, "end": 71 } ],
+            "tito": [ { "line": 44, "start": 59, "end": 71 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
           }
@@ -125,7 +125,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 43, "start": 56, "end": 57 } ],
+            "tito": [ { "line": 44, "start": 56, "end": 57 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
@@ -147,7 +147,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 28,
+                "line": 29,
                 "start": 25,
                 "end": 28
               },
@@ -173,7 +173,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 28, "start": 30, "end": 42 } ],
+            "tito": [ { "line": 29, "start": 30, "end": 42 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -187,7 +187,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 28, "start": 25, "end": 28 } ],
+            "tito": [ { "line": 29, "start": 25, "end": 28 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -209,7 +209,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 69,
+                "line": 70,
                 "start": 18,
                 "end": 21
               },
@@ -235,7 +235,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 69, "start": 18, "end": 21 } ],
+            "tito": [ { "line": 70, "start": 18, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -255,7 +255,7 @@
           {
             "root": {
               "filename": "model_simplification.py",
-              "line": 73,
+              "line": 74,
               "start": 21,
               "end": 36
             },

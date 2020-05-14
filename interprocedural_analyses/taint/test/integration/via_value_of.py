@@ -1,4 +1,5 @@
 import enum
+from builtins import __test_sink, __test_source
 
 
 def return_via_parameter_name(parameter):

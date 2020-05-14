@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.match_flows",
-    "callable_line": 11,
+    "callable_line": 14,
     "code": 5002,
-    "line": 13,
+    "line": 16,
     "start": 15,
     "end": 16,
     "filename": "port.py",
@@ -18,7 +18,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 12,
+                "line": 15,
                 "start": 8,
                 "end": 22
               },
@@ -44,7 +44,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 13,
+                "line": 16,
                 "start": 15,
                 "end": 16
               },
@@ -70,9 +70,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.match_star_arg_directly",
-    "callable_line": 29,
+    "callable_line": 32,
     "code": 5002,
-    "line": 30,
+    "line": 33,
     "start": 31,
     "end": 45,
     "filename": "port.py",
@@ -85,7 +85,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 30,
+                "line": 33,
                 "start": 31,
                 "end": 45
               },
@@ -111,7 +111,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 30,
+                "line": 33,
                 "start": 31,
                 "end": 45
               },
@@ -137,9 +137,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.match_star_arg_with_star",
-    "callable_line": 24,
+    "callable_line": 27,
     "code": 5002,
-    "line": 26,
+    "line": 29,
     "start": 26,
     "end": 31,
     "filename": "port.py",
@@ -152,7 +152,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 25,
+                "line": 28,
                 "start": 15,
                 "end": 29
               },
@@ -178,7 +178,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 26,
+                "line": 29,
                 "start": 26,
                 "end": 31
               },
@@ -204,9 +204,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.match_star_star_arg_directly",
-    "callable_line": 46,
+    "callable_line": 49,
     "code": 5002,
-    "line": 47,
+    "line": 50,
     "start": 40,
     "end": 54,
     "filename": "port.py",
@@ -219,7 +219,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 47,
+                "line": 50,
                 "start": 40,
                 "end": 54
               },
@@ -245,7 +245,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 47,
+                "line": 50,
                 "start": 40,
                 "end": 54
               },
@@ -271,9 +271,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.match_star_star_arg_with_star",
-    "callable_line": 41,
+    "callable_line": 44,
     "code": 5002,
-    "line": 43,
+    "line": 46,
     "start": 31,
     "end": 37,
     "filename": "port.py",
@@ -286,7 +286,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 42,
+                "line": 45,
                 "start": 27,
                 "end": 41
               },
@@ -312,7 +312,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 43,
+                "line": 46,
                 "start": 31,
                 "end": 37
               },
@@ -338,9 +338,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.refer_to_method_as_field",
-    "callable_line": 56,
+    "callable_line": 59,
     "code": 5002,
-    "line": 59,
+    "line": 62,
     "start": 16,
     "end": 21,
     "filename": "port.py",
@@ -353,7 +353,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 58,
+                "line": 61,
                 "start": 12,
                 "end": 27
               },
@@ -378,7 +378,7 @@
           {
             "root": {
               "filename": "port.py",
-              "line": 59,
+              "line": 62,
               "start": 16,
               "end": 21
             },
@@ -407,7 +407,7 @@
           {
             "root": {
               "filename": "port.py",
-              "line": 53,
+              "line": 56,
               "start": 15,
               "end": 30
             },
@@ -439,7 +439,7 @@
           {
             "root": {
               "filename": "port.py",
-              "line": 8,
+              "line": 11,
               "start": 16,
               "end": 21
             },
@@ -465,7 +465,7 @@
           {
             "root": {
               "filename": "port.py",
-              "line": 3,
+              "line": 6,
               "start": 15,
               "end": 30
             },
@@ -498,7 +498,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 17,
+                "line": 20,
                 "start": 15,
                 "end": 22
               },
@@ -530,7 +530,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 21,
+                "line": 24,
                 "start": 16,
                 "end": 21
               },
@@ -562,7 +562,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 34,
+                "line": 37,
                 "start": 15,
                 "end": 28
               },
@@ -594,7 +594,7 @@
             "call": {
               "position": {
                 "filename": "port.py",
-                "line": 38,
+                "line": 41,
                 "start": 21,
                 "end": 29
               },

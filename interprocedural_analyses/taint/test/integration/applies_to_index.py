@@ -1,3 +1,6 @@
+from builtins import __test_sink
+
+
 def only_applies_to_first():
     return 1, 0
 

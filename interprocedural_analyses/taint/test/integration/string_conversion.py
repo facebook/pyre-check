@@ -1,7 +1,7 @@
 from django.http import Request
 
 
-request: Request
+request: Request = ...
 
 
 class StrIsTainted:
