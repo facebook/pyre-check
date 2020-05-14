@@ -688,6 +688,31 @@ let test_decorator_factories context =
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
        str)], int]`.";
     ];
+  assert_type_errors
+    {|
+     from typing import Callable, overload
+
+     @overload
+     def decorator_factory(x: int) -> Callable[[object], Callable[[], int]]: ...
+     @overload
+     def decorator_factory(x: str) -> Callable[[object], Callable[[], str]]: ...
+     def decorator_factory(x: object) -> Callable[[object], Callable[[], object]]: ...
+
+     @decorator_factory(1)
+     def foo(name: str) -> int:
+         return len(name)
+
+     @decorator_factory("A")
+     def bar(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+     reveal_type(bar)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], int]`.";
+      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable[[], str]`.";
+    ];
   ()
 
 

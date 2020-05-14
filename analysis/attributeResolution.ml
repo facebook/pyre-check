@@ -3010,16 +3010,13 @@ module Implementation = struct
                       ~dependency,
                     arguments )
                 with
-                | Some { implementation = signature; _ }, Some arguments -> (
+                | Some callable, Some arguments -> (
                     let resolve_with_locals ~locals:_ expression =
                       let resolved = resolve_literal ~assumptions expression in
                       if Type.is_partially_typed resolved then
                         Type.Top
                       else
                         resolved
-                    in
-                    let callable =
-                      { Type.Callable.kind = Anonymous; implementation = signature; overloads = [] }
                     in
                     match
                       signature_select
