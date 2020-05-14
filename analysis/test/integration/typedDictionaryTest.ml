@@ -225,9 +225,9 @@ let test_check_typed_dictionaries context =
   assert_test_typed_dictionary
     {|
       import mypy_extensions
-      from typing import Mapping
+      from typing import Mapping, Any
       Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': str})
-      def foo(dictionary: Mapping[str, typing.Any]) -> None:
+      def foo(dictionary: Mapping[str, Any]) -> None:
         pass
       def f() -> None:
         baz: Baz
@@ -490,6 +490,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class A():
         pass
       class B(A):
@@ -993,6 +994,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import typing
       import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': typing.Any, 'year': 'int'})
       class Bar(mypy_extensions.TypedDict):
@@ -1007,6 +1009,7 @@ let test_check_typed_dictionaries context =
      attribute. *)
   assert_test_typed_dictionary
     {|
+      import typing
       import mypy_extensions
       class Bar(mypy_extensions.TypedDict):
         items: typing.List[int]
@@ -1015,6 +1018,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+     import typing
      import mypy_extensions
      from typing import Protocol
      class HasField(Protocol):

@@ -17,12 +17,14 @@ let test_check_variance context =
     ["Missing return annotation [3]: Returning `None` but no return type is specified."];
   assert_type_errors
     {|
+      import typing
       def foo(input: str) -> typing.List[int]:
         return typing.cast(typing.List[float], input)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
   assert_type_errors
     {|
+      import typing
       def foo(input) -> typing.List[int]:
         return typing.cast(typing.List[unknown], input)
     |}
@@ -33,6 +35,7 @@ let test_check_variance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Mapping[str, float]) -> float:
         return a["a"]
       def bar(x: typing.Dict[str, int]) -> float:
@@ -41,6 +44,7 @@ let test_check_variance context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(d: typing.Dict[int, typing.Any]) -> None:
         d.update({ 1: 1 })
     |}
@@ -144,17 +148,22 @@ let test_check_literal_variance context =
   let assert_type_errors = assert_type_errors ~context in
   (* We special case literal lists and dicts for convenience, as they can never escape scope. *)
   assert_type_errors {|
+      import typing
       x: typing.List[float] = []
       x = [1]
     |} [];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import typing
       x: typing.List[float] = []
       x = [y for y in [1,2,3,4]]
-    |} [];
+    |}
+    [];
 
   (* Mutable default arguments may escape scope, and we shouldn't allow subtyping. *)
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.List[float] = [1]) -> typing.List[float]:
         return x
     |}
@@ -164,6 +173,7 @@ let test_check_literal_variance context =
     ];
   assert_type_errors
     {|
+      import typing
       x: typing.List[float] = []
       y: typing.List[int] = [1]
       x = y
@@ -172,18 +182,23 @@ let test_check_literal_variance context =
       "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is "
       ^ "used as type `typing.List[int]`.";
     ];
-  assert_type_errors {|
-      x: typing.Dict[str, float] = {}
-      x = { "s": 1 }
-    |} [];
   assert_type_errors
     {|
+      import typing
+      x: typing.Dict[str, float] = {}
+      x = { "s": 1 }
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       x: typing.Dict[str, float] = {}
       x = { "s": value for value in [1,2,3] }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       x: typing.Dict[str, float] = {}
       x = { "s": "" }
     |}
@@ -193,6 +208,7 @@ let test_check_literal_variance context =
     ];
   assert_type_errors
     {|
+      import typing
       x: typing.Dict[str, float] = { "s": 1 }
       y: typing.Dict[str, int] = { "s": 1 }
       x = y
@@ -203,24 +219,32 @@ let test_check_literal_variance context =
     ];
 
   (* Returns. *)
-  assert_type_errors {|
-      def foo() -> typing.List[float]:
-        return [1]
-    |} [];
   assert_type_errors
     {|
+      import typing
+      def foo() -> typing.List[float]:
+        return [1]
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def foo() -> typing.List[float]:
         a = [1]
         return a
     |}
     ["Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`."];
 
-  assert_type_errors {|
-    def foo() -> typing.Dict[float, float]:
-      return {1: 1}
-    |} [];
   assert_type_errors
     {|
+    import typing
+    def foo() -> typing.Dict[float, float]:
+      return {1: 1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def foo() -> typing.Dict[float, float]:
         a = {1: 1}
         return a
@@ -229,18 +253,23 @@ let test_check_literal_variance context =
       "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got \
        `typing.Dict[int, int]`.";
     ];
-  assert_type_errors {|
-      def foo() -> typing.Set[float]:
-        return {1}
-    |} [];
   assert_type_errors
     {|
+      import typing
+      def foo() -> typing.Set[float]:
+        return {1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def foo() -> typing.Set[float]:
         return {x for x in [1,2,3]}
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Set[float]:
         a = {1}
         return a
@@ -248,6 +277,7 @@ let test_check_literal_variance context =
     ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.List[float]) -> float:
         return a[0]
       def bar() -> float:
@@ -256,6 +286,7 @@ let test_check_literal_variance context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.List[float]) -> float:
         return a[0]
       def bar() -> float:
@@ -269,6 +300,7 @@ let test_check_literal_variance context =
   assert_type_errors
     ~show_error_traces:true
     {|
+      import typing
       def foo(a: typing.List[float]) -> float:
         return a[0]
       def bar() -> float:
@@ -284,6 +316,7 @@ let test_check_literal_variance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, float]) -> float:
         return a["a"]
       def bar() -> float:
@@ -292,6 +325,7 @@ let test_check_literal_variance context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, float]) -> float:
         return a["a"]
       def bar() -> float:

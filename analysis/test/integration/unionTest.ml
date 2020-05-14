@@ -10,12 +10,14 @@ let test_check_union context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Union[str, int]:
         return 1.0
     |}
     ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Union[str, int]:
         if condition():
           return 1
@@ -25,6 +27,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def takes_int(a: int) -> None: ...
       def takes_str(a: str) -> None: ...
 
@@ -37,6 +40,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Union[str, int, float]) -> int:
         if isinstance(a, int):
           return a
@@ -46,6 +50,7 @@ let test_check_union context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Union[float, str]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', int, str)
       def foo(a: T) -> float:
         return a
@@ -53,6 +58,7 @@ let test_check_union context =
     ["Incompatible return type [7]: Expected `float` but got `Variable[T <: [int, str]]`."];
   assert_type_errors
     {|
+      import typing
       variable: typing.Union[typing.Optional[int], typing.Optional[str]] = None
       def ret_opt_int() -> typing.Optional[int]:
           return None
@@ -61,6 +67,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, Undefined]) -> None:
         pass
       foo(1)
@@ -68,12 +75,14 @@ let test_check_union context =
     ["Undefined or invalid type [11]: Annotation `Undefined` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.int_attribute
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.str_attribute
     |}
@@ -83,6 +92,7 @@ let test_check_union context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[OtherAttributes, Attributes]) -> int:
         return x.str_attribute
     |}
@@ -92,6 +102,7 @@ let test_check_union context =
     ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def derp(self) -> int: ...
       class Bar:
@@ -102,6 +113,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def derp(self) -> int: ...
       class Bar:
@@ -117,6 +129,7 @@ let test_check_union context =
   (* We require that all elements in a union have the same method for `in`. *)
   assert_type_errors
     {|
+      import typing
       class Equal:
         def __eq__(self, other: object) -> typing.List[int]:
           ...
@@ -132,6 +145,7 @@ let test_check_union context =
     ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Optional[typing.Union[int, str]]) -> None:
         return g(x)
 
@@ -141,6 +155,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[int, typing.Tuple[int, int], typing.Optional[str]]) -> None:
         return g(x)
 
@@ -150,6 +165,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[typing.Optional[int], typing.Tuple[int, int], typing.Optional[str]]) \
           -> None:
         return g(x)
@@ -160,6 +176,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[typing.Optional[int]]) -> None:
         return g(x)
 
@@ -169,6 +186,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[int, str, None]) -> None:
         return g(x)
 
@@ -178,6 +196,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[int, typing.Union[str, typing.Optional[typing.Tuple[int, int]]]]) -> \
           None:
         return g(x)
@@ -188,6 +207,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[int, typing.Optional[str]]) -> None:
         return g(x)
 
@@ -197,6 +217,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(x: typing.Union[int, str, typing.Tuple[int, int]]) -> None:
         pass
 
@@ -209,6 +230,7 @@ let test_check_union context =
     ];
   assert_type_errors
     {|
+      import typing
       class A:
         def __call__(self, x: int) -> bool:
           return True

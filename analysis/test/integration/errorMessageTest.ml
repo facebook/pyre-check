@@ -22,13 +22,17 @@ let test_show_error_traces context =
       ^ "Type `str` expected on line 1, specified on line 1.";
     ];
   assert_type_errors
-    "def foo() -> typing.List[str]: return 1"
+    {|
+      import typing
+      def foo() -> typing.List[str]: return 1
+    |}
     [
       "Incompatible return type [7]: Expected `typing.List[str]` but got `int`. Type "
-      ^ "`typing.List[str]` expected on line 1, specified on line 1.";
+      ^ "`typing.List[str]` expected on line 3, specified on line 3.";
     ];
   assert_type_errors
     {|
+      import typing
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
@@ -169,6 +173,7 @@ let test_show_error_traces context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         a: typing.List[float] = [1]
         b: typing.List[int] = [2]
@@ -176,20 +181,21 @@ let test_show_error_traces context =
     |}
     [
       "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is used \
-       as type `typing.List[int]`. Redeclare `a` on line 5 if you wish to override the previously \
+       as type `typing.List[int]`. Redeclare `a` on line 6 if you wish to override the previously \
        declared type. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
        for mutable container errors.";
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.List[float]:
         l = [1]
         return l
     |}
     [
       "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
-       Type `typing.List[float]` expected on line 4, specified on line 2. See \
+       Type `typing.List[float]` expected on line 5, specified on line 3. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
        for mutable container errors.";
     ]
@@ -232,6 +238,7 @@ let test_concise context =
   (* Prohibited Any *)
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Any = 1
     |}
@@ -240,6 +247,7 @@ let test_concise context =
   (* Missing Annotation *)
   assert_type_errors
     {|
+      import typing
       x: typing.Any = 1
     |}
     ["Missing global annotation [5]: Global annotation cannot be `Any`."];
@@ -259,6 +267,7 @@ let test_concise context =
   (* Incompatible Annotation *)
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, str] = 1.0) -> None:
         return
     |}
@@ -369,15 +378,20 @@ let test_concise context =
   (* TypedDict *)
   assert_type_errors
     {|
+      import mypy_extensions
       Cat = mypy_extensions.TypedDict('Cat', {'name': str, 'breed': str})
       def foo(x: Cat) -> None:
           y = x["year"]
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`."];
+    [
+      "Undefined import [21]: Could not find `mypy_extensions`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`.";
+    ];
 
   (* Redundant Cast *)
   assert_type_errors
     {|
+      import typing
       x: int
       y: int = typing.cast(int, x)
     |}

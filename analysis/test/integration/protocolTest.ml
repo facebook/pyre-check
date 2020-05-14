@@ -11,6 +11,7 @@ let test_check_protocol context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -28,6 +29,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class Beta: pass
       class Chi(Beta): pass
 
@@ -48,6 +50,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -68,6 +71,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class FooProtocol(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -95,6 +99,7 @@ let test_check_protocol context =
     ];
   assert_type_errors
     {|
+      import typing
       class ParentFoo():
         def foo(self) -> int:
           return 7
@@ -115,6 +120,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -135,6 +141,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class FooProtocol(typing.Protocol):
         def foo(self) -> int: ...
       class FooBarProtocol(typing.Protocol):
@@ -151,6 +158,7 @@ let test_check_protocol context =
   (* Collection -> Sized is special cased for now *)
   assert_type_errors
     {|
+      import typing
       def foo(
         a: typing.Sequence[int],
         b: typing.Mapping[int, int],
@@ -162,6 +170,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(d: typing.Collection[T]) -> T: ...
       def bar(x: typing.List[int]) -> int:
@@ -171,6 +180,7 @@ let test_check_protocol context =
     ["Revealed type [-1]: Revealed type for `test.foo(x)` is `int`."];
   assert_type_errors
     {|
+      import typing
       class Alpha:
         def __hash__(self) -> int:
           return 9
@@ -185,6 +195,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         foo: int
 
@@ -201,6 +212,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         foo: int
 
@@ -214,6 +226,7 @@ let test_check_protocol context =
     ];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         foo: int
 
@@ -230,6 +243,7 @@ let test_check_protocol context =
     ];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         foo: int
         def __init__(self) -> None:
@@ -238,6 +252,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> P: ...
 
@@ -259,6 +274,7 @@ let test_check_protocol context =
     ];
   assert_type_errors
     {|
+      import typing
       class P1(typing.Protocol):
         def foo(self) -> P2: ...
       class P2(typing.Protocol):
@@ -281,6 +297,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self, param: int) -> int: ...
 
@@ -302,6 +319,7 @@ let test_check_protocol context =
     ];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self, __dunder: int) -> int: ...
 
@@ -324,6 +342,7 @@ let test_check_protocol context =
     [];
   assert_default_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -341,6 +360,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         pass
       P()
@@ -348,6 +368,7 @@ let test_check_protocol context =
     ["Invalid class instantiation [45]: Cannot instantiate protocol `P`."];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
       class AlphaMeta(type):
@@ -415,6 +436,7 @@ let test_check_protocol context =
 
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         __foo: int
         def __bar(self) -> int: ...
@@ -465,6 +487,7 @@ let test_check_generic_protocols context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
         def foo(self) -> T: ...
@@ -483,6 +506,7 @@ let test_check_generic_protocols context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
         def foo(self) -> T: ...
@@ -504,6 +528,7 @@ let test_check_generic_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
         def foo(self) -> T: ...
@@ -525,6 +550,7 @@ let test_check_generic_protocols context =
     ["Revealed type [-1]: Revealed type for `v` is `int`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
         def foo(self) -> T: ...
@@ -547,6 +573,7 @@ let test_check_generic_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       X = typing.TypeVar("X")
       Y = typing.TypeVar("Y")
       class PXY(typing.Protocol[X, Y]):
@@ -579,12 +606,16 @@ let test_check_generic_protocols context =
 
 let test_check_generic_implementors context =
   let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors {|
-      def foo(l: typing.List[int]) -> int:
-         return len(l)
-    |} [];
   assert_type_errors
     {|
+      import typing
+      def foo(l: typing.List[int]) -> int:
+         return len(l)
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> typing.Union[int, str]: ...
 
@@ -606,6 +637,7 @@ let test_check_generic_implementors context =
     [];
   assert_type_errors
     {|
+    import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
       def foo(self) -> T1: ...
@@ -628,6 +660,7 @@ let test_check_generic_implementors context =
     [];
   assert_type_errors
     {|
+    import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
       def foo(self) -> T1: ...
@@ -653,6 +686,7 @@ let test_check_generic_implementors context =
     ];
   assert_type_errors
     {|
+    import typing
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
       def foo(self) -> T1: ...
@@ -676,6 +710,7 @@ let test_check_generic_implementors context =
     [];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
@@ -702,6 +737,7 @@ let test_callback_protocols context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def __call__(self, x: int, y:str) -> bool: ...
       def takesP(f: P) -> bool:
@@ -733,6 +769,7 @@ let test_callback_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class P(typing.Protocol[T]):
         def __call__(self, x: int, y:str) -> T: ...
@@ -752,6 +789,7 @@ let test_callback_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class P(typing.Protocol[T]):
         def __call__(self, x: int, y:str) -> T: ...
@@ -781,6 +819,7 @@ let test_callback_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       class P(typing.Protocol):
         def __call__(self, __dunder: int) -> bool: ...
       def parameterMismatch(x: int) -> bool:

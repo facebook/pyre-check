@@ -223,6 +223,7 @@ let test_check_init context =
     [];
   assert_type_errors
     {|
+      import typing
       class Foo:
         attribute: typing.Optional[int]
         def __init__(self) -> None:
@@ -234,6 +235,7 @@ let test_check_init context =
     ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         attribute: typing.Optional[int]
         def __init__(self) -> None:
@@ -504,6 +506,7 @@ let test_check_constructors context =
     ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def __init__(self, i: int, s: typing.Optional[str] = None) -> None:
           pass
@@ -785,6 +788,7 @@ let test_check_constructors context =
     [];
   assert_type_errors
     {|
+      import typing
       class Class:
         def __init__(self, i: int) -> None: ...
       def foo(x: typing.Type[Class]) -> Class:
@@ -793,6 +797,7 @@ let test_check_constructors context =
     [];
   assert_type_errors
     {|
+      import typing
       class Class:
         def __init__(self, i: int) -> None: ...
       def foo(x: typing.Type[Clss]) -> Class:
@@ -804,18 +809,21 @@ let test_check_constructors context =
     ];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x()
     |}
     [];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x(42)
     |}
     [];
   assert_strict_type_errors
     {|
+      import typing
       class Class:
         def __init__(self, i: int) -> None: ...
       def foo(x: typing.Type[Clss]) -> Class:
@@ -824,6 +832,7 @@ let test_check_constructors context =
     ["Undefined or invalid type [11]: Annotation `Clss` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       class Class:
         def __init__(self, i: int) -> None:
           ...
@@ -833,6 +842,7 @@ let test_check_constructors context =
     [];
   assert_type_errors
     {|
+      import typing
       class Class:
         def __init__(self, i: int) -> None:
           ...
@@ -896,6 +906,7 @@ let test_newtype context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C():
         def __init__(self, a: int, b: str) -> None: pass
       T = typing.NewType('T', C)
@@ -906,6 +917,7 @@ let test_newtype context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C():
         def __init__(self, a: int, b: str) -> None: pass
       T = typing.NewType('T', C)

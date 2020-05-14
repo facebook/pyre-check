@@ -19,6 +19,7 @@ let test_check_async context =
     [];
   assert_type_errors
     {|
+      import typing
       def bar(a: typing.Awaitable[int]) -> int:
         return await a
     |}
@@ -32,6 +33,7 @@ let test_check_async context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
 
@@ -41,6 +43,7 @@ let test_check_async context =
     ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_strict_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
 
@@ -58,12 +61,16 @@ let test_check_async context =
         await a
     |}
     ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
-  assert_default_type_errors {|
+  assert_default_type_errors
+    {|
+      import typing
       def bar(a: typing.Any) -> None:
         await a
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
+      import typing
       async def read(file: typing.AsyncIterable[str]) -> typing.List[str]:
         return [data async for data in file]
     |}
@@ -107,6 +114,7 @@ let test_check_async context =
     ];
   assert_type_errors
     {|
+      import typing
       async def foo() -> typing.AsyncGenerator[bool, None]:
         # not a generator; this gets wrapped in a coroutine
         ...
@@ -124,6 +132,7 @@ let test_check_async context =
     ];
   assert_type_errors
     {|
+      import typing
       async def foo() -> typing.AsyncGenerator[bool, None]:
         yield
 
@@ -135,6 +144,7 @@ let test_check_async context =
     ["Revealed type [-1]: Revealed type for `test.foo()` is `typing.AsyncGenerator[bool, None]`."];
   assert_type_errors
     {|
+      import typing
       async def foo(x: typing.AsyncGenerator[int, None]) -> None:
         async for a in x:
           reveal_type(a)
@@ -142,6 +152,7 @@ let test_check_async context =
     ["Revealed type [-1]: Revealed type for `a` is `int`."];
   assert_type_errors
     {|
+      import typing
       class C:
           async def foo(self) -> typing.AsyncGenerator[bool, None]:
               yield
@@ -157,6 +168,7 @@ let test_check_async context =
     ];
   assert_type_errors
     {|
+      import typing
       class C:
           async def foo(self) -> typing.AsyncGenerator[bool, None]:
             # not a generator; this gets wrapped in a coroutine
@@ -175,6 +187,7 @@ let test_check_async context =
     ];
   assert_type_errors
     {|
+        import typing
         class A:
             async def f(self) -> typing.AsyncIterator[str]:
                 yield "A"

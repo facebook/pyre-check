@@ -148,6 +148,7 @@ let test_check_excepts context =
     ["Revealed type [-1]: Revealed type for `e` is `typing.Union[Bar, Foo]`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Optional[int]:
         try:
           x = 1
@@ -192,6 +193,7 @@ let test_check_ternary context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         x: typing.Optional[int]
         y: int
@@ -201,6 +203,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         y: typing.Optional[int]
         return y if y else 5
@@ -219,6 +222,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         y: typing.Optional[int]
         x: int
@@ -227,24 +231,28 @@ let test_check_ternary context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo(a:typing.Optional[int])->str:
         return int_to_str(a) if a else ""
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
           int_to_int(x) if x else 0
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
           return int_to_int(x if x is not None else 1)
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         a, b = ("hi", int_to_int(x) if x is not None else 1)
         return b
@@ -252,6 +260,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(s: str) -> None:
         pass
 
@@ -272,6 +281,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[bytes]) -> None: ...
       def bar() -> None:
         a: typing.Union[int, bytes]

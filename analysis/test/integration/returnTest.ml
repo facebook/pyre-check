@@ -349,8 +349,8 @@ let test_check_return_control_flow context =
   assert_type_errors
     "def foo() -> str: return None"
     ["Incompatible return type [7]: Expected `str` but got `None`."];
-  assert_type_errors "def foo() -> typing.Optional[str]: return None" [];
-  assert_type_errors "def foo() -> typing.Optional[int]: return 1" [];
+  assert_type_errors "import typing\ndef foo() -> typing.Optional[str]: return None" [];
+  assert_type_errors "import typing\ndef foo() -> typing.Optional[int]: return 1" [];
   assert_type_errors
     {|
       import typing

@@ -17,6 +17,7 @@ let test_assert_is_none context =
     [];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -31,6 +32,7 @@ let test_assert_is_none context =
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -57,6 +59,7 @@ let test_assert_is_none context =
     ["Revealed type [-1]: Revealed type for `f.x` is `int`."];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -71,6 +74,7 @@ let test_assert_is_none context =
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -262,6 +266,7 @@ let test_check_global_refinement context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -274,6 +279,7 @@ let test_check_global_refinement context =
     ["Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -287,6 +293,7 @@ let test_check_global_refinement context =
     ["Revealed type [-1]: Revealed type for `a.x` is `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       MY_GLOBAL: typing.Optional[int] = 1
 
       def foo() -> None:
@@ -296,6 +303,7 @@ let test_check_global_refinement context =
     ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       x: typing.Optional[int] = 1
 
       def foo() -> None:
@@ -311,6 +319,7 @@ let test_check_local_refinement context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x:
           reveal_type(x)
@@ -318,6 +327,7 @@ let test_check_local_refinement context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, str, None]) -> None:
         if x:
           reveal_type(x)
@@ -328,6 +338,7 @@ let test_check_local_refinement context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, str, None]) -> None:
         if x is None:
           x = 42
@@ -339,6 +350,7 @@ let test_check_local_refinement context =
     ];
   assert_type_errors
     {|
+      import typing
       class FakeTest(unittest.TestCase):
         def foo(self, x: typing.Optional[int]) -> None:
           self.assertIsNotNone(x)
@@ -347,6 +359,7 @@ let test_check_local_refinement context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
+      import typing
       x: typing.Optional[int] = 1
 
       def foo(test: bool) -> None:
@@ -360,6 +373,7 @@ let test_check_local_refinement context =
     ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Optional[int]
         if x is not None:
@@ -368,6 +382,7 @@ let test_check_local_refinement context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[str]) -> typing.Optional[str]:
         d = {"a": "a"}
         if x in d:
@@ -396,6 +411,7 @@ let test_check_isinstance context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if isinstance(x, int):
           reveal_type(x)
@@ -403,6 +419,7 @@ let test_check_isinstance context =
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_type_errors
     {|
+      import typing
       MY_GLOBAL: typing.Union[int, str] = 1
 
       def foo() -> None:
@@ -412,6 +429,7 @@ let test_check_isinstance context =
     ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def __init__(self) -> None:
           self.x: typing.Union[int, str] = 1
@@ -428,6 +446,7 @@ let test_assert_contains_none context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.List[typing.Optional[int]]) -> None:
         assert None not in x
         reveal_type(x)
@@ -438,6 +457,7 @@ let test_assert_contains_none context =
     ];
   assert_type_errors
     {|
+      import typing
       def bar(i: typing.Optional[int]) -> bool:
         return i is not None
 
@@ -464,6 +484,7 @@ let test_assert_contains_none context =
     ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.Any) -> None:
         assert None not in x
         reveal_type(x)
@@ -471,6 +492,7 @@ let test_assert_contains_none context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.List[Derp]) -> None:
         assert None not in x
         reveal_type(x)
@@ -481,6 +503,7 @@ let test_assert_contains_none context =
     ];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.List[typing.Any]) -> None:
         assert None not in x
         reveal_type(x)

@@ -164,6 +164,7 @@ let ignore_lines_test context =
   assert_errors
     {|
         # pyre-strict
+        import typing
         # pyre-fixme[3]: Return annotation cannot be `Any`.
         # pyre-fixme[2]: Parameter annotation cannot be `Any`.
         # pyre-fixme[2]: Parameter annotation cannot be `Any`.

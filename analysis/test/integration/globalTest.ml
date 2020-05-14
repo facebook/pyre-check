@@ -23,6 +23,7 @@ let test_check_with_qualification context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
       l: typing.List[int] = [1]
       def hello() -> int:
         for i in l:
@@ -155,6 +156,7 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
       constant: typing.Union[int, str] = 1
       def foo() -> int:
         return constant
@@ -221,6 +223,7 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
       x: typing.List[int]
       def foo() -> int:
         return x[0]
@@ -228,6 +231,7 @@ let test_check_globals context =
     [];
   assert_type_errors
     {|
+      import typing
       x: typing.List[int]
       def foo() -> typing.List[int]:
         return x[0:1]
@@ -235,6 +239,7 @@ let test_check_globals context =
     [];
   assert_default_type_errors
     {|
+      import typing
       x: typing.List = [1,2,3]
       def foo() -> typing.List[typing.Any]:
         return x
@@ -242,6 +247,7 @@ let test_check_globals context =
     [];
   assert_default_type_errors
     {|
+      import typing
       x: typing.Dict = { "derp": 42 }
       def foo() -> typing.Dict[typing.Any, typing.Any]:
         return x
@@ -285,6 +291,7 @@ let test_check_globals context =
     ];
   assert_type_errors
     {|
+      import typing
       x = None
       y = []
       def foo() -> str:
@@ -305,6 +312,7 @@ let test_check_globals context =
       "Incompatible return type [7]: Expected `str` but got `unknown`.";
     ];
   assert_type_errors {|
+      import typing
       A = typing.Mapping[int, str]
     |} [];
   assert_type_errors
@@ -318,11 +326,13 @@ let test_check_globals context =
     ];
   assert_type_errors
     {|
+      import typing
       MyType = typing.List[typing.Any]
     |}
     ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."];
   assert_type_errors
     {|
+      import typing
       GLOBAL: typing.Optional[int]
       def foo() -> int:
         if GLOBAL:

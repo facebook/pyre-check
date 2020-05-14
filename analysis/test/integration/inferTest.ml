@@ -36,12 +36,14 @@ let test_check_missing_parameter context =
   (* typing.Any given *)
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Any) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[str, typing.Any], y: typing.Dict[int, typing.Any]) -> int:
         return 1
     |}
@@ -51,6 +53,7 @@ let test_check_missing_parameter context =
     ];
   assert_strict_type_errors
     {|
+      import typing
       MyType = typing.Any
       def foo(x: MyType) -> int:
         return 1
@@ -58,12 +61,14 @@ let test_check_missing_parameter context =
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Any = unknown) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[typing.Any, str]) -> int:
         return 1
     |}
@@ -90,6 +95,7 @@ let test_check_missing_parameter context =
     ["Undefined or invalid type [11]: Annotation `UnknownType` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> int:
         return 1
     |}
@@ -114,12 +120,14 @@ let test_check_missing_return context =
     ["Missing return annotation [3]: Returning `int` but no return type is specified."];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Any:
         return 1
     |}
     ["Missing return annotation [3]: Returning `int` but type `Any` is specified."];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Dict[str, typing.Any]:
         return {}
 
@@ -132,6 +140,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       MyType = typing.Any
       def foo() -> MyType:
         return 1
@@ -140,6 +149,7 @@ let test_check_missing_return context =
   assert_type_errors
     ~update_environment_with:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|
+      import typing
       from export import MyType
       MyTypeLocal = typing.List[typing.Any]
       def foo() -> MyType:
@@ -197,6 +207,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x) -> typing.Any:
         return x
     |}
@@ -227,6 +238,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Any:
         x = unknown_call()
         return x
@@ -238,6 +250,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+       import typing
        def foo(x: typing.Any) -> typing.Any:
          return x
      |}
@@ -247,6 +260,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Tuple[int, typing.Any]:
         return (1, 2)
     |}
@@ -287,6 +301,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Any:
         if condition():
           return 1
@@ -297,6 +312,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[int]) -> typing.Any:
         return optional or int_to_bool(optional)
     |}
@@ -309,6 +325,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[int]) -> typing.Any:
         return optional and int_to_bool(optional)
     |}
@@ -318,6 +335,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Any:
         yield
     |}

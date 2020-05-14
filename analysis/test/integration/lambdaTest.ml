@@ -11,6 +11,7 @@ let test_check_map_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return map(lambda x: str(x), l)
     |}
@@ -19,6 +20,7 @@ let test_check_map_lambda context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[str]:
         return map(lambda x: str(x), l)
     |}
@@ -26,12 +28,14 @@ let test_check_map_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[int]:
         return map(lambda x: str(x), l)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.Iterator[str]`."];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[str]:
         return map(lambda x: str(x), l)
     |}
@@ -39,12 +43,14 @@ let test_check_map_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return list(map(lambda x: str(x), l))
     |}
     ["Incompatible return type [7]: Expected `typing.Iterator[int]` but got `typing.List[str]`."];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[str]:
         return list(map(lambda x: str(x), l))
     |}
@@ -52,12 +58,14 @@ let test_check_map_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[int]:
         return list(map(lambda x: x, l))
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[str]:
         return list(map(lambda x: x, l))
     |}
@@ -65,6 +73,7 @@ let test_check_map_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[str]:
         return list(map(lambda x: str(x) if isinstance(x, int) else None, l))
     |}
@@ -79,6 +88,7 @@ let test_check_filter_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return filter(lambda x: x * x == 10, l)
     |}
@@ -86,6 +96,7 @@ let test_check_filter_lambda context =
   (* False positive *)
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[str]) -> typing.Iterator[str]:
         return filter(lambda x: x * x == 10, l)
     |}
@@ -93,6 +104,7 @@ let test_check_filter_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.Iterator[int]:
         return filter(lambda x: x * x == 10, l)
     |}
@@ -100,6 +112,7 @@ let test_check_filter_lambda context =
   (* False positive *)
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[str]) -> typing.Iterator[str]:
         return filter(lambda x: x * x == 10, l)
     |}
@@ -107,12 +120,14 @@ let test_check_filter_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> typing.List[int]:
         return filter(lambda x: x * x == 10, l)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.Iterator[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[str]) -> typing.List[str]:
         return filter(lambda x: x * x == 10, l)
     |}
@@ -120,6 +135,7 @@ let test_check_filter_lambda context =
 
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[str]) -> typing.Iterator[str]:
         return filter(lambda x: x[:4] == "http", l)
     |}
@@ -127,6 +143,7 @@ let test_check_filter_lambda context =
   (* False positive *)
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return filter(lambda x: x[:4] == "http", l)
     |}
@@ -139,6 +156,8 @@ let test_check_reduce_lambda context =
   (* False negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[int]) -> int:
         return functools.reduce(lambda x, y: x + y, l)
     |}
@@ -146,6 +165,8 @@ let test_check_reduce_lambda context =
   (* False negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[int]) -> str:
         return functools.reduce(lambda x, y: x + y, l)
     |}
@@ -154,6 +175,8 @@ let test_check_reduce_lambda context =
   (* False positive and false negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[str]) -> str:
         return functools.reduce(lambda x, y: x * y, l)
     |}
@@ -161,6 +184,8 @@ let test_check_reduce_lambda context =
   (* False positive and false negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[str]) -> int:
         return functools.reduce(lambda x, y: x * y, l)
     |}
@@ -169,12 +194,16 @@ let test_check_reduce_lambda context =
   (* False negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[int]) -> int:
         return functools.reduce(lambda x, y: x + y, l, 1)
     |}
     ["Incompatible return type [7]: Expected `int` but got `unknown`."];
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[int]) -> str:
         return functools.reduce(lambda x, y: x + y, l, 1)
     |}
@@ -183,6 +212,8 @@ let test_check_reduce_lambda context =
   (* False positive and false negative *)
   assert_type_errors
     {|
+      import typing
+      import functools
       def foo(l: typing.Iterator[str]) -> str:
         return functools.reduce(lambda x, y: x * y, l, "a")
     |}
@@ -194,6 +225,7 @@ let test_check_apply_lambda context =
 
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("_T")
       _S = typing.TypeVar("_S")
 
@@ -206,6 +238,7 @@ let test_check_apply_lambda context =
     [];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("_T")
       _S = typing.TypeVar("_S")
 
@@ -219,6 +252,7 @@ let test_check_apply_lambda context =
 
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("_T")
       _S = typing.TypeVar("_S")
 
@@ -231,6 +265,7 @@ let test_check_apply_lambda context =
     [];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("_T")
       _S = typing.TypeVar("_S")
 

@@ -60,6 +60,7 @@ let test_check_isinstance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, typing.List[int]]) -> None:
         if isinstance(x, list):
           reveal_type(x)
@@ -72,6 +73,7 @@ let test_check_isinstance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, typing.List[str], str, typing.List[int]]) -> None:
         if isinstance(x, list):
           reveal_type(x)
@@ -85,6 +87,7 @@ let test_check_isinstance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, typing.Set[str], str, typing.Set[int]]) -> None:
         if isinstance(x, set):
           reveal_type(x)
@@ -98,6 +101,7 @@ let test_check_isinstance context =
     ];
   assert_type_errors
     {|
+      import typing
       class CommonBase(): pass
       class ChildA(CommonBase): pass
       class ChildB(CommonBase): pass
@@ -114,6 +118,7 @@ let test_check_isinstance context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, float, bool]) -> None:
         if isinstance(x, str):
           reveal_type(x)

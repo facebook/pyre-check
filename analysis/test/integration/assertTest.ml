@@ -10,6 +10,7 @@ let test_check_assert context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[str]) -> None:
         if optional or len(optional) > 0:
           pass
@@ -21,6 +22,7 @@ let test_check_assert context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[str]) -> None:
         if optional is None or len(optional) > 0:
           pass
@@ -28,6 +30,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[str]) -> None:
         if optional and len(optional) > 0:
           pass
@@ -79,6 +82,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
           expect_int(x)
@@ -89,6 +93,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
           expect_int(x)
@@ -99,6 +104,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
           expect_int(x)
@@ -112,6 +118,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
           expect_int(x)
@@ -125,6 +132,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is None:
           pass
@@ -137,6 +145,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is None:
           pass
@@ -153,6 +162,7 @@ let test_check_assert_functions context =
   assert_default_type_errors
     ~context
     {|
+      import typing
       class One:
           a: int = 1
 
@@ -173,6 +183,7 @@ let test_check_assert_functions context =
     ~context
     ~handle:"foo.py"
     {|
+      import typing
       class One:
           a: int = 1
 
@@ -192,6 +203,7 @@ let test_check_assert_functions context =
   assert_type_errors
     ~context
     {|
+      import typing
       class One:
           a: int = 1
 
@@ -215,6 +227,7 @@ let test_check_all context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.List[typing.Optional[str]]) -> typing.Optional[str]:
         if all(x):
           return ','.join(x)
@@ -222,6 +235,7 @@ let test_check_all context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
         if all( x):
           return ','.join(x)
@@ -229,6 +243,7 @@ let test_check_all context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
         if not all(x):
           return ','.join(x)
@@ -239,6 +254,7 @@ let test_check_all context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Iterable[typing.Union[str, None]]) -> typing.Optional[str]:
         if all(x):
           return ','.join(x)
@@ -246,6 +262,7 @@ let test_check_all context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Iterable[typing.Union[str, int, None]]) -> \
           typing.Iterable[typing.Union[str, int]]:
         if all(x):
@@ -255,6 +272,7 @@ let test_check_all context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[typing.Optional[int], _T]) -> typing.Dict[int, _T]:
         if all(x):
           return x
@@ -296,10 +314,13 @@ let test_check_impossible_assert context =
         assert x
     |}
     ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
-  assert_default_type_errors {|
+  assert_default_type_errors
+    {|
+      import typing
       def foo(x: typing.Any) -> None:
         assert x
-    |} [];
+    |}
+    [];
 
   assert_type_errors
     {|
@@ -323,6 +344,7 @@ let test_check_impossible_assert context =
     ];
   assert_default_type_errors
     {|
+      import typing
       class Derp: ...
       def derp(x: Derp, y: typing.Type[typing.Any]) -> None:
         assert not isinstance(x, y)

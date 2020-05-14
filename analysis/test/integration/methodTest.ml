@@ -32,6 +32,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo() -> typing.Optional[typing.List[int]]:
           return [3]
     |}
@@ -40,6 +41,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -51,6 +53,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -62,6 +65,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -73,6 +77,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -84,6 +89,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -95,6 +101,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -106,6 +113,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -117,6 +125,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C:
           pass
       class D(C):
@@ -128,6 +137,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo() -> typing.Dict[int, typing.Optional[bool]]:
         return {
           **{1: True},
@@ -138,6 +148,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo() -> typing.Dict[int, typing.Optional[bool]]:
         d1 = {1: True}
         d2 = {3: False}
@@ -150,6 +161,7 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      import typing
       class C: ...
       class D(C): ...
       def foo() -> typing.Mapping[C, C]:
@@ -249,6 +261,7 @@ let test_check_inverse_operator context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo() -> None:
         d: typing.Dict[str, typing.Any] = {"foo": 3}
         z = d["foo"] + d["foo"]
@@ -258,6 +271,7 @@ let test_check_inverse_operator context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo(xs: typing.Iterable[typing.Any]) -> None:
         a, b = xs
         reveal_type(a)
@@ -275,6 +289,7 @@ let test_check_inverse_operator context =
        for dealing with edge cases with old-style format strings when the format string happens to
        be typed as Any. *)
     {|
+      import typing
       def baz(d: typing.Dict[str, typing.Any]) -> None:
         a = d["foo"]
         reveal_type(a)
@@ -288,6 +303,7 @@ let test_check_inverse_operator context =
     ~context
     (* Bottom % int should return unknown, not int (via the int __mod__ operator). *)
     {|
+      import typing
       def foo(xs: typing.Iterable[typing.Any]) -> None:
         a, b = xs
         reveal_type(a)
@@ -448,18 +464,21 @@ let test_check_method_parameters context =
   (* Special Methods *)
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Type[int]) -> str:
         return str(x)
     |}
     [];
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Iterable[int]) -> int:
         return x[0]
     |}
     ["Undefined attribute [16]: `typing.Iterable` has no attribute `__getitem__`."];
   assert_strict_type_errors
     {|
+      import typing
       def foo(x: typing.Type[int], y: object) -> bool:
         return x == y
     |}
@@ -571,6 +590,7 @@ let test_check_method_parameters context =
     ["Invalid method signature [47]: Non-static method must specify `cls` parameter."];
   assert_type_errors
     {|
+      import typing
       class Foo:
         @classmethod
         def bar(x: typing.Type[Foo]) -> None:
@@ -602,6 +622,7 @@ let test_check_method_parameters context =
     [];
   assert_type_errors
     {|
+    import typing
     class Foo:
       @staticmethod
       def __new__(cls) -> typing.Type[Foo]: ...
@@ -811,6 +832,7 @@ let test_check_behavioral_subtyping context =
   assert_type_errors
     ~show_error_traces:true
     {|
+      import typing
       class Foo():
         def bar(self, x: int) -> int:
           return 1
@@ -907,6 +929,7 @@ let test_check_behavioral_subtyping context =
   assert_type_errors
     ~show_error_traces:true
     {|
+      import typing
       class Foo():
         def bar(self, x: typing.Union[str, int]) -> None:
           pass
@@ -921,6 +944,7 @@ let test_check_behavioral_subtyping context =
     ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
@@ -936,6 +960,7 @@ let test_check_behavioral_subtyping context =
     ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
@@ -947,6 +972,7 @@ let test_check_behavioral_subtyping context =
     [];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
@@ -963,6 +989,7 @@ let test_check_behavioral_subtyping context =
     ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
@@ -1085,6 +1112,7 @@ let test_check_behavioral_subtyping context =
   (* Ignore anything involving `Any`. *)
   assert_default_type_errors
     {|
+      import typing
       class Foo():
         def __eq__(self, o: typing.Any) -> typing.Any: ...
       class Bar(Foo):
@@ -1095,6 +1123,7 @@ let test_check_behavioral_subtyping context =
   (* Overrides when both *args and **kwargs exist are not inconsistent. *)
   assert_default_type_errors
     {|
+      import typing
       class Foo():
         def f(self, a: float) -> None: ...
       class Bar(Foo):
@@ -1106,6 +1135,7 @@ let test_check_behavioral_subtyping context =
     ];
   assert_default_type_errors
     {|
+      import typing
       class Foo():
         def f(self, b: int) -> None: ...
       class Bar(Foo):
@@ -1117,6 +1147,7 @@ let test_check_behavioral_subtyping context =
     ];
   assert_default_type_errors
     {|
+      import typing
       class Foo():
         def f(self, c: str) -> None: ...
       class Bar(Foo):
@@ -1217,6 +1248,7 @@ let test_check_method_resolution context =
   assert_type_errors
     ~context
     {|
+      import typing
       class Foo:
         def __getattr__(self, name: str) -> typing.Any: ...
       def foo(x: Foo) -> None:
@@ -1230,6 +1262,7 @@ let test_check_method_resolution context =
   assert_type_errors
     ~context
     {|
+      import typing
       def foo(input: typing.Type[typing.Protocol]) -> None:
         reveal_type(input[42])
     |}
@@ -1246,11 +1279,13 @@ let test_check_callables context =
     |}
     ["Call error [29]: `int` is not a function."];
   assert_type_errors {|
+      import typing
       x: typing.Type[int]
       x()
     |} [];
   assert_type_errors
     {|
+    import typing
     class A:
       def __init__(self) -> None: pass
     class B:
@@ -1262,10 +1297,13 @@ let test_check_callables context =
       [A, B][0]()
     |}
     [];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+    import typing
     x: typing.Type[typing.Union[int, str]]
     x()
-    |} [];
+    |}
+    [];
   assert_type_errors {|
     types = [int, str]
     types[0]()
@@ -1312,6 +1350,7 @@ let test_check_callables context =
     ];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self) -> None: pass
       class B:
@@ -1328,6 +1367,7 @@ let test_check_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       class A:
         def __init__(self) -> None: pass
       def foo() -> None: pass
@@ -1351,6 +1391,7 @@ let test_check_callable_protocols context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class Call(typing.Generic[T]):
         def __call__(self) -> T: ...
@@ -1361,6 +1402,7 @@ let test_check_callable_protocols context =
 
   assert_type_errors
     {|
+      import typing
       class Call:
         def __call__(self: typing.Callable[[int], str], x: int) -> str: ...
       def foo(call: Call) -> None:
@@ -1370,6 +1412,7 @@ let test_check_callable_protocols context =
 
   assert_type_errors
     {|
+      import typing
       class Call:
         def __call__(self: typing.Callable[[int], str], x: int) -> int: ...
       def foo(call: Call) -> None:
@@ -1383,6 +1426,7 @@ let test_check_callable_protocols context =
   (* We handle subclassing. *)
   assert_type_errors
     {|
+      import typing
       class BaseClass:
         def __call__(self, val: typing.Optional[str] = None) -> "BaseClass":
           ...
@@ -1481,6 +1525,7 @@ let test_check_callable_protocols context =
      errors. *)
   assert_type_errors
     {|
+      import typing
       def foo_try_with_tuple(obj: typing.Tuple[int, ...]) -> None:
         type(obj)(v for v in obj)
     |}
@@ -1505,6 +1550,7 @@ let test_check_callable_protocols context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo_try_with_list(obj: typing.List[int]) -> None:
         type(obj)(v for v in obj)
     |}
@@ -1996,6 +2042,7 @@ let test_check_in context =
     ["Revealed type [-1]: Revealed type for `1 in test.WeirdContains()` is `int`."];
   assert_type_errors
     {|
+      import typing
       class WeirdIterator:
         def __eq__(self, other: object) -> str:
           ...
@@ -2006,6 +2053,7 @@ let test_check_in context =
     ["Revealed type [-1]: Revealed type for `1 in test.WeirdIterator()` is `str`."];
   assert_type_errors
     {|
+      import typing
       class WeirdEqual:
         def __eq__(self, other: object) -> typing.List[int]:
           ...
@@ -2017,6 +2065,7 @@ let test_check_in context =
     ["Revealed type [-1]: Revealed type for `1 in test.WeirdGetItem()` is `typing.List[int]`."];
   assert_type_errors
     {|
+      import typing
       class Equal:
         def __eq__(self, other: object) -> str:
           ...
@@ -2043,6 +2092,7 @@ let test_check_in context =
     ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `int`."];
   assert_type_errors
     {|
+      import typing
       class Equal:
         def __eq__(self, other: object) -> typing.List[int]:
           ...
@@ -2060,6 +2110,7 @@ let test_check_in context =
   (* Unions of classes and `in`. *)
   assert_type_errors
     {|
+      import typing
       class UsesContainsStr:
         def __contains__(self, o: object) -> str:
           ...
@@ -2074,7 +2125,7 @@ let test_check_in context =
     ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."];
   assert_type_errors
     {|
-      from typing import TypeVar, Generic
+      from typing import TypeVar, Generic, Union
       T = TypeVar("T")
       class Equal(Generic[T]):
         def __eq__(self, other: object) -> T:
@@ -2091,10 +2142,10 @@ let test_check_in context =
         def __next__(self) -> Equal[int]:
           ...
 
-      def foo(a: typing.Union[WeirdIterator, UsesContainsStr]) -> None:
+      def foo(a: Union[WeirdIterator, UsesContainsStr]) -> None:
         reveal_type(5 in a)
     |}
-    ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."]
+    ["Revealed type [-1]: Revealed type for `5 in a` is `Union[int, str]`."]
 
 
 let test_check_enter context =
@@ -2169,6 +2220,7 @@ let test_check_private_member_access context =
   assert_type_errors
     ~context
     {|
+      import typing
       class Base:
         def __init__(self) -> None:
           self.__private = True
@@ -2227,6 +2279,7 @@ let test_check_private_member_access context =
   assert_type_errors
     ~context
     {|
+      import typing
       T = typing.TypeVar('T')
       class GenericBase(typing.Generic[T]):
         def __init__(self, x: T) -> None:

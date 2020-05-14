@@ -51,6 +51,7 @@ let test_check_undefined_type context =
     ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
         pass
     |}
@@ -73,6 +74,7 @@ let test_check_undefined_type context =
     ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_default_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[Derp[int]]) -> typing.List[Herp]:
         pass
     |}
@@ -120,6 +122,7 @@ let test_check_undefined_type context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(x: T) -> typing.Union[str, T]:
         return x
@@ -147,12 +150,14 @@ let test_check_undefined_type context =
     ];
   assert_strict_type_errors
     {|
+      import typing
       def foo() -> typing.Optional["Herp"]:
         return None
     |}
     ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
   assert_strict_type_errors
     {|
+      import typing
       class Foo:
         def __getitem__(self, other) -> typing.Any: ...
 
@@ -188,6 +193,7 @@ let test_check_undefined_type context =
     ["Undefined or invalid type [11]: Annotation `Bar` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]): ...
     |}
@@ -221,6 +227,7 @@ let test_check_undefined_type context =
   (* Globals *)
   assert_type_errors
     {|
+      import typing
       x: Derp = 1
       y: typing.List[Derp] = 1
       z: Derp
@@ -234,6 +241,7 @@ let test_check_undefined_type context =
   (* Assigns *)
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: Derp = 1
         y: typing.List[Derp] = 1
@@ -248,6 +256,7 @@ let test_check_undefined_type context =
   (* cast, isinstance *)
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: int = 1
         typing.cast(Derp, x)
@@ -255,6 +264,7 @@ let test_check_undefined_type context =
     ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       Derp = typing.Any
       Herp = typing.List[typing.Any]
       def foo() -> None:
@@ -289,12 +299,16 @@ let test_check_invalid_type context =
       MyType = int
       x: MyType = 1
     |} [];
-  assert_type_errors {|
-      MyType: typing.TypeAlias = int
-      x: MyType = 1
-    |} [];
   assert_type_errors
     {|
+      import typing
+      MyType: typing.TypeAlias = int
+      x: MyType = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       # Type aliases cannot be annotated
       MyType: typing.Type[int] = int
       x: MyType = 1
@@ -335,6 +349,7 @@ let test_check_invalid_type context =
     ["Undefined or invalid type [11]: Annotation `Foo.X` is not defined as a type."];
   assert_type_errors
     {|
+        import typing
         def foo() -> None:
           MyType: typing.TypeAlias = int
           x: MyType = 1
@@ -348,6 +363,7 @@ let test_check_invalid_type context =
   (* Type aliases to Any *)
   assert_type_errors
     {|
+      import typing
       MyType: typing.Any
       x: MyType = 1
     |}
@@ -358,12 +374,14 @@ let test_check_invalid_type context =
     ];
   assert_type_errors
     {|
+      import typing
       MyType = typing.Any
       x: MyType = 1
     |}
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     {|
+      import typing
       MyType = typing.Any
       x: typing.List[MyType] = [1]
     |}
@@ -386,18 +404,21 @@ let test_check_invalid_type context =
   (* Using expressions of type meta-type: only OK in isinstance *)
   assert_type_errors
     {|
+      import typing
       def f(my_type: typing.Type[int]) -> None:
        x: my_type = ...
     |}
     ["Undefined or invalid type [11]: Annotation `my_type` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       def f(my_type: typing.Type[int]) -> None:
        y = typing.cast(my_type, "string")
     |}
     ["Undefined or invalid type [11]: Annotation `my_type` is not defined as a type."];
   assert_type_errors
     {|
+      import typing
       def f(my_type: typing.Type[int]) -> None:
        y = "string"
        assert isinstance(y, my_type)
@@ -406,6 +427,7 @@ let test_check_invalid_type context =
     ["Revealed type [-1]: Revealed type for `y` is `int`."];
   assert_type_errors
     {|
+      import typing
       def takes_exception(x: Exception) -> None: ...
       def f(e: typing.Type[Exception]) -> None:
        try:
@@ -416,6 +438,7 @@ let test_check_invalid_type context =
     [];
   assert_type_errors
     {|
+      import typing
       x: typing.Dict[int, [str]]
     |}
     [
@@ -504,6 +527,7 @@ let test_check_missing_type_parameters context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("_T")
       class C(typing.Generic[T]): ...
       def f(c: C) -> None:
@@ -512,6 +536,7 @@ let test_check_missing_type_parameters context =
     ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("_T")
       class C(typing.Generic[T]): ...
       def f(c: typing.List[C]) -> None:
@@ -520,6 +545,7 @@ let test_check_missing_type_parameters context =
     ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("_T")
       class C(typing.Generic[T]): ...
       def f() -> typing.List[C]:
@@ -528,6 +554,7 @@ let test_check_missing_type_parameters context =
     ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("_T")
       S = typing.TypeVar("_S")
       class C(typing.Generic[T, S]): ...
@@ -608,6 +635,7 @@ let test_check_immutable_annotations context =
     ];
   assert_default_type_errors
     {|
+      import typing
       def expects_str(x: str) -> None:
         pass
 
@@ -627,6 +655,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(x: T = 1) -> T:
         return x
@@ -634,6 +663,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', int, float)
       def foo(x: T = 1) -> T:
         return x
@@ -641,6 +671,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', int, float)
       def foo(x: T = "str") -> T:
         return x
@@ -651,6 +682,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       class B: pass
       class C(B): pass
       T = typing.TypeVar('T', bound=B)
@@ -660,6 +692,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       class O: pass
       class B: pass
       class C(B): pass
@@ -673,6 +706,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       def bar() -> typing.Any:
         ...
       def foo(x: str = bar()) -> str:
@@ -703,6 +737,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       constant: typing.Union[int, str]
       def foo() -> None:
         global constant
@@ -711,6 +746,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       constant: typing.Optional[int]
       def foo() -> int:
         if constant is not None:
@@ -720,6 +756,7 @@ let test_check_immutable_annotations context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         constant: typing.Optional[int]
         if constant is not None:
@@ -729,6 +766,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         constant: typing.Optional[str]
         if constant is not None:
@@ -738,6 +776,7 @@ let test_check_immutable_annotations context =
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> int:
         constant: typing.Optional[int]
         if constant is not None:
@@ -748,6 +787,7 @@ let test_check_immutable_annotations context =
 
   assert_type_errors
     {|
+      import typing
       constant: typing.Any
       def foo() -> None:
         global constant
@@ -776,10 +816,13 @@ let test_check_immutable_annotations context =
       "Incompatible variable type [9]: x is declared to have type `int` but is used as "
       ^ "type `str`.";
     ];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import typing
       def foo(x: typing.Optional[int]) -> None:
         x = 1
-    |} [];
+    |}
+    [];
   assert_type_errors {|
       def foo(x: int) -> None:
         x: str
@@ -799,12 +842,14 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(any: typing.Any) -> None:
         x: int = any
     |}
     ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
+      import typing
       def foo(any: typing.Any) -> None:
         x: int = any
     |}
@@ -845,6 +890,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[str, typing.Any] = {}
         x = { 'a': 'b' }
@@ -852,6 +898,7 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[str, typing.List[typing.Any]] = {}
     |}
@@ -875,6 +922,7 @@ let test_check_immutable_annotations context =
     ["Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified."];
   assert_type_errors
     {|
+      import typing
       x = 1
       y: typing.Any = 2
       z: typing.List[typing.Any] = [3]
@@ -895,6 +943,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       class Foo():
         __slots__: typing.List[str] = ['name']
         def foo(self) -> str:
@@ -903,6 +952,7 @@ let test_check_immutable_annotations context =
     ["Incompatible return type [7]: Expected `str` but got `unknown`."];
   assert_type_errors
     {|
+      import typing
       class Foo():
         __slots__: typing.List[str] = ['name', 'attribute']
         def foo(self) -> str:
@@ -914,6 +964,7 @@ let test_check_immutable_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       class Foo():
         __slots__: typing.List[str] = ['name']
         def foo(self) -> str:
@@ -929,6 +980,7 @@ let test_check_incomplete_annotations context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Any = 1
     |}
@@ -937,12 +989,14 @@ let test_check_incomplete_annotations context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.List[typing.Any] = []
     |}
     ["Prohibited any [33]: Explicit annotation for `x` cannot contain `Any`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x = 1
         typing.cast(typing.Any, x)
@@ -950,35 +1004,43 @@ let test_check_incomplete_annotations context =
     ["Prohibited any [33]: Explicit annotation for `typing.cast` cannot be `Any`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x = 1
         typing.cast(typing.List[typing.Any], x)
     |}
     ["Prohibited any [33]: Explicit annotation for `typing.cast` cannot contain `Any`."];
-  assert_default_type_errors {|
+  assert_default_type_errors
+    {|
+      import typing
       def foo() -> None:
         x: typing.Any = 1
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[str, typing.Any] = {}
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.List[typing.Dict[str, typing.Any]] = []
     |}
     [];
   assert_default_type_errors
     {|
+      import typing
       def foo() -> None:
         x = 1
         typing.cast(typing.Any, x)
     |}
     [];
   assert_type_errors {|
+      import typing
       MyDict = typing.Dict[str, typing.Any]
     |} []
 
@@ -987,6 +1049,7 @@ let test_check_incomplete_callable context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: int) -> str:
         return "foo"
       bar: typing.Callable[[int], bool] = foo
@@ -997,6 +1060,7 @@ let test_check_incomplete_callable context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: int) -> str:
         return "foo"
       bar: typing.Callable[[int]] = foo
@@ -1027,6 +1091,7 @@ let test_check_refinement context =
   (* List[Any] correctly can refine to List[int] *)
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         l: typing.List[typing.Any] = []
         l = [1]
@@ -1039,6 +1104,7 @@ let test_check_refinement context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         l: typing.List[int] = []
         l.append('a')
@@ -1049,6 +1115,7 @@ let test_check_refinement context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         l: typing.List[int] = None
         l.append('a')
@@ -1061,6 +1128,7 @@ let test_check_refinement context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if not x:
           return 1
@@ -1069,6 +1137,7 @@ let test_check_refinement context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if not x:
           y = x
@@ -1077,6 +1146,7 @@ let test_check_refinement context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       class A:
           a: typing.Optional[int] = None
           def foo(self) -> None:
@@ -1086,6 +1156,7 @@ let test_check_refinement context =
     [];
   assert_type_errors
     {|
+      import typing
       class A:
           a: typing.Optional[int] = None
           def bar(self) -> int:
@@ -1097,6 +1168,7 @@ let test_check_refinement context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      import typing
       def bar(x: typing.Optional[int]) -> None:
           if x and int_to_int(x) < 0:
               y = 1
@@ -1104,6 +1176,7 @@ let test_check_refinement context =
     [];
   assert_type_errors
     {|
+      import typing
       def bar(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
           if not input:
             input = set()
@@ -1117,6 +1190,7 @@ let test_check_invalid_type_variables context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def f(x: T) -> T:
         return x
@@ -1124,6 +1198,7 @@ let test_check_invalid_type_variables context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def f() -> T:
         return T
@@ -1135,6 +1210,7 @@ let test_check_invalid_type_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C:
         x: T = 1
@@ -1145,6 +1221,7 @@ let test_check_invalid_type_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       x: T = ...
     |}
@@ -1156,6 +1233,7 @@ let test_check_invalid_type_variables context =
   (* We don't error for inferred generics. *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C(typing.Generic[T]):
         pass
@@ -1169,6 +1247,7 @@ let test_check_invalid_type_variables context =
      should work because of behavioral subtyping. *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def f() -> typing.Callable[[T], T]:
         def g(x: T) -> T:
@@ -1180,6 +1259,7 @@ let test_check_invalid_type_variables context =
   (* Check invalid type variables in parameters and returns. *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", covariant=True)
       class Foo(typing.Generic[T]):
         def foo(self, x: T) -> T:
@@ -1191,6 +1271,7 @@ let test_check_invalid_type_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", covariant=True)
       class Foo(typing.Generic[T]):
         def __init__(self, x: T) -> None:
@@ -1199,6 +1280,7 @@ let test_check_invalid_type_variables context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", covariant=True)
       class Foo(typing.Generic[T]):
         def foo(self, x: typing.List[T]) -> T:
@@ -1207,6 +1289,7 @@ let test_check_invalid_type_variables context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", contravariant=True)
       class Foo(typing.Generic[T]):
         def foo(self, x: T) -> T:
@@ -1218,6 +1301,7 @@ let test_check_invalid_type_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", contravariant=True)
       class Foo(typing.Generic[T]):
         def foo(self, x: T) -> typing.List[T]:
@@ -1226,6 +1310,7 @@ let test_check_invalid_type_variables context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", covariant=True)
       def foo(x: T) -> T:
         return x
@@ -1574,6 +1659,7 @@ let test_check_safe_cast context =
   assert_type_errors
     ~context
     {|
+      import pyre_extensions
       def foo(input: float) -> int:
         return pyre_extensions.safe_cast(int, input)
     |}
@@ -1584,6 +1670,7 @@ let test_check_safe_cast context =
   assert_type_errors
     ~context
     {|
+        import pyre_extensions
         def foo(input: int) -> float:
           return pyre_extensions.safe_cast(float, input)
     |}

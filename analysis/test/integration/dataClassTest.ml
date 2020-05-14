@@ -171,6 +171,7 @@ let test_check_attr context =
           handle = "attr/__init__.pyi";
           source =
             {|
+        import typing
         _T = typing.TypeVar("T")
         class Attribute(typing.Generic[_T]):
           name: str
@@ -182,6 +183,7 @@ let test_check_attr context =
         };
       ]
     {|
+      import typing
       import attr
       @attr.s
       class C:

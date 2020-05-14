@@ -115,6 +115,7 @@ let test_check_unbounded_variables context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def expects_any(input: object) -> None: ...
       def expects_string(inut: str) -> None: ...
@@ -129,6 +130,7 @@ let test_check_unbounded_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(input: T) -> typing.Any:
         return input
@@ -136,6 +138,7 @@ let test_check_unbounded_variables context =
     ["Missing return annotation [3]: Returning `Variable[T]` but type `Any` is specified."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(input: T) -> int:
         return input
@@ -143,6 +146,7 @@ let test_check_unbounded_variables context =
     ["Incompatible return type [7]: Expected `int` but got `Variable[T]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def mapping_get(k: str, default: typing.Union[int, T]) -> typing.Union[int, T]: ...
       def foo() -> None:
@@ -156,6 +160,7 @@ let test_check_unbounded_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(input: T) -> None:
         input.impossible()
@@ -163,6 +168,7 @@ let test_check_unbounded_variables context =
     ["Undefined attribute [16]: `Variable[T]` has no attribute `impossible`."];
   assert_type_errors
     {|
+      import typing
       X = typing.TypeVar("X")
       class Foo(typing.Generic[X]): pass
 
@@ -181,6 +187,7 @@ let test_check_unbounded_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       X = typing.TypeVar("X")
       class Foo(typing.Generic[X]):
         def __init__(self, x: X) -> None: ...
@@ -207,8 +214,8 @@ let test_check_unbounded_variables context =
       def overloaded(x: str) -> int: ...
       def overloaded(x: Union[int, bool, float, str]) -> Union[int, bool, float, str]: ...
 
-      T1 = typing.TypeVar("T1")
-      T2 = typing.TypeVar("T2")
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
       def generic(x: Callable[[T1], T2], y: List[T1], z: List[T2]) -> Tuple[T1, T2]: ...
 
       def foo() -> None:
@@ -233,6 +240,7 @@ let test_check_unbounded_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(input: T, b: bool) -> typing.Optional[T]:
         x = None
@@ -374,6 +382,7 @@ let test_check_variable_bindings context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', bound=int)
       def foo(t: T) -> None:
         str_to_int(t)
@@ -385,6 +394,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', bound=int)
       def foo() -> T:
         return 1.0
@@ -396,6 +406,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', bound=int)
       def foo(t: T) -> None:
         int_to_str(t)
@@ -409,6 +420,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       class C():
         def baz(self) -> int:
           return 7
@@ -436,6 +448,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       class C: pass
       T = typing.TypeVar('T', bound=C)
       def foo(input: typing.Type[T]) -> T:
@@ -446,6 +459,7 @@ let test_check_variable_bindings context =
     ["Revealed type [-1]: Revealed type for `v` is `Variable[T (bound to C)]`."];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("T", bound=int)
       class Foo:
         def foo(self, x: int) -> int:
@@ -457,6 +471,7 @@ let test_check_variable_bindings context =
     [];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("T", bound=float)
       class Foo:
         def foo(self, x: int) -> int:
@@ -472,6 +487,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("T", bound=float)
       class Foo:
         def foo(self, x: _T) -> _T:
@@ -516,6 +532,7 @@ let test_check_variable_bindings context =
     ["Revealed type [-1]: Revealed type for `x` is `Variable[_SelfT (bound to C)]`."];
   assert_type_errors
     {|
+      import typing
       X = typing.TypeVar("X", bound=C)
       class Foo(typing.Generic[X]): pass
       class C(): pass
@@ -536,6 +553,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       X = typing.TypeVar("X", Mineral, Animal)
       class Foo(typing.Generic[X]): pass
       class Mineral(): pass
@@ -560,6 +578,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', bound=int)
       class ConstrainedBase(typing.Generic[T]): pass
       class BadChild(ConstrainedBase[str]): pass
@@ -570,6 +589,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', bound=int)
       class ConstrainedBase(typing.Generic[T]): pass
       class AnyChild(ConstrainedBase[typing.Any]): pass
@@ -598,14 +618,20 @@ let test_unbound_variables context =
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, "
       ^ "add an explicit annotation.";
     ];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import typing
       def foo() -> None:
         x: typing.List[int] = []
-    |} [];
-  assert_type_errors {|
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def foo() -> None:
         x: typing.Sequence[int] = []
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
       def foo() -> None:
@@ -617,6 +643,7 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Optional[typing.List[int]]
         x = []
@@ -628,12 +655,14 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[str, typing.List[int]] = { "A" : [] }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.List[int] = {}
     |}
@@ -643,6 +672,7 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[int, str] = []
     |}
@@ -652,6 +682,7 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         x: typing.Dict[int, typing.List[int]] = { "A" : [] }
     |}
@@ -660,12 +691,16 @@ let test_unbound_variables context =
       ^ "`typing.Dict[int, typing.List[int]]` but is used as type "
       ^ "`typing.Dict[str, typing.List[int]]`.";
     ];
-  assert_type_errors {|
-      def foo() -> typing.List[int]:
-        return []
-    |} [];
   assert_type_errors
     {|
+      import typing
+      def foo() -> typing.List[int]:
+        return []
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def bar(x: typing.List[int]) -> None:
         pass
       def foo() -> None:
@@ -676,6 +711,7 @@ let test_unbound_variables context =
   (* TODO(T42360946): Probably want a better error here *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def bar(x: typing.List[T]) -> T:
         return x[0]
@@ -685,6 +721,7 @@ let test_unbound_variables context =
     ["Incomplete type [37]: Type inferred for `x` is incomplete, add an explicit annotation."];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -695,6 +732,7 @@ let test_unbound_variables context =
     [];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -711,6 +749,7 @@ let test_unbound_variables context =
     ];
   assert_default_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -723,6 +762,7 @@ let test_unbound_variables context =
     ["Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`."];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -735,6 +775,7 @@ let test_unbound_variables context =
     ["Revealed type [-1]: Revealed type for `g` is `G[int]`."];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -753,6 +794,7 @@ let test_unbound_variables context =
     ];
   assert_default_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -771,6 +813,7 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       T = typing.TypeVar("T")
       class G(typing.Generic[T_Explicit, T]):
@@ -786,6 +829,7 @@ let test_unbound_variables context =
     ];
   assert_type_errors
     {|
+      import typing
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
@@ -1089,9 +1133,10 @@ let test_callable_parameter_variadics context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing import Callable
+      from typing import Callable, List
+      import pyre_extensions
       V = pyre_extensions.ParameterSpecification("V")
-      def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]: ...
+      def f(x: Callable[V, int]) -> Callable[V, List[int]]: ...
       def foo(x: int) -> int:
         return 7
       def bar(x: int, y: str) -> int:
@@ -1103,13 +1148,15 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `test.f(test.foo)` is `typing.Callable[[Named(x, \
        int)], "
-      ^ "typing.List[int]]`.";
+      ^ "List[int]]`.";
       "Revealed type [-1]: Revealed type for `test.f(test.bar)` is `typing.Callable[[Named(x, \
        int), "
-      ^ "Named(y, str)], typing.List[int]]`.";
+      ^ "Named(y, str)], List[int]]`.";
     ];
   assert_type_errors
     {|
+      import typing
+      import pyre_extensions
       V = pyre_extensions.ParameterSpecification("V")
       class Propagating(typing.List[typing.Callable[V, int]]):
          def foo(self) -> int: ...
@@ -1118,12 +1165,12 @@ let test_callable_parameter_variadics context =
   assert_type_errors
     ~handle:"qualifier.py"
     {|
-      from typing import Callable
+      from typing import Callable, List
       from pyre_extensions import ParameterSpecification
       from pyre_extensions.type_variable_operators import PositionalArgumentsOf, KeywordArgumentsOf
       V = ParameterSpecification("V")
-      def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
-        def decorated( *args: V.args, **kwargs: V.kwargs) -> typing.List[int]:
+      def f(x: Callable[V, int]) -> Callable[V, List[int]]:
+        def decorated( *args: V.args, **kwargs: V.kwargs) -> List[int]:
           return [x( *args, **kwargs)]
         return decorated
     |}
@@ -1141,6 +1188,7 @@ let test_callable_parameter_variadics context =
   assert_type_errors
     {|
       from typing import Protocol, Callable, TypeVar
+      import pyre_extensions
       TParams = pyre_extensions.ParameterSpecification("TParams")
       TReturn = TypeVar("TReturn")
       def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
@@ -1167,6 +1215,7 @@ let test_callable_parameter_variadics context =
   assert_type_errors
     {|
       from typing import Protocol, Callable, TypeVar, overload, Union
+      import pyre_extensions
       TParams = pyre_extensions.ParameterSpecification("TParams")
       TReturn = TypeVar("TReturn")
       def call_this_function(__f: Callable[TParams, TReturn], *args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
@@ -1199,6 +1248,7 @@ let test_callable_parameter_variadics context =
   assert_type_errors
     {|
       from typing import Protocol, Callable, TypeVar
+      import pyre_extensions
       TParams = pyre_extensions.ParameterSpecification("TParams")
       TReturn = TypeVar("TReturn")
       def call_n_times(
@@ -1230,6 +1280,7 @@ let test_callable_parameter_variadics context =
     {|
       from abc import ABCMeta
       from typing import Protocol, Callable, TypeVar
+      import pyre_extensions
       TParams = pyre_extensions.ParameterSpecification("TParams")
       TReturn = TypeVar("TReturn")
       class HasForward(Protocol[TParams, TReturn]):
@@ -1280,6 +1331,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Tuple[Ts]) -> Tuple[Tuple[Ts], Tuple[Ts]]:
       return x, x
@@ -1293,6 +1345,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
     def foo() -> Tuple[int, str, bool]:
@@ -1308,6 +1361,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
     def foo() -> Tuple[int, str, bool]:
@@ -1319,6 +1373,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import List
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def bad(x: List[Ts]) -> None:
       pass
@@ -1330,6 +1385,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
      from typing import Dict
+     import pyre_extensions
      Ts = pyre_extensions.ListVariadic("Ts")
      def bad(x: Dict[Ts]) -> None:
        pass
@@ -1342,6 +1398,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def strip_first(x: Tuple[object, Ts]) -> Tuple[Ts]: ...
     def foo() -> None:
@@ -1359,6 +1416,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Callable, Tuple
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def tuple_to_callable(x: Tuple[Ts]) -> Callable[Ts, int]: ...
     def foo(x: int, y: str, z: bool) -> None:
@@ -1371,6 +1429,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[Ts, int]: ...
     def foo() -> Callable[[int, str, bool], int]:
@@ -1386,6 +1445,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def tuple_to_callable(x: Optional[Tuple[Ts]] = None) -> Callable[Ts, int]: ...
     def foo() -> Callable[[int, str, bool], int]:
@@ -1397,6 +1457,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def callable_to_tuple(f: Callable[Ts, int]) -> Tuple[Ts]: ...
     def bar(x: int, y: str, z: bool) -> int:
@@ -1410,6 +1471,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def two_callables_to_tuple(f1: Callable[Ts, int], f2: Callable[Ts, int]) -> Tuple[Ts]: ...
     def bar(x: int, y: str, z: bool) -> int:
@@ -1425,6 +1487,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
     def call_with_tuple(f: Callable[Ts, TReturn], tupleargs: Tuple[Ts]) -> TReturn:
@@ -1447,6 +1510,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, Protocol
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     Tparams = pyre_extensions.ParameterSpecification("Tparams")
     def callable_to_callable(f: Callable[Ts, int]) -> Callable[Ts, int]:
@@ -1472,6 +1536,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def loop( *args: Ts) -> Tuple[Ts]:
       return args
@@ -1482,6 +1547,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     def loop( *args: Ts) -> Tuple[Ts]:
       return args
@@ -1496,6 +1562,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     TsB = pyre_extensions.ListVariadic("TsB")
     def loop( *args: Ts) -> Tuple[Ts]:
@@ -1510,6 +1577,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
     def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
@@ -1530,6 +1598,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
     def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
@@ -1548,6 +1617,7 @@ let test_list_variadics context =
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
+    import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
     def call_with_args(f: Callable[Ts, TReturn], *args: Ts) -> TReturn:
@@ -1722,8 +1792,9 @@ let test_user_defined_variadics context =
   assert_type_errors
     {|
     from typing import Generic, Tuple, List
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Map
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     class Foo(Generic[Ts]):
       x: Tuple[Ts]
       y: Tuple[Map[List, Ts]]
@@ -1758,8 +1829,9 @@ let test_user_defined_variadics context =
     ~handle:"test.py"
     {|
     from typing import Generic, Tuple, List, Protocol
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Map
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     class Foo(Protocol[Ts]):
       def m(self, *args: Ts) -> bool: ...
     class I:
@@ -1773,8 +1845,9 @@ let test_user_defined_variadics context =
   assert_type_errors
     {|
     from typing import Generic, Tuple, List, Protocol
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Map
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     class Foo(Generic[Ts]):
       pass
     def f_in( *args: Ts) -> Foo[Ts]: ...
@@ -1815,13 +1888,14 @@ let test_user_defined_variadics context =
     {|
     from typing import Generic, Tuple, List, TypeVar
     from typing_extensions import Literal
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Concatenate
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     T = TypeVar("T")
     One = Literal[1]
     Two = Literal[2]
     Three = Literal[3]
-    class Tensor(typing.Generic[T, Ts]):
+    class Tensor(Generic[T, Ts]):
       def el(self) -> T: ...
       def dims(self) -> Tuple[Ts]: ...
     def foo(
@@ -1845,8 +1919,9 @@ let test_concatenation_operator context =
   assert_type_errors
     {|
     from typing import Generic, Tuple, List
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Concatenate
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     def add_on(t: Tuple[Ts]) -> Tuple[Concatenate[int, Ts, float]]:
       ...
     def strip_off(t: Tuple[Concatenate[int, Ts, bool]]) -> Tuple[Ts]:
@@ -1864,8 +1939,9 @@ let test_concatenation_operator context =
   assert_type_errors
     {|
     from typing import Generic, Tuple, List
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Concatenate, Map
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     def map_tuple(t: Tuple[Ts]) -> Tuple[Map[List, Ts]]:
       ...
     def unmap_tuple(t: Tuple[Map[List, Ts]]) -> Tuple[Ts]:
@@ -1887,10 +1963,11 @@ let test_concatenation_operator context =
     {|
     from typing import Generic, Tuple, List, TypeVar
     from typing_extensions import Literal
+    from pyre_extensions import ListVariadic
     from pyre_extensions.type_variable_operators import Concatenate
-    Ts = pyre_extensions.ListVariadic("Ts")
+    Ts = ListVariadic("Ts")
     T = TypeVar("T")
-    class Tensor(typing.Generic[T, Ts]):
+    class Tensor(Generic[T, Ts]):
       def el(self) -> T: ...
       def dims(self) -> Tuple[Ts]: ...
     One = Literal[1]
@@ -1910,8 +1987,9 @@ let test_concatenation_operator context =
   assert_type_errors
     {|
       from typing import Callable, TypeVar
+      from pyre_extensions import ListVariadic
       from pyre_extensions.type_variable_operators import Concatenate
-      Ts = pyre_extensions.ListVariadic("Ts")
+      Ts = ListVariadic("Ts")
 
       def prepend_addition_argument(f: Callable[Ts, int]) -> Callable[Concatenate[int, Ts], str]:
            def inner(x: int, *args: Ts) -> str:
@@ -1931,8 +2009,9 @@ let test_concatenation_operator context =
   assert_type_errors
     {|
       from typing import Callable, TypeVar, List
+      from pyre_extensions import ListVariadic
       from pyre_extensions.type_variable_operators import Concatenate
-      Ts = pyre_extensions.ListVariadic("Ts")
+      Ts = ListVariadic("Ts")
       TReturn = TypeVar("TReturn")
 
       def simple_partial_application(
@@ -1954,9 +2033,10 @@ let test_concatenation_operator context =
     {|
       from typing import Generic, Tuple, List, TypeVar
       from typing_extensions import Literal
+      import pyre_extensions
       Ts = pyre_extensions.ListVariadic("Ts")
       T = TypeVar("T")
-      class Tensor(typing.Generic[T, Ts]):
+      class Tensor(Generic[T, Ts]):
         pass
       def bar(t: Tensor[int, str]) -> None:
         pass
@@ -1969,10 +2049,11 @@ let test_concatenation_operator context =
     {|
       from typing import Generic, Tuple, List, TypeVar
       from typing_extensions import Literal
+      import pyre_extensions
       T = TypeVar("T")
       Ts1 = pyre_extensions.ListVariadic("Ts1")
       Ts2 = pyre_extensions.ListVariadic("Ts2")
-      class Multi(typing.Generic[Ts1, T, Ts2]):
+      class Multi(Generic[Ts1, T, Ts2]):
         def first(self) -> Tuple[Ts1]: ...
         def second(self) -> Tuple[Ts2]: ...
       def bar(m: Multi[[int, str], float, [bool, int, bool]]) -> None:
@@ -2166,10 +2247,10 @@ let test_user_defined_parameter_specification_classes context =
     ["Revealed type [-1]: Revealed type for `f` is `typing.Callable[[str, Named(x, int)], int]`."];
   assert_type_errors
     {|
-      from pyre_extensions import ParameterSpecification
+      from pyre_extensions import ParameterSpecification, ListVariadic
       from typing import TypeVar, Generic, Callable
 
-      Ts = pyre_extensions.ListVariadic("Ts")
+      Ts = ListVariadic("Ts")
       TParams = ParameterSpecification("TParams")
       TReturn = TypeVar("TReturn")
       class MyClass(Generic[Ts, TReturn]):

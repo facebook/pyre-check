@@ -10,6 +10,7 @@ let test_higher_order_callables context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(f: typing.Callable[[int], str]) -> str:
         return f(1)
 
@@ -21,6 +22,7 @@ let test_higher_order_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(f: typing.Callable[..., str]) -> str:
         return f(1)
 
@@ -32,6 +34,7 @@ let test_higher_order_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(f: typing.Callable[[int], T]) -> typing.Callable[[str], T]:
         def takes_str(s: str) -> T:
@@ -49,6 +52,7 @@ let test_higher_order_callables context =
     ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(f: typing.Callable[..., T]) -> typing.Callable[..., T]:
         def takes_str(s: str) -> T:
@@ -69,6 +73,7 @@ let test_union_of_callables context =
   assert_type_errors
     ~context
     {|
+      import typing
       def baz(x: typing.Union[typing.Callable[[int], typing.Any], typing.Callable[..., typing.Any]]) -> None:
           reveal_type(x)
           x(1)
