@@ -1974,6 +1974,32 @@ let test_check_typed_dictionary_in_alias context =
   ()
 
 
+let test_check_optional_typed_dictionary context =
+  assert_type_errors
+    ~context
+    {|
+     from typing import Any, TypedDict, Optional
+
+     class MyDict(TypedDict):
+       a: str
+       b: str
+
+
+     def foo(b: bool) -> Optional[MyDict]:
+       if b:
+         return None
+       return {"a": str(1), "b": "hi"}
+     def bar(b: bool) -> Optional[MyDict]:
+       if b:
+         return None
+       return {"a": str(1), "b": 0}
+    |}
+    [
+      "TypedDict initialization error [55]: Expected type `str` for `MyDict` field `b` but got \
+       `int`.";
+    ]
+
+
 let () =
   "typed_dictionary"
   >::: [
@@ -1981,5 +2007,6 @@ let () =
          "check_typed_dictionary_inference" >:: test_check_typed_dictionary_inference;
          "check_typed_dictionary_inheritance" >:: test_check_typed_dictionary_inheritance;
          "check_typed_dictionary_in_alias" >:: test_check_typed_dictionary_in_alias;
+         "check_optional_typed_dictionary" >:: test_check_optional_typed_dictionary;
        ]
   |> Test.run
