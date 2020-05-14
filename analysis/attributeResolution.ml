@@ -3806,10 +3806,11 @@ module Implementation = struct
           }
         =
         let instantiated_return_annotation =
+          let local_free_variables = Type.Variable.all_free_variables (Type.Callable callable) in
           let solution =
             TypeOrder.OrderedConstraintsSet.solve
               constraints_set
-              ~only_solve_for:(Type.Variable.all_free_variables (Type.Callable callable))
+              ~only_solve_for:local_free_variables
               ~order
             |> Option.value ~default:ConstraintsSet.Solution.empty
           in
@@ -3819,7 +3820,9 @@ module Implementation = struct
           if skip_marking_escapees then
             instantiated
           else
-            Type.Variable.mark_all_free_variables_as_escaped instantiated
+            Type.Variable.mark_all_free_variables_as_escaped
+              ~specific:local_free_variables
+              instantiated
             (* We need to do transformations of the form Union[T_escaped, int] => int in order to
                properly handle some typeshed stubs which only sometimes bind type variables and
                expect them to fall out in this way (see Mapping.get) *)
