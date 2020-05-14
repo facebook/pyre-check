@@ -552,6 +552,8 @@ module ClientCapabilities = struct
 
     type publish_diagnostics = {
       related_information: bool option; [@key "relatedInformation"] [@default None]
+      version_support: bool option; [@key "versionSupport"] [@default None]
+      tag_support: CompletionItemKind.t option; [@key "tagSupport"] [@default None]
     }
     [@@deriving of_yojson]
 

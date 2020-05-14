@@ -287,7 +287,16 @@ let test_initialize_request_parses _ =
          "workspaceFolders": true
        },
        "textDocument": {
-         "publishDiagnostics": { "relatedInformation": true },
+         "publishDiagnostics": {
+            "relatedInformation": true,
+            "versionSupport": false,
+            "tagSupport": {
+                "valueSet": [
+                    1,
+                    2
+                ]
+            }
+         },
          "synchronization": {
            "dynamicRegistration": true,
            "willSave": true,
