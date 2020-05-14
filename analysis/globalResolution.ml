@@ -220,12 +220,12 @@ let global ({ dependency; _ } as resolution) reference =
   | "__name__"
   | "__package__" ->
       let annotation = Annotation.create_immutable Type.string in
-      Some annotation
+      Some { AnnotatedGlobalEnvironment.annotation; undecorated_signature = None }
   | "__dict__" ->
       let annotation =
         Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable
       in
-      Some annotation
+      Some { AnnotatedGlobalEnvironment.annotation; undecorated_signature = None }
   | _ ->
       AnnotatedGlobalEnvironment.ReadOnly.get_global
         (annotated_global_environment resolution)
@@ -265,6 +265,7 @@ let attribute_from_class_name
               ~parent:class_name
               ~visibility:ReadWrite
               ~property:false
+              ~undecorated_signature:None
             |> Option.some
         | None -> None )
   in

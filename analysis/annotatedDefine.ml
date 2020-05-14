@@ -57,7 +57,10 @@ let decorate
       match
         GlobalResolution.resolve_define ~resolution ~implementation:(Some signature) ~overloads:[]
       with
-      | Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ } ->
+      | {
+       decorated = Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ };
+       _;
+      } ->
           let parameters =
             match parameters with
             | Defined parameters ->

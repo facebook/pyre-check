@@ -419,7 +419,11 @@ let test_register_globals context =
   let environment = create_environment ~context () in
   let resolution = GlobalResolution.create environment in
   let assert_global reference expected =
-    let actual = !&reference |> GlobalResolution.global resolution >>| Annotation.annotation in
+    let actual =
+      !&reference
+      |> GlobalResolution.global resolution
+      >>| fun { annotation; _ } -> Annotation.annotation annotation
+    in
     assert_equal
       ~printer:(function
         | Some annotation -> Type.show annotation
@@ -640,7 +644,7 @@ let test_populate context =
         | Some global -> Annotation.show global
         | None -> "None")
       expected
-      (GlobalResolution.global global_resolution !&actual)
+      (GlobalResolution.global global_resolution !&actual >>| fun { annotation; _ } -> annotation)
   in
   let assert_global =
     populate

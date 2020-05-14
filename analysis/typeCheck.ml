@@ -406,8 +406,8 @@ module State (Context : Context) = struct
         ~implementation:(Some signature)
         ~overloads:[]
     with
-    | Type.Callable callable -> Type.Callable { callable with kind = Anonymous }
-    | other -> other
+    | { decorated = Type.Callable callable; _ } -> Type.Callable { callable with kind = Anonymous }
+    | { decorated = other; _ } -> other
 
 
   let type_of_parent ~global_resolution parent =
@@ -5548,12 +5548,16 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         ~implementation:(Some signature)
         ~overloads:[]
     with
-    | Type.Callable
-        {
-          implementation =
-            { Type.Callable.annotation = current_overload_annotation; _ } as current_overload;
-          _;
-        } ->
+    | {
+     decorated =
+       Type.Callable
+         {
+           implementation =
+             { Type.Callable.annotation = current_overload_annotation; _ } as current_overload;
+           _;
+         };
+     _;
+    } ->
         let annotation = Resolution.resolve_reference resolution name in
         let overload_to_callable overload =
           Type.Callable

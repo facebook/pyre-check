@@ -40,6 +40,7 @@ val create
   visibility:visibility ->
   property:bool ->
   uninstantiated_annotation:Type.t option ->
+  undecorated_signature:Type.Callable.t option ->
   instantiated
 
 val create_uninstantiated
@@ -53,6 +54,7 @@ val create_uninstantiated
   parent:Type.Primitive.t ->
   visibility:visibility ->
   property:bool ->
+  undecorated_signature:Type.Callable.t option ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -60,6 +62,8 @@ val annotation : instantiated -> Annotation.t
 val uninstantiated_annotation : 'a t -> 'a
 
 val with_uninstantiated_annotation : uninstantiated_annotation:'a -> 'a t -> 'a t
+
+val with_undecorated_signature : 'a t -> undecorated_signature:Type.Callable.t option -> 'a t
 
 val name : 'a t -> Identifier.t
 
@@ -84,6 +88,8 @@ val visibility : 'a t -> visibility
 val is_final : 'a t -> bool
 
 val with_initialized : 'a t -> initialized:initialized -> 'a t
+
+val undecorated_signature : 'a t -> Type.Callable.t option
 
 val instantiate
   :  'a t ->

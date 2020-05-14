@@ -33,6 +33,7 @@ type 'a t = {
   parent: Type.Primitive.t;
   visibility: visibility;
   property: bool;
+  undecorated_signature: Type.Callable.t option;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -58,6 +59,7 @@ let create
     ~visibility
     ~property
     ~uninstantiated_annotation
+    ~undecorated_signature
   =
   {
     payload = { annotation; original_annotation; uninstantiated_annotation };
@@ -70,6 +72,7 @@ let create
     parent;
     visibility;
     property;
+    undecorated_signature;
   }
 
 
@@ -84,6 +87,7 @@ let create_uninstantiated
     ~parent
     ~visibility
     ~property
+    ~undecorated_signature
   =
   {
     payload = uninstantiated_annotation;
@@ -96,6 +100,7 @@ let create_uninstantiated
     parent;
     visibility;
     property;
+    undecorated_signature;
   }
 
 
@@ -128,6 +133,10 @@ let with_uninstantiated_annotation ~uninstantiated_annotation attribute =
   { attribute with payload = uninstantiated_annotation }
 
 
+let with_undecorated_signature attribute ~undecorated_signature =
+  { attribute with undecorated_signature }
+
+
 let name { name; _ } = name
 
 let parent { parent; _ } = parent
@@ -151,6 +160,8 @@ let static { payload = { uninstantiated_annotation; _ }; _ } =
 let property { property; _ } = property
 
 let visibility { visibility; _ } = visibility
+
+let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
 let is_final { visibility; _ } =
   match visibility with

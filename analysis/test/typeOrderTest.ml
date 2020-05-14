@@ -48,6 +48,7 @@ let make_attributes ~class_name =
       ~parent:class_name
       ~property:false
       ~name
+      ~undecorated_signature:None
   in
   List.map ~f:parse_attribute
 

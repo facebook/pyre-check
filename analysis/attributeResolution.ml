@@ -35,6 +35,11 @@ type uninstantiated = UninstantiatedAnnotation.t
 
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
 
+type resolved_define = {
+  undecorated_signature: Type.Callable.t;
+  decorated: Type.t;
+}
+
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
   { UninstantiatedAnnotation.accessed_via_metaclass; kind = Attribute (Callable callable) }
 
@@ -855,238 +860,232 @@ module Implementation = struct
             }
             :: parameters
           in
-          ( attribute_name,
-            UninstantiatedAnnotation.Attribute
-              (Callable
-                 {
-                   kind = Named (Reference.combine name (Reference.create attribute_name));
-                   overloads = [];
-                   implementation =
-                     {
-                       annotation;
-                       parameters = Defined (Type.Callable.Parameter.create parameters);
-                     };
-                 }) )
+          let callable =
+            {
+              Type.Callable.kind = Named (Reference.combine name (Reference.create attribute_name));
+              overloads = [];
+              implementation =
+                { annotation; parameters = Defined (Type.Callable.Parameter.create parameters) };
+            }
+          in
+
+          AnnotatedAttribute.create_uninstantiated
+            ~uninstantiated_annotation:
+              {
+                UninstantiatedAnnotation.accessed_via_metaclass = false;
+                kind = Attribute (Callable callable);
+              }
+            ~abstract:false
+            ~async:false
+            ~class_variable:false
+            ~defined:true
+            ~initialized:OnClass
+            ~name:attribute_name
+            ~parent:(Reference.show name)
+            ~visibility:ReadWrite
+            ~property:false
+            ~undecorated_signature:(Some callable)
         in
         match options definition with
         | None -> []
         | Some { init; repr; eq; order } ->
-            let generated_methods =
-              let methods =
-                if init && not (already_in_table "__init__") then
-                  let parameters =
-                    let extract_dataclass_field_arguments (_, value) =
-                      match value with
-                      | {
-                       Node.value =
-                         Expression.Call
-                           {
-                             callee =
-                               {
-                                 Node.value =
-                                   Expression.Name
-                                     (Name.Attribute
-                                       {
-                                         base =
-                                           {
-                                             Node.value =
-                                               Expression.Name (Name.Identifier "dataclasses");
-                                             _;
-                                           };
-                                         attribute = "field";
-                                         _;
-                                       });
-                                 _;
-                               };
-                             arguments;
-                             _;
-                           };
-                       _;
-                      } ->
-                          Some arguments
+            let methods =
+              if init && not (already_in_table "__init__") then
+                let parameters =
+                  let extract_dataclass_field_arguments (_, value) =
+                    match value with
+                    | {
+                     Node.value =
+                       Expression.Call
+                         {
+                           callee =
+                             {
+                               Node.value =
+                                 Expression.Name
+                                   (Name.Attribute
+                                     {
+                                       base =
+                                         {
+                                           Node.value =
+                                             Expression.Name (Name.Identifier "dataclasses");
+                                           _;
+                                         };
+                                       attribute = "field";
+                                       _;
+                                     });
+                               _;
+                             };
+                           arguments;
+                           _;
+                         };
+                     _;
+                    } ->
+                        Some arguments
+                    | _ -> None
+                  in
+                  let init_not_disabled attribute =
+                    let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
+                      match name, value with
+                      | Some { Node.value = parameter_name; _ }, Expression.False
+                        when String.equal "init" (Identifier.sanitized parameter_name) ->
+                          true
+                      | _ -> false
+                    in
+                    match extract_dataclass_field_arguments attribute with
+                    | Some arguments -> not (List.exists arguments ~f:is_disable_init)
+                    | _ -> true
+                  in
+                  let extract_init_value (attribute, value) =
+                    let initialized = AnnotatedAttribute.initialized attribute in
+                    let get_default_value { Call.Argument.name; value } =
+                      match name with
+                      | Some { Node.value = parameter_name; _ } ->
+                          if String.equal "default" (Identifier.sanitized parameter_name) then
+                            Some value
+                          else if
+                            String.equal "default_factory" (Identifier.sanitized parameter_name)
+                          then
+                            let { Node.location; _ } = value in
+                            Some
+                              {
+                                Node.value = Expression.Call { Call.callee = value; arguments = [] };
+                                location;
+                              }
+                          else
+                            None
                       | _ -> None
                     in
-                    let init_not_disabled attribute =
-                      let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
-                        match name, value with
-                        | Some { Node.value = parameter_name; _ }, Expression.False
-                          when String.equal "init" (Identifier.sanitized parameter_name) ->
-                            true
-                        | _ -> false
-                      in
-                      match extract_dataclass_field_arguments attribute with
-                      | Some arguments -> not (List.exists arguments ~f:is_disable_init)
-                      | _ -> true
+                    match initialized with
+                    | NotInitialized -> None
+                    | _ -> (
+                        match extract_dataclass_field_arguments (attribute, value) with
+                        | Some arguments -> List.find_map arguments ~f:get_default_value
+                        | _ -> Some value )
+                  in
+                  let collect_parameters parameters (attribute, value) =
+                    (* Parameters must be annotated attributes *)
+                    let annotation =
+                      instantiate_attribute attribute
+                      |> AnnotatedAttribute.annotation
+                      |> Annotation.original
+                      |> function
+                      | Type.Parametric
+                          { name = "dataclasses.InitVar"; parameters = [Single single_parameter] }
+                        ->
+                          single_parameter
+                      | annotation -> annotation
                     in
-                    let extract_init_value (attribute, value) =
-                      let initialized = AnnotatedAttribute.initialized attribute in
-                      let get_default_value { Call.Argument.name; value } =
-                        match name with
-                        | Some { Node.value = parameter_name; _ } ->
-                            if String.equal "default" (Identifier.sanitized parameter_name) then
-                              Some value
-                            else if
-                              String.equal "default_factory" (Identifier.sanitized parameter_name)
-                            then
-                              let { Node.location; _ } = value in
-                              Some
+                    match AnnotatedAttribute.name attribute with
+                    | name when not (Type.contains_unknown annotation) ->
+                        UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
+                          table
+                          name;
+                        let name = "$parameter$" ^ name in
+                        let value = extract_init_value (attribute, value) in
+                        let rec override_existing_parameters unchecked_parameters =
+                          match unchecked_parameters with
+                          | [] ->
+                              [
                                 {
-                                  Node.value =
-                                    Expression.Call { Call.callee = value; arguments = [] };
-                                  location;
-                                }
-                            else
-                              None
-                        | _ -> None
-                      in
-                      match initialized with
-                      | NotInitialized -> None
-                      | _ -> (
-                          match extract_dataclass_field_arguments (attribute, value) with
-                          | Some arguments -> List.find_map arguments ~f:get_default_value
-                          | _ -> Some value )
-                    in
-                    let collect_parameters parameters (attribute, value) =
-                      (* Parameters must be annotated attributes *)
-                      let annotation =
-                        instantiate_attribute attribute
-                        |> AnnotatedAttribute.annotation
-                        |> Annotation.original
-                        |> function
-                        | Type.Parametric
-                            { name = "dataclasses.InitVar"; parameters = [Single single_parameter] }
-                          ->
-                            single_parameter
-                        | annotation -> annotation
-                      in
-                      match AnnotatedAttribute.name attribute with
-                      | name when not (Type.contains_unknown annotation) ->
-                          UninstantiatedAttributeTable
-                          .mark_as_implicitly_initialized_if_uninitialized
-                            table
-                            name;
-                          let name = "$parameter$" ^ name in
-                          let value = extract_init_value (attribute, value) in
-                          let rec override_existing_parameters unchecked_parameters =
-                            match unchecked_parameters with
-                            | [] ->
-                                [
-                                  {
-                                    Type.Callable.Parameter.name;
-                                    annotation;
-                                    default = Option.is_some value;
-                                  };
-                                ]
-                            | { Type.Callable.Parameter.name = old_name; default = old_default; _ }
+                                  Type.Callable.Parameter.name;
+                                  annotation;
+                                  default = Option.is_some value;
+                                };
+                              ]
+                          | { Type.Callable.Parameter.name = old_name; default = old_default; _ }
+                            :: tail
+                            when Identifier.equal old_name name ->
+                              { name; annotation; default = Option.is_some value || old_default }
                               :: tail
-                              when Identifier.equal old_name name ->
-                                { name; annotation; default = Option.is_some value || old_default }
-                                :: tail
-                            | head :: tail -> head :: override_existing_parameters tail
-                          in
-                          override_existing_parameters parameters
-                      | _ -> parameters
-                    in
-                    let get_table
-                        ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
-                      =
-                      let create attribute : uninstantiated_attribute * Expression.t =
-                        let value =
-                          match attribute with
-                          | {
-                           Node.value =
-                             { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
-                           _;
-                          } ->
-                              value
-                          | { Node.location; _ } -> Node.create Expression.Ellipsis ~location
+                          | head :: tail -> head :: override_existing_parameters tail
                         in
-                        ( create_attribute
-                            ~parent
-                            ?defined:None
-                            ~accessed_via_metaclass:false
-                            (Node.value attribute),
-                          value )
+                        override_existing_parameters parameters
+                    | _ -> parameters
+                  in
+                  let get_table
+                      ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent)
+                    =
+                    let create attribute : uninstantiated_attribute * Expression.t =
+                      let value =
+                        match attribute with
+                        | {
+                         Node.value =
+                           { Attribute.kind = Simple { values = { value; _ } :: _; _ }; _ };
+                         _;
+                        } ->
+                            value
+                        | { Node.location; _ } -> Node.create Expression.Ellipsis ~location
                       in
-                      let compare_by_location left right =
-                        Ast.Location.compare (Node.location left) (Node.location right)
-                      in
-                      Class.attributes
-                        ~include_generated_attributes:false
-                        ~in_test:false
-                        attribute_components
-                      |> Identifier.SerializableMap.bindings
-                      |> List.unzip
-                      |> snd
-                      |> List.sort ~compare:compare_by_location
-                      |> List.map ~f:create
+                      ( create_attribute
+                          ~parent
+                          ?defined:None
+                          ~accessed_via_metaclass:false
+                          (Node.value attribute),
+                        value )
                     in
+                    let compare_by_location left right =
+                      Ast.Location.compare (Node.location left) (Node.location right)
+                    in
+                    Class.attributes
+                      ~include_generated_attributes:false
+                      ~in_test:false
+                      attribute_components
+                    |> Identifier.SerializableMap.bindings
+                    |> List.unzip
+                    |> snd
+                    |> List.sort ~compare:compare_by_location
+                    |> List.map ~f:create
+                  in
 
-                    let parent_attribute_tables =
-                      parent_dataclasses
-                      |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
-                      |> List.rev
-                      |> List.map ~f:get_table
-                    in
-                    parent_attribute_tables @ [get_table definition]
-                    |> List.map ~f:(List.filter ~f:init_not_disabled)
-                    |> List.fold ~init:[] ~f:(fun parameters ->
-                           List.fold ~init:parameters ~f:collect_parameters)
+                  let parent_attribute_tables =
+                    parent_dataclasses
+                    |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
+                    |> List.rev
+                    |> List.map ~f:get_table
                   in
-                  [make_method ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
-                else
-                  []
-              in
-              let methods =
-                if repr && not (already_in_table "__repr__") then
-                  let new_method =
-                    make_method ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
-                  in
-                  new_method :: methods
-                else
-                  methods
-              in
-              let add_order_method methods name =
-                let annotation = Type.object_primitive in
-                if not (already_in_table name) then
-                  make_method
-                    ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
-                    ~annotation:Type.bool
-                    ~attribute_name:name
-                  :: methods
-                else
-                  methods
-              in
-              let methods =
-                if eq then
-                  add_order_method methods "__eq__"
-                else
-                  methods
-              in
-              let methods =
-                if order then
-                  ["__lt__"; "__le__"; "__gt__"; "__ge__"]
-                  |> List.fold ~init:methods ~f:add_order_method
-                else
-                  methods
-              in
-              methods
+                  parent_attribute_tables @ [get_table definition]
+                  |> List.map ~f:(List.filter ~f:init_not_disabled)
+                  |> List.fold ~init:[] ~f:(fun parameters ->
+                         List.fold ~init:parameters ~f:collect_parameters)
+                in
+                [make_method ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
+              else
+                []
             in
-            let make_attribute (attribute_name, kind) =
-              AnnotatedAttribute.create_uninstantiated
-                ~uninstantiated_annotation:
-                  { UninstantiatedAnnotation.accessed_via_metaclass = false; kind }
-                ~abstract:false
-                ~async:false
-                ~class_variable:false
-                ~defined:true
-                ~initialized:OnClass
-                ~name:attribute_name
-                ~parent:(Reference.show name)
-                ~visibility:ReadWrite
-                ~property:false
+            let methods =
+              if repr && not (already_in_table "__repr__") then
+                let new_method =
+                  make_method ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
+                in
+                new_method :: methods
+              else
+                methods
             in
-            List.map generated_methods ~f:make_attribute
+            let add_order_method methods name =
+              let annotation = Type.object_primitive in
+              if not (already_in_table name) then
+                make_method
+                  ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
+                  ~annotation:Type.bool
+                  ~attribute_name:name
+                :: methods
+              else
+                methods
+            in
+            let methods =
+              if eq then
+                add_order_method methods "__eq__"
+              else
+                methods
+            in
+            let methods =
+              if order then
+                ["__lt__"; "__le__"; "__gt__"; "__ge__"]
+                |> List.fold ~init:methods ~f:add_order_method
+              else
+                methods
+            in
+            methods
       in
       let dataclass_attributes () =
         (* TODO (T43210531): Warn about inconsistent annotations *)
@@ -1169,7 +1168,7 @@ module Implementation = struct
       assumptions:Assumptions.t ->
       implementation:Define.Signature.t option ->
       overloads:Define.Signature.t list ->
-      Type.t;
+      resolved_define;
     signature_select:
       assumptions:Assumptions.t ->
       resolve_with_locals:
@@ -1595,19 +1594,21 @@ module Implementation = struct
               ~class_name
               ~fields
               ~method_name:(AnnotatedAttribute.name attribute)
-            >>| fun overloads ->
+            >>| overloaded_callable
+            >>| fun callable ->
             AnnotatedAttribute.with_uninstantiated_annotation
               ~uninstantiated_annotation:
                 {
                   uninstantiated_annotation with
-                  UninstantiatedAnnotation.kind =
-                    Attribute (Callable (overloaded_callable overloads));
+                  UninstantiatedAnnotation.kind = Attribute (Callable callable);
                 }
               attribute
+            |> AnnotatedAttribute.with_undecorated_signature ~undecorated_signature:(Some callable)
         | _ -> None
       in
       let constructor =
-        Type.TypedDictionary.constructor ~name:class_name ~fields
+        let constructor = Type.TypedDictionary.constructor ~name:class_name ~fields in
+        constructor
         |> create_uninstantiated_method
         |> fun uninstantiated_annotation ->
         AnnotatedAttribute.create_uninstantiated
@@ -1621,6 +1622,7 @@ module Implementation = struct
           ~parent:class_name
           ~visibility:ReadWrite
           ~property:false
+          ~undecorated_signature:(Some constructor)
       in
       let all_special_methods =
         constructor
@@ -1655,20 +1657,20 @@ module Implementation = struct
       let add_placeholder_stub_inheritances () =
         let add_if_missing ~attribute_name ~annotation =
           if Option.is_none (UninstantiatedAttributeTable.lookup_name table attribute_name) then
+            let callable =
+              {
+                Type.Callable.kind = Anonymous;
+                implementation = { annotation; parameters = Undefined };
+                overloads = [];
+              }
+            in
             UninstantiatedAttributeTable.add
               table
               (AnnotatedAttribute.create_uninstantiated
                  ~uninstantiated_annotation:
                    {
                      UninstantiatedAnnotation.accessed_via_metaclass;
-                     kind =
-                       Attribute
-                         (Callable
-                            {
-                              kind = Anonymous;
-                              implementation = { annotation; parameters = Undefined };
-                              overloads = [];
-                            });
+                     kind = Attribute (Callable callable);
                    }
                  ~abstract:false
                  ~async:false
@@ -1678,7 +1680,8 @@ module Implementation = struct
                  ~name:attribute_name
                  ~parent:class_name
                  ~visibility:ReadWrite
-                 ~property:false)
+                 ~property:false
+                 ~undecorated_signature:(Some callable))
           else
             ()
         in
@@ -1903,6 +1906,7 @@ module Implementation = struct
           ~name:"__call__"
           ~parent:"typing.Callable"
           ~property:false
+          ~undecorated_signature:None
         |> Option.some
     | None ->
         uninstantiated_attribute_tables
@@ -2421,7 +2425,7 @@ module Implementation = struct
     let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
     let parent_name = Reference.show parent_name in
     let class_annotation = Type.Primitive parent_name in
-    let annotation, class_variable, visibility =
+    let annotation, class_variable, visibility, undecorated_signature =
       match kind with
       | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
           let value = List.hd values >>| fun { value; _ } -> value in
@@ -2502,7 +2506,7 @@ module Implementation = struct
                   Type.Top
             | _ -> Type.Top
           in
-          UninstantiatedAnnotation.Attribute annotation, class_variable, visibility
+          UninstantiatedAnnotation.Attribute annotation, class_variable, visibility, None
       | Method { signatures; final; static; _ } ->
           (* Handle Callables *)
           let visibility =
@@ -2511,7 +2515,7 @@ module Implementation = struct
             else
               ReadWrite
           in
-          let callable =
+          let callable, undecorated_signature =
             match signatures with
             | define :: _ as defines ->
                 let overloads =
@@ -2529,19 +2533,25 @@ module Implementation = struct
                   in
                   List.fold ~init:(None, []) ~f:to_signature overloads
                 in
-                let resolved = resolve_define ~implementation ~overloads ~assumptions in
-                if static || String.equal attribute_name "__new__" then
-                  UninstantiatedAnnotation.Attribute
-                    (Type.Parametric
-                       { name = "typing.StaticMethod"; parameters = [Single resolved] })
-                else if Define.Signature.is_class_method define then
-                  UninstantiatedAnnotation.Attribute
-                    (Type.Parametric { name = "typing.ClassMethod"; parameters = [Single resolved] })
-                else
-                  UninstantiatedAnnotation.Attribute resolved
+                let { decorated = resolved; undecorated_signature } =
+                  resolve_define ~implementation ~overloads ~assumptions
+                in
+                let annotation =
+                  if static || String.equal attribute_name "__new__" then
+                    UninstantiatedAnnotation.Attribute
+                      (Type.Parametric
+                         { name = "typing.StaticMethod"; parameters = [Single resolved] })
+                  else if Define.Signature.is_class_method define then
+                    UninstantiatedAnnotation.Attribute
+                      (Type.Parametric
+                         { name = "typing.ClassMethod"; parameters = [Single resolved] })
+                  else
+                    UninstantiatedAnnotation.Attribute resolved
+                in
+                annotation, undecorated_signature
             | [] -> failwith "impossible"
           in
-          callable, false, visibility
+          callable, false, visibility, Some undecorated_signature
       | Property { kind; _ } -> (
           let parse_annotation_option annotation = annotation >>| parse_annotation ~assumptions in
           match kind with
@@ -2567,7 +2577,8 @@ module Implementation = struct
                         };
                   },
                 false,
-                ReadWrite )
+                ReadWrite,
+                None )
           | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
               let annotation = parse_annotation_option getter_annotation in
               ( UninstantiatedAnnotation.Property
@@ -2576,7 +2587,8 @@ module Implementation = struct
                     setter = None;
                   },
                 false,
-                ReadOnly Unrefinable ) )
+                ReadOnly Unrefinable,
+                None ) )
     in
     let initialized =
       match kind with
@@ -2617,6 +2629,7 @@ module Implementation = struct
         ( match kind with
         | Property _ -> true
         | _ -> false )
+      ~undecorated_signature
 
 
   let metaclass
@@ -3070,7 +3083,7 @@ module Implementation = struct
     in
     let parse_and_apply_decorators ({ Define.Signature.decorators; _ } as signature) =
       let parsed = parse signature in
-      decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator
+      parsed, decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator
     in
     let kind =
       match implementation, overloads with
@@ -3081,14 +3094,32 @@ module Implementation = struct
           (* Should never happen, but not worth crashing over *)
           Type.Callable.Anonymous
     in
-    let implementation =
+    let undecorated_implementation, decorated_implementation =
+      let undefined_overload =
+        { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
+      in
       implementation
       >>| parse_and_apply_decorators
-      |> Option.value
-           ~default:{ Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
+      |> Option.value ~default:(undefined_overload, undefined_overload)
     in
-    let overloads = List.map overloads ~f:parse_and_apply_decorators in
-    Type.Callable { Type.Callable.implementation; overloads; kind }
+    let undecorated_overloads, decorated_overloads =
+      List.map overloads ~f:parse_and_apply_decorators |> List.unzip
+    in
+    {
+      undecorated_signature =
+        {
+          Type.Callable.implementation = undecorated_implementation;
+          overloads = undecorated_overloads;
+          kind;
+        };
+      decorated =
+        Type.Callable
+          {
+            Type.Callable.implementation = decorated_implementation;
+            overloads = decorated_overloads;
+            kind;
+          };
+    }
 
 
   let signature_select

@@ -224,7 +224,7 @@ val resolve_define
   :  resolution:t ->
   implementation:Define.Signature.t option ->
   overloads:Define.Signature.t list ->
-  Type.t
+  AttributeResolution.resolved_define
 
 val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Type.t
 

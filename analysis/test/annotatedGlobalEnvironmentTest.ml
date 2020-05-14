@@ -24,17 +24,16 @@ let test_simple_registration context =
         ()
     in
     let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    let printer global =
-      global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
-    in
     let location_insensitive_compare left right =
       Option.compare Annotation.compare left right = 0
     in
-    assert_equal
-      ~cmp:location_insensitive_compare
-      ~printer
-      (expected >>| Annotation.create_immutable ?original)
-      (AnnotatedGlobalEnvironment.ReadOnly.get_global read_only (Reference.create name))
+    let printer global =
+      global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
+    in
+    let expectation = expected >>| Annotation.create_immutable ?original in
+    AnnotatedGlobalEnvironment.ReadOnly.get_global read_only (Reference.create name)
+    >>| (fun { annotation; _ } -> annotation)
+    |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
   in
   assert_registers "x = 1" "test.x" (Some Type.integer);
   assert_registers "x, y, z  = 'A', True, 1.8" "test.x" (Some Type.string);
@@ -103,19 +102,17 @@ let test_updates context =
     let execute_action = function
       | global_name, dependency, expectation ->
           let location_insensitive_compare left right =
-            Option.compare AnnotatedGlobalEnvironment.compare_global left right = 0
+            Option.compare Annotation.compare left right = 0
           in
           let printer global =
-            global
-            >>| AnnotatedGlobalEnvironment.sexp_of_global
-            >>| Sexp.to_string_hum
-            |> Option.value ~default:"None"
+            global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
           in
           let expectation = expectation >>| Annotation.create_immutable in
           AnnotatedGlobalEnvironment.ReadOnly.get_global
             read_only
             (Reference.create global_name)
             ~dependency
+          >>| (fun { annotation; _ } -> annotation)
           |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;

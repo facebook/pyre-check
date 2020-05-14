@@ -30,6 +30,11 @@ val resolved_type : weakened_type -> Type.t
 
 val typed_dictionary_errors : weakened_type -> typed_dictionary_mismatch Node.t list
 
+type resolved_define = {
+  undecorated_signature: Type.Callable.t;
+  decorated: Type.t;
+}
+
 val make_weakened_type
   :  ?typed_dictionary_errors:typed_dictionary_mismatch Node.t list ->
   Type.t ->
@@ -225,7 +230,7 @@ module AttributeReadOnly : sig
     ?dependency:DependencyKey.registered ->
     implementation:Define.Signature.t option ->
     overloads:Define.Signature.t list ->
-    Type.t
+    resolved_define
 
   val signature_select
     :  t ->

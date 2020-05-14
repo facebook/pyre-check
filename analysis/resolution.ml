@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Pyre
 
 type t = {
   global_resolution: GlobalResolution.t;
@@ -162,7 +163,7 @@ let get_local
       RefinementUnit.base result
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.delocalize reference |> global
+      Reference.delocalize reference |> global >>| fun { annotation; _ } -> annotation
   | _ -> None
 
 
@@ -177,7 +178,9 @@ let get_local_with_attributes
       RefinementUnit.annotation result ~reference:attribute_path
   | _ when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.(combine object_reference attribute_path |> delocalize) |> global
+      Reference.(combine object_reference attribute_path |> delocalize)
+      |> global
+      >>| fun { annotation; _ } -> annotation
   | _ -> None
 
 
@@ -322,7 +325,8 @@ let fallback_attribute ~resolution ~name class_name =
                  ~name
                  ~parent:(Reference.show class_name_reference)
                  ~visibility:ReadWrite
-                 ~property:false)
+                 ~property:false
+                 ~undecorated_signature:None)
         | _ -> None )
     | _ -> None
   in

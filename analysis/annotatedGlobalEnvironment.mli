@@ -5,7 +5,11 @@
 open Ast
 open SharedMemoryKeys
 
-type global = Annotation.t [@@deriving eq, show, compare, sexp]
+type global = {
+  annotation: Annotation.t;
+  undecorated_signature: Type.Callable.t option;
+}
+[@@deriving eq, show, compare, sexp]
 
 module AnnotatedReadOnly : sig
   include Environment.ReadOnly

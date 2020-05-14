@@ -9,7 +9,11 @@ open Pyre
 open Statement
 module PreviousEnvironment = AttributeResolution
 
-type global = Annotation.t [@@deriving eq, show, compare, sexp]
+type global = {
+  annotation: Annotation.t;
+  undecorated_signature: Type.Callable.t option;
+}
+[@@deriving eq, show, compare, sexp]
 
 let class_hierarchy_environment class_metadata_environment =
   ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
@@ -68,16 +72,21 @@ let produce_global_annotation attribute_resolution name ~dependency =
     in
     match global with
     | UnannotatedGlobalEnvironment.Define defines ->
-        List.map defines ~f:(fun { define; _ } -> define)
-        |> List.partition_tf ~f:Define.Signature.is_overloaded_function
-        |> (fun (overloads, implementations) ->
-             AttributeResolution.ReadOnly.resolve_define
-               attribute_resolution
-               ?dependency
-               ~implementation:(List.last implementations)
-               ~overloads)
-        |> Annotation.create_immutable
-        |> Option.some
+        let { AttributeResolution.undecorated_signature; decorated } =
+          List.map defines ~f:(fun { define; _ } -> define)
+          |> List.partition_tf ~f:Define.Signature.is_overloaded_function
+          |> fun (overloads, implementations) ->
+          AttributeResolution.ReadOnly.resolve_define
+            attribute_resolution
+            ?dependency
+            ~implementation:(List.last implementations)
+            ~overloads
+        in
+        Some
+          {
+            annotation = Annotation.create_immutable decorated;
+            undecorated_signature = Some undecorated_signature;
+          }
     | SimpleAssign
         {
           explicit_annotation = None;
@@ -113,7 +122,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
              attribute_resolution
         |> Type.meta
         |> Annotation.create_immutable
-        |> Option.some
+        |> fun annotation -> Some { annotation; undecorated_signature = None }
     | SimpleAssign { explicit_annotation; value; _ } ->
         let explicit_annotation =
           explicit_annotation
@@ -127,7 +136,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
               AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
         in
         produce_assignment_global ~is_explicit:(Option.is_some explicit_annotation) annotation
-        |> Option.some
+        |> fun annotation -> Some { annotation; undecorated_signature = None }
     | TupleAssign { value; index; total_length; _ } ->
         let extracted =
           match
@@ -141,7 +150,8 @@ let produce_global_annotation attribute_resolution name ~dependency =
           | Type.Tuple (Type.Unbounded parameter) -> parameter
           | _ -> Type.Top
         in
-        produce_assignment_global ~is_explicit:false extracted |> Option.some
+        produce_assignment_global ~is_explicit:false extracted
+        |> fun annotation -> Some { annotation; undecorated_signature = None }
     | _ -> None
   in
   let class_lookup =
@@ -152,7 +162,8 @@ let produce_global_annotation attribute_resolution name ~dependency =
   in
   if class_lookup then
     let primitive = Type.Primitive (Reference.show name) in
-    Annotation.create_immutable (Type.meta primitive) |> Option.some
+    Annotation.create_immutable (Type.meta primitive)
+    |> fun annotation -> Some { annotation; undecorated_signature = None }
   else
     UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
       (unannotated_global_environment class_metadata_environment)
@@ -216,11 +227,11 @@ module GlobalValueTable = Environment.EnvironmentTable.WithCache (struct
   let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobal name
 
   let serialize_value = function
-    | Some annotation -> Annotation.sexp_of_t annotation |> Sexp.to_string
+    | Some annotation -> sexp_of_global annotation |> Sexp.to_string
     | None -> "None"
 
 
-  let equal_value = Option.equal Annotation.equal
+  let equal_value = Option.equal equal_global
 end)
 
 let produce_global_location global_value_table name ~dependency =
