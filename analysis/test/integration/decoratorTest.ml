@@ -518,7 +518,23 @@ let test_check_user_decorators context =
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
        `typing.Callable(am_i_async)[..., str]`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      def not_a_decorator(x: int) -> str: ...
+
+      @not_a_decorator
+      def function_returning_callable() -> Callable[[int], str]:
+       ...
+
+      reveal_type(function_returning_callable)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.function_returning_callable` is \
+       `typing.Callable(function_returning_callable)[[], typing.Callable[[int], str]]`.";
+    ];
+  ()
 
 
 let test_check_callable_class_decorators context =

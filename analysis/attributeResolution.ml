@@ -3033,24 +3033,22 @@ module Implementation = struct
                     ConstraintsSet.Solution.instantiate solution return_annotation
                     (* If we failed, just default to the old annotation. *)
                   in
-                  let decorated_annotation =
-                    decorated_annotation |> Option.value ~default:annotation
-                  in
                   match decorated_annotation with
                   (* Note that @property decorators can't properly be handled in this fashion. The
                      problem stems from the need to use `apply_decorators` to individual overloaded
                      defines - if an overloaded define could become Not An Overload, it's not clear
                      what we should do. Defer the problem by now by only inferring a limited set of
                      decorators. *)
-                  | Type.Callable
-                      {
-                        Type.Callable.implementation =
-                          {
-                            Type.Callable.parameters = decorated_parameters;
-                            annotation = decorated_annotation;
-                          };
-                        _;
-                      } ->
+                  | Some
+                      (Type.Callable
+                        {
+                          Type.Callable.implementation =
+                            {
+                              Type.Callable.parameters = decorated_parameters;
+                              annotation = decorated_annotation;
+                            };
+                          _;
+                        }) ->
                       {
                         Type.Callable.annotation = decorated_annotation;
                         parameters = decorated_parameters;
