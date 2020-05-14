@@ -149,3 +149,7 @@ def find_files(directory: Path, name: str) -> List[str]:
         return []
     files = output.split("\n")
     return [file.strip() for file in files]
+
+
+def find_directories(directory: Path) -> List[Path]:
+    return [path for path in directory.iterdir() if path.is_dir()]

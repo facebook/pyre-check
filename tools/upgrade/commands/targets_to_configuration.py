@@ -17,6 +17,7 @@ from ..errors import Errors
 from ..filesystem import (
     LocalMode,
     add_local_mode,
+    find_directories,
     find_files,
     find_targets,
     get_filesystem,
@@ -177,14 +178,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         LOG.info(
             "Converting typecheck targets to pyre configurations in `%s`", subdirectory
         )
-
-        configurations = find_files(subdirectory, ".pyre_configuration.local")
-        configuration_directories = sorted(
-            Path(configuration.replace("/.pyre_configuration.local", ""))
-            for configuration in configurations
-        )
-        if len(configuration_directories) == 0:
-            configuration_directories = [subdirectory]
+        configuration_directories = self._gather_directories(subdirectory)
         converted = []
         for directory in configuration_directories:
             if all(
@@ -210,3 +204,35 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             summary=summary,
             set_dependencies=False,
         )
+
+    def _gather_directories(self, subdirectory: Path) -> List[Path]:
+        configurations = find_files(subdirectory, ".pyre_configuration.local")
+        configuration_directories = [
+            configuration.replace("/.pyre_configuration.local", "")
+            for configuration in configurations
+        ]
+        sorted_directories = sorted(
+            (directory.split("/") for directory in configuration_directories),
+            key=lambda directory: (len(directory), directory),
+        )
+        if len(configuration_directories) == 0:
+            configuration_directories = [str(subdirectory)]
+        else:
+            # Fill in missing coverage
+            missing_directories = []
+            current_depth = 1
+            for directory in sorted_directories:
+                if len(directory) <= current_depth:
+                    continue
+                all_subdirectories = find_directories(
+                    Path("/".join(directory[0:current_depth]))
+                )
+                for subdirectory in all_subdirectories:
+                    if all(
+                        not configuration_directory.startswith(str(subdirectory))
+                        for configuration_directory in configuration_directories
+                    ):
+                        missing_directories.append(subdirectory)
+                current_depth += 1
+            configuration_directories.extend(missing_directories)
+        return [Path(directory) for directory in configuration_directories]

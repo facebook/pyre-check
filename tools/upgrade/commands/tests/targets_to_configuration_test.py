@@ -151,12 +151,63 @@ class TargetsToConfigurationTest(unittest.TestCase):
         remove_target_typing_fields.assert_called_once()
 
     @patch(f"{targets_to_configuration.__name__}.find_files")
+    @patch(f"{targets_to_configuration.__name__}.find_directories")
+    def test_gather_directories(self, find_directories, find_files) -> None:
+        arguments = MagicMock()
+        find_files.return_value = ["subdirectory/.pyre_configuration.local"]
+        expected_directories = [Path("subdirectory")]
+        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
+            Path("subdirectory")
+        )
+        self.assertEqual(expected_directories, directories)
+
+        find_files.return_value = ["subdirectory/a/.pyre_configuration.local"]
+        find_directories.return_value = [
+            "subdirectory/a",
+            "subdirectory/b",
+            "subdirectory/c",
+        ]
+        expected_directories = [
+            Path("subdirectory/a"),
+            Path("subdirectory/b"),
+            Path("subdirectory/c"),
+        ]
+        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
+            Path("subdirectory")
+        )
+        self.assertEqual(expected_directories, directories)
+
+        find_files.reset_mock()
+        find_directories.reset_mock()
+        find_files.return_value = [
+            "subdirectory/a/.pyre_configuration.local",
+            "subdirectory/b/.pyre_configuration.local",
+            "subdirectory/c/x/.pyre_configuration.local",
+        ]
+        find_directories.side_effect = [
+            ["subdirectory/a", "subdirectory/b", "subdirectory/c"],
+            ["subdirectory/c/x", "subdirectory/c/y"],
+        ]
+        expected_directories = [
+            Path("subdirectory/a"),
+            Path("subdirectory/b"),
+            Path("subdirectory/c/x"),
+            Path("subdirectory/c/y"),
+        ]
+        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
+            Path("subdirectory")
+        )
+        self.assertEqual(expected_directories, directories)
+
     @patch(f"{targets_to_configuration.__name__}.Repository.submit_changes")
+    @patch(
+        f"{targets_to_configuration.__name__}.TargetsToConfiguration._gather_directories"
+    )
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.convert_directory"
     )
     def test_run_targets_to_configuration(
-        self, convert_directory, submit_changes, find_files
+        self, convert_directory, gather_directories, submit_changes
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = "subdirectory"
@@ -165,15 +216,15 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.fixme_threshold = None
         arguments.no_commit = False
 
-        find_files.return_value = ["subdirectory/.pyre_configuration.local"]
+        gather_directories.return_value = [Path("subdirectory")]
         TargetsToConfiguration(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory"))
         submit_changes.assert_called_once()
 
         convert_directory.reset_mock()
-        find_files.return_value = [
-            "subdirectory/a/.pyre_configuration.local",
-            "subdirectory/b/.pyre_configuration.local",
+        gather_directories.return_value = [
+            Path("subdirectory/a"),
+            Path("subdirectory/b"),
         ]
         TargetsToConfiguration(arguments, repository).run()
         convert_directory.assert_has_calls(
@@ -181,9 +232,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
         )
 
         convert_directory.reset_mock()
-        find_files.return_value = [
-            "subdirectory/a/.pyre_configuration.local",
-            "subdirectory/a/nested/.pyre_configuration.local",
+        gather_directories.return_value = [
+            Path("subdirectory/a"),
+            Path("subdirectory/a"),
         ]
         TargetsToConfiguration(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory/a"))
