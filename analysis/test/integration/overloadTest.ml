@@ -199,6 +199,31 @@ let test_check_decorated_overloads context =
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], \
        int][[[int], int][[int], int]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, Callable
+      def decoratorA(x: object) -> Callable[[int], int]: ...
+      def decoratorB(x: object) -> Callable[[int], int]: ...
+
+      @overload
+      @decoratorA
+      def foo(a: str) -> str: ...
+
+      @overload
+      @decoratorB
+      def foo(a: bool) -> bool: ...
+
+      @decoratorB
+      def foo(a: object) -> object:
+        return 1
+
+      reveal_type(foo)
+    |}
+    [
+      "Incompatible overload [43]: This definition does not have the same decorators as the \
+       preceding overload(s)";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
   ()
 
 

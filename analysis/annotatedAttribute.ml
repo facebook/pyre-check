@@ -22,6 +22,9 @@ type initialized =
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 
+type problem = DifferingDecorators of { offender: Type.t Type.Callable.overload }
+[@@deriving eq, show, compare, sexp]
+
 type 'a t = {
   payload: 'a;
   abstract: bool;
@@ -34,6 +37,7 @@ type 'a t = {
   visibility: visibility;
   property: bool;
   undecorated_signature: Type.Callable.t option;
+  problem: problem option;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -60,6 +64,7 @@ let create
     ~property
     ~uninstantiated_annotation
     ~undecorated_signature
+    ~problem
   =
   {
     payload = { annotation; original_annotation; uninstantiated_annotation };
@@ -73,6 +78,7 @@ let create
     visibility;
     property;
     undecorated_signature;
+    problem;
   }
 
 
@@ -88,6 +94,7 @@ let create_uninstantiated
     ~visibility
     ~property
     ~undecorated_signature
+    ~problem
   =
   {
     payload = uninstantiated_annotation;
@@ -101,6 +108,7 @@ let create_uninstantiated
     visibility;
     property;
     undecorated_signature;
+    problem;
   }
 
 
@@ -162,6 +170,8 @@ let property { property; _ } = property
 let visibility { visibility; _ } = visibility
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
+
+let problem { problem; _ } = problem
 
 let is_final { visibility; _ } =
   match visibility with

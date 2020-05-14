@@ -397,6 +397,7 @@ let test_class_attributes context =
       ~visibility:ReadWrite
       ~property:false
       ~undecorated_signature
+      ~problem:None
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
@@ -572,7 +573,8 @@ let test_class_attributes context =
          ~parent
          ~property
          ~visibility
-         ~undecorated_signature)
+         ~undecorated_signature
+         ~problem:None)
   in
   assert_attribute
     ~parent:"test.Attributes"
@@ -895,7 +897,8 @@ let test_typed_dictionary_individual_attributes context =
          ~parent
          ~property
          ~visibility
-         ~undecorated_signature)
+         ~undecorated_signature
+         ~problem:None)
   in
   let create_method ~uninstantiated_annotation ~parent =
     create_expected_attribute

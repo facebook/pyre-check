@@ -172,6 +172,7 @@ and incompatible_overload_kind =
       name: Reference.t;
       location: Location.t;
     }
+  | DifferingDecorators
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =

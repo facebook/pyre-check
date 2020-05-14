@@ -406,8 +406,10 @@ module State (Context : Context) = struct
         ~implementation:(Some signature)
         ~overloads:[]
     with
-    | { decorated = Type.Callable callable; _ } -> Type.Callable { callable with kind = Anonymous }
-    | { decorated = other; _ } -> other
+    | { decorated = Ok (Type.Callable callable); _ } ->
+        Type.Callable { callable with kind = Anonymous }
+    | { decorated = Ok other; _ } -> other
+    | { decorated = Error _; _ } -> Any
 
 
   let type_of_parent ~global_resolution parent =
@@ -5549,7 +5551,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
       AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
     in
-    let handle full_undecorated_signature =
+    let handle ~undecorated_signature ~problem =
       let overload_to_callable overload =
         Type.Callable
           {
@@ -5559,7 +5561,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           }
       in
       let check_implementation_exists errors =
-        let { Type.Callable.implementation; _ } = full_undecorated_signature in
+        let { Type.Callable.implementation; _ } = undecorated_signature in
         if
           Define.is_overloaded_function define && Type.Callable.Overload.is_undefined implementation
         then
@@ -5580,7 +5582,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           _;
         }
           =
-          full_undecorated_signature
+          undecorated_signature
         in
         if Define.is_overloaded_function define then
           let errors_sofar =
@@ -5628,7 +5630,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           errors
       in
       let check_unmatched_overloads errors =
-        let { Type.Callable.overloads; _ } = full_undecorated_signature in
+        let { Type.Callable.overloads; _ } = undecorated_signature in
         if Define.is_overloaded_function define then
           let preceding, following_and_including =
             List.split_while overloads ~f:(fun other ->
@@ -5655,25 +5657,44 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         else
           errors
       in
+      let check_differing_decorators errors =
+        match problem with
+        | Some (AnnotatedAttribute.DifferingDecorators { offender })
+          when Type.Callable.equal_overload Type.equal current_overload offender ->
+            let error =
+              Error.create
+                ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                ~define:Context.define
+                ~kind:(Error.IncompatibleOverload DifferingDecorators)
+            in
+            error :: errors
+        | _ -> errors
+      in
       errors
       |> check_implementation_exists
       |> check_compatible_return_types
       |> check_unmatched_overloads
+      |> check_differing_decorators
     in
     match GlobalResolution.global global_resolution name with
-    | Some { undecorated_signature = Some undecorated_signature; _ } -> handle undecorated_signature
+    | Some { undecorated_signature = Some undecorated_signature; problem; _ } ->
+        handle ~undecorated_signature ~problem
     | _ -> (
-        match
+        let attribute =
           Reference.prefix name
           >>| Reference.show
           >>= GlobalResolution.attribute_from_class_name
                 ~resolution:global_resolution
                 ~name:(Reference.last name)
                 ~instantiated:Top
-          >>= AnnotatedAttribute.undecorated_signature
+        in
+        match
+          attribute
+          >>| fun attribute -> attribute, AnnotatedAttribute.undecorated_signature attribute
         with
-        | Some signature -> handle signature
-        | None -> errors )
+        | Some (attribute, Some undecorated_signature) ->
+            handle ~undecorated_signature ~problem:(AnnotatedAttribute.problem attribute)
+        | _ -> errors )
   in
 
   class_initialization_errors errors_sofar |> overload_errors

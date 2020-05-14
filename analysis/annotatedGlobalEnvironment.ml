@@ -12,6 +12,7 @@ module PreviousEnvironment = AttributeResolution
 type global = {
   annotation: Annotation.t;
   undecorated_signature: Type.Callable.t option;
+  problem: AnnotatedAttribute.problem option;
 }
 [@@deriving eq, show, compare, sexp]
 
@@ -82,10 +83,14 @@ let produce_global_annotation attribute_resolution name ~dependency =
             ~implementation:(List.last implementations)
             ~overloads
         in
+        let annotation =
+          Result.ok decorated |> Option.value ~default:Type.Any |> Annotation.create_immutable
+        in
         Some
           {
-            annotation = Annotation.create_immutable decorated;
+            annotation;
             undecorated_signature = Some undecorated_signature;
+            problem = Result.error decorated;
           }
     | SimpleAssign
         {
@@ -122,7 +127,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
              attribute_resolution
         |> Type.meta
         |> Annotation.create_immutable
-        |> fun annotation -> Some { annotation; undecorated_signature = None }
+        |> fun annotation -> Some { annotation; undecorated_signature = None; problem = None }
     | SimpleAssign { explicit_annotation; value; _ } ->
         let explicit_annotation =
           explicit_annotation
@@ -136,7 +141,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
               AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
         in
         produce_assignment_global ~is_explicit:(Option.is_some explicit_annotation) annotation
-        |> fun annotation -> Some { annotation; undecorated_signature = None }
+        |> fun annotation -> Some { annotation; undecorated_signature = None; problem = None }
     | TupleAssign { value; index; total_length; _ } ->
         let extracted =
           match
@@ -151,7 +156,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
           | _ -> Type.Top
         in
         produce_assignment_global ~is_explicit:false extracted
-        |> fun annotation -> Some { annotation; undecorated_signature = None }
+        |> fun annotation -> Some { annotation; undecorated_signature = None; problem = None }
     | _ -> None
   in
   let class_lookup =
@@ -163,7 +168,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
   if class_lookup then
     let primitive = Type.Primitive (Reference.show name) in
     Annotation.create_immutable (Type.meta primitive)
-    |> fun annotation -> Some { annotation; undecorated_signature = None }
+    |> fun annotation -> Some { annotation; undecorated_signature = None; problem = None }
   else
     UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
       (unannotated_global_environment class_metadata_environment)

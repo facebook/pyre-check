@@ -37,7 +37,7 @@ type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t
 
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
-  decorated: Type.t;
+  decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
 }
 
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
@@ -885,6 +885,7 @@ module Implementation = struct
             ~visibility:ReadWrite
             ~property:false
             ~undecorated_signature:(Some callable)
+            ~problem:None
         in
         match options definition with
         | None -> []
@@ -1623,6 +1624,7 @@ module Implementation = struct
           ~visibility:ReadWrite
           ~property:false
           ~undecorated_signature:(Some constructor)
+          ~problem:None
       in
       let all_special_methods =
         constructor
@@ -1681,7 +1683,8 @@ module Implementation = struct
                  ~parent:class_name
                  ~visibility:ReadWrite
                  ~property:false
-                 ~undecorated_signature:(Some callable))
+                 ~undecorated_signature:(Some callable)
+                 ~problem:None)
           else
             ()
         in
@@ -1907,6 +1910,7 @@ module Implementation = struct
           ~parent:"typing.Callable"
           ~property:false
           ~undecorated_signature:None
+          ~problem:None
         |> Option.some
     | None ->
         uninstantiated_attribute_tables
@@ -2425,7 +2429,7 @@ module Implementation = struct
     let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
     let parent_name = Reference.show parent_name in
     let class_annotation = Type.Primitive parent_name in
-    let annotation, class_variable, visibility, undecorated_signature =
+    let annotation, class_variable, visibility, undecorated_signature, problem =
       match kind with
       | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
           let value = List.hd values >>| fun { value; _ } -> value in
@@ -2506,7 +2510,7 @@ module Implementation = struct
                   Type.Top
             | _ -> Type.Top
           in
-          UninstantiatedAnnotation.Attribute annotation, class_variable, visibility, None
+          UninstantiatedAnnotation.Attribute annotation, class_variable, visibility, None, None
       | Method { signatures; final; static; _ } ->
           (* Handle Callables *)
           let visibility =
@@ -2515,7 +2519,7 @@ module Implementation = struct
             else
               ReadWrite
           in
-          let callable, undecorated_signature =
+          let callable, undecorated_signature, problem =
             match signatures with
             | define :: _ as defines ->
                 let overloads =
@@ -2533,25 +2537,28 @@ module Implementation = struct
                   in
                   List.fold ~init:(None, []) ~f:to_signature overloads
                 in
-                let { decorated = resolved; undecorated_signature } =
+                let { decorated; undecorated_signature } =
                   resolve_define ~implementation ~overloads ~assumptions
                 in
                 let annotation =
-                  if static || String.equal attribute_name "__new__" then
-                    UninstantiatedAnnotation.Attribute
-                      (Type.Parametric
-                         { name = "typing.StaticMethod"; parameters = [Single resolved] })
-                  else if Define.Signature.is_class_method define then
-                    UninstantiatedAnnotation.Attribute
-                      (Type.Parametric
-                         { name = "typing.ClassMethod"; parameters = [Single resolved] })
-                  else
-                    UninstantiatedAnnotation.Attribute resolved
+                  match decorated with
+                  | Ok resolved ->
+                      if static || String.equal attribute_name "__new__" then
+                        Type.Parametric
+                          { name = "typing.StaticMethod"; parameters = [Single resolved] }
+                      else if Define.Signature.is_class_method define then
+                        Type.Parametric
+                          { name = "typing.ClassMethod"; parameters = [Single resolved] }
+                      else
+                        resolved
+                  | Error _ -> Any
                 in
-                annotation, undecorated_signature
+                ( UninstantiatedAnnotation.Attribute annotation,
+                  undecorated_signature,
+                  Result.error decorated )
             | [] -> failwith "impossible"
           in
-          callable, false, visibility, Some undecorated_signature
+          callable, false, visibility, Some undecorated_signature, problem
       | Property { kind; _ } -> (
           let parse_annotation_option annotation = annotation >>| parse_annotation ~assumptions in
           match kind with
@@ -2578,6 +2585,7 @@ module Implementation = struct
                   },
                 false,
                 ReadWrite,
+                None,
                 None )
           | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
               let annotation = parse_annotation_option getter_annotation in
@@ -2588,6 +2596,7 @@ module Implementation = struct
                   },
                 false,
                 ReadOnly Unrefinable,
+                None,
                 None ) )
     in
     let initialized =
@@ -2630,6 +2639,7 @@ module Implementation = struct
         | Property _ -> true
         | _ -> false )
       ~undecorated_signature
+      ~problem
 
 
   let metaclass
@@ -3081,10 +3091,7 @@ module Implementation = struct
       in
       AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
     in
-    let parse_and_apply_decorators ({ Define.Signature.decorators; _ } as signature) =
-      let parsed = parse signature in
-      parsed, decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator
-    in
+    (*parsed, decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator*)
     let kind =
       match implementation, overloads with
       | Some { Define.Signature.name; _ }, _
@@ -3094,31 +3101,74 @@ module Implementation = struct
           (* Should never happen, but not worth crashing over *)
           Type.Callable.Anonymous
     in
-    let undecorated_implementation, decorated_implementation =
-      let undefined_overload =
-        { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
-      in
-      implementation
-      >>| parse_and_apply_decorators
-      |> Option.value ~default:(undefined_overload, undefined_overload)
+    let undefined_overload =
+      { Type.Callable.annotation = Type.Top; parameters = Type.Callable.Undefined }
     in
-    let undecorated_overloads, decorated_overloads =
-      List.map overloads ~f:parse_and_apply_decorators |> List.unzip
+    let parsed_overloads, parsed_implementation, decorators =
+      match overloads, implementation with
+      | ({ decorators = head_decorators; _ } as overload) :: tail, _ ->
+          let purify =
+            let is_not_overload_decorator decorator =
+              not
+                (Ast.Statement.Define.Signature.is_overloaded_function
+                   { overload with decorators = [decorator] })
+            in
+            List.filter ~f:is_not_overload_decorator
+          in
+          let enforce_equality ~parsed ~current sofar =
+            let equal left right =
+              Int.equal (Expression.location_insensitive_compare left right) 0
+            in
+            if List.equal equal sofar (purify current) then
+              Ok sofar
+            else
+              Error (AnnotatedAttribute.DifferingDecorators { offender = parsed })
+          in
+          let reversed_parsed_overloads, decorators =
+            let collect
+                (reversed_parsed_overloads, decorators_sofar)
+                ({ Define.Signature.decorators = current; _ } as overload)
+              =
+              let parsed = parse overload in
+              ( parsed :: reversed_parsed_overloads,
+                Result.bind decorators_sofar ~f:(enforce_equality ~parsed ~current) )
+            in
+            List.fold tail ~f:collect ~init:([parse overload], Result.Ok (purify head_decorators))
+          in
+          let parsed_implementation, decorators =
+            match implementation with
+            | Some ({ Define.Signature.decorators = current; _ } as implementation) ->
+                let parsed = parse implementation in
+                Some parsed, Result.bind decorators ~f:(enforce_equality ~parsed ~current)
+            | None -> None, decorators
+          in
+          List.rev reversed_parsed_overloads, parsed_implementation, decorators
+      | [], Some { decorators; _ } -> [], implementation >>| parse, Result.Ok decorators
+      | [], None -> [], None, Ok []
+    in
+    let decorated =
+      let apply_decorators decorators =
+        let decorators = List.rev decorators in
+        let apply target = List.fold decorators ~init:target ~f:apply_decorator in
+        Type.Callable
+          {
+            Type.Callable.implementation =
+              parsed_implementation >>| apply |> Option.value ~default:undefined_overload;
+            overloads = List.map parsed_overloads ~f:apply;
+            kind;
+          }
+      in
+      Result.map decorators ~f:apply_decorators
     in
     {
       undecorated_signature =
         {
-          Type.Callable.implementation = undecorated_implementation;
-          overloads = undecorated_overloads;
+          Type.Callable.implementation =
+            parsed_implementation |> Option.value ~default:undefined_overload;
+          overloads = parsed_overloads;
           kind;
         };
-      decorated =
-        Type.Callable
-          {
-            Type.Callable.implementation = decorated_implementation;
-            overloads = decorated_overloads;
-            kind;
-          };
+      decorated;
     }
 
 

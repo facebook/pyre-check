@@ -31,7 +31,7 @@ let test_apply_decorators context =
     let applied_return_annotation =
       GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
       |> function
-      | { decorated = Callable { implementation = { Type.Callable.annotation; _ }; _ }; _ } ->
+      | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
           annotation
       | _ -> failwith "impossible"
     in
@@ -45,7 +45,7 @@ let test_apply_decorators context =
     let applied_return_annotation =
       GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
       |> function
-      | { decorated = Callable { implementation = { Type.Callable.annotation; _ }; _ }; _ } ->
+      | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
           annotation
       | _ -> failwith "impossible"
     in
@@ -78,7 +78,10 @@ let test_apply_decorators context =
       let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
       GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
       |> (function
-           | { decorated = Callable { implementation = { Type.Callable.parameters; _ }; _ }; _ } ->
+           | {
+               decorated = Ok (Callable { implementation = { Type.Callable.parameters; _ }; _ });
+               _;
+             } ->
                parameters
            | _ -> failwith "impossible")
       |> function
@@ -115,7 +118,7 @@ let test_apply_decorators context =
   |> (fun define ->
        GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[])
   |> (function
-       | { decorated = Callable { implementation = { Type.Callable.parameters; _ }; _ }; _ } ->
+       | { decorated = Ok (Callable { implementation = { Type.Callable.parameters; _ }; _ }); _ } ->
            parameters
        | _ -> failwith "impossible")
   |> fun parameters ->

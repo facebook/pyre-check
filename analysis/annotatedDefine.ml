@@ -58,7 +58,8 @@ let decorate
         GlobalResolution.resolve_define ~resolution ~implementation:(Some signature) ~overloads:[]
       with
       | {
-       decorated = Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ };
+       decorated =
+         Ok (Type.Callable { implementation = { Type.Callable.parameters; annotation; _ }; _ });
        _;
       } ->
           let parameters =

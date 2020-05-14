@@ -8,6 +8,7 @@ open SharedMemoryKeys
 type global = {
   annotation: Annotation.t;
   undecorated_signature: Type.Callable.t option;
+  problem: AnnotatedAttribute.problem option;
 }
 [@@deriving eq, show, compare, sexp]
 

@@ -6,6 +6,7 @@
 open Ast
 open SharedMemoryKeys
 open Statement
+open Core
 
 type typed_dictionary_mismatch =
   | MissingRequiredField of {
@@ -32,7 +33,7 @@ val typed_dictionary_errors : weakened_type -> typed_dictionary_mismatch Node.t 
 
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
-  decorated: Type.t;
+  decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
 }
 
 val make_weakened_type

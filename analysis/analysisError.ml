@@ -181,6 +181,7 @@ and incompatible_overload_kind =
       name: Reference.t;
       location: Location.t;
     }
+  | DifferingDecorators
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
@@ -676,7 +677,9 @@ let messages ~concise ~signature location kind =
               pp_reference
               name
               (Location.line location);
-          ] )
+          ]
+      | DifferingDecorators ->
+          ["This definition does not have the same decorators as the preceding overload(s)"] )
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
       let trace =
@@ -3186,6 +3189,7 @@ let dequalify
     | Unmatchable { name; matching_overload; unmatched_location } ->
         Unmatchable { name = dequalify_reference name; matching_overload; unmatched_location }
     | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
+    | DifferingDecorators -> DifferingDecorators
   in
   let dequalify_invalid_type_parameters { AttributeResolution.name; kind } =
     let dequalify_generic_type_problems = function

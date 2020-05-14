@@ -21,6 +21,9 @@ type initialized =
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 
+type problem = DifferingDecorators of { offender: Type.t Type.Callable.overload }
+[@@deriving eq, show, compare, sexp]
+
 type 'a t [@@deriving eq, show, compare, sexp]
 
 type instantiated_annotation
@@ -41,6 +44,7 @@ val create
   property:bool ->
   uninstantiated_annotation:Type.t option ->
   undecorated_signature:Type.Callable.t option ->
+  problem:problem option ->
   instantiated
 
 val create_uninstantiated
@@ -55,6 +59,7 @@ val create_uninstantiated
   visibility:visibility ->
   property:bool ->
   undecorated_signature:Type.Callable.t option ->
+  problem:problem option ->
   'a t
 
 val annotation : instantiated -> Annotation.t
@@ -90,6 +95,8 @@ val is_final : 'a t -> bool
 val with_initialized : 'a t -> initialized:initialized -> 'a t
 
 val undecorated_signature : 'a t -> Type.Callable.t option
+
+val problem : 'a t -> problem option
 
 val instantiate
   :  'a t ->

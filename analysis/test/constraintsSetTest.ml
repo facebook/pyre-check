@@ -31,6 +31,7 @@ let make_attributes ~class_name =
       ~property:false
       ~name
       ~undecorated_signature:None
+      ~problem:None
   in
   List.map ~f:parse_attribute
 
