@@ -50,7 +50,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             """,
             [
                 DecoratorAnnotationSpecification(
-                    decorator="@target_decorator", arg_annotation="Arg"
+                    decorator="@target_decorator",
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             {"def module.decorated(arg1: Arg, arg2: Arg, *v, **kw): ..."},
@@ -66,7 +67,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator='@target_decorator("some_attribute")',
-                    arg_annotation="Arg",
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             {
@@ -84,7 +85,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             """,
             [
                 DecoratorAnnotationSpecification(
-                    decorator='@target_decorator(key="value")', arg_annotation="Arg"
+                    decorator='@target_decorator(key="value")',
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             {
@@ -107,7 +109,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                         '@target_decorator("some_attribute", "another_attribute", '
                         'key2="another_value")'
                     ),
-                    arg_annotation="Arg",
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             {
@@ -126,7 +128,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator('some_attribute_not_found')",
-                    arg_annotation="Arg",
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             set(),
@@ -141,7 +143,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             """,
             [
                 DecoratorAnnotationSpecification(
-                    decorator="@target_decorator", vararg_annotation="Vararg"
+                    decorator="@target_decorator",
+                    annotations=AnnotationSpecification(vararg="Vararg"),
                 )
             ],
             {"def module.decorated(arg1, arg2, *v: Vararg, **kw): ..."},
@@ -156,7 +159,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             """,
             [
                 DecoratorAnnotationSpecification(
-                    decorator="@target_decorator", kwarg_annotation="Kwarg"
+                    decorator="@target_decorator",
+                    annotations=AnnotationSpecification(kwarg="Kwarg"),
                 )
             ],
             {"def module.decorated(arg1, arg2, *v, **kw: Kwarg): ..."},
@@ -171,7 +175,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             """,
             [
                 DecoratorAnnotationSpecification(
-                    decorator="@target_decorator", return_annotation="Return"
+                    decorator="@target_decorator",
+                    annotations=AnnotationSpecification(returns="Return"),
                 )
             ],
             {"def module.decorated(arg1, arg2, *v, **kw) -> Return: ..."},
@@ -187,9 +192,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    return_annotation="Return",
-                    parameter_type_whitelist={"str", "int"},
+                    annotations=AnnotationSpecification(arg="Arg", returns="Return"),
+                    whitelist=WhitelistSpecification(parameter_type={"str", "int"}),
                 )
             ],
             {
@@ -208,9 +212,8 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    return_annotation="Return",
-                    parameter_name_whitelist={"arg1", "arg4"},
+                    annotations=AnnotationSpecification(arg="Arg", returns="Return"),
+                    whitelist=WhitelistSpecification(parameter_name={"arg1", "arg4"}),
                 )
             ],
             {
@@ -229,10 +232,9 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    vararg_annotation="Vararg",
-                    kwarg_annotation="Kwarg",
-                    return_annotation="Return",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg", returns="Return"
+                    ),
                 )
             ],
             {
@@ -253,10 +255,9 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    vararg_annotation="Vararg",
-                    kwarg_annotation="Kwarg",
-                    return_annotation="Return",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg", returns="Return"
+                    ),
                 )
             ],
             {
@@ -283,10 +284,9 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    vararg_annotation="Vararg",
-                    kwarg_annotation="Kwarg",
-                    return_annotation="Return",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg", returns="Return"
+                    ),
                 )
             ],
             set(),
@@ -302,7 +302,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator('some_attribute')",
-                    arg_annotation="Arg",
+                    annotations=AnnotationSpecification(arg="Arg"),
                 )
             ],
             set(),
@@ -318,9 +318,9 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    vararg_annotation="Vararg",
-                    kwarg_annotation="Kwarg",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg"
+                    ),
                 )
             ],
             {
@@ -356,10 +356,9 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    vararg_annotation="Vararg",
-                    kwarg_annotation="Kwarg",
-                    return_annotation="Return",
+                    annotations=AnnotationSpecification(
+                        arg="Arg", vararg="Vararg", kwarg="Kwarg", returns="Return"
+                    ),
                 )
             ],
             {
@@ -387,17 +386,15 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator1",
-                    arg_annotation="Arg1",
-                    vararg_annotation="Vararg1",
-                    kwarg_annotation="Kwarg1",
-                    return_annotation="Return1",
+                    annotations=AnnotationSpecification(
+                        arg="Arg1", vararg="Vararg1", kwarg="Kwarg1", returns="Return1"
+                    ),
                 ),
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator2",
-                    arg_annotation="Arg2",
-                    vararg_annotation="Vararg2",
-                    kwarg_annotation="Kwarg2",
-                    return_annotation="Return2",
+                    annotations=AnnotationSpecification(
+                        arg="Arg2", vararg="Vararg2", kwarg="Kwarg2", returns="Return2"
+                    ),
                 ),
             ],
             {
@@ -439,8 +436,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             [
                 DecoratorAnnotationSpecification(
                     decorator="@target_decorator",
-                    arg_annotation="Arg",
-                    return_annotation="Return",
+                    annotations=AnnotationSpecification(arg="Arg", returns="Return"),
                     whitelist=WhitelistSpecification(
                         parameter_type={"str", "int"}, parameter_name={"arg1", "arg4"}
                     ),
