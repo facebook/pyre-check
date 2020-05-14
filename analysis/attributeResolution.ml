@@ -3178,8 +3178,12 @@ module Implementation = struct
       let apply_decorators decorators =
         let decorators = List.rev decorators in
         let callable = List.fold decorators ~init:undecorated_signature ~f:apply_decorator in
-        (* Blindly slap the original name back on *)
-        Type.Callable { callable with kind }
+        if Type.Callable.equal { callable with kind } undecorated_signature then
+          (* Do some amateur taint analysis and assume that this is calling the original function
+             under the hood *)
+          Type.Callable { callable with kind }
+        else
+          Type.Callable callable
       in
       Result.map decorators ~f:apply_decorators
     in

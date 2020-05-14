@@ -196,7 +196,7 @@ let test_check_decorated_overloads context =
        incompatible with the return type of the implementation (`int`).";
       "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
        incompatible with the return type of the implementation (`int`).";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], int]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
     ];
   assert_type_errors
     {|
@@ -250,7 +250,7 @@ let test_check_decorated_overloads context =
     |}
     [
       (* We "select" the relevant overload *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], bool]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], bool]`.";
     ];
   assert_type_errors
     {|
@@ -282,7 +282,7 @@ let test_check_decorated_overloads context =
     [
       (* But when you "crack the egg" of an overloaded callable, it's not sound to assume it comes
          back together. When multiple overloads match, we select the first one *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(a, bool)], \
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[Named(a, bool)], \
        int]`.";
     ];
   ()

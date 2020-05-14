@@ -202,8 +202,7 @@ let test_incremental_check context =
       |}
         );
       ]
-    ~expected:
-      ["Revealed type [-1]: Revealed type for `b.foo` is `typing.Callable(foo)[[int], bool]`."];
+    ~expected:["Revealed type [-1]: Revealed type for `b.foo` is `typing.Callable[[int], bool]`."];
 
   assert_incremental_check_errors
     ~context

@@ -436,7 +436,7 @@ let test_decorators context =
 
       reveal_type(foo)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], object]`."];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], object]`."];
   ()
 
 
@@ -452,7 +452,7 @@ let test_check_user_decorators context =
         return str(x)
       reveal_type(f)
     |}
-    ["Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[str], int]`."];
+    ["Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[[str], int]`."];
 
   (* We currently ignore decorating decorators. *)
   assert_type_errors
@@ -472,7 +472,7 @@ let test_check_user_decorators context =
     |}
     [
       "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[str], int]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[[str], int]`.";
     ];
   assert_type_errors
     {|
@@ -495,7 +495,7 @@ let test_check_user_decorators context =
       reveal_type(D.f)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable(C.f)[[C, int], None]`.";
+      "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable[[C, int], None]`.";
       "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, D), \
        Named(y, int)], None]`.";
     ];
@@ -516,8 +516,7 @@ let test_check_user_decorators context =
     [
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
-      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[..., str]`.";
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Callable[..., str]`.";
     ];
   assert_type_errors
     {|
@@ -534,6 +533,21 @@ let test_check_user_decorators context =
       "Revealed type [-1]: Revealed type for `test.function_returning_callable` is \
        `typing.Callable(function_returning_callable)[[], typing.Callable[[int], str]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      def happens_to_return_a_match(f: object) -> Callable[[int], str]:
+        def inner(x: int, /) -> str:
+         return "A"
+        return inner
+
+      @happens_to_return_a_match
+      def foo(x: int, /) -> str:
+        return "B"
+
+      reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], str]`."];
   ()
 
 
@@ -611,7 +625,7 @@ let test_decorator_factories context =
 
      reveal_type(foo)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
   assert_type_errors
     {|
      from typing import Callable
@@ -624,7 +638,7 @@ let test_decorator_factories context =
 
      reveal_type(foo)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
   assert_type_errors
     {|
      from typing import Callable
@@ -637,7 +651,7 @@ let test_decorator_factories context =
 
      reveal_type(foo)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
   assert_type_errors
     {|
      from typing import Callable

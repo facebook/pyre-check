@@ -1968,8 +1968,8 @@ let test_check_typed_dictionary_in_alias context =
       "Revealed type [-1]: Revealed type for `test.foo(1)` is `Child`.";
       "Incompatible variable type [9]: d is declared to have type `int` but is used as type \
        `Child`.";
-      "Incompatible parameter type [6]: Expected `Child` for 1st positional only parameter to call \
-       `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `Child` for 1st positional only parameter to \
+       anonymous call but got `int`.";
     ];
   ()
 

@@ -2005,10 +2005,7 @@ let test_concatenation_operator context =
 
       reveal_type(foo)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int, int, int], \
-       str]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int, int, int], str]`."];
   assert_type_errors
     {|
       from typing import Callable, TypeVar, List
@@ -2029,9 +2026,7 @@ let test_concatenation_operator context =
 
       reveal_type(foo)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[str, bool], int]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[str, bool], int]`."];
   assert_type_errors
     {|
       from typing import Generic, Tuple, List, TypeVar
@@ -2225,9 +2220,8 @@ let test_user_defined_parameter_specification_classes context =
 
     |}
     [
-      "Revealed type [-1]: Revealed type for `m` is \
-       `BoundMethod[typing.Callable(TestCommand.method)[[TestCommand, Named(x, int)], int], \
-       TestCommand]`.";
+      "Revealed type [-1]: Revealed type for `m` is `BoundMethod[typing.Callable[[TestCommand, \
+       Named(x, int)], int], TestCommand]`.";
     ];
   assert_type_errors
     {|
