@@ -69,22 +69,6 @@ IssueInstances have per run information, like source location, while Issues have
 attributes like the status of an issue.
 """
 
-"""Tables that should be removed from existing databases.
-
-These are tables that are NO LONGER in use, and will be removed. Don't add
-tables here until all code that was using them has been updated.
-"""
-PurgeMetadata = MetaData()
-for t in [
-    "active_jobs",
-    "deletion_history",
-    "herald_task_history",
-    "precondition_incremental_lookup",
-    "run_precondition_assoc",
-    "run_postcondition_assoc",
-]:
-    Table(t, PurgeMetadata)
-
 
 class SourceLocation(object):
     """The location in a source file that an error occurred in
