@@ -3028,49 +3028,38 @@ module Implementation = struct
                         ~skip_marking_escapees:false
                     with
                     | SignatureSelectionTypes.Found
-                        { selected_return_annotation = Type.Callable { implementation; _ }; _ } ->
-                        Some implementation
+                        { selected_return_annotation = Type.Callable callable; _ } ->
+                        Some callable
                     | _ -> None )
-                | Some { implementation = signature; _ }, None -> Some signature
+                | Some callable, None -> Some callable
                 | None, _ -> None
               in
               match resolved_decorator with
-              | Some
-                  {
-                    Type.Callable.annotation = return_annotation;
-                    parameters =
-                      Type.Callable.Defined
-                        [
-                          Type.Callable.Parameter.PositionalOnly
-                            { annotation = parameter_annotation; _ };
-                        ];
-                    _;
-                  }
-              | Some
-                  {
-                    Type.Callable.annotation = return_annotation;
-                    parameters =
-                      Type.Callable.Defined
-                        [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }];
-                    _;
-                  } -> (
-                  let order = full_order ~assumptions in
-                  let decorated_annotation =
-                    TypeOrder.OrderedConstraintsSet.add
-                      ConstraintsSet.empty
-                      ~new_constraint:
-                        (LessOrEqual { left = Type.Callable callable; right = parameter_annotation })
-                      ~order
-                    |> TypeOrder.OrderedConstraintsSet.solve ~order
-                    >>| fun solution ->
-                    ConstraintsSet.Solution.instantiate solution return_annotation
-                  in
-                  match decorated_annotation with
-                  | Some (Type.Callable callable) -> callable
-                  | Some _ ->
+              | Some resolved_decorator -> (
+                  match
+                    signature_select
+                      ~assumptions
+                      ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
+                      ~arguments:
+                        (Resolved
+                           [
+                             {
+                               kind = Positional;
+                               expression = None;
+                               resolved = Type.Callable callable;
+                             };
+                           ])
+                      ~callable:resolved_decorator
+                      ~self_argument:None
+                      ~skip_marking_escapees:false
+                  with
+                  | SignatureSelectionTypes.Found
+                      { selected_return_annotation = Type.Callable callable; _ } ->
+                      callable
+                  | Found _ ->
                       (* for now we only allow decorators that return callables *)
                       callable
-                  | None ->
+                  | NotFound _ ->
                       (* If we failed, just default to the old annotation. *)
                       callable )
               | _ -> callable )

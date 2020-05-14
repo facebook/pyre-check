@@ -422,21 +422,30 @@ let test_decorators context =
       ^ "parameter to call `int.__add__` but got `str`.";
     ];
 
-  (* We only apply the implementation. I'm not sure why this is our strategy *)
   assert_type_errors
     {|
       from typing import overload, Callable
       @overload
-      def overloaded_decorator(f: Callable[[int], int]) -> Callable[[int], int]: ...
-      def overloaded_decorator(f: Callable[[int], float]) -> Callable[[int], object]: ...
+      def overloaded_decorator(f: Callable[[int], int]) -> Callable[[str], int]: ...
+      @overload
+      def overloaded_decorator(f: Callable[[int], str]) -> Callable[[bool], float]: ...
+      def overloaded_decorator(f: object) -> object: ...
 
       @overloaded_decorator
       def foo(x: int) -> int:
         return x
 
+      @overloaded_decorator
+      def bar(x: int) -> str:
+        return "A"
+
       reveal_type(foo)
+      reveal_type(bar)
     |}
-    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], object]`."];
+    [
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[str], int]`.";
+      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable[[bool], float]`.";
+    ];
   ()
 
 
