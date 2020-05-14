@@ -4117,6 +4117,28 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", ["z", location (4, 13) (4, 14)]];
   assert_unbound_names
     {|
+      def foo():
+        f = (lambda x: x)
+        g = (lambda *y: y)
+        h = (lambda **z: z)
+        return f or g or h
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
+        f = (lambda x: x + y)
+        return f
+    |}
+    ~expected:[!&"foo", ["y", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [(x, y, z) for x, *y in [[1], [2,3]]]
+    |}
+    ~expected:[!&"foo", ["z", location (3, 17) (3, 18)]];
+  assert_unbound_names
+    {|
        class A:
          def foo() -> None:
            self.bar()

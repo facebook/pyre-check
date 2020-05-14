@@ -2335,7 +2335,8 @@ let collect_accesses
           List.fold parameters ~init:collected ~f:collect_from_parameter
         in
         let bound_names =
-          List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } -> name)
+          List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } ->
+              Identifier.split_star name |> snd)
           |> Identifier.Set.of_list
         in
         let names_in_body = collect_from_expression NameAccessSet.empty body in
