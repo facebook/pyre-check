@@ -2010,6 +2010,7 @@ module State (Context : Context) = struct
           let errors =
             match resolved, potential_missing_operator_error with
             | Type.Top, Some kind -> emit_error ~errors ~location ~kind
+            | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
             | Type.Any, _
             | Type.Top, _ ->
                 errors

@@ -1374,7 +1374,19 @@ let test_check_callables context =
       def bar(x: typing.Union[typing.Type[A], typing.Callable[[], None]]) -> None:
         x()
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import Any
+      def foo(x: BoundMethod[Any, int]) -> None:
+        y = x()
+        reveal_type(y)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
+    ];
+  ()
 
 
 let test_check_callable_protocols context =
