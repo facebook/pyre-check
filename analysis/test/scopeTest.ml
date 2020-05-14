@@ -580,6 +580,12 @@ let test_define_local_bindings _ =
   assert_bindings
     {|
     def foo(flag: bool):
+      import bar.baz
+  |}
+    ~expected:["bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 9) (3, 16)))];
+  assert_bindings
+    {|
+    def foo(flag: bool):
       import bar as b
   |}
     ~expected:

@@ -76,17 +76,24 @@ module Binding = struct
         let orelse_names = of_statements orelse in
         List.concat [target_names; body_names; orelse_names]
     | Statement.If { If.body; orelse; _ } -> List.append (of_statements body) (of_statements orelse)
-    | Statement.Import { Import.imports; _ } ->
+    | Statement.Import { Import.imports; from } ->
         let binding_of_import { Import.alias; name = { Node.value = name; location } } =
           match alias with
-          | None ->
-              let name = Reference.show name in
-              if String.is_prefix name ~prefix:"_" then
-                None
-              else
-                Some { kind = Kind.ImportName; name; location }
           | Some { Node.value = alias; location } ->
               Some { kind = Kind.ImportName; name = Reference.show alias; location }
+          | None -> (
+              match from with
+              | Some _ ->
+                  (* `name` must be a simple name *)
+                  let name = Reference.show name in
+                  if String.is_prefix name ~prefix:"_" then
+                    None
+                  else
+                    Some { kind = Kind.ImportName; name; location }
+              | None ->
+                  (* `import a.b` actually binds name a *)
+                  let name = Reference.as_list name |> List.hd_exn in
+                  Some { kind = Kind.ImportName; name; location } )
         in
         List.filter_map imports ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->

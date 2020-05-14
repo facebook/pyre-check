@@ -4090,6 +4090,13 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", []];
   assert_unbound_names
     {|
+      import chocobo.river
+      def foo() -> None:
+        chocobo
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
       def foo(x: int) -> None:
         bar(x)
     |}
