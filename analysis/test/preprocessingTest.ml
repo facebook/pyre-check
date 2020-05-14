@@ -4103,6 +4103,13 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", []];
   assert_unbound_names
     {|
+      from some_module import bar
+      def foo() -> None:
+        bar(x=1, y=z)
+    |}
+    ~expected:[!&"foo", ["z", location (4, 13) (4, 14)]];
+  assert_unbound_names
+    {|
        class A:
          def foo() -> None:
            self.bar()

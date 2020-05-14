@@ -2358,14 +2358,7 @@ let collect_accesses
         collect_from_expression collected right
     | Call { Call.callee; arguments } ->
         let collected = collect_from_expression collected callee in
-        List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.name; value } ->
-            let collected =
-              Option.value_map
-                name
-                ~f:(fun { Node.value; location } ->
-                  Set.add collected { Define.NameAccess.name = value; location })
-                ~default:collected
-            in
+        List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
             collect_from_expression collected value)
     | Dictionary { Dictionary.entries; keywords } ->
         let collected = List.fold entries ~init:collected ~f:collect_from_entry in
