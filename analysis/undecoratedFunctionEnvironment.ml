@@ -10,7 +10,7 @@ open Statement
 module PreviousEnvironment = ClassHierarchyEnvironment
 
 module UndecoratedFunctionValue = struct
-  type t = Type.t Type.Callable.overload option [@@deriving compare]
+  type t = Type.Callable.t option [@@deriving compare]
 
   let prefix = Prefix.make ()
 
@@ -35,7 +35,7 @@ let produce_undecorated_function class_hierarchy_environment name ~dependency =
   in
   let handle = function
     | UnannotatedGlobalEnvironment.Define signatures ->
-        let handle { UnannotatedGlobalEnvironment.define = signature; _ } =
+        let create_overload signature =
           let parse_annotation =
             AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               ?dependency
@@ -61,9 +61,24 @@ let produce_undecorated_function class_hierarchy_environment name ~dependency =
           in
           AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
         in
-        List.find signatures ~f:(fun { UnannotatedGlobalEnvironment.define; _ } ->
-            not (Define.Signature.is_overloaded_function define))
-        >>| handle
+        let overloads, implementations =
+          List.map signatures ~f:(fun { define; _ } -> define)
+          |> List.partition_tf ~f:Define.Signature.is_overloaded_function
+        in
+        let implementation =
+          List.last implementations
+          >>| create_overload
+          |> Option.value ~default:{ Type.Callable.annotation = Type.Top; parameters = Undefined }
+        in
+        let name =
+          List.hd_exn signatures |> (fun { define = { name; _ }; _ } -> name) |> Node.value
+        in
+        Some
+          {
+            Type.Callable.kind = Named name;
+            implementation;
+            overloads = List.map overloads ~f:create_overload;
+          }
     | _ -> None
   in
   global >>= handle
@@ -100,13 +115,13 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
   let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
 
   let serialize_value = function
-    | Some overload -> Type.Callable.show_overload Type.pp overload
+    | Some callable -> Type.Callable.show callable
     | None -> "None"
 
 
   let show_key = Reference.show
 
-  let equal_value = Option.equal (Type.Callable.equal_overload Type.equal)
+  let equal_value = Option.equal Type.Callable.equal
 end)
 
 include UndecoratedFunctions

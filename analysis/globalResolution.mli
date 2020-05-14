@@ -105,9 +105,6 @@ val function_definitions : t -> Reference.t -> Define.t Node.t list option
 
 val is_suppressed_module : t -> Reference.t -> bool
 
-(* Exposed only for parallelism. Future not guaranteed. *)
-val undecorated_signature : t -> Reference.t -> Type.t Type.Callable.overload option
-
 val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
 (* Only for use in monkey check. *)

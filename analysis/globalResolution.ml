@@ -112,12 +112,6 @@ let is_suppressed_module ({ dependency; _ } as resolution) reference =
     reference
 
 
-let undecorated_signature ({ dependency; _ } as resolution) =
-  UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
-    ?dependency
-    (undecorated_function_environment resolution)
-
-
 let aliases ({ dependency; _ } as resolution) =
   AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
 

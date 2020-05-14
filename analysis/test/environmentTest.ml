@@ -776,21 +776,32 @@ let test_populate context =
       def foo(x: int) -> str: ...
     |}] in
   let global_resolution = GlobalResolution.create environment in
+  let undecorated_function_environment =
+    GlobalResolution.class_metadata_environment global_resolution
+    |> ClassMetadataEnvironment.ReadOnly.undecorated_function_environment
+  in
   assert_equal
-    ~cmp:(Option.equal (Type.Callable.equal_overload Type.equal))
+    ~cmp:(Option.equal Type.Callable.equal)
     ~printer:(function
       | None -> "None"
-      | Some callable -> Format.asprintf "Some (%a)" (Type.Callable.pp_overload Type.pp) callable)
-    (GlobalResolution.undecorated_signature global_resolution (Reference.create "test.foo"))
+      | Some callable -> Format.asprintf "Some (%a)" Type.Callable.pp callable)
+    (UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
+       undecorated_function_environment
+       (Reference.create "test.foo"))
     (Some
        {
-         Type.Callable.annotation = Type.string;
-         parameters =
-           Type.Callable.Defined
-             [
-               Type.Callable.Parameter.Named
-                 { annotation = Type.integer; name = "x"; default = false };
-             ];
+         Type.Callable.kind = Named (Reference.create "test.foo");
+         implementation =
+           {
+             Type.Callable.annotation = Type.string;
+             parameters =
+               Type.Callable.Defined
+                 [
+                   Type.Callable.Parameter.Named
+                     { annotation = Type.integer; name = "x"; default = false };
+                 ];
+           };
+         overloads = [];
        });
   ()
 

@@ -12,7 +12,7 @@ module UndecoratedReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    Type.t Type.Callable.overload option
+    Type.Callable.t option
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 end

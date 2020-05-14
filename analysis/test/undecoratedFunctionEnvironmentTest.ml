@@ -46,11 +46,11 @@ let test_updates context =
       | `Undecorated (function_name, dependency, expectation) ->
           let parse expectation =
             match Type.create (parse_single_expression expectation) ~aliases:(fun _ -> None) with
-            | Type.Callable { implementation; _ } -> implementation
+            | Type.Callable callable -> callable
             | _ -> failwith (expectation ^ "not a callable")
           in
           let printer implementation =
-            implementation >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"none"
+            implementation >>| Type.Callable.show |> Option.value ~default:"none"
           in
           UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
             read_only
@@ -131,13 +131,45 @@ let test_updates context =
     ~middle_actions:
       [
         `Undecorated
-          ("test.decorator", dependency, Some "typing.Callable[[test.First], test.Second]");
+          ( "test.decorator",
+            dependency,
+            Some "typing.Callable(test.decorator)[[test.First], test.Second]" );
       ]
     ~expected_triggers:[dependency]
     ~post_actions:
       [
         `Undecorated
-          ("test.decorator", dependency, Some "typing.Callable[[test.Second], test.Second]");
+          ( "test.decorator",
+            dependency,
+            Some "typing.Callable(test.decorator)[[test.Second], test.Second]" );
+      ]
+    ();
+  assert_updates
+    ~original_source:{||}
+    ~new_source:
+      {|
+      class Base:
+        pass
+      class ChildA:
+        pass
+      class ChildB:
+        pass
+      @overload
+      def decorator(__x: ChildA) -> ChildA: ...
+      @overload
+      def decorator(__x: ChildB) -> ChildB: ...
+      def decorator(__x: Base) -> Base: ...
+    |}
+    ~middle_actions:[]
+    ~expected_triggers:[]
+    ~post_actions:
+      [
+        `Undecorated
+          ( "test.decorator",
+            dependency,
+            Some
+              "typing.Callable(test.decorator)[[test.Base], test.Base][[[test.ChildA], \
+               test.ChildA][[test.ChildB], test.ChildB]]" );
       ]
     ();
   ()

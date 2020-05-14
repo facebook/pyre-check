@@ -3010,7 +3010,7 @@ module Implementation = struct
                       ~dependency,
                     arguments )
                 with
-                | Some signature, Some arguments -> (
+                | Some { implementation = signature; _ }, Some arguments -> (
                     let resolve_with_locals ~locals:_ expression =
                       let resolved = resolve_literal ~assumptions expression in
                       if Type.is_partially_typed resolved then
@@ -3034,7 +3034,7 @@ module Implementation = struct
                         { selected_return_annotation = Type.Callable { implementation; _ }; _ } ->
                         Some implementation
                     | _ -> None )
-                | Some signature, None -> Some signature
+                | Some { implementation = signature; _ }, None -> Some signature
                 | None, _ -> None
               in
               match resolved_decorator with
