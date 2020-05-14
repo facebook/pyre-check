@@ -4168,7 +4168,7 @@ let test_populate_unbound_names _ =
       def foo() -> None:
         x: Derp = derp()
     |}
-    ~expected:[!&"foo", []];
+    ~expected:[!&"foo", ["Derp", location (4, 5) (4, 9)]];
   (* TODO: Handle unbound names in decorators *)
   assert_unbound_names
     {|

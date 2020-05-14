@@ -2431,8 +2431,11 @@ let collect_accesses ~decorators statements =
   let rec collect_from_statement collected { Node.value; location = statement_location } =
     (* Boilerplates to visit all statements that may contain accesses *)
     match value with
-    | Statement.Assign { Assign.target; value; _ } ->
+    | Statement.Assign { Assign.target; value; annotation; _ } ->
         let collected = collect_from_expression collected target in
+        let collected =
+          Option.value_map annotation ~default:collected ~f:(collect_from_expression collected)
+        in
         collect_from_expression collected value
     | Assert { Assert.test; message; _ } ->
         let collected = collect_from_expression collected test in
