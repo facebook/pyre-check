@@ -2773,6 +2773,88 @@ let populate_captures ({ Source.statements; _ } as source) =
   { source with Source.statements = transform_statements ~scopes statements }
 
 
+let populate_unbound_names source =
+  let open Scope in
+  let to_unbound_name ~scopes ({ Define.NameAccess.name; _ } as access) =
+    match ScopeStack.lookup scopes name with
+    | Some _ -> None
+    | None -> Option.some_if (not (Builtins.mem name)) access
+  in
+  let rec transform_statement ~scopes statement =
+    match statement with
+    (* Process each defines *)
+    | {
+     Node.location;
+     value =
+       Statement.Define
+         ({ signature = { Define.Signature.decorators; _ } as signature; body; _ } as define);
+    } ->
+        (* TODO (T66973980): Check decorators *)
+        let _, body_accesses = collect_accesses ~decorators body in
+        let scopes =
+          if Define.is_toplevel define then
+            scopes
+          else
+            ScopeStack.extend scopes ~with_:(Scope.of_define_exn define)
+        in
+        let unbound_names =
+          let to_unbound_name ~scopes sofar name =
+            match to_unbound_name ~scopes name with
+            | None -> sofar
+            | Some name -> NameAccessSet.add sofar name
+          in
+          Set.fold ~init:NameAccessSet.empty body_accesses ~f:(to_unbound_name ~scopes)
+          |> NameAccessSet.to_list
+        in
+        let body = transform_statements ~scopes body in
+        { Node.location; value = Statement.Define { define with signature; body; unbound_names } }
+    | { Node.location; value = Class class_ } ->
+        (* TODO (T66974107, T66973854): Check class base list and class toplevel *)
+        let body = transform_statements ~scopes class_.body in
+        { Node.location; value = Class { class_ with body } }
+    (* The rest is just boilerplates to make sure every nested define gets visited *)
+    | { Node.location; value = For for_ } ->
+        let body = transform_statements ~scopes for_.body in
+        let orelse = transform_statements ~scopes for_.orelse in
+        { Node.location; value = For { for_ with body; orelse } }
+    | { Node.location; value = If if_ } ->
+        let body = transform_statements ~scopes if_.body in
+        let orelse = transform_statements ~scopes if_.orelse in
+        { Node.location; value = If { if_ with body; orelse } }
+    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+        let body = transform_statements ~scopes body in
+        let orelse = transform_statements ~scopes orelse in
+        let finally = transform_statements ~scopes finally in
+        let handlers =
+          List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
+              let body = transform_statements ~scopes body in
+              { handler with body })
+        in
+        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+    | { Node.location; value = With with_ } ->
+        let body = transform_statements ~scopes with_.body in
+        { Node.location; value = With { with_ with body } }
+    | { Node.location; value = While while_ } ->
+        let body = transform_statements ~scopes while_.body in
+        let orelse = transform_statements ~scopes while_.orelse in
+        { Node.location; value = While { while_ with body; orelse } }
+    | statement -> statement
+  and transform_statements ~scopes statements =
+    List.map statements ~f:(transform_statement ~scopes)
+  in
+  let scopes = ScopeStack.create source in
+  let top_level_unbound_names, statements =
+    let top_level_statement =
+      let { Node.value = define; location } = Source.top_level_define_node source in
+      Node.create ~location (Statement.Define define)
+    in
+    match transform_statement ~scopes top_level_statement |> Node.value with
+    | Statement.Define { Define.unbound_names; body; _ } -> unbound_names, body
+    | _ -> failwith "Define should not be transformed into other kinds of statements"
+  in
+  { source with Source.top_level_unbound_names; statements }
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -2785,6 +2867,7 @@ let preprocess_phase1 source =
   source
   |> expand_string_annotations
   |> expand_format_string
+  |> populate_unbound_names
   |> qualify
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub

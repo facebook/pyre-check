@@ -39,6 +39,8 @@ val populate_nesting_defines : Source.t -> Source.t
 
 val populate_captures : Source.t -> Source.t
 
+val populate_unbound_names : Source.t -> Source.t
+
 (* List of function definitions in a source. include_toplevels copies all definitions into a
    toplevel definition. *)
 val defines

@@ -2428,7 +2428,9 @@ let test_sqlalchemy_declarative_base _ =
 
 let test_transform_ast _ =
   let assert_expand ?(handle = "qualifier.py") source expected =
-    let parse source = parse source ~handle |> Preprocessing.preprocess in
+    let parse source =
+      parse source ~handle |> Preprocessing.qualify |> Preprocessing.expand_implicit_returns
+    in
     assert_source_equal
       ~location_insensitive:true
       (parse expected)
@@ -4012,6 +4014,184 @@ let test_populate_captures _ =
   ()
 
 
+let test_populate_unbound_names _ =
+  let assert_unbound_names ~expected source_text =
+    let source =
+      Test.parse ~handle:"test.py" source_text
+      |> Preprocessing.expand_format_string
+      |> Preprocessing.populate_unbound_names
+    in
+    let defines =
+      Preprocessing.defines
+        ~include_toplevels:true
+        ~include_nested:true
+        ~include_methods:true
+        source
+    in
+    let unbound_map =
+      let build_unbound_map
+          sofar
+          { Node.value = { Define.signature = { Define.Signature.name; _ }; unbound_names; _ }; _ }
+        =
+        Reference.Map.set sofar ~key:(Node.value name) ~data:unbound_names
+      in
+      List.fold defines ~init:Reference.Map.empty ~f:build_unbound_map
+    in
+    let assert_unbound_names name expected =
+      let expected =
+        List.map expected ~f:(fun (name, location) -> { Define.NameAccess.name; location })
+      in
+      let actual = Reference.Map.find unbound_map name |> Option.value ~default:[] in
+      assert_equal
+        ~cmp:[%compare.equal: Define.NameAccess.t list]
+        ~printer:(fun unbound_names ->
+          Sexp.to_string_hum [%message (unbound_names : Define.NameAccess.t list)])
+        expected
+        actual
+    in
+    List.iter expected ~f:(fun (name, unbound_names) -> assert_unbound_names name unbound_names)
+  in
+  let toplevel_name = !&"test.$toplevel" in
+
+  assert_unbound_names "derp" ~expected:[toplevel_name, ["derp", location (1, 0) (1, 4)]];
+  assert_unbound_names
+    {|
+       x = 42
+       y = x + z
+    |}
+    ~expected:[toplevel_name, ["z", location (3, 8) (3, 9)]];
+  assert_unbound_names
+    {|
+      def foo() -> None:
+        derp
+    |}
+    ~expected:[!&"foo", ["derp", location (3, 2) (3, 6)]];
+  assert_unbound_names
+    {|
+      def foo(derp: int) -> None:
+        derp
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      import derp
+      def foo() -> None:
+        derp
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo(x: int) -> None:
+        bar(x)
+    |}
+    ~expected:[!&"foo", ["bar", location (3, 2) (3, 5)]];
+  assert_unbound_names
+    {|
+      def bar() -> None: ...
+      def foo(x: int) -> None:
+        bar(x)
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+       class A:
+         def foo() -> None:
+           self.bar()
+    |}
+    ~expected:[!&"foo", ["self", location (4, 4) (4, 8)]];
+  assert_unbound_names
+    {|
+       class A:
+         def foo(self) -> None:
+           self.bar()
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+       class A:
+         @staticmethod
+         def foo() -> None:
+           A.bar()
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo() -> None:
+        def bar(x) -> int:
+          return x + baz
+        x = bar(qux)
+        y = bar(x)
+    |}
+    ~expected:
+      [!&"foo", ["qux", location (5, 10) (5, 13)]; !&"bar", ["baz", location (4, 15) (4, 18)]];
+  assert_unbound_names
+    {|
+      def foo(x: int):
+        reveal_type(x)
+      pyre_dump()
+    |}
+    ~expected:[!&"foo", []; toplevel_name, []];
+  assert_unbound_names
+    {|
+      def foo():
+        y = int("42")
+        return [x for x in range(y)]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def bar() -> None: ...
+      def foo():
+        try:
+          bar()
+        except Derp:
+          pass
+        except ValueError:
+          pass
+    |}
+    ~expected:[!&"foo", ["Derp", location (6, 9) (6, 13)]];
+
+  (* TODO: Handle unbound names in annotations *)
+  assert_unbound_names {|
+      def foo() -> Derp:
+        pass
+    |} ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo(d: Derp) -> None:
+        pass
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      from some_module import derp
+      def foo() -> None:
+        x: Derp = derp()
+    |}
+    ~expected:[!&"foo", []];
+  (* TODO: Handle unbound names in decorators *)
+  assert_unbound_names
+    {|
+      class Foo:
+        @derp
+        def foo(self) -> None:
+          pass
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      class Foo:
+        @property
+        def foo(self) -> int:
+          return 42
+        @foo.setter
+        def foo(self, value: int) -> None:
+          pass
+    |}
+    ~expected:[!&"foo", []];
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -4032,5 +4212,6 @@ let () =
          "sqlalchemy_declarative_base" >:: test_sqlalchemy_declarative_base;
          "nesting_define" >:: test_populate_nesting_define;
          "captures" >:: test_populate_captures;
+         "unbound_names" >:: test_populate_unbound_names;
        ]
   |> Test.run

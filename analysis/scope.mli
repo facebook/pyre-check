@@ -116,3 +116,8 @@ module ScopeStack : sig
 
   val lookup : t -> Identifier.t -> Access.t option
 end
+
+module Builtins : sig
+  val mem : Identifier.t -> bool
+  (** Returns whether the given name belongs to the builtin scope. *)
+end
