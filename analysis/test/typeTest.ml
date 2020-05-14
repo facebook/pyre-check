@@ -869,6 +869,52 @@ let test_contains_callable _ =
   assert_false (Type.contains_callable (Type.Primitive "foo"))
 
 
+let test_map_callable_annotation _ =
+  let assert_mapped ~f callable expected =
+    assert_equal
+      ~cmp:Type.Callable.equal
+      ~printer:Type.Callable.show
+      expected
+      (Type.Callable.map_annotation ~f callable)
+  in
+  let callable =
+    {
+      Type.Record.Callable.kind = Type.Record.Callable.Named (Reference.create "foo");
+      implementation =
+        {
+          Type.Record.Callable.annotation = Type.union [Type.string; Type.integer];
+          parameters = Type.Record.Callable.Defined [];
+        };
+      overloads =
+        [
+          {
+            Type.Record.Callable.annotation = Type.string;
+            parameters = Type.Record.Callable.Defined [];
+          };
+        ];
+    }
+  in
+  let mapped_callable =
+    {
+      Type.Record.Callable.kind = Type.Record.Callable.Named (Reference.create "foo");
+      implementation =
+        {
+          Type.Record.Callable.annotation = Type.bool;
+          parameters = Type.Record.Callable.Defined [];
+        };
+      overloads =
+        [
+          {
+            Type.Record.Callable.annotation = Type.bool;
+            parameters = Type.Record.Callable.Defined [];
+          };
+        ];
+    }
+  in
+  assert_mapped ~f:(fun _ -> Type.bool) callable mapped_callable;
+  ()
+
+
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
 let test_is_concrete _ =
@@ -2308,6 +2354,7 @@ let () =
          "concatenation_zip" >:: test_concatenation_zip;
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;
+         "map_callable_annotation" >:: test_map_callable_annotation;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

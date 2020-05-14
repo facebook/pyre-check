@@ -389,6 +389,8 @@ module Callable : sig
 
   val map_parameters : t -> f:(parameters -> parameters) -> t
 
+  val map_annotation : t -> f:(type_t -> type_t) -> t
+
   val with_return_annotation : t -> annotation:type_t -> t
 
   val create

@@ -1489,6 +1489,17 @@ module Callable = struct
     }
 
 
+  let map_annotation ({ implementation; overloads; _ } as callable) ~f =
+    let for_implementation ({ annotation; _ } as implementation) =
+      { implementation with annotation = f annotation }
+    in
+    {
+      callable with
+      implementation = for_implementation implementation;
+      overloads = List.map overloads ~f:for_implementation;
+    }
+
+
   let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
     let re_annotate implementation = { implementation with annotation } in
     {
