@@ -2309,12 +2309,13 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
   { source with Source.statements = transform_statements ~nesting_define:None statements }
 
 
+module NameAccessSet = Set.Make (Define.NameAccess)
 module CaptureSet = Set.Make (Define.Capture)
 
 let populate_captures ({ Source.statements; _ } as source) =
   let open Scope in
   let collect_accesses ~decorators statements =
-    let rec collect_from_expression collected { Node.value; _ } =
+    let rec collect_from_expression collected { Node.value; location = expression_location } =
       let open Expression in
       let collect_from_entry collected { Dictionary.Entry.key; value } =
         let collected = collect_from_expression collected key in
@@ -2333,12 +2334,15 @@ let populate_captures ({ Source.statements; _ } as source) =
             List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } -> name)
             |> Identifier.Set.of_list
           in
-          let names_in_body = collect_from_expression Identifier.Set.empty body in
-          let unbound_names_in_body = Set.diff names_in_body bound_names in
+          let names_in_body = collect_from_expression NameAccessSet.empty body in
+          let unbound_names_in_body =
+            Set.filter names_in_body ~f:(fun { Define.NameAccess.name; _ } ->
+                not (Identifier.Set.mem bound_names name))
+          in
           Set.union unbound_names_in_body collected
       | Name (Name.Identifier identifier) ->
           (* For simple names, add them to the result *)
-          Set.add collected identifier
+          Set.add collected { Define.NameAccess.name = identifier; location = expression_location }
       | Name (Name.Attribute { Name.Attribute.base; _ }) ->
           (* For attribute access, only count the base *)
           collect_from_expression collected base
@@ -2354,7 +2358,8 @@ let populate_captures ({ Source.statements; _ } as source) =
               let collected =
                 Option.value_map
                   name
-                  ~f:(fun { Node.value; _ } -> Set.add collected value)
+                  ~f:(fun { Node.value; location } ->
+                    Set.add collected { Define.NameAccess.name = value; location })
                   ~default:collected
               in
               collect_from_expression collected value)
@@ -2395,8 +2400,8 @@ let populate_captures ({ Source.statements; _ } as source) =
           collected
     (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
     and collect_from_comprehension
-          : 'a. (Identifier.Set.t -> 'a -> Identifier.Set.t) -> Identifier.Set.t ->
-            'a Comprehension.t -> Identifier.Set.t
+          : 'a. (NameAccessSet.t -> 'a -> NameAccessSet.t) -> NameAccessSet.t ->
+            'a Comprehension.t -> NameAccessSet.t
       =
      fun collect_from_element collected { Comprehension.element; generators } ->
       let collected =
@@ -2410,18 +2415,23 @@ let populate_captures ({ Source.statements; _ } as source) =
           generators
           ~init:Identifier.Set.empty
           ~f:(fun sofar { Comprehension.Generator.target; _ } ->
-            collect_from_expression sofar target)
+            collect_from_expression NameAccessSet.empty target
+            |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } ->
+                   Set.add sofar name))
       in
       let names =
-        collect_from_element Identifier.Set.empty element
+        collect_from_element NameAccessSet.empty element
         |> fun init ->
         List.fold generators ~init ~f:(fun init { Comprehension.Generator.conditions; _ } ->
             List.fold conditions ~init ~f:collect_from_expression)
       in
-      let unbound_names = Set.diff names bound_names in
+      let unbound_names =
+        Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
+            not (Identifier.Set.mem bound_names name))
+      in
       Set.union unbound_names collected
     in
-    let rec collect_from_statement collected { Node.value; _ } =
+    let rec collect_from_statement collected { Node.value; location = statement_location } =
       (* Boilerplates to visit all statements that may contain accesses *)
       match value with
       | Statement.Assign { Assign.target; value; _ } ->
@@ -2459,7 +2469,13 @@ let populate_captures ({ Source.statements; _ } as source) =
                 let collected =
                   Option.value_map kind ~f:(collect_from_expression collected) ~default:collected
                 in
-                let collected = Option.value_map name ~f:(Set.add collected) ~default:collected in
+                let collected =
+                  Option.value_map
+                    name
+                    ~f:(fun name ->
+                      Set.add collected { Define.NameAccess.name; location = statement_location })
+                    ~default:collected
+                in
                 collect_from_statements collected body)
           in
           let collected = collect_from_statements collected orelse in
@@ -2485,10 +2501,10 @@ let populate_captures ({ Source.statements; _ } as source) =
     and collect_from_statements init statements =
       List.fold statements ~init ~f:collect_from_statement
     in
-    ( List.fold decorators ~init:Identifier.Set.empty ~f:collect_from_expression,
-      collect_from_statements Identifier.Set.empty statements )
+    ( List.fold decorators ~init:NameAccessSet.empty ~f:collect_from_expression,
+      collect_from_statements NameAccessSet.empty statements )
   in
-  let to_capture ~is_decorator ~scopes name =
+  let to_capture ~is_decorator ~scopes { Define.NameAccess.name; _ } =
     match ScopeStack.lookup scopes name with
     | None -> None
     | Some
