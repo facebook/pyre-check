@@ -5542,131 +5542,140 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       errors
   in
   let overload_errors errors =
-    match
-      GlobalResolution.resolve_define
-        ~resolution:global_resolution
-        ~implementation:(Some signature)
-        ~overloads:[]
-    with
-    | {
-     decorated =
-       Type.Callable
-         {
-           implementation =
-             { Type.Callable.annotation = current_overload_annotation; _ } as current_overload;
-           _;
-         };
-     _;
-    } ->
-        let annotation = Resolution.resolve_reference resolution name in
-        let overload_to_callable overload =
-          Type.Callable
-            {
-              implementation = { overload with annotation = Type.Any };
-              kind = Anonymous;
-              overloads = [];
-            }
+    let parser =
+      GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
+    in
+    let variables = GlobalResolution.variables global_resolution in
+    let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
+      AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
+    in
+    let handle full_undecorated_signature =
+      let overload_to_callable overload =
+        Type.Callable
+          {
+            implementation = { overload with annotation = Type.Any };
+            kind = Anonymous;
+            overloads = [];
+          }
+      in
+      let check_implementation_exists errors =
+        let { Type.Callable.implementation; _ } = full_undecorated_signature in
+        if
+          Define.is_overloaded_function define && Type.Callable.Overload.is_undefined implementation
+        then
+          let error =
+            Error.create
+              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~kind:(Error.MissingOverloadImplementation name)
+              ~define:Context.define
+          in
+          error :: errors
+        else
+          errors
+      in
+      let check_compatible_return_types errors =
+        let {
+          Type.Callable.implementation =
+            { annotation = implementation_annotation; _ } as implementation;
+          _;
+        }
+          =
+          full_undecorated_signature
         in
-        let check_implementation_exists errors =
-          match annotation with
-          | Type.Callable { implementation; _ }
-            when Define.is_overloaded_function define
-                 && Type.Callable.Overload.is_undefined implementation ->
+        if Define.is_overloaded_function define then
+          let errors_sofar =
+            if
+              Resolution.is_consistent_with
+                resolution
+                current_overload_annotation
+                implementation_annotation
+                ~expression:None
+            then
+              errors
+            else
               let error =
                 Error.create
                   ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                  ~kind:(Error.MissingOverloadImplementation name)
+                  ~kind:
+                    (Error.IncompatibleOverload
+                       (ReturnType
+                          {
+                            implementation_annotation;
+                            overload_annotation = current_overload_annotation;
+                            name;
+                          }))
                   ~define:Context.define
               in
               error :: errors
-          | _ -> errors
-        in
-        let check_compatible_return_types errors =
-          match annotation with
-          | Type.Callable
-              {
-                implementation = { annotation = implementation_annotation; _ } as implementation;
-                _;
-              }
-            when Define.is_overloaded_function define ->
-              let errors_sofar =
-                if
-                  Resolution.is_consistent_with
-                    resolution
-                    current_overload_annotation
-                    implementation_annotation
-                    ~expression:None
-                then
-                  errors
-                else
-                  let error =
-                    Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                      ~kind:
-                        (Error.IncompatibleOverload
-                           (ReturnType
-                              {
-                                implementation_annotation;
-                                overload_annotation = current_overload_annotation;
-                                name;
-                              }))
-                      ~define:Context.define
-                  in
-                  error :: errors
-              in
-              if
-                not
-                  (GlobalResolution.less_or_equal
-                     global_resolution
-                     ~right:(overload_to_callable current_overload)
-                     ~left:(overload_to_callable implementation))
-              then
-                let error =
+          in
+          if
+            not
+              (GlobalResolution.less_or_equal
+                 global_resolution
+                 ~right:(overload_to_callable current_overload)
+                 ~left:(overload_to_callable implementation))
+          then
+            let error =
+              Error.create
+                ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                ~define:Context.define
+                ~kind:(Error.IncompatibleOverload (Parameters { name; location }))
+            in
+            error :: errors_sofar
+          else
+            errors_sofar
+        else
+          errors
+      in
+      let check_unmatched_overloads errors =
+        let { Type.Callable.overloads; _ } = full_undecorated_signature in
+        if Define.is_overloaded_function define then
+          let preceding, following_and_including =
+            List.split_while overloads ~f:(fun other ->
+                not (Type.Callable.equal_overload Type.equal other current_overload))
+          in
+          if List.is_empty following_and_including then
+            errors
+          else
+            let right = overload_to_callable current_overload in
+            List.find preceding ~f:(fun preceder ->
+                GlobalResolution.less_or_equal
+                  global_resolution
+                  ~left:(overload_to_callable preceder)
+                  ~right)
+            >>| (fun matching_overload ->
                   Error.create
                     ~location:(Location.with_module ~qualifier:Context.qualifier location)
                     ~define:Context.define
-                    ~kind:(Error.IncompatibleOverload (Parameters { name; location }))
-                in
-                error :: errors_sofar
-              else
-                errors_sofar
-          | _ -> errors
-        in
-        let check_unmatched_overloads errors =
-          match annotation with
-          | Type.Callable { overloads; _ } when Define.is_overloaded_function define ->
-              let preceding, following_and_including =
-                List.split_while overloads ~f:(fun other ->
-                    not (Type.Callable.equal_overload Type.equal other current_overload))
-              in
-              if List.is_empty following_and_including then
-                errors
-              else
-                let right = overload_to_callable current_overload in
-                List.find preceding ~f:(fun preceder ->
-                    GlobalResolution.less_or_equal
-                      global_resolution
-                      ~left:(overload_to_callable preceder)
-                      ~right)
-                >>| (fun matching_overload ->
-                      Error.create
-                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                        ~define:Context.define
-                        ~kind:
-                          (Error.IncompatibleOverload
-                             (Unmatchable { name; unmatched_location = location; matching_overload })))
-                >>| (fun error -> error :: errors)
-                |> Option.value ~default:errors
-          | _ -> errors
-        in
-        errors
-        |> check_implementation_exists
-        |> check_compatible_return_types
-        |> check_unmatched_overloads
-    | _ ->
-        (* Currently impossible *)
-        errors
+                    ~kind:
+                      (Error.IncompatibleOverload
+                         (Unmatchable { name; unmatched_location = location; matching_overload })))
+            >>| (fun error -> error :: errors)
+            |> Option.value ~default:errors
+        else
+          errors
+      in
+      errors
+      |> check_implementation_exists
+      |> check_compatible_return_types
+      |> check_unmatched_overloads
+    in
+    match GlobalResolution.global global_resolution name with
+    | Some { undecorated_signature = Some undecorated_signature; _ } -> handle undecorated_signature
+    | _ -> (
+        match
+          Reference.prefix name
+          >>| Reference.show
+          >>= GlobalResolution.attribute_from_class_name
+                ~resolution:global_resolution
+                ~name:(Reference.last name)
+                ~instantiated:Top
+          >>= AnnotatedAttribute.undecorated_signature
+        with
+        | Some signature -> handle signature
+        | None -> errors )
   in
+
   class_initialization_errors errors_sofar |> overload_errors
 
 

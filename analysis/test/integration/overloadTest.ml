@@ -170,4 +170,42 @@ let test_check_implementation context =
   ()
 
 
-let () = "overload" >::: ["check_implementation" >:: test_check_implementation] |> Test.run
+let test_check_decorated_overloads context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import overload, Callable
+      def decorator(x: object) -> Callable[[int], int]: ...
+
+      @overload
+      @decorator
+      def foo(a: str) -> str: ...
+
+      @overload
+      @decorator
+      def foo(a: bool) -> bool: ...
+
+      @decorator
+      def foo(a: object) -> int:
+        return 1
+
+      reveal_type(foo)
+    |}
+    [
+      "Incompatible overload [43]: The return type of overloaded function `foo` (`str`) is \
+       incompatible with the return type of the implementation (`int`).";
+      "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
+       incompatible with the return type of the implementation (`int`).";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], \
+       int][[[int], int][[int], int]]`.";
+    ];
+  ()
+
+
+let () =
+  "overload"
+  >::: [
+         "check_implementation" >:: test_check_implementation;
+         "decorated_overloads" >:: test_check_decorated_overloads;
+       ]
+  |> Test.run
