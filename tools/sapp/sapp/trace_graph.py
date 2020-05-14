@@ -213,11 +213,25 @@ class TraceGraph(object):
             (leaf.id.local_id, depth)
         )
 
+    def add_trace_frame_leaf_by_local_id_assoc(
+        self, trace_frame: TraceFrame, leaf_id: int, depth: int
+    ) -> None:
+        self._trace_frame_leaf_assoc[trace_frame.id.local_id].add((leaf_id, depth))
+
     def get_trace_frame_leaf_ids(self, trace_frame: TraceFrame) -> Set[int]:
         ids: Set[int] = {
             id for (id, depth) in self._trace_frame_leaf_assoc[trace_frame.id.local_id]
         }
         return ids
+
+    def get_trace_frame_leaf_ids_by_kind(
+        self, trace_frame: TraceFrame, kind: SharedTextKind
+    ) -> Set[int]:
+        return {
+            id
+            for (id, depth) in self._trace_frame_leaf_assoc[trace_frame.id.local_id]
+            if self._shared_texts[id].kind == kind
+        }
 
     def get_trace_frame_leaf_ids_with_depths(
         self, trace_frame: TraceFrame

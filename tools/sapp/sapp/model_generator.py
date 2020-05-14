@@ -64,7 +64,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         self.summary["trace_entries"][TraceKind.postcondition] = input["postconditions"]
         callables = self._compute_callables_count(input)
 
-        log.info("Generating instances")
+        log.info("Generating issues and traces")
         for entry in input["issues"]:
             self._generate_issue(self.summary["run"], entry, callables)
 
