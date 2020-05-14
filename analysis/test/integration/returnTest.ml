@@ -106,7 +106,9 @@ let test_check_return context =
     "class A: pass\ndef foo() -> A: return 1"
     ["Incompatible return type [7]: Expected `A` but got `int`."];
   assert_type_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()" [];
-  assert_type_errors "def foo() -> str: return not_annotated()" [];
+  assert_type_errors
+    "from builtins import not_annotated\ndef foo() -> str: return not_annotated()"
+    [];
   assert_type_errors
     {|
       def x()->int:
@@ -129,6 +131,7 @@ let test_check_return context =
     ["Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."];
   assert_type_errors
     {|
+      from builtins import condition
       def foo() -> str:
         if condition():
           return 1
@@ -465,6 +468,7 @@ let test_check_return_control_flow context =
     ];
   assert_type_errors
     {|
+      from builtins import not_annotated
       class other(): pass
       def foo() -> other:
         result = 0
@@ -553,6 +557,7 @@ let test_check_noreturn context =
     [];
   assert_type_errors
     {|
+      import sys
       import typing
       def no_return(input: typing.Optional[int]) -> int:
         if input is None:
@@ -569,6 +574,8 @@ let test_check_noreturn context =
     [];
   assert_type_errors
     {|
+      import sys
+      from builtins import condition
       def may_not_return() -> str:
         if condition():
           sys.exit(0)
@@ -578,6 +585,8 @@ let test_check_noreturn context =
     [];
   assert_type_errors
     {|
+      import sys
+      from builtins import condition
       def no_return() -> int:
         if condition():
           return 1

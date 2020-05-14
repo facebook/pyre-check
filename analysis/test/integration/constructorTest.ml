@@ -147,6 +147,7 @@ let test_check_init context =
     [];
   assert_type_errors
     {|
+      from builtins import condition
       class Foo:
         attribute: int
         def __init__(self) -> None:
@@ -168,6 +169,7 @@ let test_check_init context =
     [];
   assert_type_errors
     {|
+      from builtins import condition
       class Foo:
         attribute: int
         def __init__(self) -> None:
@@ -178,6 +180,7 @@ let test_check_init context =
     [];
   assert_type_errors
     {|
+      from builtins import condition
       class Foo:
         attribute: int
         def __init__(self) -> None:
@@ -779,6 +782,7 @@ let test_check_constructors context =
      the subclass, regardless of order. *)
   assert_type_errors
     {|
+      from builtins import A, B
       class Subclass(A, B):
         def foo(self)->A:
           return super()

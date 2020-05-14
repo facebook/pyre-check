@@ -26,6 +26,7 @@ let test_check_async context =
     [];
   assert_type_errors
     {|
+      from builtins import IsAwaitable
       def bar(a: IsAwaitable) -> int:
         await a
         return 0
@@ -33,6 +34,7 @@ let test_check_async context =
     [];
   assert_type_errors
     {|
+      from builtins import IsAwaitable
       import typing
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
@@ -51,10 +53,13 @@ let test_check_async context =
         return (await c)
     |}
     ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      from builtins import IsAwaitable
       def bar(a: IsAwaitable) -> int:
         return (await a)
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
       def bar(a: int) -> None:

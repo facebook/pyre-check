@@ -16,7 +16,7 @@ let test_check_coverage context =
     |> List.map ~f:(fun line -> "    " ^ line)
     |> String.concat ~sep:"\n"
     |> String.substr_replace_all ~pattern:"ERROR" ~with_:"a.undefined"
-    |> Format.asprintf "def foo(a: A) -> None:\n%s\n"
+    |> Format.asprintf "from builtins import A\nimport typing\ndef foo(a: A) -> None:\n%s\n"
   in
   let assert_covered ?(additional_errors = []) source =
     assert_type_errors

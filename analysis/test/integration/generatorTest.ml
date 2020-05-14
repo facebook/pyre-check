@@ -89,6 +89,7 @@ let test_check_comprehensions context =
     [];
   assert_type_errors
     {|
+      from builtins import str_to_int
       import typing
       def foo(input: typing.List[str]) -> typing.List[int]:
         return [str_to_int(a) for a in input]
@@ -175,6 +176,7 @@ let test_check_comprehensions context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: int_to_int(y) for (x, y) in a.items() if y }

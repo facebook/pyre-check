@@ -273,6 +273,7 @@ let test_check_unbounded_variables context =
     [];
   assert_type_errors
     {|
+    from builtins import identity
     from typing import Union, Tuple
     SeparatedUnion = Union[
         Tuple[int, bool],
@@ -382,6 +383,7 @@ let test_check_variable_bindings context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from builtins import str_to_int
       import typing
       T = typing.TypeVar('T', bound=int)
       def foo(t: T) -> None:
@@ -406,6 +408,7 @@ let test_check_variable_bindings context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_str
       import typing
       T = typing.TypeVar('T', bound=int)
       def foo(t: T) -> None:

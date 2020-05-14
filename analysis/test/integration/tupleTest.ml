@@ -10,6 +10,7 @@ let test_check_tuple context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from builtins import return_tuple
       def derp()->int:
           a, b = return_tuple()
           return a+b
@@ -201,6 +202,7 @@ let test_check_tuple context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def bar(z: typing.Optional[int]) -> typing.Tuple[int, typing.Optional[int]]:
           return 1, int_to_int(z) if z is not None else None

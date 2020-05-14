@@ -301,6 +301,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      from builtins import condition
       import typing
       def foo() -> typing.Any:
         if condition():
@@ -312,6 +313,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_bool
       import typing
       def foo(optional: typing.Optional[int]) -> typing.Any:
         return optional or int_to_bool(optional)
@@ -325,6 +327,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_bool
       import typing
       def foo(optional: typing.Optional[int]) -> typing.Any:
         return optional and int_to_bool(optional)
@@ -356,6 +359,7 @@ let test_check_missing_return context =
   (* Joining. *)
   assert_type_errors
     {|
+      from builtins import condition
       def foo():
         if condition():
           return 1
@@ -368,6 +372,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      from builtins import condition
       def foo():
         if condition():
           return 1
@@ -377,11 +382,12 @@ let test_check_missing_return context =
           return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Union[int, None, int, str]` "
+      "Missing return annotation [3]: Returning `typing.Union[None, int, str]` "
       ^ "but no return type is specified.";
     ];
   assert_type_errors
     {|
+      from builtins import condition
       def foo():
         if condition():
           return 1
@@ -391,6 +397,7 @@ let test_check_missing_return context =
     ["Missing return annotation [3]: Returning `float` but no return type is specified."];
   assert_type_errors
     {|
+      from builtins import condition
       def foo():
         if condition():
           return None
@@ -403,6 +410,7 @@ let test_check_missing_return context =
     ];
   assert_type_errors
     {|
+      from builtins import condition, A, B
       def foo():
         if condition():
           return A()

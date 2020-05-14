@@ -573,6 +573,7 @@ let test_check_attributes context =
   (* Check attribute type propagation. *)
   assert_type_errors
     {|
+      from builtins import not_annotated
       class Foo:
         attribute: int = 1
         def foo(self) -> None:

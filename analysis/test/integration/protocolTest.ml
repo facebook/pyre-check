@@ -252,6 +252,7 @@ let test_check_protocol context =
     [];
   assert_type_errors
     {|
+      from builtins import A
       import typing
       class P(typing.Protocol):
         def foo(self) -> P: ...

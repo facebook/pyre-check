@@ -38,6 +38,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> int:
         if 1 > 2:
           x = 2
@@ -48,6 +49,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> int:
         if 1 > 2:
           x = 2
@@ -58,6 +60,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> int:
         if 1 > 2:
           x = 2
@@ -73,6 +76,7 @@ let test_check_assert context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> int:
         if True:
           return 0
@@ -82,6 +86,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
@@ -93,6 +98,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
@@ -104,6 +110,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
@@ -118,6 +125,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is not None:
@@ -132,6 +140,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is None:
@@ -145,6 +154,7 @@ let test_check_assert context =
     [];
   assert_type_errors
     {|
+      from builtins import expect_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
         if x is None:
@@ -273,6 +283,7 @@ let test_check_all context =
   assert_type_errors
     {|
       import typing
+      _T = typing.TypeVar('_T')
       def foo(x: typing.Dict[typing.Optional[int], _T]) -> typing.Dict[int, _T]:
         if all(x):
           return x

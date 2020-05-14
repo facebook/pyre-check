@@ -618,10 +618,13 @@ let test_check_immutable_annotations context =
         x = 'string'
     |}
     ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      from builtins import int_to_str
       def f(x: int) -> None:
         x: str = int_to_str(x)
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
     constant: int
@@ -1168,6 +1171,7 @@ let test_check_refinement context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def bar(x: typing.Optional[int]) -> None:
           if x and int_to_int(x) < 0:

@@ -17,6 +17,7 @@ let test_check_union context =
     ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
   assert_type_errors
     {|
+      from builtins import condition
       import typing
       def foo() -> typing.Union[str, int]:
         if condition():
@@ -75,6 +76,7 @@ let test_check_union context =
     ["Undefined or invalid type [11]: Annotation `Undefined` is not defined as a type."];
   assert_type_errors
     {|
+      from builtins import Attributes, OtherAttributes
       import typing
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.int_attribute
@@ -82,6 +84,7 @@ let test_check_union context =
     [];
   assert_type_errors
     {|
+      from builtins import Attributes, OtherAttributes
       import typing
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.str_attribute
@@ -92,6 +95,7 @@ let test_check_union context =
     ];
   assert_type_errors
     {|
+      from builtins import Attributes, OtherAttributes
       import typing
       def foo(x: typing.Union[OtherAttributes, Attributes]) -> int:
         return x.str_attribute

@@ -40,6 +40,7 @@ let test_reveal_type context =
     ["Revealed type [-1]: Revealed type for `x.__add__(y)` is `int`."];
   assert_type_errors
     {|
+      from builtins import int_to_str
       def foo(x: int) -> None:
 
         reveal_type(int_to_str(x))

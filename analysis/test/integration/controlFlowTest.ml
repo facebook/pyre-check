@@ -231,6 +231,7 @@ let test_check_ternary context =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      from builtins import int_to_str
       import typing
       def foo(a:typing.Optional[int])->str:
         return int_to_str(a) if a else ""
@@ -238,6 +239,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def foo(x: typing.Optional[int]) -> None:
           int_to_int(x) if x else 0
@@ -245,6 +247,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def foo(x: typing.Optional[int]) -> int:
           return int_to_int(x if x is not None else 1)
@@ -252,6 +255,7 @@ let test_check_ternary context =
     [];
   assert_type_errors
     {|
+      from builtins import int_to_int
       import typing
       def foo(x: typing.Optional[int]) -> int:
         a, b = ("hi", int_to_int(x) if x is not None else 1)
@@ -367,6 +371,7 @@ let test_check_nested context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> None:
         def nested() -> None:
           int_to_int(1.0)

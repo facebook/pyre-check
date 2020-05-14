@@ -221,10 +221,13 @@ let test_check_function_parameters_with_backups context =
 let test_check_function_parameters context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      from builtins import int_to_int
       def foo() -> None:
         int_to_int(1)
-    |} [];
+    |}
+    [];
   assert_type_errors
     "int_to_int(1.0)"
     [
@@ -233,6 +236,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> None:
         int_to_int(1.0)
     |}
@@ -253,6 +257,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo() -> int:
         return int_to_int(1.0)
     |}
@@ -262,6 +267,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       def foo(i) -> None:
         int_to_int(i)
     |}
@@ -290,6 +296,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      from builtins import int_to_int
       class A:
         def foo(self) -> None:
           int_to_int(self.attribute)
@@ -331,6 +338,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
+      from builtins import to_int, int_to_str
       def foo(a: typing.Optional[int]) -> int:
         return to_int(a and int_to_str(a))
     |}
@@ -338,6 +346,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
+      from builtins import to_int, int_to_str
       def foo(a: typing.Optional[int]) -> int:
         return to_int(a or int_to_str(a))
     |}
@@ -367,6 +376,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
+      from builtins import Attributes
       def bar(x: typing.Optional[Attributes]) -> None:
           baz(x.int_attribute if x is not None else None)
 
@@ -377,6 +387,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
+      from builtins import Attributes
       def bar(x: typing.Optional[Attributes]) -> None:
           baz(x.int_attribute if x else None)
 
@@ -386,6 +397,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      from builtins import takes_iterable
       def foo(x) -> None:
         takes_iterable(x)
     |}
@@ -598,6 +610,7 @@ let test_check_function_parameter_errors context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from builtins import str_float_to_int
       class Foo:
         attribute: str = ""
       def foo(input: Foo) -> None:
@@ -610,6 +623,7 @@ let test_check_function_parameter_errors context =
     ];
   assert_type_errors
     {|
+      from builtins import str_float_to_int
       class Foo:
         attribute: str = ""
       def foo(input: Foo) -> None:
@@ -623,6 +637,7 @@ let test_check_function_parameter_errors context =
   assert_type_errors
     {|
       import typing
+      from builtins import optional_str_to_int
       class Foo:
         attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
@@ -637,6 +652,7 @@ let test_check_function_parameter_errors context =
   assert_type_errors
     {|
       import typing
+      from builtins import optional_str_to_int
       class Foo:
         attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
@@ -1011,18 +1027,21 @@ let test_check_variable_restrictions context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+       from builtins import variable_restricted_identity
        def f(x: str) -> int:
          return variable_restricted_identity(x)
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
     {|
+       from builtins import variable_restricted_identity
        def f(x: str) -> str:
          return variable_restricted_identity(x)
     |}
     [];
   assert_type_errors
     {|
+       from builtins import variable_restricted_identity
        def f(x: float) -> str:
          return variable_restricted_identity(x)
     |}
@@ -1155,6 +1174,7 @@ let test_check_named_arguments context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from builtins import str_float_to_int
       def bar()->int:
         return str_float_to_int(i="",f=2.0) + str_float_to_int(f=1.0,i="bar")
     |}
@@ -1179,12 +1199,14 @@ let test_check_named_arguments context =
     [];
   assert_type_errors
     {|
+      from builtins import str_float_to_int
       def bar() -> int:
         return str_float_to_int(i="")
     |}
     ["Missing argument [20]: Call `str_float_to_int` expects argument `f`."];
   assert_type_errors
     {|
+      from builtins import str_float_to_int
       def bar() -> int:
         return 1 + str_float_to_int(i=2.0,f=1)
       def foo() -> int:
