@@ -109,6 +109,7 @@ let test_lexer _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression !"a"];
          };
     ];
@@ -598,6 +599,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -622,6 +624,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -647,6 +650,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -667,6 +671,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -687,6 +692,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -707,6 +713,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
     ];
@@ -727,6 +734,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -747,6 +755,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -778,6 +787,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -798,6 +808,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -822,6 +833,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -846,6 +858,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -867,6 +880,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -887,6 +901,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Expression (+Expression.Integer 1);
@@ -911,6 +926,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Expression (+Expression.Integer 1);
@@ -936,6 +952,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Define
@@ -952,6 +969,7 @@ let test_define _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Expression (+Expression.Integer 1);
@@ -979,6 +997,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -1006,6 +1025,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -1030,6 +1050,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -1076,6 +1097,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -1100,6 +1122,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
     ];
@@ -1120,6 +1143,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Expression (+Expression.Integer 1);
@@ -1149,6 +1173,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1178,6 +1203,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1207,6 +1233,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1235,6 +1262,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1262,6 +1290,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1289,6 +1318,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1324,6 +1354,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1359,6 +1390,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1399,6 +1431,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1435,6 +1468,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1469,6 +1503,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1498,6 +1533,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1541,6 +1577,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1585,6 +1622,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1630,6 +1668,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1663,6 +1702,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1692,6 +1732,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1737,6 +1778,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Pass];
          };
     ];
@@ -1776,6 +1818,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Pass];
          };
     ];
@@ -1811,6 +1854,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Pass];
          };
     ];
@@ -1842,6 +1886,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Return
@@ -1872,6 +1917,7 @@ let test_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Yield
@@ -3387,6 +3433,7 @@ let test_class _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body = [+Statement.Pass];
                   };
              ];
@@ -3416,6 +3463,7 @@ let test_class _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Define
@@ -3432,6 +3480,7 @@ let test_class _ =
                                  nesting_define = None;
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -3559,6 +3608,7 @@ let test_class _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body = [+Statement.Pass];
                   };
              ];
@@ -3588,6 +3638,7 @@ let test_class _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Assign
@@ -3642,6 +3693,7 @@ let test_class _ =
                                  nesting_define = None;
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -4794,6 +4846,7 @@ let test_stubs _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
     ];
@@ -4814,6 +4867,7 @@ let test_stubs _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
     ];
@@ -4834,6 +4888,7 @@ let test_stubs _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
     ];
@@ -4861,6 +4916,7 @@ let test_stubs _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
     ];
@@ -4929,6 +4985,7 @@ let test_ellipsis _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body = [+Statement.Pass];
          };
     ];

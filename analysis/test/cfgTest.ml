@@ -26,6 +26,7 @@ let test_to_dot _ =
             nesting_define = None;
           };
         captures = [];
+        unbound_names = [];
         body;
       }
     in
@@ -111,6 +112,7 @@ let assert_cfg body expected =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body;
     }
   in

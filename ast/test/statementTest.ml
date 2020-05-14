@@ -28,6 +28,7 @@ let test_is_method _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Pass];
     }
   in
@@ -50,6 +51,7 @@ let test_is_classmethod _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Pass];
     }
   in
@@ -76,6 +78,7 @@ let test_is_class_property _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Pass];
     }
   in
@@ -100,6 +103,7 @@ let test_decorator _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Pass];
     }
   in
@@ -137,6 +141,7 @@ let test_is_constructor _ =
             nesting_define = None;
           };
         captures = [];
+        unbound_names = [];
         body = [+Statement.Pass];
       }
     in

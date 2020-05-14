@@ -28,6 +28,7 @@ let test_parent_definition context =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Pass];
     }
     |> Node.create_with_default_location

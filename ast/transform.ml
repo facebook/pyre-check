@@ -230,7 +230,7 @@ module Make (Transformer : Transformer) = struct
                 decorators = transform_list decorators ~f:transform_expression;
               }
         | Continue -> value
-        | Define { signature; captures; body } ->
+        | Define { signature; captures; unbound_names; body } ->
             let transform_signature
                 {
                   Define.Signature.name;
@@ -271,6 +271,7 @@ module Make (Transformer : Transformer) = struct
               {
                 signature = transform_signature signature;
                 captures = List.map captures ~f:transform_capture;
+                unbound_names;
                 body = transform_list body ~f:transform_statement |> List.concat;
               }
         | Delete expression -> Delete (transform_expression expression)

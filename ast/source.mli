@@ -52,6 +52,7 @@ end
 type t = {
   metadata: Metadata.t;
   source_path: SourcePath.t;
+  top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]

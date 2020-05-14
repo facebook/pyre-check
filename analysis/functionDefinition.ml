@@ -93,7 +93,7 @@ let collect_typecheck_units { Source.statements; _ } =
       let rec drop_nested_body_in_statement = function
         | Statement.Class definition -> Statement.Class { definition with body = [] }
         | Define { Define.signature; _ } ->
-            Statement.Define { Define.signature; captures = []; body = [] }
+            Statement.Define { Define.signature; captures = []; unbound_names = []; body = [] }
         | For ({ For.body; orelse; _ } as for_statement) ->
             Statement.For
               {

@@ -450,6 +450,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
             nesting_define = None;
           };
         captures = [];
+        unbound_names = [];
         body = [];
       }
   in
@@ -602,6 +603,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
                       nesting_define = None;
                     };
                   captures = [];
+                  unbound_names = [];
                   body = [];
                 }
               |> Node.create_with_default_location;

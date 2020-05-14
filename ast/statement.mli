@@ -272,16 +272,29 @@ and Define : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
+  module NameAccess : sig
+    type t = {
+      name: Identifier.t;
+      location: Location.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
   type t = {
     signature: Signature.t;
     captures: Capture.t list;
+    unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
-  val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
+  val create_toplevel
+    :  unbound_names:NameAccess.t list ->
+    qualifier:Reference.t option ->
+    statements:Statement.t list ->
+    t
 
   val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 

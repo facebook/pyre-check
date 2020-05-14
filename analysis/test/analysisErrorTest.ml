@@ -26,7 +26,12 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
 
 
 let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
-  { Define.signature = signature_value ~return_annotation ~name (); captures = []; body }
+  {
+    Define.signature = signature_value ~return_annotation ~name ();
+    captures = [];
+    unbound_names = [];
+    body;
+  }
 
 
 let untyped_signature = +signature_value ~return_annotation:None ()

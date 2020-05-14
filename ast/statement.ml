@@ -1196,16 +1196,29 @@ and Define : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
+  module NameAccess : sig
+    type t = {
+      name: Identifier.t;
+      location: Location.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
   type t = {
     signature: Signature.t;
     captures: Capture.t list;
+    unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
-  val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
+  val create_toplevel
+    :  unbound_names:NameAccess.t list ->
+    qualifier:Reference.t option ->
+    statements:Statement.t list ->
+    t
 
   val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 
@@ -1485,9 +1498,20 @@ end = struct
       | _ -> Kind.location_insensitive_compare left.kind right.kind
   end
 
+  module NameAccess = struct
+    type t = {
+      name: Identifier.t;
+      location: Location.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_insensitive_compare left right = [%compare: Identifier.t] left.name right.name
+  end
+
   type t = {
     signature: Signature.t;
     captures: Capture.t list;
+    unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -1498,15 +1522,33 @@ end = struct
     | _ -> (
         match List.compare Capture.location_insensitive_compare left.captures right.captures with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_insensitive_compare left.body right.body )
+        | _ -> (
+            match
+              List.compare
+                NameAccess.location_insensitive_compare
+                left.unbound_names
+                right.unbound_names
+            with
+            | x when not (Int.equal x 0) -> x
+            | _ -> List.compare Statement.location_insensitive_compare left.body right.body ) )
 
 
-  let create_toplevel ~qualifier ~statements =
-    { signature = Signature.create_toplevel ~qualifier; captures = []; body = statements }
+  let create_toplevel ~unbound_names ~qualifier ~statements =
+    {
+      signature = Signature.create_toplevel ~qualifier;
+      captures = [];
+      unbound_names;
+      body = statements;
+    }
 
 
   let create_class_toplevel ~parent ~statements =
-    { signature = Signature.create_class_toplevel ~parent; captures = []; body = statements }
+    {
+      signature = Signature.create_class_toplevel ~parent;
+      captures = [];
+      unbound_names = [];
+      body = statements;
+    }
 
 
   let name { signature = { Signature.name; _ }; _ } = name
@@ -2406,6 +2448,7 @@ module PrettyPrinter = struct
         Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
         body;
         captures = _;
+        unbound_names = _;
       }
     =
     let return_annotation =

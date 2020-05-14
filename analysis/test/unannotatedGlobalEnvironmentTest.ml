@@ -1032,6 +1032,7 @@ let test_updates context =
             nesting_define = None;
           };
         captures = [];
+        unbound_names = [];
         body;
       }
   in
@@ -1273,6 +1274,7 @@ let test_updates context =
                    nesting_define = None;
                  };
                captures = [];
+               unbound_names = [];
                body =
                  [
                    create_simple_return
@@ -1314,6 +1316,7 @@ let test_updates context =
                    nesting_define = None;
                  };
                captures = [];
+               unbound_names = [];
                body =
                  [
                    create_simple_return
@@ -1353,6 +1356,7 @@ let test_updates context =
               nesting_define = None;
             };
           captures = [];
+          unbound_names = [];
           body =
             [
               create_simple_return
@@ -1414,6 +1418,7 @@ let test_updates context =
               nesting_define = None;
             };
           captures = [];
+          unbound_names = [];
           body =
             [
               node
@@ -1472,6 +1477,7 @@ let test_updates context =
               nesting_define = None;
             };
           captures = [];
+          unbound_names = [];
           body =
             [
               node
@@ -1584,6 +1590,7 @@ let test_updates context =
                      nesting_define = None;
                    };
                  captures = [];
+                 unbound_names = [];
                  body = [create_elipsis ~start:(4, 24) ~stop:(4, 27) ()];
                }
            in
@@ -1651,6 +1658,7 @@ let test_updates context =
                           nesting_define = None;
                         };
                       captures = [];
+                      unbound_names = [];
                       body = [create_elipsis ~start:(6, 37) ~stop:(6, 40) ()];
                     }
                 in

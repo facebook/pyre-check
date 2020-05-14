@@ -59,6 +59,7 @@ let assert_fixpoint body expected =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body;
     }
   in

@@ -1471,7 +1471,9 @@ let mock_signature =
   }
 
 
-let mock_define = { Define.signature = mock_signature; captures = []; body = [] }
+let mock_define =
+  { Define.signature = mock_signature; captures = []; unbound_names = []; body = [] }
+
 
 let create_type_alias_table type_aliases =
   let aliases primitive = type_aliases primitive >>| fun alias -> Type.TypeAlias alias in

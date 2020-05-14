@@ -236,6 +236,7 @@ end
 type t = {
   metadata: Metadata.t;
   source_path: SourcePath.t;
+  top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, sexp]
@@ -251,7 +252,17 @@ let location_insensitive_compare left right =
   | _ -> (
       match SourcePath.compare left.source_path right.source_path with
       | x when x <> 0 -> x
-      | _ -> List.compare Statement.location_insensitive_compare left.statements right.statements )
+      | _ -> (
+          match
+            List.compare
+              Statement.Define.NameAccess.compare
+              left.top_level_unbound_names
+              right.top_level_unbound_names
+          with
+          | x when x <> 0 -> x
+          | _ ->
+              List.compare Statement.location_insensitive_compare left.statements right.statements )
+      )
 
 
 let show source = Format.asprintf "%a" pp source
@@ -271,7 +282,7 @@ let mode ~configuration ~local_mode : mode =
 
 
 let create_from_source_path ~metadata ~source_path statements =
-  { metadata; source_path; statements }
+  { metadata; source_path; top_level_unbound_names = []; statements }
 
 
 let create
@@ -282,7 +293,7 @@ let create
     statements
   =
   let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
-  { metadata; source_path; statements }
+  { metadata; source_path; top_level_unbound_names = []; statements }
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
@@ -290,7 +301,13 @@ let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
 let statements { statements; _ } = statements
 
 let top_level_define
-    { source_path = { SourcePath.qualifier; _ }; statements; metadata = { Metadata.version; _ }; _ }
+    {
+      source_path = { SourcePath.qualifier; _ };
+      top_level_unbound_names;
+      statements;
+      metadata = { Metadata.version; _ };
+      _;
+    }
   =
   let statements =
     if version < 3 then
@@ -298,7 +315,10 @@ let top_level_define
     else
       statements
   in
-  Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements
+  Statement.Define.create_toplevel
+    ~qualifier:(Some qualifier)
+    ~unbound_names:top_level_unbound_names
+    ~statements
 
 
 let top_level_define_node source =

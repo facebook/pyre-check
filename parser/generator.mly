@@ -787,6 +787,7 @@ compound_statement:
             nesting_define = None;
           };
           captures = [];
+          unbound_names = [];
           body
         };
       }

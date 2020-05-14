@@ -966,6 +966,7 @@ let test_class_locations _ =
                             nesting_define = None;
                           };
                         captures = [];
+                        unbound_names = [];
                         body = [node ~start:(2, 12) ~stop:(2, 16) Statement.Pass];
                       });
                ];
@@ -1045,6 +1046,7 @@ let test_class_locations _ =
                                        nesting_define = None;
                                      };
                                    captures = [];
+                                   unbound_names = [];
                                    body = [node ~start:(5, 6) ~stop:(5, 10) Statement.Pass];
                                  });
                           ];
@@ -1077,6 +1079,7 @@ let test_define_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body =
                [
                  node
@@ -1112,6 +1115,7 @@ let test_define_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body =
                [
                  node
@@ -1131,6 +1135,7 @@ let test_define_locations _ =
                             nesting_define = None;
                           };
                         captures = [];
+                        unbound_names = [];
                         body =
                           [
                             node
@@ -1197,6 +1202,7 @@ let test_define_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body = [node ~start:(6, 2) ~stop:(6, 6) Statement.Pass];
            });
     ];
@@ -1242,6 +1248,7 @@ let test_define_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body =
                [
                  node
@@ -2676,6 +2683,7 @@ let test_stub_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body =
                [
                  node
@@ -2721,6 +2729,7 @@ let test_stub_locations _ =
                  nesting_define = None;
                };
              captures = [];
+             unbound_names = [];
              body =
                [
                  node

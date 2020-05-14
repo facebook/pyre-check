@@ -5081,7 +5081,8 @@ module DummyContext = struct
   let debug = false
 
   let define =
-    Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
+    Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+    |> Node.create_with_default_location
 
 
   module Builder = Callgraph.NullBuilder

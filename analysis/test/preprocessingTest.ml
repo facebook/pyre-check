@@ -1814,6 +1814,7 @@ let test_expand_implicit_returns _ =
                     nesting_define = None;
                   };
                 captures = [];
+                unbound_names = [];
                 body = expected_body;
               };
          ])
@@ -1991,6 +1992,7 @@ let test_defines _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Expression (+Expression.Float 1.0)];
     }
   in
@@ -2008,6 +2010,7 @@ let test_defines _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body;
     }
   in
@@ -2025,6 +2028,7 @@ let test_defines _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body;
     }
   in
@@ -2044,6 +2048,7 @@ let test_defines _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Expression (+Expression.Float 1.0)];
     }
   in
@@ -2061,6 +2066,7 @@ let test_defines _ =
           nesting_define = None;
         };
       captures = [];
+      unbound_names = [];
       body = [+Statement.Expression (+Expression.Float 1.0); +Statement.Define inner];
     }
   in
@@ -2112,6 +2118,7 @@ let test_classes _ =
                    nesting_define = None;
                  };
                captures = [];
+               unbound_names = [];
                body = [+Statement.Pass];
              };
         ];
@@ -2664,6 +2671,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Define
@@ -2680,6 +2688,7 @@ let test_populate_nesting_define _ =
                         nesting_define = Some !&"foo";
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Expression (+Expression.Integer 1);
@@ -2714,6 +2723,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Define
@@ -2730,6 +2740,7 @@ let test_populate_nesting_define _ =
                         nesting_define = Some !&"foo";
                       };
                     captures = [];
+                    unbound_names = [];
                     body = [+Statement.Pass];
                   };
                +Statement.Define
@@ -2746,6 +2757,7 @@ let test_populate_nesting_define _ =
                         nesting_define = Some !&"foo";
                       };
                     captures = [];
+                    unbound_names = [];
                     body = [+Statement.Pass];
                   };
              ];
@@ -2773,6 +2785,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Define
@@ -2789,6 +2802,7 @@ let test_populate_nesting_define _ =
                         nesting_define = Some !&"foo";
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Define
@@ -2805,6 +2819,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"bar";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -2837,6 +2852,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.If
@@ -2858,6 +2874,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -2877,6 +2894,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -2909,6 +2927,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.While
@@ -2930,6 +2949,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -2949,6 +2969,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -2978,6 +2999,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.With
@@ -3000,6 +3022,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -3035,6 +3058,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Try
@@ -3055,6 +3079,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -3080,6 +3105,7 @@ let test_populate_nesting_define _ =
                                        nesting_define = Some !&"foo";
                                      };
                                    captures = [];
+                                   unbound_names = [];
                                    body = [+Statement.Pass];
                                  };
                             ];
@@ -3101,6 +3127,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"foo";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -3137,6 +3164,7 @@ let test_populate_nesting_define _ =
                         nesting_define = None;
                       };
                     captures = [];
+                    unbound_names = [];
                     body =
                       [
                         +Statement.Define
@@ -3153,6 +3181,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = Some !&"bar";
                                };
                              captures = [];
+                             unbound_names = [];
                              body = [+Statement.Pass];
                            };
                       ];
@@ -3183,6 +3212,7 @@ let test_populate_nesting_define _ =
                nesting_define = None;
              };
            captures = [];
+           unbound_names = [];
            body =
              [
                +Statement.Class
@@ -3206,6 +3236,7 @@ let test_populate_nesting_define _ =
                                  nesting_define = None;
                                };
                              captures = [];
+                             unbound_names = [];
                              body =
                                [
                                  +Statement.Define
@@ -3222,6 +3253,7 @@ let test_populate_nesting_define _ =
                                           nesting_define = Some !&"bar";
                                         };
                                       captures = [];
+                                      unbound_names = [];
                                       body = [+Statement.Pass];
                                     };
                                ];

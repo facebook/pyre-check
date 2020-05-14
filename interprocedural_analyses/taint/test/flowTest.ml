@@ -38,7 +38,7 @@ let test_no_errors _ =
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =
-      Statement.Define.create_toplevel ~qualifier:None ~statements:[]
+      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
       |> Node.create_with_default_location
     in
     let errors =
@@ -86,7 +86,7 @@ let test_errors _ =
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =
-      Statement.Define.create_toplevel ~qualifier:None ~statements:[]
+      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
       |> Node.create_with_default_location
     in
     let errors =

@@ -3906,6 +3906,7 @@ module TypedDictionary = struct
               nesting_define = None;
             };
           captures = [];
+          unbound_names = [];
           body = [];
         }
       |> Node.create_with_default_location
