@@ -44,6 +44,8 @@ module Binding = struct
     let open Expression in
     match target with
     | Expression.Name (Name.Identifier name) -> [{ name; kind; location }]
+    | Expression.Starred (Starred.Once element | Starred.Twice element) ->
+        of_unannotated_target ~kind element
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)

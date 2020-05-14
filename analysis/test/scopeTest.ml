@@ -512,6 +512,17 @@ let test_define_local_bindings _ =
   assert_bindings
     {|
     def foo():
+      x, *y = 1, 2, 3
+      return x + sum(y)
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (3, 2) (3, 3)));
+        "y", Some (ExpectBinding.create (Binding.Kind.AssignTarget None) (location (3, 6) (3, 7)));
+      ];
+  assert_bindings
+    {|
+    def foo():
       def bar():
         pass
       pass
@@ -570,6 +581,17 @@ let test_define_local_bindings _ =
             (ExpectBinding.create
                (Binding.Kind.AssignTarget (Some (int_annotation (4, 7) (4, 10))))
                (location (4, 4) (4, 5))) );
+      ];
+  assert_bindings
+    {|
+    def foo():
+      for x, *y in [[1], [2,3], [4,5,6]]:
+        pass
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.ForTarget (location (3, 6) (3, 7)));
+        "y", Some (ExpectBinding.create Binding.Kind.ForTarget (location (3, 10) (3, 11)));
       ];
   assert_bindings
     {|
@@ -762,6 +784,13 @@ let test_expression_local_bindings _ =
     "(x for x in range(10))"
     ~expected:
       ["x", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 7) (1, 8)))];
+  assert_bindings
+    "(x for x, *y in [[1], [2,3]])"
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 7) (1, 8)));
+        "y", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 11) (1, 12)));
+      ];
   assert_bindings
     "[x for x in range(10)]"
     ~expected:
