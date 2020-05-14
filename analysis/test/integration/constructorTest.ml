@@ -276,11 +276,7 @@ let test_check_init context =
         def a(self) -> int:
           return self.a
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `C` has type `int` "
-      ^ "but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    [];
   assert_type_errors
     {|
       class C:
@@ -299,10 +295,8 @@ let test_check_init context =
             self.y = y
     |}
     [
-      "Missing attribute annotation [4]: Attribute `attribute` of class `C` has type `int` "
-      ^ "but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `y` of class `C` has type `int` "
-      ^ "but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `y` of class `C` has type `int` but no type is \
+       specified.";
     ];
   assert_type_errors
     {|
@@ -903,6 +897,27 @@ let test_infer_constructor_attributes context =
       "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were"
       ^ " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      class A:
+          def __init__(self, x: int) -> None:
+              self.y = x
+              self.x = x
+              self._x = x
+              self.__x = x
+      def foo(a: A) -> None:
+        reveal_type(a.y)
+        reveal_type(a.x)
+        reveal_type(a._x)
+        reveal_type(a.__x)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `a.y` is `int`.";
+      "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a._x` is `int`.";
+      "Revealed type [-1]: Revealed type for `a.__x` is `int`.";
     ]
 
 

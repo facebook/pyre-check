@@ -1684,27 +1684,8 @@ end = struct
           match target with
           | { Node.value = Name _; _ } ->
               let annotation =
-                let is_reassignment target value =
-                  let target = Identifier.sanitized target in
-                  let value = Identifier.sanitized value in
-                  String.equal target value || String.equal target ("_" ^ value)
-                in
-                match toplevel, annotation, target, value with
-                | ( true,
-                    None,
-                    {
-                      Node.value =
-                        Name
-                          (Name.Attribute
-                            {
-                              base = { Node.value = Name (Name.Identifier _); _ };
-                              attribute = target;
-                              _;
-                            });
-                      _;
-                    },
-                    { Node.value = Name (Name.Identifier value); _ } )
-                  when is_reassignment target value ->
+                match toplevel, annotation, value with
+                | true, None, { Node.value = Name (Name.Identifier value); _ } ->
                     Identifier.SerializableMap.find_opt value parameter_annotations
                 | _ -> annotation
               in

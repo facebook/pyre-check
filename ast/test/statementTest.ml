@@ -344,7 +344,7 @@ let test_attributes _ =
       def foo(self, argument: str):
         self.attribute = argument
     |}
-    ["attribute", None, Some "argument", true];
+    ["attribute", Some Type.string, Some "argument", true];
   assert_implicit_attributes
     {|
       def foo(self, attribute: str):
