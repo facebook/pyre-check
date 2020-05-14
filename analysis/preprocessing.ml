@@ -2312,7 +2312,13 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
 module NameAccessSet = Set.Make (Define.NameAccess)
 module CaptureSet = Set.Make (Define.Capture)
 
-let collect_accesses ~decorators statements =
+let collect_accesses
+    {
+      Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ };
+      body;
+      _;
+    }
+  =
   let rec collect_from_expression collected { Node.value; location = expression_location } =
     let open Expression in
     let collect_from_entry collected { Dictionary.Entry.key; value } =
@@ -2501,8 +2507,27 @@ let collect_accesses ~decorators statements =
   and collect_from_statements init statements =
     List.fold statements ~init ~f:collect_from_statement
   in
-  ( List.fold decorators ~init:NameAccessSet.empty ~f:collect_from_expression,
-    collect_from_statements NameAccessSet.empty statements )
+  let decorator_accesses =
+    List.fold decorators ~init:NameAccessSet.empty ~f:collect_from_expression
+  in
+  let body_accesses =
+    let parameter_annotation_accesses =
+      List.fold
+        parameters
+        ~init:NameAccessSet.empty
+        ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
+          let sofar = Option.value_map value ~default:sofar ~f:(collect_from_expression sofar) in
+          Option.value_map annotation ~default:sofar ~f:(collect_from_expression sofar))
+    in
+    let return_annotation_accesses =
+      Option.value_map
+        return_annotation
+        ~default:parameter_annotation_accesses
+        ~f:(collect_from_expression parameter_annotation_accesses)
+    in
+    collect_from_statements return_annotation_accesses body
+  in
+  decorator_accesses, body_accesses
 
 
 let populate_captures ({ Source.statements; _ } as source) =
@@ -2710,13 +2735,8 @@ let populate_captures ({ Source.statements; _ } as source) =
   let rec transform_statement ~scopes statement =
     match statement with
     (* Process each defines *)
-    | {
-     Node.location;
-     value =
-       Statement.Define
-         ({ signature = { Define.Signature.decorators; _ } as signature; body; _ } as define);
-    } ->
-        let decorator_accesses, body_accesses = collect_accesses ~decorators body in
+    | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
+        let decorator_accesses, body_accesses = collect_accesses define in
         let parent_scopes = scopes in
         let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
         let captures =
@@ -2738,7 +2758,7 @@ let populate_captures ({ Source.statements; _ } as source) =
           |> CaptureSet.to_list
         in
         let body = transform_statements ~scopes body in
-        { Node.location; value = Statement.Define { define with signature; body; captures } }
+        { Node.location; value = Statement.Define { define with body; captures } }
     (* The rest is just boilerplates to make sure every nested define gets visited *)
     | { Node.location; value = Class class_ } ->
         let body = transform_statements ~scopes class_.body in
@@ -2786,14 +2806,9 @@ let populate_unbound_names source =
   let rec transform_statement ~scopes statement =
     match statement with
     (* Process each defines *)
-    | {
-     Node.location;
-     value =
-       Statement.Define
-         ({ signature = { Define.Signature.decorators; _ } as signature; body; _ } as define);
-    } ->
+    | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
         (* TODO (T66973980): Check decorators *)
-        let _, body_accesses = collect_accesses ~decorators body in
+        let _, body_accesses = collect_accesses define in
         let scopes =
           if Define.is_toplevel define then
             scopes
@@ -2810,7 +2825,7 @@ let populate_unbound_names source =
           |> NameAccessSet.to_list
         in
         let body = transform_statements ~scopes body in
-        { Node.location; value = Statement.Define { define with signature; body; unbound_names } }
+        { Node.location; value = Statement.Define { define with body; unbound_names } }
     | { Node.location; value = Class class_ } ->
         (* TODO (T66974107, T66973854): Check class base list and class toplevel *)
         let body = transform_statements ~scopes class_.body in

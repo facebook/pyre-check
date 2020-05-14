@@ -3562,6 +3562,15 @@ let test_populate_captures _ =
     {|
      def foo(x: int):
        y = 1
+       def bar(z: int = y):
+         x
+  |}
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
        def bar():
          yield x
          return y
@@ -4150,18 +4159,24 @@ let test_populate_unbound_names _ =
           pass
     |}
     ~expected:[!&"foo", ["Derp", location (6, 9) (6, 13)]];
-
-  (* TODO: Handle unbound names in annotations *)
-  assert_unbound_names {|
+  assert_unbound_names
+    {|
       def foo() -> Derp:
         pass
-    |} ~expected:[!&"foo", []];
+    |}
+    ~expected:[!&"foo", ["Derp", location (2, 13) (2, 17)]];
   assert_unbound_names
     {|
       def foo(d: Derp) -> None:
         pass
     |}
-    ~expected:[!&"foo", []];
+    ~expected:[!&"foo", ["Derp", location (2, 11) (2, 15)]];
+  assert_unbound_names
+    {|
+      def foo(d: int = derp()) -> None:
+        pass
+    |}
+    ~expected:[!&"foo", ["derp", location (2, 17) (2, 21)]];
   assert_unbound_names
     {|
       from some_module import derp
@@ -4169,6 +4184,7 @@ let test_populate_unbound_names _ =
         x: Derp = derp()
     |}
     ~expected:[!&"foo", ["Derp", location (4, 5) (4, 9)]];
+
   (* TODO: Handle unbound names in decorators *)
   assert_unbound_names
     {|
