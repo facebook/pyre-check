@@ -298,7 +298,9 @@ let test_constructors context =
         pass
     |}
     "C"
-    (Some "typing.Callable('test.Parent.__new__')[[Named(x, str)], test.C]");
+    (Some
+       "BoundMethod[typing.Callable(test.Parent.__new__)[[Named(self, typing.Type[test.Parent]), \
+        Named(x, str)], test.C], typing.Type[test.C]]");
   assert_constructor
     {|
       T = typing.TypeVar('T', bound=C)

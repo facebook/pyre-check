@@ -4029,25 +4029,12 @@ module Implementation = struct
     let constructor_signature, constructor_index = signature_and_index ~name:"__init__" in
     let new_signature, new_index =
       let new_signature, new_index = signature_and_index ~name:"__new__" in
-      let drop_class_parameter = function
-        | Type.Callable { Type.Callable.kind; implementation; overloads } ->
-            let drop_parameter { Type.Callable.annotation; parameters } =
-              let parameters =
-                match parameters with
-                | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
-                | _ -> parameters
-              in
-              { Type.Callable.annotation; parameters }
-            in
-            Type.Callable
-              {
-                kind;
-                implementation = drop_parameter implementation;
-                overloads = List.map overloads ~f:drop_parameter;
-              }
-        | annotation -> annotation
-      in
-      drop_class_parameter new_signature, new_index
+      ( Type.Parametric
+          {
+            name = "BoundMethod";
+            parameters = [Single new_signature; Single (Type.meta instantiated)];
+          },
+        new_index )
     in
     let signature =
       if new_index < constructor_index then
