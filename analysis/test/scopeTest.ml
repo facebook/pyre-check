@@ -575,8 +575,13 @@ let test_define_local_bindings _ =
     {|
     def foo(flag: bool):
       import bar
+      import _baz
   |}
-    ~expected:["bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 9) (3, 12)))];
+    ~expected:
+      [
+        "bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 9) (3, 12)));
+        "_baz", Some (ExpectBinding.create Binding.Kind.ImportName (location (4, 9) (4, 13)));
+      ];
   assert_bindings
     {|
     def foo(flag: bool):
@@ -597,10 +602,12 @@ let test_define_local_bindings _ =
     {|
     def foo(flag: bool):
       from bar import b
+      from bar import _c
   |}
     ~expected:
       [
         "b", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 18) (3, 19)));
+        "_c", Some (ExpectBinding.create Binding.Kind.ImportName (location (4, 18) (4, 20)));
         "bar", None;
       ];
   assert_bindings

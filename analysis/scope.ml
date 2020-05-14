@@ -80,22 +80,18 @@ module Binding = struct
         let binding_of_import { Import.alias; name = { Node.value = name; location } } =
           match alias with
           | Some { Node.value = alias; location } ->
-              Some { kind = Kind.ImportName; name = Reference.show alias; location }
+              { kind = Kind.ImportName; name = Reference.show alias; location }
           | None -> (
               match from with
               | Some _ ->
                   (* `name` must be a simple name *)
-                  let name = Reference.show name in
-                  if String.is_prefix name ~prefix:"_" then
-                    None
-                  else
-                    Some { kind = Kind.ImportName; name; location }
+                  { kind = Kind.ImportName; name = Reference.show name; location }
               | None ->
                   (* `import a.b` actually binds name a *)
                   let name = Reference.as_list name |> List.hd_exn in
-                  Some { kind = Kind.ImportName; name; location } )
+                  { kind = Kind.ImportName; name; location } )
         in
-        List.filter_map imports ~f:binding_of_import
+        List.map imports ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->
         let bindings_of_handler { Try.Handler.name; kind; body } =
           let name_binding =
