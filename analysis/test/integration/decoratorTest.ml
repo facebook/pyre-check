@@ -725,6 +725,24 @@ let test_decorator_factories context =
   ()
 
 
+let test_general_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def to_int(x: object) -> int: ...
+
+     @to_int
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `int`."];
+  ()
+
+
 let () =
   "decorator"
   >::: [
@@ -736,5 +754,6 @@ let () =
          "check_callable_class_decorators" >:: test_check_callable_class_decorators;
          "decorators" >:: test_decorators;
          "decorator_factories" >:: test_decorator_factories;
+         "general_decorators" >:: test_general_decorators;
        ]
   |> Test.run

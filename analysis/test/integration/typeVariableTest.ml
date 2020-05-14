@@ -2180,14 +2180,10 @@ let test_user_defined_parameter_specification_classes context =
     def foo() -> None:
       m = TestCommand().method
       reveal_type(m)
-
     |}
     [
-      (* Note that this isn't working because we don't support decorators that return anything but
-         an actual callable type. It should be returning int. *)
-      "Revealed type [-1]: Revealed type for `m` is \
-       `BoundMethod[typing.Callable(TestCommand.method)[[Named(self, TestCommand), Named(x, int)], \
-       None], TestCommand]`.";
+      "Revealed type [-1]: Revealed type for `m` is `ObjectMethod[TestCommand, [Named(x, int)], \
+       int]`.";
     ];
   assert_type_errors
     {|

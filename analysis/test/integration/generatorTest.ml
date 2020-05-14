@@ -352,7 +352,10 @@ let test_check_generators context =
         awaited = await get()
         return awaited
     |}
-    [];
+    [
+      (* calling `Any` returns Top *)
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+    ];
   assert_type_errors
     {|
       import typing

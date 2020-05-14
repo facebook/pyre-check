@@ -2899,13 +2899,12 @@ module Implementation = struct
       ~implementation
       ~overloads
     =
-    let apply_decorator (callable : Type.Callable.t) { Node.value = decorator; _ } =
+    let apply_decorator (argument : Type.t) { Node.value = decorator; _ } =
       let resolve_decorators name ~arguments =
-        let handle = function
-          | "click.command"
-          | "click.group"
-          | "click.pass_context"
-          | "click.pass_obj" ->
+        let handle decorator =
+          match decorator, argument with
+          | ( ("click.command" | "click.group" | "click.pass_context" | "click.pass_obj"),
+              Callable callable ) ->
               (* Suppress caller/callee parameter matching by altering the click entry point to have
                  a generic parameter list. *)
               let parameters =
@@ -2915,8 +2914,8 @@ module Implementation = struct
                     Type.Callable.Parameter.Keywords Type.Any;
                   ]
               in
-              Type.Callable.map_parameters callable ~f:(fun _ -> parameters)
-          | name
+              Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
+          | name, Callable callable
             when String.equal name "contextlib.asynccontextmanager"
                  || Set.mem Recognized.asyncio_contextmanager_decorators name ->
               let process_overload ({ Type.Callable.annotation; _ } as overload) =
@@ -2947,12 +2946,13 @@ module Implementation = struct
                 =
                 callable
               in
-              {
-                callable with
-                implementation = process_overload old_implementation;
-                overloads = List.map old_overloads ~f:process_overload;
-              }
-          | "contextlib.contextmanager" ->
+              Type.Callable
+                {
+                  callable with
+                  implementation = process_overload old_implementation;
+                  overloads = List.map old_overloads ~f:process_overload;
+                }
+          | "contextlib.contextmanager", Callable callable ->
               let process_overload ({ Type.Callable.annotation; _ } as overload) =
                 let joined =
                   let order = full_order ~assumptions in
@@ -2981,12 +2981,13 @@ module Implementation = struct
                 =
                 callable
               in
-              {
-                callable with
-                implementation = process_overload old_implementation;
-                overloads = List.map old_overloads ~f:process_overload;
-              }
-          | name when Set.mem Decorators.special_decorators name ->
+              Type.Callable
+                {
+                  callable with
+                  implementation = process_overload old_implementation;
+                  overloads = List.map old_overloads ~f:process_overload;
+                }
+          | name, Callable callable when Set.mem Decorators.special_decorators name ->
               let process_overload overload = Decorators.apply ~overload ~resolution:() ~name in
               let {
                 Type.Callable.implementation = old_implementation;
@@ -2996,12 +2997,13 @@ module Implementation = struct
                 =
                 callable
               in
-              {
-                callable with
-                implementation = process_overload old_implementation;
-                overloads = List.map old_overloads ~f:process_overload;
-              }
-          | name -> (
+              Type.Callable
+                {
+                  callable with
+                  implementation = process_overload old_implementation;
+                  overloads = List.map old_overloads ~f:process_overload;
+                }
+          | name, _ -> (
               let resolved_decorator =
                 match
                   ( undecorated_signature
@@ -3041,40 +3043,29 @@ module Implementation = struct
                       ~assumptions
                       ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
                       ~arguments:
-                        (Resolved
-                           [
-                             {
-                               kind = Positional;
-                               expression = None;
-                               resolved = Type.Callable callable;
-                             };
-                           ])
+                        (Resolved [{ kind = Positional; expression = None; resolved = argument }])
                       ~callable:resolved_decorator
                       ~self_argument:None
                       ~skip_marking_escapees:false
                   with
-                  | SignatureSelectionTypes.Found
-                      { selected_return_annotation = Type.Callable callable; _ } ->
-                      callable
-                  | Found _ ->
-                      (* for now we only allow decorators that return callables *)
-                      callable
+                  | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
+                      selected_return_annotation
                   | NotFound _ ->
                       (* If we failed, just default to the old annotation. *)
-                      callable )
-              | _ -> callable )
+                      argument )
+              | _ -> argument )
         in
         Expression.name_to_identifiers name
         >>| String.concat ~sep:"."
         >>| handle
-        |> Option.value ~default:callable
+        |> Option.value ~default:argument
       in
       let open Expression in
       match decorator with
       | Expression.Call { callee = { Node.value = Expression.Name name; _ }; arguments } ->
           resolve_decorators name ~arguments:(Some arguments)
       | Expression.Name name -> resolve_decorators name ~arguments:None
-      | _ -> callable
+      | _ -> argument
     in
     let parse =
       let parser =
@@ -3163,13 +3154,15 @@ module Implementation = struct
     let decorated =
       let apply_decorators decorators =
         let decorators = List.rev decorators in
-        let callable = List.fold decorators ~init:undecorated_signature ~f:apply_decorator in
-        if Type.Callable.equal { callable with kind } undecorated_signature then
-          (* Do some amateur taint analysis and assume that this is calling the original function
-             under the hood *)
-          Type.Callable { callable with kind }
-        else
-          Type.Callable callable
+        match
+          List.fold decorators ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
+        with
+        | Type.Callable callable
+          when Type.Callable.equal { callable with kind } undecorated_signature ->
+            (* Do some amateur taint analysis and assume that this is calling the original function
+               under the hood *)
+            Type.Callable { callable with kind }
+        | other -> other
       in
       Result.map decorators ~f:apply_decorators
     in
