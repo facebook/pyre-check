@@ -196,8 +196,7 @@ let test_check_decorated_overloads context =
        incompatible with the return type of the implementation (`int`).";
       "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
        incompatible with the return type of the implementation (`int`).";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], \
-       int][[[int], int][[int], int]]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], int]`.";
     ];
   assert_type_errors
     {|
@@ -223,6 +222,68 @@ let test_check_decorated_overloads context =
       "Incompatible overload [43]: This definition does not have the same decorators as the \
        preceding overload(s)";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Callable, TypeVar
+
+      TReturn = TypeVar("TReturn")
+
+      def decorator(f: Callable[[str], TReturn]) -> Callable[[int], TReturn]: ...
+
+      @overload
+      @decorator
+      def foo(a: bool) -> int: ...
+
+      @overload
+      @decorator
+      def foo(a: str) -> bool: ...
+
+      @overload
+      @decorator
+      def foo(a: int) -> str: ...
+
+      @decorator
+      def foo(a: object) -> object: ...
+
+      reveal_type(foo)
+    |}
+    [
+      (* We "select" the relevant overload *)
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], bool]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Callable, TypeVar
+      from pyre_extensions import ParameterSpecification
+
+      TParams = ParameterSpecification("TParams")
+      TReturn = TypeVar("TReturn")
+
+      def decorator(f: Callable[TParams, TReturn]) -> Callable[TParams, TReturn]: ...
+
+      @overload
+      @decorator
+      def foo(a: bool) -> int: ...
+
+      @overload
+      @decorator
+      def foo(a: str) -> bool: ...
+
+      @overload
+      @decorator
+      def foo(a: int) -> str: ...
+
+      @decorator
+      def foo(a: object) -> object: ...
+
+      reveal_type(foo)
+    |}
+    [
+      (* But when you "crack the egg" of an overloaded callable, it's not sound to assume it comes
+         back together. When multiple overloads match, we select the first one *)
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(a, bool)], \
+       int]`.";
     ];
   ()
 
