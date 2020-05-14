@@ -1386,6 +1386,21 @@ let test_check_callables context =
       "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
       "Revealed type [-1]: Revealed type for `y` is `unknown`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, TypeVar, Tuple
+      T = TypeVar("T")
+      class CallableClass:
+        @overload
+        def __call__(self, x: str, t: T) -> Tuple[str, T]: ...
+        @overload
+        def __call__(self, x: int, t: T) -> Tuple[int, T]: ...
+        def __call__(self, x: object, t: object) -> object: ...
+      def foo(x: BoundMethod[CallableClass, int]) -> None:
+        y = x(1.0)
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `Tuple[int, float]`."];
   ()
 
 

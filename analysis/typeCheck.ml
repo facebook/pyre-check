@@ -1691,12 +1691,30 @@ module State (Context : Context) = struct
       let arguments = List.rev reversed_arguments in
       let unpack_callable_and_self_argument = function
         | Type.Callable callable -> Some { callable; self_argument = None }
-        | Parametric
-            {
-              name = "BoundMethod";
-              parameters = [Single (Callable callable); Single self_argument];
-            } ->
-            Some { callable; self_argument = Some self_argument }
+        | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] }
+          -> (
+            let self_argument = Some self_argument in
+            match callable with
+            | Callable callable -> Some { callable; self_argument }
+            | complex -> (
+                let get_call_attribute parent =
+                  GlobalResolution.attribute_from_annotation
+                    global_resolution
+                    ~parent
+                    ~name:"__call__"
+                  >>| Annotated.Attribute.annotation
+                  >>| Annotation.annotation
+                in
+                (* We do two layers since almost all callable classes have a BoundMethod __call__
+                   which we need to unwrap. We can't go arbitrarily deep since it would be possible
+                   to loop, and its not worth building in a new assumption system just for this. We
+                   can't use a constraint/protocol solve if we want to extract overloads, leaving us
+                   with this *)
+                get_call_attribute complex
+                >>= get_call_attribute
+                >>= function
+                | Callable callable -> Some { callable; self_argument }
+                | _ -> None ) )
         | _ -> None
       in
 
