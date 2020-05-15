@@ -16,7 +16,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `x` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[True]`.";
-      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -26,7 +25,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `b` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[True]`.";
-      "Unbound name [10]: Name `b` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -37,7 +35,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `d` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `d` is `int`.";
-      "Unbound name [10]: Name `d` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -51,7 +48,6 @@ let test_check_walrus_operator context =
       "Unbound name [10]: Name `y` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[0]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[0]`.";
-      "Unbound name [10]: Name `y` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -63,7 +59,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `x` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[3]`.";
-      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -75,7 +70,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `category` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `category` is `typing_extensions.Literal['vector']`.";
-      "Unbound name [10]: Name `category` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -86,7 +80,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `b` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `b` is `int`.";
-      "Unbound name [10]: Name `b` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -97,7 +90,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `b` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`.";
-      "Unbound name [10]: Name `b` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -108,7 +100,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `b` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`.";
-      "Unbound name [10]: Name `b` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -122,7 +113,6 @@ let test_check_walrus_operator context =
     [
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `a` is `int`.";
-      "Unbound name [10]: Name `a` is used but not defined in the current scope.";
     ]
 
 

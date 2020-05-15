@@ -74,7 +74,6 @@ let test_check_undefined_type context =
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
-      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
     ];
   assert_default_type_errors
     {|
@@ -181,12 +180,10 @@ let test_check_undefined_type context =
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
-      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_strict_type_errors
@@ -282,8 +279,6 @@ let test_check_undefined_type context =
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
     ];
 
@@ -300,8 +295,6 @@ let test_check_undefined_type context =
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
     ];
 

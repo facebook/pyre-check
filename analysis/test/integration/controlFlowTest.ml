@@ -356,7 +356,6 @@ let test_check_unbound_variables context =
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
        flow path that doesn't define `unknown`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|

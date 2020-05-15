@@ -2810,12 +2810,24 @@ let populate_unbound_names source =
             ScopeStack.extend scopes ~with_:(Scope.of_define_exn define)
         in
         let unbound_names =
+          let deduplicate_access access_set =
+            (* Only keep one access for each name *)
+            let accumulate_names sofar ({ Define.NameAccess.name; _ } as access) =
+              match Map.add sofar ~key:name ~data:access with
+              | `Ok sofar -> sofar
+              | `Duplicate -> sofar
+            in
+            NameAccessSet.fold access_set ~init:Identifier.Map.empty ~f:accumulate_names
+            |> Identifier.Map.data
+            |> NameAccessSet.of_list
+          in
           let to_unbound_name ~scopes sofar name =
             match to_unbound_name ~scopes name with
             | None -> sofar
             | Some name -> NameAccessSet.add sofar name
           in
-          Set.fold ~init:NameAccessSet.empty body_accesses ~f:(to_unbound_name ~scopes)
+          deduplicate_access body_accesses
+          |> Set.fold ~init:NameAccessSet.empty ~f:(to_unbound_name ~scopes)
           |> NameAccessSet.to_list
         in
         let body = transform_statements ~scopes body in
