@@ -947,6 +947,26 @@ let test_newtype context =
   ()
 
 
+let test_dictionary_constructor context =
+  assert_type_errors
+    ~context
+    {|
+    from typing import Optional, Dict
+    def expand(x: Optional[Dict[str, int]] = None) -> None:
+      new_dict = {
+          **x,
+          "param": 7,
+      }
+      reveal_type(new_dict)
+    |}
+    [
+      "Invalid argument [32]: Keyword argument `x` has type `Optional[Dict[str, int]]` but must be \
+       a mapping.";
+      "Revealed type [-1]: Revealed type for `new_dict` is `Optional[Dict[str, int]]`.";
+    ];
+  ()
+
+
 let () =
   "constructor"
   >::: [
@@ -955,5 +975,6 @@ let () =
          "check_constructors" >:: test_check_constructors;
          "check_infer_constructor_attributes" >:: test_infer_constructor_attributes;
          "newtype" >:: test_newtype;
+         "check_dictionary_constructor" >:: test_dictionary_constructor;
        ]
   |> Test.run

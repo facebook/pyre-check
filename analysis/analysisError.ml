@@ -87,6 +87,7 @@ and invalid_argument =
   | Keyword of {
       expression: Expression.t option;
       annotation: Type.t;
+      require_string_keys: bool;
     }
   | ConcreteVariable of {
       expression: Expression.t option;
@@ -854,7 +855,12 @@ let messages ~concise ~signature location kind =
       ]
   | InvalidArgument argument when concise -> (
       match argument with
-      | Keyword _ -> ["Keyword argument must be a mapping with string keys."]
+      | Keyword { require_string_keys; _ } ->
+          [
+            Format.sprintf
+              "Keyword argument must be a mapping%s."
+              (if require_string_keys then " with string keys" else "");
+          ]
       | ConcreteVariable _ -> ["Variable argument must be an iterable."]
       | ListVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
           [
@@ -879,13 +885,14 @@ let messages ~concise ~signature location kind =
           ] )
   | InvalidArgument argument -> (
       match argument with
-      | Keyword { expression; annotation } ->
+      | Keyword { expression; annotation; require_string_keys } ->
           [
             Format.asprintf
-              "Keyword argument%s has type `%a` but must be a mapping with string keys."
+              "Keyword argument%s has type `%a` but must be a mapping%s."
               (show_sanitized_optional_expression expression)
               pp_type
-              annotation;
+              annotation
+              (if require_string_keys then " with string keys" else "");
           ]
       | ConcreteVariable { expression; annotation } ->
           [
@@ -3226,8 +3233,9 @@ let dequalify
     | IncompatibleOverload kind -> IncompatibleOverload (dequalify_incompatible_overload_kind kind)
     | IncompleteType { target; annotation; attempted_action } ->
         IncompleteType { target; annotation = dequalify annotation; attempted_action }
-    | InvalidArgument (Keyword { expression; annotation }) ->
-        InvalidArgument (Keyword { expression; annotation = dequalify annotation })
+    | InvalidArgument (Keyword { expression; annotation; require_string_keys }) ->
+        InvalidArgument
+          (Keyword { expression; annotation = dequalify annotation; require_string_keys })
     | InvalidArgument (ConcreteVariable { expression; annotation }) ->
         InvalidArgument (ConcreteVariable { expression; annotation = dequalify annotation })
     | InvalidArgument (ListVariadicVariable { variable; mismatch }) ->

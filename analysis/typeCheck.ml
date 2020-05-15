@@ -1912,7 +1912,11 @@ module State (Context : Context) = struct
         | CallingParameterVariadicTypeVariable ->
             [location, Error.NotCallable (Type.Callable callable)]
         | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
-            [location, Error.InvalidArgument (Error.Keyword { expression; annotation })]
+            [
+              ( location,
+                Error.InvalidArgument
+                  (Error.Keyword { expression; annotation; require_string_keys = true }) );
+            ]
         | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
             [location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
         | Mismatch mismatch ->
@@ -2677,9 +2681,35 @@ module State (Context : Context) = struct
             let { Resolved.resolution; resolved = keyword_resolved; errors = new_errors; _ } =
               forward_expression ~resolution ~expression:keyword
             in
-            ( GlobalResolution.join global_resolution resolved keyword_resolved,
-              resolution,
-              List.append new_errors errors )
+            let errors = List.append new_errors errors in
+            let errors =
+              match keyword_resolved with
+              | Top
+              | Bottom
+              | Any ->
+                  errors
+              | _ -> (
+                  match
+                    GlobalResolution.extract_type_parameters
+                      global_resolution
+                      ~source:keyword_resolved
+                      ~target:"typing.Mapping"
+                  with
+                  | Some [_; _] -> errors
+                  | _ ->
+                      emit_error
+                        ~errors
+                        ~location
+                        ~kind:
+                          (Error.InvalidArgument
+                             (Error.Keyword
+                                {
+                                  expression = Some keyword;
+                                  annotation = keyword_resolved;
+                                  require_string_keys = false;
+                                })) )
+            in
+            GlobalResolution.join global_resolution resolved keyword_resolved, resolution, errors
           in
           List.fold
             keywords

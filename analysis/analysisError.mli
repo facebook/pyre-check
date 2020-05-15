@@ -78,6 +78,7 @@ and invalid_argument =
   | Keyword of {
       expression: Expression.t option;
       annotation: Type.t;
+      require_string_keys: bool;
     }
   | ConcreteVariable of {
       expression: Expression.t option;
