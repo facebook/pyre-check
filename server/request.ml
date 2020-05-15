@@ -1061,13 +1061,7 @@ let rec process
           (* Make sure the IDE flushes its state about this file, by sending back all the errors for
              this file. *)
           update_open_documents ~state path;
-          (* We do not recheck dependencies because nothing changes when we open a document, and we
-             do the type checking here just to make type checking resolution appear in shared
-             memory. *)
-          process_type_check_request
-            ~state
-            ~configuration:{ configuration with Configuration.Analysis.incremental_style = Shallow }
-            [path]
+          { state; response = None }
       | CloseDocument path ->
           let { State.open_documents; _ } = state in
           let _ =
