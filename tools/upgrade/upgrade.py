@@ -327,27 +327,7 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Expand target coverage in configuration up to given error limit
     expand_target_coverage = commands.add_parser("expand-target-coverage")
-    expand_target_coverage.set_defaults(command=ExpandTargetCoverage)
-    expand_target_coverage.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
-    expand_target_coverage.add_argument(
-        "--submit", action="store_true", help=argparse.SUPPRESS
-    )
-    expand_target_coverage.add_argument(
-        "--lint", action="store_true", help=argparse.SUPPRESS
-    )
-    expand_target_coverage.add_argument(
-        "--subdirectory", help="Only upgrade TARGETS files within this directory."
-    )
-    expand_target_coverage.add_argument(
-        "--fixme-threshold",
-        type=int,
-        help="Ignore all errors in a file if fixme count exceeds threshold.",
-    )
-    expand_target_coverage.add_argument(
-        "--no-commit", action="store_true", help="Keep changes in working state."
-    )
+    ExpandTargetCoverage.add_arguments(expand_target_coverage)
 
     # Subcommand: Consolidate nested local configurations
     consolidate_nested_configurations = commands.add_parser("consolidate-nested")
