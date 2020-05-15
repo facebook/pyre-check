@@ -30,7 +30,7 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
         arguments.incremental_style = IncrementalStyle.FINE_GRAINED
         arguments.no_start = False
     else:
-        watchman_link = "https://facebook.github.io/watchman/docs/install.html"
+        watchman_link = "https://facebook.github.io/watchman/docs/install"
         LOG.warning(
             "No watchman binary found. \n"
             "To enable pyre incremental, "
