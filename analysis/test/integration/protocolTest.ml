@@ -831,6 +831,26 @@ let test_callback_protocols context =
         takesP(parameterMismatch)
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Protocol
+
+      class ShouldMatch(Protocol):
+          def __call__(self, p: int) -> H: ...
+
+      class ShouldNotMatch(Protocol):
+          def __call__(self, p: str) -> H: ...
+
+      class H:
+          def __init__(self, p: int) -> None: ...
+
+      x: ShouldMatch = H
+      y: ShouldNotMatch = H
+    |}
+    [
+      "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is used as \
+       type `typing.Type[H]`.";
+    ];
   ()
 
 

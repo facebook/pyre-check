@@ -498,11 +498,49 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         else
           List.concat_map rights ~f:(fun right ->
               solve_less_or_equal order ~constraints ~left ~right)
-    | ( Type.Parametric { name = "type"; parameters = [Single (Type.Primitive left)] },
-        Type.Primitive _ ) ->
-        metaclass left ~assumptions
-        >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
-        |> Option.value ~default:impossible
+    | ( Type.Parametric { name = "type"; parameters = [Single left] },
+        Type.Parametric { name = "type"; parameters = [Single right] } ) ->
+        solve_less_or_equal order ~constraints ~left ~right
+    | Type.Parametric { name = "type"; parameters = [Single meta_parameter] }, _ ->
+        let through_meta_hierarchy =
+          match meta_parameter, right with
+          | Primitive meta_parameter, Primitive _ ->
+              metaclass meta_parameter ~assumptions
+              >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
+              |> Option.value ~default:impossible
+          | _ -> impossible
+        in
+        let through_protocol_hierarchy =
+          match right, is_protocol right ~protocol_assumptions with
+          | Primitive right_name, true ->
+              if
+                [%compare.equal: Type.Parameter.t list option]
+                  (instantiate_protocol_parameters order ~candidate:left ~protocol:right_name)
+                  (Some [])
+              then
+                [constraints]
+              else
+                impossible
+          | Parametric { name = right_name; _ }, true ->
+              instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
+              >>| Type.parametric right_name
+              >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
+              |> Option.value ~default:impossible
+          | Callable _, _ -> (
+              match meta_parameter with
+              | Type.Union types ->
+                  solve_less_or_equal
+                    order
+                    ~constraints
+                    ~left:(Type.union (List.map ~f:Type.meta types))
+                    ~right
+              | single_parameter ->
+                  constructor ~protocol_assumptions single_parameter
+                  >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
+                  |> Option.value ~default:impossible )
+          | _ -> impossible
+        in
+        List.append through_protocol_hierarchy through_meta_hierarchy
     | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
         let solve_parameters left_parameters =
           let handle_variables constraints (left, right, variable) =
@@ -654,18 +692,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           List.concat_map sofar ~f:call_as_overload
         in
         List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
-    | _, Type.Callable _ when Type.is_meta left -> (
-        match Type.single_parameter left with
-        | Type.Union types ->
-            solve_less_or_equal
-              order
-              ~constraints
-              ~left:(Type.union (List.map ~f:Type.meta types))
-              ~right
-        | single_parameter ->
-            constructor ~protocol_assumptions single_parameter
-            >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
-            |> Option.value ~default:impossible )
     | left, Type.Callable _ ->
         resolve_callable_protocol ~order ~assumption:right left
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
