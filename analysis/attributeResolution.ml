@@ -1120,7 +1120,6 @@ module Implementation = struct
     single_uninstantiated_attribute_table:
       assumptions:Assumptions.t ->
       include_generated_attributes:bool ->
-      in_test:bool ->
       accessed_via_metaclass:bool ->
       Type.Primitive.t ->
       UninstantiatedAttributeTable.t option;
@@ -1652,11 +1651,10 @@ module Implementation = struct
       { class_metadata_environment; dependency; create_attribute; instantiate_attribute; _ }
       ~assumptions
       ~include_generated_attributes
-      ~in_test
       ~accessed_via_metaclass
       class_name
     =
-    let handle ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent) =
+    let handle ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent) ~in_test =
       let table = UninstantiatedAttributeTable.create () in
       let add_actual () =
         let collect_attributes attribute =
@@ -1733,28 +1731,34 @@ module Implementation = struct
       in
       table
     in
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment class_metadata_environment)
-      ?dependency
-      class_name
-    >>| fun definition ->
-    if
-      ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
-        class_metadata_environment
-        ?dependency
-        class_name
-    then
-      typed_dictionary_special_methods_table
-        ~create_attribute
-        ~assumptions
-        ~include_generated_attributes
-        ~in_test
-        ~accessed_via_metaclass
-        ~class_metadata_environment
-        ~class_name
-        definition
-    else
-      handle definition
+    match
+      ( UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+          (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+             class_metadata_environment)
+          ?dependency
+          class_name,
+        ClassMetadataEnvironment.ReadOnly.get_class_metadata
+          class_metadata_environment
+          ?dependency
+          class_name )
+    with
+    | Some definition, Some { is_typed_dictionary; is_test = in_test; _ } ->
+        let table =
+          if is_typed_dictionary then
+            typed_dictionary_special_methods_table
+              ~create_attribute
+              ~assumptions
+              ~include_generated_attributes
+              ~in_test
+              ~accessed_via_metaclass
+              ~class_metadata_environment
+              ~class_name
+              definition
+          else
+            handle definition ~in_test
+        in
+        Some table
+    | _ -> None
 
 
   let uninstantiated_attribute_tables
@@ -1772,12 +1776,11 @@ module Implementation = struct
       ~special_method
       class_name
     =
-    let handle { ClassMetadataEnvironment.is_test; successors; _ } =
+    let handle { ClassMetadataEnvironment.successors; _ } =
       let get_table ~accessed_via_metaclass =
         single_uninstantiated_attribute_table
           ~assumptions
           ~include_generated_attributes
-          ~in_test:is_test
           ~accessed_via_metaclass
       in
       let normal_tables =
@@ -4340,7 +4343,6 @@ module Cache = ManagedCache.Make (struct
       parse_annotation_cache
       {
         SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
-        in_test;
         accessed_via_metaclass;
         name;
       }
@@ -4361,7 +4363,6 @@ module Cache = ManagedCache.Make (struct
     Implementation.single_uninstantiated_attribute_table
       open_recurser_with_parse_annotation_cache
       ~include_generated_attributes
-      ~in_test
       ~accessed_via_metaclass
       ~assumptions:empty_assumptions
       name
@@ -4392,7 +4393,6 @@ module ReadOnly = struct
       { Implementation.dependency; _ }
       ~assumptions:_
       ~include_generated_attributes
-      ~in_test
       ~accessed_via_metaclass
       name
     =
@@ -4401,7 +4401,6 @@ module ReadOnly = struct
       ?dependency
       {
         SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
-        in_test;
         accessed_via_metaclass;
         name;
       }

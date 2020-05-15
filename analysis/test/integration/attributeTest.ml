@@ -470,6 +470,20 @@ let test_check_attributes context =
     [];
   assert_type_errors
     {|
+      class unittest.case.TestCase: ...
+      class Base():
+        def setUp(self) -> None:
+          self.x: int = 1
+      class Foo(Base, unittest.case.TestCase):
+        def foo(self) -> None:
+          y = self.x
+    |}
+    [
+      "Undefined attribute [16]: `Base` has no attribute `x`.";
+      "Undefined attribute [16]: `Foo` has no attribute `x`.";
+    ];
+  assert_type_errors
+    {|
       class Foo:
         def __init__(self) -> None:
           self.attribute: int = 1

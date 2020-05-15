@@ -18,7 +18,6 @@ end
 module AttributeTableKey : sig
   type t = {
     include_generated_attributes: bool;
-    in_test: bool;
     accessed_via_metaclass: bool;
     name: Type.Primitive.t;
   }

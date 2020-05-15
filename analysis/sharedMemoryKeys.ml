@@ -127,7 +127,6 @@ module AttributeTableKey = struct
   module T = struct
     type t = {
       include_generated_attributes: bool;
-      in_test: bool;
       accessed_via_metaclass: bool;
       name: Type.Primitive.t;
     }
