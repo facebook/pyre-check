@@ -962,7 +962,23 @@ let test_dictionary_constructor context =
     [
       "Invalid argument [32]: Keyword argument `x` has type `Optional[Dict[str, int]]` but must be \
        a mapping.";
-      "Revealed type [-1]: Revealed type for `new_dict` is `Optional[Dict[str, int]]`.";
+      "Revealed type [-1]: Revealed type for `new_dict` is `unknown`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+    from typing import Dict, Mapping
+    def combine(x: Dict[str, int], y: Mapping[float, bool]) -> None:
+      new_dict = {
+          **x,
+          True: "A",
+          **y,
+      }
+      reveal_type(new_dict)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `new_dict` is `Dict[typing.Union[bool, float, str], \
+       typing.Union[bool, int, str]]`.";
     ];
   ()
 

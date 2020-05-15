@@ -2676,45 +2676,55 @@ module State (Context : Context) = struct
           else
             value
         in
-        let resolved, resolution, errors =
+        let resolved_key_and_value, resolution, errors =
           let forward_keyword (resolved, resolution, errors) keyword =
-            let { Resolved.resolution; resolved = keyword_resolved; errors = new_errors; _ } =
-              forward_expression ~resolution ~expression:keyword
-            in
-            let errors = List.append new_errors errors in
-            let errors =
-              match keyword_resolved with
-              | Top
-              | Bottom
-              | Any ->
-                  errors
-              | _ -> (
-                  match
-                    GlobalResolution.extract_type_parameters
-                      global_resolution
-                      ~source:keyword_resolved
-                      ~target:"typing.Mapping"
-                  with
-                  | Some [_; _] -> errors
-                  | _ ->
-                      emit_error
-                        ~errors
-                        ~location
-                        ~kind:
-                          (Error.InvalidArgument
-                             (Error.Keyword
-                                {
-                                  expression = Some keyword;
-                                  annotation = keyword_resolved;
-                                  require_string_keys = false;
-                                })) )
-            in
-            GlobalResolution.join global_resolution resolved keyword_resolved, resolution, errors
+            match resolved with
+            | None -> resolved, resolution, errors
+            | Some (key, value) -> (
+                let { Resolved.resolution; resolved = source; errors = new_errors; _ } =
+                  forward_expression ~resolution ~expression:keyword
+                in
+                let errors = List.append new_errors errors in
+                match source with
+                | Top
+                | Bottom
+                | Any ->
+                    None, resolution, errors
+                | _ -> (
+                    match
+                      GlobalResolution.extract_type_parameters
+                        global_resolution
+                        ~source
+                        ~target:"typing.Mapping"
+                    with
+                    | Some [new_key; new_value] ->
+                        ( Some
+                            ( GlobalResolution.join global_resolution key new_key,
+                              GlobalResolution.join global_resolution value new_value ),
+                          resolution,
+                          errors )
+                    | _ ->
+                        let errors =
+                          emit_error
+                            ~errors
+                            ~location
+                            ~kind:
+                              (Error.InvalidArgument
+                                 (Error.Keyword
+                                    {
+                                      expression = Some keyword;
+                                      annotation = source;
+                                      require_string_keys = false;
+                                    }))
+                        in
+                        None, resolution, errors ) )
           in
-          List.fold
-            keywords
-            ~f:forward_keyword
-            ~init:(Type.dictionary ~key ~value, resolution, errors)
+          List.fold keywords ~f:forward_keyword ~init:(Some (key, value), resolution, errors)
+        in
+        let resolved =
+          resolved_key_and_value
+          >>| (fun (key, value) -> Type.dictionary ~key ~value)
+          |> Option.value ~default:Type.Top
         in
         { resolution; errors; resolved; resolved_annotation = None; base = None }
     | DictionaryComprehension { Comprehension.element; generators } ->
