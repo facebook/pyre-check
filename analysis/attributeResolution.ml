@@ -2761,7 +2761,15 @@ module Implementation = struct
   (* In general, python expressions can be self-referential. This resolution only checks literals
      and annotations found in the resolution map, without resolving expressions. *)
   let resolve_literal
-      { class_metadata_environment; dependency; full_order; resolve_literal; parse_annotation; _ }
+      {
+        class_metadata_environment;
+        dependency;
+        full_order;
+        resolve_literal;
+        parse_annotation;
+        resolve_define;
+        _;
+      }
       ~assumptions
       expression
     =
@@ -2812,6 +2820,18 @@ module Implementation = struct
             None
       | _ -> None
     in
+    let resolve_name expression =
+      if has_identifier_base expression then
+        match fully_specified_type expression with
+        | Some annotation ->
+            if Type.is_none annotation then
+              Type.none
+            else
+              Type.meta annotation
+        | None -> Type.Any
+      else
+        Type.Any
+    in
 
     let order = full_order ~assumptions in
     match Node.value expression with
@@ -2837,14 +2857,27 @@ module Implementation = struct
              * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
             Option.value (fully_specified_type callee) ~default:Type.Any )
     | Name (Identifier "None") -> Type.Any
-    | Name _ when has_identifier_base expression -> (
-        match fully_specified_type expression with
-        | Some annotation ->
-            if Type.is_none annotation then
-              Type.none
-            else
-              Type.meta annotation
-        | None -> Type.Any )
+    | Name name when is_simple_name name -> (
+        let reference = name_to_reference_exn name in
+        let unannotated_global_environment =
+          unannotated_global_environment class_metadata_environment
+        in
+        match
+          UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+            ?dependency
+            unannotated_global_environment
+            reference
+        with
+        | Some (UnannotatedGlobalEnvironment.Define defines) ->
+            let { decorated; _ } =
+              List.map defines ~f:(fun { define; _ } -> define)
+              |> List.partition_tf ~f:Define.Signature.is_overloaded_function
+              |> fun (overloads, implementations) ->
+              resolve_define ~assumptions ~implementation:(List.last implementations) ~overloads
+            in
+            Result.ok decorated |> Option.value ~default:Type.Any
+        | _ -> resolve_name expression )
+    | Name _ -> resolve_name expression
     | Complex _ -> Type.complex
     | Dictionary { Dictionary.entries; keywords = [] } ->
         let key_annotation, value_annotation =

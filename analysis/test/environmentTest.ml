@@ -711,7 +711,13 @@ let test_populate context =
           ()));
   assert_global
     "test.global_function"
-    (Annotation.create_immutable ~original:(Some Type.Top) Type.Any);
+    (Annotation.create_immutable
+       ~original:(Some Type.Top)
+       (Type.Callable.create
+          ~name:!&"test.function"
+          ~parameters:(Type.Callable.Defined [])
+          ~annotation:Type.Any
+          ()));
   assert_global "test.Class" (Annotation.create_immutable (Type.meta (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 
