@@ -647,7 +647,77 @@ let test_check_method_parameters context =
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `x`."]
+    ["Undefined attribute [16]: `Foo` has no attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import List, TypeVar
+      T = TypeVar("T")
+      def wrap(x: T) -> List[T]:
+        return [x]
+      class Foo:
+        @wrap
+        @classmethod
+        def bar(cls) -> None:
+          return
+      reveal_type(Foo.bar)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Foo.bar` is \
+       `List[typing.ClassMethod[typing.Callable(Foo.bar)[[Named(cls, typing.Type[Foo])], None]]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List, TypeVar
+      T = TypeVar("T")
+      def wrap(x: T) -> List[T]:
+        return [x]
+      class Foo:
+        def __init_subclass__(cls) -> None:
+          return
+        @classmethod # shouldn't "double wrap" this
+        def __class_getitem__(cls) -> None:
+          return
+      reveal_type(Foo().__init_subclass__)
+      reveal_type(Foo().__class_getitem__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Foo().__init_subclass__` is \
+       `BoundMethod[typing.Callable(Foo.__init_subclass__)[[Named(cls, typing.Type[Foo])], None], \
+       typing.Type[Foo]]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo().__class_getitem__` is \
+       `BoundMethod[typing.Callable(Foo.__class_getitem__)[[Named(cls, typing.Type[Foo])], None], \
+       typing.Type[Foo]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List, TypeVar, Callable
+      T = TypeVar("T")
+      def wrap(x: T) -> List[T]:
+        return [x]
+      class CallableClass:
+        def __call__(self, x: int) -> str:
+          return "A"
+      def masquerade(x: object) -> Callable[[int], str]:
+        return CallableClass()
+      class Foo:
+        @wrap # the magic should only be triggered on "plain functions", so this should be skipped
+        def __init_subclass__(cls) -> None:
+          return
+                    # the type system isn't smart enough to distinguish that callable from a function,
+        @masquerade # so we erroneously wrap it
+        def __class_getitem__(cls) -> None:
+          return
+
+      reveal_type(Foo().__init_subclass__)
+      reveal_type(Foo().__class_getitem__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Foo().__init_subclass__` is \
+       `List[typing.Callable(Foo.__init_subclass__)[[Named(cls, typing.Type[Foo])], None]]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo().__class_getitem__` is \
+       `BoundMethod[typing.Callable[[int], str], typing.Type[Foo]]`.";
+    ];
+  ()
 
 
 let test_check_abstract_methods context =

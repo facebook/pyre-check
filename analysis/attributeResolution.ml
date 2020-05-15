@@ -2520,43 +2520,43 @@ module Implementation = struct
               ReadWrite
           in
           let callable, undecorated_signature, problem =
-            match signatures with
-            | define :: _ as defines ->
-                let overloads =
-                  let create_overload define =
-                    Define.Signature.is_overloaded_function define, define
-                  in
-                  List.map defines ~f:create_overload
-                in
-                let implementation, overloads =
-                  let to_signature (implementation, overloads) (is_overload, signature) =
-                    if is_overload then
-                      implementation, signature :: overloads
-                    else
-                      Some signature, overloads
-                  in
-                  List.fold ~init:(None, []) ~f:to_signature overloads
-                in
-                let { decorated; undecorated_signature } =
-                  resolve_define ~implementation ~overloads ~assumptions
-                in
-                let annotation =
-                  match decorated with
-                  | Ok resolved ->
-                      if static || String.equal attribute_name "__new__" then
-                        Type.Parametric
-                          { name = "typing.StaticMethod"; parameters = [Single resolved] }
-                      else if Define.Signature.is_class_method define then
-                        Type.Parametric
-                          { name = "typing.ClassMethod"; parameters = [Single resolved] }
-                      else
-                        resolved
-                  | Error _ -> Any
-                in
-                ( UninstantiatedAnnotation.Attribute annotation,
-                  undecorated_signature,
-                  Result.error decorated )
-            | [] -> failwith "impossible"
+            let overloads =
+              let create_overload define = Define.Signature.is_overloaded_function define, define in
+              List.map signatures ~f:create_overload
+            in
+            let implementation, overloads =
+              let to_signature (implementation, overloads) (is_overload, signature) =
+                if is_overload then
+                  implementation, signature :: overloads
+                else
+                  Some signature, overloads
+              in
+              List.fold ~init:(None, []) ~f:to_signature overloads
+            in
+            let { decorated; undecorated_signature } =
+              resolve_define ~implementation ~overloads ~assumptions
+            in
+            let annotation =
+              match decorated with
+              | Ok resolved -> (
+                  match attribute_name, static, resolved with
+                  | _, true, _
+                  | "__new__", _, _ ->
+                      Type.Parametric
+                        { name = "typing.StaticMethod"; parameters = [Single resolved] }
+                  (* these names are only magic-ed into being ClassMethods if they're "plain
+                     functions". We can't capture that in the type system, so we approximate with
+                     Callable *)
+                  | "__init_subclass__", _, Callable _
+                  | "__class_getitem__", _, Callable _ ->
+                      Type.Parametric
+                        { name = "typing.ClassMethod"; parameters = [Single resolved] }
+                  | _ -> resolved )
+              | Error _ -> Any
+            in
+            ( UninstantiatedAnnotation.Attribute annotation,
+              undecorated_signature,
+              Result.error decorated )
           in
           callable, false, visibility, Some undecorated_signature, problem
       | Property { kind; _ } -> (
@@ -3003,6 +3003,9 @@ module Implementation = struct
                   implementation = process_overload old_implementation;
                   overloads = List.map old_overloads ~f:process_overload;
                 }
+          | name, _ when Set.mem Recognized.classmethod_decorators name ->
+              (* TODO (T67024249): convert these to just normal stubs *)
+              Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
           | name, _ -> (
               let resolved_decorator =
                 match
