@@ -30,11 +30,7 @@ let test_check_isinstance context =
     {|
       isinstance(1, NonexistentClass)
     |}
-    [
-      "Unbound name [10]: Name `NonexistentClass` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
-       one control flow path that doesn't define `NonexistentClass`.";
-    ];
+    ["Unbound name [10]: Name `NonexistentClass` is used but not defined in the current scope."];
   assert_type_errors
     {|
       def foo(x: int) -> None:
@@ -55,8 +51,6 @@ let test_check_isinstance context =
     |}
     [
       "Unbound name [10]: Name `NonexistentClass` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
-       one control flow path that doesn't define `NonexistentClass`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
     ];

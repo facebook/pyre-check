@@ -1643,9 +1643,6 @@ module State (Context : Context) = struct
       in
       match annotation with
       | Some annotation when Type.is_undeclared (Annotation.annotation annotation) ->
-          let errors =
-            Error.UndefinedName reference |> fun kind -> emit_error ~errors ~location ~kind
-          in
           {
             Resolved.resolution;
             errors;
@@ -1679,7 +1676,7 @@ module State (Context : Context) = struct
                              })
                     else
                       errors
-                | _ -> emit_error ~errors ~location ~kind:(Error.UndefinedName reference)
+                | _ -> errors
               in
               { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
           | _ ->
@@ -2055,7 +2052,7 @@ module State (Context : Context) = struct
       let open Error in
       match kind with
       | UndefinedAttribute _
-      | UndefinedName _ ->
+      | UnboundName _ ->
           true
       | _ -> false
     in
@@ -2966,10 +2963,8 @@ module State (Context : Context) = struct
                         | _ -> true)
                     |> Option.value ~default:head_definition
                   in
-                  match reference, definition with
-                  | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
-                      emit_error ~errors ~location ~kind:(Error.UndefinedName reference)
-                  | _, (_, Some target) ->
+                  match definition with
+                  | _, Some target ->
                       if Option.is_some (inverse_operator name) then
                         (* Defer any missing attribute error until the inverse operator has been
                            typechecked. *)
@@ -3048,20 +3043,6 @@ module State (Context : Context) = struct
                 }
           in
           match resolved_base with
-          | _ when Type.is_undeclared resolved_base ->
-              let errors =
-                reference
-                >>| (fun reference -> Error.UndefinedName reference)
-                >>| (fun kind -> emit_error ~errors ~location ~kind)
-                |> Option.value ~default:errors
-              in
-              {
-                resolution;
-                errors;
-                resolved = resolved_base;
-                resolved_annotation = None;
-                base = None;
-              }
           (* Global or local. *)
           | Type.Top ->
               reference

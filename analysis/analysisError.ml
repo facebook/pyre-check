@@ -307,7 +307,6 @@ type kind =
       origin: origin;
     }
   | UndefinedImport of Reference.t
-  | UndefinedName of Reference.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;
@@ -364,7 +363,6 @@ let code = function
       | WeakenedPostcondition _ -> 15 )
   | UndefinedAttribute _ -> 16
   | IncompatibleConstructorAnnotation _ -> 17
-  | UndefinedName _ -> 18
   | TooManyArguments _ -> 19
   | MissingArgument _ -> 20
   | UndefinedImport _ -> 21
@@ -456,7 +454,6 @@ let name = function
   | UnboundName _ -> "Unbound name"
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedImport _ -> "Undefined import"
-  | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined or invalid type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UnsafeCast _ -> "Unsafe cast"
@@ -1841,18 +1838,6 @@ let messages ~concise ~signature location kind =
         | Module name -> Format.asprintf "Module `%a`" pp_reference name
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
-  | UndefinedName name when concise ->
-      [Format.asprintf "Global name `%a` is undefined." pp_reference name]
-  | UndefinedName name ->
-      [
-        Format.asprintf
-          "Global name `%a` is not defined, or there is at least one control flow path that \
-           doesn't define `%a`."
-          pp_reference
-          name
-          pp_reference
-          name;
-      ]
   | UndefinedImport reference when concise ->
       [Format.asprintf "Could not find `%a`." pp_reference reference]
   | UndefinedImport reference ->
@@ -2171,7 +2156,6 @@ let due_to_analysis_limitations { kind; _ } =
   | UnawaitedAwaitable _
   | UnboundName _
   | UndefinedAttribute _
-  | UndefinedName _
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
@@ -2375,7 +2359,6 @@ let less_or_equal ~resolution left right =
       | Class left, Class right -> GlobalResolution.less_or_equal resolution ~left ~right
       | Module left, Module right -> Reference.equal_sanitized left right
       | _ -> false )
-  | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right -> true
   | UndefinedType left, UndefinedType right -> Type.equal left right
   | UnexpectedKeyword left, UnexpectedKeyword right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
@@ -2447,7 +2430,6 @@ let less_or_equal ~resolution left right =
   | UnboundName _, _
   | UndefinedAttribute _, _
   | UndefinedImport _, _
-  | UndefinedName _, _
   | UndefinedType _, _
   | UnexpectedKeyword _, _
   | UninitializedAttribute _, _
@@ -2693,8 +2675,6 @@ let join ~resolution left right =
       when Identifier.equal_sanitized left_attribute right_attribute
            && Reference.equal_sanitized left right ->
         UndefinedAttribute { origin = Module left; attribute = left_attribute }
-    | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right ->
-        UndefinedName left
     | UndefinedType left, UndefinedType right when Type.equal left right -> UndefinedType left
     | UnexpectedKeyword left, UnexpectedKeyword right
       when Option.equal Reference.equal_sanitized left.callee right.callee
@@ -2702,12 +2682,6 @@ let join ~resolution left right =
         UnexpectedKeyword left
     | UndefinedImport left, UndefinedImport right when Reference.equal_sanitized left right ->
         UndefinedImport left
-    (* Join UndefinedImport/Name pairs into an undefined import, as the missing name is due to us
-       being unable to resolve the import. *)
-    | UndefinedImport left, UndefinedName right when Reference.equal_sanitized left right ->
-        UndefinedImport left
-    | UndefinedName left, UndefinedImport right when Reference.equal_sanitized left right ->
-        UndefinedImport right
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (IntSet.to_list (IntSet.union (IntSet.of_list left) (IntSet.of_list right)))
     | ( Unpack { expected_count = left_count; unpack_problem = UnacceptableType left },
@@ -2820,7 +2794,6 @@ let join ~resolution left right =
     | UnboundName _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
-    | UndefinedName _, _
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
@@ -2891,8 +2864,7 @@ let join_at_source ~resolution errors =
         Type.show parent ^ Reference.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } -> Reference.show_sanitized name
     | { kind = MissingOverloadImplementation name; _ } -> Reference.show_sanitized name
-    | { kind = UndefinedImport name; _ }
-    | { kind = UndefinedName name; _ } ->
+    | { kind = UndefinedImport name; _ } ->
         Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
     | { kind = UnboundName name; _ }
     | { kind = UndefinedType (Type.Primitive name); _ } ->
@@ -2902,10 +2874,6 @@ let join_at_source ~resolution errors =
   let add_error errors error =
     let key = key error in
     match Map.find errors key, error.kind with
-    | Some { kind = UndefinedImport _; _ }, UndefinedName _ ->
-        (* Swallow up UndefinedName errors when the Import error already exists. *)
-        errors
-    | Some { kind = UndefinedName _; _ }, UndefinedImport _ -> Map.set ~key ~data:error errors
     | Some { kind = UnboundName _; _ }, UndefinedType _ ->
         (* Swallow up UndefinedType errors when the UnboundName error already exists. *)
         errors
@@ -3108,7 +3076,6 @@ let suppress ~mode ~ignore_codes error =
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
     | UndefinedImport _ -> false
-    | UndefinedName name when String.equal (Reference.show name) "reveal_type" -> true
     | RevealedType _ -> false
     | UnsafeCast _ -> false
     | _ ->
@@ -3458,7 +3425,6 @@ let dequalify
           | Module module_name -> Module (dequalify_reference module_name)
         in
         UndefinedAttribute { attribute; origin }
-    | UndefinedName name -> UndefinedName name
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
     | UndefinedImport reference -> UndefinedImport reference
     | UnexpectedKeyword { name; callee } ->

@@ -298,7 +298,6 @@ type kind =
       origin: origin;
     }
   | UndefinedImport of Reference.t
-  | UndefinedName of Reference.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;

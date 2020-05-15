@@ -15,11 +15,7 @@ let test_delete context =
         del x
         return x # Error
     |}
-    [
-      "Incompatible return type [7]: Expected `None` but got `unknown`.";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
-    ];
+    ["Incompatible return type [7]: Expected `None` but got `unknown`."];
   assert_type_errors
     ~context
     {|
@@ -30,11 +26,7 @@ let test_delete context =
           x =+ 1
         return x
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Undeclared]`.";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
-    ]
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Undeclared]`."]
 
 
 let () = "delete" >::: ["check_delete" >:: test_delete] |> Test.run

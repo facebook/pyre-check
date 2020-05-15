@@ -822,7 +822,6 @@ let test_suppress _ =
     ~signature:untyped_signature
     Source.Unsafe
     (revealed_type "a" (Annotation.create Type.integer));
-  assert_suppressed Source.Unsafe (Error.UndefinedName !&"reveal_type");
   assert_not_suppressed Source.Unsafe (Error.AnalysisFailure Type.integer);
   assert_suppressed
     Source.Unsafe
@@ -852,10 +851,6 @@ let test_suppress _ =
     Source.Unsafe
     ~ignore_codes:suppress_missing_return
     (incompatible_return_type Type.integer Type.float);
-  assert_suppressed
-    Source.Unsafe
-    ~ignore_codes:suppress_missing_return
-    (Error.UndefinedName !&"reveal_type");
 
   assert_suppressed
     Source.Declare

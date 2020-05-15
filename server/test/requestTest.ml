@@ -397,18 +397,11 @@ let test_process_display_type_errors_request context =
     in
     let expected_errors =
       let undefined_global global =
-        [
-          Format.asprintf
-            "Unbound name [10]: Name `test_%s` is used but not defined in the current scope."
-            global;
-          Format.asprintf
-            "Undefined name [18]: Global name `test_%s` is not defined, or there is at least one \
-             control flow path that doesn't define `test_%s`."
-            global
-            global;
-        ]
+        Format.asprintf
+          "Unbound name [10]: Name `test_%s` is used but not defined in the current scope."
+          global
       in
-      List.concat_map expected_errors ~f:undefined_global
+      List.map expected_errors ~f:undefined_global
     in
     assert_errors_equal ~actual_errors ~expected_errors
   in

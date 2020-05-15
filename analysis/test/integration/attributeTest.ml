@@ -1016,6 +1016,7 @@ let test_check_attribute_initialization context =
 let test_check_missing_attribute context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
+  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Foo:
@@ -1025,8 +1026,6 @@ let test_check_missing_attribute context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
        is specified.";
-      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
-       flow path that doesn't define `unknown`.";
     ];
   assert_type_errors
     {|
@@ -1063,16 +1062,13 @@ let test_check_missing_attribute context =
           self.b: MyType = 1
     |}
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
+  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Foo:
         a = unknown
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
-      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
-       flow path that doesn't define `unknown`.";
-    ];
+    ["Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified."];
   assert_type_errors
     {|
         import typing

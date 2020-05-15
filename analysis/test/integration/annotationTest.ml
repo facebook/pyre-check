@@ -275,8 +275,6 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `Derp` is not defined, or there is at least one control \
-       flow path that doesn't define `Derp`.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
     ]
 
@@ -1366,8 +1364,6 @@ let test_check_aliases context =
     [
       "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
       "Unbound name [10]: Name `UndefinedName` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
-       control flow path that doesn't define `UndefinedName`.";
     ];
   (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
@@ -1376,11 +1372,7 @@ let test_check_aliases context =
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
     |}
-    [
-      "Unbound name [10]: Name `UndefinedName` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
-       control flow path that doesn't define `UndefinedName`.";
-    ];
+    ["Unbound name [10]: Name `UndefinedName` is used but not defined in the current scope."];
   (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
     ~context

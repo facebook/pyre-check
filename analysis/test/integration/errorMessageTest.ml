@@ -123,8 +123,6 @@ let test_show_error_traces context =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` but \
        no type is specified. Attribute `attribute` declared on line 3, type `str` deduced from \
        test.py:7:4.";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
       "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on line \
        8, specified on line 5.";
     ];
@@ -141,8 +139,6 @@ let test_show_error_traces context =
        from test.py:5:2.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
     ];
   assert_type_errors
     {|
@@ -158,9 +154,8 @@ let test_show_error_traces context =
        line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
     ];
+  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Other():
@@ -172,8 +167,6 @@ let test_show_error_traces context =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` but \
        no type is specified. Attribute `attribute` declared on line 3, type `int` deduced from \
        test.py:5:4.";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
     ];
   assert_type_errors
     {|
@@ -412,10 +405,7 @@ let test_concise context =
       def foo() -> None:
         y = x
     |}
-    [
-      "Unbound name [10]: Name `x` is used but not defined.";
-      "Undefined name [18]: Global name `x` is undefined.";
-    ];
+    ["Unbound name [10]: Name `x` is used but not defined."];
   assert_type_errors
     {|
       def foo(x: X) -> None:

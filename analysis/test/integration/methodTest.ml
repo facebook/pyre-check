@@ -1321,11 +1321,7 @@ let test_check_method_resolution context =
       def foo() -> None:
         bar().baz()
     |}
-    [
-      "Unbound name [10]: Name `bar` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `bar` is not defined, or there is at least one control \
-       flow path that doesn't define `bar`.";
-    ];
+    ["Unbound name [10]: Name `bar` is used but not defined in the current scope."];
   assert_type_errors ~context {|
       def foo(input: str) -> None:
         input.lower()

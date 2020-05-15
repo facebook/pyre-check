@@ -308,20 +308,6 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
-      class C:
-       attribute: int = 1
-      try:
-        x = C()
-      except:
-        pass
-      x.attribute
-    |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`.";
-    ];
-  assert_type_errors
-    {|
       import typing
       def foo(a: typing.Union[str, None]) -> None: pass
       foo(None)

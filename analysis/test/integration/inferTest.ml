@@ -205,8 +205,6 @@ let test_check_missing_return context =
     |}
     [
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `a` is not defined, or there is at least one control flow \
-       path that doesn't define `a`.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
     ];
   assert_type_errors
@@ -250,8 +248,6 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Unbound name [10]: Name `unknown_call` is used but not defined in the current scope.";
-      "Undefined name [18]: Global name `unknown_call` is not defined, or there is at least one \
-       control flow path that doesn't define `unknown_call`.";
     ];
   assert_type_errors
     {|
