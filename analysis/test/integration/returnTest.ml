@@ -244,6 +244,7 @@ let test_check_return_control_flow context =
           return 1
     |}
     [
+      "Unbound name [10]: Name `unknown_condition` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
        one control flow path that doesn't define `unknown_condition`.";
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
@@ -257,6 +258,7 @@ let test_check_return_control_flow context =
           x = 1
     |}
     [
+      "Unbound name [10]: Name `unknown_condition` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
        one control flow path that doesn't define `unknown_condition`.";
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";

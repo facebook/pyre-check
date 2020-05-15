@@ -301,6 +301,7 @@ type kind =
       typed_dictionary_name: Identifier.t;
       missing_key: string;
     }
+  | UnboundName of Identifier.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;
@@ -353,6 +354,7 @@ let code = function
   | IncompatibleReturnType _ -> 7
   | IncompatibleAttributeType _ -> 8
   | IncompatibleVariableType _ -> 9
+  | UnboundName _ -> 10
   | UndefinedType _ -> 11
   | IncompatibleAwaitableType _ -> 12
   | UninitializedAttribute _ -> 13
@@ -451,6 +453,7 @@ let name = function
   | TypedDictionaryInvalidOperation _ -> "Invalid TypedDict operation"
   | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
+  | UnboundName _ -> "Unbound name"
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedImport _ -> "Undefined import"
   | UndefinedName _ -> "Undefined name"
@@ -1804,6 +1807,16 @@ let messages ~concise ~signature location kind =
           (show_sanitized_expression expression)
           start_line;
       ]
+  | UnboundName name when concise ->
+      [Format.asprintf "Name `%a` is used but not defined." Identifier.pp_sanitized name]
+  | UnboundName name ->
+      [
+        Format.asprintf
+          "Name `%a` is used but not defined in the current scope."
+          Identifier.pp_sanitized
+          name;
+        "Did you forget to import it or assign to it?";
+      ]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
@@ -2156,6 +2169,7 @@ let due_to_analysis_limitations { kind; _ } =
   | RevealedType _
   | UnsafeCast _
   | UnawaitedAwaitable _
+  | UnboundName _
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
@@ -2354,6 +2368,7 @@ let less_or_equal ~resolution left right =
     ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
+  | UnboundName left_name, UnboundName right_name -> Identifier.equal_sanitized left_name right_name
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
       match left.origin, right.origin with
@@ -2429,6 +2444,7 @@ let less_or_equal ~resolution left right =
   | TypedDictionaryInitializationError _, _
   | TypedDictionaryKeyNotFound _, _
   | UnawaitedAwaitable _, _
+  | UnboundName _, _
   | UndefinedAttribute _, _
   | UndefinedImport _, _
   | UndefinedName _, _
@@ -2664,6 +2680,9 @@ let join ~resolution left right =
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right ->
         UnawaitedAwaitable left
+    | UnboundName left_name, UnboundName right_name
+      when Identifier.equal_sanitized left_name right_name ->
+        left.kind
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute ->
@@ -2798,6 +2817,7 @@ let join ~resolution left right =
     | TypedDictionaryInvalidOperation _, _
     | TypedDictionaryInitializationError _, _
     | UnawaitedAwaitable _, _
+    | UnboundName _, _
     | UndefinedAttribute _, _
     | UndefinedImport _, _
     | UndefinedName _, _
@@ -3415,6 +3435,7 @@ let dequalify
     | UnsafeCast kind -> UnsafeCast kind
     | UnawaitedAwaitable { references; expression } ->
         UnawaitedAwaitable { references = List.map references ~f:dequalify_reference; expression }
+    | UnboundName name -> UnboundName (dequalify_identifier name)
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with

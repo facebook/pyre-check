@@ -60,6 +60,7 @@ let test_format_string context =
         f'{{{x}}}'
     |}
     [
+      "Unbound name [10]: Name `x` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
     ]

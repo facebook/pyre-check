@@ -189,8 +189,10 @@ let test_check_init context =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` "
       ^ "has type `int` but is used as type `unknown`.";
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
        flow path that doesn't define `unknown`.";
+      "Unbound name [10]: Name `unknown2` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown2` is not defined, or there is at least one \
        control flow path that doesn't define `unknown2`.";
     ];
@@ -801,7 +803,10 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    ["Undefined or invalid type [11]: Annotation `Clss` is not defined as a type."];
+    [
+      "Undefined or invalid type [11]: Annotation `Clss` is not defined as a type.";
+      "Unbound name [10]: Name `Clss` is used but not defined in the current scope.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -824,7 +829,10 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    ["Undefined or invalid type [11]: Annotation `Clss` is not defined as a type."];
+    [
+      "Undefined or invalid type [11]: Annotation `Clss` is not defined as a type.";
+      "Unbound name [10]: Name `Clss` is used but not defined in the current scope.";
+    ];
   assert_type_errors
     {|
       import typing

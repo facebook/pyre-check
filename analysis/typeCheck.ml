@@ -442,6 +442,7 @@ module State (Context : Context) = struct
             { name; parent; parameters; return_annotation; decorators; async; nesting_define; _ } as
             signature;
           captures;
+          unbound_names;
           _;
         } as define;
     }
@@ -572,6 +573,12 @@ module State (Context : Context) = struct
           List.append decorator_errors errors
       in
       List.fold decorators ~init:errors ~f:check_decorator |> check_final_decorator
+    in
+    let check_unbound_names errors =
+      let add_unbound_name_error errors { Define.NameAccess.name; location } =
+        emit_error ~errors ~location ~kind:(AnalysisError.UnboundName name)
+      in
+      List.fold unbound_names ~init:errors ~f:add_unbound_name_error
     in
     let check_return_annotation resolution errors =
       let add_missing_return_error ~errors annotation =
@@ -1438,7 +1445,8 @@ module State (Context : Context) = struct
       let resolution, errors = add_capture_annotations resolution [] in
       let resolution, errors = check_parameter_annotations resolution errors in
       let errors =
-        check_return_annotation resolution errors
+        check_unbound_names errors
+        |> check_return_annotation resolution
         |> check_decorators resolution
         |> check_base_annotations resolution
         |> check_behavioral_subtyping resolution

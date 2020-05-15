@@ -226,6 +226,7 @@ let test_check_assert_functions context =
           return o.a
     |}
     [
+      "Unbound name [10]: Name `pyretestassert` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `pyretestassert` is not defined, or there is at least one \
        control flow path that doesn't define `pyretestassert`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
@@ -324,7 +325,10 @@ let test_check_impossible_assert context =
       def foo(x: Derp) -> None:
         assert x
     |}
-    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
+    [
+      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -350,6 +354,7 @@ let test_check_impossible_assert context =
         assert not isinstance(x, Herp)
     |}
     [
+      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `Herp` is not defined, or there is at least one control \
        flow path that doesn't define `Herp`.";
     ];

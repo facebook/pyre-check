@@ -292,6 +292,7 @@ type kind =
       typed_dictionary_name: Identifier.t;
       missing_key: string;
     }
+  | UnboundName of Identifier.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;

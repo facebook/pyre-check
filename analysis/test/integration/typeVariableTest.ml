@@ -1515,7 +1515,7 @@ let test_list_variadics context =
     from typing import Tuple, Optional, Callable, Protocol
     import pyre_extensions
     Ts = pyre_extensions.ListVariadic("Ts")
-    Tparams = pyre_extensions.ParameterSpecification("Tparams")
+    TParams = pyre_extensions.ParameterSpecification("TParams")
     def callable_to_callable(f: Callable[Ts, int]) -> Callable[Ts, int]:
       return f
     def rich_callable_to_callable(f: Callable[TParams, int]) -> Callable[TParams, int]:

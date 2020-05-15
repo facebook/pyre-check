@@ -31,6 +31,7 @@ let test_check_isinstance context =
       isinstance(1, NonexistentClass)
     |}
     [
+      "Unbound name [10]: Name `NonexistentClass` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
        one control flow path that doesn't define `NonexistentClass`.";
     ];
@@ -53,6 +54,7 @@ let test_check_isinstance context =
         reveal_type(x)
     |}
     [
+      "Unbound name [10]: Name `NonexistentClass` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
        one control flow path that doesn't define `NonexistentClass`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";

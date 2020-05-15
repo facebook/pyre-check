@@ -139,6 +139,8 @@ let test_show_error_traces context =
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        no type is specified. Global variable `constant` declared on line 2, type `int` deduced \
        from test.py:5:2.";
+      "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
+       import it or assign to it?";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
     ];
@@ -154,6 +156,8 @@ let test_show_error_traces context =
       "Missing global annotation [5]: Globally accessible variable `constant` has type \
        `typing.Union[int, str]` but no type is specified. Global variable `constant` declared on \
        line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
+      "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
+       import it or assign to it?";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
     ];
@@ -408,13 +412,19 @@ let test_concise context =
       def foo() -> None:
         y = x
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Unbound name [10]: Name `x` is used but not defined.";
+      "Undefined name [18]: Global name `x` is undefined.";
+    ];
   assert_type_errors
     {|
       def foo(x: X) -> None:
         return
     |}
-    ["Undefined or invalid type [11]: Annotation `X` is not defined as a type."];
+    [
+      "Unbound name [10]: Name `X` is used but not defined.";
+      "Undefined or invalid type [11]: Annotation `X` is not defined as a type.";
+    ];
 
   (* Uninitialized Attribute *)
   assert_type_errors

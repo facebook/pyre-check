@@ -65,7 +65,10 @@ let test_check_missing_parameter context =
       def foo(x: typing.Any = unknown) -> int:
         return 1
     |}
-    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
+    ];
   assert_strict_type_errors
     {|
       import typing
@@ -92,7 +95,10 @@ let test_check_missing_parameter context =
       def foo(x: UnknownType) -> int:
         return 1
     |}
-    ["Undefined or invalid type [11]: Annotation `UnknownType` is not defined as a type."];
+    [
+      "Unbound name [10]: Name `UnknownType` is used but not defined in the current scope.";
+      "Undefined or invalid type [11]: Annotation `UnknownType` is not defined as a type.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -201,6 +207,7 @@ let test_check_missing_return context =
           return 1
     |}
     [
+      "Unbound name [10]: Name `a` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `a` is not defined, or there is at least one control flow \
        path that doesn't define `a`.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
@@ -245,6 +252,7 @@ let test_check_missing_return context =
     |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Unbound name [10]: Name `unknown_call` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown_call` is not defined, or there is at least one \
        control flow path that doesn't define `unknown_call`.";
     ];

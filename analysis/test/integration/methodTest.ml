@@ -1322,6 +1322,7 @@ let test_check_method_resolution context =
         bar().baz()
     |}
     [
+      "Unbound name [10]: Name `bar` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `bar` is not defined, or there is at least one control \
        flow path that doesn't define `bar`.";
     ];
@@ -2165,7 +2166,7 @@ let test_check_in context =
       class WeirdGetItem:
         def __getitem__(self, x: int) -> WeirdEqual:
           ...
-      reveal_type(1 in test.WeirdGetItem())
+      reveal_type(1 in WeirdGetItem())
     |}
     ["Revealed type [-1]: Revealed type for `1 in test.WeirdGetItem()` is `typing.List[int]`."];
   assert_type_errors

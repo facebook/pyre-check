@@ -158,21 +158,18 @@ let test_check_callables context =
   assert_type_errors
     {|
       import typing
-      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+      def takes_callable(f: typing.Callable[[typing.Any], int]) -> int:
         return 0
       takes_callable(lambda y: 0)
     |}
     [
       "Missing parameter annotation [2]: Parameter `f` must have a type "
       ^ "that does not contain `Any`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st positional only parameter "
-      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`.";
     ];
   assert_type_errors
     {|
       import typing
-      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+      def takes_callable(f: typing.Callable[[typing.Any], int]) -> int:
         return 0
       takes_callable(lambda y: "")
     |}
@@ -180,7 +177,7 @@ let test_check_callables context =
       "Missing parameter annotation [2]: Parameter `f` must have a type "
       ^ "that does not contain `Any`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st positional only parameter "
+      ^ "Expected `typing.Callable[[typing.Any], int]` for 1st positional only parameter "
       ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
     ];
   assert_default_type_errors
@@ -229,7 +226,10 @@ let test_check_function_parameters context =
     |}
     [];
   assert_type_errors
-    "int_to_int(1.0)"
+    {|
+      from builtins import int_to_int
+      int_to_int(1.0)
+    |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `int_to_int` but got `float`.";

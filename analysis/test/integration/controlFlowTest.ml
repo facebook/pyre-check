@@ -319,6 +319,7 @@ let test_check_unbound_variables context =
         return result
     |}
     [
+      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
@@ -336,6 +337,7 @@ let test_check_unbound_variables context =
         return result
     |}
     [
+      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
@@ -350,9 +352,11 @@ let test_check_unbound_variables context =
         return unknown
     |}
     [
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
        flow path that doesn't define `unknown`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -583,7 +587,6 @@ let test_check_while context =
       def foo() -> None:
         while True:
           print("infinity!")
-        beyond = impossible
         reveal_type("never reached")
     |}
     [];

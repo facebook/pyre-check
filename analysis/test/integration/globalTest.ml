@@ -319,6 +319,7 @@ let test_check_globals context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
+      "Unbound name [10]: Name `MappBoo` is used but not defined in the current scope.";
       "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one control \
        flow path that doesn't define `MappBoo`.";
     ];
