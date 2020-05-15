@@ -1,2 +1,3 @@
-# pyre-placeholder-stub
+def __getattr__() -> Any: ...
+
 # Placeholder stub.
