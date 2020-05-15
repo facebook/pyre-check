@@ -170,7 +170,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[],
             targets=["target1"],
-            search_path=["/scratch$baz$hello"],
+            search_path=["/scratch$baz$hello", "/root/typeshed"],
         )
         shared_analysis_directory._symbolic_links = {
             "/root/project/tracked.py": "/scratch/bar/tracked.py",
@@ -189,6 +189,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 "/root/other-project/new.py",
                 "/root/project/tracked.py",
                 "/scratch/baz/hello/also_tracked.py",
+                "/root/typeshed/foo.pyi",
             ]
         )
         self.assertEqual(
@@ -197,7 +198,11 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertEqual(deleted_paths, ["/root/project/foo/deleted.py"])
         self.assertEqual(
             tracked_paths,
-            ["/root/project/tracked.py", "/scratch/baz/hello/also_tracked.py"],
+            [
+                "/root/project/tracked.py",
+                "/scratch/baz/hello/also_tracked.py",
+                "/root/typeshed/foo.pyi",
+            ],
         )
 
     @patch.object(os, "getcwd", return_value="/root")

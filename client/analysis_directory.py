@@ -90,7 +90,9 @@ class AnalysisDirectory:
     ) -> None:
         self._path = path
         self._filter_paths: Set[str] = filter_paths or set()
-        self._search_path: List[str] = search_path or []
+        self._search_path_directories: List[str] = self._get_search_path_directories(
+            search_path or []
+        )
 
     def get_root(self) -> str:
         return self._path
@@ -133,18 +135,23 @@ class AnalysisDirectory:
     def cleanup(self) -> None:
         pass
 
+    @staticmethod
+    def _get_search_path_directories(search_path: List[str]) -> List[str]:
+        return [os.path.abspath(os.path.join(*path.split("$"))) for path in search_path]
+
     @property
     @functools.lru_cache(1)
     def _tracked_directories(self) -> List[str]:
-        tracked_directories = [
-            self.get_root(),
-            *[os.path.join(*path.split("$")) for path in self._search_path],
-        ]
-        return [os.path.abspath(path) for path in tracked_directories]
+        return [os.path.abspath(self.get_root()), *self._search_path_directories]
 
     def _is_tracked(self, path: str) -> bool:
         return any(
             is_parent(directory, path) for directory in self._tracked_directories
+        )
+
+    def _is_in_search_path(self, path: str) -> bool:
+        return any(
+            is_parent(directory, path) for directory in self._search_path_directories
         )
 
 
@@ -168,7 +175,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._filter_paths: Set[str] = filter_paths or set()
         self._local_configuration_root = local_configuration_root
         self._extensions: Set[str] = set(extensions or []) | {"py", "pyi"}
-        self._search_path: List[str] = search_path or []
+        self._search_path_directories: List[str] = self._get_search_path_directories(
+            search_path or []
+        )
         self._isolate = isolate
         self._buck_builder: BuckBuilder = buck_builder or buck.SimpleBuckBuilder()
 
@@ -466,6 +475,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             path
             for path in paths
             if path not in self._symbolic_links
+            and not self._is_in_search_path(path)
             and os.path.isfile(path)
             and is_parent(os.getcwd(), path)
         ]
