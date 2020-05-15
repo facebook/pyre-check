@@ -336,17 +336,8 @@ def run(repository: Repository) -> None:
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "command"):
-        arguments.command = Fixme
-        arguments.error_source = "stdin"
-
-    # Initialize values that may be null-checked, but do not exist as a flag
-    # for all subcommands
-    if not hasattr(arguments, "paths"):
-        arguments.paths = None
-    if not hasattr(arguments, "error_source"):
-        arguments.error_source = None
-    if not hasattr(arguments, "comment"):
-        arguments.comment = None
+        # Reparsing with `fixme` as default subcommand.
+        arguments = parser.parse_args(sys.argv[1:] + ["fixme"])
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
