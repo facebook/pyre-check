@@ -200,10 +200,7 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `C` has no attribute `__rshift__`.";
-    ];
+    ["Undefined attribute [16]: `C` has no attribute `__rshift__`."];
   assert_type_errors
     ~context
     {|
@@ -297,7 +294,7 @@ let test_check_inverse_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `typing.Any`.";
     ];
   assert_type_errors
     ~context
@@ -313,7 +310,7 @@ let test_check_inverse_operator context =
       "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
        `Any`.";
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `typing.Any`.";
     ];
   assert_type_errors
     ~context
@@ -1468,7 +1465,7 @@ let test_check_callables context =
     |}
     [
       "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
-      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
     ];
   assert_type_errors
     {|
@@ -1554,10 +1551,7 @@ let test_check_callable_protocols context =
       def foo(call: Call) -> int:
         return call()
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Call error [29]: `Call` is not a function.";
-    ];
+    ["Call error [29]: `Call` is not a function."];
   assert_default_type_errors {|
       def foo(call) -> int:
         return call()

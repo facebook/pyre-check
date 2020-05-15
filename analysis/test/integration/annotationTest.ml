@@ -961,10 +961,7 @@ let test_check_immutable_annotations context =
         def foo(self) -> str:
           return self.name + self.attribute + self.constant
     |}
-    [
-      "Incompatible return type [7]: Expected `str` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
-    ];
+    ["Undefined attribute [16]: `Foo` has no attribute `constant`."];
   assert_type_errors
     {|
       import typing

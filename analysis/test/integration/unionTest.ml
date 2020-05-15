@@ -125,10 +125,7 @@ let test_check_union context =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Bar` has no attribute `derp`.";
-    ];
+    ["Undefined attribute [16]: `Bar` has no attribute `derp`."];
 
   (* We require that all elements in a union have the same method for `in`. *)
   assert_type_errors

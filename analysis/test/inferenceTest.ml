@@ -798,7 +798,7 @@ let test_infer_backward context =
       def foo(x) -> None:
           x += 1
     |}
-    [{|[{"name":"x","type":"int","value":null}]|}];
+    [];
 
   (* Analysis doesn't crash when __iadd__ is called with non-simple names. *)
   assert_infer

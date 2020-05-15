@@ -2038,7 +2038,7 @@ module State (Context : Context) = struct
                 errors
             | _ -> emit_error ~errors ~location ~kind:(Error.NotCallable resolved)
           in
-          { resolution; errors; resolved = Type.Top; resolved_annotation = None; base = None }
+          { resolution; errors; resolved = Type.Any; resolved_annotation = None; base = None }
     in
     let is_terminating_error { Error.kind; _ } =
       let open Error in
@@ -3580,7 +3580,9 @@ module State (Context : Context) = struct
                               }))
                     in
                     match getitem_type with
-                    | Type.Top -> None
+                    | Type.Top
+                    | Type.Any ->
+                        None
                     | getitem_annotation ->
                         Some (List.init ~f:(fun _ -> getitem_annotation) expected_size) )
               in

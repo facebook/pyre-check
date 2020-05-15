@@ -358,7 +358,7 @@ let test_module_exports context =
   assert_exports_resolved "wildcard.cyclic" Type.Top;
   assert_exports_resolved "wildcard.aliased()" Type.integer;
   assert_exports_resolved "wildcard_default.constant" Type.integer;
-  assert_exports_resolved "wildcard_default.aliased()" Type.Top;
+  assert_exports_resolved "wildcard_default.aliased()" Type.Any;
   let assert_fixpoint_stop =
     assert_resolved
       ~context
@@ -553,7 +553,7 @@ let test_forward_expression context =
     ~precondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
     ~postcondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
     "undefined()"
-    Type.Top;
+    Type.Any;
   assert_forward
     ~precondition:["foo_instance", Type.Primitive "Foo"]
     ~postcondition:["foo_instance", Type.Primitive "Foo"]
@@ -624,8 +624,8 @@ let test_forward_expression context =
     ~postcondition:["Container", dictionary_set_union]
     "1 in Container"
     Type.bool;
-  assert_forward "undefined < 1" Type.Top;
-  assert_forward "undefined == undefined" Type.Top;
+  assert_forward "undefined < 1" Type.Any;
+  assert_forward "undefined == undefined" Type.Any;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
@@ -676,7 +676,7 @@ let test_forward_expression context =
     (Type.generator (Type.tuple [Type.integer; Type.string]));
   assert_forward "(nested for element in [[1]] for nested in element)" (Type.generator Type.integer);
   assert_forward "(undefined for element in [1])" (Type.generator Type.Top);
-  assert_forward "(element for element in undefined)" (Type.generator Type.Top);
+  assert_forward "(element for element in undefined)" (Type.generator Type.Any);
 
   (* Lambda. *)
   let callable ~parameters ~annotation =
@@ -810,7 +810,7 @@ let test_forward_expression context =
   assert_forward "-1" (Type.Literal (Integer (-1)));
   assert_forward "+1" Type.integer;
   assert_forward "~1" Type.integer;
-  assert_forward "-undefined" Type.Top;
+  assert_forward "-undefined" Type.Any;
 
   (* Walrus operator. *)
   assert_forward

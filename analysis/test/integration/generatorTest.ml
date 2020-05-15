@@ -70,7 +70,7 @@ let test_check_comprehensions context =
         return { k: v for k, v in d }
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^ "`typing.Dict[]`.";
+      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got `typing.Dict[]`.";
       "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
     ];
   assert_type_errors
@@ -352,10 +352,7 @@ let test_check_generators context =
         awaited = await get()
         return awaited
     |}
-    [
-      (* calling `Any` returns Top *)
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-    ];
+    [];
   assert_type_errors
     {|
       import typing

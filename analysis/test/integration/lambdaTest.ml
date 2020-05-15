@@ -161,7 +161,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[int]) -> int:
         return functools.reduce(lambda x, y: x + y, l)
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [];
   (* False negative *)
   assert_type_errors
     {|
@@ -170,7 +170,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[int]) -> str:
         return functools.reduce(lambda x, y: x + y, l)
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+    [];
 
   (* False positive and false negative *)
   assert_type_errors
@@ -180,7 +180,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[str]) -> str:
         return functools.reduce(lambda x, y: x * y, l)
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+    [];
   (* False positive and false negative *)
   assert_type_errors
     {|
@@ -189,7 +189,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[str]) -> int:
         return functools.reduce(lambda x, y: x * y, l)
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [];
 
   (* False negative *)
   assert_type_errors
@@ -199,7 +199,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[int]) -> int:
         return functools.reduce(lambda x, y: x + y, l, 1)
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    [];
   assert_type_errors
     {|
       import typing
@@ -207,7 +207,7 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[int]) -> str:
         return functools.reduce(lambda x, y: x + y, l, 1)
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   (* False positive and false negative *)
   assert_type_errors
@@ -217,7 +217,8 @@ let test_check_reduce_lambda context =
       def foo(l: typing.Iterator[str]) -> str:
         return functools.reduce(lambda x, y: x * y, l, "a")
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."]
+    [];
+  ()
 
 
 let test_check_apply_lambda context =

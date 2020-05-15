@@ -384,6 +384,7 @@ let test_lookup_call_arguments context =
   assert_annotation_list
     ~lookup
     [
+      "2:0-5:15/typing.Any";
       "2:4-2:6/typing_extensions.Literal[12]";
       "3:12-3:20/typing_extensions.Literal['argval']";
       "3:4-3:20/typing_extensions.Literal['argval']";
@@ -393,8 +394,12 @@ let test_lookup_call_arguments context =
   assert_annotation
     ~position:{ Location.line = 2; column = 4 }
     ~annotation:(Some "2:4-2:6/typing_extensions.Literal[12]");
-  assert_annotation ~position:{ Location.line = 2; column = 6 } ~annotation:None;
-  assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:None;
+  assert_annotation
+    ~position:{ Location.line = 2; column = 6 }
+    ~annotation:(Some "2:0-5:15/typing.Any");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 3 }
+    ~annotation:(Some "2:0-5:15/typing.Any");
   assert_annotation
     ~position:{ Location.line = 3; column = 4 }
     ~annotation:(Some "3:4-3:20/typing_extensions.Literal['argval']");
@@ -404,8 +409,12 @@ let test_lookup_call_arguments context =
   assert_annotation
     ~position:{ Location.line = 3; column = 19 }
     ~annotation:(Some "3:12-3:20/typing_extensions.Literal['argval']");
-  assert_annotation ~position:{ Location.line = 3; column = 20 } ~annotation:None;
-  assert_annotation ~position:{ Location.line = 4; column = 3 } ~annotation:None;
+  assert_annotation
+    ~position:{ Location.line = 3; column = 20 }
+    ~annotation:(Some "2:0-5:15/typing.Any");
+  assert_annotation
+    ~position:{ Location.line = 4; column = 3 }
+    ~annotation:(Some "2:0-5:15/typing.Any");
   assert_annotation
     ~position:{ Location.line = 4; column = 4 }
     ~annotation:(Some "4:4-5:14/typing_extensions.Literal['nextline']");
@@ -421,7 +430,9 @@ let test_lookup_call_arguments context =
   assert_annotation
     ~position:{ Location.line = 5; column = 13 }
     ~annotation:(Some "5:4-5:14/typing_extensions.Literal['nextline']");
-  assert_annotation ~position:{ Location.line = 5; column = 14 } ~annotation:None
+  assert_annotation
+    ~position:{ Location.line = 5; column = 14 }
+    ~annotation:(Some "2:0-5:15/typing.Any")
 
 
 let test_lookup_class_attributes context =
@@ -841,9 +852,14 @@ let test_lookup_unknown_accesses context =
       "2:13-2:17/None";
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
       "3:14-3:19/typing_extensions.Literal['key']";
+      "3:4-3:28/typing.Any";
     ];
-  assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:None;
-  assert_annotation ~position:{ Location.line = 3; column = 23 } ~annotation:None
+  assert_annotation
+    ~position:{ Location.line = 3; column = 4 }
+    ~annotation:(Some "3:4-3:28/typing.Any");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 23 }
+    ~annotation:(Some "3:4-3:28/typing.Any")
 
 
 let () =

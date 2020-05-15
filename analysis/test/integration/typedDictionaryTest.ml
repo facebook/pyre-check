@@ -804,9 +804,6 @@ let test_check_typed_dictionaries context =
       ^ "has no type specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
       "Undefined or invalid type [11]: Annotation `NamelessTypedDict` is not defined as a type.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `foo` "
-      ^ "but got `unknown`.";
     ];
   assert_test_typed_dictionary
     {|

@@ -131,10 +131,7 @@ let test_check_tuple context =
         (x, y), z = 0
         return x + y + z
     |}
-    [
-      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    ["Unable to unpack [23]: Unable to unpack `int` into 2 values."];
   assert_type_errors
     {|
       import typing
@@ -492,12 +489,12 @@ let test_custom_tuple context =
     |}
     [
       "Missing return annotation [3]: Returning `int` but type `Any` is specified.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `z` is `typing.Any`.";
+      "Unable to unpack [23]: Unable to unpack `test.C` into 3 values.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
     ];
 
-  (* We still error when your class doesn't have getitem. *)
   assert_type_errors
     {|
       def foo() -> None:

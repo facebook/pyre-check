@@ -132,7 +132,6 @@ let test_check_async context =
     [
       "Revealed type [-1]: Revealed type for `test.foo()` is "
       ^ "`typing.Coroutine[typing.Any, typing.Any, typing.AsyncGenerator[bool, None]]`.";
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
       "Undefined attribute [16]: `typing.Coroutine` has no attribute `__aiter__`.";
     ];
   assert_type_errors
@@ -187,7 +186,6 @@ let test_check_async context =
     [
       "Revealed type [-1]: Revealed type for `test.C().foo()` is "
       ^ "`typing.Coroutine[typing.Any, typing.Any, typing.AsyncGenerator[bool, None]]`.";
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
       "Undefined attribute [16]: `typing.Coroutine` has no attribute `__aiter__`.";
     ];
   assert_type_errors
@@ -222,10 +220,7 @@ let test_check_async context =
         async with 1:
           return 0
     |}
-    [
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-      "Undefined attribute [16]: `int` has no attribute `__aenter__`.";
-    ]
+    ["Undefined attribute [16]: `int` has no attribute `__aenter__`."]
 
 
 let () = "async" >::: ["check_async" >:: test_check_async] |> Test.run

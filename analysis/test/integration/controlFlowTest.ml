@@ -322,7 +322,7 @@ let test_check_unbound_variables context =
       "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
-      ^ "`typing.Union[typing.Undeclared, unknown]`.";
+      ^ "`typing.Union[typing.Any, typing.Undeclared]`.";
       "Undefined name [18]: Global name `result` is not defined, or there is at least one control \
        flow path that doesn't define `result`.";
     ];
@@ -339,7 +339,7 @@ let test_check_unbound_variables context =
       "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
-      ^ "`typing.Union[typing.Undeclared, unknown]`.";
+      ^ "`typing.Union[typing.Any, typing.Undeclared]`.";
       "Undefined name [18]: Global name `result` is not defined, or there is at least one control \
        flow path that doesn't define `result`.";
     ];
