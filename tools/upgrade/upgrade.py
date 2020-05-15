@@ -331,22 +331,7 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Consolidate nested local configurations
     consolidate_nested_configurations = commands.add_parser("consolidate-nested")
-    consolidate_nested_configurations.set_defaults(
-        command=ConsolidateNestedConfigurations
-    )
-    consolidate_nested_configurations.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
-    consolidate_nested_configurations.add_argument(
-        "--submit", action="store_true", help=argparse.SUPPRESS
-    )
-    consolidate_nested_configurations.add_argument(
-        "--lint", action="store_true", help=argparse.SUPPRESS
-    )
-    consolidate_nested_configurations.add_argument("--subdirectory")
-    consolidate_nested_configurations.add_argument(
-        "--no-commit", action="store_true", help="Keep changes in working state."
-    )
+    ConsolidateNestedConfigurations.add_arguments(consolidate_nested_configurations)
 
     # Initialize default values.
     arguments = parser.parse_args()
