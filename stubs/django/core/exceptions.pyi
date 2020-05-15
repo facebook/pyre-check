@@ -7,6 +7,9 @@ NON_FIELD_ERRORS: str
 class PermissionDenied(Exception):
     pass
 
+class ViewDoesNotExist(Exception):
+    pass
+
 class MiddlewareNotUsed(Exception):
     pass
 

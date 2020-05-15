@@ -22,7 +22,7 @@ class Field:
         validators: Sequence[Callable[[Any], None]] = ...,
         localize: bool = ...,
         disabled: bool = ...,
-        label_suffix: Optional[str] = ...
+        label_suffix: Optional[str] = ...,
     ) -> None: ...
 
 BooleanField = Field

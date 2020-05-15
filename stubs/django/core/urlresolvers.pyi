@@ -9,12 +9,14 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Union,
 )
 
+import re2
 from django.http import Http404, HttpResponse
 from wsgi import IGWSGIRequest
 
@@ -37,7 +39,7 @@ def reverse(
     viewname: Any,
     urlconf: Any = ...,
     args: Optional[Sequence[Any]] = ...,
-    kwargs: Optional[Dict[str, Any]] = ...,
+    kwargs: Optional[Mapping[str, Any]] = ...,
     prefix: Any = ...,
     current_app: Any = ...,
 ) -> str: ...
@@ -53,9 +55,12 @@ class RegexURLResolver:
     urlconf_module: Any
     urlconf_name: Union[str, ModuleType]
     regex: Pattern
+    def resolve(self, path: str) -> ResolverMatch: ...
     def resolve_error_handler(
         self, status_code: int
     ) -> Tuple[Callable[[IGWSGIRequest, ...], HttpResponse], Dict]: ...
+    # this is not in Django but we add it on
+    _re_set: Union[bool, Optional[re2.Set]]
 
 def get_urlconf(default: Any = None) -> Any: ...
 def get_resolver(urlconf: Any) -> RegexURLResolver: ...
