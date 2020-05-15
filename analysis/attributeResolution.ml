@@ -2012,6 +2012,7 @@ module Implementation = struct
         full_order;
         attribute = get_attribute;
         signature_select;
+        constructor;
         _;
       }
       ~assumptions
@@ -2068,10 +2069,9 @@ module Implementation = struct
         let self_parameter =
           Type.Callable.Parameter.Named { name = "self"; annotation = Type.Top; default = false }
         in
-        match instantiated, attribute_name, callable with
-        | ( Type.Tuple (Bounded (Concrete members)),
-            "__getitem__",
-            ({ Type.Callable.overloads; _ } as callable) ) ->
+        match instantiated, attribute_name, class_name with
+        | Type.Tuple (Bounded (Concrete members)), "__getitem__", _ ->
+            let { Type.Callable.overloads; _ } = callable in
             let overload index member =
               {
                 Type.Callable.annotation = member;
@@ -2084,11 +2084,10 @@ module Implementation = struct
               }
             in
             let overloads = List.mapi ~f:overload members @ overloads in
-            { callable with overloads }
+            Type.Callable { callable with overloads }
         | ( Parametric { name = "type"; parameters = [Single (Type.Primitive name)] },
             "__getitem__",
-            ({ kind = Named callable_name; _ } as callable) )
-          when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
+            "typing.GenericMeta" ) ->
             let implementation, overloads =
               let generics =
                 ClassHierarchyEnvironment.ReadOnly.variables
@@ -2179,8 +2178,22 @@ module Implementation = struct
                         },
                         [] ) )
             in
-            { callable with implementation; overloads }
-        | _ -> callable
+            Type.Callable { callable with implementation; overloads }
+        | ( Parametric
+              {
+                name = "type";
+                parameters =
+                  [
+                    Single
+                      ( (Type.Primitive name as instantiated)
+                      | (Type.Parametric { name; _ } as instantiated) );
+                  ];
+              },
+            "__call__",
+            "type" )
+          when accessed_via_metaclass ->
+            constructor ~assumptions name ~instantiated
+        | _ -> Type.Callable callable
       in
 
       match annotation with
@@ -2215,7 +2228,7 @@ module Implementation = struct
       | Attribute annotation -> (
           let annotation =
             match annotation with
-            | Type.Callable callable -> Type.Callable (special_case_methods callable)
+            | Type.Callable callable -> special_case_methods callable
             | other -> other
           in
           let order () = full_order ~assumptions in

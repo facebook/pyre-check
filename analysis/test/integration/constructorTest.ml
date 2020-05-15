@@ -861,6 +861,18 @@ let test_check_constructors context =
         foo(c)
     |}
     [];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, x: int, y: str) -> None:
+          pass
+      reveal_type(Foo.__call__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Foo.__call__` is \
+       `BoundMethod[typing.Callable(Foo.__init__)[[Named(self, Foo), Named(x, int), Named(y, \
+       str)], Foo], Foo]`.";
+    ];
   ()
 
 
