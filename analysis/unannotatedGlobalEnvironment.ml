@@ -498,7 +498,6 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
   let typing_classes =
     [
       make "typing.Optional" ~bases:single_unary_generic;
-      make "typing.Undeclared";
       make "typing.NoReturn";
       make "typing.Annotated" ~bases:catch_all_generic;
       make "typing.Protocol" ~bases:catch_all_generic;

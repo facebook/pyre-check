@@ -550,11 +550,6 @@ let test_forward_expression context =
     "test.foo(unknown).attribute"
     Type.Top;
   assert_forward
-    ~precondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
-    ~postcondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
-    "undefined()"
-    Type.Any;
-  assert_forward
     ~precondition:["foo_instance", Type.Primitive "Foo"]
     ~postcondition:["foo_instance", Type.Primitive "Foo"]
     ~environment:
@@ -735,11 +730,6 @@ let test_forward_expression context =
     ~postcondition:["x", Type.list Type.integer]
     "['', *x]"
     (Type.list (Type.union [Type.string; Type.integer]));
-  assert_forward
-    ~precondition:["x", Type.undeclared]
-    ~postcondition:["x", Type.undeclared]
-    "[x]"
-    (Type.list Type.undeclared);
 
   (* Name. *)
   assert_forward
@@ -985,16 +975,6 @@ let test_forward_statement context =
     ["z", Type.integer]
     "x = y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.integer];
-  assert_forward ["y", Type.undeclared] "x = y" ["x", Type.Any; "y", Type.undeclared];
-  assert_forward
-    ["y", Type.Union [Type.integer; Type.undeclared]]
-    "x = y"
-    ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
-  assert_forward ["y", Type.undeclared] "x = [y]" ["x", Type.list Type.Any; "y", Type.undeclared];
-  assert_forward
-    ["y", Type.Union [Type.integer; Type.undeclared]]
-    "x = [y]"
-    ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
   assert_forward ~postcondition_immutables:["x", Type.Any] [] "x: Derp" ["x", Type.Any];
   assert_forward ~postcondition_immutables:["x", Type.string] [] "x: str = 1" ["x", Type.string];
   assert_forward

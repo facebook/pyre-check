@@ -346,7 +346,7 @@ module State (Context : Context) = struct
     | _, None -> previous
     | Some previous_resolution, Some next_resolution ->
         let global_resolution = Resolution.global_resolution previous_resolution in
-        let widen_annotations ~key annotation =
+        let widen_annotations ~key:_ annotation =
           match annotation with
           | `Both (previous, next) ->
               Some
@@ -356,18 +356,6 @@ module State (Context : Context) = struct
                    ~previous
                    ~next
                    ~iteration)
-          | `Left previous
-          | `Right previous
-            when Reference.length key = 1 ->
-              let widened =
-                RefinementUnit.widen
-                  ~global_resolution
-                  ~widening_threshold
-                  ~previous
-                  ~next:(RefinementUnit.create ~base:(Annotation.create Type.undeclared) ())
-                  ~iteration
-              in
-              Some widened
           | `Left previous
           | `Right previous ->
               Some previous
@@ -1642,17 +1630,9 @@ module State (Context : Context) = struct
         | _ -> None
       in
       match annotation with
-      | Some annotation when Type.is_undeclared (Annotation.annotation annotation) ->
-          {
-            Resolved.resolution;
-            errors;
-            resolved = Annotation.annotation annotation;
-            resolved_annotation = Some annotation;
-            base = None;
-          }
       | Some annotation ->
           {
-            resolution;
+            Resolved.resolution;
             errors;
             resolved = Annotation.annotation annotation;
             resolved_annotation = Some annotation;
@@ -2437,7 +2417,7 @@ module State (Context : Context) = struct
         in
         if
           List.is_empty (List.filter ~f:is_terminating_error callee_errors)
-          || not (Type.is_top resolved_callee || Type.is_undeclared resolved_callee)
+          || not (Type.is_top resolved_callee)
         then
           {
             resolution = updated_resolution;
@@ -3101,7 +3081,7 @@ module State (Context : Context) = struct
         in
         if
           List.is_empty (List.filter ~f:is_terminating_error base_errors)
-          || not (Type.is_top resolved_base || Type.is_undeclared resolved_base)
+          || not (Type.is_top resolved_base)
         then
           {
             resolution = updated_resolution;
@@ -3487,7 +3467,6 @@ module State (Context : Context) = struct
               let { Resolved.resolution; errors = new_errors; resolved; _ } =
                 forward_expression ~resolution ~expression:value
               in
-              let resolved = Type.remove_undeclared resolved in
               resolution, List.append new_errors errors, resolved
             in
             let guide =

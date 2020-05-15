@@ -305,10 +305,7 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got "
-      ^ "`typing.Union[int, typing.Undeclared]`.";
-    ];
+    [];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -316,11 +313,7 @@ let test_check_unbound_variables context =
           result = narnia()
         return result
     |}
-    [
-      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
-      "Incompatible return type [7]: Expected `int` but got "
-      ^ "`typing.Union[typing.Any, typing.Undeclared]`.";
-    ];
+    ["Unbound name [10]: Name `narnia` is used but not defined in the current scope."];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -330,11 +323,7 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    [
-      "Unbound name [10]: Name `narnia` is used but not defined in the current scope.";
-      "Incompatible return type [7]: Expected `int` but got "
-      ^ "`typing.Union[typing.Any, typing.Undeclared]`.";
-    ];
+    ["Unbound name [10]: Name `narnia` is used but not defined in the current scope."];
   assert_type_errors
     {|
       def foo() -> int:

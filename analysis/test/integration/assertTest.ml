@@ -68,10 +68,7 @@ let test_check_assert context =
           assert not True
         return int_to_int(x)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
-      ^ "to call `int_to_int` but got `typing.Union[int, typing.Undeclared]`.";
-    ];
+    [];
   assert_type_errors
     {|
       from builtins import int_to_int

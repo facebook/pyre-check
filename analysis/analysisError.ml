@@ -2111,10 +2111,7 @@ let due_to_analysis_limitations { kind; _ } =
   | RedundantCast actual
   | UninitializedAttribute { mismatch = { actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.contains_unknown actual
-      || Type.is_unbound actual
-      || Type.is_type_alias actual
-      || Type.is_undeclared actual
+      Type.contains_unknown actual || Type.is_unbound actual || Type.is_type_alias actual
   | Top -> true
   | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
@@ -3093,7 +3090,6 @@ let suppress ~mode ~ignore_codes error =
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
         Type.is_untyped actual
         || Type.contains_unknown actual
-        || Type.is_undeclared actual
         || Type.Variable.convert_all_escaped_free_variables_to_anys actual
            |> Type.contains_prohibited_any
     | _ -> true

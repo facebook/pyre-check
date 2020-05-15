@@ -454,7 +454,7 @@ let test_infer context =
         assert not True
       return x
     |}
-    [];
+    [{|"int"|}];
   assert_infer ~fields:["inference.annotation"] {|
       def foo():
         return {}

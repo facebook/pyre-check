@@ -138,8 +138,6 @@ module OrderImplementation = struct
         | Type.Bottom, other
         | other, Type.Bottom ->
             other
-        | undeclared, _ when Type.equal undeclared Type.undeclared -> Type.union [left; right]
-        | _, undeclared when Type.equal undeclared Type.undeclared -> Type.union [left; right]
         | Type.Top, _
         | _, Type.Top ->
             Type.Top

@@ -182,7 +182,7 @@ module State (Context : Context) = struct
     else if next.bottom then
       previous
     else
-      let widen_annotations ~key annotation =
+      let widen_annotations ~key:_ annotation =
         match annotation with
         | `Both (previous, next) ->
             Some
@@ -192,18 +192,6 @@ module State (Context : Context) = struct
                  ~previous
                  ~next
                  ~iteration)
-        | `Left previous
-        | `Right previous
-          when Reference.length key = 1 ->
-            let widened =
-              RefinementUnit.widen
-                ~global_resolution:(Resolution.global_resolution resolution)
-                ~widening_threshold
-                ~previous
-                ~next:(RefinementUnit.create ~base:(Annotation.create Type.undeclared) ())
-                ~iteration
-            in
-            Some widened
         | `Left previous
         | `Right previous ->
             Some previous
@@ -533,7 +521,6 @@ module State (Context : Context) = struct
         let reference = Reference.create name in
         Resolution.get_local resolution ~reference
         >>| (fun { Annotation.annotation; _ } ->
-              let annotation = Type.remove_undeclared annotation in
               let error =
                 Error.create
                   ~location:(Location.with_module ~qualifier:Context.qualifier location)

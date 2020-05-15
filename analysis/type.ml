@@ -890,8 +890,6 @@ let literal_string literal = Literal (String literal)
 
 let tuple parameters = Tuple (Bounded (Concrete parameters))
 
-let undeclared = Primitive "typing.Undeclared"
-
 let union parameters =
   let parameters =
     let parameter_set = Hash_set.create () in
@@ -903,9 +901,7 @@ let union parameters =
     List.iter parameters ~f:add_parameter;
     Base.Hash_set.to_list parameter_set |> List.sort ~compare
   in
-  if List.mem ~equal parameters undeclared then
-    Union parameters
-  else if List.exists ~f:is_top parameters then
+  if List.exists ~f:is_top parameters then
     Top
   else if List.exists ~f:is_any parameters then
     Any
@@ -1339,8 +1335,6 @@ let contains_callable annotation = exists annotation ~predicate:is_callable
 let contains_any annotation = exists annotation ~predicate:is_any
 
 let contains_unknown annotation = exists annotation ~predicate:is_top
-
-let is_undeclared annotation = exists annotation ~predicate:(equal undeclared)
 
 let pp_type = pp
 
@@ -3929,48 +3923,6 @@ module TypedDictionary = struct
     else
       common_methods @ List.map non_total_special_methods ~f:(fun { name; _ } -> define name)
 end
-
-let remove_undeclared annotation =
-  let module RemoveUndeclared = Transform.Make (struct
-    type state = unit
-
-    let visit_children_before _ _ = true
-
-    let visit_children_after = false
-
-    let visit _ annotation =
-      let transformed_annotation =
-        match annotation with
-        | Parametric { name; parameters } ->
-            let declare annotation =
-              match annotation with
-              | Record.Parameter.Single (Primitive "typing.Undeclared") ->
-                  Record.Parameter.Single Any
-              | _ -> annotation
-            in
-            let parameters = List.map parameters ~f:declare in
-            Parametric { name; parameters }
-        | Union annotations -> (
-            let annotations =
-              let declared = function
-                | Primitive "typing.Undeclared" -> false
-                | _ -> true
-              in
-              List.filter ~f:declared annotations
-            in
-            match annotations with
-            | [] -> Any
-            | [annotation] -> annotation
-            | _ -> union annotations )
-        | _ -> annotation
-      in
-      { Transform.transformed_annotation; new_state = () }
-  end)
-  in
-  match annotation with
-  | Primitive "typing.Undeclared" -> Any
-  | _ -> snd (RemoveUndeclared.visit () annotation)
-
 
 (* Transform tuples and callables so they are printed correctly when running infer and click to fix. *)
 let infer_transform annotation =

@@ -26,7 +26,7 @@ let test_delete context =
           x =+ 1
         return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Undeclared]`."]
+    []
 
 
 let () = "delete" >::: ["check_delete" >:: test_delete] |> Test.run

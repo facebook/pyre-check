@@ -395,12 +395,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, _ when Type.equal left right -> [constraints]
     | _, Type.Primitive "object" -> [constraints]
     | other, Type.Any -> [add_fallbacks other]
-    | other, Type.Top ->
-        if Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared)
-        then
-          impossible
-        else
-          [constraints]
+    | _, Type.Top -> [constraints]
     | Type.ParameterVariadicComponent _, _
     | _, Type.ParameterVariadicComponent _ ->
         impossible

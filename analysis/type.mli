@@ -312,8 +312,6 @@ val literal_string : string -> t
 
 val tuple : t list -> t
 
-val undeclared : t
-
 val union : t list -> t
 
 val yield : t -> t
@@ -342,8 +340,6 @@ module Transform : sig
 end
 
 val exists : t -> predicate:(t -> bool) -> bool
-
-val is_undeclared : t -> bool
 
 module Callable : sig
   module Parameter : sig
@@ -873,8 +869,6 @@ module TypedDictionary : sig
 
   val is_builtin_typed_dictionary_class : Primitive.t -> bool
 end
-
-val remove_undeclared : t -> t
 
 val infer_transform : t -> t
 
