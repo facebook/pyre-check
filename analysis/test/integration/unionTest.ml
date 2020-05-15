@@ -73,10 +73,7 @@ let test_check_union context =
         pass
       foo(1)
     |}
-    [
-      "Undefined or invalid type [11]: Annotation `Undefined` is not defined as a type.";
-      "Unbound name [10]: Name `Undefined` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `Undefined` is used but not defined in the current scope."];
   assert_type_errors
     {|
       from builtins import Attributes, OtherAttributes

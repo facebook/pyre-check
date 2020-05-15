@@ -421,10 +421,7 @@ let test_concise context =
       def foo(x: X) -> None:
         return
     |}
-    [
-      "Unbound name [10]: Name `X` is used but not defined.";
-      "Undefined or invalid type [11]: Annotation `X` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `X` is used but not defined."];
 
   (* Uninitialized Attribute *)
   assert_type_errors

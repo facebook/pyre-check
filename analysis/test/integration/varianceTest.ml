@@ -31,7 +31,6 @@ let test_check_variance context =
     [
       "Missing parameter annotation [2]: Parameter `input` has no type specified.";
       "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
-      "Undefined or invalid type [11]: Annotation `unknown` is not defined as a type.";
       "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
     ];
   assert_type_errors

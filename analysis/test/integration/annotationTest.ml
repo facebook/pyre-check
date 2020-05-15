@@ -17,9 +17,7 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   (* Don't crash when returning a bad type. *)
@@ -28,20 +26,14 @@ let test_check_undefined_type context =
       def foo(a: gurbage) -> None:
         return a
     |}
-    [
-      "Unbound name [10]: Name `gurbage` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `gurbage` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `gurbage` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo(a: gurbage) -> int:
         a = 1
         return a
     |}
-    [
-      "Unbound name [10]: Name `gurbage` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `gurbage` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `gurbage` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo(x: Derp, y: Herp) -> None:
@@ -49,19 +41,14 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_default_type_errors
     {|
       def foo(x: int) -> Herp:
         return x
     |}
-    [
-      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Herp` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       import typing
@@ -69,30 +56,21 @@ let test_check_undefined_type context =
         pass
     |}
     [
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_default_type_errors
     {|
       def foo(x: Derp[int]) -> None:
         pass
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo(x: Derp[int, str]) -> None:
         pass
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       import typing
@@ -100,9 +78,7 @@ let test_check_undefined_type context =
         pass
     |}
     [
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
     ];
   assert_default_type_errors
@@ -110,10 +86,7 @@ let test_check_undefined_type context =
       def foo(x: Optional) -> None:
         pass
     |}
-    [
-      "Unbound name [10]: Name `Optional` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Optional` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Optional` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo(x: Optional[Any]) -> None:
@@ -121,8 +94,6 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Optional` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Any` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Optional` is not defined as a type.";
       "Unbound name [10]: Name `Any` is used but not defined in the current scope.";
     ];
   assert_default_type_errors
@@ -130,20 +101,14 @@ let test_check_undefined_type context =
       def foo(x: Dict) -> None:
         pass
     |}
-    [
-      "Unbound name [10]: Name `Dict` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Dict` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Dict` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo() -> None:
         x: undefined = 1
         return
     |}
-    [
-      "Unbound name [10]: Name `undefined` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `undefined` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `undefined` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       def foo(x: Derp) -> None:
@@ -152,9 +117,7 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `undefined` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `undefined` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -179,12 +142,8 @@ let test_check_undefined_type context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_strict_type_errors
     {|
@@ -192,10 +151,7 @@ let test_check_undefined_type context =
       def foo() -> typing.Optional["Herp"]:
         return None
     |}
-    [
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
-      "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `Herp` is used but not defined in the current scope."];
   assert_strict_type_errors
     {|
       import typing
@@ -208,7 +164,6 @@ let test_check_undefined_type context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `other` has no type specified.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
     ];
 
@@ -225,7 +180,6 @@ let test_check_undefined_type context =
     [
       "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   (* Class bases *)
@@ -263,7 +217,6 @@ let test_check_undefined_type context =
     |}
     [
       "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
       "Undefined or invalid type [11]: Annotation `DD` is not defined as a type.";
     ];
 
@@ -275,12 +228,7 @@ let test_check_undefined_type context =
       y: typing.List[Derp] = 1
       z: Derp
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
 
   (* Assigns *)
   assert_type_errors
@@ -291,12 +239,7 @@ let test_check_undefined_type context =
         y: typing.List[Derp] = 1
         z: Derp
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
 
   (* cast, isinstance *)
   assert_type_errors
@@ -306,10 +249,7 @@ let test_check_undefined_type context =
         x: int = 1
         typing.cast(Derp, x)
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
   assert_type_errors
     {|
       import typing
@@ -367,10 +307,7 @@ let test_check_invalid_type context =
     {|
       x: MyType = 1
     |}
-    [
-      "Unbound name [10]: Name `MyType` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `MyType` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `MyType` is used but not defined in the current scope."];
   assert_type_errors
     {|
       MyType: int
@@ -507,10 +444,7 @@ let test_check_invalid_type context =
 
       def foo() -> Foo[garbage]: ...
     |}
-    [
-      "Undefined or invalid type [11]: Annotation `garbage` is not defined as a type.";
-      "Unbound name [10]: Name `garbage` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `garbage` is used but not defined in the current scope."];
 
   (* Malformed alias assignment *)
   assert_type_errors
@@ -631,7 +565,6 @@ let test_check_analysis_failure context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Incompatible variable type [9]: x is declared to have type `int` "
       ^ "but is used as type `unknown`.";
     ];
@@ -646,7 +579,6 @@ let test_check_analysis_failure context =
     |}
     [
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Invalid argument [32]: Keyword argument `x` has type `unknown` "
       ^ "but must be a mapping with string keys.";
     ]

@@ -2894,6 +2894,9 @@ let join_at_source ~resolution errors =
     | { kind = UndefinedImport name; _ }
     | { kind = UndefinedName name; _ } ->
         Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
+    | { kind = UnboundName name; _ }
+    | { kind = UndefinedType (Type.Primitive name); _ } ->
+        Format.asprintf "Unbound[%s]" name
     | error -> show error
   in
   let add_error errors error =
@@ -2903,6 +2906,10 @@ let join_at_source ~resolution errors =
         (* Swallow up UndefinedName errors when the Import error already exists. *)
         errors
     | Some { kind = UndefinedName _; _ }, UndefinedImport _ -> Map.set ~key ~data:error errors
+    | Some { kind = UnboundName _; _ }, UndefinedType _ ->
+        (* Swallow up UndefinedType errors when the UnboundName error already exists. *)
+        errors
+    | Some { kind = UndefinedType _; _ }, UnboundName _ -> Map.set ~key ~data:error errors
     | Some existing_error, _ ->
         let joined_error = join ~resolution existing_error error in
         if not (equal_kind joined_error.kind Top) then

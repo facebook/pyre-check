@@ -179,7 +179,10 @@ module State (Context : Context) = struct
       | "..." -> false
       | _ -> not (GlobalResolution.is_tracked resolution class_name)
     in
-    let untracked = List.filter (Type.elements annotation) ~f:is_untracked_name in
+    let untracked =
+      List.filter (Type.elements annotation) ~f:is_untracked_name
+      |> List.dedup_and_sort ~compare:String.compare
+    in
     let errors =
       List.fold untracked ~init:errors ~f:(fun errors name ->
           emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))

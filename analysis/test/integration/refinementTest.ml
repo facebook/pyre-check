@@ -481,10 +481,7 @@ let test_assert_contains_none context =
       def foo(x: Derp) -> None:
         assert None not in x
     |}
-    [
-      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `Derp` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       import typing
@@ -501,7 +498,6 @@ let test_assert_contains_none context =
         reveal_type(x)
     |}
     [
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
     ];

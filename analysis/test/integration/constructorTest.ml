@@ -803,10 +803,7 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    [
-      "Undefined or invalid type [11]: Annotation `Clss` is not defined as a type.";
-      "Unbound name [10]: Name `Clss` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."];
   assert_default_type_errors
     {|
       import typing
@@ -829,10 +826,7 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    [
-      "Undefined or invalid type [11]: Annotation `Clss` is not defined as a type.";
-      "Unbound name [10]: Name `Clss` is used but not defined in the current scope.";
-    ];
+    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."];
   assert_type_errors
     {|
       import typing

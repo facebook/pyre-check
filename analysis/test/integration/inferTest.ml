@@ -95,10 +95,7 @@ let test_check_missing_parameter context =
       def foo(x: UnknownType) -> int:
         return 1
     |}
-    [
-      "Unbound name [10]: Name `UnknownType` is used but not defined in the current scope.";
-      "Undefined or invalid type [11]: Annotation `UnknownType` is not defined as a type.";
-    ];
+    ["Unbound name [10]: Name `UnknownType` is used but not defined in the current scope."];
   assert_type_errors
     {|
       import typing
