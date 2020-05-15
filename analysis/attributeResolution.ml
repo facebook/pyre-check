@@ -719,6 +719,17 @@ let undecorated_signature class_metadata_environment ~dependency =
     (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment class_metadata_environment)
 
 
+let is_final_class class_metadata_environment ~dependency class_name =
+  match
+    ClassMetadataEnvironment.ReadOnly.get_class_metadata
+      ?dependency
+      class_metadata_environment
+      class_name
+  with
+  | Some { ClassMetadataEnvironment.is_final; _ } -> is_final
+  | _ -> false
+
+
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
 module Implementation = struct
@@ -4091,8 +4102,8 @@ module Implementation = struct
       >>| fst
       |> Option.value ~default:Int.max_value
     in
-    let signature_and_index ~name =
-      let signature, parent =
+    let signature_index_and_parent ~name =
+      let signature, parent_name =
         match
           attribute
             ~assumptions
@@ -4106,28 +4117,32 @@ module Implementation = struct
         with
         | Some attribute ->
             ( AnnotatedAttribute.annotation attribute |> Annotation.annotation,
-              Type.Primitive (AnnotatedAttribute.parent attribute) )
-        | None -> Type.Top, Type.Primitive class_name
+              AnnotatedAttribute.parent attribute )
+        | None -> Type.Top, class_name
       in
-      signature, definition_index parent
+      signature, definition_index (Type.Primitive parent_name), parent_name
     in
-    let constructor_signature, constructor_index = signature_and_index ~name:"__init__" in
-    let new_signature, new_index =
-      let new_signature, new_index = signature_and_index ~name:"__new__" in
+    let constructor_signature, constructor_index, _ = signature_index_and_parent ~name:"__init__" in
+    let new_signature, new_index, new_parent_name =
+      let new_signature, new_index, new_parent_name = signature_index_and_parent ~name:"__new__" in
       ( Type.Parametric
           {
             name = "BoundMethod";
             parameters = [Single new_signature; Single (Type.meta instantiated)];
           },
-        new_index )
+        new_index,
+        new_parent_name )
     in
-    let signature =
+    let signature, with_return =
       if new_index < constructor_index then
-        new_signature
+        (* If it is a Final class, we respect the return type of `__new__` and its overloads. *)
+        if is_final_class class_metadata_environment ~dependency new_parent_name then
+          new_signature, Fn.id
+        else
+          new_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
       else
-        constructor_signature
+        constructor_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
     in
-    let with_return = Type.Callable.with_return_annotation ~annotation:return_annotation in
     match signature with
     | Type.Callable callable -> Type.Callable (with_return callable)
     | Parametric

@@ -322,6 +322,142 @@ let test_constructors context =
     (Some
        "BoundMethod[typing.Callable('test.A.__init__')[[Named(self, test.A), Named(foo, int, \
         default)], test.A], test.A]");
+  assert_constructor
+    {|
+      from typing import Generic, Optional, TypeVar
+      T = TypeVar("T")
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[test.T]], \
+        typing.Type[test.Base]]");
+  (* With @final. *)
+  assert_constructor
+    {|
+      from typing import final, Generic, Optional, TypeVar
+      T = TypeVar("T")
+      @final
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[typing.Optional[test.T]]], \
+        typing.Type[test.Base]]");
+  assert_constructor
+    {|
+      from typing import final, Generic, Optional, TypeVar
+      T = TypeVar("T")
+      @final
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+    |}
+    "Base[int]"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base[int]]), \
+        Named(x, int)], test.Base[typing.Optional[int]]], typing.Type[test.Base[int]]]");
+  assert_constructor
+    {|
+      from typing import Generic, Optional, TypeVar
+      T = TypeVar("T")
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+      class Child(Base[T]): ...
+    |}
+    "Child"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
+        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Child[test.T]], \
+        typing.Type[test.Child]]");
+  assert_constructor
+    {|
+      from typing import Generic, Optional, TypeVar
+      T = TypeVar("T")
+      S = TypeVar("S")
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+      class Child(Base[T], Generic[T, S]): ...
+    |}
+    "Child[int, test.S]"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base[int]]), \
+        Named(x, int)], test.Child[int, test.S]], typing.Type[test.Child[int, test.S]]]");
+  assert_constructor
+    {|
+      from typing import final, overload, Generic, List, Optional, TypeVar, Union
+      T = TypeVar("T")
+      @final
+      class Base(Generic[T]):
+        @overload
+        def __new__(cls, x: List[T]) -> Base[T]: ...
+        @overload
+        def __new__(cls, x: T) -> Base[Optional[T]]: ...
+
+        def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
+        typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
+        typing.Union[test.Base[typing.Optional[test.T]], test.Base[test.T]]][[[Named(cls, \
+        typing.Type[test.Base[test.T]]), Named(x, typing.List[test.T])], \
+        test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), Named(x, test.T)], \
+        test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
+  (* Without @final. *)
+  assert_constructor
+    {|
+      from typing import overload, Generic, List, Optional, TypeVar, Union
+      T = TypeVar("T")
+      class Base(Generic[T]):
+        @overload
+        def __new__(cls, x: List[T]) -> Base[T]: ...
+        @overload
+        def __new__(cls, x: T) -> Base[Optional[T]]: ...
+
+        def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
+        typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
+        test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), Named(x, \
+        typing.List[test.T])], test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), \
+        Named(x, test.T)], test.Base[test.T]]], typing.Type[test.Base]]");
+  (* __init__ takes precedence over __new__ and ignores any return type for __new__. *)
+  assert_constructor
+    {|
+      from typing import Generic, Optional, TypeVar
+      T = TypeVar("T")
+      class Base(Generic[T]):
+        def __new__(self, x: T) -> Base[Optional[T]]: ...
+        def __init__(self, x: T) -> None: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), Named(x, \
+        test.T)], test.Base[test.T]], test.Base[test.T]]");
+  assert_constructor
+    {|
+      from typing import final, overload, Generic, List, Optional, TypeVar, Union
+      T = TypeVar("T")
+      @final
+      class Base(Generic[T]):
+        @overload
+        def __new__(cls, x: List[T]) -> Base[T]: ...
+        @overload
+        def __new__(cls, x: T) -> Base[Optional[T]]: ...
+
+        def __new__(cls, x: Union[T, List[T]]) -> Union[Base[T], Base[Optional[T]]]: ...
+        def __init__(self, x: Union[T, List[T]]) -> None: ...
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__init__)[[Named(self, test.Base[test.T]), Named(x, \
+        typing.Union[typing.List[test.T], test.T])], test.Base[test.T]], test.Base[test.T]]");
   ()
 
 
