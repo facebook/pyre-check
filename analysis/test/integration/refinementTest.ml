@@ -613,6 +613,42 @@ let test_check_final_attribute_refinement context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from typing import Final, Optional
+
+      class Boo: ...
+
+      class Baz:
+        z: Final[Optional[Boo]] = None
+
+      class Bar:
+        y: Final[Optional[Baz]] = None
+
+      class Foo:
+        x: Final[Optional[Bar]] = None
+
+      def bar(foo: Foo) -> None:
+        assert (foo.x and foo.x.y and foo.x.y.z)
+        reveal_type(foo.x)
+        reveal_type(foo.x.y)
+        reveal_type(foo.x.y.z)
+
+      def bar2(foo: Foo) -> None:
+        # This produces the same underlying Assert as above after normalization.
+        if not foo.x or not foo.x.y:
+          pass
+        else:
+          reveal_type(foo.x)
+          reveal_type(foo.x.y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`).";
+      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`).";
+      "Revealed type [-1]: Revealed type for `foo.x.y.z` is `Optional[Boo]` (inferred: `Boo`).";
+      "Revealed type [-1]: Revealed type for `foo.x` is `Optional[Bar]` (inferred: `Bar`).";
+      "Revealed type [-1]: Revealed type for `foo.x.y` is `Optional[Baz]` (inferred: `Baz`).";
+    ];
+  assert_type_errors
+    {|
       from typing import Optional
       from dataclasses import dataclass
       def expects_str(x: str) -> None:

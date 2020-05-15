@@ -270,9 +270,9 @@ let meet
               sofar
               ~key
               ~data:(create_refinement_unit annotation ~left_attributes ~right_attributes)
-        | `Left _
-        | `Right _ ->
-            sofar
+        | `Left refinement_unit
+        | `Right refinement_unit ->
+            Identifier.Map.Tree.set sofar ~key ~data:refinement_unit
       in
       Identifier.Map.Tree.fold2
         left_attributes

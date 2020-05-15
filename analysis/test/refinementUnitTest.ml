@@ -236,6 +236,9 @@ let test_join context =
 
 let test_meet context =
   let global_resolution = resolution context in
+  let assert_equal actual expected =
+    assert_equal ~printer:[%show: RefinementUnit.t] expected actual
+  in
   (* Type order is preserved. *)
   assert_equal
     (meet
@@ -287,7 +290,20 @@ let test_meet context =
        ( create ~base:(Annotation.create Type.object_primitive) ()
        |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) ))
     ( create ~base:(Annotation.create Type.object_primitive) ()
-    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string) );
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)
+    |> add_attribute_refinement ~reference:!&"a.x.b" ~base:(Annotation.create Type.integer) );
+  assert_equal
+    (meet
+       ~global_resolution
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.string)
+       |> add_attribute_refinement
+            ~reference:!&"a.x.b"
+            ~base:(Annotation.create Type.object_primitive) )
+       ( create ~base:(Annotation.create Type.object_primitive) ()
+       |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.integer) ))
+    ( create ~base:(Annotation.create Type.object_primitive) ()
+    |> add_attribute_refinement ~reference:!&"a.x" ~base:(Annotation.create Type.Bottom) );
 
   (* Mutability. *)
   assert_equal
