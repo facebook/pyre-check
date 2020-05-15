@@ -2511,7 +2511,7 @@ module Implementation = struct
             | _ -> Type.Top
           in
           UninstantiatedAnnotation.Attribute annotation, class_variable, visibility, None, None
-      | Method { signatures; final; static; _ } ->
+      | Method { signatures; final; _ } ->
           (* Handle Callables *)
           let visibility =
             if final then
@@ -2539,16 +2539,15 @@ module Implementation = struct
             let annotation =
               match decorated with
               | Ok resolved -> (
-                  match attribute_name, static, resolved with
-                  | _, true, _
-                  | "__new__", _, _ ->
+                  match attribute_name, resolved with
+                  (* these names are only magic-ed into being ClassMethods/StaticMethods if they're
+                     "plain functions". We can't capture that in the type system, so we approximate
+                     with Callable *)
+                  | "__new__", Callable _ ->
                       Type.Parametric
                         { name = "typing.StaticMethod"; parameters = [Single resolved] }
-                  (* these names are only magic-ed into being ClassMethods if they're "plain
-                     functions". We can't capture that in the type system, so we approximate with
-                     Callable *)
-                  | "__init_subclass__", _, Callable _
-                  | "__class_getitem__", _, Callable _ ->
+                  | "__init_subclass__", Callable _
+                  | "__class_getitem__", Callable _ ->
                       Type.Parametric
                         { name = "typing.ClassMethod"; parameters = [Single resolved] }
                   | _ -> resolved )
@@ -3006,6 +3005,8 @@ module Implementation = struct
           | name, _ when Set.mem Recognized.classmethod_decorators name ->
               (* TODO (T67024249): convert these to just normal stubs *)
               Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
+          | "staticmethod", _ ->
+              Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
           | name, _ -> (
               let resolved_decorator =
                 match

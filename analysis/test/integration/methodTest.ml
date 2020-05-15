@@ -717,6 +717,23 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `test.Foo().__class_getitem__` is \
        `BoundMethod[typing.Callable[[int], str], typing.Type[Foo]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import List, TypeVar
+      T = TypeVar("T")
+      def wrap(x: T) -> List[T]:
+        return [x]
+      class Foo:
+        @wrap
+        @staticmethod
+        def s() -> None:
+          return
+      reveal_type(Foo().s)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.Foo().s` is \
+       `List[typing.StaticMethod[typing.Callable(Foo.s)[[], None]]]`.";
+    ];
   ()
 
 
