@@ -4278,7 +4278,7 @@ module State (Context : Context) = struct
                   let errors, annotations =
                     match guide with
                     | Type.Any -> errors, List.map assignees ~f:(fun _ -> Type.Any)
-                    | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Top)
+                    | Type.Top -> errors, List.map assignees ~f:(fun _ -> Type.Any)
                     | _ -> (
                         match nonuniform_sequence_parameters (List.length assignees) guide with
                         | None ->
@@ -4293,7 +4293,7 @@ module State (Context : Context) = struct
                                        unpack_problem = UnacceptableType guide;
                                      })
                             in
-                            errors, List.map assignees ~f:(fun _ -> Type.Top)
+                            errors, List.map assignees ~f:(fun _ -> Type.Any)
                         | Some annotations ->
                             let annotations =
                               let has_starred_assignee = not (List.is_empty starred) in
@@ -4330,7 +4330,7 @@ module State (Context : Context) = struct
                                          unpack_problem = CountMismatch (List.length annotations);
                                        })
                               in
-                              errors, List.map assignees ~f:(fun _ -> Type.Top)
+                              errors, List.map assignees ~f:(fun _ -> Type.Any)
                             else
                               errors, annotations )
                   in

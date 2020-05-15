@@ -490,9 +490,9 @@ let test_custom_tuple context =
     [
       "Missing return annotation [3]: Returning `int` but type `Any` is specified.";
       "Unable to unpack [23]: Unable to unpack `test.C` into 3 values.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
-      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
-      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `z` is `typing.Any`.";
     ];
 
   assert_type_errors
@@ -505,9 +505,9 @@ let test_custom_tuple context =
     |}
     [
       "Unable to unpack [23]: Unable to unpack `object` into 3 values.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
-      "Revealed type [-1]: Revealed type for `y` is `unknown`.";
-      "Revealed type [-1]: Revealed type for `z` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `z` is `typing.Any`.";
     ]
 
 

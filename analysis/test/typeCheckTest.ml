@@ -1008,11 +1008,11 @@ let test_forward_statement context =
     ["c", Type.integer; "d", Type.Top]
     "a, b = c, d"
     ["a", Type.integer; "b", Type.Top; "c", Type.integer; "d", Type.Top];
-  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Top; "y", Type.Top; "z", Type.integer];
+  assert_forward ["z", Type.integer] "x, y = z" ["x", Type.Any; "y", Type.Any; "z", Type.integer];
   assert_forward
     ["z", Type.tuple [Type.integer; Type.string; Type.string]]
     "x, y = z"
-    ["x", Type.Top; "y", Type.Top; "z", Type.tuple [Type.integer; Type.string; Type.string]];
+    ["x", Type.Any; "y", Type.Any; "z", Type.tuple [Type.integer; Type.string; Type.string]];
   assert_forward
     ["y", Type.integer; "z", Type.Top]
     "x = y, z"
@@ -1030,7 +1030,7 @@ let test_forward_statement context =
     ["z", Type.Tuple (Type.Unbounded Type.integer)]
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
-  assert_forward [] "(x, y), z = 1" ["x", Type.Top; "y", Type.Top; "z", Type.Top];
+  assert_forward [] "(x, y), z = 1" ["x", Type.Any; "y", Type.Any; "z", Type.Any];
   assert_forward
     ["z", Type.list Type.integer]
     "x, y = z"

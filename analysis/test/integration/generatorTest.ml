@@ -69,10 +69,7 @@ let test_check_comprehensions context =
       def foo(d: typing.Dict[int, str]) -> typing.Dict[int, str]:
         return { k: v for k, v in d }
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got `typing.Dict[]`.";
-      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
-    ];
+    ["Unable to unpack [23]: Unable to unpack `int` into 2 values."];
   assert_type_errors
     {|
       import typing
