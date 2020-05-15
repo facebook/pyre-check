@@ -100,8 +100,10 @@ class Errors:
                 unsuppressed_paths.append(path_to_suppress)
 
         if unsuppressed_paths:
+            paths_string = ", ".join(unsuppressed_paths)
             raise PartialErrorSuppression(
-                "Could not fully suppress errors.", unsuppressed_paths
+                f"Could not fully suppress errors in: {paths_string}",
+                unsuppressed_paths,
             )
 
 
