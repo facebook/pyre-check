@@ -1210,7 +1210,6 @@ let test_check_invalid_type_variables context =
     [
       "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's \
        parameters.";
-      "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
     ];
   assert_type_errors
     {|

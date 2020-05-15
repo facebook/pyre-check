@@ -460,7 +460,7 @@ let test_register_globals context =
   |> ignore;
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
-  assert_global "qualifier.with_resolve" (Some Type.Top);
+  assert_global "qualifier.with_resolve" (Some Type.Any);
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
@@ -698,7 +698,9 @@ let test_populate context =
   assert_global "test.global_value_set" (Annotation.create_immutable Type.integer);
   assert_global "test.global_annotated" (Annotation.create_immutable Type.integer);
   assert_global "test.global_both" (Annotation.create_immutable Type.integer);
-  assert_global "test.global_unknown" (Annotation.create_immutable Type.Top);
+  assert_global
+    "test.global_unknown"
+    (Annotation.create_immutable ~original:(Some Type.Top) Type.Any);
   assert_global
     "test.function"
     (Annotation.create_immutable
@@ -709,7 +711,7 @@ let test_populate context =
           ()));
   assert_global
     "test.global_function"
-    (Annotation.create_immutable ~original:(Some Type.Top) Type.Top);
+    (Annotation.create_immutable ~original:(Some Type.Top) Type.Any);
   assert_global "test.Class" (Annotation.create_immutable (Type.meta (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 

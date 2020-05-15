@@ -2818,7 +2818,7 @@ module Implementation = struct
     | Expression.Await expression ->
         resolve_literal ~assumptions expression
         |> Type.awaitable_value
-        |> Option.value ~default:Type.Top
+        |> Option.value ~default:Type.Any
     | BooleanOperator { BooleanOperator.left; right; _ } ->
         let annotation =
           TypeOrder.join
@@ -2835,8 +2835,8 @@ module Implementation = struct
         | None ->
             (* Constructor on concrete class or fully specified generic,
              * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
-            Option.value (fully_specified_type callee) ~default:Top )
-    | Name (Identifier "None") -> Type.Top
+            Option.value (fully_specified_type callee) ~default:Type.Any )
+    | Name (Identifier "None") -> Type.Any
     | Name _ when has_identifier_base expression -> (
         match fully_specified_type expression with
         | Some annotation ->
@@ -2844,7 +2844,7 @@ module Implementation = struct
               Type.none
             else
               Type.meta annotation
-        | None -> Type.Top )
+        | None -> Type.Any )
     | Complex _ -> Type.complex
     | Dictionary { Dictionary.entries; keywords = [] } ->
         let key_annotation, value_annotation =

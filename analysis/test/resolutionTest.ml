@@ -200,21 +200,21 @@ let test_resolve_literal context =
       expected
       (GlobalResolution.resolve_literal resolution expression)
   in
-  assert_resolve_literal "i" Type.Top;
-  assert_resolve_literal "await i" Type.Top;
-  assert_resolve_literal "await awaitable" Type.Top;
+  assert_resolve_literal "i" Type.Any;
+  assert_resolve_literal "await i" Type.Any;
+  assert_resolve_literal "await awaitable" Type.Any;
   assert_resolve_literal "\"\"" Type.string;
   assert_resolve_literal "1" Type.integer;
-  assert_resolve_literal "1+1" Type.Top;
-  assert_resolve_literal "j" Type.Top;
-  assert_resolve_literal "foo()" Type.Top;
+  assert_resolve_literal "1+1" Type.Any;
+  assert_resolve_literal "j" Type.Any;
+  assert_resolve_literal "foo()" Type.Any;
   assert_resolve_literal "C()" (Type.Primitive "C");
-  assert_resolve_literal "G(7)" Type.Top;
+  assert_resolve_literal "G(7)" Type.Any;
   assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
-  assert_resolve_literal "G" Type.Top;
+  assert_resolve_literal "G" Type.Any;
 
   (* None *)
-  assert_resolve_literal "None" Type.Top;
+  assert_resolve_literal "None" Type.Any;
   assert_resolve_literal "[None]" Type.Any;
 
   (* Dictionary *)
@@ -243,7 +243,7 @@ let test_resolve_literal context =
   assert_resolve_literal
     "(1, 'string')"
     (Type.Tuple (Bounded (Concrete [Type.integer; Type.string])));
-  assert_resolve_literal "(1, i)" (Type.Tuple (Bounded (Concrete [Type.integer; Type.Top])));
+  assert_resolve_literal "(1, i)" (Type.Tuple (Bounded (Concrete [Type.integer; Type.Any])));
 
   (* Ternary *)
   assert_resolve_literal "1 if x else 2" Type.integer;
