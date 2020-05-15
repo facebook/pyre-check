@@ -39,7 +39,7 @@ def path_exists(filename: str) -> Path:
 def find_targets(search_root: Path) -> Dict[str, List[str]]:
     LOG.info("Finding typecheck targets in %s", search_root)
     # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
-    typing_field = "check_types ?="
+    typing_field = "check_types ?= ?True"
     targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*".format(
         typing_field
     )

@@ -15,7 +15,6 @@ from .. import errors, upgrade
 from ..commands import command
 from ..repository import Repository
 from ..upgrade import (
-    ErrorSuppressingCommand,
     FixmeAll,
     FixmeSingle,
     FixmeTargets,
@@ -448,7 +447,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 "grep",
                 "-RPzo",
                 "--include=*TARGETS",
-                r"(?s)name = ((?!\n\s*name).)*check_types ?=((?!\n\s*name).)*",
+                r"(?s)name = ((?!\n\s*name).)*check_types ?= ?True((?!\n\s*name).)*",
                 Path("derp"),
             ],
             stderr=-1,
