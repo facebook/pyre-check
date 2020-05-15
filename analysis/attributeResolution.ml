@@ -4275,7 +4275,7 @@ module ParseAnnotationCache = struct
 
     let produce_value
         class_metadata_environment
-        { SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression }
+        { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
         ~dependency
       =
       let uncached_open_recurser =
@@ -4286,7 +4286,11 @@ module ParseAnnotationCache = struct
           ~class_metadata_environment
           ~dependency
       in
-      Implementation.parse_annotation uncached_open_recurser ~assumptions ~validation expression
+      Implementation.parse_annotation
+        uncached_open_recurser
+        ~assumptions:empty_assumptions
+        ~validation
+        expression
 
 
     let filter_upstream_dependency = function
@@ -4305,14 +4309,11 @@ module ParseAnnotationCache = struct
     let cached_parse_annotation
         read_only
         { Implementation.dependency; _ }
-        ~assumptions
+        ~assumptions:_
         ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
         expression
       =
-      get
-        read_only
-        ?dependency
-        { SharedMemoryKeys.ParseAnnotationKey.assumptions; validation; expression }
+      get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
   end
 end
 
@@ -4342,7 +4343,6 @@ module Cache = ManagedCache.Make (struct
         in_test;
         accessed_via_metaclass;
         name;
-        assumptions;
       }
       ~dependency
     =
@@ -4363,7 +4363,7 @@ module Cache = ManagedCache.Make (struct
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
-      ~assumptions
+      ~assumptions:empty_assumptions
       name
 
 
@@ -4390,7 +4390,7 @@ module ReadOnly = struct
   let cached_single_attribute_table
       read_only
       { Implementation.dependency; _ }
-      ~assumptions
+      ~assumptions:_
       ~include_generated_attributes
       ~in_test
       ~accessed_via_metaclass
@@ -4404,7 +4404,6 @@ module ReadOnly = struct
         in_test;
         accessed_via_metaclass;
         name;
-        assumptions;
       }
 
 

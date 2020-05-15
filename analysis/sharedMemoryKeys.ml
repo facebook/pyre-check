@@ -130,7 +130,6 @@ module AttributeTableKey = struct
       in_test: bool;
       accessed_via_metaclass: bool;
       name: Type.Primitive.t;
-      assumptions: Assumptions.t;
     }
     [@@deriving compare, sexp, hash, show]
   end
@@ -155,7 +154,6 @@ module ParseAnnotationKey = struct
 
   module T = struct
     type t = {
-      assumptions: Assumptions.t;
       validation: type_validation_policy;
       expression: Expression.t;
     }

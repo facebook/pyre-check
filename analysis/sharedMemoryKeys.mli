@@ -21,7 +21,6 @@ module AttributeTableKey : sig
     in_test: bool;
     accessed_via_metaclass: bool;
     name: Type.Primitive.t;
-    assumptions: Assumptions.t;
   }
   [@@deriving sexp]
 
@@ -39,7 +38,6 @@ module ParseAnnotationKey : sig
     | ValidatePrimitivesAndTypeParameters
 
   type t = {
-    assumptions: Assumptions.t;
     validation: type_validation_policy;
     expression: Expression.t;
   }
