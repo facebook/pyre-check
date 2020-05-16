@@ -186,11 +186,7 @@ let test_check_ternary context =
         else:
           return 1
     |}
-    [
-      "Undefined attribute [16]: `Optional` has no attribute `__gt__`.";
-      (* TODO: We might want to get rid of this in the future *)
-      "Undefined attribute [16]: `Optional` has no attribute `__le__`.";
-    ];
+    ["Undefined attribute [16]: `Optional` has no attribute `__gt__`."];
   assert_type_errors
     {|
       import typing
@@ -579,6 +575,16 @@ let test_check_while context =
       print(some_var)
     |}
     [];
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        while x < 1.0:
+          pass
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__lt__` but got `float`.";
+    ];
   ()
 
 
