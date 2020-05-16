@@ -17,9 +17,6 @@ module T = struct
   (* These are not filtered: our backend is broken if any locations appear in errors. *)
   let any_position = { line = -1; column = -1 }
 
-  (* We explicitly do not analyze expressions/statements at synthetic positions. *)
-  let synthetic_position = { line = -1; column = -2 }
-
   let show_position { line; column } = Format.sprintf "%d:%d" line column
 
   let pp_position format { line; column } = Format.fprintf format "%d:%d" line column
@@ -47,8 +44,6 @@ module T = struct
 
 
   let any = { start = any_position; stop = any_position }
-
-  let synthetic = { start = synthetic_position; stop = synthetic_position }
 
   let start { start; _ } = start
 
@@ -108,10 +103,6 @@ module WithModule = struct
     [@@deriving compare, eq, sexp, hash, to_yojson]
 
     let any = { path = Reference.empty; start = any_position; stop = any_position }
-
-    let synthetic =
-      { path = Reference.empty; start = synthetic_position; stop = synthetic_position }
-
 
     let line { start = { line; _ }; _ } = line
 

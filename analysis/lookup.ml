@@ -73,10 +73,7 @@ module NodeVisitor = struct
         | _ -> None
       in
       let store_lookup ~table ~location ~data =
-        if
-          (not (Location.equal location Location.any))
-          && not (Location.equal location Location.synthetic)
-        then
+        if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
       in
       let store_annotation location annotation =
@@ -189,10 +186,7 @@ module Visit = struct
           |> Type.meta
         in
         let location = Node.location annotation in
-        if
-          (not (Location.equal location Location.any))
-          && not (Location.equal location Location.synthetic)
-        then
+        if not (Location.equal location Location.any) then
           Hashtbl.add annotations_lookup ~key:location ~data:resolved |> ignore
       in
       match Node.value statement with

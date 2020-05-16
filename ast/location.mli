@@ -24,8 +24,6 @@ val create : start:Lexing.position -> stop:Lexing.position -> t
 
 val any : t
 
-val synthetic : t
-
 val start : t -> position
 
 val stop : t -> position
@@ -72,8 +70,6 @@ module WithModule : sig
   [@@deriving compare, eq, sexp, hash, to_yojson]
 
   val any : t
-
-  val synthetic : t
 
   val line : t -> int
 

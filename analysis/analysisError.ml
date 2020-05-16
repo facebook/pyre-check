@@ -2893,7 +2893,7 @@ let deduplicate errors =
 
 
 let filter ~resolution errors =
-  let should_filter ({ location; _ } as error) =
+  let should_filter error =
     let is_mock_error { kind; _ } =
       match kind with
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
@@ -3019,8 +3019,7 @@ let filter ~resolution errors =
           | _ -> false )
       | _ -> false
     in
-    Location.WithModule.equal Location.WithModule.synthetic location
-    || is_stub_error error
+    is_stub_error error
     || is_mock_error error
     || is_unimplemented_return_error error
     || is_builtin_import_error error

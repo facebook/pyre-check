@@ -585,15 +585,16 @@ let test_join context =
     (error (revealed_type "a" (Annotation.create Type.integer)))
     (error (revealed_type "b" (Annotation.create Type.float)))
     (error Error.Top);
+  let stop = { Location.line = 42; column = 42 } in
   assert_join
     (error
-       ~location:{ Location.synthetic with Location.start = { Location.line = 1; column = 0 } }
+       ~location:{ Location.start = { Location.line = 1; column = 0 }; stop }
        (revealed_type "a" (Annotation.create Type.integer)))
     (error
-       ~location:{ Location.synthetic with Location.start = { Location.line = 2; column = 1 } }
+       ~location:{ Location.start = { Location.line = 2; column = 1 }; stop }
        (revealed_type "a" (Annotation.create Type.float)))
     (error
-       ~location:{ Location.synthetic with Location.start = { Location.line = 1; column = 0 } }
+       ~location:{ Location.start = { Location.line = 1; column = 0 }; stop }
        (revealed_type "a" (Annotation.create Type.float)))
 
 
@@ -697,9 +698,6 @@ let test_filter context =
   assert_unfiltered (incompatible_return_type Type.NoneType Type.integer);
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
-
-  (* Always filter synthetic locations. *)
-  assert_filtered ~location:Location.synthetic (missing_return Type.integer);
 
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);

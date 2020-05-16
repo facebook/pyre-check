@@ -246,11 +246,7 @@ let create define =
         in
         Node.connect_option body_node join;
         let orelse_statements =
-          let test =
-            Expression.negate test
-            |> Expression.normalize
-            |> fun test -> { test with location = Location.synthetic }
-          in
+          let test = Expression.negate test |> Expression.normalize in
           Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
           :: orelse
         in
@@ -337,11 +333,7 @@ let create define =
         Node.connect_option body split;
         let orelse =
           let orelse =
-            let test =
-              Expression.negate test
-              |> Expression.normalize
-              |> fun test -> { test with location = Location.synthetic }
-            in
+            let test = Expression.negate test |> Expression.normalize in
             Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) test :: orelse
           in
           create orelse jumps split
