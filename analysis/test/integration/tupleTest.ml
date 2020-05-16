@@ -243,7 +243,11 @@ let test_check_tuple context =
           ...
       C(1,2)
     |}
-    ["Too many arguments [19]: Call `C.__new__` expects 1 positional argument, 2 were provided."];
+    [
+      "Unbound name [10]: Name `T` is used but not defined in the current scope.";
+      "Unbound name [10]: Name `$unparsed_annotation` is used but not defined in the current scope.";
+      "Too many arguments [19]: Call `C.__new__` expects 1 positional argument, 2 were provided.";
+    ];
   assert_type_errors
     {|
       import collections

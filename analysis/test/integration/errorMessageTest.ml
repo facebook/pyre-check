@@ -123,6 +123,8 @@ let test_show_error_traces context =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` but \
        no type is specified. Attribute `attribute` declared on line 3, type `str` deduced from \
        test.py:7:4.";
+      "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
+       import it or assign to it?";
       "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on line \
        8, specified on line 5.";
     ];
@@ -155,7 +157,6 @@ let test_show_error_traces context =
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
     ];
-  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Other():
@@ -167,6 +168,8 @@ let test_show_error_traces context =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` but \
        no type is specified. Attribute `attribute` declared on line 3, type `int` deduced from \
        test.py:5:4.";
+      "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
+       import it or assign to it?";
     ];
   assert_type_errors
     {|

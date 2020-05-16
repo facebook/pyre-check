@@ -380,6 +380,7 @@ let test_check_attributes context =
   assert_type_errors
     {|
       import typing
+      _T = typing.TypeVar('_T')
       class Foo:
         bar: typing.Generic[_T]
         def foo(self) -> int:
@@ -441,8 +442,8 @@ let test_check_attributes context =
     [];
   assert_type_errors
     {|
-      class unittest.TestCase: ...
-      class Foo(unittest.TestCase):
+      from unittest import TestCase
+      class Foo(TestCase):
         def setUp(self) -> None:
           self.attribute: int = 1
         def foo(self) -> str:
@@ -451,8 +452,8 @@ let test_check_attributes context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
-      class unittest.case.TestCase: ...
-      class Foo(unittest.case.TestCase):
+      from unittest.case import TestCase
+      class Foo(TestCase):
         def setUp(self) -> None:
           self.attribute: int = 1
         def foo(self) -> str:
@@ -461,8 +462,8 @@ let test_check_attributes context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
-      class unittest.case.TestCase: ...
-      class Foo(unittest.case.TestCase):
+      from unittest.case import TestCase
+      class Foo(TestCase):
         x: int
         def setUp(self) -> None:
           self.x = 1
@@ -470,11 +471,11 @@ let test_check_attributes context =
     [];
   assert_type_errors
     {|
-      class unittest.case.TestCase: ...
+      from unittest.case import TestCase
       class Base():
         def setUp(self) -> None:
           self.x: int = 1
-      class Foo(Base, unittest.case.TestCase):
+      class Foo(Base, TestCase):
         def foo(self) -> None:
           y = self.x
     |}
@@ -1016,7 +1017,6 @@ let test_check_attribute_initialization context =
 let test_check_missing_attribute context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
-  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Foo:
@@ -1026,6 +1026,7 @@ let test_check_missing_attribute context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
        is specified.";
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -1062,13 +1063,15 @@ let test_check_missing_attribute context =
           self.b: MyType = 1
     |}
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
-  (* TODO (T66973854): Check unbound names in class toplevel *)
   assert_type_errors
     {|
       class Foo:
         a = unknown
     |}
-    ["Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified."];
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+      "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
+    ];
   assert_type_errors
     {|
         import typing

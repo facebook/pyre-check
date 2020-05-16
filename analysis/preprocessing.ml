@@ -2433,7 +2433,12 @@ module AccessCollector = struct
     | Assert { Assert.test; message; _ } ->
         let collected = from_expression collected test in
         Option.value_map message ~f:(from_expression collected) ~default:collected
-    | Class { Class.decorators; _ }
+    | Class { Class.bases; decorators; _ } ->
+        let collected =
+          List.fold bases ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
+              from_expression sofar value)
+        in
+        List.fold decorators ~init:collected ~f:from_expression
     | Define { Define.signature = { Define.Signature.decorators; _ }; _ } ->
         List.fold decorators ~init:collected ~f:from_expression
     | Delete expression
@@ -2512,6 +2517,9 @@ module AccessCollector = struct
         ~f:(from_expression parameter_annotation_accesses)
     in
     from_statements return_annotation_accesses body
+
+
+  let from_class { Class.body; _ } = from_statements NameAccessSet.empty body
 end
 
 let populate_captures ({ Source.statements; _ } as source) =
@@ -2718,7 +2726,7 @@ let populate_captures ({ Source.statements; _ } as source) =
   in
   let rec transform_statement ~scopes statement =
     match statement with
-    (* Process each defines *)
+    (* Process each define *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
         let accesses = AccessCollector.from_define define in
         let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
@@ -2777,45 +2785,50 @@ let populate_unbound_names source =
     | Some _ -> None
     | None -> Option.some_if (not (Builtins.mem name)) access
   in
+  let compute_unbound_names ~scopes accesses =
+    let deduplicate_access access_set =
+      (* Only keep one access for each name *)
+      let accumulate_names sofar ({ Define.NameAccess.name; _ } as access) =
+        match Map.add sofar ~key:name ~data:access with
+        | `Ok sofar -> sofar
+        | `Duplicate -> sofar
+      in
+      NameAccessSet.fold access_set ~init:Identifier.Map.empty ~f:accumulate_names
+      |> Identifier.Map.data
+      |> NameAccessSet.of_list
+    in
+    let to_unbound_name ~scopes sofar name =
+      match to_unbound_name ~scopes name with
+      | None -> sofar
+      | Some name -> NameAccessSet.add sofar name
+    in
+    deduplicate_access accesses
+    |> Set.fold ~init:NameAccessSet.empty ~f:(to_unbound_name ~scopes)
+    |> NameAccessSet.to_list
+  in
   let rec transform_statement ~scopes statement =
     match statement with
-    (* Process each defines *)
+    (* Process each define *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
-        (* TODO (T66973980): Check decorators *)
-        let accesses = AccessCollector.from_define define in
         let scopes =
           if Define.is_toplevel define then
             scopes
           else
             ScopeStack.extend scopes ~with_:(Scope.of_define_exn define)
         in
-        let unbound_names =
-          let deduplicate_access access_set =
-            (* Only keep one access for each name *)
-            let accumulate_names sofar ({ Define.NameAccess.name; _ } as access) =
-              match Map.add sofar ~key:name ~data:access with
-              | `Ok sofar -> sofar
-              | `Duplicate -> sofar
-            in
-            NameAccessSet.fold access_set ~init:Identifier.Map.empty ~f:accumulate_names
-            |> Identifier.Map.data
-            |> NameAccessSet.of_list
-          in
-          let to_unbound_name ~scopes sofar name =
-            match to_unbound_name ~scopes name with
-            | None -> sofar
-            | Some name -> NameAccessSet.add sofar name
-          in
-          deduplicate_access accesses
-          |> Set.fold ~init:NameAccessSet.empty ~f:(to_unbound_name ~scopes)
-          |> NameAccessSet.to_list
-        in
+        let unbound_names = AccessCollector.from_define define |> compute_unbound_names ~scopes in
         let body = transform_statements ~scopes body in
         { Node.location; value = Statement.Define { define with body; unbound_names } }
-    | { Node.location; value = Class class_ } ->
-        (* TODO (T66974107, T66973854): Check class base list and class toplevel *)
-        let body = transform_statements ~scopes class_.body in
-        { Node.location; value = Class { class_ with body } }
+    | { Node.location; value = Class ({ Class.body; _ } as class_) } ->
+        let top_level_unbound_names =
+          let scopes =
+            ScopeStack.extend scopes ~with_:(Scope.of_define_exn (Class.toplevel_define class_))
+          in
+          AccessCollector.from_class class_ |> compute_unbound_names ~scopes
+        in
+        (* Use parent scope here as classes do not open up new scopes for the methods defined in it. *)
+        let body = transform_statements ~scopes body in
+        { Node.location; value = Class { class_ with body; top_level_unbound_names } }
     (* The rest is just boilerplates to make sure every nested define gets visited *)
     | { Node.location; value = For for_ } ->
         let body = transform_statements ~scopes for_.body in

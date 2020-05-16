@@ -10,6 +10,7 @@ let test_assert_is_none context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import unittest
       class FakeTest(unittest.TestCase):
         def foo(self) -> None:
           self.assertIsNotNone(2)
@@ -18,6 +19,7 @@ let test_assert_is_none context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -33,6 +35,7 @@ let test_assert_is_none context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -60,6 +63,7 @@ let test_assert_is_none context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -75,6 +79,7 @@ let test_assert_is_none context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -280,6 +285,7 @@ let test_check_global_refinement context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class A:
         def __init__(self, x: typing.Optional[int]) -> None:
           self.x = x
@@ -351,6 +357,7 @@ let test_check_local_refinement context =
   assert_type_errors
     {|
       import typing
+      import unittest
       class FakeTest(unittest.TestCase):
         def foo(self, x: typing.Optional[int]) -> None:
           self.assertIsNotNone(x)

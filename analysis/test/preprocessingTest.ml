@@ -4253,7 +4253,30 @@ let test_populate_unbound_names _ =
     |}
     ~expected:[!&"foo", ["derp", location (3, 3) (3, 7)]];
 
-  (* TODO: Handle unbound names in decorators *)
+  let class_foo_toplevel_name = !&"Foo.$class_toplevel" in
+  assert_unbound_names
+    {|
+      class Foo(Derp):
+        def foo(self) -> None:
+          pass
+    |}
+    ~expected:[toplevel_name, ["Derp", location (2, 10) (2, 14)]];
+  assert_unbound_names
+    {|
+      class Foo:
+        class Baz(Bar):
+          pass
+    |}
+    ~expected:[class_foo_toplevel_name, ["Bar", location (3, 12) (3, 15)]];
+  assert_unbound_names
+    {|
+      class Foo:
+        class Bar:
+          pass
+        class Baz(Bar):
+          pass
+    |}
+    ~expected:[class_foo_toplevel_name, []];
   assert_unbound_names
     {|
       class Foo:
@@ -4261,7 +4284,7 @@ let test_populate_unbound_names _ =
         def foo(self) -> None:
           pass
     |}
-    ~expected:[!&"foo", []];
+    ~expected:[class_foo_toplevel_name, ["derp", location (3, 3) (3, 7)]];
   assert_unbound_names
     {|
       class Foo:
@@ -4272,7 +4295,7 @@ let test_populate_unbound_names _ =
         def foo(self, value: int) -> None:
           pass
     |}
-    ~expected:[!&"foo", []];
+    ~expected:[class_foo_toplevel_name, []];
   ()
 
 

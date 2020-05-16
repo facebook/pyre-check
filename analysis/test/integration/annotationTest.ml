@@ -178,7 +178,7 @@ let test_check_undefined_type context =
           self.z: Herp = 1
     |}
     [
-      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Unbound name [10]: Name `Herp` is used but not defined in the current scope.";
     ];
 
@@ -187,7 +187,7 @@ let test_check_undefined_type context =
     {|
       class Foo(Bar): ...
     |}
-    ["Undefined or invalid type [11]: Annotation `Bar` is not defined as a type."];
+    ["Unbound name [10]: Name `Bar` is used but not defined in the current scope."];
   assert_type_errors
     {|
       import typing
@@ -195,9 +195,9 @@ let test_check_undefined_type context =
       class Foo(Generic[_T]): ...
     |}
     [
+      "Unbound name [10]: Name `Generic` is used but not defined in the current scope.";
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
-      "Undefined or invalid type [11]: Annotation `Generic` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -206,8 +206,8 @@ let test_check_undefined_type context =
       class Foo(AA, BB, CC, DD): ...
     |}
     [
-      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `DD` is not defined as a type.";
+      "Unbound name [10]: Name `BB` is used but not defined in the current scope.";
+      "Unbound name [10]: Name `DD` is used but not defined in the current scope.";
     ];
   assert_type_errors
     {|
@@ -216,8 +216,8 @@ let test_check_undefined_type context =
       class Foo(AA, BB, CC, DD): ...
     |}
     [
-      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
-      "Undefined or invalid type [11]: Annotation `DD` is not defined as a type.";
+      "Unbound name [10]: Name `BB` is used but not defined in the current scope.";
+      "Unbound name [10]: Name `DD` is used but not defined in the current scope.";
     ];
 
   (* Globals *)
@@ -1309,13 +1309,18 @@ let test_check_invalid_type_variables context =
 
 
 let test_check_aliases context =
-  assert_type_errors ~context {|
-      class C(typing_extensions.Protocol):
-        ...
-    |} [];
   assert_type_errors
     ~context
     {|
+      import typing_extensions
+      class C(typing_extensions.Protocol):
+        ...
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      import typing_extensions
       class C(typing_extensions.Protocol[int]):
         ...
     |}

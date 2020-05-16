@@ -369,6 +369,7 @@ let test_check_nested context =
     [];
   assert_type_errors
     {|
+      import collections
       class Derp:
           Word = collections.namedtuple("word", ("verb", "noun"))
       def foo() -> Derp.Word: pass
