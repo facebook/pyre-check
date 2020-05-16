@@ -165,6 +165,8 @@ and Class : sig
 
   val location_insensitive_compare : t -> t -> int
 
+  val toplevel_define : t -> Define.t
+
   val constructors : ?in_test:bool -> t -> Define.t list
 
   val defines : t -> Define.t list
@@ -294,12 +296,6 @@ and Define : sig
   val create_toplevel
     :  unbound_names:NameAccess.t list ->
     qualifier:Reference.t option ->
-    statements:Statement.t list ->
-    t
-
-  val create_class_toplevel
-    :  unbound_names:NameAccess.t list ->
-    parent:Reference.t ->
     statements:Statement.t list ->
     t
 

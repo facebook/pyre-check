@@ -460,6 +460,8 @@ and Class : sig
 
   val location_insensitive_compare : t -> t -> int
 
+  val toplevel_define : t -> Define.t
+
   val constructors : ?in_test:bool -> t -> Define.t list
 
   val defines : t -> Define.t list
@@ -526,6 +528,13 @@ end = struct
                       Define.NameAccess.compare
                       left.top_level_unbound_names
                       right.top_level_unbound_names ) ) )
+
+
+  let toplevel_define { name = { Node.value; _ }; top_level_unbound_names; body; _ } =
+    Define.create_class_toplevel
+      ~unbound_names:top_level_unbound_names
+      ~parent:value
+      ~statements:body
 
 
   let constructors ?(in_test = false) { body; _ } =

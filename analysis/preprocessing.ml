@@ -1421,20 +1421,8 @@ let defines
 
 
     let predicate = function
-      | {
-          Node.location;
-          value =
-            Statement.Class
-              { Class.name = { Node.value = name; _ }; body; top_level_unbound_names; _ };
-          _;
-        }
-        when include_toplevels ->
-          Define.create_class_toplevel
-            ~unbound_names:top_level_unbound_names
-            ~parent:name
-            ~statements:body
-          |> Node.create ~location
-          |> Option.some
+      | { Node.location; value = Statement.Class class_; _ } when include_toplevels ->
+          Class.toplevel_define class_ |> Node.create ~location |> Option.some
       | { Node.location; value = Define define } when Define.is_stub define ->
           if include_stubs then
             Some { Node.location; Node.value = define }
