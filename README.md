@@ -4,6 +4,7 @@ Pyre is a performant type checker for python.
 *Read this in other languages: [Español](README.es.md)*
 
 [![Build Status](https://travis-ci.com/facebook/pyre-check.svg?branch=master)](https://travis-ci.com/facebook/pyre-check)
+[![Python Version](https://img.shields.io/badge/Python->3.5-blue.svg)](https://shields.io/)
 
 ## Getting Started
 
