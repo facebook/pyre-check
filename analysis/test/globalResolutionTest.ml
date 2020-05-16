@@ -464,7 +464,13 @@ let test_constructors context =
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
-      { StatementClass.name = + !&"Derp"; bases; body = []; decorators = [] }
+      {
+        StatementClass.name = + !&"Derp";
+        bases;
+        body = [];
+        decorators = [];
+        top_level_unbound_names = [];
+      }
       |> ClassSummary.create ~qualifier:Reference.empty
       |> ClassSummary.is_protocol
     in

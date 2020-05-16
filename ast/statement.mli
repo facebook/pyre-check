@@ -159,6 +159,7 @@ and Class : sig
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
+    top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -296,7 +297,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
+  val create_class_toplevel
+    :  unbound_names:NameAccess.t list ->
+    parent:Reference.t ->
+    statements:Statement.t list ->
+    t
 
   val name : t -> Reference.t Node.t
 

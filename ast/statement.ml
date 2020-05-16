@@ -454,6 +454,7 @@ and Class : sig
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
+    top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -495,6 +496,7 @@ end = struct
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
+    top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -511,11 +513,19 @@ end = struct
         | _ -> (
             match List.compare Statement.location_insensitive_compare left.body right.body with
             | x when not (Int.equal x 0) -> x
-            | _ ->
-                List.compare
-                  Expression.location_insensitive_compare
-                  left.decorators
-                  right.decorators ) )
+            | _ -> (
+                match
+                  List.compare
+                    Expression.location_insensitive_compare
+                    left.decorators
+                    right.decorators
+                with
+                | x when not (Int.equal x 0) -> x
+                | _ ->
+                    List.compare
+                      Define.NameAccess.compare
+                      left.top_level_unbound_names
+                      right.top_level_unbound_names ) ) )
 
 
   let constructors ?(in_test = false) { body; _ } =
@@ -1220,7 +1230,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
+  val create_class_toplevel
+    :  unbound_names:NameAccess.t list ->
+    parent:Reference.t ->
+    statements:Statement.t list ->
+    t
 
   val name : t -> Reference.t Node.t
 
@@ -1542,11 +1556,11 @@ end = struct
     }
 
 
-  let create_class_toplevel ~parent ~statements =
+  let create_class_toplevel ~unbound_names ~parent ~statements =
     {
       signature = Signature.create_class_toplevel ~parent;
       captures = [];
-      unbound_names = [];
+      unbound_names;
       body = statements;
     }
 

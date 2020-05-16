@@ -388,6 +388,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
+      top_level_unbound_names = [];
     }
     |> Node.create_with_default_location
   in

@@ -935,6 +935,7 @@ let test_class_locations _ =
              body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
              decorators =
                [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
+             top_level_unbound_names = [];
            });
     ];
   assert_source_locations
@@ -971,6 +972,7 @@ let test_class_locations _ =
                       });
                ];
              decorators = [];
+             top_level_unbound_names = [];
            });
     ];
   assert_source_locations
@@ -1001,6 +1003,7 @@ let test_class_locations _ =
                    (Statement.Expression (node ~start:(2, 1) ~stop:(2, 2) (Expression.Integer 1)));
                ];
              decorators = [];
+             top_level_unbound_names = [];
            });
     ];
   assert_source_locations
@@ -1054,6 +1057,7 @@ let test_class_locations _ =
                       });
                ];
              decorators = [];
+             top_level_unbound_names = [];
            });
     ]
 
@@ -2769,6 +2773,7 @@ let test_stub_locations _ =
                       });
                ];
              decorators = [];
+             top_level_unbound_names = [];
            });
     ];
   assert_source_locations
@@ -2789,6 +2794,7 @@ let test_stub_locations _ =
                    (Statement.Expression (node ~start:(1, 13) ~stop:(1, 16) Expression.Ellipsis));
                ];
              decorators = [];
+             top_level_unbound_names = [];
            });
     ]
 

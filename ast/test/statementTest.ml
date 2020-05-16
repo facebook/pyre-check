@@ -295,7 +295,9 @@ let test_attributes _ =
       in
       List.map expected ~f:attribute
     in
-    let definition = { Class.name = + !&""; bases = []; body = []; decorators = [] } in
+    let definition =
+      { Class.name = + !&""; bases = []; body = []; decorators = []; top_level_unbound_names = [] }
+    in
     assert_equal
       ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")

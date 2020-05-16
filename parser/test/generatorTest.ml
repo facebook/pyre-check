@@ -3402,13 +3402,25 @@ let test_class _ =
     "@bar\nclass foo():\n\tpass"
     [
       +Statement.Class
-         { Class.name = + !&"foo"; bases = []; body = [+Statement.Pass]; decorators = [!"bar"] };
+         {
+           Class.name = + !&"foo";
+           bases = [];
+           body = [+Statement.Pass];
+           decorators = [!"bar"];
+           top_level_unbound_names = [];
+         };
     ];
   assert_parsed_equal
     "class foo: pass"
     [
       +Statement.Class
-         { Class.name = + !&"foo"; bases = []; body = [+Statement.Pass]; decorators = [] };
+         {
+           Class.name = + !&"foo";
+           bases = [];
+           body = [+Statement.Pass];
+           decorators = [];
+           top_level_unbound_names = [];
+         };
     ];
   assert_parsed_equal
     "class foo():\n\tdef bar(): pass"
@@ -3438,6 +3450,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3487,13 +3500,20 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
     "class foo.bar: pass"
     [
       +Statement.Class
-         { Class.name = + !&"foo.bar"; bases = []; body = [+Statement.Pass]; decorators = [] };
+         {
+           Class.name = + !&"foo.bar";
+           bases = [];
+           body = [+Statement.Pass];
+           decorators = [];
+           top_level_unbound_names = [];
+         };
     ];
   assert_parsed_equal
     "class foo(1, 2):\n\t1"
@@ -3508,6 +3528,7 @@ let test_class _ =
              ];
            body = [+Statement.Expression (+Expression.Integer 1)];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3523,6 +3544,7 @@ let test_class _ =
              ];
            body = [+Statement.Expression (+Expression.Integer 1)];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3543,6 +3565,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3563,6 +3586,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3583,6 +3607,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3613,6 +3638,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -3655,6 +3681,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
 
@@ -3701,6 +3728,7 @@ let test_class _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ]
 
@@ -4827,6 +4855,7 @@ let test_stubs _ =
                   };
              ];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -4929,6 +4958,7 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -4940,6 +4970,7 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ];
   assert_parsed_equal
@@ -4951,6 +4982,7 @@ let test_stubs _ =
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
+           top_level_unbound_names = [];
          };
     ]
 

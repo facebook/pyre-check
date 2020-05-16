@@ -1423,11 +1423,16 @@ let defines
     let predicate = function
       | {
           Node.location;
-          value = Statement.Class { Class.name = { Node.value = name; _ }; body; _ };
+          value =
+            Statement.Class
+              { Class.name = { Node.value = name; _ }; body; top_level_unbound_names; _ };
           _;
         }
         when include_toplevels ->
-          Define.create_class_toplevel ~parent:name ~statements:body
+          Define.create_class_toplevel
+            ~unbound_names:top_level_unbound_names
+            ~parent:name
+            ~statements:body
           |> Node.create ~location
           |> Option.some
       | { Node.location; value = Define define } when Define.is_stub define ->
@@ -1642,6 +1647,7 @@ let expand_typed_dictionary_declarations
                        [non_total_base] );
                    decorators = [];
                    body = assignments;
+                   top_level_unbound_names = [];
                  })
         | _ -> None
       in
@@ -1741,6 +1747,7 @@ let expand_typed_dictionary_declarations
               :: bases_tail;
             body;
             decorators = _;
+            top_level_unbound_names = _;
           } ->
           let fields =
             let extract = function
@@ -2036,6 +2043,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   bases = [tuple_base ~location];
                   body = constructors @ attributes;
                   decorators = [];
+                  top_level_unbound_names = [];
                 }
           | _ -> value )
       | Class ({ Class.name = { Node.value = name; _ }; bases; body; _ } as original) ->
@@ -2205,6 +2213,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
               bases = [base_argument];
               body = [constructor];
               decorators = [];
+              top_level_unbound_names = [];
             }
       | _ -> value
     in
@@ -2234,6 +2243,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
                bases = [metaclass];
                decorators = [];
                body = [Node.create ~location Statement.Pass];
+               top_level_unbound_names = [];
              })
       in
       match value with

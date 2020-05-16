@@ -700,6 +700,7 @@ compound_statement:
           bases = List.map ~f:convert_argument bases;
           body;
           decorators = [];
+          top_level_unbound_names = [];
         };
       }
     }

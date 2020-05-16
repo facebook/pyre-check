@@ -2080,7 +2080,9 @@ let test_defines _ =
   let define_foo = create_define "foo" in
   let define_bar = create_define "bar" in
   let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
-  let parent = { Class.name = + !&"Foo"; bases = []; body; decorators = [] } in
+  let parent =
+    { Class.name = + !&"Foo"; bases = []; body; decorators = []; top_level_unbound_names = [] }
+  in
   assert_defines
     [+Statement.Class parent]
     [
@@ -2123,12 +2125,27 @@ let test_classes _ =
              };
         ];
       decorators = [];
+      top_level_unbound_names = [];
     }
   in
   assert_classes [+Statement.Class class_define] [class_define];
-  let inner = { Class.name = + !&"bar"; bases = []; body = [+Statement.Pass]; decorators = [] } in
+  let inner =
+    {
+      Class.name = + !&"bar";
+      bases = [];
+      body = [+Statement.Pass];
+      decorators = [];
+      top_level_unbound_names = [];
+    }
+  in
   let class_define =
-    { Class.name = + !&"foo"; bases = []; body = [+Statement.Class inner]; decorators = [] }
+    {
+      Class.name = + !&"foo";
+      bases = [];
+      body = [+Statement.Class inner];
+      decorators = [];
+      top_level_unbound_names = [];
+    }
   in
   assert_classes [+Statement.Class class_define] [class_define; inner]
 
@@ -3189,6 +3206,7 @@ let test_populate_nesting_define _ =
                       ];
                   };
              ];
+           top_level_unbound_names = [];
          };
     ];
   assert_populated
@@ -3261,6 +3279,7 @@ let test_populate_nesting_define _ =
                                ];
                            };
                       ];
+                    top_level_unbound_names = [];
                   };
              ];
          };
