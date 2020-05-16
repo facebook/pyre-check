@@ -2304,6 +2304,7 @@ module State (Context : Context) = struct
           let rec is_compatible annotation =
             match annotation with
             | _ when Type.is_meta annotation -> true
+            | Type.Primitive "typing._Alias" -> true
             | Type.Tuple (Type.Unbounded annotation) -> Type.is_meta annotation
             | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
                 List.for_all ~f:Type.is_meta annotations

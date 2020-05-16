@@ -171,7 +171,18 @@ let test_check_isinstance context =
       "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
        typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
        `isinstance` but got `int`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import List, Dict
+      def foo(x: int) -> None:
+        isinstance(x, List)
+        isinstance(x, Dict)
+        Y = Dict
+        isinstance(x, Y)
+    |}
+    [];
+  ()
 
 
 let () = "isinstance" >::: ["check_isinstance" >:: test_check_isinstance] |> Test.run
