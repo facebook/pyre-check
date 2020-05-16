@@ -1553,6 +1553,7 @@ let primitive_substitution_map =
     "typing.Deque", Primitive "collections.deque";
     "typing.Dict", Primitive "dict";
     "typing.List", Primitive "list";
+    "typing.OrderedDict", Primitive "collections.OrderedDict";
     "typing.Tuple", Tuple (Unbounded Any);
     "typing.Type", Primitive "type";
     "typing_extensions.Protocol", Primitive "typing.Protocol";
