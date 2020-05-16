@@ -101,23 +101,6 @@ let test_check_contextmanager context =
     {|
       import typing
       import contextlib
-
-      @click.command
-      @contextlib.contextmanager
-      def f() -> typing.Generator[int, None, None]:
-        yield 1
-      def g() -> None:
-        reveal_type(f)
-    |}
-    [
-      "Revealed type [-1]: Revealed type for `test.f` is \
-       `typing.Callable(f)[[Variable(typing.Any), Keywords(typing.Any)], \
-       contextlib._GeneratorContextManager[int]]`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      import contextlib
       class C:
         @contextlib.contextmanager
         def f(self) -> typing.Iterator[int]:
@@ -323,7 +306,24 @@ let test_check_click_command context =
       "Undefined attribute [16]: Callable `main` has no attribute `command`.";
       "Undefined attribute [16]: Callable `main` has no attribute `command`.";
     ];
+  assert_type_errors
+    {|
+      import click
+      import typing
+      import contextlib
 
+      @click.command
+      @contextlib.contextmanager
+      def f() -> typing.Generator[int, None, None]:
+        yield 1
+      def g() -> None:
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.f` is \
+       `typing.Callable(f)[[Variable(typing.Any), Keywords(typing.Any)], \
+       contextlib._GeneratorContextManager[int]]`.";
+    ];
   assert_type_errors
     {|
       def main(flag: bool) -> bool:
@@ -387,12 +387,13 @@ let test_decorators context =
         return x
     |}
     [];
-  (* TODO (T66973980): Check unbound names in decorators *)
-  assert_type_errors {|
+  assert_type_errors
+    {|
       @my_decorator
       def f(x: int) -> int:
         return x
-    |} [];
+    |}
+    ["Unbound name [10]: Name `my_decorator` is used but not defined in the current scope."];
   assert_type_errors
     {|
       from typing import Any

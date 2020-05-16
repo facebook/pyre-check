@@ -2313,11 +2313,7 @@ module NameAccessSet = Set.Make (Define.NameAccess)
 module CaptureSet = Set.Make (Define.Capture)
 
 let collect_accesses
-    {
-      Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ };
-      body;
-      _;
-    }
+    { Define.signature = { Define.Signature.parameters; return_annotation; _ }; body; _ }
   =
   let rec collect_from_expression collected { Node.value; location = expression_location } =
     let open Expression in
@@ -2440,6 +2436,9 @@ let collect_accesses
     | Assert { Assert.test; message; _ } ->
         let collected = collect_from_expression collected test in
         Option.value_map message ~f:(collect_from_expression collected) ~default:collected
+    | Class { Class.decorators; _ }
+    | Define { Define.signature = { Define.Signature.decorators; _ }; _ } ->
+        List.fold decorators ~init:collected ~f:collect_from_expression
     | Delete expression
     | Expression expression
     | Yield expression
@@ -2492,36 +2491,26 @@ let collect_accesses
     | Global _
     | Import _
     | Nonlocal _
-    | Pass
-    (* Nested classes and defines are not part of the visit because their accesses belong to
-       themselves. *)
-    | Class _
-    | Define _ ->
+    | Pass ->
         collected
   and collect_from_statements init statements =
     List.fold statements ~init ~f:collect_from_statement
   in
-  let decorator_accesses =
-    List.fold decorators ~init:NameAccessSet.empty ~f:collect_from_expression
+  let parameter_annotation_accesses =
+    List.fold
+      parameters
+      ~init:NameAccessSet.empty
+      ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
+        let sofar = Option.value_map value ~default:sofar ~f:(collect_from_expression sofar) in
+        Option.value_map annotation ~default:sofar ~f:(collect_from_expression sofar))
   in
-  let body_accesses =
-    let parameter_annotation_accesses =
-      List.fold
-        parameters
-        ~init:NameAccessSet.empty
-        ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
-          let sofar = Option.value_map value ~default:sofar ~f:(collect_from_expression sofar) in
-          Option.value_map annotation ~default:sofar ~f:(collect_from_expression sofar))
-    in
-    let return_annotation_accesses =
-      Option.value_map
-        return_annotation
-        ~default:parameter_annotation_accesses
-        ~f:(collect_from_expression parameter_annotation_accesses)
-    in
-    collect_from_statements return_annotation_accesses body
+  let return_annotation_accesses =
+    Option.value_map
+      return_annotation
+      ~default:parameter_annotation_accesses
+      ~f:(collect_from_expression parameter_annotation_accesses)
   in
-  decorator_accesses, body_accesses
+  collect_from_statements return_annotation_accesses body
 
 
 let populate_captures ({ Source.statements; _ } as source) =
@@ -2730,8 +2719,7 @@ let populate_captures ({ Source.statements; _ } as source) =
     match statement with
     (* Process each defines *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
-        let decorator_accesses, body_accesses = collect_accesses define in
-        let parent_scopes = scopes in
+        let accesses = collect_accesses define in
         let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
         let captures =
           let to_capture ~is_decorator ~scopes sofar name =
@@ -2739,16 +2727,7 @@ let populate_captures ({ Source.statements; _ } as source) =
             | None -> sofar
             | Some capture -> CaptureSet.add sofar capture
           in
-          let decorator_captures =
-            Set.fold
-              ~init:CaptureSet.empty
-              decorator_accesses
-              ~f:(to_capture ~is_decorator:true ~scopes:parent_scopes)
-          in
-          Set.fold
-            ~init:decorator_captures
-            body_accesses
-            ~f:(to_capture ~is_decorator:false ~scopes)
+          Set.fold ~init:CaptureSet.empty accesses ~f:(to_capture ~is_decorator:false ~scopes)
           |> CaptureSet.to_list
         in
         let body = transform_statements ~scopes body in
@@ -2802,7 +2781,7 @@ let populate_unbound_names source =
     (* Process each defines *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
         (* TODO (T66973980): Check decorators *)
-        let _, body_accesses = collect_accesses define in
+        let accesses = collect_accesses define in
         let scopes =
           if Define.is_toplevel define then
             scopes
@@ -2826,7 +2805,7 @@ let populate_unbound_names source =
             | None -> sofar
             | Some name -> NameAccessSet.add sofar name
           in
-          deduplicate_access body_accesses
+          deduplicate_access accesses
           |> Set.fold ~init:NameAccessSet.empty ~f:(to_unbound_name ~scopes)
           |> NameAccessSet.to_list
         in

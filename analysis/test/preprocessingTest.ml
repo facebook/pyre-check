@@ -3703,13 +3703,13 @@ let test_populate_captures _ =
        def bar():
          @decorator(x)
          def baz():
-           return 42
-         return y
+           return y
+         return 42
   |}
     ~expected:
       [
-        !&"bar", ["y", Annotation None];
-        !&"baz", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))];
+        !&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))];
+        !&"baz", ["y", Annotation None];
       ];
   (* Lambda bounds are excluded *)
   assert_captures
@@ -3964,36 +3964,40 @@ let test_populate_captures _ =
   assert_captures
     {|
      def foo(decorator) -> None:
-       @decorator # This decorator should refer to the argument of foo
-       def bar(decorator) -> None:
-         pass
+       def bar() -> None:
+         @decorator # This decorator should refer to the argument of foo
+         def baz(decorator) -> None:
+           pass
     |}
-    ~expected:[!&"bar", ["decorator", Annotation None]];
+    ~expected:[!&"bar", ["decorator", Annotation None]; !&"baz", []];
   assert_captures
     {|
      def decorator(func): ...
      def foo(decorator) -> None:
-       @decorator # This decorator should refer to the argument of foo
-       def bar(decorator) -> None:
-         pass
+       def bar() -> None:
+         @decorator # This decorator should refer to the argument of foo
+         def baz(decorator) -> None:
+           pass
     |}
-    ~expected:[!&"bar", ["decorator", Annotation None]];
+    ~expected:[!&"bar", ["decorator", Annotation None]; !&"baz", []];
   assert_captures
     {|
      def decorator(func): ...
      def foo() -> None:
-       @decorator # This decorator should refer to the global foo
-       def bar(decorator) -> None:
-         pass
+       def bar() -> None:
+         @decorator # This decorator should refer to the global foo
+         def baz(decorator) -> None:
+           pass
     |}
-    ~expected:[!&"bar", []];
+    ~expected:[!&"bar", []; !&"baz", []];
   assert_captures
     {|
      def foo() -> None:
        def decorator(func): ...
-       @decorator # This decorator should refer to the foo defined above
-       def bar(decorator) -> None:
-         pass
+       def bar() -> None:
+         @decorator # This decorator should refer to the foo defined above
+         def baz(decorator) -> None:
+           pass
     |}
     ~expected:
       [
@@ -4018,6 +4022,7 @@ let test_populate_captures _ =
                   nesting_define = None;
                 } );
           ] );
+        !&"baz", [];
       ];
 
   ()
@@ -4220,6 +4225,14 @@ let test_populate_unbound_names _ =
         x: Derp = derp()
     |}
     ~expected:[!&"foo", ["Derp", location (4, 5) (4, 9)]];
+  assert_unbound_names
+    {|
+      def foo() -> None:
+        @derp
+        def bar() -> None:
+          pass
+    |}
+    ~expected:[!&"foo", ["derp", location (3, 3) (3, 7)]];
 
   (* TODO: Handle unbound names in decorators *)
   assert_unbound_names

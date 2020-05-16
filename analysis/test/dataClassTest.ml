@@ -11,6 +11,7 @@ let test_transform_environment context =
   let assert_equivalent_attributes = assert_equivalent_attributes ~context in
   assert_equivalent_attributes
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo:
         ...

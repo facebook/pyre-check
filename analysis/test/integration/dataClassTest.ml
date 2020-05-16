@@ -10,6 +10,7 @@ let test_check_data_class context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo():
         x: int = 1
@@ -22,6 +23,7 @@ let test_check_data_class context =
     ];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo():
         x: int = 1
@@ -34,6 +36,7 @@ let test_check_data_class context =
     ];
   assert_type_errors
     {|
+      import dataclasses
       @dataclasses.dataclass
       class Foo():
         x: int = 1
@@ -46,6 +49,7 @@ let test_check_data_class context =
     ];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo():
         x = 1
@@ -60,6 +64,7 @@ let test_check_data_class context =
     ];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo():
         x: int = 1
@@ -69,6 +74,7 @@ let test_check_data_class context =
     [];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Foo():
         dangan: int
@@ -78,6 +84,7 @@ let test_check_data_class context =
     [];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class Base():
         x: int
@@ -124,6 +131,7 @@ let test_check_data_class context =
     [];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       from placeholder_stub import X
       @dataclass
       class Foo(X):
@@ -134,6 +142,7 @@ let test_check_data_class context =
     [];
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass(frozen=True)
       class F:
         x = 1
@@ -145,6 +154,7 @@ let test_check_data_class context =
   (* Actually a test of descriptors to make sure it doesn't infinitely loop *)
   assert_type_errors
     {|
+      from dataclasses import dataclass
       @dataclass
       class D:
         x: C = C()
