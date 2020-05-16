@@ -2322,30 +2322,28 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
 module NameAccessSet = Set.Make (Define.NameAccess)
 module CaptureSet = Set.Make (Define.Capture)
 
-let collect_accesses
-    { Define.signature = { Define.Signature.parameters; return_annotation; _ }; body; _ }
-  =
-  let rec collect_from_expression collected { Node.value; location = expression_location } =
+module AccessCollector = struct
+  let rec from_expression collected { Node.value; location = expression_location } =
     let open Expression in
-    let collect_from_entry collected { Dictionary.Entry.key; value } =
-      let collected = collect_from_expression collected key in
-      collect_from_expression collected value
+    let from_entry collected { Dictionary.Entry.key; value } =
+      let collected = from_expression collected key in
+      from_expression collected value
     in
     match value with
     (* Lambdas are speical -- they bind their own names, which we want to exclude *)
     | Lambda { Lambda.parameters; body } ->
         let collected =
-          let collect_from_parameter collected { Node.value = { Parameter.value; _ }; _ } =
-            Option.value_map value ~f:(collect_from_expression collected) ~default:collected
+          let from_parameter collected { Node.value = { Parameter.value; _ }; _ } =
+            Option.value_map value ~f:(from_expression collected) ~default:collected
           in
-          List.fold parameters ~init:collected ~f:collect_from_parameter
+          List.fold parameters ~init:collected ~f:from_parameter
         in
         let bound_names =
           List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } ->
               Identifier.split_star name |> snd)
           |> Identifier.Set.of_list
         in
-        let names_in_body = collect_from_expression NameAccessSet.empty body in
+        let names_in_body = from_expression NameAccessSet.empty body in
         let unbound_names_in_body =
           Set.filter names_in_body ~f:(fun { Define.NameAccess.name; _ } ->
               not (Identifier.Set.mem bound_names name))
@@ -2356,44 +2354,42 @@ let collect_accesses
         Set.add collected { Define.NameAccess.name = identifier; location = expression_location }
     | Name (Name.Attribute { Name.Attribute.base; _ }) ->
         (* For attribute access, only count the base *)
-        collect_from_expression collected base
+        from_expression collected base
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
-    | Await await -> collect_from_expression collected await
+    | Await await -> from_expression collected await
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let collected = collect_from_expression collected left in
-        collect_from_expression collected right
+        let collected = from_expression collected left in
+        from_expression collected right
     | Call { Call.callee; arguments } ->
-        let collected = collect_from_expression collected callee in
+        let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
-            collect_from_expression collected value)
+            from_expression collected value)
     | Dictionary { Dictionary.entries; keywords } ->
-        let collected = List.fold entries ~init:collected ~f:collect_from_entry in
-        List.fold keywords ~init:collected ~f:collect_from_expression
-    | DictionaryComprehension comprehension ->
-        collect_from_comprehension collect_from_entry collected comprehension
+        let collected = List.fold entries ~init:collected ~f:from_entry in
+        List.fold keywords ~init:collected ~f:from_expression
+    | DictionaryComprehension comprehension -> from_comprehension from_entry collected comprehension
     | Generator comprehension
     | ListComprehension comprehension
     | SetComprehension comprehension ->
-        collect_from_comprehension collect_from_expression collected comprehension
+        from_comprehension from_expression collected comprehension
     | List expressions
     | Set expressions
     | Tuple expressions
     | String { kind = StringLiteral.Format expressions; _ } ->
-        List.fold expressions ~init:collected ~f:collect_from_expression
+        List.fold expressions ~init:collected ~f:from_expression
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
-        collect_from_expression collected expression
+        from_expression collected expression
     | Ternary { Ternary.target; test; alternative } ->
-        let collected = collect_from_expression collected target in
-        let collected = collect_from_expression collected test in
-        collect_from_expression collected alternative
-    | UnaryOperator { UnaryOperator.operand; _ } -> collect_from_expression collected operand
+        let collected = from_expression collected target in
+        let collected = from_expression collected test in
+        from_expression collected alternative
+    | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
     | WalrusOperator { WalrusOperator.target; value } ->
-        let collected = collect_from_expression collected target in
-        collect_from_expression collected value
-    | Yield yield ->
-        Option.value_map yield ~default:collected ~f:(collect_from_expression collected)
+        let collected = from_expression collected target in
+        from_expression collected value
+    | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
     | String _
     | Complex _
     | Ellipsis
@@ -2402,81 +2398,84 @@ let collect_accesses
     | Integer _
     | True ->
         collected
+
+
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
-  and collect_from_comprehension
-        : 'a. (NameAccessSet.t -> 'a -> NameAccessSet.t) -> NameAccessSet.t -> 'a Comprehension.t ->
-          NameAccessSet.t
+  and from_comprehension :
+        'a. (NameAccessSet.t -> 'a -> NameAccessSet.t) -> NameAccessSet.t -> 'a Comprehension.t ->
+        NameAccessSet.t
     =
-   fun collect_from_element collected { Comprehension.element; generators } ->
+   fun from_element collected { Comprehension.element; generators } ->
     let collected =
-      let collect_from_generator collected { Comprehension.Generator.iterator; _ } =
-        collect_from_expression collected iterator
+      let from_generator collected { Comprehension.Generator.iterator; _ } =
+        from_expression collected iterator
       in
-      List.fold generators ~init:collected ~f:collect_from_generator
+      List.fold generators ~init:collected ~f:from_generator
     in
     let bound_names =
       List.fold
         generators
         ~init:Identifier.Set.empty
         ~f:(fun sofar { Comprehension.Generator.target; _ } ->
-          collect_from_expression NameAccessSet.empty target
+          from_expression NameAccessSet.empty target
           |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } -> Set.add sofar name))
     in
     let names =
-      collect_from_element NameAccessSet.empty element
+      from_element NameAccessSet.empty element
       |> fun init ->
       List.fold generators ~init ~f:(fun init { Comprehension.Generator.conditions; _ } ->
-          List.fold conditions ~init ~f:collect_from_expression)
+          List.fold conditions ~init ~f:from_expression)
     in
     let unbound_names =
       Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
           not (Identifier.Set.mem bound_names name))
     in
     Set.union unbound_names collected
-  in
-  let rec collect_from_statement collected { Node.value; location = statement_location } =
+
+
+  and from_statement collected { Node.value; location = statement_location } =
     (* Boilerplates to visit all statements that may contain accesses *)
     match value with
     | Statement.Assign { Assign.target; value; annotation; _ } ->
-        let collected = collect_from_expression collected target in
+        let collected = from_expression collected target in
         let collected =
-          Option.value_map annotation ~default:collected ~f:(collect_from_expression collected)
+          Option.value_map annotation ~default:collected ~f:(from_expression collected)
         in
-        collect_from_expression collected value
+        from_expression collected value
     | Assert { Assert.test; message; _ } ->
-        let collected = collect_from_expression collected test in
-        Option.value_map message ~f:(collect_from_expression collected) ~default:collected
+        let collected = from_expression collected test in
+        Option.value_map message ~f:(from_expression collected) ~default:collected
     | Class { Class.decorators; _ }
     | Define { Define.signature = { Define.Signature.decorators; _ }; _ } ->
-        List.fold decorators ~init:collected ~f:collect_from_expression
+        List.fold decorators ~init:collected ~f:from_expression
     | Delete expression
     | Expression expression
     | Yield expression
     | YieldFrom expression ->
-        collect_from_expression collected expression
+        from_expression collected expression
     | For { For.target; iterator; body; orelse; _ } ->
-        let collected = collect_from_expression collected target in
-        let collected = collect_from_expression collected iterator in
-        let collected = collect_from_statements collected body in
-        collect_from_statements collected orelse
+        let collected = from_expression collected target in
+        let collected = from_expression collected iterator in
+        let collected = from_statements collected body in
+        from_statements collected orelse
     | If { If.test; body; orelse }
     | While { While.test; body; orelse } ->
-        let collected = collect_from_expression collected test in
-        let collected = collect_from_statements collected body in
-        collect_from_statements collected orelse
+        let collected = from_expression collected test in
+        let collected = from_statements collected body in
+        from_statements collected orelse
     | Raise { Raise.expression; from } ->
         let collected =
-          Option.value_map expression ~f:(collect_from_expression collected) ~default:collected
+          Option.value_map expression ~f:(from_expression collected) ~default:collected
         in
-        Option.value_map from ~f:(collect_from_expression collected) ~default:collected
+        Option.value_map from ~f:(from_expression collected) ~default:collected
     | Return { Return.expression; _ } ->
-        Option.value_map expression ~f:(collect_from_expression collected) ~default:collected
+        Option.value_map expression ~f:(from_expression collected) ~default:collected
     | Try { Try.body; handlers; orelse; finally } ->
-        let collected = collect_from_statements collected body in
+        let collected = from_statements collected body in
         let collected =
           List.fold handlers ~init:collected ~f:(fun collected { Try.Handler.kind; name; body } ->
               let collected =
-                Option.value_map kind ~f:(collect_from_expression collected) ~default:collected
+                Option.value_map kind ~f:(from_expression collected) ~default:collected
               in
               let collected =
                 Option.value_map
@@ -2485,17 +2484,17 @@ let collect_accesses
                     Set.add collected { Define.NameAccess.name; location = statement_location })
                   ~default:collected
               in
-              collect_from_statements collected body)
+              from_statements collected body)
         in
-        let collected = collect_from_statements collected orelse in
-        collect_from_statements collected finally
+        let collected = from_statements collected orelse in
+        from_statements collected finally
     | With { With.items; body; _ } ->
         let collected =
           List.fold items ~init:collected ~f:(fun collected (value, target) ->
-              let collected = collect_from_expression collected value in
-              Option.value_map target ~f:(collect_from_expression collected) ~default:collected)
+              let collected = from_expression collected value in
+              Option.value_map target ~f:(from_expression collected) ~default:collected)
         in
-        collect_from_statements collected body
+        from_statements collected body
     | Break
     | Continue
     | Global _
@@ -2503,25 +2502,29 @@ let collect_accesses
     | Nonlocal _
     | Pass ->
         collected
-  and collect_from_statements init statements =
-    List.fold statements ~init ~f:collect_from_statement
-  in
-  let parameter_annotation_accesses =
-    List.fold
-      parameters
-      ~init:NameAccessSet.empty
-      ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
-        let sofar = Option.value_map value ~default:sofar ~f:(collect_from_expression sofar) in
-        Option.value_map annotation ~default:sofar ~f:(collect_from_expression sofar))
-  in
-  let return_annotation_accesses =
-    Option.value_map
-      return_annotation
-      ~default:parameter_annotation_accesses
-      ~f:(collect_from_expression parameter_annotation_accesses)
-  in
-  collect_from_statements return_annotation_accesses body
 
+
+  and from_statements init statements = List.fold statements ~init ~f:from_statement
+
+  let from_define
+      { Define.signature = { Define.Signature.parameters; return_annotation; _ }; body; _ }
+    =
+    let parameter_annotation_accesses =
+      List.fold
+        parameters
+        ~init:NameAccessSet.empty
+        ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
+          let sofar = Option.value_map value ~default:sofar ~f:(from_expression sofar) in
+          Option.value_map annotation ~default:sofar ~f:(from_expression sofar))
+    in
+    let return_annotation_accesses =
+      Option.value_map
+        return_annotation
+        ~default:parameter_annotation_accesses
+        ~f:(from_expression parameter_annotation_accesses)
+    in
+    from_statements return_annotation_accesses body
+end
 
 let populate_captures ({ Source.statements; _ } as source) =
   let open Scope in
@@ -2729,7 +2732,7 @@ let populate_captures ({ Source.statements; _ } as source) =
     match statement with
     (* Process each defines *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
-        let accesses = collect_accesses define in
+        let accesses = AccessCollector.from_define define in
         let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
         let captures =
           let to_capture ~is_decorator ~scopes sofar name =
@@ -2791,7 +2794,7 @@ let populate_unbound_names source =
     (* Process each defines *)
     | { Node.location; value = Statement.Define ({ body; _ } as define) } ->
         (* TODO (T66973980): Check decorators *)
-        let accesses = collect_accesses define in
+        let accesses = AccessCollector.from_define define in
         let scopes =
           if Define.is_toplevel define then
             scopes
