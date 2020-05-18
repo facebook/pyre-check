@@ -48,7 +48,7 @@ class PyreConnection:
     def start_server(self) -> PyreCheckResult:
         subprocess.run(["pyre", "start"], cwd=str(self.pyre_directory))
         result = subprocess.run(
-            ["pyre", "incremental"],
+            ["pyre", "--noninteractive", "incremental"],
             stdout=subprocess.PIPE,
             cwd=str(self.pyre_directory),
         )
@@ -58,7 +58,7 @@ class PyreConnection:
     def restart_server(self) -> PyreCheckResult:
         result = _parse_check_output(
             subprocess.run(
-                ["pyre", "restart"],
+                ["pyre", "--noninteractive", "restart"],
                 stdout=subprocess.PIPE,
                 cwd=str(self.pyre_directory),
             )
@@ -84,7 +84,7 @@ class PyreConnection:
 
 
 def _parse_check_output(
-    completed_process: "subprocess.CompletedProcess[bytes]"
+    completed_process: "subprocess.CompletedProcess[bytes]",
 ) -> PyreCheckResult:
     errors = completed_process.stdout.decode().split()
     return PyreCheckResult(exit_code=completed_process.returncode, errors=errors)

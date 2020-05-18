@@ -24,7 +24,11 @@ class ConnectionApiTest(unittest.TestCase):
             run.call_args_list,
             [
                 call(["pyre", "start"], cwd="/tmp"),
-                call(["pyre", "incremental"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "incremental"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
                 call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
             ],
         )
@@ -37,7 +41,11 @@ class ConnectionApiTest(unittest.TestCase):
             run.call_args_list,
             [
                 call(["pyre", "start"], cwd="/tmp"),
-                call(["pyre", "incremental"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "incremental"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
                 call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
             ],
         )
@@ -50,7 +58,11 @@ class ConnectionApiTest(unittest.TestCase):
             run.call_args_list,
             [
                 call(["pyre", "start"], cwd="/tmp"),
-                call(["pyre", "incremental"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "incremental"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
                 call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
                 call(["pyre", "query", "bye"], cwd="/tmp", stdout=subprocess.PIPE),
             ],
@@ -63,7 +75,11 @@ class ConnectionApiTest(unittest.TestCase):
             run.call_args_list,
             [
                 call(["pyre", "start"], cwd="/tmp"),
-                call(["pyre", "incremental"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "incremental"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
                 call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
                 call(["pyre", "stop"], check=True, cwd="/tmp"),
             ],
