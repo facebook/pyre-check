@@ -225,7 +225,8 @@ class FunctionsCollector(cst.CSTVisitor):
                 code_range,
                 self.path,
                 "PYRE_MISSING_ANNOTATIONS",
-                "This function is missing a return annotation.",
+                "This function is missing a return annotation. \
+                Bodies of unannotated functions are not typechecked by Pyre.",
             )
             self.issues.append(issue)
 
