@@ -467,14 +467,22 @@ module WeakenMutableLiterals = struct
           | _ -> weakened_fallback_type
         in
         make_weakened_type ~typed_dictionary_errors resolved
-    | Some { Node.value = Expression.Dictionary { entries; _ }; _ }, _, _ ->
+    | ( Some { Node.value = Expression.Dictionary { entries; _ }; _ },
+        Type.Parametric
+          { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
+        Type.Parametric
+          { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } )
+      ->
         weaken_dictionary_entries
           ~get_typed_dictionary
           resolve
-          ~resolved
           ~expected
           ~comparator:comparator_without_override
           ~entries
+          ~actual_key_type
+          ~actual_value_type
+          ~expected_key_type
+          ~expected_value_type
     | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
         Type.Parametric { name = "dict"; parameters = [Single actual_key; Single actual_value] },
         Type.Parametric { name = "dict"; parameters = [Single expected_key; Single expected_value] }
@@ -513,55 +521,51 @@ module WeakenMutableLiterals = struct
   and weaken_dictionary_entries
       ~get_typed_dictionary
       resolve
-      ~resolved
       ~expected
       ~comparator
       ~entries
+      ~actual_key_type
+      ~actual_value_type
+      ~expected_key_type
+      ~expected_value_type
     =
     let comparator_without_override = comparator in
     let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
-    match resolved, expected with
-    | ( Type.Parametric
-          { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
-        Type.Parametric
-          { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } )
-      ->
-        let { resolved = weakened_key_type; typed_dictionary_errors = key_errors } =
-          List.map
-            ~f:(fun { key; _ } ->
-              weaken_mutable_literals
-                ~get_typed_dictionary
-                resolve
-                ~expression:(Some key)
-                ~resolved:actual_key_type
-                ~expected:expected_key_type
-                ~comparator:comparator_without_override)
-            entries
-          |> combine_weakened_types
-        in
-        let { resolved = weakened_value_type; typed_dictionary_errors = value_errors } =
-          List.map
-            ~f:(fun { value; _ } ->
-              weaken_mutable_literals
-                ~get_typed_dictionary
-                resolve
-                ~expression:(Some value)
-                ~resolved:actual_value_type
-                ~expected:expected_value_type
-                ~comparator:comparator_without_override)
-            entries
-          |> combine_weakened_types
-        in
-        make_weakened_type
-          ~typed_dictionary_errors:(key_errors @ value_errors)
-          ( if
-            comparator ~left:weakened_key_type ~right:expected_key_type
-            && comparator ~left:weakened_value_type ~right:expected_value_type
-          then
-              expected
-          else
-            Type.dictionary ~key:weakened_key_type ~value:weakened_value_type )
-    | _ -> make_weakened_type resolved
+    let { resolved = weakened_key_type; typed_dictionary_errors = key_errors } =
+      List.map
+        ~f:(fun { key; _ } ->
+          weaken_mutable_literals
+            ~get_typed_dictionary
+            resolve
+            ~expression:(Some key)
+            ~resolved:actual_key_type
+            ~expected:expected_key_type
+            ~comparator:comparator_without_override)
+        entries
+      |> combine_weakened_types
+    in
+    let { resolved = weakened_value_type; typed_dictionary_errors = value_errors } =
+      List.map
+        ~f:(fun { value; _ } ->
+          weaken_mutable_literals
+            ~get_typed_dictionary
+            resolve
+            ~expression:(Some value)
+            ~resolved:actual_value_type
+            ~expected:expected_value_type
+            ~comparator:comparator_without_override)
+        entries
+      |> combine_weakened_types
+    in
+    make_weakened_type
+      ~typed_dictionary_errors:(key_errors @ value_errors)
+      ( if
+        comparator ~left:weakened_key_type ~right:expected_key_type
+        && comparator ~left:weakened_value_type ~right:expected_value_type
+      then
+          expected
+      else
+        Type.dictionary ~key:weakened_key_type ~value:weakened_value_type )
 end
 
 module TypeParameterValidationTypes = struct
