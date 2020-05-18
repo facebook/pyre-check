@@ -138,6 +138,34 @@ module WeakenMutableLiterals = struct
     }
 
 
+  let distribute_union_over_parametric ~parametric_name ~number_of_parameters annotation =
+    match annotation with
+    | Type.Union parameters ->
+        let extract_matching_parameters = function
+          | Type.Parametric { name; parameters }
+            when Identifier.equal name parametric_name
+                 && List.length parameters = number_of_parameters ->
+              Type.Parameter.all_singles parameters
+          | _ -> None
+        in
+        let combine_parameters parameters_list =
+          match number_of_parameters with
+          | 1 -> Some [Type.Parameter.Single (Type.union (List.concat parameters_list))]
+          | 2 ->
+              Some
+                [
+                  Type.Parameter.Single (Type.union (List.map ~f:List.hd_exn parameters_list));
+                  Type.Parameter.Single (Type.union (List.map ~f:List.last_exn parameters_list));
+                ]
+          | _ -> None
+        in
+        List.map parameters ~f:extract_matching_parameters
+        |> Option.all
+        >>= combine_parameters
+        >>| fun parametric_types -> Type.parametric parametric_name parametric_types
+    | _ -> None
+
+
   let rec weaken_mutable_literals
       resolve
       ~get_typed_dictionary

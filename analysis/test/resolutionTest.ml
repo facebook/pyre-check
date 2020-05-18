@@ -1026,6 +1026,50 @@ let test_resolve_mutable_literals_typed_dictionary context =
   ()
 
 
+let test_distribute_union_over_parametric _ =
+  let assert_distributed actual expected =
+    assert_equal ~cmp:[%equal: Type.t option] ~printer:[%show: Type.t option] expected actual
+  in
+  assert_distributed
+    (AttributeResolution.distribute_union_over_parametric
+       ~parametric_name:"list"
+       ~number_of_parameters:1
+       Type.integer)
+    None;
+  assert_distributed
+    (AttributeResolution.distribute_union_over_parametric
+       ~parametric_name:"list"
+       ~number_of_parameters:1
+       (Type.union [Type.list Type.integer; Type.integer]))
+    None;
+  assert_distributed
+    (AttributeResolution.distribute_union_over_parametric
+       ~parametric_name:"list"
+       ~number_of_parameters:2
+       (Type.union [Type.list Type.integer; Type.list Type.string]))
+    None;
+  assert_distributed
+    (AttributeResolution.distribute_union_over_parametric
+       ~parametric_name:"list"
+       ~number_of_parameters:1
+       (Type.union [Type.list Type.integer; Type.list Type.string]))
+    (Some (Type.list (Type.union [Type.integer; Type.string])));
+  assert_distributed
+    (AttributeResolution.distribute_union_over_parametric
+       ~parametric_name:"dict"
+       ~number_of_parameters:2
+       (Type.union
+          [
+            Type.dictionary ~key:Type.integer ~value:Type.string;
+            Type.dictionary ~key:Type.string ~value:Type.integer;
+          ]))
+    (Some
+       (Type.dictionary
+          ~key:(Type.union [Type.integer; Type.string])
+          ~value:(Type.union [Type.integer; Type.string])));
+  ()
+
+
 let test_get_typed_dictionary context =
   let resolution =
     make_resolution
@@ -1374,6 +1418,7 @@ let () =
          "resolve_mutable_literal_to_complex_type" >:: test_resolve_mutable_literal_to_complex_type;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
+         "distribute_union_over_parametric" >:: test_distribute_union_over_parametric;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
          "source_is_unit_test" >:: test_source_is_unit_test;

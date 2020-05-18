@@ -41,6 +41,12 @@ val make_weakened_type
   Type.t ->
   weakened_type
 
+val distribute_union_over_parametric
+  :  parametric_name:Identifier.t ->
+  number_of_parameters:int ->
+  Type.t ->
+  Type.t option
+
 val weaken_mutable_literals
   :  (Expression.expression Node.t -> Type.t) ->
   get_typed_dictionary:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
