@@ -172,6 +172,26 @@ let test_check_method_returns context =
       bar({'foo': 'foo'})
     |}
     [];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Dict, Mapping, Optional, Sequence, Tuple, Union
+      from enum import Enum
+      class FooEnum(Enum, str):
+          FOO_FIELD = "hello"
+
+      dict_string_to_int: Dict[str, int]
+      dict_string_to_string: Dict[str, str]
+      d1: Mapping[str, Union[int, str]] = {**dict_string_to_int, FooEnum.FOO_FIELD: FooEnum.FOO_FIELD}
+      d2: Dict[str, Union[int, str]] = {**dict_string_to_int, "hello": "world"}
+      d3: Dict[str, Union[int, str]] = {**dict_string_to_int, **dict_string_to_string}
+
+      xs: Sequence[Tuple[int, int, str, Dict[str, Optional[str]]]] = [
+          (1, 2, "hello", {"foo": "hello", "bar": None, "baz": None}),
+          (3, 4, "world", {"foo": "hello", "bar": "hello", "baz": "hello"}),
+      ]
+    |}
+    [];
   ()
 
 

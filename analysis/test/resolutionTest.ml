@@ -590,10 +590,13 @@ let test_resolve_mutable_literals context =
 
 
 let test_resolve_mutable_literal_to_complex_type context =
-  let resolution = make_resolution ~context {|
+  let resolution =
+    make_resolution ~context {|
       class C: ...
       class D(C): ...
-    |} in
+      class Q: ...
+    |}
+  in
   let assert_resolve_mutable_literals ~source ~against expected_output =
     let parse_annotation annotation =
       annotation
@@ -691,6 +694,34 @@ let test_resolve_mutable_literal_to_complex_type context =
     ~source:"{1: test.D()}"
     ~against:"typing.Union[typing.Mapping[int, test.C], int, str]"
     "typing.Union[typing.Mapping[int, test.C], int, str]";
+
+  (* Distribute the resolved Union type over the mutable container before weakening. For example,
+     List[Union[List[C], List[Q]]] to List[List[Union[C, Q]]]. *)
+  assert_resolve_mutable_literals
+    ~source:"[[test.C()], [test.Q()]]"
+    ~against:"typing.List[typing.List[typing.Union[test.C, test.Q]]]"
+    "typing.List[typing.List[typing.Union[test.C, test.Q]]]";
+  assert_resolve_mutable_literals
+    ~source:"[{test.C()}, {test.Q()}]"
+    ~against:"typing.List[typing.Set[typing.Union[test.C, test.Q]]]"
+    "typing.List[typing.Set[typing.Union[test.C, test.Q]]]";
+  assert_resolve_mutable_literals
+    ~source:"[{'foo': test.C()}, {'bar': test.Q()}]"
+    ~against:"typing.List[typing.Dict[str, typing.Union[test.C, test.Q]]]"
+    "typing.List[typing.Dict[str, typing.Union[test.C, test.Q]]]";
+  assert_resolve_mutable_literals
+    ~source:"[{'foo': None}, {'foo': 'bar'}]"
+    ~against:"typing.List[typing.Dict[str, typing.Optional[str]]]"
+    "typing.List[typing.Dict[str,typing.Optional[str]]]";
+  assert_resolve_mutable_literals
+    ~source:"{'hello': {'foo': None}, 'world': {'foo': 'bar'}}"
+    ~against:"typing.Dict[str, typing.Dict[str, typing.Optional[str]]]"
+    "typing.Dict[str,typing.Dict[str, typing.Optional[str]]]";
+  (* Weakening against an explicit List[Union[List[C], List[Q]]] still works. *)
+  assert_resolve_mutable_literals
+    ~source:"[[test.C()], [test.Q()]]"
+    ~against:"typing.List[typing.Union[typing.List[test.C], typing.List[test.Q]]]"
+    "typing.List[typing.Union[typing.List[test.C], typing.List[test.Q]]]";
   ()
 
 

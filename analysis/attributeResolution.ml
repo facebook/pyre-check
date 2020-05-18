@@ -515,7 +515,14 @@ module WeakenMutableLiterals = struct
             else
               make_weakened_type actual_literal
         | _ -> make_weakened_type resolved )
-    | _ -> make_weakened_type resolved
+    | _ ->
+        weaken_by_distributing_union
+          ~get_typed_dictionary
+          resolve
+          ~expected
+          ~resolved
+          ~comparator:comparator_without_override
+          ~expression
 
 
   and weaken_dictionary_entries
@@ -566,6 +573,49 @@ module WeakenMutableLiterals = struct
           expected
       else
         Type.dictionary ~key:weakened_key_type ~value:weakened_value_type )
+
+
+  and weaken_by_distributing_union
+      ~get_typed_dictionary
+      resolve
+      ~expected
+      ~resolved
+      ~comparator
+      ~expression
+    =
+    let open Expression in
+    let comparator_without_override = comparator in
+    match expression, resolved, expected with
+    | ( Some { Node.value = Expression.List _ | Expression.Set _; _ },
+        Type.Union _,
+        Type.Parametric
+          {
+            name = ("list" | "set") as parametric_name;
+            parameters = [Single (Type.Union _)] as parameters;
+          } )
+    | ( Some { Node.value = Expression.Dictionary _; _ },
+        Type.Union _,
+        Type.Parametric
+          {
+            name = "dict" as parametric_name;
+            parameters = ([Single (Type.Union _); _] | [_; Single (Type.Union _)]) as parameters;
+          } ) -> (
+        match
+          distribute_union_over_parametric
+            ~parametric_name
+            ~number_of_parameters:(List.length parameters)
+            resolved
+        with
+        | Some resolved ->
+            weaken_mutable_literals
+              ~get_typed_dictionary
+              resolve
+              ~expression
+              ~resolved
+              ~expected
+              ~comparator:comparator_without_override
+        | None -> make_weakened_type resolved )
+    | _ -> make_weakened_type resolved
 end
 
 module TypeParameterValidationTypes = struct
