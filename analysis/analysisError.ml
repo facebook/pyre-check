@@ -183,6 +183,7 @@ and incompatible_overload_kind =
       location: Location.t;
     }
   | DifferingDecorators
+  | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
@@ -680,7 +681,9 @@ let messages ~concise ~signature location kind =
               (Location.line location);
           ]
       | DifferingDecorators ->
-          ["This definition does not have the same decorators as the preceding overload(s)"] )
+          ["This definition does not have the same decorators as the preceding overload(s)."]
+      | MisplacedOverloadDecorator ->
+          ["The @overload decorator must be the topmost decorator if present."] )
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
       let trace =
@@ -3186,6 +3189,7 @@ let dequalify
         Unmatchable { name = dequalify_reference name; matching_overload; unmatched_location }
     | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
     | DifferingDecorators -> DifferingDecorators
+    | MisplacedOverloadDecorator -> MisplacedOverloadDecorator
   in
   let dequalify_invalid_type_parameters { AttributeResolution.name; kind } =
     let dequalify_generic_type_problems = function

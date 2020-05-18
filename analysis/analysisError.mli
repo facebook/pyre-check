@@ -174,6 +174,7 @@ and incompatible_overload_kind =
       location: Location.t;
     }
   | DifferingDecorators
+  | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =

@@ -220,8 +220,31 @@ let test_check_decorated_overloads context =
     |}
     [
       "Incompatible overload [43]: This definition does not have the same decorators as the \
-       preceding overload(s)";
+       preceding overload(s).";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import overload, Callable
+      def decorator(x: object) -> Callable[[int], int]: ...
+
+      @decorator
+      @overload
+      def foo(a: str) -> str: ...
+
+      @overload
+      @decorator
+      def foo(a: bool) -> bool: ...
+
+      @decorator
+      def foo(a: object) -> object:
+        return 1
+
+      reveal_type(foo)
+    |}
+    [
+      "Incompatible overload [43]: The @overload decorator must be the topmost decorator if present.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[int], int]`.";
     ];
   assert_type_errors
     {|

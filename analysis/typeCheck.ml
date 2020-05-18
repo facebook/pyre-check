@@ -5722,11 +5722,31 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             error :: errors
         | _ -> errors
       in
+      let check_misplaced_overload_decorator errors =
+        match signature with
+        | { decorators = _ :: (_ :: _ as tail_decorators); _ } ->
+            let is_overload_decorator decorator =
+              Ast.Statement.Define.Signature.is_overloaded_function
+                { signature with decorators = [decorator] }
+            in
+            if List.exists tail_decorators ~f:is_overload_decorator then
+              let error =
+                Error.create
+                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                  ~define:Context.define
+                  ~kind:(Error.IncompatibleOverload MisplacedOverloadDecorator)
+              in
+              error :: errors
+            else
+              errors
+        | _ -> errors
+      in
       errors
       |> check_implementation_exists
       |> check_compatible_return_types
       |> check_unmatched_overloads
       |> check_differing_decorators
+      |> check_misplaced_overload_decorator
     in
     match GlobalResolution.global global_resolution name with
     | Some { undecorated_signature = Some undecorated_signature; problem; _ } ->
