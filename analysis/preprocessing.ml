@@ -1904,6 +1904,31 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       let attribute_statements =
         let attribute { Node.value = name, annotation, _value; location } =
           let target = Reference.create ~prefix:parent name |> from_reference ~location in
+          let annotation =
+            let location = Node.location annotation in
+            {
+              Node.location;
+              value =
+                Expression.Call
+                  {
+                    callee =
+                      {
+                        Node.location;
+                        value =
+                          Expression.Name
+                            (Attribute
+                               {
+                                 base =
+                                   Reference.create "typing.Final"
+                                   |> Ast.Expression.from_reference ~location;
+                                 attribute = "__getitem__";
+                                 special = true;
+                               });
+                      };
+                    arguments = [{ name = None; value = annotation }];
+                  };
+            }
+          in
           Statement.Assign
             {
               Assign.target;

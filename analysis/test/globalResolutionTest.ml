@@ -806,7 +806,7 @@ let test_class_attributes context =
     ~expected_attribute:
       (create_expected_attribute
          ~parent:"test.NT"
-         ~visibility:ReadWrite
+         ~visibility:(ReadOnly (Refinable { overridable = false }))
          ~initialized:OnlyOnInstance
          ~uninstantiated_annotation:"int"
          "x"

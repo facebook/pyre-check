@@ -2473,7 +2473,7 @@ let test_transform_ast _ =
         def __init__(self, a: typing.Any) -> None:
           self.a = a
         _fields: typing.Tuple[str] = ('a',)
-        a: typing.Any
+        a: typing.Final[typing.Any]
     |};
   assert_expand
     {|
@@ -2486,8 +2486,8 @@ let test_transform_ast _ =
          self.one = one
          self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Any
-        two: typing.Any
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
     |};
   assert_expand
     {|
@@ -2500,8 +2500,8 @@ let test_transform_ast _ =
          self.one = one
          self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: int
-        two: str
+        one: typing.Final[int]
+        two: typing.Final[str]
     |};
   assert_expand
     {|
@@ -2519,9 +2519,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: typing.Any
-        b: typing.Any
-        c: typing.Any
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
     |};
   assert_expand
     {|
@@ -2535,8 +2535,8 @@ let test_transform_ast _ =
           self.one = one
           self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Any
-        two: typing.Any
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
         three: int = 1
     |};
   assert_expand
@@ -2554,9 +2554,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: int
-        b: str
-        c: int
+        a: typing.Final[int]
+        b: typing.Final[str]
+        c: typing.Final[int]
     |};
   assert_expand
     {|
@@ -2586,11 +2586,11 @@ let test_transform_ast _ =
            self.ts = ts
            self.lazy = lazy
          _fields: typing.Tuple[str, str, str, str, str] = ('op', 'path', 'value', 'ts', 'lazy')
-         op: typing.Any
-         path: typing.Any
-         value: typing.Any
-         ts: typing.Any
-         lazy: typing.Any
+         op: typing.Final[typing.Any]
+         path: typing.Final[typing.Any]
+         value: typing.Final[typing.Any]
+         ts: typing.Final[typing.Any]
+         lazy: typing.Final[typing.Any]
          pass
     |};
   assert_expand
@@ -2606,8 +2606,8 @@ let test_transform_ast _ =
             self.a = a
             self.b = b
           _fields: typing.Tuple[str, str] = ('a', 'b')
-          a: typing.Any
-          b: typing.Any
+          a: typing.Final[typing.Any]
+          b: typing.Final[typing.Any]
     |};
   assert_expand
     {|
@@ -2641,8 +2641,8 @@ let test_transform_ast _ =
     {|
       class Foo(typing.NamedTuple):
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Any
-        two: typing.Any
+        one: typing.Final[typing.Any]
+        two: typing.Final[typing.Any]
         def __new__(cls, one) -> typing.NamedTuple:
           return super(Foo, cls).__new__(cls, one, two=0)
     |};
@@ -2657,8 +2657,8 @@ let test_transform_ast _ =
           self.one = one
           self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: int
-        two: str
+        one: typing.Final[int]
+        two: typing.Final[str]
     |}
 
 

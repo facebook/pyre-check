@@ -896,7 +896,27 @@ let test_check_final_attribute_refinement context =
     [
       "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]`.";
       "Revealed type [-1]: Revealed type for `a.x` is `Union[typing.Callable[[], int], int]`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+    from typing import NamedTuple, Optional
+    from dataclasses import dataclass
+
+    class Foo(NamedTuple):
+        value: Optional[int]
+        other: int = 1
+
+    def f() -> None:
+        foo = Foo(value=1)
+        reveal_type(foo.value)
+        if foo.value:
+            reveal_type(foo.value)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `foo.value` is `Optional[int]` (inferred: `int`).";
+    ];
+  ()
 
 
 let () =
