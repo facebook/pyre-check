@@ -237,7 +237,8 @@ class StrictIssueCollector(StrictCountCollector):
     issues: List[CodeQualityIssue] = []
 
     def _create_issue(self, node: cst.Module) -> None:
-        code_range = self.get_metadata(PositionProvider, node)
+        file_range = self.get_metadata(PositionProvider, node)
+        code_range = CodeRange(start=file_range.start, end=file_range.start)
         issue = CodeQualityIssue(
             code_range, self.path, "PYRE_STRICT", "Unsafe Pyre file."
         )
