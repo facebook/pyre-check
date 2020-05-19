@@ -264,13 +264,10 @@ let test_simple_global_registration context =
     in
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
-      global
-      >>| UnannotatedGlobalEnvironment.sexp_of_unannotated_global
-      >>| Sexp.to_string_hum
-      |> Option.value ~default:"None"
+      global >>| UnannotatedGlobal.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
     in
     let location_insensitive_compare left right =
-      Option.compare UnannotatedGlobalEnvironment.compare_unannotated_global left right = 0
+      Option.compare UnannotatedGlobal.compare left right = 0
     in
     assert_equal
       ~cmp:location_insensitive_compare
@@ -324,7 +321,7 @@ let test_simple_global_registration context =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
         {
-          UnannotatedGlobalEnvironment.define = signature;
+          UnannotatedGlobal.UnannotatedDefine.define = signature;
           location = Location.with_module ~qualifier:(Reference.create "test") location;
         }
     | _ -> failwith "not define"
@@ -410,19 +407,17 @@ let test_updates context =
       | `Global (global_name, dependency, expectation) ->
           let printer optional =
             optional
-            >>| UnannotatedGlobalEnvironment.sexp_of_unannotated_global
+            >>| UnannotatedGlobal.sexp_of_t
             >>| Sexp.to_string_hum
             |> Option.value ~default:"none"
           in
-          let cmp left right =
-            Option.compare UnannotatedGlobalEnvironment.compare_unannotated_global left right = 0
-          in
+          let cmp left right = Option.compare UnannotatedGlobal.compare left right = 0 in
           let remove_target_location = function
-            | UnannotatedGlobalEnvironment.SimpleAssign assign ->
-                UnannotatedGlobalEnvironment.SimpleAssign
+            | UnannotatedGlobal.SimpleAssign assign ->
+                UnannotatedGlobal.SimpleAssign
                   { assign with target_location = Location.WithModule.any }
-            | UnannotatedGlobalEnvironment.TupleAssign assign ->
-                UnannotatedGlobalEnvironment.TupleAssign
+            | UnannotatedGlobal.TupleAssign assign ->
+                UnannotatedGlobal.TupleAssign
                   { assign with target_location = Location.WithModule.any }
             | global -> global
           in
@@ -651,7 +646,7 @@ let test_updates context =
           ( Reference.create "test.x",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.SimpleAssign
+              (UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -666,7 +661,7 @@ let test_updates context =
           ( Reference.create "test.x",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.SimpleAssign
+              (UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -687,7 +682,7 @@ let test_updates context =
         `Global
           ( Reference.create "test.alias",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
       ]
     ~expected_triggers:[dependency]
     ~post_actions:[`Global (Reference.create "test.alias", dependency, None)]
@@ -704,11 +699,11 @@ let test_updates context =
         `Global
           ( Reference.create "test.member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member")) );
+            Some (UnannotatedGlobal.Imported (Reference.create "target.other_member")) );
       ]
       (* Location insensitive *)
     ~expected_triggers:[]
@@ -717,11 +712,11 @@ let test_updates context =
         `Global
           ( Reference.create "test.member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member")) );
+            Some (UnannotatedGlobal.Imported (Reference.create "target.other_member")) );
       ]
     ();
 
@@ -757,7 +752,7 @@ let test_updates context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.TupleAssign
+              (UnannotatedGlobal.TupleAssign
                  {
                    value = tuple_expression;
                    index = 0;
@@ -768,7 +763,7 @@ let test_updates context =
           ( Reference.create "test.Y",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.TupleAssign
+              (UnannotatedGlobal.TupleAssign
                  {
                    value = tuple_expression;
                    index = 1;
@@ -779,7 +774,7 @@ let test_updates context =
           ( Reference.create "test.Z",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.TupleAssign
+              (UnannotatedGlobal.TupleAssign
                  {
                    value = tuple_expression;
                    index = 2;
@@ -806,7 +801,7 @@ let test_updates context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.SimpleAssign
+              (UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation = None;
                    value =
@@ -837,7 +832,7 @@ let test_updates context =
           ( Reference.create "test.X",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.SimpleAssign
+              (UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation = None;
                    value =
@@ -886,7 +881,7 @@ let test_updates context =
           ( Reference.create "test.x",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.SimpleAssign
+              (UnannotatedGlobal.SimpleAssign
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
@@ -935,7 +930,7 @@ let test_updates context =
       return_annotation
     =
     {
-      UnannotatedGlobalEnvironment.define =
+      UnannotatedGlobal.UnannotatedDefine.define =
         {
           Define.Signature.name;
           parameters = [];
@@ -970,7 +965,7 @@ let test_updates context =
           ( Reference.create "test.foo",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.Define
+              (UnannotatedGlobal.Define
                  [
                    create_simple_signature
                      ~start:(2, 0)
@@ -990,7 +985,7 @@ let test_updates context =
           ( Reference.create "test.foo",
             dependency,
             Some
-              (UnannotatedGlobalEnvironment.Define
+              (UnannotatedGlobal.Define
                  [
                    create_simple_signature
                      ~start:(2, 0)

@@ -34,7 +34,7 @@ let produce_undecorated_function class_hierarchy_environment name ~dependency =
       name
   in
   let handle = function
-    | UnannotatedGlobalEnvironment.Define signatures ->
+    | UnannotatedGlobal.Define signatures ->
         let create_overload signature =
           let parse_annotation =
             AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters

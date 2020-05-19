@@ -72,7 +72,7 @@ let produce_global_annotation attribute_resolution name ~dependency =
       Annotation.create_immutable ~original annotation
     in
     match global with
-    | UnannotatedGlobalEnvironment.Define defines ->
+    | UnannotatedGlobal.Define defines ->
         let { AttributeResolution.undecorated_signature; decorated } =
           List.map defines ~f:(fun { define; _ } -> define)
           |> List.partition_tf ~f:Define.Signature.is_overloaded_function
@@ -256,7 +256,7 @@ let produce_global_location global_value_table name ~dependency =
   | Some location -> Some location
   | None ->
       let extract_location = function
-        | UnannotatedGlobalEnvironment.Define ({ UnannotatedGlobalEnvironment.location; _ } :: _) ->
+        | UnannotatedGlobal.Define ({ UnannotatedGlobal.UnannotatedDefine.location; _ } :: _) ->
             Some location
         | SimpleAssign { target_location; _ } -> Some target_location
         | TupleAssign { target_location; _ } -> Some target_location

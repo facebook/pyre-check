@@ -10,28 +10,6 @@ open Statement
 open Expression
 open SharedMemoryKeys
 
-type unannotated_define = {
-  define: Define.Signature.t;
-  location: Location.WithModule.t;
-}
-[@@deriving compare, show, equal, sexp]
-
-type unannotated_global =
-  | SimpleAssign of {
-      explicit_annotation: Expression.t option;
-      value: Expression.t;
-      target_location: Location.WithModule.t;
-    }
-  | TupleAssign of {
-      value: Expression.t;
-      target_location: Location.WithModule.t;
-      index: int;
-      total_length: int;
-    }
-  | Imported of Reference.t
-  | Define of unannotated_define list
-[@@deriving compare, show, equal, sexp]
-
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
@@ -44,7 +22,7 @@ module ReadOnly = struct
     get_class_definition:
       ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
     get_unannotated_global:
-      ?dependency:DependencyKey.registered -> Reference.t -> unannotated_global option;
+      ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
     get_define: ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
     get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
     hash_to_key_map: unit -> string String.Map.t;
@@ -190,7 +168,7 @@ module WriteOnly : sig
     previous_defines_list:Reference.t list ->
     unit
 
-  val set_unannotated_global : target:Reference.t -> unannotated_global -> unit
+  val set_unannotated_global : target:Reference.t -> UnannotatedGlobal.t -> unit
 
   val set_define : name:Reference.t -> FunctionDefinition.t -> unit
 
@@ -215,7 +193,7 @@ end = struct
       (ClassValue)
 
   module UnannotatedGlobalValue = struct
-    type t = unannotated_global
+    type t = UnannotatedGlobal.t
 
     let prefix = Prefix.make ()
 
@@ -223,7 +201,7 @@ end = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = compare_unannotated_global
+    let compare = UnannotatedGlobal.compare
   end
 
   module UnannotatedGlobals =
@@ -329,7 +307,9 @@ end = struct
           let value = value >>| Node.value >>| ClassSummary.show in
           Some (ClassValue.description, key, value)
       | UnannotatedGlobals.Decoded (key, value) ->
-          let value = value >>| show_unannotated_global in
+          let value =
+            value >>| fun value -> Format.asprintf "%a" Sexp.pp (UnannotatedGlobal.sexp_of_t value)
+          in
           Some (UnannotatedGlobalValue.description, Reference.show key, value)
       | FunctionDefinitions.Decoded (key, value) ->
           let value =
@@ -343,7 +323,7 @@ end = struct
       | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
           Some (Option.equal (Node.equal ClassSummary.equal) first second)
       | UnannotatedGlobals.Decoded (_, first), UnannotatedGlobals.Decoded (_, second) ->
-          Some (Option.equal equal_unannotated_global first second)
+          Some (Option.equal [%compare.equal: UnannotatedGlobal.t] first second)
       | FunctionDefinitions.Decoded (_, first), FunctionDefinitions.Decoded (_, second) ->
           let node_equal left right = Int.equal 0 (FunctionDefinitionValue.compare left right) in
           Some (Option.equal node_equal first second)
@@ -624,125 +604,26 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
 
 let missing_builtin_globals =
   let assign name annotation =
-    ( Reference.create name,
-      SimpleAssign
-        {
-          explicit_annotation = Some (Type.expression annotation);
-          target_location = Location.WithModule.any;
-          value = Node.create_with_default_location Expression.Ellipsis;
-        } )
+    {
+      UnannotatedGlobal.Collector.Result.name = Reference.create name;
+      unannotated_global =
+        UnannotatedGlobal.SimpleAssign
+          {
+            explicit_annotation = Some (Type.expression annotation);
+            target_location = Location.WithModule.any;
+            value = Node.create_with_default_location Expression.Ellipsis;
+          };
+    }
   in
   [assign "None" Type.none; assign "..." Type.Any; assign "__debug__" Type.bool]
 
 
-let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ } =
-  let rec visit_statement ~qualifier globals { Node.value; location } =
-    let qualified_name target =
-      let target = name_to_reference_exn target |> Reference.sanitize_qualified in
-      Option.some_if (Reference.length target = 1) (Reference.combine qualifier target)
-    in
-    match value with
-    | Statement.Assign
-        { Assign.target = { Node.value = Name target; location }; annotation; value; _ }
-      when is_simple_name target ->
-        qualified_name target
-        >>| (fun qualified ->
-              ( qualified,
-                SimpleAssign
-                  {
-                    explicit_annotation = annotation;
-                    value;
-                    target_location = Location.with_module ~qualifier location;
-                  } )
-              :: globals)
-        |> Option.value ~default:globals
-    | Statement.Assign { Assign.target = { Node.value = Tuple elements; _ }; value; _ } ->
-        let valid =
-          let total_length = List.length elements in
-          let is_simple_name index = function
-            | { Node.value = Expression.Name name; location } when is_simple_name name ->
-                qualified_name name
-                >>| fun name ->
-                ( name,
-                  TupleAssign
-                    {
-                      value;
-                      target_location = Location.with_module ~qualifier location;
-                      index;
-                      total_length;
-                    } )
-            | _ -> None
-          in
-          List.mapi elements ~f:is_simple_name
-        in
-        (Option.all valid |> Option.value ~default:[]) @ globals
-    | Import { Import.from = Some _; imports = [{ Import.name = { Node.value = name; _ }; _ }] }
-      when String.equal (Reference.show name) "*" ->
-        (* Don't register x.* as a global when a user writes `from x import *`. *)
-        globals
-    | Import { Import.from; imports } ->
-        let from =
-          match from >>| Node.value >>| Reference.show with
-          | None
-          | Some "future.builtins"
-          | Some "builtins" ->
-              Reference.empty
-          | Some from -> Reference.create from
-        in
-        let import_to_global { Import.name = { Node.value = name; _ }; alias } =
-          let qualified_name =
-            match alias with
-            | None -> Reference.combine qualifier name
-            | Some { Node.value = alias; _ } -> Reference.combine qualifier (Reference.create alias)
-          in
-          let original_name = Reference.combine from name in
-          qualified_name, Imported original_name
-        in
-        List.rev_append (List.map ~f:import_to_global imports) globals
-    | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
-        ( Node.value name,
-          Define [{ define = signature; location = Location.with_module ~qualifier location }] )
-        :: globals
-    | If { If.body; orelse; _ } ->
-        (* TODO(T28732125): Properly take an intersection here. *)
-        List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
-    | Try { Try.body; handlers; orelse; finally } ->
-        let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) body in
-        let globals =
-          let handlers_statements =
-            List.concat_map handlers ~f:(fun { Try.Handler.body; _ } -> body)
-          in
-          List.fold ~init:globals ~f:(visit_statement ~qualifier) handlers_statements
-        in
-        let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) orelse in
-        List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
-    | _ -> globals
+let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+    WriteOnly.set_unannotated_global ~target:name unannotated_global;
+    name
   in
-  let write (target, o) =
-    WriteOnly.set_unannotated_global ~target o;
-    target
-  in
-  let merge_defines unannotated_globals_alist =
-    let not_defines, defines =
-      List.partition_map unannotated_globals_alist ~f:(function
-          | name, Define defines -> `Snd (name, defines)
-          | x -> `Fst x)
-    in
-    let add_to_map sofar (name, defines) =
-      let merge_with_existing to_merge = function
-        | None -> Some to_merge
-        | Some existing -> Some (to_merge @ existing)
-      in
-      Map.change sofar name ~f:(merge_with_existing defines)
-    in
-    List.fold defines ~f:add_to_map ~init:Reference.Map.empty
-    |> Reference.Map.map ~f:(fun x -> Define x)
-    |> Reference.Map.to_alist
-    |> List.append not_defines
-  in
-  let globals =
-    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> merge_defines |> List.rev
-  in
+  let globals = UnannotatedGlobal.Collector.from_source source in
   let globals =
     match Reference.as_list qualifier with
     | [] -> globals @ missing_builtin_globals

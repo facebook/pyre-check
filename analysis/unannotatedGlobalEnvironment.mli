@@ -8,28 +8,6 @@ open Statement
 open SharedMemoryKeys
 open Core
 
-type unannotated_define = {
-  define: Define.Signature.t;
-  location: Location.WithModule.t;
-}
-[@@deriving compare, show, equal, sexp]
-
-type unannotated_global =
-  | SimpleAssign of {
-      explicit_annotation: Expression.t option;
-      value: Expression.t;
-      target_location: Location.WithModule.t;
-    }
-  | TupleAssign of {
-      value: Expression.t;
-      target_location: Location.WithModule.t;
-      index: int;
-      total_length: int;
-    }
-  | Imported of Reference.t
-  | Define of unannotated_define list
-[@@deriving compare, show, sexp]
-
 module ReadOnly : sig
   type t
 
@@ -70,7 +48,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
-    unannotated_global option
+    UnannotatedGlobal.t option
 
   val get_define
     :  t ->

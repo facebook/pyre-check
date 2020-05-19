@@ -2966,7 +2966,7 @@ module Implementation = struct
             unannotated_global_environment
             reference
         with
-        | Some (UnannotatedGlobalEnvironment.Define defines) ->
+        | Some (UnannotatedGlobal.Define defines) ->
             let { decorated; _ } =
               List.map defines ~f:(fun { define; _ } -> define)
               |> List.partition_tf ~f:Define.Signature.is_overloaded_function
