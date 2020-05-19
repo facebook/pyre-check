@@ -1064,13 +1064,26 @@ let rec process
           { state; response = None }
       | CloseDocument path ->
           let { State.open_documents; _ } = state in
-          let _ =
+          let relative_path =
             match ModuleTracker.lookup_path ~configuration module_tracker path with
-            | Some { SourcePath.qualifier; _ } -> Reference.Table.remove open_documents qualifier
-            | _ -> ()
+            | Some { SourcePath.qualifier; relative; _ } ->
+                Reference.Table.remove open_documents qualifier;
+                Some relative
+            | _ -> None
           in
           LookupCache.evict_path ~state ~configuration path;
-          { state; response = None }
+          let response =
+            relative_path
+            >>| (fun path ->
+                  LanguageServer.Protocol.PublishDiagnostics.clear_diagnostics_for_uri
+                    ~uri:(Path.uri (Path.create_absolute path)))
+            >>| LanguageServer.Protocol.PublishDiagnostics.to_yojson
+            >>| Yojson.Safe.to_string
+            >>| (fun response -> LanguageServerProtocolResponse response)
+            >>| Option.some
+            |> Option.value ~default:None
+          in
+          { state; response }
       | DocumentChange file ->
           (* On change, update open document's content but do not trigger recheck. *)
           update_open_documents ~state (File.path file);

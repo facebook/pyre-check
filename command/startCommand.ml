@@ -34,9 +34,9 @@ let is_connection_reset_error = function
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.ast_environment; open_documents; _ } as state)
+    ({ Server.State.ast_environment; _ } as state)
   =
-  let errors_to_lsp_responses errors =
+  let errors_to_lsp_responses { Server.State.open_documents; _ } errors =
     let build_file_to_error_map error_list =
       let table = String.Table.create () in
       let add_to_table error =
@@ -45,7 +45,10 @@ let computation_thread
           | Some errors -> error :: errors
         in
         let key = Analysis.AnalysisError.Instantiated.path error in
-        Hashtbl.update table key ~f:update
+        let key_qualifier = Ast.SourcePath.qualifier_of_relative key in
+        let open_document_keys = Hashtbl.keys open_documents in
+        if List.mem ~equal:Ast.Reference.equal open_document_keys key_qualifier then
+          Hashtbl.update table key ~f:update
       in
       let add_empty_error_array reference =
         let update = function
@@ -90,7 +93,7 @@ let computation_thread
   let broadcast_response state response =
     let responses =
       match response with
-      | TypeCheckResponse errors -> errors_to_lsp_responses errors
+      | TypeCheckResponse errors -> errors_to_lsp_responses state errors
       | LanguageServerProtocolResponse _ -> [response]
       | ClientExitResponse Persistent -> [response]
       | ServerUuidResponse _ -> [response]
@@ -147,7 +150,7 @@ let computation_thread
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some (TypeCheckResponse errors) ->
-                List.iter (errors_to_lsp_responses errors) ~f:(fun response ->
+                List.iter (errors_to_lsp_responses state errors) ~f:(fun response ->
                     Connections.broadcast_to_adapter_sockets
                       ~response
                       ~connections:state.connections);
