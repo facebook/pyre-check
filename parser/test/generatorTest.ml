@@ -4602,7 +4602,7 @@ let test_import _ =
     "import a as b"
     [
       +Statement.Import
-         { Import.from = None; imports = [{ Import.name = + !&"a"; alias = Some (+ !&"b") }] };
+         { Import.from = None; imports = [{ Import.name = + !&"a"; alias = Some (+"b") }] };
     ];
   assert_parsed_equal
     "import a as b, c, d as e"
@@ -4612,9 +4612,9 @@ let test_import _ =
            Import.from = None;
            imports =
              [
-               { Import.name = + !&"a"; alias = Some (+ !&"b") };
+               { Import.name = + !&"a"; alias = Some (+"b") };
                { Import.name = + !&"c"; alias = None };
-               { Import.name = + !&"d"; alias = Some (+ !&"e") };
+               { Import.name = + !&"d"; alias = Some (+"e") };
              ];
          };
     ];
@@ -4687,9 +4687,9 @@ let test_import _ =
            Import.from = Some (+ !&"f");
            imports =
              [
-               { Import.name = + !&"a"; alias = Some (+ !&"b") };
+               { Import.name = + !&"a"; alias = Some (+"b") };
                { Import.name = + !&"c"; alias = None };
-               { Import.name = + !&"d"; alias = Some (+ !&"e") };
+               { Import.name = + !&"d"; alias = Some (+"e") };
              ];
          };
     ];

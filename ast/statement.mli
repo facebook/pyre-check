@@ -20,7 +20,7 @@ end
 module Import : sig
   type import = {
     name: Reference.t Node.t;
-    alias: Reference.t Node.t option;
+    alias: Identifier.t Node.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

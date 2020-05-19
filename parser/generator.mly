@@ -1240,7 +1240,7 @@ import:
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = { Node.location = fst name; value = snd name };
-        alias = Some { Node.location = fst alias; value = Reference.create (snd alias) };
+        alias = Some { Node.location = fst alias; value = snd alias };
       }
     }
   ;

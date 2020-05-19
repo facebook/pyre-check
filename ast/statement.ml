@@ -34,7 +34,7 @@ end
 module Import = struct
   type import = {
     name: Reference.t Node.t;
-    alias: Reference.t Node.t option;
+    alias: Identifier.t Node.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -48,7 +48,7 @@ module Import = struct
     let location_insensitive_compare_import left right =
       match
         Option.compare
-          (Node.location_insensitive_compare [%compare: Reference.t])
+          (Node.location_insensitive_compare [%compare: Identifier.t])
           left.alias
           right.alias
       with
@@ -2532,13 +2532,10 @@ module PrettyPrinter = struct
             orelse
     | Import { Import.from; imports } -> (
         let pp_import formatter { Import.name; alias } =
-          Format.fprintf
-            formatter
-            "%a%a"
-            Reference.pp
-            (Node.value name)
-            pp_reference_option
-            (alias >>| Node.value)
+          match alias with
+          | None -> Format.fprintf formatter "%a" Reference.pp (Node.value name)
+          | Some { Node.value = alias; _ } ->
+              Format.fprintf formatter "%a as %a" Reference.pp (Node.value name) Identifier.pp alias
         in
         let pp_imports formatter import_list = pp_list formatter pp_import ", " import_list in
         match from with

@@ -174,7 +174,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Import { Import.from; imports } ->
           let visit_import { Import.name; alias } =
             visit_node ~state ~visitor (Reference name);
-            Option.iter ~f:(fun alias -> visit_node ~state ~visitor (Reference alias)) alias
+            Option.iter ~f:(fun alias -> visit_node ~state ~visitor (Identifier alias)) alias
           in
           Option.iter ~f:(fun from -> visit_node ~state ~visitor (Reference from)) from;
           List.iter ~f:visit_import imports

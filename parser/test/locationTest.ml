@@ -1805,12 +1805,12 @@ let test_import_locations _ =
                [
                  {
                    Import.name = node ~start:(1, 14) ~stop:(1, 15) !&"a";
-                   alias = Some (node ~start:(1, 19) ~stop:(1, 20) !&"b");
+                   alias = Some (node ~start:(1, 19) ~stop:(1, 20) "b");
                  };
                  { Import.name = node ~start:(1, 22) ~stop:(1, 23) !&"c"; alias = None };
                  {
                    Import.name = node ~start:(1, 25) ~stop:(1, 26) !&"d";
-                   alias = Some (node ~start:(1, 30) ~stop:(1, 31) !&"e");
+                   alias = Some (node ~start:(1, 30) ~stop:(1, 31) "e");
                  };
                ];
            });
@@ -1828,12 +1828,12 @@ let test_import_locations _ =
                [
                  {
                    Import.name = node ~start:(1, 7) ~stop:(1, 8) !&"a";
-                   alias = Some (node ~start:(1, 12) ~stop:(1, 13) !&"b");
+                   alias = Some (node ~start:(1, 12) ~stop:(1, 13) "b");
                  };
                  { Import.name = node ~start:(1, 15) ~stop:(1, 16) !&"c"; alias = None };
                  {
                    Import.name = node ~start:(1, 18) ~stop:(1, 19) !&"d";
-                   alias = Some (node ~start:(1, 23) ~stop:(1, 24) !&"e");
+                   alias = Some (node ~start:(1, 23) ~stop:(1, 24) "e");
                  };
                ];
            });

@@ -5,7 +5,6 @@
 
 open Core
 open Statement
-open Pyre
 
 type aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
 
@@ -66,7 +65,11 @@ let create
       | Statement.Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import source ~from in
           let export aliases { Import.name = { Node.value = name; _ }; alias } =
-            let alias = alias >>| Node.value |> Option.value ~default:name in
+            let alias =
+              match alias with
+              | None -> name
+              | Some { Node.value = alias; _ } -> Reference.create alias
+            in
             let name =
               if String.equal (Reference.show alias) "*" then
                 Node.value from
@@ -78,7 +81,11 @@ let create
           List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
           let export aliases { Import.name = { Node.value = name; _ }; alias } =
-            let alias = alias >>| Node.value |> Option.value ~default:name in
+            let alias =
+              match alias with
+              | None -> name
+              | Some { Node.value = alias; _ } -> Reference.create alias
+            in
             let source, target =
               if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then
                 alias, Reference.drop_prefix ~prefix:qualifier name

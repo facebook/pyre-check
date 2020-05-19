@@ -834,7 +834,7 @@ let qualify
                 (* Add `alias -> from.name`. *)
                 Map.set
                   aliases
-                  ~key:alias
+                  ~key:(Reference.create alias)
                   ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
             | None ->
                 (* Add `name -> from.name`. *)
@@ -849,7 +849,7 @@ let qualify
             match alias with
             | Some { Node.value = alias; _ } ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
+                Map.set aliases ~key:(Reference.create alias) ~data:(local_alias ~qualifier ~name)
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
@@ -1492,7 +1492,7 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
             match alias with
             | Some { Node.value = alias; _ } ->
                 (* Add `name -> alias`. *)
-                Map.set map ~key:name ~data:alias
+                Map.set map ~key:name ~data:(Reference.create alias)
             | None -> map
           in
           List.fold_left imports ~f:add_import ~init:map, [statement]
@@ -1501,7 +1501,7 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
             match alias with
             | Some { Node.value = alias; _ } ->
                 (* Add `from.name -> alias`. *)
-                Map.set map ~key:(Reference.combine from name) ~data:alias
+                Map.set map ~key:(Reference.combine from name) ~data:(Reference.create alias)
             | None ->
                 (* Add `from.name -> name`. *)
                 Map.set map ~key:(Reference.combine from name) ~data:name

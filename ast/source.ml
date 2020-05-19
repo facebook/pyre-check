@@ -369,7 +369,9 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
           public_values @ filter_private [name], dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } =
-            alias >>| Node.value |> Option.value ~default:(Node.value name)
+            match alias with
+            | None -> Node.value name
+            | Some { Node.value = alias; _ } -> Reference.create alias
           in
           public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
       | _ -> public_values, dunder_all

@@ -693,7 +693,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
           let qualified_name =
             match alias with
             | None -> Reference.combine qualifier name
-            | Some { Node.value = alias; _ } -> Reference.combine qualifier alias
+            | Some { Node.value = alias; _ } -> Reference.combine qualifier (Reference.create alias)
           in
           let original_name = Reference.combine from name in
           qualified_name, Imported original_name

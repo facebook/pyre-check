@@ -186,7 +186,7 @@ module Binding = struct
         let binding_of_import sofar { Import.alias; name = { Node.value = name; location } } =
           match alias with
           | Some { Node.value = alias; location } ->
-              { kind = Kind.ImportName; name = Reference.show alias; location } :: sofar
+              { kind = Kind.ImportName; name = alias; location } :: sofar
           | None -> (
               match from with
               | Some _ ->
