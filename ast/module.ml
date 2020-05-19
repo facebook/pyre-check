@@ -52,18 +52,18 @@ let create_for_testing ~local_mode ~stub =
 
 
 let create
-    ( {
-        Source.source_path = { SourcePath.is_stub; qualifier; _ };
-        statements;
-        metadata = { Source.Metadata.local_mode; _ };
-        _;
-      } as source )
+    {
+      Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
+      statements;
+      metadata = { Source.Metadata.local_mode; _ };
+      _;
+    }
   =
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
       | Statement.Import { Import.from = Some from; imports } ->
-          let from = Source.expand_relative_import source ~from in
+          let from = SourcePath.expand_relative_import source_path ~from in
           let export aliases { Import.name = { Node.value = name; _ }; alias } =
             let alias =
               match alias with

@@ -219,12 +219,12 @@ let test_expand_relative_import _ =
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in
-    let source = Source.create ~relative [] in
+    let source_path = Source.create ~relative [] |> fun { Source.source_path; _ } -> source_path in
     assert_equal
       ~cmp:Reference.equal
       ~printer:Reference.show
       (Reference.create expected)
-      (Node.value (Source.expand_relative_import source ~from))
+      (Node.value (SourcePath.expand_relative_import source_path ~from))
   in
   assert_export ~relative:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export

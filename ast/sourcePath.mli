@@ -29,3 +29,5 @@ val full_path : configuration:Configuration.Analysis.t -> t -> Path.t
 val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> int
 
 val is_stub : t -> bool
+
+val expand_relative_import : from:Reference.t Node.t -> t -> Reference.t Node.t

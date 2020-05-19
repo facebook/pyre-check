@@ -379,39 +379,3 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
   Option.value dunder_all ~default:toplevel_public |> List.dedup_and_sort ~compare:Reference.compare
-
-
-let expand_relative_import
-    ~from:{ Node.value = from; location }
-    { source_path = { SourcePath.is_init; qualifier; _ }; _ }
-  =
-  match Reference.show from with
-  | "builtins" -> Node.create ~location Reference.empty
-  | serialized ->
-      (* Expand relative imports according to PEP 328 *)
-      let dots = String.take_while ~f:(fun dot -> Char.equal dot '.') serialized in
-      let postfix =
-        match String.drop_prefix serialized (String.length dots) with
-        (* Special case for single `.`, `..`, etc. in from clause. *)
-        | "" -> Reference.empty
-        | nonempty -> Reference.create nonempty
-      in
-      let prefix =
-        if not (String.is_empty dots) then
-          let initializer_module_offset =
-            (* `.` corresponds to the directory containing the module. For non-init modules, the
-               qualifier matches the path, so we drop exactly the number of dots. However, for
-               __init__ modules, the directory containing it represented by the qualifier. *)
-            if is_init then
-              1
-            else
-              0
-          in
-          List.rev (Reference.as_list qualifier)
-          |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
-          |> List.rev
-          |> Reference.create_from_list
-        else
-          Reference.empty
-      in
-      Node.create ~location (Reference.combine prefix postfix)

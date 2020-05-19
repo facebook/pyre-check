@@ -10,7 +10,9 @@ open Pyre
 open PyreParser
 open Statement
 
-let expand_relative_imports ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+let expand_relative_imports
+    ({ Source.source_path = { SourcePath.qualifier; _ } as source_path; _ } as source)
+  =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
 
@@ -21,7 +23,7 @@ let expand_relative_imports ({ Source.source_path = { SourcePath.qualifier; _ };
           when (not (String.equal (Reference.show (Node.value from)) "builtins"))
                && not (String.equal (Reference.show (Node.value from)) "future.builtins") ->
             Statement.Import
-              { Import.from = Some (Source.expand_relative_import source ~from); imports }
+              { Import.from = Some (SourcePath.expand_relative_import source_path ~from); imports }
         | _ -> value
       in
       qualifier, [{ Node.location; value }]
