@@ -960,6 +960,7 @@ let test_forward_statement context =
     match forwarded with
     | None -> assert_true bottom
     | Some actual_resolution ->
+        assert_false bottom;
         assert_annotation_store
           ~expected:(create_annotation_store ~immutables:postcondition_immutables postcondition)
           actual_resolution
