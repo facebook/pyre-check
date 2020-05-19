@@ -473,6 +473,23 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `y` is `Union[typing.Callable[[object, int], str], \
        int]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import NamedTuple
+
+      class Descriptor:
+        def __get__(self, o: object, t: object = None) -> int:
+          return 1
+
+      class N(NamedTuple):
+          value: Descriptor = Descriptor()
+
+      def f() -> None:
+          foo = N()
+          x = foo.value
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Descriptor`."];
   ()
 
 

@@ -1902,20 +1902,22 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let tuple_attributes ~parent ~location attributes =
       let attribute_statements =
-        let attribute (name, annotation, value) =
+        let attribute { Node.value = name, annotation, _value; location } =
           let target = Reference.create ~prefix:parent name |> from_reference ~location in
           Statement.Assign
             {
               Assign.target;
               annotation = Some annotation;
-              value = Option.value value ~default:(Node.create Expression.Ellipsis ~location);
+              value = Node.create Expression.Ellipsis ~location;
               parent = Some parent;
             }
           |> Node.create ~location
         in
         List.map attributes ~f:attribute
       in
-      let fields_attribute = fields_attribute ~parent ~location attributes in
+      let fields_attribute =
+        List.map attributes ~f:Node.value |> fields_attribute ~parent ~location
+      in
       fields_attribute :: attribute_statements
     in
     let tuple_constructors ~parent ~location attributes =
@@ -2024,7 +2026,10 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           (* TODO (T42893621): properly handle the excluded case *)
             when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
               let constructors = tuple_constructors ~parent:name ~location attributes in
-              let attributes = tuple_attributes ~parent:name ~location attributes in
+              let attributes =
+                List.map attributes ~f:(Node.create ~location)
+                |> tuple_attributes ~parent:name ~location
+              in
               Statement.Class
                 {
                   Class.name = Node.create ~location:target_location name;
@@ -2060,7 +2065,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   Node.value =
                     Statement.Assign
                       { Assign.target = { Node.value = Name target; _ }; value; annotation; _ };
-                  _;
+                  location;
                 } ->
                   let last =
                     match target with
@@ -2073,13 +2078,15 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     in
                     Option.value annotation ~default:any
                   in
-                  Some (last, annotation, Some value)
-              | _ -> None
+                  `Fst (Node.create ~location (last, annotation, Some value))
+              | statement -> `Snd statement
             in
-            let attributes = List.filter_map body ~f:extract_assign in
-            let constructors = tuple_constructors ~parent:name ~location attributes in
-            let fields_attribute = fields_attribute ~parent:name ~location attributes in
-            Class { original with Class.body = constructors @ (fields_attribute :: body) }
+            let attributes, other = List.partition_map body ~f:extract_assign in
+            let constructors =
+              List.map attributes ~f:Node.value |> tuple_constructors ~parent:name ~location
+            in
+            let tuple_attributes = tuple_attributes ~parent:name ~location attributes in
+            Class { original with Class.body = constructors @ tuple_attributes @ other }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base) =
               match extract_attributes value with
@@ -2102,7 +2109,10 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     else
                       tuple_constructors ~parent:name ~location attributes
                   in
-                  let attributes = tuple_attributes ~parent:name ~location attributes in
+                  let attributes =
+                    List.map attributes ~f:(Node.create ~location)
+                    |> tuple_attributes ~parent:name ~location
+                  in
                   tuple_base ~location :: bases, attributes_sofar @ constructors @ attributes
               | None -> base :: bases, attributes_sofar
             in

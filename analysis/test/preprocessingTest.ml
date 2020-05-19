@@ -2556,7 +2556,7 @@ let test_transform_ast _ =
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         a: int
         b: str
-        c: int = 3
+        c: int
     |};
   assert_expand
     {|
