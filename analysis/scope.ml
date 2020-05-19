@@ -40,20 +40,20 @@ module Binding = struct
   }
   [@@deriving sexp, compare, hash]
 
-  let rec of_unannotated_target ~kind { Node.value = target; location } =
+  let rec of_unannotated_target ~kind sofar { Node.value = target; location } =
     let open Expression in
     match target with
-    | Expression.Name (Name.Identifier name) -> [{ name; kind; location }]
+    | Expression.Name (Name.Identifier name) -> { name; kind; location } :: sofar
     | Expression.Starred (Starred.Once element | Starred.Twice element) ->
-        of_unannotated_target ~kind element
+        of_unannotated_target ~kind sofar element
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
-        List.concat_map elements ~f:(of_unannotated_target ~kind)
-    | _ -> []
+        List.fold elements ~init:sofar ~f:(of_unannotated_target ~kind)
+    | _ -> sofar
 
 
-  let rec of_statement { Node.value = statement; location } =
+  let rec of_statement sofar { Node.value = statement; location } =
     (* TODO (T53600647): Support walrus operator. *)
     let open Statement in
     match statement with
@@ -64,60 +64,63 @@ module Binding = struct
           annotation = Some annotation;
           _;
         } ->
-        [{ name; kind = Kind.AssignTarget (Some annotation); location }]
+        { name; kind = Kind.AssignTarget (Some annotation); location } :: sofar
     | Statement.Assign { Assign.target; _ } ->
-        of_unannotated_target ~kind:(Kind.AssignTarget None) target
+        of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
     | Statement.Class { Class.name = { Node.value = name; _ }; _ } ->
-        [{ kind = Kind.ClassName; name = Reference.show name; location }]
+        { kind = Kind.ClassName; name = Reference.show name; location } :: sofar
     | Statement.Define { Define.signature = { name = { Node.value = name; _ }; _ } as signature; _ }
       ->
-        [{ kind = Kind.DefineName signature; name = Reference.show name; location }]
+        { kind = Kind.DefineName signature; name = Reference.show name; location } :: sofar
     | Statement.For { For.target; body; orelse; _ } ->
-        let target_names = of_unannotated_target ~kind:Kind.ForTarget target in
-        let body_names = of_statements body in
-        let orelse_names = of_statements orelse in
-        List.concat [target_names; body_names; orelse_names]
-    | Statement.If { If.body; orelse; _ } -> List.append (of_statements body) (of_statements orelse)
+        let sofar = of_unannotated_target ~kind:Kind.ForTarget sofar target in
+        let sofar = of_statements sofar body in
+        of_statements sofar orelse
+    | Statement.If { If.body; orelse; _ } ->
+        let sofar = of_statements sofar body in
+        of_statements sofar orelse
     | Statement.Import { Import.imports; from } ->
-        let binding_of_import { Import.alias; name = { Node.value = name; location } } =
+        let binding_of_import sofar { Import.alias; name = { Node.value = name; location } } =
           match alias with
           | Some { Node.value = alias; location } ->
-              { kind = Kind.ImportName; name = Reference.show alias; location }
+              { kind = Kind.ImportName; name = Reference.show alias; location } :: sofar
           | None -> (
               match from with
               | Some _ ->
                   (* `name` must be a simple name *)
-                  { kind = Kind.ImportName; name = Reference.show name; location }
+                  { kind = Kind.ImportName; name = Reference.show name; location } :: sofar
               | None ->
                   (* `import a.b` actually binds name a *)
                   let name = Reference.as_list name |> List.hd_exn in
-                  { kind = Kind.ImportName; name; location } )
+                  { kind = Kind.ImportName; name; location } :: sofar )
         in
-        List.map imports ~f:binding_of_import
+        List.fold imports ~init:sofar ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->
-        let bindings_of_handler { Try.Handler.name; kind; body } =
-          let name_binding =
-            Option.map name ~f:(fun name ->
+        let bindings_of_handler sofar { Try.Handler.name; kind; body } =
+          let sofar =
+            match name with
+            | None -> sofar
+            | Some name ->
                 (* TODO: Track the location of handler name. *)
-                { kind = Kind.ExceptTarget kind; name; location })
+                { kind = Kind.ExceptTarget kind; name; location } :: sofar
           in
-          let bindings_in_body = of_statements body in
-          List.append (Option.to_list name_binding) bindings_in_body
+          of_statements sofar body
         in
-        let body_names = of_statements body in
-        let handler_names = List.concat_map handlers ~f:bindings_of_handler in
-        let orelse_names = of_statements orelse in
-        let finally_names = of_statements finally in
-        List.concat [body_names; handler_names; orelse_names; finally_names]
+        let sofar = of_statements sofar body in
+        let sofar = List.fold handlers ~init:sofar ~f:bindings_of_handler in
+        let sofar = of_statements sofar orelse in
+        of_statements sofar finally
     | Statement.While { While.body; orelse; _ } ->
-        List.append (of_statements body) (of_statements orelse)
+        let sofar = of_statements sofar body in
+        of_statements sofar orelse
     | Statement.With { With.items; body; _ } ->
-        let bindings_of_item (_, alias) =
-          Option.value_map alias ~f:(of_unannotated_target ~kind:Kind.WithTarget) ~default:[]
+        let bindings_of_item sofar (_, alias) =
+          match alias with
+          | None -> sofar
+          | Some target -> of_unannotated_target ~kind:Kind.WithTarget sofar target
         in
-        let item_names = List.concat_map items ~f:bindings_of_item in
-        let body_names = of_statements body in
-        List.append item_names body_names
+        let sofar = List.fold items ~init:sofar ~f:bindings_of_item in
+        of_statements sofar body
     | Assert _
     | Break
     | Continue
@@ -130,46 +133,57 @@ module Binding = struct
     | Return _
     | Yield _
     | YieldFrom _ ->
-        []
+        sofar
 
 
-  and of_statements statements = List.concat_map statements ~f:of_statement
+  and of_statements sofar statements = List.fold statements ~init:sofar ~f:of_statement
 
-  let of_parameter index { Node.value = { Expression.Parameter.name; annotation; _ }; location } =
-    let star, name =
-      let star, name = Identifier.split_star name in
-      let star =
-        match star with
-        | "**" -> Some Kind.Star.Twice
-        | "*" -> Some Kind.Star.Once
-        | _ -> None
+  let of_parameters sofar parameters =
+    let of_parameter
+        index
+        sofar
+        { Node.value = { Expression.Parameter.name; annotation; _ }; location }
+      =
+      let star, name =
+        let star, name = Identifier.split_star name in
+        let star =
+          match star with
+          | "**" -> Some Kind.Star.Twice
+          | "*" -> Some Kind.Star.Once
+          | _ -> None
+        in
+        star, name
       in
-      star, name
+      { kind = Kind.ParameterName { index; star; annotation }; name; location } :: sofar
     in
-    { kind = Kind.ParameterName { index; star; annotation }; name; location }
+    List.foldi parameters ~init:sofar ~f:of_parameter
 
 
-  let of_generator { Expression.Comprehension.Generator.target; _ } =
-    of_unannotated_target ~kind:Kind.ComprehensionTarget target
+  let of_generators sofar generators =
+    let of_generator sofar { Expression.Comprehension.Generator.target; _ } =
+      of_unannotated_target ~kind:Kind.ComprehensionTarget sofar target
+    in
+    List.fold generators ~init:sofar ~f:of_generator
 end
 
-let rec globals_of_statement { Node.value; _ } =
+let rec globals_of_statement sofar { Node.value; _ } =
   let open Statement in
   match value with
-  | Statement.Global globals -> globals
+  | Statement.Global globals -> List.rev_append globals sofar
   | For { For.body; orelse; _ }
   | If { If.body; orelse; _ }
   | While { While.body; orelse; _ } ->
-      globals_of_statements (List.append body orelse)
+      let sofar = globals_of_statements sofar body in
+      globals_of_statements sofar orelse
   | Try { Try.body; handlers; orelse; finally } ->
-      let statements =
-        let handler_statements =
-          List.concat_map handlers ~f:(fun { Try.Handler.body; _ } -> body)
-        in
-        List.concat [body; handler_statements; orelse; finally]
+      let sofar = globals_of_statements sofar body in
+      let sofar =
+        List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->
+            globals_of_statements sofar body)
       in
-      globals_of_statements statements
-  | With { With.body; _ } -> globals_of_statements body
+      let sofar = globals_of_statements sofar orelse in
+      globals_of_statements sofar finally
+  | With { With.body; _ } -> globals_of_statements sofar body
   | Assign _
   | Assert _
   | Break
@@ -185,28 +199,31 @@ let rec globals_of_statement { Node.value; _ } =
   | Return _
   | Yield _
   | YieldFrom _ ->
-      []
+      sofar
 
 
-and globals_of_statements statements = List.concat_map statements ~f:globals_of_statement
+and globals_of_statements sofar statements =
+  List.fold statements ~init:sofar ~f:globals_of_statement
 
-let rec nonlocals_of_statement { Node.value; _ } =
+
+let rec nonlocals_of_statement sofar { Node.value; _ } =
   let open Statement in
   match value with
-  | Statement.Nonlocal nonlocals -> nonlocals
+  | Statement.Nonlocal nonlocals -> List.rev_append nonlocals sofar
   | For { For.body; orelse; _ }
   | If { If.body; orelse; _ }
   | While { While.body; orelse; _ } ->
-      nonlocals_of_statements (List.append body orelse)
+      let sofar = nonlocals_of_statements sofar body in
+      nonlocals_of_statements sofar orelse
   | Try { Try.body; handlers; orelse; finally } ->
-      let statements =
-        let handler_statements =
-          List.concat_map handlers ~f:(fun { Try.Handler.body; _ } -> body)
-        in
-        List.concat [body; handler_statements; orelse; finally]
+      let sofar = nonlocals_of_statements sofar body in
+      let sofar =
+        List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->
+            nonlocals_of_statements sofar body)
       in
-      nonlocals_of_statements statements
-  | With { With.body; _ } -> nonlocals_of_statements body
+      let sofar = nonlocals_of_statements sofar orelse in
+      nonlocals_of_statements sofar finally
+  | With { With.body; _ } -> nonlocals_of_statements sofar body
   | Assign _
   | Assert _
   | Break
@@ -222,10 +239,12 @@ let rec nonlocals_of_statement { Node.value; _ } =
   | Return _
   | Yield _
   | YieldFrom _ ->
-      []
+      sofar
 
 
-and nonlocals_of_statements statements = List.concat_map statements ~f:nonlocals_of_statement
+and nonlocals_of_statements sofar statements =
+  List.fold statements ~init:sofar ~f:nonlocals_of_statement
+
 
 module Scope = struct
   module Kind = struct
@@ -251,11 +270,9 @@ module Scope = struct
         | true ->
             (* Global and nonlocal declarations take priority. *)
             sofar
-        | false -> (
-            (* First binding wins. *)
-            match Map.add sofar ~key:name ~data:binding with
-            | `Ok result -> result
-            | `Duplicate -> sofar ))
+        | false ->
+            (* First binding (i.e. last item in the list) wins. *)
+            Map.set sofar ~key:name ~data:binding)
 
 
   let of_define { Statement.Define.signature; body; _ } =
@@ -263,19 +280,21 @@ module Scope = struct
     if Define.Signature.is_toplevel signature then
       None
     else
-      let globals = globals_of_statements body |> Identifier.Set.of_list in
-      let nonlocals = nonlocals_of_statements body |> Identifier.Set.of_list in
-      let parameter_bindings =
-        let { Define.Signature.parameters; _ } = signature in
-        List.mapi parameters ~f:Binding.of_parameter
+      let globals = globals_of_statements [] body |> Identifier.Set.of_list in
+      let nonlocals = nonlocals_of_statements [] body |> Identifier.Set.of_list in
+      let bindings =
+        let parameter_bindings =
+          let { Define.Signature.parameters; _ } = signature in
+          Binding.of_parameters [] parameters
+        in
+        Binding.of_statements parameter_bindings body
       in
-      let body_bindings = Binding.of_statements body in
       Some
         {
           kind = Kind.Define signature;
           globals;
           nonlocals;
-          bindings = create_map ~globals ~nonlocals (List.append parameter_bindings body_bindings);
+          bindings = create_map ~globals ~nonlocals bindings;
         }
 
 
@@ -304,8 +323,7 @@ module Scope = struct
             kind = Kind.Lambda;
             globals;
             nonlocals;
-            bindings =
-              List.mapi parameters ~f:Binding.of_parameter |> create_map ~globals ~nonlocals;
+            bindings = Binding.of_parameters [] parameters |> create_map ~globals ~nonlocals;
           }
     | DictionaryComprehension { Comprehension.generators; _ }
     | Generator { Comprehension.generators; _ }
@@ -316,8 +334,7 @@ module Scope = struct
             kind = Kind.Comprehension;
             globals;
             nonlocals;
-            bindings =
-              List.concat_map generators ~f:Binding.of_generator |> create_map ~globals ~nonlocals;
+            bindings = Binding.of_generators [] generators |> create_map ~globals ~nonlocals;
           }
     | _ -> None
 
@@ -345,7 +362,7 @@ module Scope = struct
       kind = Kind.Module;
       globals;
       nonlocals;
-      bindings = Binding.of_statements statements |> create_map ~globals ~nonlocals;
+      bindings = Binding.of_statements [] statements |> create_map ~globals ~nonlocals;
     }
 
 
