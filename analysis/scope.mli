@@ -29,6 +29,7 @@ module Binding : sig
           annotation: Expression.t option;
           star: Star.t option;
         }
+      | WalrusTarget
       | WithTarget
     [@@deriving sexp, compare, hash]
   end

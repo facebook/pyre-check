@@ -2721,7 +2721,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                     Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.DefineName signature ->
                     Some { Define.Capture.name; kind = DefineSignature signature }
-                | Binding.Kind.(ComprehensionTarget | ForTarget | WithTarget) ->
+                | Binding.Kind.(ComprehensionTarget | ForTarget | WalrusTarget | WithTarget) ->
                     Some { Define.Capture.name; kind = Annotation None } ) ) )
   in
   let rec transform_statement ~scopes statement =
