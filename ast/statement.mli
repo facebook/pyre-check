@@ -53,6 +53,18 @@ module Return : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+module Decorator : sig
+  type t = {
+    name: Reference.t Node.t;
+    arguments: Expression.Call.Argument.t list option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val to_expression : t -> Expression.t
+end
+
 module rec Assert : sig
   module Origin : sig
     type t =
@@ -158,7 +170,7 @@ and Class : sig
     name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Expression.t list;
+    decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -204,7 +216,7 @@ and Define : sig
     type t = {
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
-      decorators: Expression.t list;
+      decorators: Decorator.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;

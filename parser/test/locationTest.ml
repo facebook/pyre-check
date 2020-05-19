@@ -933,8 +933,7 @@ let test_class_locations _ =
              Class.name = node ~start:(2, 6) ~stop:(2, 9) !&"foo";
              bases = [];
              body = [node ~start:(3, 1) ~stop:(3, 5) Statement.Pass];
-             decorators =
-               [node ~start:(1, 1) ~stop:(1, 4) (Expression.Name (Name.Identifier "bar"))];
+             decorators = [{ name = node ~start:(1, 1) ~stop:(1, 4) !&"bar"; arguments = None }];
              top_level_unbound_names = [];
            });
     ];
@@ -2725,7 +2724,7 @@ let test_stub_locations _ =
                        };
                    ];
                  decorators =
-                   [node ~start:(1, 1) ~stop:(1, 9) (Expression.Name (Name.Identifier "overload"))];
+                   [{ name = node ~start:(1, 1) ~stop:(1, 9) !&"overload"; arguments = None }];
                  return_annotation = None;
                  async = false;
                  generator = false;

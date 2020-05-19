@@ -36,6 +36,8 @@ let test_is_method _ =
   assert_false (Define.is_method (define ~name:"foo" ~parent:None))
 
 
+let decorator ?arguments name = { Decorator.name = + !&name; arguments }
+
 let test_is_classmethod _ =
   let define name decorators =
     {
@@ -57,7 +59,7 @@ let test_is_classmethod _ =
   in
   assert_false (Define.is_class_method (define "foo" []));
   assert_false (Define.is_class_method (define "__init__" []));
-  assert_true (Define.is_class_method (define "foo" [!"classmethod"]));
+  assert_true (Define.is_class_method (define "foo" [decorator "classmethod"]));
   assert_true (Define.is_class_method (define "__init_subclass__" []));
   assert_true (Define.is_class_method (define "__new__" []));
   assert_true (Define.is_class_method (define "__class_getitem__" []))
@@ -84,7 +86,7 @@ let test_is_class_property _ =
   in
   assert_false (Define.is_class_property (define "foo" []));
   assert_false (Define.is_class_property (define "__init__" []));
-  assert_true (Define.is_class_property (define "foo" [!"pyre_extensions.classproperty"]));
+  assert_true (Define.is_class_property (define "foo" [decorator "pyre_extensions.classproperty"]));
   assert_false (Define.is_class_property (define "__new__" []))
 
 
@@ -108,21 +110,21 @@ let test_decorator _ =
     }
   in
   assert_false (Define.is_static_method (define []));
-  assert_false (Define.is_static_method (define [!"foo"]));
-  assert_true (Define.is_static_method (define [!"staticmethod"]));
-  assert_true (Define.is_static_method (define [!"foo"; !"staticmethod"]));
+  assert_false (Define.is_static_method (define [decorator "foo"]));
+  assert_true (Define.is_static_method (define [decorator "staticmethod"]));
+  assert_true (Define.is_static_method (define [decorator "foo"; decorator "staticmethod"]));
   assert_false (Define.is_abstract_method (define []));
-  assert_false (Define.is_abstract_method (define [!"foo"]));
-  assert_true (Define.is_abstract_method (define [!"abstractmethod"]));
-  assert_true (Define.is_abstract_method (define [!"foo"; !"abstractmethod"]));
-  assert_true (Define.is_abstract_method (define [!"abc.abstractmethod"]));
-  assert_true (Define.is_abstract_method (define [!"abstractproperty"]));
-  assert_true (Define.is_abstract_method (define [!"abc.abstractproperty"]));
-  assert_true (Define.is_overloaded_function (define [!"overload"]));
-  assert_true (Define.is_overloaded_function (define [!"typing.overload"]));
-  assert_true (Define.is_property_setter (define [!"foo.setter"]));
-  assert_false (Define.is_property_setter (define [!"setter"]));
-  assert_false (Define.is_property_setter (define [!"bar.setter"]))
+  assert_false (Define.is_abstract_method (define [decorator "foo"]));
+  assert_true (Define.is_abstract_method (define [decorator "abstractmethod"]));
+  assert_true (Define.is_abstract_method (define [decorator "foo"; decorator "abstractmethod"]));
+  assert_true (Define.is_abstract_method (define [decorator "abc.abstractmethod"]));
+  assert_true (Define.is_abstract_method (define [decorator "abstractproperty"]));
+  assert_true (Define.is_abstract_method (define [decorator "abc.abstractproperty"]));
+  assert_true (Define.is_overloaded_function (define [decorator "overload"]));
+  assert_true (Define.is_overloaded_function (define [decorator "typing.overload"]));
+  assert_true (Define.is_property_setter (define [decorator "foo.setter"]));
+  assert_false (Define.is_property_setter (define [decorator "setter"]));
+  assert_false (Define.is_property_setter (define [decorator "bar.setter"]))
 
 
 let test_is_constructor _ =

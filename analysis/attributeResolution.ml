@@ -839,7 +839,7 @@ module Implementation = struct
         let get_decorator decorator =
           List.filter_map
             ~f:
-              (AstEnvironment.ReadOnly.matches_decorator
+              (AstEnvironment.ReadOnly.resolve_decorator_if_matches
                  (ast_environment class_metadata_environment)
                  ?dependency
                  ~target:decorator)
@@ -3040,178 +3040,147 @@ module Implementation = struct
       ~implementation
       ~overloads
     =
-    let apply_decorator (argument : Type.t) { Node.value = decorator; _ } =
-      let resolve_decorators name ~arguments =
-        let handle decorator =
-          match decorator, argument with
-          | ( ("click.command" | "click.group" | "click.pass_context" | "click.pass_obj"),
-              Callable callable ) ->
-              (* Suppress caller/callee parameter matching by altering the click entry point to have
-                 a generic parameter list. *)
-              let parameters =
-                Type.Callable.Defined
-                  [
-                    Type.Callable.Parameter.Variable (Concrete Type.Any);
-                    Type.Callable.Parameter.Keywords Type.Any;
-                  ]
-              in
-              Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
-          | name, Callable callable
-            when String.equal name "contextlib.asynccontextmanager"
-                 || Set.mem Recognized.asyncio_contextmanager_decorators name ->
-              let process_overload ({ Type.Callable.annotation; _ } as overload) =
-                let joined =
-                  let order = full_order ~assumptions in
-                  try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
-                  | ClassHierarchy.Untracked _ ->
-                      (* create_overload gets called when building the environment, which is unsound
-                         and can raise. *)
-                      Type.Any
+    let apply_decorator (argument : Type.t) { Decorator.name; arguments } =
+      let decorator = Node.value name |> Reference.show in
+      match decorator, argument with
+      | ( ("click.command" | "click.group" | "click.pass_context" | "click.pass_obj"),
+          Callable callable ) ->
+          (* Suppress caller/callee parameter matching by altering the click entry point to have a
+             generic parameter list. *)
+          let parameters =
+            Type.Callable.Defined
+              [
+                Type.Callable.Parameter.Variable (Concrete Type.Any);
+                Type.Callable.Parameter.Keywords Type.Any;
+              ]
+          in
+          Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
+      | name, Callable callable
+        when String.equal name "contextlib.asynccontextmanager"
+             || Set.mem Recognized.asyncio_contextmanager_decorators name ->
+          let process_overload ({ Type.Callable.annotation; _ } as overload) =
+            let joined =
+              let order = full_order ~assumptions in
+              try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
+              | ClassHierarchy.Untracked _ ->
+                  (* create_overload gets called when building the environment, which is unsound and
+                     can raise. *)
+                  Type.Any
+            in
+            if Type.is_async_iterator joined then
+              {
+                overload with
+                Type.Callable.annotation =
+                  Type.parametric
+                    "typing.AsyncContextManager"
+                    [Single (Type.single_parameter joined)];
+              }
+            else
+              overload
+          in
+          let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
+            callable
+          in
+          Type.Callable
+            {
+              callable with
+              implementation = process_overload old_implementation;
+              overloads = List.map old_overloads ~f:process_overload;
+            }
+      | "contextlib.contextmanager", Callable callable ->
+          let process_overload ({ Type.Callable.annotation; _ } as overload) =
+            let joined =
+              let order = full_order ~assumptions in
+              try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
+              | ClassHierarchy.Untracked _ ->
+                  (* create_overload gets called when building the environment, which is unsound and
+                     can raise. *)
+                  Type.Any
+            in
+            if Type.is_iterator joined then
+              {
+                overload with
+                Type.Callable.annotation =
+                  Type.parametric
+                    "contextlib._GeneratorContextManager"
+                    [Single (Type.single_parameter joined)];
+              }
+            else
+              overload
+          in
+          let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
+            callable
+          in
+          Type.Callable
+            {
+              callable with
+              implementation = process_overload old_implementation;
+              overloads = List.map old_overloads ~f:process_overload;
+            }
+      | name, Callable callable when Set.mem Decorators.special_decorators name ->
+          let process_overload overload = Decorators.apply ~overload ~resolution:() ~name in
+          let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
+            callable
+          in
+          Type.Callable
+            {
+              callable with
+              implementation = process_overload old_implementation;
+              overloads = List.map old_overloads ~f:process_overload;
+            }
+      | name, _ when Set.mem Recognized.classmethod_decorators name ->
+          (* TODO (T67024249): convert these to just normal stubs *)
+          Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
+      | "staticmethod", _ ->
+          Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
+      | name, _ -> (
+          let resolved_decorator =
+            match
+              ( undecorated_signature class_metadata_environment (Reference.create name) ~dependency,
+                arguments )
+            with
+            | Some callable, Some arguments -> (
+                let resolve_with_locals ~locals:_ expression =
+                  let resolved = resolve_literal ~assumptions expression in
+                  if Type.is_partially_typed resolved then
+                    Type.Top
+                  else
+                    resolved
                 in
-                if Type.is_async_iterator joined then
-                  {
-                    overload with
-                    Type.Callable.annotation =
-                      Type.parametric
-                        "typing.AsyncContextManager"
-                        [Single (Type.single_parameter joined)];
-                  }
-                else
-                  overload
-              in
-              let {
-                Type.Callable.implementation = old_implementation;
-                overloads = old_overloads;
-                _;
-              }
-                =
-                callable
-              in
-              Type.Callable
-                {
-                  callable with
-                  implementation = process_overload old_implementation;
-                  overloads = List.map old_overloads ~f:process_overload;
-                }
-          | "contextlib.contextmanager", Callable callable ->
-              let process_overload ({ Type.Callable.annotation; _ } as overload) =
-                let joined =
-                  let order = full_order ~assumptions in
-                  try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
-                  | ClassHierarchy.Untracked _ ->
-                      (* create_overload gets called when building the environment, which is unsound
-                         and can raise. *)
-                      Type.Any
-                in
-                if Type.is_iterator joined then
-                  {
-                    overload with
-                    Type.Callable.annotation =
-                      Type.parametric
-                        "contextlib._GeneratorContextManager"
-                        [Single (Type.single_parameter joined)];
-                  }
-                else
-                  overload
-              in
-              let {
-                Type.Callable.implementation = old_implementation;
-                overloads = old_overloads;
-                _;
-              }
-                =
-                callable
-              in
-              Type.Callable
-                {
-                  callable with
-                  implementation = process_overload old_implementation;
-                  overloads = List.map old_overloads ~f:process_overload;
-                }
-          | name, Callable callable when Set.mem Decorators.special_decorators name ->
-              let process_overload overload = Decorators.apply ~overload ~resolution:() ~name in
-              let {
-                Type.Callable.implementation = old_implementation;
-                overloads = old_overloads;
-                _;
-              }
-                =
-                callable
-              in
-              Type.Callable
-                {
-                  callable with
-                  implementation = process_overload old_implementation;
-                  overloads = List.map old_overloads ~f:process_overload;
-                }
-          | name, _ when Set.mem Recognized.classmethod_decorators name ->
-              (* TODO (T67024249): convert these to just normal stubs *)
-              Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
-          | "staticmethod", _ ->
-              Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
-          | name, _ -> (
-              let resolved_decorator =
                 match
-                  ( undecorated_signature
-                      class_metadata_environment
-                      (Reference.create name)
-                      ~dependency,
-                    arguments )
+                  signature_select
+                    ~assumptions
+                    ~resolve_with_locals
+                    ~arguments:(Unresolved arguments)
+                    ~callable
+                    ~self_argument:None
+                    ~skip_marking_escapees:false
                 with
-                | Some callable, Some arguments -> (
-                    let resolve_with_locals ~locals:_ expression =
-                      let resolved = resolve_literal ~assumptions expression in
-                      if Type.is_partially_typed resolved then
-                        Type.Top
-                      else
-                        resolved
-                    in
-                    match
-                      signature_select
-                        ~assumptions
-                        ~resolve_with_locals
-                        ~arguments:(Unresolved arguments)
-                        ~callable
-                        ~self_argument:None
-                        ~skip_marking_escapees:false
-                    with
-                    | SignatureSelectionTypes.Found
-                        { selected_return_annotation = Type.Callable callable; _ } ->
-                        Some callable
-                    | _ -> None )
-                | Some callable, None -> Some callable
-                | None, _ -> None
-              in
-              match resolved_decorator with
-              | Some resolved_decorator -> (
-                  match
-                    signature_select
-                      ~assumptions
-                      ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
-                      ~arguments:
-                        (Resolved [{ kind = Positional; expression = None; resolved = argument }])
-                      ~callable:resolved_decorator
-                      ~self_argument:None
-                      ~skip_marking_escapees:false
-                  with
-                  | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
-                      selected_return_annotation
-                  | NotFound _ ->
-                      (* If we failed, just default to the old annotation. *)
-                      argument )
-              | _ -> argument )
-        in
-        Expression.name_to_identifiers name
-        >>| String.concat ~sep:"."
-        >>| handle
-        |> Option.value ~default:argument
-      in
-      let open Expression in
-      match decorator with
-      | Expression.Call { callee = { Node.value = Expression.Name name; _ }; arguments } ->
-          resolve_decorators name ~arguments:(Some arguments)
-      | Expression.Name name -> resolve_decorators name ~arguments:None
-      | _ -> argument
+                | SignatureSelectionTypes.Found
+                    { selected_return_annotation = Type.Callable callable; _ } ->
+                    Some callable
+                | _ -> None )
+            | Some callable, None -> Some callable
+            | None, _ -> None
+          in
+          match resolved_decorator with
+          | Some resolved_decorator -> (
+              match
+                signature_select
+                  ~assumptions
+                  ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
+                  ~arguments:
+                    (Resolved [{ kind = Positional; expression = None; resolved = argument }])
+                  ~callable:resolved_decorator
+                  ~self_argument:None
+                  ~skip_marking_escapees:false
+              with
+              | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
+                  selected_return_annotation
+              | NotFound _ ->
+                  (* If we failed, just default to the old annotation. *)
+                  argument )
+          | _ -> argument )
     in
     let parse =
       let parser =
@@ -3260,7 +3229,7 @@ module Implementation = struct
           in
           let enforce_equality ~parsed ~current sofar =
             let equal left right =
-              Int.equal (Expression.location_insensitive_compare left right) 0
+              Int.equal (Ast.Statement.Decorator.location_insensitive_compare left right) 0
             in
             if List.equal equal sofar (purify current) then
               Ok sofar

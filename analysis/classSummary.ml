@@ -11,7 +11,7 @@ type t = {
   name: Reference.t;
   qualifier: Reference.t;
   bases: Expression.Call.Argument.t list;
-  decorators: Expression.t list;
+  decorators: Decorator.t list;
   attribute_components: Class.AttributeComponents.t;
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -73,6 +73,7 @@ let is_protocol { bases; _ } =
 
 
 let has_decorator { decorators; _ } decorator =
+  let decorators = List.map decorators ~f:Decorator.to_expression in
   Expression.exists_in_list ~expression_list:decorators decorator
 
 

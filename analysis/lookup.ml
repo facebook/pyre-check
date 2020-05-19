@@ -213,7 +213,8 @@ module Visit = struct
           in
           precondition_visit (Ast.Expression.from_reference ~location:name_location name);
           List.iter parameters ~f:visit_parameter;
-          List.iter decorators ~f:postcondition_visit;
+          List.map decorators ~f:Ast.Statement.Decorator.to_expression
+          |> List.iter ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
       | Import { Import.from; imports } ->
           let visit_import { Import.name = { Node.value = name; location = name_location }; alias } =

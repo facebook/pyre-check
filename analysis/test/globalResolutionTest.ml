@@ -73,8 +73,8 @@ let test_get_decorator context =
                  ~decorator
           in
           let equal_decorator left right =
-            let open AstEnvironment.ReadOnly in
-            String.equal left.name right.name
+            let open Decorator in
+            Reference.equal left.name.value right.name.value
             && Option.equal
                  (List.equal (fun left right ->
                       Call.Argument.location_insensitive_compare left right = 0))
@@ -82,7 +82,7 @@ let test_get_decorator context =
                  right.arguments
           in
           assert_equal
-            ~printer:(List.to_string ~f:AstEnvironment.ReadOnly.show_decorator)
+            ~printer:(List.to_string ~f:Decorator.show)
             ~cmp:(List.equal equal_decorator)
             expected
             actual
@@ -98,7 +98,7 @@ let test_get_decorator context =
         pass
     |}
     "decorator"
-    [{ name = "decorator"; arguments = None }];
+    [{ name = + !&"decorator"; arguments = None }];
   assert_get_decorator {|
       @decorator.a.b
       class A:
@@ -116,7 +116,7 @@ let test_get_decorator context =
         pass
     |}
     "decorator.a.b"
-    [{ name = "decorator.a.b"; arguments = None }];
+    [{ name = + !&"decorator.a.b"; arguments = None }];
   assert_get_decorator
     {|
       @decorator(a=b, c=d)
@@ -135,7 +135,7 @@ let test_get_decorator context =
     "decorator"
     [
       {
-        name = "decorator";
+        name = + !&"decorator";
         arguments =
           Some
             [
@@ -154,12 +154,12 @@ let test_get_decorator context =
     "decorator"
     [
       {
-        name = "decorator";
+        name = + !&"decorator";
         arguments =
           Some [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
       };
       {
-        name = "decorator";
+        name = + !&"decorator";
         arguments =
           Some
             [
@@ -176,7 +176,7 @@ let test_get_decorator context =
         pass
     |}
     "abc.ABCMeta"
-    [{ name = "abc.ABCMeta"; arguments = None }]
+    [{ name = + !&"abc.ABCMeta"; arguments = None }]
 
 
 let test_constructors context =

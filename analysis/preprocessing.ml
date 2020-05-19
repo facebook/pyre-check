@@ -663,7 +663,7 @@ let qualify
           List.map
             decorators
             ~f:
-              (qualify_expression
+              (qualify_decorator
                  ~qualify_strings:false
                  ~scope:{ scope with use_forward_references = true })
         in
@@ -699,9 +699,7 @@ let qualify
             Call.Argument.value = qualify_expression ~qualify_strings:false ~scope value;
           }
         in
-        let decorators =
-          List.map decorators ~f:(qualify_expression ~qualify_strings:false ~scope)
-        in
+        let decorators = List.map decorators ~f:(qualify_decorator ~qualify_strings:false ~scope) in
         let body =
           let qualifier = Reference.combine qualifier name in
           let original_scope =
@@ -728,16 +726,21 @@ let qualify
                   let return_annotation =
                     return_annotation >>| qualify_expression ~scope ~qualify_strings:true
                   in
-                  let qualify_decorator ({ Node.value; _ } as decorator) =
-                    match value with
-                    | Expression.Name
-                        (Name.Identifier ("staticmethod" | "classmethod" | "property"))
-                    | Name (Name.Attribute { attribute = "getter" | "setter" | "deleter"; _ }) ->
+                  let qualify_decorator
+                      ({ Decorator.name = { Node.value = name; _ }; _ } as decorator)
+                    =
+                    match name |> Reference.as_list |> List.rev with
+                    | ["staticmethod"]
+                    | ["classmethod"]
+                    | ["property"]
+                    | "getter" :: _
+                    | "setter" :: _
+                    | "deleter" :: _ ->
                         decorator
                     | _ ->
                         (* TODO (T41755857): Decorator qualification logic should be slightly more
                            involved than this. *)
-                        qualify_expression ~qualify_strings:false ~scope decorator
+                        qualify_decorator ~qualify_strings:false ~scope decorator
                   in
                   let decorators = List.map decorators ~f:qualify_decorator in
                   let signature =
@@ -1028,28 +1031,16 @@ let qualify
             }
       | Call { callee; arguments } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
-          let qualify_argument { Call.Argument.name; value } =
-            let qualify_strings =
-              if name_is ~name:"typing.TypeVar" callee then
-                true
-              else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
-                false
-              else
-                qualify_strings
-            in
-            let name =
-              let rename identifier =
-                let parameter_prefix = "$parameter$" in
-                if String.is_prefix identifier ~prefix:parameter_prefix then
-                  identifier
-                else
-                  parameter_prefix ^ identifier
-              in
-              name >>| Node.map ~f:rename
-            in
-            { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
+          let qualify_strings =
+            if name_is ~name:"typing.TypeVar" callee then
+              true
+            else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+              false
+            else
+              qualify_strings
           in
-          Call { callee; arguments = List.map ~f:qualify_argument arguments }
+          Call
+            { callee; arguments = List.map ~f:(qualify_argument ~qualify_strings ~scope) arguments }
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           ComparisonOperator
             {
@@ -1150,6 +1141,23 @@ let qualify
           value
     in
     { expression with Node.value }
+  and qualify_decorator ~qualify_strings ~scope { Decorator.name; arguments } =
+    {
+      Decorator.name = Node.map name ~f:(qualify_reference ~scope);
+      arguments = arguments >>| List.map ~f:(qualify_argument ~qualify_strings ~scope);
+    }
+  and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
+    let name =
+      let rename identifier =
+        let parameter_prefix = "$parameter$" in
+        if String.is_prefix identifier ~prefix:parameter_prefix then
+          identifier
+        else
+          parameter_prefix ^ identifier
+      in
+      name >>| Node.map ~f:rename
+    in
+    { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
   in
   let scope =
     {
@@ -2476,11 +2484,15 @@ module AccessCollector = struct
           List.fold bases ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
               from_expression sofar value)
         in
-        List.fold decorators ~init:collected ~f:from_expression
+        List.map decorators ~f:Decorator.to_expression
+        |> List.fold ~init:collected ~f:from_expression
     | Define
         { Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ }; _ }
       ->
-        let collected = List.fold decorators ~init:collected ~f:from_expression in
+        let collected =
+          List.map decorators ~f:Decorator.to_expression
+          |> List.fold ~init:collected ~f:from_expression
+        in
         let collected =
           List.fold
             parameters

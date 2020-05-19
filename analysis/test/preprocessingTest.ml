@@ -1249,7 +1249,7 @@ let test_qualify _ =
           return $parameter$decorated
         return $local_qualifier?mydecoratorwrapper$mydecorator
       $local_qualifier$x = 42
-      @(qualifier.mydecoratorwrapper($local_qualifier$x))
+      @qualifier.mydecoratorwrapper($local_qualifier$x)
       def qualifier.f():
         pass
     |};
@@ -1272,7 +1272,7 @@ let test_qualify _ =
         return $local_qualifier?mydecoratorwrapper$mydecorator
       class qualifier.A:
         qualifier.A.x = 42
-        @(qualifier.mydecoratorwrapper(qualifier.A.x))
+        @qualifier.mydecoratorwrapper(qualifier.A.x)
         def qualifier.A.f($parameter$self):
             pass
     |};
@@ -1297,7 +1297,7 @@ let test_qualify _ =
       $local_qualifier$x = 42
       class qualifier.A:
         qualifier.A.y = 42
-        @(qualifier.mydecoratorwrapper($local_qualifier$x + qualifier.A.y))
+        @qualifier.mydecoratorwrapper($local_qualifier$x + qualifier.A.y)
         def qualifier.A.f($parameter$self):
             pass
     |};

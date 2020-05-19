@@ -101,12 +101,6 @@ module Make (Transformer : Transformer) = struct
                 right = transform_expression right;
               }
         | Call { callee; arguments } ->
-            let transform_arguments arguments =
-              let transform_argument { Call.Argument.name; value } =
-                { Call.Argument.name; value = transform_expression value }
-              in
-              transform_list arguments ~f:transform_argument
-            in
             Call { callee = transform_expression callee; arguments = transform_arguments arguments }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
@@ -201,6 +195,29 @@ module Make (Transformer : Transformer) = struct
       let expression = Transformer.expression !state expression in
       state := initial_state;
       expression
+    and transform_arguments arguments =
+      let transform_argument { Call.Argument.name; value } =
+        { Call.Argument.name; value = transform_expression value }
+      in
+      transform_list arguments ~f:transform_argument
+    in
+    let transform_decorator { Decorator.name; arguments } =
+      (* Really we should be leaving this up to the client inside of `statement` since this isn't an
+         expression. However, it used to be one, so we do a best-effort transformation here *)
+      let name =
+        let { Node.location; value = name } = name in
+        from_reference name ~location
+        |> transform_expression
+        |> Node.value
+        |> (function
+             | Expression.Name name -> Some name
+             | _ -> None)
+        >>= name_to_reference
+        |> Option.value ~default:name
+        |> Node.create ~location
+      in
+      let arguments = arguments >>| transform_arguments in
+      { Decorator.name; arguments }
     in
     let rec transform_statement statement =
       let transform_children value =
@@ -227,7 +244,7 @@ module Make (Transformer : Transformer) = struct
                 Class.name;
                 bases = transform_list bases ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
-                decorators = transform_list decorators ~f:transform_expression;
+                decorators = transform_list decorators ~f:transform_decorator;
                 top_level_unbound_names;
               }
         | Continue -> value
@@ -248,7 +265,7 @@ module Make (Transformer : Transformer) = struct
                 Define.Signature.name;
                 parameters =
                   transform_list parameters ~f:(transform_parameter ~transform_expression);
-                decorators = transform_list decorators ~f:transform_expression;
+                decorators = transform_list decorators ~f:transform_decorator;
                 return_annotation = return_annotation >>| transform_expression;
                 async;
                 parent;

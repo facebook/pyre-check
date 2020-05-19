@@ -56,25 +56,19 @@ module ReadOnly : sig
 
   val resolve_exports : t -> ?dependency:DependencyKey.registered -> Reference.t -> Reference.t
 
-  type decorator = {
-    name: string;
-    arguments: Expression.Call.Argument.t list option;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val matches_decorator
+  val resolve_decorator_if_matches
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Expression.expression Node.t ->
+    Ast.Statement.Decorator.t ->
     target:string ->
-    decorator option
+    Ast.Statement.Decorator.t option
 
   val get_decorator
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     ClassSummary.t Node.t ->
     decorator:string ->
-    decorator list
+    Ast.Statement.Decorator.t list
 end
 
 (* Store the environment to saved-state *)

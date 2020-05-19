@@ -581,6 +581,10 @@ let test_compound _ =
     ]
 
 
+let decorator ?arguments name =
+  { Decorator.name = Node.create_with_default_location !&name; arguments }
+
+
 let test_define _ =
   assert_parsed_equal
     "def foo(a):\n  1"
@@ -726,7 +730,7 @@ let test_define _ =
              {
                name = + !&"foo";
                parameters = [];
-               decorators = [!"foo"];
+               decorators = [decorator "foo"];
                return_annotation = None;
                async = true;
                generator = false;
@@ -747,7 +751,7 @@ let test_define _ =
              {
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-               decorators = [!"decorator"];
+               decorators = [decorator "decorator"];
                return_annotation = None;
                async = false;
                generator = false;
@@ -770,15 +774,13 @@ let test_define _ =
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators =
                  [
-                   +Expression.Call
-                      {
-                        callee = !"decorator";
-                        arguments =
-                          [
-                            { Call.Argument.name = Some ~+"a"; value = !"b" };
-                            { Call.Argument.name = Some ~+"c"; value = !"d" };
-                          ];
-                      };
+                   decorator
+                     "decorator"
+                     ~arguments:
+                       [
+                         { Call.Argument.name = Some ~+"a"; value = !"b" };
+                         { Call.Argument.name = Some ~+"c"; value = !"d" };
+                       ];
                  ];
                return_annotation = None;
                async = false;
@@ -800,7 +802,7 @@ let test_define _ =
              {
                name = + !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-               decorators = [!"foo"; !"bar"];
+               decorators = [decorator "foo"; decorator "bar"];
                return_annotation = None;
                async = false;
                generator = false;
@@ -3406,7 +3408,7 @@ let test_class _ =
            Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Pass];
-           decorators = [!"bar"];
+           decorators = [decorator "bar"];
            top_level_unbound_names = [];
          };
     ];
@@ -4937,7 +4939,7 @@ let test_stubs _ =
                       annotation = Some !"int";
                     };
                  ];
-               decorators = [!"overload"];
+               decorators = [decorator "overload"];
                return_annotation = None;
                async = false;
                generator = false;

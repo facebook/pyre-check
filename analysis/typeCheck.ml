@@ -533,12 +533,11 @@ module State (Context : Context) = struct
       in
       let check_decorator errors decorator =
         let is_whitelisted decorator =
-          let has_suffix { Node.value; _ } suffix =
-            match value with
-            | Expression.Name (Name.Attribute { attribute; _ }) when String.equal attribute suffix
-              ->
-                true
-            | _ -> false
+          let has_suffix
+              { Ast.Statement.Decorator.name = { Node.value = name; _ }; arguments }
+              suffix
+            =
+            Option.is_none arguments && String.equal (Reference.last name) suffix
           in
           let is_property_derivative decorator =
             has_suffix decorator "setter"
@@ -556,7 +555,9 @@ module State (Context : Context) = struct
           errors
         else
           let { Resolved.errors = decorator_errors; _ } =
-            forward_expression ~resolution ~expression:decorator
+            forward_expression
+              ~resolution
+              ~expression:(Ast.Statement.Decorator.to_expression decorator)
           in
           List.append decorator_errors errors
       in

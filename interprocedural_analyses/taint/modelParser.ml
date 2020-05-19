@@ -901,7 +901,9 @@ let create ~resolution ?path ~configuration ~rule_filter source =
           raise_invalid_model
             (Format.sprintf
                "Unexpected decorators found when parsing model: `%s`"
-               (List.map decorators ~f:Expression.show |> String.concat ~sep:", "))
+               ( List.map decorators ~f:Decorator.to_expression
+               |> List.map ~f:Expression.show
+               |> String.concat ~sep:", " ))
         else
           global_type ()
       in

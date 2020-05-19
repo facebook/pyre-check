@@ -11,13 +11,22 @@
   open Pyre
   open ParserExpression
 
-  let with_decorators decorators = function
+  type decorator = { decorator_name : Reference.t Node.t; arguments : Call.Argument.t list option }
+
+  let with_decorators decorators decoratee =
+    let decorators =
+      let convert ({ decorator_name; arguments } ) =
+        { Decorator.name = decorator_name; arguments = arguments >>| List.map ~f:convert_argument }
+      in
+      List.map decorators ~f:convert
+    in
+    match decoratee with
     | { Node.location; value = Statement.Class value } ->
-        let decorated = { value with Class.decorators = List.map ~f:convert decorators; } in
+        let decorated = { value with Class.decorators; } in
         { Node.location; value = Statement.Class decorated }
     | { Node.location; value = Define value } ->
         let signature =
-          { value.signature with Define.Signature.decorators = List.map ~f:convert decorators }
+          { value.signature with Define.Signature.decorators }
         in
         let decorated = { value with signature } in
         { Node.location; value = Define decorated }
@@ -968,8 +977,14 @@ bases:
     }
   ;
 
+decorator_arguments:
+  | { None }
+  | LEFTPARENS; arguments = arguments; RIGHTPARENS { Some arguments }
+
 decorator:
-  | AT; expression = expression; NEWLINE+ { expression }
+  | AT; name = reference; arguments = decorator_arguments; NEWLINE+ {
+      { decorator_name = { Node.location = fst name; value = snd name }; arguments }
+    }
   ;
 
 identifier:

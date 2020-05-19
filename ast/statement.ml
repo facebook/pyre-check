@@ -93,6 +93,30 @@ module Return = struct
     | _ -> Option.compare Expression.location_insensitive_compare left.expression right.expression
 end
 
+module Decorator = struct
+  type t = {
+    name: Reference.t Node.t;
+    arguments: Expression.Call.Argument.t list option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match Reference.compare left.name.value right.name.value with
+    | x when not (Int.equal x 0) -> x
+    | _ ->
+        (Option.compare (List.compare Expression.Call.Argument.location_insensitive_compare))
+          left.arguments
+          right.arguments
+
+
+  let to_expression { name = { Node.value = name; location }; arguments } =
+    let name = Expression.from_reference ~location name in
+    match arguments with
+    | Some arguments ->
+        Node.create ~location (Expression.Expression.Call { callee = name; arguments })
+    | None -> name
+end
+
 module rec Assert : sig
   module Origin : sig
     type t =
@@ -453,7 +477,7 @@ and Class : sig
     name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Expression.t list;
+    decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -497,7 +521,7 @@ end = struct
     name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Expression.t list;
+    decorators: Decorator.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -518,7 +542,7 @@ end = struct
             | _ -> (
                 match
                   List.compare
-                    Expression.location_insensitive_compare
+                    Decorator.location_insensitive_compare
                     left.decorators
                     right.decorators
                 with
@@ -576,26 +600,8 @@ end = struct
     let open Expression in
     let is_frozen_dataclass decorator =
       match decorator with
-      | {
-       Node.value =
-         Expression.Call
-           {
-             callee =
-               {
-                 Node.value =
-                   Name
-                     (Name.Attribute
-                       {
-                         base = { value = Name (Name.Identifier "dataclasses"); _ };
-                         attribute = "dataclass";
-                         _;
-                       });
-                 _;
-               };
-             arguments;
-           };
-       _;
-      } ->
+      | { Decorator.name = { Node.value = name; _ }; arguments = Some arguments }
+        when Reference.equal name (Reference.create "dataclasses.dataclass") ->
           let has_frozen_argument Call.Argument.{ name; value } =
             match name, value with
             | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
@@ -1145,7 +1151,7 @@ and Define : sig
     type t = {
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
-      decorators: Expression.t list;
+      decorators: Decorator.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -1303,7 +1309,7 @@ end = struct
     type t = {
       name: Reference.t Node.t;
       parameters: Expression.Parameter.t list;
-      decorators: Expression.t list;
+      decorators: Decorator.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -1326,10 +1332,7 @@ end = struct
           | x when not (Int.equal x 0) -> x
           | _ -> (
               match
-                List.compare
-                  Expression.location_insensitive_compare
-                  left.decorators
-                  right.decorators
+                List.compare Decorator.location_insensitive_compare left.decorators right.decorators
               with
               | x when not (Int.equal x 0) -> x
               | _ -> (
@@ -1393,6 +1396,7 @@ end = struct
     let is_method { parent; _ } = Option.is_some parent
 
     let has_decorator ?(match_prefix = false) { decorators; _ } decorator =
+      let decorators = List.map decorators ~f:Decorator.to_expression in
       Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
 
 
@@ -2376,6 +2380,7 @@ module PrettyPrinter = struct
   let pp_decorators formatter = function
     | [] -> ()
     | decorators ->
+        let decorators = List.map decorators ~f:Decorator.to_expression in
         Format.fprintf formatter "@[<v>@@(%a)@;@]" Expression.pp_expression_list decorators
 
 

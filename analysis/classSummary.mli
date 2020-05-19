@@ -10,7 +10,7 @@ type t = {
   name: Reference.t;
   qualifier: Reference.t;
   bases: Expression.Call.Argument.t list;
-  decorators: Expression.t list;
+  decorators: Decorator.t list;
   attribute_components: Class.AttributeComponents.t;
 }
 [@@deriving compare, eq, sexp, show, hash]

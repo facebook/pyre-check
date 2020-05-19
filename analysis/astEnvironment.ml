@@ -700,24 +700,17 @@ module ReadOnly = struct
     resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
 
 
-  type decorator = {
-    name: string;
-    arguments: Expression.Call.Argument.t list option;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  let matches_decorator read_only ?dependency decorator ~target =
-    let name_resolves_to_target ~name =
-      let name = resolve_exports read_only ?dependency (Reference.create name) |> Reference.show in
-      String.equal name target
-    in
-    match decorator with
-    | { Node.value = Expression.Expression.Call { callee; arguments }; _ }
-      when name_resolves_to_target ~name:(Expression.show callee) ->
-        Some { name = target; arguments = Some arguments }
-    | { Node.value = Name _; _ } when name_resolves_to_target ~name:(Expression.show decorator) ->
-        Some { name = target; arguments = None }
-    | _ -> None
+  let resolve_decorator_if_matches
+      read_only
+      ?dependency
+      ({ Ast.Statement.Decorator.name; _ } as decorator)
+      ~target
+    =
+    let resolved_name = Node.map name ~f:(resolve_exports read_only ?dependency) in
+    if String.equal (Node.value resolved_name |> Reference.show) target then
+      Some { decorator with name = resolved_name }
+    else
+      None
 
 
   let get_decorator
@@ -726,7 +719,9 @@ module ReadOnly = struct
       { Node.value = { ClassSummary.decorators; _ }; _ }
       ~decorator
     =
-    List.filter_map ~f:(matches_decorator read_only ?dependency ~target:decorator) decorators
+    List.filter_map
+      ~f:(resolve_decorator_if_matches read_only ?dependency ~target:decorator)
+      decorators
 end
 
 let read_only ({ module_tracker } as environment) =
