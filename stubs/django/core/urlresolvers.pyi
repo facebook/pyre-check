@@ -17,8 +17,7 @@ from typing import (
 )
 
 import re2
-from django.http import Http404, HttpResponse
-from wsgi import IGWSGIRequest
+from django.http import Http404, HttpRequest, HttpResponse
 
 class Resolver404(Http404): ...
 
@@ -58,7 +57,7 @@ class RegexURLResolver:
     def resolve(self, path: str) -> ResolverMatch: ...
     def resolve_error_handler(
         self, status_code: int
-    ) -> Tuple[Callable[[IGWSGIRequest, ...], HttpResponse], Dict]: ...
+    ) -> Tuple[Callable[[HttpRequest, ...], HttpResponse], Dict]: ...
     # this is not in Django but we add it on
     _re_set: Union[bool, Optional[re2.Set]]
 
