@@ -2422,13 +2422,14 @@ module AccessCollector = struct
 
 
   and from_statement collected { Node.value; location = statement_location } =
+    let from_optional_expression collected =
+      Option.value_map ~default:collected ~f:(from_expression collected)
+    in
     (* Boilerplates to visit all statements that may contain accesses *)
     match value with
     | Statement.Assign { Assign.target; value; annotation; _ } ->
         let collected = from_expression collected target in
-        let collected =
-          Option.value_map annotation ~default:collected ~f:(from_expression collected)
-        in
+        let collected = from_optional_expression collected annotation in
         from_expression collected value
     | Assert { Assert.test; message; _ } ->
         let collected = from_expression collected test in
@@ -2439,8 +2440,19 @@ module AccessCollector = struct
               from_expression sofar value)
         in
         List.fold decorators ~init:collected ~f:from_expression
-    | Define { Define.signature = { Define.Signature.decorators; _ }; _ } ->
-        List.fold decorators ~init:collected ~f:from_expression
+    | Define
+        { Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ }; _ }
+      ->
+        let collected = List.fold decorators ~init:collected ~f:from_expression in
+        let collected =
+          List.fold
+            parameters
+            ~init:collected
+            ~f:(fun sofar { Node.value = { Parameter.annotation; value; _ }; _ } ->
+              let sofar = from_optional_expression sofar annotation in
+              from_optional_expression sofar value)
+        in
+        from_optional_expression collected return_annotation
     | Delete expression
     | Expression expression
     | Yield expression
@@ -2457,12 +2469,9 @@ module AccessCollector = struct
         let collected = from_statements collected body in
         from_statements collected orelse
     | Raise { Raise.expression; from } ->
-        let collected =
-          Option.value_map expression ~f:(from_expression collected) ~default:collected
-        in
-        Option.value_map from ~f:(from_expression collected) ~default:collected
-    | Return { Return.expression; _ } ->
-        Option.value_map expression ~f:(from_expression collected) ~default:collected
+        let collected = from_optional_expression collected expression in
+        from_optional_expression collected from
+    | Return { Return.expression; _ } -> from_optional_expression collected expression
     | Try { Try.body; handlers; orelse; finally } ->
         let collected = from_statements collected body in
         let collected =
@@ -2485,7 +2494,7 @@ module AccessCollector = struct
         let collected =
           List.fold items ~init:collected ~f:(fun collected (value, target) ->
               let collected = from_expression collected value in
-              Option.value_map target ~f:(from_expression collected) ~default:collected)
+              from_optional_expression collected target)
         in
         from_statements collected body
     | Break
@@ -2499,25 +2508,7 @@ module AccessCollector = struct
 
   and from_statements init statements = List.fold statements ~init ~f:from_statement
 
-  let from_define
-      { Define.signature = { Define.Signature.parameters; return_annotation; _ }; body; _ }
-    =
-    let parameter_annotation_accesses =
-      List.fold
-        parameters
-        ~init:NameAccessSet.empty
-        ~f:(fun sofar { Node.value = { Parameter.value; annotation; _ }; _ } ->
-          let sofar = Option.value_map value ~default:sofar ~f:(from_expression sofar) in
-          Option.value_map annotation ~default:sofar ~f:(from_expression sofar))
-    in
-    let return_annotation_accesses =
-      Option.value_map
-        return_annotation
-        ~default:parameter_annotation_accesses
-        ~f:(from_expression parameter_annotation_accesses)
-    in
-    from_statements return_annotation_accesses body
-
+  let from_define { Define.body; _ } = from_statements NameAccessSet.empty body
 
   let from_class { Class.body; _ } = from_statements NameAccessSet.empty body
 end
