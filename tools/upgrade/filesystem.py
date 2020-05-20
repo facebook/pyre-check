@@ -58,7 +58,6 @@ def find_targets(search_root: Path) -> Dict[str, List[str]]:
         return {}
     if find_targets.returncode != 0:
         LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
-        return {}
     output = find_targets.stdout.decode()
     targets = re.split(typing_field, output)
     target_pattern = re.compile(r".*?([^\s]*)\/TARGETS:.*name = \"([^\"]*)\".*")
