@@ -1229,9 +1229,7 @@ let test_check_invalid_type_variables context =
     |}
     [];
 
-  (* This is fact valid, but not for the reason it looks like here, as the Ts are in different
-     scopes. This means that changing the return value to Callable[[int], int] or anything else
-     should work because of behavioral subtyping. *)
+  (* The inline Callable type does not actually make a new type variable scope *)
   assert_type_errors
     {|
       import typing
@@ -1241,7 +1239,10 @@ let test_check_invalid_type_variables context =
           return x
         return g
     |}
-    [];
+    [
+      "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's \
+       parameters.";
+    ];
 
   (* Check invalid type variables in parameters and returns. *)
   assert_type_errors

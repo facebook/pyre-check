@@ -222,19 +222,6 @@ module State (Context : Context) = struct
         else
           None
       in
-      let resolution =
-        match annotation with
-        | Type.Callable { Type.Callable.implementation = { Type.Callable.parameters; _ }; _ } ->
-            let parameters =
-              Type.Callable.create ~annotation:Type.Top ~parameters ()
-              |> Type.Variable.all_free_variables
-            in
-            List.fold
-              parameters
-              ~f:(fun resolution variable -> Resolution.add_type_variable resolution ~variable)
-              ~init:resolution
-        | _ -> resolution
-      in
       let all_primitives_and_variables_are_valid, errors =
         let errors, no_untracked =
           add_untracked_annotation_errors ~resolution:global_resolution ~location ~errors annotation
