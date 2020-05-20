@@ -4511,25 +4511,13 @@ module State (Context : Context) = struct
               let expected = parse_refinement_annotation annotation_expression in
               let contradiction =
                 if Type.contains_unknown expected || Type.is_any expected then
-                  None
+                  false
                 else
                   let { Resolved.resolved; _ } = forward_expression ~resolution ~expression:value in
-                  if
-                    Type.is_unbound resolved
-                    || Type.contains_unknown resolved
-                    || Type.is_any resolved
-                    || not
-                         (GlobalResolution.less_or_equal
-                            global_resolution
-                            ~left:resolved
-                            ~right:expected)
-                  then
-                    None
-                  else
-                    Some
-                      ( Node.location test,
-                        Error.ImpossibleAssertion
-                          { test; expression = value; annotation = resolved } )
+                  (not (Type.is_unbound resolved))
+                  && (not (Type.contains_unknown resolved))
+                  && (not (Type.is_any resolved))
+                  && GlobalResolution.less_or_equal global_resolution ~left:resolved ~right:expected
               in
               let resolve ~name =
                 match Resolution.get_local_with_attributes resolution ~name with
@@ -4545,7 +4533,7 @@ module State (Context : Context) = struct
                 | _ -> resolution
               in
               match contradiction, value with
-              | Some (location, kind), _ -> None, emit_error ~errors ~location ~kind
+              | true, _ -> None, errors
               | _, { Node.value = Name name; _ } when is_simple_name name ->
                   Some (resolve ~name), errors
               | _ -> Some resolution, errors )

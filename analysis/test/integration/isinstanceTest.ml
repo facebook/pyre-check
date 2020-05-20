@@ -42,6 +42,14 @@ let test_check_isinstance context =
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
     ];
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        if not isinstance(x, int):
+          reveal_type(x)
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_strict_type_errors
     {|
       def foo(x: int) -> None:

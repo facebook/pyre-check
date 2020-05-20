@@ -327,16 +327,6 @@ let test_check_impossible_assert context =
     |}
     [];
 
-  assert_type_errors
-    {|
-      class Derp: ...
-      def derp(x: Derp) -> None:
-        assert not isinstance(x, Derp)
-    |}
-    [
-      "Impossible assertion [25]: `x` has type `Derp`, assertion `not isinstance(x, test.Derp)` \
-       will always fail.";
-    ];
   assert_default_type_errors
     {|
       class Derp: ...
