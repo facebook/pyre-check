@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import IO, Any, List, Optional, Sequence, Set, Union
 
 import libcst
-from libcst._version import LIBCST_VERSION
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors._apply_type_annotations import ApplyTypeAnnotationsVisitor
 from typing_extensions import Final
@@ -355,11 +354,7 @@ def apply_stub_annotations(stub_path: str, file_path: str) -> str:
         stub = _parse(stub_file)
         source = _parse(source_file)
         context = CodemodContext()
-        if LIBCST_VERSION >= "0.3.5":
-            # pyre-ignore[16]: This is from the new version of libcst.
-            ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
-        else:
-            ApplyTypeAnnotationsVisitor.add_stub_to_context(context, stub)
+        ApplyTypeAnnotationsVisitor.store_stub_in_context(context, stub)
         modified_tree = ApplyTypeAnnotationsVisitor(context).transform_module(source)
         return modified_tree.code
 
