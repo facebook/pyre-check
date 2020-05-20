@@ -215,9 +215,11 @@ let test_check_click_command context =
       def main(flag: bool) -> bool:
           return flag
 
+      reveal_type(main)
+
       main()
     |}
-    [];
+    ["Revealed type [-1]: Revealed type for `test.main` is `click.core.Command`."];
   assert_type_errors
     {|
       import click
@@ -270,6 +272,9 @@ let test_check_click_command context =
       def run2(ctx: click.Context) -> None:
           pass
 
+
+      reveal_type(main)
+
       # Pyre should not raise any errors on the arguments with the presence of the click decorators
       main()
       main(obj={})
@@ -277,29 +282,21 @@ let test_check_click_command context =
       run(x=1)
       run2()
     |}
-    (* These errors are filtered in production. *)
-    [
-      "Undefined attribute [16]: Callable `main` has no attribute `command`.";
-      "Undefined attribute [16]: Callable `main` has no attribute `command`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.main` is `click.core.Group`."];
   assert_type_errors
     {|
       import click
       import typing
       import contextlib
 
-      @click.command
+      @click.command()
       @contextlib.contextmanager
       def f() -> typing.Generator[int, None, None]:
         yield 1
       def g() -> None:
         reveal_type(f)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `test.f` is \
-       `typing.Callable(f)[[Variable(typing.Any), Keywords(typing.Any)], \
-       contextlib._GeneratorContextManager[int]]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.f` is `click.core.Command`."];
   assert_type_errors
     {|
       def main(flag: bool) -> bool:

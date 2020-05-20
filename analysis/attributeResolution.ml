@@ -3049,9 +3049,7 @@ module Implementation = struct
         |> Reference.show
       in
       match decorator, argument with
-      | ( ( "click.decorators.command" | "click.decorators.group" | "click.decorators.pass_context"
-          | "click.decorators.pass_obj" ),
-          Callable callable ) ->
+      | ("click.decorators.pass_context" | "click.decorators.pass_obj"), Callable callable ->
           (* Suppress caller/callee parameter matching by altering the click entry point to have a
              generic parameter list. *)
           let parameters =

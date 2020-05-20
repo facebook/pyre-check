@@ -72,44 +72,7 @@ let test_apply_decorators context =
          (Some (+Expression.String (StringLiteral.create "typing.Generator[str, None, None]"))))
     (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
 
-  (* Click related tests *)
-  let assert_apply_click_decorators ~expected_count define =
-    let actual_count =
-      let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
-      |> (function
-           | {
-               decorated = Ok (Callable { implementation = { Type.Callable.parameters; _ }; _ });
-               _;
-             } ->
-               parameters
-           | _ -> failwith "impossible")
-      |> function
-      | Undefined -> 0
-      | ParameterVariadicTypeVariable _ -> 0
-      | Defined parameters -> List.length parameters
-    in
-    assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_count actual_count
-  in
   let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
-  create_define ~decorators:[] ~parameters:[create_parameter ~name:"test"] ~return_annotation:None
-  |> assert_apply_click_decorators ~expected_count:1;
-  create_define
-    ~decorators:[decorator "click.neither_command_nor_group" ~arguments:[]]
-    ~parameters:[create_parameter ~name:"test"]
-    ~return_annotation:None
-  |> assert_apply_click_decorators ~expected_count:1;
-  create_define
-    ~decorators:[decorator "click.command" ~arguments:[]]
-    ~parameters:[create_parameter ~name:"test"]
-    ~return_annotation:None
-  |> assert_apply_click_decorators ~expected_count:2;
-  create_define
-    ~decorators:[decorator "click.group" ~arguments:[]]
-    ~parameters:[create_parameter ~name:"test"]
-    ~return_annotation:None
-  |> assert_apply_click_decorators ~expected_count:2;
-
   (* Custom decorators. *)
   create_define
     ~decorators:[decorator "$strip_first_parameter"]

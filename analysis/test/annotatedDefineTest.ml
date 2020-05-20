@@ -114,6 +114,7 @@ let test_decorate context =
       define.signature.return_annotation
       expected.signature.return_annotation
   in
+  (* Syntactic decoration doesn't work for non-callable returns :( *)
   assert_decorated
     {|
       @click.command()
@@ -121,7 +122,7 @@ let test_decorate context =
         ...
     |}
     ~expected:{|
-      def foo(*args: typing.Any, **kwargs: typing.Any) -> None:
+      def foo($parameter$x: int) -> None:
         ...
     |}
 
