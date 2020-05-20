@@ -3041,9 +3041,16 @@ module Implementation = struct
       ~overloads
     =
     let apply_decorator (argument : Type.t) { Decorator.name; arguments } =
-      let decorator = Node.value name |> Reference.show in
+      let decorator =
+        Node.value name
+        |> AstEnvironment.ReadOnly.resolve_exports
+             (ast_environment class_metadata_environment)
+             ?dependency
+        |> Reference.show
+      in
       match decorator, argument with
-      | ( ("click.command" | "click.group" | "click.pass_context" | "click.pass_obj"),
+      | ( ( "click.decorators.command" | "click.decorators.group" | "click.decorators.pass_context"
+          | "click.decorators.pass_obj" ),
           Callable callable ) ->
           (* Suppress caller/callee parameter matching by altering the click entry point to have a
              generic parameter list. *)

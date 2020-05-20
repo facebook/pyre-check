@@ -528,6 +528,28 @@ let test_check_user_decorators context =
       reveal_type(foo)
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], str]`."];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        { handle = "indirect.py"; source = "from actual import decorator as indirected" };
+        {
+          handle = "actual.py";
+          source =
+            {|
+              def decorator(x: object) -> int:
+                return 42
+            |};
+        };
+      ]
+    {|
+      import indirect
+      @indirect.indirected
+      def foo() -> str:
+        return "B"
+
+      reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `int`."];
   ()
 
 
