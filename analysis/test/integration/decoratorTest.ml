@@ -3,7 +3,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Test
 open OUnit2
 open IntegrationTest
 
@@ -208,29 +207,6 @@ let test_check_asynccontextmanager context =
 
 let test_check_click_command context =
   let assert_type_errors = assert_type_errors ~context in
-  let assert_type_errors =
-    let update_environment_with =
-      [
-        {
-          handle = "click.pyi";
-          (* This is just a mock stub of click and is not meant to be accurate or complete *)
-          source =
-            {|
-            from typing import Any
-
-            def command() -> Any: ...
-            def group() -> Any: ...
-            def pass_context(f: Any) -> Any: ...
-            def pass_obj(f: Any) -> Any: ...
-            def option( *param_decls, **attrs) -> Any: ...
-            def argument( *param_decls, **attrs) -> Any: ...
-            class Context: ...
-        |};
-        };
-      ]
-    in
-    assert_type_errors ~update_environment_with
-  in
   assert_type_errors
     {|
       import click
