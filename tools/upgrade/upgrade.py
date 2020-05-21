@@ -180,12 +180,15 @@ class FixmeTargets(ErrorSuppressingCommand):
     def _run_fixme_targets_file(
         self, project_directory: Path, path: str, target_names: List[str]
     ) -> None:
-        LOG.info("Processing %s/TARGETS...", path)
-        targets = [path + ":" + name + "-pyre-typecheck" for name in target_names]
+        LOG.info("Processing %s...", path)
+        targets = [
+            path.replace("/TARGETS", "") + ":" + name + "-pyre-typecheck"
+            for name in target_names
+        ]
         errors = errors_from_targets(project_directory, path, targets)
         if not errors:
             return
-        LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
+        LOG.info("Found %d type errors in %s.", len(errors), path)
 
         if not errors:
             return

@@ -130,7 +130,7 @@ def errors_from_targets(
     errors = Errors.empty()
     if buck_test.returncode == 0:
         # Successful run with no type errors
-        LOG.info("No errors in %s/TARGETS...", path)
+        LOG.info("No errors in %s...", path)
     elif buck_test.returncode == 32:
         buck_test_output = buck_test.stdout.decode().split("\n")
         pyre_error_pattern = re.compile(r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)")

@@ -104,8 +104,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             new_targets = []
             targets_files = []
             for path, target_names in all_targets.items():
-                targets_files.append(Path(path) / "TARGETS")
-                new_targets += ["//" + path + ":" + name for name in target_names]
+                targets_files.append(Path(path))
+                new_targets += [
+                    "//" + path.replace("/TARGETS", "") + ":" + name
+                    for name in target_names
+                ]
 
         configuration_path = directory / ".pyre_configuration.local"
         if configuration_path.exists():

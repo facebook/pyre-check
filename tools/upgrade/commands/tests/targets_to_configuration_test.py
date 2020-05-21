@@ -56,8 +56,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.fixme_threshold = None
         arguments.no_commit = False
         find_targets.return_value = {
-            "subdirectory/a": ["target_one"],
-            "subdirectory/b/c": ["target_three", "target_two"],
+            "subdirectory/a/TARGETS": ["target_one"],
+            "subdirectory/b/c/TARGETS": ["target_three", "target_two"],
         }
         filesystem_list = MagicMock()
         filesystem_list.return_value = []

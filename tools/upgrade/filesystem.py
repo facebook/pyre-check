@@ -78,7 +78,7 @@ def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[s
             target_finder.visit(tree)
             targets = target_finder.result()
             if len(targets) > 0:
-                target_names[target_file.replace("/TARGETS", "")] = targets
+                target_names[target_file] = targets
                 total_targets += len(targets)
 
     LOG.info(

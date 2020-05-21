@@ -410,9 +410,11 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.assert_not_called()
         submit_changes.assert_not_called()
 
-        find_targets.return_value = {"a/b": ["derp", "herp", "merp"]}
+        find_targets.return_value = {"a/b/TARGETS": ["derp", "herp", "merp"]}
         FixmeTargets(arguments, repository).run()
-        fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
+        fix_file.assert_called_once_with(
+            Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
+        )
         submit_changes.assert_called_once_with(
             commit=True,
             submit=arguments.submit,
@@ -424,7 +426,9 @@ class FixmeTargetsTest(unittest.TestCase):
         submit_changes.reset_mock()
         arguments.subdirectory = "derp"
         FixmeTargets(arguments, repository).run()
-        fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
+        fix_file.assert_called_once_with(
+            Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
+        )
         submit_changes.assert_called_once_with(
             commit=True,
             submit=arguments.submit,
