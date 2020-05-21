@@ -271,6 +271,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         directories = TargetsToConfiguration(arguments, repository)._gather_directories(
             Path("subdirectory")
         )
+        find_directories.assert_not_called()
         self.assertEqual(expected_directories, directories)
 
         find_files.return_value = ["subdirectory/a/.pyre_configuration.local"]
@@ -287,6 +288,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         directories = TargetsToConfiguration(arguments, repository)._gather_directories(
             Path("subdirectory")
         )
+        find_directories.assert_called_once_with(Path("subdirectory"))
         self.assertEqual(expected_directories, directories)
 
         find_files.reset_mock()
@@ -308,6 +310,35 @@ class TargetsToConfigurationTest(unittest.TestCase):
         ]
         directories = TargetsToConfiguration(arguments, repository)._gather_directories(
             Path("subdirectory")
+        )
+        find_directories.assert_has_calls(
+            [call(Path("subdirectory")), call(Path("subdirectory/c"))]
+        )
+        self.assertEqual(expected_directories, directories)
+
+        # Do not search for directories above `subdirectory/layer`
+        find_files.reset_mock()
+        find_directories.reset_mock()
+        find_files.return_value = [
+            "subdirectory/layer/a/.pyre_configuration.local",
+            "subdirectory/layer/b/.pyre_configuration.local",
+            "subdirectory/layer/c/x/.pyre_configuration.local",
+        ]
+        find_directories.side_effect = [
+            ["subdirectory/layer/a", "subdirectory/layer/b", "subdirectory/layer/c"],
+            ["subdirectory/layer/c/x", "subdirectory/layer/c/y"],
+        ]
+        expected_directories = [
+            Path("subdirectory/layer/a"),
+            Path("subdirectory/layer/b"),
+            Path("subdirectory/layer/c/x"),
+            Path("subdirectory/layer/c/y"),
+        ]
+        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
+            Path("subdirectory/layer/")
+        )
+        find_directories.assert_has_calls(
+            [call(Path("subdirectory/layer")), call(Path("subdirectory/layer/c"))]
         )
         self.assertEqual(expected_directories, directories)
 

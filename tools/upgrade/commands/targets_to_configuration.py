@@ -267,7 +267,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         else:
             # Fill in missing coverage
             missing_directories = []
-            current_depth = 1
+            current_depth = len(str(subdirectory).split("/"))
             for directory in sorted_directories:
                 if len(directory) <= current_depth:
                     continue
