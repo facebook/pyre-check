@@ -45,46 +45,50 @@ module Collector = struct
 
   let from_source { Source.statements; source_path = { SourcePath.qualifier; _ }; _ } =
     let rec visit_statement ~qualifier globals { Node.value; location } =
-      let qualified_name target =
-        let target = name_to_reference_exn target |> Reference.sanitize_qualified in
-        Option.some_if (Reference.length target = 1) (Reference.combine qualifier target)
-      in
       match value with
       | Statement.Assign
-          { Assign.target = { Node.value = Name target; location }; annotation; value; _ }
-        when is_simple_name target ->
-          qualified_name target
-          >>| (fun qualified ->
+          {
+            Assign.target = { Node.value = Name (Name.Identifier identifier); location };
+            annotation;
+            value;
+            _;
+          } ->
+          let qualified =
+            Identifier.sanitized identifier |> Reference.create |> Reference.combine qualifier
+          in
+          {
+            Result.name = qualified;
+            unannotated_global =
+              SimpleAssign
                 {
-                  Result.name = qualified;
-                  unannotated_global =
-                    SimpleAssign
-                      {
-                        explicit_annotation = annotation;
-                        value;
-                        target_location = Location.with_module ~qualifier location;
-                      };
-                }
-                :: globals)
-          |> Option.value ~default:globals
+                  explicit_annotation = annotation;
+                  value;
+                  target_location = Location.with_module ~qualifier location;
+                };
+          }
+          :: globals
       | Statement.Assign { Assign.target = { Node.value = Tuple elements; _ }; value; _ } ->
           let valid =
             let total_length = List.length elements in
             let is_simple_name index = function
-              | { Node.value = Expression.Name name; location } when is_simple_name name ->
-                  qualified_name name
-                  >>| fun name ->
-                  {
-                    Result.name;
-                    unannotated_global =
-                      TupleAssign
-                        {
-                          value;
-                          target_location = Location.with_module ~qualifier location;
-                          index;
-                          total_length;
-                        };
-                  }
+              | { Node.value = Expression.Name (Name.Identifier identifier); location } ->
+                  let name =
+                    Identifier.sanitized identifier
+                    |> Reference.create
+                    |> Reference.combine qualifier
+                  in
+                  Some
+                    {
+                      Result.name;
+                      unannotated_global =
+                        TupleAssign
+                          {
+                            value;
+                            target_location = Location.with_module ~qualifier location;
+                            index;
+                            total_length;
+                          };
+                    }
               | _ -> None
             in
             List.mapi elements ~f:is_simple_name
