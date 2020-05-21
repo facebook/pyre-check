@@ -40,6 +40,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         self._fixme_threshold: int = arguments.fixme_threshold
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
+        self._pyre_only: bool = arguments.pyre_only
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -62,6 +63,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             help="Ignore all errors in a file if fixme count exceeds threshold.",
         )
         parser.add_argument(
+            "--pyre-only",
+            action="store_true",
+            help="Only convert pyre targets to configuration.",
+        )
+        parser.add_argument(
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
@@ -82,7 +88,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         subprocess.run(remove_typing_fields_command)
 
     def convert_directory(self, directory: Path) -> None:
-        all_targets = find_targets(directory, pyre_only=True)
+        all_targets = find_targets(directory, pyre_only=self._pyre_only)
         if not all_targets:
             LOG.warning("No configuration created because no targets found.")
             return
