@@ -66,8 +66,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
-
-    def remove_target_typing_fields(self, files: List[str]) -> None:
+    def remove_target_typing_fields(self, files: List[Path]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
         typing_options_regex = [
             r"typing \?=.*",
@@ -79,23 +78,27 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             "sed",
             "-i",
             "/" + r"\|".join(typing_options_regex) + "/d",
-        ] + files
+        ] + [str(file) for file in files]
         subprocess.run(remove_typing_fields_command)
 
     def convert_directory(self, directory: Path) -> None:
-        all_targets = find_targets(directory)
+        all_targets = find_targets(directory, pyre_only=True)
         if not all_targets:
             LOG.warning("No configuration created because no targets found.")
             return
-        targets_files = [
-            str(directory / path)
-            for path in get_filesystem().list(str(directory), patterns=[r"**/TARGETS"])
-        ]
         if self._glob:
             new_targets = ["//" + str(directory) + "/..."]
+            targets_files = [
+                directory / path
+                for path in get_filesystem().list(
+                    str(directory), patterns=[r"**/TARGETS"]
+                )
+            ]
         else:
             new_targets = []
+            targets_files = []
             for path, target_names in all_targets.items():
+                targets_files.append(Path(path) / "TARGETS")
                 new_targets += ["//" + path + ":" + name for name in target_names]
 
         configuration_path = directory / ".pyre_configuration.local"
@@ -114,20 +117,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 configuration.write()
         else:
             LOG.info("Creating local configuration at %s.", configuration_path)
-            configuration_contents = {"targets": new_targets, "strict": True}
-            # Heuristic: if all targets with type checked targets are setting
-            # a target to be strictly checked, let's turn on default strict.
-            for targets_file in targets_files:
-                regex_patterns = [
-                    r"check_types_options \?=.*strict.*",
-                    r"typing_options \?=.*strict.*",
-                ]
-                result = subprocess.run(
-                    ["grep", "-x", r"\|".join(regex_patterns), targets_file]
-                )
-                if result.returncode != 0:
-                    configuration_contents["strict"] = False
-                    break
+            configuration_contents = {"targets": new_targets}
             configuration = Configuration(configuration_path, configuration_contents)
             configuration.write()
 

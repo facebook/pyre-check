@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import ast as builtin_ast
 import logging
+import os
 import re
 import subprocess
 from enum import Enum
@@ -29,6 +31,34 @@ class LocalMode(Enum):
         return "# " + self.value
 
 
+class TargetCollector(builtin_ast.NodeVisitor):
+    def __init__(self, pyre_only: bool) -> None:
+        self._pyre_only: bool = pyre_only
+        self._targets: List[str] = []
+
+    def visit_Call(self, node: builtin_ast.Call) -> None:
+        target_fields = node.keywords
+        check_types = False
+        uses_pyre = True
+        name = None
+        for field in target_fields:
+            value = field.value
+            if field.arg == "name":
+                if isinstance(value, builtin_ast.Str):
+                    name = value.s
+            elif field.arg == "check_types":
+                if isinstance(value, builtin_ast.NameConstant):
+                    check_types = check_types or value.value
+            elif field.arg == "check_types_options":
+                if isinstance(value, builtin_ast.Str):
+                    uses_pyre = uses_pyre and "mypy" not in value.s.lower()
+        if name and check_types and (not self._pyre_only or uses_pyre):
+            self._targets.append(name)
+
+    def result(self) -> List[str]:
+        return self._targets
+
+
 def path_exists(filename: str) -> Path:
     path = Path(filename)
     if not path.exists():
@@ -36,43 +66,21 @@ def path_exists(filename: str) -> Path:
     return path
 
 
-def find_targets(search_root: Path) -> Dict[str, List[str]]:
+def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[str]]:
     LOG.info("Finding typecheck targets in %s", search_root)
-    # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
-    typing_field = "check_types ?= ?True"
-    targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*".format(
-        typing_field
-    )
-    find_targets_command = [
-        "grep",
-        "-RPzo",
-        "--include=*TARGETS",
-        targets_regex,
-        search_root,
-    ]
-    find_targets = subprocess.run(
-        find_targets_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    if find_targets.returncode == 1:
-        LOG.info("Did not find any targets.")
-        return {}
-    if find_targets.returncode != 0:
-        LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
-    output = find_targets.stdout.decode()
-    targets = re.split(typing_field, output)
-    target_pattern = re.compile(r".*?([^\s]*)\/TARGETS:.*name = \"([^\"]*)\".*")
+    target_files = find_files(search_root, "TARGETS")
     target_names = {}
     total_targets = 0
-    for target in targets:
-        matched = target_pattern.match(target.replace("\n", " ").strip())
-        if matched:
-            total_targets += 1
-            path = matched.group(1).strip()
-            target_name = matched.group(2)
-            if path in target_names:
-                target_names[path].append(target_name)
-            else:
-                target_names[path] = [target_name]
+    for target_file in target_files:
+        target_finder = TargetCollector(pyre_only)
+        with open(target_file, "r") as source:
+            tree = builtin_ast.parse(source.read())
+            target_finder.visit(tree)
+            targets = target_finder.result()
+            if len(targets) > 0:
+                target_names[target_file.replace("/TARGETS", "")] = targets
+                total_targets += len(targets)
+
     LOG.info(
         "Found {} typecheck targets in {} TARGETS files to analyze".format(
             total_targets, len(target_names)

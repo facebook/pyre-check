@@ -93,8 +93,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
                     "//subdirectory/a:target_one",
                     "//subdirectory/b/c:target_three",
                     "//subdirectory/b/c:target_two",
-                ],
-                "strict": True,
+                ]
             }
             open_mock.assert_has_calls(
                 [call(Path("subdirectory/.pyre_configuration.local"), "w")]

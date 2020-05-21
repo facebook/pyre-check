@@ -397,37 +397,20 @@ class FixmeTargetsTest(unittest.TestCase):
         return_value=Path(".pyre_configuration"),
     )
     @patch.object(upgrade.FixmeTargets, "_run_fixme_targets_file")
+    @patch(f"{upgrade.__name__}.find_targets")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_fixme_targets(
-        self, submit_changes, fix_file, find_configuration, subprocess
+        self, submit_changes, find_targets, fix_file, find_configuration, subprocess
     ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
-        grep_return = MagicMock()
-        grep_return.returncode = 1
-        grep_return.stderr = b"stderr"
-        subprocess.return_value = grep_return
+        find_targets.return_value = {}
         FixmeTargets(arguments, repository).run()
         fix_file.assert_not_called()
         submit_changes.assert_not_called()
 
-        grep_return.returncode = 0
-        grep_return.stdout = b"""
-        a/b/TARGETS:name = "derp",
-            srcs = ["derp.py"],
-            check_types = True,
-            check_types_options = "pyre",
-        a/b/TARGETS:name = "herp",
-            srcs = [],
-            check_types = True,
-            check_types_options = "pyre, strict",
-        a/b/TARGETS:name = "merp",
-            srcs = [],
-            check_types = True,
-            check_types_options = "mypy",
-        """
-        subprocess.return_value = grep_return
+        find_targets.return_value = {"a/b": ["derp", "herp", "merp"]}
         FixmeTargets(arguments, repository).run()
         fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
@@ -437,22 +420,10 @@ class FixmeTargetsTest(unittest.TestCase):
         )
 
         # Test subdirectory
-        subprocess.reset_mock()
         fix_file.reset_mock()
         submit_changes.reset_mock()
         arguments.subdirectory = "derp"
         FixmeTargets(arguments, repository).run()
-        subprocess.assert_called_once_with(
-            [
-                "grep",
-                "-RPzo",
-                "--include=*TARGETS",
-                r"(?s)name = ((?!\n\s*name).)*check_types ?= ?True((?!\n\s*name).)*",
-                Path("derp"),
-            ],
-            stderr=-1,
-            stdout=-1,
-        )
         fix_file.assert_called_once_with(Path("."), "a/b", ["derp", "herp", "merp"])
         submit_changes.assert_called_once_with(
             commit=True,
