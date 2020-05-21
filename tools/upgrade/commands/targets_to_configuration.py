@@ -172,7 +172,8 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             self.remove_pyre_typing_fields(all_targets)
         else:
             self.remove_target_typing_fields(targets_files)
-        remove_non_pyre_ignores(directory)
+        if not self._pyre_only:
+            remove_non_pyre_ignores(directory)
 
         all_errors = configuration.get_errors()
         error_threshold = self._fixme_threshold
