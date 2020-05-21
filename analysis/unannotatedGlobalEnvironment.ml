@@ -623,7 +623,30 @@ let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; 
     WriteOnly.set_unannotated_global ~target:name unannotated_global;
     name
   in
-  let globals = UnannotatedGlobal.Collector.from_source source in
+  let merge_defines unannotated_globals_alist =
+    let not_defines, defines =
+      List.partition_map unannotated_globals_alist ~f:(function
+          | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
+              `Snd (name, defines)
+          | x -> `Fst x)
+    in
+    let add_to_map sofar (name, defines) =
+      let merge_with_existing to_merge = function
+        | None -> Some to_merge
+        | Some existing -> Some (to_merge @ existing)
+      in
+      Map.change sofar name ~f:(merge_with_existing defines)
+    in
+    List.fold defines ~f:add_to_map ~init:Reference.Map.empty
+    |> Reference.Map.to_alist
+    |> List.map ~f:(fun (name, defines) ->
+           {
+             UnannotatedGlobal.Collector.Result.name;
+             unannotated_global = Define (List.rev defines);
+           })
+    |> fun defines -> List.append defines not_defines
+  in
+  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines in
   let globals =
     match Reference.as_list qualifier with
     | [] -> globals @ missing_builtin_globals
