@@ -82,5 +82,3 @@ val statements : t -> Statement.t list
 val top_level_define : t -> Statement.Define.t
 
 val top_level_define_node : t -> Statement.Define.t Node.t
-
-val wildcard_exports_of : t -> Reference.t list

@@ -102,10 +102,63 @@ module ModuleMetadata =
 
 let create module_tracker = { module_tracker }
 
+let wildcard_exports_of { Source.source_path = { SourcePath.qualifier; _ }; statements; _ } =
+  let open Statement in
+  let open Expression in
+  let toplevel_public, dunder_all =
+    let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
+      let filter_private =
+        let is_public name =
+          let dequalified =
+            Reference.drop_prefix ~prefix:qualifier name |> Reference.sanitize_qualified
+          in
+          if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
+            Some dequalified
+          else
+            None
+        in
+        List.filter_map ~f:is_public
+      in
+      match value with
+      | Statement.Assign
+          {
+            Assign.target = { Node.value = Name (Name.Identifier target); _ };
+            value = { Node.value = Expression.(List names | Tuple names); _ };
+            _;
+          }
+        when String.equal (Identifier.sanitized target) "__all__" ->
+          let to_reference = function
+            | { Node.value = Expression.String { value = name; _ }; _ } ->
+                Reference.create name
+                |> Reference.last
+                |> (fun last -> if String.is_empty last then None else Some last)
+                >>| Reference.create
+            | _ -> None
+          in
+          public_values, Some (List.filter_map ~f:to_reference names)
+      | Assign { Assign.target = { Node.value = Name target; _ }; _ } when is_simple_name target ->
+          public_values @ filter_private [target |> name_to_reference_exn], dunder_all
+      | Class { Class.name; _ } -> public_values @ filter_private [Node.value name], dunder_all
+      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } ->
+          public_values @ filter_private [name], dunder_all
+      | Import { Import.imports; _ } ->
+          let get_import_name { Import.alias; name } =
+            match alias with
+            | None -> Node.value name
+            | Some { Node.value = alias; _ } -> Reference.create alias
+          in
+          public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
+      | _ -> public_values, dunder_all
+    in
+    List.fold ~f:gather_toplevel ~init:([], None) statements
+  in
+  Option.value dunder_all ~default:toplevel_public |> List.dedup_and_sort ~compare:Reference.compare
+
+
 module Raw = struct
   let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     RawSources.add qualifier source;
-    RawWildcardExports.write_through qualifier (Source.wildcard_exports_of source)
+    RawWildcardExports.write_through qualifier (wildcard_exports_of source)
 
 
   let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
@@ -129,7 +182,7 @@ end
 
 let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   Sources.add qualifier source;
-  WildcardExports.write_through qualifier (Source.wildcard_exports_of source);
+  WildcardExports.write_through qualifier (wildcard_exports_of source);
   ModuleMetadata.add qualifier (Module.create source)
 
 
