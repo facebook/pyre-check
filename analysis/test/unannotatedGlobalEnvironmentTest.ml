@@ -682,7 +682,10 @@ let test_updates context =
         `Global
           ( Reference.create "test.alias",
             dependency,
-            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Module
+                    { target = !&"target.member"; implicit_alias = false })) );
       ]
     ~expected_triggers:[dependency]
     ~post_actions:[`Global (Reference.create "test.alias", dependency, None)]
@@ -699,11 +702,17 @@ let test_updates context =
         `Global
           ( Reference.create "test.member",
             dependency,
-            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobal.Imported (Reference.create "target.other_member")) );
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
       (* Location insensitive *)
     ~expected_triggers:[]
@@ -712,11 +721,17 @@ let test_updates context =
         `Global
           ( Reference.create "test.member",
             dependency,
-            Some (UnannotatedGlobal.Imported (Reference.create "target.member")) );
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "member"; implicit_alias = true })) );
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobal.Imported (Reference.create "target.other_member")) );
+            Some
+              (UnannotatedGlobal.Imported
+                 (UnannotatedGlobal.ImportEntry.Name
+                    { from = !&"target"; target = "other_member"; implicit_alias = true })) );
       ]
     ();
 

@@ -11,6 +11,23 @@ module UnannotatedDefine : sig
   [@@deriving sexp, compare]
 end
 
+module ImportEntry : sig
+  type t =
+    | Module of {
+        target: Reference.t;
+        implicit_alias: bool;
+      }
+    | Name of {
+        from: Reference.t;
+        target: Identifier.t;
+        implicit_alias: bool;
+      }
+  [@@deriving sexp, compare]
+
+  (* Do NOT use this API in new code *)
+  val deprecated_original_name : t -> Reference.t
+end
+
 type t =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
@@ -23,7 +40,7 @@ type t =
       index: int;
       total_length: int;
     }
-  | Imported of Reference.t
+  | Imported of ImportEntry.t
   | Define of UnannotatedDefine.t list
   | Class
 [@@deriving sexp, compare]

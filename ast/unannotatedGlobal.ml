@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Pyre
 open Expression
 open Statement
 
@@ -14,6 +13,33 @@ module UnannotatedDefine = struct
     location: Location.WithModule.t;
   }
   [@@deriving sexp, compare]
+end
+
+module ImportEntry = struct
+  type t =
+    | Module of {
+        target: Reference.t;
+        implicit_alias: bool;
+      }
+    | Name of {
+        from: Reference.t;
+        target: Identifier.t;
+        implicit_alias: bool;
+      }
+  [@@deriving sexp, compare]
+
+  let deprecated_original_name = function
+    | Module { target; implicit_alias } ->
+        if implicit_alias then
+          Option.value_exn (Reference.head target)
+        else
+          target
+    | Name { from; target; _ } -> (
+        match Reference.show from with
+        | "future.builtins"
+        | "builtins" ->
+            Reference.create target
+        | _ -> Reference.create target |> Reference.combine from )
 end
 
 type t =
@@ -28,7 +54,7 @@ type t =
       index: int;
       total_length: int;
     }
-  | Imported of Reference.t
+  | Imported of ImportEntry.t
   | Define of UnannotatedDefine.t list
   | Class
 [@@deriving sexp, compare]
@@ -87,29 +113,42 @@ module Collector = struct
             List.mapi elements ~f:is_simple_name
           in
           List.rev_append (Option.all valid |> Option.value ~default:[]) globals
-      | Import { Import.from = Some _; imports = [{ Import.name = { Node.value = name; _ }; _ }] }
-        when String.equal (Reference.show name) "*" ->
-          (* Don't register x.* as a global when a user writes `from x import *`. *)
-          globals
-      | Import { Import.from; imports } ->
-          let from =
-            match from >>| Node.value >>| Reference.show with
-            | None
-            | Some "future.builtins"
-            | Some "builtins" ->
-                Reference.empty
-            | Some from -> Reference.create from
-          in
-          let import_to_global { Import.name = { Node.value = target; _ }; alias } =
-            let name =
+      | Import { Import.from = None; imports } ->
+          let collect_module_import sofar { Import.name = { Node.value = target; _ }; alias } =
+            let implicit_alias, name =
               match alias with
-              | None -> Reference.show target
-              | Some { Node.value = alias; _ } -> alias
+              | None ->
+                  (* `import a.b` will bind name `a` in the current module *)
+                  true, Reference.as_list target |> List.hd_exn
+              | Some { Node.value = alias; _ } -> false, alias
             in
-            let original_name = Reference.combine from target in
-            { Result.name; unannotated_global = Imported original_name }
+            {
+              Result.name;
+              unannotated_global = Imported (ImportEntry.Module { target; implicit_alias });
+            }
+            :: sofar
           in
-          List.rev_append (List.map ~f:import_to_global imports) globals
+          List.fold imports ~init:globals ~f:collect_module_import
+      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
+          let collect_name_import sofar { Import.name = { Node.value = target; _ }; alias } =
+            (* `target` must be an unqualified identifier *)
+            match Reference.show target with
+            | "*" ->
+                (* Don't register x.* as a global when a user writes `from x import *`. *)
+                sofar
+            | target ->
+                let implicit_alias, name =
+                  match alias with
+                  | None -> true, target
+                  | Some { Node.value = alias; _ } -> false, alias
+                in
+                {
+                  Result.name;
+                  unannotated_global = Imported (ImportEntry.Name { from; target; implicit_alias });
+                }
+                :: sofar
+          in
+          List.fold imports ~init:globals ~f:collect_name_import
       | Class { Class.name; _ } ->
           { Result.name = Node.value name |> Reference.last; unannotated_global = Class } :: globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->

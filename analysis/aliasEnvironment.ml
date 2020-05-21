@@ -241,7 +241,7 @@ let extract_alias unannotated_global_environment name ~dependency =
                 else
                   None )
         | _ -> None )
-    | UnannotatedGlobal.Imported original_name -> (
+    | UnannotatedGlobal.Imported import -> (
         if
           UnannotatedGlobalEnvironment.ReadOnly.class_exists
             unannotated_global_environment
@@ -249,6 +249,7 @@ let extract_alias unannotated_global_environment name ~dependency =
         then
           None
         else
+          let original_name = UnannotatedGlobal.ImportEntry.deprecated_original_name import in
           match Reference.as_list name, Reference.as_list original_name with
           | [single_identifier], [typing; identifier]
             when String.equal typing "typing" && String.equal single_identifier identifier ->
