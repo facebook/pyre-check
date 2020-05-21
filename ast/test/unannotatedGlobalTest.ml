@@ -17,33 +17,31 @@ let test_collection context =
     in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: Reference.t list]
-      ~printer:(List.to_string ~f:Reference.show)
+      ~cmp:[%compare.equal: string list]
+      ~printer:(String.concat ~sep:", ")
       expected
       actual
   in
 
-  assert_collected_names
-    {|
+  assert_collected_names {|
        x = 1
        y = 2
        z = 3
-    |}
-    ~expected:[!&"test.x"; !&"test.y"; !&"test.z"];
+    |} ~expected:["x"; "y"; "z"];
   assert_collected_names
     {|
       x, y = 1, 2
       z[3] = 4
       u, (v, w) = derp
     |}
-    ~expected:[!&"test.x"; !&"test.y"];
+    ~expected:["x"; "y"];
   assert_collected_names
     {|
        def foo(): pass
        def bar(): pass
        def foo(): pass
     |}
-    ~expected:[!&"foo"; !&"bar"; !&"foo"];
+    ~expected:["foo"; "bar"; "foo"];
   assert_collected_names
     {|
        import x
@@ -51,7 +49,7 @@ let test_collection context =
        from u.v import w
        from a.b import c as d
     |}
-    ~expected:[!&"test.x"; !&"test.z"; !&"test.w"; !&"test.d"];
+    ~expected:["x"; "z"; "w"; "d"];
   assert_collected_names
     {|
        if derp():
@@ -61,7 +59,7 @@ let test_collection context =
          x = 3
          y = 4
     |}
-    ~expected:[!&"test.x"; !&"test.z"; !&"test.x"; !&"test.y"];
+    ~expected:["x"; "z"; "x"; "y"];
   assert_collected_names
     {|
        try:
@@ -70,7 +68,7 @@ let test_collection context =
        except:
          y = 3
     |}
-    ~expected:[!&"test.x"; !&"test.z"; !&"test.y"];
+    ~expected:["x"; "z"; "y"];
   ()
 
 

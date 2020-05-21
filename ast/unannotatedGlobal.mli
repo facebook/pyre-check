@@ -30,7 +30,7 @@ type t =
 module Collector : sig
   module Result : sig
     type nonrec t = {
-      name: Reference.t;
+      name: Identifier.t;
       unannotated_global: t;
     }
     [@@deriving sexp, compare]

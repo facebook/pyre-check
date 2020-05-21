@@ -37,7 +37,7 @@ module Collector = struct
     type unannotated_global = t [@@deriving sexp, compare]
 
     type t = {
-      name: Reference.t;
+      name: Identifier.t;
       unannotated_global: unannotated_global;
     }
     [@@deriving sexp, compare]
@@ -53,11 +53,8 @@ module Collector = struct
             value;
             _;
           } ->
-          let qualified =
-            Identifier.sanitized identifier |> Reference.create |> Reference.combine qualifier
-          in
           {
-            Result.name = qualified;
+            Result.name = Identifier.sanitized identifier;
             unannotated_global =
               SimpleAssign
                 {
@@ -72,14 +69,9 @@ module Collector = struct
             let total_length = List.length elements in
             let is_simple_name index = function
               | { Node.value = Expression.Name (Name.Identifier identifier); location } ->
-                  let name =
-                    Identifier.sanitized identifier
-                    |> Reference.create
-                    |> Reference.combine qualifier
-                  in
                   Some
                     {
-                      Result.name;
+                      Result.name = Identifier.sanitized identifier;
                       unannotated_global =
                         TupleAssign
                           {
@@ -107,20 +99,19 @@ module Collector = struct
                 Reference.empty
             | Some from -> Reference.create from
           in
-          let import_to_global { Import.name = { Node.value = name; _ }; alias } =
-            let qualified_name =
+          let import_to_global { Import.name = { Node.value = target; _ }; alias } =
+            let name =
               match alias with
-              | None -> Reference.combine qualifier name
-              | Some { Node.value = alias; _ } ->
-                  Reference.combine qualifier (Reference.create alias)
+              | None -> Reference.show target
+              | Some { Node.value = alias; _ } -> alias
             in
-            let original_name = Reference.combine from name in
-            { Result.name = qualified_name; unannotated_global = Imported original_name }
+            let original_name = Reference.combine from target in
+            { Result.name; unannotated_global = Imported original_name }
           in
           List.rev_append (List.map ~f:import_to_global imports) globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
-            Result.name = Node.value name;
+            Result.name = Node.value name |> Reference.last;
             unannotated_global =
               Define [{ define = signature; location = Location.with_module ~qualifier location }];
           }

@@ -605,7 +605,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
 let missing_builtin_globals =
   let assign name annotation =
     {
-      UnannotatedGlobal.Collector.Result.name = Reference.create name;
+      UnannotatedGlobal.Collector.Result.name;
       unannotated_global =
         UnannotatedGlobal.SimpleAssign
           {
@@ -620,8 +620,9 @@ let missing_builtin_globals =
 
 let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
-    WriteOnly.set_unannotated_global ~target:name unannotated_global;
-    name
+    let target = Reference.create name |> Reference.combine qualifier in
+    WriteOnly.set_unannotated_global ~target unannotated_global;
+    target
   in
   let merge_defines unannotated_globals_alist =
     let not_defines, defines =
@@ -637,8 +638,8 @@ let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; 
       in
       Map.change sofar name ~f:(merge_with_existing defines)
     in
-    List.fold defines ~f:add_to_map ~init:Reference.Map.empty
-    |> Reference.Map.to_alist
+    List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
+    |> Identifier.Map.to_alist
     |> List.map ~f:(fun (name, defines) ->
            {
              UnannotatedGlobal.Collector.Result.name;

@@ -721,8 +721,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ) -> bool: ...
         def sum(iterable: Iterable[_T]) -> Union[_T, int]: ...
 
-        def sys.exit(code: int) -> NoReturn: ...
-
         def eval(arg: str) -> None: ...
 
         @overload
@@ -856,7 +854,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ]
   in
   [
-    "sys.py", "";
+    ( "sys.py",
+      {|
+        from typing import NoReturn
+        def exit(code: int) -> NoReturn: ...
+    |} );
     ( "hashlib.pyi",
       {|
         _DataType = typing.Union[int, str]
