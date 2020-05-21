@@ -647,7 +647,14 @@ let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; 
            })
     |> fun defines -> List.append defines not_defines
   in
-  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines in
+  let drop_classes unannotated_globals =
+    let is_not_class = function
+      | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
+      | _ -> true
+    in
+    List.filter unannotated_globals ~f:is_not_class
+  in
+  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
   let globals =
     match Reference.as_list qualifier with
     | [] -> globals @ missing_builtin_globals

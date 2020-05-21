@@ -44,6 +44,15 @@ let test_collection context =
     ~expected:["foo"; "bar"; "foo"];
   assert_collected_names
     {|
+       class Foo: pass
+       class Bar:
+         class Nested: pass
+       class Baz:
+         def foo(self): ...
+    |}
+    ~expected:["Foo"; "Bar"; "Baz"];
+  assert_collected_names
+    {|
        import x
        import y as z
        from u.v import w

@@ -30,6 +30,7 @@ type t =
     }
   | Imported of Reference.t
   | Define of UnannotatedDefine.t list
+  | Class
 [@@deriving sexp, compare]
 
 module Collector = struct
@@ -109,6 +110,8 @@ module Collector = struct
             { Result.name; unannotated_global = Imported original_name }
           in
           List.rev_append (List.map ~f:import_to_global imports) globals
+      | Class { Class.name; _ } ->
+          { Result.name = Node.value name |> Reference.last; unannotated_global = Class } :: globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
             Result.name = Node.value name |> Reference.last;

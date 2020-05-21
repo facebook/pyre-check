@@ -25,6 +25,7 @@ type t =
     }
   | Imported of Reference.t
   | Define of UnannotatedDefine.t list
+  | Class
 [@@deriving sexp, compare]
 
 module Collector : sig

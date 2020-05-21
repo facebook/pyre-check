@@ -258,6 +258,7 @@ let extract_alias unannotated_global_environment name ~dependency =
               let value = from_reference ~location:Location.any original_name in
               Some (TypeAlias { target = name; value }) )
     | TupleAssign _
+    | Class
     | Define _ ->
         None
   in
