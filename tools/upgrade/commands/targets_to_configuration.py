@@ -8,8 +8,9 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
+import libcst
 from typing_extensions import Final
 
 from ..configuration import Configuration
@@ -29,6 +30,32 @@ from .command import ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class TargetPyreRemover(libcst.CSTTransformer):
+    def leave_Call(
+        self, original_node: libcst.Call, updated_node: libcst.Call
+    ) -> libcst.Call:
+        check_types = False
+        uses_pyre = True
+        updated_fields = []
+        for field in original_node.args:
+            name = field.keyword
+            value = field.value
+            if not name:
+                continue
+            name = name.value
+            if name == "check_types":
+                if isinstance(value, libcst.Name):
+                    check_types = check_types or value.value.lower() == "true"
+            elif name == "check_types_options":
+                if isinstance(value, libcst.SimpleString):
+                    uses_pyre = uses_pyre and "mypy" not in value.value.lower()
+            elif name not in ["typing", "typing_options"]:
+                updated_fields.append(field)
+        if check_types and uses_pyre:
+            return updated_node.with_changes(args=updated_fields)
+        return updated_node
 
 
 class TargetsToConfiguration(ErrorSuppressingCommand):
@@ -87,6 +114,13 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         ] + [str(file) for file in files]
         subprocess.run(remove_typing_fields_command)
 
+    def remove_pyre_typing_fields(self, path_to_targets: Dict[str, List[str]]) -> None:
+        for path, _ in path_to_targets.items():
+            targets_file = Path(path)
+            source = targets_file.read_text()
+            output = libcst.parse_module(source).visit(TargetPyreRemover()).code
+            targets_file.write_text(output)
+
     def convert_directory(self, directory: Path) -> None:
         all_targets = find_targets(directory, pyre_only=self._pyre_only)
         if not all_targets:
@@ -134,7 +168,10 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             self._repository.add_paths([configuration_path])
 
         # Remove all type-related target settings
-        self.remove_target_typing_fields(targets_files)
+        if self._pyre_only and not self._glob:
+            self.remove_pyre_typing_fields(all_targets)
+        else:
+            self.remove_target_typing_fields(targets_files)
         remove_non_pyre_ignores(directory)
 
         all_errors = configuration.get_errors()

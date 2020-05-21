@@ -6,17 +6,125 @@
 # pyre-unsafe
 
 import json
+import libcst
 import unittest
 from pathlib import Path
+from textwrap import dedent
 from unittest.mock import MagicMock, call, mock_open, patch
 
 from ... import errors, upgrade
 from ...repository import Repository
 from .. import targets_to_configuration
-from ..targets_to_configuration import TargetsToConfiguration
+from ..targets_to_configuration import TargetPyreRemover, TargetsToConfiguration
 
 
 repository = Repository()
+
+
+class TargetRemoverTest(unittest.TestCase):
+    def assert_targets_removed(self, source: str, expected_result: str) -> None:
+        output = libcst.parse_module(dedent(source)).visit(TargetPyreRemover()).code
+        self.assertEqual(dedent(expected_result), output)
+
+    def test_remove_pyre_target_fields(self) -> None:
+        source = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
+            check_types = True,
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+
+        python_unittest(
+            name = "test_target_name",
+            srcs = glob([
+                "**/tests/*.py",
+            ]),
+            check_types = True,
+            check_types_options = "mypy",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        expected_result = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+
+        python_unittest(
+            name = "test_target_name",
+            srcs = glob([
+                "**/tests/*.py",
+            ]),
+            check_types = True,
+            check_types_options = "mypy",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        self.assert_targets_removed(source, expected_result)
+
+        source = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
+            check_types = True,
+            check_types_options = "strict",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+
+        python_unittest(
+            name = "test_target_name",
+            srcs = glob([
+                "**/tests/*.py",
+            ]),
+            check_types = True,
+            check_types_options = "strict, mypy",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        expected_result = """
+        load("@path:python_binary.bzl", "python_binary")
+
+        python_binary(
+            name = "target_name",
+            main_module = "path.to.module",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+
+        python_unittest(
+            name = "test_target_name",
+            srcs = glob([
+                "**/tests/*.py",
+            ]),
+            check_types = True,
+            check_types_options = "strict, mypy",
+            deps = [
+                ":dependency_target_name",
+            ],
+        )
+        """
+        self.assert_targets_removed(source, expected_result)
 
 
 class TargetsToConfigurationTest(unittest.TestCase):
@@ -34,8 +142,12 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
     )
+    @patch(
+        f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_pyre_typing_fields"
+    )
     def test_convert_directory(
         self,
+        remove_pyre_typing_fields,
         remove_target_typing_fields,
         repository_format,
         suppress_errors,
@@ -55,6 +167,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.glob = None
         arguments.fixme_threshold = None
         arguments.no_commit = False
+        arguments.pyre_only = False
         find_targets.return_value = {
             "subdirectory/a/TARGETS": ["target_one"],
             "subdirectory/b/c/TARGETS": ["target_three", "target_two"],
