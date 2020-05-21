@@ -14,7 +14,7 @@ import libcst
 from typing_extensions import Final
 
 from ..configuration import Configuration
-from ..errors import Errors
+from ..errors import Errors, PartialErrorSuppression
 from ..filesystem import (
     LocalMode,
     add_local_mode,
@@ -199,13 +199,23 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 )
                 add_local_mode(path, LocalMode.IGNORE)
             else:
-                self._suppress_errors(Errors(errors))
+                try:
+                    self._suppress_errors(Errors(errors))
+                except PartialErrorSuppression:
+                    LOG.warning(f"Could not suppress all errors in {path}")
+                    LOG.info("Run with --unsafe to force suppression anyway.")
+                    self._repository.revert_all(remove_untracked=True)
 
         # Lint and re-run pyre once to resolve most formatting issues
         if self._lint:
             if self._repository.format():
                 errors = configuration.get_errors(should_clean=False)
-                self._suppress_errors(errors)
+                try:
+                    self._suppress_errors(errors)
+                except PartialErrorSuppression:
+                    LOG.warning(f"Could not suppress all errors in {path}")
+                    LOG.info("Run with --unsafe to force suppression anyway.")
+                    self._repository.revert_all(remove_untracked=True)
 
     def run(self) -> None:
         # TODO(T62926437): Basic integration testing.
