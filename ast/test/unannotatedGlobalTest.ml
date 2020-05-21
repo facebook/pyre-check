@@ -36,7 +36,7 @@ let test_collection context =
       z[3] = 4
       u, (v, w) = derp
     |}
-    ~expected:[!&"test.y"; !&"test.x"];
+    ~expected:[!&"test.x"; !&"test.y"];
   assert_collected_names
     {|
        def foo(): pass

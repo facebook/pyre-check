@@ -93,7 +93,7 @@ module Collector = struct
             in
             List.mapi elements ~f:is_simple_name
           in
-          (Option.all valid |> Option.value ~default:[]) @ globals
+          List.rev_append (Option.all valid |> Option.value ~default:[]) globals
       | Import { Import.from = Some _; imports = [{ Import.name = { Node.value = name; _ }; _ }] }
         when String.equal (Reference.show name) "*" ->
           (* Don't register x.* as a global when a user writes `from x import *`. *)
