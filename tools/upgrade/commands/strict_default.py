@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..filesystem import LocalMode, add_local_mode
+from ..filesystem import LocalMode, add_local_mode, path_exists
 from ..repository import Repository
 from .command import Command
 
@@ -21,8 +21,32 @@ class StrictDefault(Command):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
         self._local_configuration: Path = arguments.local_configuration
+        self._remove_strict_headers: bool = arguments.remove_strict_headers
         self._fixme_threshold: int = arguments.fixme_threshold
         self._lint: bool = arguments.lint
+
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        parser.set_defaults(command=StrictDefault)
+        parser.add_argument(
+            "-l",
+            "--local-configuration",
+            type=path_exists,
+            help="Path to project root with local configuration",
+        )
+        parser.add_argument(
+            # TODO(T53195818): Not implemented
+            "--remove-strict-headers",
+            action="store_true",
+            help="Delete unnecessary `# pyre-strict` headers.",
+        )
+        parser.add_argument(
+            "--fixme-threshold",
+            type=int,
+            default=0,
+            help="Mark file as unsafe if fixme count exceeds threshold.",
+        )
+        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()

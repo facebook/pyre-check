@@ -236,26 +236,7 @@ def run(repository: Repository) -> None:
 
     # Subcommand: Change default pyre mode to strict and adjust module headers.
     strict_default = commands.add_parser("strict-default")
-    strict_default.set_defaults(command=StrictDefault)
-    strict_default.add_argument(
-        "-l",
-        "--local-configuration",
-        type=path_exists,
-        help="Path to project root with local configuration",
-    )
-    strict_default.add_argument(
-        # TODO(T53195818): Not implemented
-        "--remove-strict-headers",
-        action="store_true",
-        help="Delete unnecessary `# pyre-strict` headers.",
-    )
-    strict_default.add_argument(
-        "--fixme-threshold",
-        type=int,
-        default=0,
-        help="Mark file as unsafe if fixme count exceeds threshold.",
-    )
-    strict_default.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+    StrictDefault.add_arguments(strict_default)
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
