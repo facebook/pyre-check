@@ -612,13 +612,19 @@ let test_ast_change _ =
 
 
 let test_register_modules context =
-  let assert_module_exports raw_source expected_exports =
+  let assert_module_exports ?(is_stub = false) raw_source expected_exports =
     let ast_environment =
       let ast_environment, _ =
-        ScratchProject.setup
-          ~context
-          ["testing.py", raw_source; "canary.py", "from .testing import *"]
-        |> ScratchProject.parse_sources
+        let sources =
+          let testing_suffix =
+            if is_stub then
+              ".pyi"
+            else
+              ".py"
+          in
+          ["testing" ^ testing_suffix, raw_source; "canary.py", "from .testing import *"]
+        in
+        ScratchProject.setup ~context sources |> ScratchProject.parse_sources
       in
       Analysis.AstEnvironment.read_only ast_environment
     in
@@ -656,6 +662,28 @@ let test_register_modules context =
       def fuzz() -> int: pass
     |}
     ["b"; "z"; "fuzz"];
+  assert_module_exports {|
+      import foo
+      import bar.baz
+    |} ["foo"; "bar"];
+  assert_module_exports
+    {|
+      from a import b
+      b = 42
+    |}
+    (* Don't include duplicates *)
+    ["b"];
+  assert_module_exports
+    {|
+      import a
+      import b as c
+      from d import e
+      from f import g as h
+      i = 42
+    |}
+    ~is_stub:true
+    (* Stub files do not export implicit module aliases *)
+    ["c"; "h"; "i"];
   assert_module_exports
     {|
       from a import b

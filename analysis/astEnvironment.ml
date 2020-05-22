@@ -29,13 +29,13 @@ module RawSources =
     (RawSourceValue)
 
 module RawWildcardExportsValue = struct
-  type t = Reference.t list
+  type t = Identifier.t list
 
   let prefix = Prefix.make ()
 
   let description = "Unprocessed wildcard exports"
 
-  let compare = List.compare Reference.compare
+  let compare = List.compare Identifier.compare
 
   let unmarshall value = Marshal.from_string value 0
 end
@@ -65,13 +65,13 @@ module Sources =
     (SourceValue)
 
 module WildcardExportsValue = struct
-  type t = Reference.t list
+  type t = Identifier.t list
 
   let prefix = Prefix.make ()
 
   let description = "Wildcard exports"
 
-  let compare = List.compare Reference.compare
+  let compare = List.compare Identifier.compare
 
   let unmarshall value = Marshal.from_string value 0
 end
@@ -102,57 +102,46 @@ module ModuleMetadata =
 
 let create module_tracker = { module_tracker }
 
-let wildcard_exports_of { Source.source_path = { SourcePath.qualifier; _ }; statements; _ } =
-  let open Statement in
+let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
   let open Expression in
-  let toplevel_public, dunder_all =
-    let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
-      let filter_private =
-        let is_public name =
-          let dequalified =
-            Reference.drop_prefix ~prefix:qualifier name |> Reference.sanitize_qualified
-          in
-          if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
-            Some dequalified
-          else
-            None
+  let open UnannotatedGlobal in
+  let extract_dunder_all = function
+    | {
+        Collector.Result.name = "__all__";
+        unannotated_global =
+          SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
+      } ->
+        let to_identifier = function
+          | { Node.value = Expression.String { value = name; _ }; _ } -> Some name
+          | _ -> None
         in
-        List.filter_map ~f:is_public
-      in
-      match value with
-      | Statement.Assign
-          {
-            Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Expression.(List names | Tuple names); _ };
-            _;
-          }
-        when String.equal (Identifier.sanitized target) "__all__" ->
-          let to_reference = function
-            | { Node.value = Expression.String { value = name; _ }; _ } ->
-                Reference.create name
-                |> Reference.last
-                |> (fun last -> if String.is_empty last then None else Some last)
-                >>| Reference.create
-            | _ -> None
-          in
-          public_values, Some (List.filter_map ~f:to_reference names)
-      | Assign { Assign.target = { Node.value = Name target; _ }; _ } when is_simple_name target ->
-          public_values @ filter_private [target |> name_to_reference_exn], dunder_all
-      | Class { Class.name; _ } -> public_values @ filter_private [Node.value name], dunder_all
-      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } ->
-          public_values @ filter_private [name], dunder_all
-      | Import { Import.imports; _ } ->
-          let get_import_name { Import.alias; name } =
-            match alias with
-            | None -> Node.value name
-            | Some { Node.value = alias; _ } -> Reference.create alias
-          in
-          public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
-      | _ -> public_values, dunder_all
-    in
-    List.fold ~f:gather_toplevel ~init:([], None) statements
+        Some (List.filter_map ~f:to_identifier names)
+    | _ -> None
   in
-  Option.value dunder_all ~default:toplevel_public |> List.dedup_and_sort ~compare:Reference.compare
+  let unannotated_globals = Collector.from_source source in
+  match List.find_map unannotated_globals ~f:extract_dunder_all with
+  | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
+  | _ ->
+      let unannotated_globals =
+        (* Stubs have a slightly different rule with re-export *)
+        let filter_unaliased_import = function
+          | {
+              Collector.Result.unannotated_global =
+                Imported
+                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
+              _;
+            } ->
+              not implicit_alias
+          | _ -> true
+        in
+        if is_stub then
+          List.filter unannotated_globals ~f:filter_unaliased_import
+        else
+          unannotated_globals
+      in
+      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
+      |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
+      |> List.dedup_and_sort ~compare:Identifier.compare
 
 
 module Raw = struct
@@ -315,7 +304,7 @@ let expand_wildcard_imports
       end)
       in
       let visited_modules = Reference.Hash_set.create () in
-      let transitive_exports = Reference.Hash_set.create () in
+      let transitive_exports = Identifier.Hash_set.create () in
       let worklist = Queue.of_list [qualifier] in
       let rec search_wildcard_imports () =
         match Queue.dequeue worklist with
@@ -329,7 +318,7 @@ let expand_wildcard_imports
                   | None -> ()
                   | Some exports -> (
                       List.iter exports ~f:(fun export ->
-                          if not (String.equal (Reference.show export) "*") then
+                          if not (String.equal export "*") then
                             Hash_set.add transitive_exports export);
                       match Raw.get_source ast_environment qualifier ~dependency with
                       | None -> ()
@@ -338,7 +327,7 @@ let expand_wildcard_imports
             search_wildcard_imports ()
       in
       search_wildcard_imports ();
-      Hash_set.to_list transitive_exports |> List.sort ~compare:Reference.compare
+      Hash_set.to_list transitive_exports |> List.sort ~compare:Identifier.compare
 
 
     let statement state ({ Node.value; _ } as statement) =
@@ -357,7 +346,10 @@ let expand_wildcard_imports
                 | [] -> statement
                 | exports ->
                     List.map exports ~f:(fun name ->
-                        { Import.name = Node.create ~location name; alias = None })
+                        {
+                          Import.name = Node.create ~location (Reference.create name);
+                          alias = None;
+                        })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })
                     |> fun value -> { statement with Node.value }
@@ -590,7 +582,10 @@ let update
       }
 
 
-let get_wildcard_exports _ = WildcardExports.get
+let get_wildcard_exports _ ?dependency reference =
+  WildcardExports.get ?dependency reference
+  |> Option.map ~f:(fun name -> List.map ~f:Reference.create name)
+
 
 let get_source_path { module_tracker } = ModuleTracker.lookup_source_path module_tracker
 
@@ -619,14 +614,14 @@ let serialize_decoded decoded =
       Some
         ( WildcardExportsValue.description,
           Reference.show key,
-          Option.map value ~f:(List.to_string ~f:Reference.show) )
+          Option.map value ~f:(List.to_string ~f:Fn.id) )
   | Sources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
   | WildcardExports.Decoded (key, value) ->
       Some
         ( WildcardExportsValue.description,
           Reference.show key,
-          Option.map value ~f:(List.to_string ~f:Reference.show) )
+          Option.map value ~f:(List.to_string ~f:Fn.id) )
   | _ -> None
 
 
@@ -635,11 +630,11 @@ let decoded_equal first second =
   | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
   | RawWildcardExports.Decoded (_, first), RawWildcardExports.Decoded (_, second) ->
-      Some (Option.equal (List.equal Reference.equal) first second)
+      Some (Option.equal (List.equal Identifier.equal) first second)
   | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
   | WildcardExports.Decoded (_, first), WildcardExports.Decoded (_, second) ->
-      Some (Option.equal (List.equal Reference.equal) first second)
+      Some (Option.equal (List.equal Identifier.equal) first second)
   | _ -> None
 
 
