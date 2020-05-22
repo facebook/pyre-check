@@ -142,12 +142,8 @@ class TargetsToConfigurationTest(unittest.TestCase):
     @patch(
         f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_target_typing_fields"
     )
-    @patch(
-        f"{targets_to_configuration.__name__}.TargetsToConfiguration.remove_pyre_typing_fields"
-    )
     def test_convert_directory(
         self,
-        remove_pyre_typing_fields,
         remove_target_typing_fields,
         repository_format,
         suppress_errors,

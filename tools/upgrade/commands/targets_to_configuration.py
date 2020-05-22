@@ -101,25 +101,25 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
     def remove_target_typing_fields(self, files: List[Path]) -> None:
         LOG.info("Removing typing options from %s targets files", len(files))
-        typing_options_regex = [
-            r"typing \?=.*",
-            r"check_types \?=.*",
-            r"check_types_options \?=.*",
-            r"typing_options \?=.*",
-        ]
-        remove_typing_fields_command = [
-            "sed",
-            "-i",
-            "/" + r"\|".join(typing_options_regex) + "/d",
-        ] + [str(file) for file in files]
-        subprocess.run(remove_typing_fields_command)
-
-    def remove_pyre_typing_fields(self, path_to_targets: Dict[str, List[str]]) -> None:
-        for path, _ in path_to_targets.items():
-            targets_file = Path(path)
-            source = targets_file.read_text()
-            output = libcst.parse_module(source).visit(TargetPyreRemover()).code
-            targets_file.write_text(output)
+        if self._pyre_only and not self._glob:
+            for path in files:
+                targets_file = Path(path)
+                source = targets_file.read_text()
+                output = libcst.parse_module(source).visit(TargetPyreRemover()).code
+                targets_file.write_text(output)
+        else:
+            typing_options_regex = [
+                r"typing \?=.*",
+                r"check_types \?=.*",
+                r"check_types_options \?=.*",
+                r"typing_options \?=.*",
+            ]
+            remove_typing_fields_command = [
+                "sed",
+                "-i",
+                "/" + r"\|".join(typing_options_regex) + "/d",
+            ] + [str(file) for file in files]
+            subprocess.run(remove_typing_fields_command)
 
     def convert_directory(self, directory: Path) -> None:
         all_targets = find_targets(directory, pyre_only=self._pyre_only)
@@ -168,10 +168,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             self._repository.add_paths([configuration_path])
 
         # Remove all type-related target settings
-        if self._pyre_only and not self._glob:
-            self.remove_pyre_typing_fields(all_targets)
-        else:
-            self.remove_target_typing_fields(targets_files)
+        self.remove_target_typing_fields(targets_files)
         if not self._pyre_only:
             remove_non_pyre_ignores(directory)
 
