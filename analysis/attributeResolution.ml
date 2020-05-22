@@ -1834,6 +1834,7 @@ module Implementation = struct
               ~in_test
               ~accessed_via_metaclass
               ~class_metadata_environment
+              ?dependency
               ~class_name
               definition
           else
