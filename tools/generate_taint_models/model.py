@@ -51,7 +51,6 @@ class Parameter(NamedTuple):
     kind: ArgumentKind
 
     def __eq__(self, other: "Parameter") -> bool:
-        # pyre-fixme[25]: Assertion will always fail.
         if not isinstance(other, self.__class__):
             return False
         return self.name == other.name

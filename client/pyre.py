@@ -45,8 +45,6 @@ def main(argv: List[str]) -> int:
 
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
-        # pyre-fixme[6]: Expected `_FormatterClass` for 2nd param but got
-        #  `Type[argparse.RawTextHelpFormatter]`.
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="environment variables:"
         "\n   `PYRE_BINARY` overrides the pyre binary used."

@@ -17,12 +17,13 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 def all_subclasses(parent_class: Type[object]) -> Iterable[Type[object]]:
     return set(parent_class.__subclasses__()).union(
+        # pyre-fixme[10]: Name `c` is used but not defined.
         [s for c in parent_class.__subclasses__() for s in all_subclasses(c)]
     )
 
 
 def gather_all_constructors_in_hierarchy(
-    classes_to_taint: List[str]
+    classes_to_taint: List[str],
 ) -> Iterable[Callable[..., object]]:
     LOG.info(f"Getting all init functions from `{classes_to_taint}`")
     all_inits_from_classes = []

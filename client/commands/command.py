@@ -738,7 +738,6 @@ class Command(CommandParser, ABC):
                     stream_logger.join()
 
             if capture_output:
-                # pyre-fixme: stdout_reader is not always declared!
                 stdout_reader.join()
 
             output = ""

@@ -37,14 +37,14 @@ class TraceGraph(object):
 
         # Create a mapping of (caller_id, caller_port) to the corresponding
         # trace frame's id.
-        self._trace_frames_map: DefaultDict[  # pyre-fixme[8]
+        self._trace_frames_map: DefaultDict[
             TraceKind, DefaultDict[Tuple[int, str], Set[int]]
         ] = defaultdict(lambda: defaultdict(set))
 
         # Similar to _trace_frames_map, but maps the reverse direction
         # of the trace graph, i.e. (callee_id, callee_port) to the
         # trace_frame_id.
-        self._trace_frames_rev_map: DefaultDict[  # pyre-fixme[8]
+        self._trace_frames_rev_map: DefaultDict[
             TraceKind, DefaultDict[Tuple[int, str], Set[int]]
         ] = defaultdict(lambda: defaultdict(set))
 

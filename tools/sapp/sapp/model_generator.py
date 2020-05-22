@@ -299,6 +299,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             )
             queue.extend(
                 [
+                    # pyre-fixme[16]: `_Alias` has no attribute `intersection`.
                     (frame, Set.intersection(leaves, frame_leaves))
                     for (frame, frame_leaves) in next_frames
                 ]

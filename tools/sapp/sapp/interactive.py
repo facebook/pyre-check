@@ -225,10 +225,17 @@ details              show additional information about the current trace frame
                 .scalar()
             )
 
+            # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got `(cls:
+            #  SharedTextKind) -> Any`.
             self.sources_dict = self._all_leaves_by_kind(session, SharedTextKind.SOURCE)
+            # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got `(cls:
+            #  SharedTextKind) -> Any`.
             self.sinks_dict = self._all_leaves_by_kind(session, SharedTextKind.SINK)
             self.features_dict = self._all_leaves_by_kind(
-                session, SharedTextKind.FEATURE
+                session,
+                # pyre-fixme[6]: Expected `SharedTextKind` for 2nd param but got
+                #  `(cls: SharedTextKind) -> Any`.
+                SharedTextKind.FEATURE,
             )
 
         print("=" * len(self.welcome_message))
@@ -510,32 +517,17 @@ details              show additional information about the current trace frame
 
             if codes is not None:
                 query = self._add_list_or_int_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
-                    #  but got `Union[None, List[int], int]`.
-                    codes,
-                    query,
-                    Issue.code,
-                    "codes",
+                    codes, query, Issue.code, "codes"
                 )
 
             if callables is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
-                    #  but got `Union[None, List[str], str]`.
-                    callables,
-                    query,
-                    CallableText.contents,
-                    "callables",
+                    callables, query, CallableText.contents, "callables"
                 )
 
             if filenames is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
-                    #  but got `Union[None, List[str], str]`.
-                    filenames,
-                    query,
-                    FilenameText.contents,
-                    "filenames",
+                    filenames, query, FilenameText.contents, "filenames"
                 )
 
             if (exact_trace_length_to_sources is not None) and (
@@ -560,8 +552,6 @@ details              show additional information about the current trace frame
 
             if exact_trace_length_to_sources is not None:
                 query = self._add_list_or_int_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
-                    #  but got `Union[None, List[int], int]`.
                     exact_trace_length_to_sources,
                     query,
                     IssueInstance.min_trace_length_to_sources,
@@ -570,8 +560,6 @@ details              show additional information about the current trace frame
 
             if exact_trace_length_to_sinks is not None:
                 query = self._add_list_or_int_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[int], int]` for 1st param
-                    #  but got `Union[None, List[int], int]`.
                     exact_trace_length_to_sinks,
                     query,
                     IssueInstance.min_trace_length_to_sinks,
@@ -600,19 +588,31 @@ details              show additional information about the current trace frame
 
             sources_list = [
                 self._get_leaves_issue_instance(
-                    session, int(issue.id), SharedTextKind.SOURCE
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SOURCE,
                 )
                 for issue in issues
             ]
             sinks_list = [
                 self._get_leaves_issue_instance(
-                    session, int(issue.id), SharedTextKind.SINK
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SINK,
                 )
                 for issue in issues
             ]
             features_list = [
                 self._get_leaves_issue_instance(
-                    session, int(issue.id), SharedTextKind.FEATURE
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.FEATURE,
                 )
                 for issue in issues
             ]
@@ -695,22 +695,12 @@ details              show additional information about the current trace frame
 
             if callers is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
-                    #  but got `Union[None, List[str], str]`.
-                    callers,
-                    query,
-                    CallerText.contents,
-                    "callers",
+                    callers, query, CallerText.contents, "callers"
                 )
 
             if callees is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    # pyre-fixme[6]: Expected `Union[List[str], str]` for 1st param
-                    #  but got `Union[None, List[str], str]`.
-                    callees,
-                    query,
-                    CalleeText.contents,
-                    "callees",
+                    callees, query, CalleeText.contents, "callees"
                 )
 
             if kind is not None:
@@ -754,12 +744,20 @@ details              show additional information about the current trace frame
             if selected_frame.kind == TraceKind.POSTCONDITION:
                 self.sinks = set()
                 self.sources = self._get_leaves_trace_frame(
-                    session, int(selected_frame.id), SharedTextKind.SOURCE
+                    session,
+                    int(selected_frame.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SOURCE,
                 )
 
             else:
                 self.sinks = self._get_leaves_trace_frame(
-                    session, int(selected_frame.id), SharedTextKind.SINK
+                    session,
+                    int(selected_frame.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SINK,
                 )
 
                 self.sources = set()
@@ -1208,7 +1206,6 @@ details              show additional information about the current trace frame
         )
         assert trace_frame.callee_location is not None
         location = trace_frame.callee_location
-        # pyre-fixme[16]: `Optional` has no attribute `line_no`.
         center_line_number = location.line_no
         begin_lineno = max(center_line_number - context, 1)
         end_lineno = min(center_line_number + context, len(file_lines))
@@ -1235,9 +1232,7 @@ details              show additional information about the current trace frame
             print(f"{prefix} {line}")
             if i == center_line_number:
                 print(
-                    # pyre-fixme[16]: `Optional` has no attribute `begin_column`.
                     " " * (len(prefix) + location.begin_column),
-                    # pyre-fixme[16]: `Optional` has no attribute `end_column`.
                     "^" * (location.end_column - location.begin_column),
                 )
 
@@ -1571,6 +1566,7 @@ details              show additional information about the current trace frame
 
         with self.db.make_session() as session:
             leaves_output = f"\n{' ' * 13}".join(
+                # pyre-fixme[6]: Expected `int` for 2nd param but got `DBID`.
                 self._get_leaves_trace_frame(session, trace_frame.id, leaf_kind)
             )
 

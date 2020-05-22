@@ -126,6 +126,7 @@ def get_class_hierarchy(pyre_connection: PyreConnection) -> Optional[ClassHierar
     hierarchy = {
         key: edges
         for annotation_and_edges in result["response"]
+        # pyre-fixme[10]: Name `annotation_and_edges` is used but not defined.
         for key, edges in annotation_and_edges.items()
     }
     return ClassHierarchy(hierarchy)
@@ -148,7 +149,7 @@ def get_attributes(pyre_connection: PyreConnection, class_name: str) -> List[str
 
 
 def get_call_graph(
-    pyre_connection: PyreConnection
+    pyre_connection: PyreConnection,
 ) -> Optional[Dict[str, List[CallGraphTarget]]]:
     result = pyre_connection.query_server("dump_call_graph()")
     if result is None or "response" not in result:
