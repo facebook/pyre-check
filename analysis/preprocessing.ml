@@ -2439,12 +2439,6 @@ module AccessCollector = struct
         NameAccessSet.t
     =
    fun from_element collected { Comprehension.element; generators } ->
-    let collected =
-      let from_generator collected { Comprehension.Generator.iterator; _ } =
-        from_expression collected iterator
-      in
-      List.fold generators ~init:collected ~f:from_generator
-    in
     let bound_names =
       List.fold
         generators
@@ -2456,8 +2450,12 @@ module AccessCollector = struct
     let names =
       from_element NameAccessSet.empty element
       |> fun init ->
-      List.fold generators ~init ~f:(fun init { Comprehension.Generator.conditions; _ } ->
-          List.fold conditions ~init ~f:from_expression)
+      List.fold
+        generators
+        ~init
+        ~f:(fun sofar { Comprehension.Generator.iterator; conditions; _ } ->
+          let sofar = from_expression sofar iterator in
+          List.fold conditions ~init:sofar ~f:from_expression)
     in
     let unbound_names =
       Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->

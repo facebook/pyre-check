@@ -4217,6 +4217,12 @@ let test_populate_unbound_names _ =
     ~expected:[!&"foo", []];
   assert_unbound_names
     {|
+      def foo():
+        return [y for x in range(42) for y in x]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
       def bar() -> None: ...
       def foo():
         try:
