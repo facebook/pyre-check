@@ -582,10 +582,7 @@ let update
       }
 
 
-let get_wildcard_exports _ ?dependency reference =
-  WildcardExports.get ?dependency reference
-  |> Option.map ~f:(fun name -> List.map ~f:Reference.create name)
-
+let get_wildcard_exports _ = WildcardExports.get
 
 let get_source_path { module_tracker } = ModuleTracker.lookup_source_path module_tracker
 
@@ -641,7 +638,7 @@ let decoded_equal first second =
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
-    get_wildcard_exports: Reference.t -> Reference.t list option;
+    get_wildcard_exports: Reference.t -> Identifier.t list option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;

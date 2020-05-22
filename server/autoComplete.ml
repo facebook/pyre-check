@@ -126,9 +126,10 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
   let global_resolution = Resolution.global_resolution resolution in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
   let exported_imports = get_exported_imports ~ast_environment module_reference in
-  let get_member_name_and_type member_reference =
+  let get_member_name_and_type member_name =
     (* We remove members which are exported by importing some other modules. They should not show up
        in autocompletion. *)
+    let member_reference = Reference.create member_name in
     if Reference.Set.mem exported_imports member_reference then
       None
     else
