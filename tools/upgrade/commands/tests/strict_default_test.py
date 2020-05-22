@@ -61,8 +61,10 @@ class StrictDefaultTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch(f"{strict_default.__name__}.add_local_mode")
+    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
     def test_run_strict_default(
         self,
+        suppress_errors,
         add_local_mode,
         get_errors,
         add_strict,
@@ -78,6 +80,7 @@ class StrictDefaultTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             StrictDefault(arguments, repository).run()
             add_local_mode.assert_not_called()
+            suppress_errors.assert_not_called()
 
         add_local_mode.reset_mock()
         get_errors.reset_mock()
@@ -99,10 +102,12 @@ class StrictDefaultTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             StrictDefault(arguments, repository).run()
             add_local_mode.assert_not_called()
+            suppress_errors.assert_called_once_with(errors.Errors(pyre_errors))
 
         # Exceeding error threshold
         get_errors.return_value = []
         add_local_mode.reset_mock()
+        suppress_errors.reset_mock()
         get_errors.reset_mock()
         pyre_errors = [
             {
@@ -133,3 +138,4 @@ class StrictDefaultTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             StrictDefault(arguments, repository).run()
             add_local_mode.assert_called_once()
+            suppress_errors.assert_not_called()

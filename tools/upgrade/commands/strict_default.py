@@ -9,15 +9,16 @@ import logging
 from pathlib import Path
 
 from ..configuration import Configuration
+from ..errors import Errors, PartialErrorSuppression
 from ..filesystem import LocalMode, add_local_mode, path_exists
 from ..repository import Repository
-from .command import Command
+from .command import ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class StrictDefault(Command):
+class StrictDefault(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
         self._local_configuration: Path = arguments.local_configuration
@@ -27,6 +28,7 @@ class StrictDefault(Command):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
+        ErrorSuppressingCommand.add_arguments(parser)
         parser.set_defaults(command=StrictDefault)
         parser.add_argument(
             "-l",
@@ -72,6 +74,13 @@ class StrictDefault(Command):
                 error_count = len(errors)
                 if error_count > self._fixme_threshold:
                     add_local_mode(path, LocalMode.UNSAFE)
+                else:
+                    try:
+                        self._suppress_errors(Errors(errors))
+                    except PartialErrorSuppression:
+                        LOG.warning(f"Could not suppress all errors in {path}")
+                        LOG.info("Run with --unsafe to force suppression anyway.")
+                        self._repository.revert_all(remove_untracked=True)
 
             if self._lint:
                 self._repository.format()
