@@ -98,8 +98,7 @@ class FastBuckBuilder(BuckBuilder):
             # Java's logging conflicts with Python's logging, we capture the
             # logs and re-log them with python's logger.
             log_processor = threading.Thread(
-                target=self._read_stderr,
-                args=(buck_builder_process.stderr, logging.DEBUG),
+                target=self._read_stderr, args=(buck_builder_process.stderr,)
             )
             log_processor.daemon = True
             log_processor.start()
