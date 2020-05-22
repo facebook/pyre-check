@@ -28,24 +28,6 @@ module RawSources =
     (SharedMemoryKeys.ReferenceDependencyKey)
     (RawSourceValue)
 
-module RawWildcardExportsValue = struct
-  type t = Identifier.t list
-
-  let prefix = Prefix.make ()
-
-  let description = "Unprocessed wildcard exports"
-
-  let compare = List.compare Identifier.compare
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module RawWildcardExports =
-  DependencyTrackedMemory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
-    (RawWildcardExportsValue)
-
 module SourceValue = struct
   type t = Source.t
 
@@ -146,8 +128,7 @@ let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } a
 
 module Raw = struct
   let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-    RawSources.add qualifier source;
-    RawWildcardExports.write_through qualifier (wildcard_exports_of source)
+    RawSources.add qualifier source
 
 
   let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
@@ -155,7 +136,6 @@ module Raw = struct
     let update_result, dependency_set =
       SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty ~scheduler ~configuration
       |> RawSources.add_to_transaction ~keys
-      |> RawWildcardExports.add_to_transaction ~keys
       |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
     in
     ( update_result,
@@ -165,8 +145,6 @@ module Raw = struct
 
 
   let get_source _ = RawSources.get
-
-  let get_wildcard_exports _ = RawWildcardExports.get
 end
 
 let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
@@ -179,7 +157,6 @@ let remove_sources _ qualifiers =
   let keys = Sources.KeySet.of_list qualifiers in
   RawSources.remove_batch keys;
   Sources.remove_batch keys;
-  RawWildcardExports.remove_batch keys;
   WildcardExports.remove_batch keys;
   ModuleMetadata.remove_batch keys
 
@@ -314,15 +291,11 @@ let expand_wildcard_imports
               match Hash_set.strict_add visited_modules qualifier with
               | Error _ -> ()
               | Ok () -> (
-                  match Raw.get_wildcard_exports ast_environment qualifier ~dependency with
+                  match Raw.get_source ast_environment qualifier ~dependency with
                   | None -> ()
-                  | Some exports -> (
-                      List.iter exports ~f:(fun export ->
-                          if not (String.equal export "*") then
-                            Hash_set.add transitive_exports export);
-                      match Raw.get_source ast_environment qualifier ~dependency with
-                      | None -> ()
-                      | Some source -> Visitor.visit [] source |> Queue.enqueue_all worklist ) )
+                  | Some source ->
+                      wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
+                      Visitor.visit [] source |> Queue.enqueue_all worklist )
             in
             search_wildcard_imports ()
       in
@@ -598,7 +571,6 @@ let shared_memory_hash_to_key_map qualifiers =
     Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
   in
   RawSources.compute_hashes_to_keys ~keys:qualifiers
-  |> extend_map ~new_map:(RawWildcardExports.compute_hashes_to_keys ~keys:qualifiers)
   |> extend_map ~new_map:(Sources.compute_hashes_to_keys ~keys:qualifiers)
   |> extend_map ~new_map:(WildcardExports.compute_hashes_to_keys ~keys:qualifiers)
 
@@ -607,11 +579,6 @@ let serialize_decoded decoded =
   match decoded with
   | RawSources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
-  | RawWildcardExports.Decoded (key, value) ->
-      Some
-        ( WildcardExportsValue.description,
-          Reference.show key,
-          Option.map value ~f:(List.to_string ~f:Fn.id) )
   | Sources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
   | WildcardExports.Decoded (key, value) ->
@@ -626,8 +593,6 @@ let decoded_equal first second =
   match first, second with
   | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
-  | RawWildcardExports.Decoded (_, first), RawWildcardExports.Decoded (_, second) ->
-      Some (Option.equal (List.equal Identifier.equal) first second)
   | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
   | WildcardExports.Decoded (_, first), WildcardExports.Decoded (_, second) ->
