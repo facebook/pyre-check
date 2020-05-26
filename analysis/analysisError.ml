@@ -1097,10 +1097,24 @@ let messages ~concise ~signature location kind =
         | Toplevel ->
             "The type variable `%s` can only be used to annotate generic classes or functions."
       in
+      let detail variable =
+        match origin with
+        | ClassToplevel ->
+            [
+              Format.sprintf
+                "To reference the type variable, you can modify the class to inherit from \
+                 `typing.Generic[%s]`."
+                variable;
+            ]
+        | Define
+        | Toplevel ->
+            []
+      in
       match annotation with
       | Type.Variable.Unary variable ->
-          [Format.asprintf format (Type.show (Type.Variable variable))]
+          Format.asprintf format (Type.show (Type.Variable variable)) :: detail variable.variable
       | Type.Variable.ParameterVariadic variable ->
+          (* We don't give hints for the more complicated cases. *)
           let name = Type.Variable.Variadic.Parameters.name variable in
           [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->

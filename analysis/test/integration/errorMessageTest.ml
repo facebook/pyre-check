@@ -198,6 +198,20 @@ let test_show_error_traces context =
        Type `typing.List[float]` expected on line 5, specified on line 3. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
        for mutable container errors.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      T = TypeVar("T")
+      class C:
+        x: T
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` is declared in class `C` to have type \
+       `Variable[T]` but is never initialized.";
+      "Invalid type variable [34]: The current class isn't generic with respect to the type \
+       variable `Variable[T]`. To reference the type variable, you can modify the class to inherit \
+       from `typing.Generic[T]`.";
     ]
 
 
