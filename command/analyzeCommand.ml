@@ -96,9 +96,14 @@ let run_analysis
     let timer = Timer.start () in
     let scheduler = Scheduler.create ~configuration () in
     (* In order to save time, sanity check models before starting the analysis. *)
-    Log.info "Verifying model syntax.";
+    Log.info "Verifying model syntax and configuration.";
     Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
     |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
+    Taint.TaintConfiguration.create
+      ~rule_filter:None
+      ~paths:configuration.Configuration.Analysis.taint_model_paths
+    |> ignore;
+
     let environment, ast_environment, qualifiers =
       let configuration =
         (* In order to get an accurate call graph and type information, we need to ensure that we
