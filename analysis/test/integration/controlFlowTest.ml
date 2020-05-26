@@ -612,6 +612,29 @@ let test_check_while context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+  assert_type_errors
+    {|
+      from typing import NoReturn
+
+      def foo() -> NoReturn: ...
+
+      def bar() -> None:
+        try:
+          reveal_type(1)
+        except:
+          pass
+        foo()
+
+      def baz() -> None:
+        try:
+          reveal_type(2)
+        except:
+          pass
+      |}
+    [
+      "Revealed type [-1]: Revealed type for `1` is `typing_extensions.Literal[1]`.";
+      "Revealed type [-1]: Revealed type for `2` is `typing_extensions.Literal[2]`.";
+    ];
   ()
 
 
