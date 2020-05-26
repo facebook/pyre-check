@@ -266,9 +266,9 @@ def _suppress_errors(
             continue
         if errors[number][0]["code"] == "0":
             # Handle unused ignores.
-            removing_pyre_comments = True
             replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
             if replacement == "":
+                removing_pyre_comments = True
                 _remove_comment_preamble(new_lines)
             else:
                 new_lines.append(replacement)

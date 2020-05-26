@@ -167,6 +167,20 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
+        self.assertSuppressErrors(
+            {1: [{"code": "0", "description": "description"}]},
+            """
+            def foo() -> None: # FIXME[1]
+                # comment
+                pass
+            """,
+            """
+            def foo() -> None:
+                # comment
+                pass
+            """,
+        )
+
         # Multiple Errors
         self.assertSuppressErrors(
             {
