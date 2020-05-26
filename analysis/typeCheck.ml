@@ -1162,11 +1162,26 @@ module State (Context : Context) = struct
         errors
     in
     let check_behavioral_subtyping resolution errors =
+      let is_whitelisted_dunder_method define =
+        let whitelist =
+          String.Set.of_list
+            [
+              "__call__";
+              "__eq__";
+              "__getitem__";
+              "__ne__";
+              "__setattr__";
+              "__setitem__";
+              "__sizeof__";
+            ]
+        in
+        String.Set.mem whitelist (Define.unqualified_name define)
+      in
       try
         if
           Define.is_constructor define
           || Define.is_class_method define
-          || Define.is_dunder_method define
+          || is_whitelisted_dunder_method define
         then
           errors
         else

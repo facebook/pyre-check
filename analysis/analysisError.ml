@@ -2947,17 +2947,7 @@ let filter ~resolution errors =
           true
       | _ -> false
     in
-    let is_override_on_dunder_method { kind; _ } =
-      (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
-      match kind with
-      | InconsistentOverride { overridden_method; override; _ }
-        when String.is_prefix ~prefix:"__" overridden_method
-             && String.is_suffix ~suffix:"__" overridden_method -> (
-          match override with
-          | StrengthenedPrecondition (NotFound _) -> true
-          | _ -> false )
-      | _ -> false
-    in
+
     let is_unnecessary_missing_annotation_error { kind; _ } =
       (* Ignore missing annotations thrown at assigns but not thrown where global or attribute was
          originally defined. *)
@@ -3031,7 +3021,6 @@ let filter ~resolution errors =
     || is_mock_error error
     || is_unimplemented_return_error error
     || is_builtin_import_error error
-    || is_override_on_dunder_method error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
     || is_callable_attribute_error error

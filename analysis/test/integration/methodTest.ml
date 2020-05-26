@@ -1178,7 +1178,11 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def __dunder__(self, a: int) -> None: pass
     |}
-    [];
+    [
+      "Inconsistent override [14]: `test.Bar.__dunder__` overrides method defined in `Foo` \
+       inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
+       `float`.";
+    ];
 
   (* Dunder methods must end with dunder. *)
   assert_type_errors
