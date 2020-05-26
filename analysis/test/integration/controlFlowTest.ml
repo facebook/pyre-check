@@ -586,6 +586,32 @@ let test_check_while context =
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `int.__lt__` but got `float`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Dict, Any
+
+      def foo() -> Dict[str, Any]: ...
+      def bar() -> None:
+        try:
+          x = foo()
+        except Exception as ex:
+          x = {"a": False}
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
+  assert_type_errors
+    {|
+      from typing import Dict, Any
+
+      def foo() -> Dict[str, Any]: ...
+      def bar(b: bool) -> None:
+        if b:
+          x = foo()
+        else:
+          x = {"a": False}
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Dict[str, bool]`."];
   ()
 
 
