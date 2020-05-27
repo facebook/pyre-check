@@ -770,35 +770,49 @@ module State (Context : Context) = struct
                         in
                         List.append annotation_errors errors, annotation
                       in
-                      let compatible =
-                        GlobalResolution.constraints_solution_exists
-                          global_resolution
-                          ~left:resolved
-                          ~right:annotation
+                      let enforce_here =
+                        let is_literal_classmethod { Decorator.name = { Node.value = name; _ }; _ } =
+                          match Reference.as_list name with
+                          | ["classmethod"] -> true
+                          | _ -> false
+                        in
+                        match List.rev decorators with
+                        | [] -> true
+                        | last :: _ when is_literal_classmethod last -> true
+                        | _ :: _ -> false
                       in
                       let errors =
-                        let name = Identifier.sanitized name in
-                        let kind =
-                          if compatible then
-                            None
-                          else if
-                            (is_class_method && String.equal name "cls")
-                            || ((not is_class_method) && String.equal name "self")
-                          then
-                            (* Assume the user incorrectly tried to type the implicit parameter *)
-                            Some
-                              (Error.InvalidMethodSignature { annotation = Some annotation; name })
-                          else (* Assume the user forgot to specify the implicit parameter *)
-                            Some
-                              (Error.InvalidMethodSignature
-                                 {
-                                   annotation = None;
-                                   name = (if is_class_method then "cls" else "self");
-                                 })
-                        in
-                        match kind with
-                        | Some kind -> emit_error ~errors ~location ~kind
-                        | None -> errors
+                        if enforce_here then
+                          let name = Identifier.sanitized name in
+                          let kind =
+                            let compatible =
+                              GlobalResolution.constraints_solution_exists
+                                global_resolution
+                                ~left:resolved
+                                ~right:annotation
+                            in
+                            if compatible then
+                              None
+                            else if
+                              (is_class_method && String.equal name "cls")
+                              || ((not is_class_method) && String.equal name "self")
+                            then
+                              (* Assume the user incorrectly tried to type the implicit parameter *)
+                              Some
+                                (Error.InvalidMethodSignature { annotation = Some annotation; name })
+                            else (* Assume the user forgot to specify the implicit parameter *)
+                              Some
+                                (Error.InvalidMethodSignature
+                                   {
+                                     annotation = None;
+                                     name = (if is_class_method then "cls" else "self");
+                                   })
+                          in
+                          match kind with
+                          | Some kind -> emit_error ~errors ~location ~kind
+                          | None -> errors
+                        else
+                          errors
                       in
                       errors, Annotation.create annotation
                   | None -> errors, Annotation.create resolved )

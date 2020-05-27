@@ -730,6 +730,27 @@ let test_general_decorators context =
      reveal_type(foo)
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `int`."];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def to_int(x: object) -> int: ...
+
+     class H:
+       @to_int
+       def foo(name: str) -> int:
+             return len(name)
+
+     def f() -> None:
+       a = H.foo
+       reveal_type(a)
+       b = H().foo
+       reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+      "Revealed type [-1]: Revealed type for `b` is `int`.";
+    ];
   ()
 
 
