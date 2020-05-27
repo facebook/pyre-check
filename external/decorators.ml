@@ -5,19 +5,30 @@
 
 open Core
 
-let apply ~overload:{ Type.Callable.annotation; parameters } ~resolution:_ ~name =
-  match name with
-  | "$strip_first_parameter" ->
-      let parameters =
-        match parameters with
-        | Type.Callable.Defined parameters ->
-            List.tl parameters
-            |> Option.value ~default:parameters
-            |> fun parameters -> Type.Callable.Defined parameters
-        | _ -> parameters
+let apply ~argument ~name =
+  match name, argument with
+  | "$strip_first_parameter", Type.Callable callable ->
+      let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
+        callable
       in
-      { Type.Callable.annotation; parameters }
-  | _ -> { Type.Callable.annotation; parameters }
+      let process_overload { Type.Callable.annotation; parameters } =
+        let parameters =
+          match parameters with
+          | Type.Callable.Defined parameters ->
+              List.tl parameters
+              |> Option.value ~default:parameters
+              |> fun parameters -> Type.Callable.Defined parameters
+          | _ -> parameters
+        in
+        { Type.Callable.annotation; parameters }
+      in
+      Type.Callable
+        {
+          callable with
+          implementation = process_overload old_implementation;
+          overloads = List.map old_overloads ~f:process_overload;
+        }
+  | _, argument -> argument
 
 
 let special_decorators = String.Set.singleton "$strip_first_parameter"

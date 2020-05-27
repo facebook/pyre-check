@@ -3123,17 +3123,8 @@ module Implementation = struct
               implementation = process_overload old_implementation;
               overloads = List.map old_overloads ~f:process_overload;
             }
-      | name, Callable callable when Set.mem Decorators.special_decorators name ->
-          let process_overload overload = Decorators.apply ~overload ~resolution:() ~name in
-          let { Type.Callable.implementation = old_implementation; overloads = old_overloads; _ } =
-            callable
-          in
-          Type.Callable
-            {
-              callable with
-              implementation = process_overload old_implementation;
-              overloads = List.map old_overloads ~f:process_overload;
-            }
+      | name, argument when Set.mem Decorators.special_decorators name ->
+          Decorators.apply ~argument ~name
       | name, _ when Set.mem Recognized.classmethod_decorators name ->
           (* TODO (T67024249): convert these to just normal stubs *)
           Type.Parametric { name = "typing.ClassMethod"; parameters = [Single argument] }
