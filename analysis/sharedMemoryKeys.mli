@@ -69,6 +69,7 @@ type dependency =
   | FromEmptyStub of Reference.t
   | AttributeTable of AttributeTableKey.t
   | ParseAnnotation of ParseAnnotationKey.t
+  | Metaclass of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : sig

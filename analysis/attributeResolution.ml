@@ -4154,8 +4154,73 @@ module ParseAnnotationCache = struct
   end
 end
 
+module MetaclassCache = struct
+  module Cache = ManagedCache.Make (struct
+    module PreviousEnvironment = ParseAnnotationCache
+
+    module Key = struct
+      type t = string [@@deriving compare, show, sexp, hash]
+
+      let to_string = show
+
+      let compare = compare
+
+      type out = t
+
+      let from_string = Fn.id
+    end
+
+    module Value = struct
+      type t = Type.t option [@@deriving compare]
+
+      let prefix = Prefix.make ()
+
+      let description = "metaclasses"
+
+      let unmarshall value = Marshal.from_string value 0
+    end
+
+    module KeySet = String.Set
+    module HashableKey = String
+
+    let lazy_incremental = false
+
+    let produce_value parse_annotation_cache key ~dependency =
+      let implementation_with_cached_parse_annotation =
+        new ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+          dependency
+          parse_annotation_cache
+      in
+      implementation_with_cached_parse_annotation#metaclass key ~assumptions:empty_assumptions
+
+
+    let filter_upstream_dependency = function
+      | SharedMemoryKeys.Metaclass key -> Some key
+      | _ -> None
+
+
+    let trigger_to_dependency key = SharedMemoryKeys.Metaclass key
+  end)
+
+  include Cache
+
+  module ReadOnly = struct
+    include Cache.ReadOnly
+
+    class with_parse_annotation_and_metaclass_caches dependency read_only =
+      object
+        inherit
+          ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+            dependency
+            (upstream_environment read_only)
+
+        method! metaclass ~assumptions:_ key = get read_only ?dependency key
+      end
+  end
+end
+
 module Cache = ManagedCache.Make (struct
-  module PreviousEnvironment = ParseAnnotationCache
+  module PreviousEnvironment = MetaclassCache
   module Key = SharedMemoryKeys.AttributeTableKey
 
   module Value = struct
@@ -4174,7 +4239,7 @@ module Cache = ManagedCache.Make (struct
   let lazy_incremental = true
 
   let produce_value
-      parse_annotation_cache
+      metaclass_cache
       {
         SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
         accessed_via_metaclass;
@@ -4183,9 +4248,9 @@ module Cache = ManagedCache.Make (struct
       ~dependency
     =
     let implementation_with_cached_parse_annotation =
-      new ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+      new MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
         dependency
-        parse_annotation_cache
+        metaclass_cache
     in
     implementation_with_cached_parse_annotation#single_uninstantiated_attribute_table
       ~include_generated_attributes
@@ -4208,10 +4273,14 @@ include Cache
 module ReadOnly = struct
   include Cache.ReadOnly
 
-  let parse_annotation_cache = upstream_environment
+  let metaclass_cache = upstream_environment
+
+  let parse_annotation_cache read_only =
+    metaclass_cache read_only |> MetaclassCache.ReadOnly.upstream_environment
+
 
   let class_metadata_environment read_only =
-    ParseAnnotationCache.ReadOnly.upstream_environment (upstream_environment read_only)
+    ParseAnnotationCache.ReadOnly.upstream_environment (parse_annotation_cache read_only)
 
 
   let cached_single_uninstantiated_attribute_table
@@ -4239,19 +4308,19 @@ module ReadOnly = struct
         cached_single_uninstantiated_attribute_table read_only dependency
     end
 
-  class with_both_caches dependency read_only =
+  class with_all_caches dependency read_only =
     object
       inherit
-        ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+        MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
           dependency
-          (parse_annotation_cache read_only)
+          (metaclass_cache read_only)
 
       method! single_uninstantiated_attribute_table ~assumptions:_ =
         cached_single_uninstantiated_attribute_table read_only dependency
     end
 
   let add_both_caches_and_empty_assumptions f read_only ?dependency =
-    new with_both_caches dependency read_only
+    new with_all_caches dependency read_only
     |> f
     |> fun method_ -> method_ ~assumptions:empty_assumptions
 
@@ -4298,7 +4367,7 @@ module ReadOnly = struct
   let constructor = add_both_caches_and_empty_assumptions (fun o -> o#constructor)
 
   let full_order ?dependency read_only =
-    let implementation = new with_both_caches dependency read_only in
+    let implementation = new with_all_caches dependency read_only in
     implementation#full_order ~assumptions:empty_assumptions
 
 
