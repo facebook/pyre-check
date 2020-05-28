@@ -167,7 +167,6 @@ let test_source_models context =
     |}
     ~expect:[outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "test.C.foo"]
     ();
-
   ()
 
 
@@ -281,6 +280,34 @@ let test_sink_models context =
           ~sink_parameters:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           "test.multiple";
+      ]
+    ();
+  ()
+
+
+let test_cross_repository_models context =
+  let assert_model = assert_model ~context in
+  assert_model
+    ~source:{|
+      def cross_repository_source(source_parameter): ...
+    |}
+    ~model_source:
+      {|
+      def test.cross_repository_source(
+        source_parameter: CrossRepositoryTaint[
+          TaintSource[UserControlled],
+          'crossRepositorySource',
+          'formal(0)',
+          0
+        ]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:
+            [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          "test.cross_repository_source";
       ]
     ()
 
@@ -980,6 +1007,31 @@ let test_invalid_models context =
       "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
     ~expect:
       "Invalid model for `test.partial_sink`: Unrecognized sink for partial sink: `Nonexistent`."
+    ();
+  assert_invalid_model
+    ~source:"def f(parameter): ..."
+    ~model_source:"def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled]]): ..."
+    ~expect:
+      "Invalid model for `test.f`: Cross repository taint must be of the form \
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+    ();
+  assert_invalid_model
+    ~source:"def f(parameter): ..."
+    ~model_source:
+      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
+       some_canonical_name, 'formal(0)', 0]): ..."
+    ~expect:
+      "Invalid model for `test.f`: Cross repository taint must be of the form \
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+    ();
+  assert_invalid_model
+    ~source:"def f(parameter): ..."
+    ~model_source:
+      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], \
+       'some_canonical_name', 0, 0]): ..."
+    ~expect:
+      "Invalid model for `test.f`: Cross repository taint must be of the form \
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
     ()
 
 
@@ -1065,6 +1117,7 @@ let () =
   "taint_model"
   >::: [
          "attach_features" >:: test_attach_features;
+         "cross_repository_models" >:: test_cross_repository_models;
          "class_models" >:: test_class_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
          "filter_by_rules" >:: test_filter_by_rules;

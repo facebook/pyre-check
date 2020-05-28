@@ -292,6 +292,31 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   annotation
             in
             parse_annotation expression |> List.map ~f:extend_path
+        | Call { callee; arguments } when base_name callee = Some "CrossRepositoryTaint" -> (
+            match arguments with
+            | [
+             {
+               Call.Argument.value =
+                 {
+                   Node.value =
+                     Expression.Tuple
+                       [
+                         { Node.value = taint; _ };
+                         { Node.value = Expression.String { StringLiteral.value = _; _ }; _ };
+                         { Node.value = Expression.String { StringLiteral.value = _; _ }; _ };
+                         { Node.value = Expression.Integer _; _ };
+                       ];
+                   _;
+                 };
+               _;
+             };
+            ] ->
+                (* TODO(T67571285): Thread the producer_id and canonical_port information through. *)
+                parse_annotation taint
+            | _ ->
+                raise_invalid_model
+                  "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
+                   canonical_name, canonical_port, producer_id]." )
         | Call
             {
               callee;
