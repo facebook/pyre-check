@@ -123,15 +123,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         trace_frames = []
 
         for p in entry["preconditions"]:
-            tf = self._generate_issue_traces(
-                TraceKind.PRECONDITION, run, entry, p, terminator="sink"
-            )
+            tf = self._generate_issue_traces(TraceKind.PRECONDITION, run, entry, p)
             trace_frames.append(tf)
 
         for p in entry["postconditions"]:
-            tf = self._generate_issue_traces(
-                TraceKind.POSTCONDITION, run, entry, p, terminator="source"
-            )
+            tf = self._generate_issue_traces(TraceKind.POSTCONDITION, run, entry, p)
             trace_frames.append(tf)
 
         features = set()
@@ -239,9 +235,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos = titos[:200]
         return titos
 
-    def _generate_issue_traces(
-        self, kind: TraceKind, run, issue, callinfo, terminator: str
-    ):
+    def _generate_issue_traces(self, kind: TraceKind, run, issue, callinfo):
         # Generates a synthetic trace frame from a forward or backward trace in callinfo
         # that represents a call edge from the issue callable to the start of a
         # a trace.
@@ -264,11 +258,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             titos=titos,
             annotations=callinfo.get("annotations", []),
         )
-        self._generate_transitive_trace_frames(run, call_tf, leaf_ids, terminator)
+        self._generate_transitive_trace_frames(run, call_tf, leaf_ids)
         return call_tf
 
     def _generate_transitive_trace_frames(
-        self, run: Run, start_frame: TraceFrame, leaf_ids: Set[int], terminator: str
+        self, run: Run, start_frame: TraceFrame, leaf_ids: Set[int]
     ):
         """Generates all trace reachable from start_frame, provided they contain a
         leaf_id from the initial set of leaf_ids."""
@@ -291,11 +285,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 self.visited_frames[frame_id] = leaves
 
             next_frames = self._get_or_populate_trace_frames(
-                kind,
-                run,
-                frame.callee_id,
-                caller_port=frame.callee_port,
-                terminator=terminator,
+                kind, run, frame.callee_id, caller_port=frame.callee_port
             )
             queue.extend(
                 [
@@ -305,13 +295,17 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 ]
             )
 
+    def _is_leaf_port(self, port: str) -> bool:
+        return (
+            port == "leaf"
+            or port == "source"
+            or port == "sink"
+            or port.startswith("anchor:")
+            or port.startswith("producer:")
+        )
+
     def _get_or_populate_trace_frames(
-        self,
-        kind: TraceKind,
-        run: Run,
-        caller_id: DBID,
-        caller_port: str,
-        terminator: str,
+        self, kind: TraceKind, run: Run, caller_id: DBID, caller_port: str
     ) -> List[Tuple[TraceFrame, Set[int]]]:  # TraceFrame, LeafIds
         if self.graph.has_trace_frames_with_caller(kind, caller_id, caller_port):
             return [
@@ -325,7 +319,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self._generate_trace_frame(kind, run, e)
             for e in self.summary["trace_entries"][kind].pop(key, [])
         ]
-        if len(new) == 0 and key[1] != "leaf" and key[1] != terminator:
+        if len(new) == 0 and not self._is_leaf_port(key[1]):
             self.summary["missing_traces"][kind].add(key)
         return new
 
@@ -482,9 +476,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             annotation["type_interval"],
             [],  # no more annotations for a precond coming from an annotation
         )
-        self._generate_transitive_trace_frames(
-            run, call_tf, leaf_ids, terminator="sink"
-        )
+        self._generate_transitive_trace_frames(run, call_tf, leaf_ids)
         return call_tf
 
     def _get_issue_handle(self, entry):
