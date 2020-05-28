@@ -182,7 +182,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               :: right_parameters )
           | ( Parameter.Named ({ annotation = left_annotation; _ } as left) :: left_parameters,
               Parameter.Named ({ annotation = right_annotation; _ } as right) :: right_parameters )
-            ->
+          | ( Parameter.Named ({ annotation = left_annotation; default = true; _ } as left)
+              :: left_parameters,
+              Parameter.KeywordOnly ({ annotation = right_annotation; _ } as right)
+              :: right_parameters )
+          | ( Parameter.Named ({ annotation = left_annotation; default = false; _ } as left)
+              :: left_parameters,
+              Parameter.KeywordOnly ({ annotation = right_annotation; default = false; _ } as right)
+              :: right_parameters ) ->
               if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
                 solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)

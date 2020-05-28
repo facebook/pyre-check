@@ -166,7 +166,58 @@ let test_check_implementation context =
           return 1
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import overload, Union
+      from typing_extensions import Literal
 
+      @overload
+      def g( *, make_int: Literal[True]) -> int: ...
+      @overload
+      def g( *, make_int: bool = ...) -> bool: ...
+
+      def g(make_int: bool = ...) -> Union[int, bool]: ...
+
+      some_bool: bool
+      x1: bool = g()
+      x2: bool = g(make_int=some_bool)
+      x3: bool = g(make_int=False)
+      x4: int = g(make_int=True)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import overload, Union
+      from typing_extensions import Literal
+
+      @overload
+      def g( *, make_int: Literal[True], make_int2: bool = ...) -> int: ...
+      @overload
+      def g( *, make_int: bool = ..., make_int2: Literal[True]) -> int: ...
+      @overload
+      def g( *, make_int: bool = ..., make_int2: bool = ...) -> bool: ...
+
+      def g(make_int: bool = ..., make_int2: bool = ...) -> Union[int, bool]: ...
+
+      some_bool: bool
+      x1: bool = g()
+      x2: int = g(make_int=True)
+      x3: bool = g(make_int=False)
+      x4: bool = g(make_int=some_bool)
+      x5: int = g(make_int2=True)
+      x6: bool = g(make_int2=False)
+      x7: bool = g(make_int2=some_bool)
+      x8: int = g(make_int=True, make_int2=True)
+      x9: int = g(make_int=True, make_int2=False)
+      x10: int = g(make_int=True, make_int2=some_bool)
+      x11: int = g(make_int=False, make_int2=True)
+      x12: bool = g(make_int=False, make_int2=False)
+      x13: bool = g(make_int=False, make_int2=some_bool)
+      x14: int = g(make_int=some_bool, make_int2=True)
+      x15: bool = g(make_int=some_bool, make_int2=False)
+      x16: bool = g(make_int=some_bool, make_int2=some_bool)
+    |}
+    [];
   ()
 
 

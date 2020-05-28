@@ -1014,6 +1014,28 @@ let test_less_or_equal context =
        ~left:"typing.Callable('foo')[[str], int]"
        ~right:"typing.Callable('foo')[[int], int]");
 
+  (* Callables with keyword-only parameters. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Named(foo, bool, default)], int]"
+       ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Named(foo, bool, default)], int]"
+       ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Named(foo, bool)], int]"
+       ~right:"typing.Callable[[KeywordOnly(foo, bool)], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Named(foo, bool)], int]"
+       ~right:"typing.Callable[[KeywordOnly(foo, bool, default)], int]");
+
   (* Undefined callables. *)
   assert_true
     (less_or_equal order ~left:"typing.Callable[..., int]" ~right:"typing.Callable[..., float]");
