@@ -810,11 +810,15 @@ let test_parse_repository context =
     ~expected:["a.py", "def a.foo() -> int: ..."];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"]
-    ~expected:["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"];
+    ~expected:["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo as foo"];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"; "c.py", "from b import *"]
     ~expected:
-      ["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"; "c.py", "from b import foo"]
+      [
+        "a.py", "def a.foo() -> int: ...";
+        "b.pyi", "from a import foo as foo";
+        "c.py", "from b import foo as foo";
+      ]
 
 
 module IncrementalTest = struct

@@ -1737,7 +1737,7 @@ let test_expand_wildcard_imports context =
       from a import *
     |}
     {|
-      from a import foo
+      from a import foo as foo
     |};
   assert_expanded
     ["a.py", "def foo(): pass"; "b.py", "def bar(): pass"]
@@ -1746,8 +1746,8 @@ let test_expand_wildcard_imports context =
       from b import *
     |}
     {|
-      from a import foo
-      from b import bar
+      from a import foo as foo
+      from b import bar as bar
     |};
   assert_expanded
     [
@@ -1764,7 +1764,7 @@ let test_expand_wildcard_imports context =
       from a import *
     |}
     {|
-      from a import bar, foo, y
+      from a import bar as bar, foo as foo, y as y
     |};
   assert_expanded
     [
@@ -1781,7 +1781,7 @@ let test_expand_wildcard_imports context =
       from a import *
     |}
     {|
-      from a import bar
+      from a import bar as bar
     |}
 
 

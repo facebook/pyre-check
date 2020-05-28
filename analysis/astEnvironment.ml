@@ -321,7 +321,7 @@ let expand_wildcard_imports
                     List.map exports ~f:(fun name ->
                         {
                           Import.name = Node.create ~location (Reference.create name);
-                          alias = None;
+                          alias = Some (Node.create ~location name);
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })
