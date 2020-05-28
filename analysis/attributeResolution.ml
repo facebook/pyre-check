@@ -1244,116 +1244,9 @@ let callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order
   | _ -> None
 
 
-module Implementation = struct
-  module Indent = struct
-    type dependency = SharedMemoryKeys.DependencyKey.registered
-
-    type open_recurser = {
-      class_metadata_environment: ClassMetadataEnvironment.MetadataReadOnly.t;
-      dependency: dependency option;
-      full_order: assumptions:Assumptions.t -> TypeOrder.order;
-      single_uninstantiated_attribute_table:
-        assumptions:Assumptions.t ->
-        include_generated_attributes:bool ->
-        accessed_via_metaclass:bool ->
-        Type.Primitive.t ->
-        UninstantiatedAttributeTable.t option;
-      uninstantiated_attribute_tables:
-        assumptions:Assumptions.t ->
-        transitive:bool ->
-        accessed_through_class:bool ->
-        include_generated_attributes:bool ->
-        special_method:bool ->
-        string ->
-        UninstantiatedAttributeTable.t Sequence.t option;
-      attribute:
-        assumptions:Assumptions.t ->
-        transitive:bool ->
-        accessed_through_class:bool ->
-        include_generated_attributes:bool ->
-        ?special_method:bool ->
-        ?instantiated:Type.t ->
-        ?apply_descriptors:bool ->
-        attribute_name:Identifier.t ->
-        Type.Primitive.t ->
-        AnnotatedAttribute.instantiated option;
-      all_attributes:
-        assumptions:Assumptions.t ->
-        transitive:bool ->
-        accessed_through_class:bool ->
-        include_generated_attributes:bool ->
-        ?special_method:bool ->
-        Type.Primitive.t ->
-        uninstantiated_attribute list option;
-      check_invalid_type_parameters:
-        assumptions:Assumptions.t ->
-        Type.t ->
-        TypeParameterValidationTypes.type_parameters_mismatch list * Type.t;
-      parse_annotation:
-        assumptions:Assumptions.t ->
-        ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->
-        Expression.expression Node.t ->
-        Type.t;
-      create_attribute:
-        assumptions:Assumptions.t ->
-        parent:ClassSummary.t Node.t ->
-        ?defined:bool ->
-        accessed_via_metaclass:bool ->
-        Attribute.attribute ->
-        UninstantiatedAnnotation.t AnnotatedAttribute.t;
-      metaclass: assumptions:Assumptions.t -> ClassSummary.t Node.t -> Type.t;
-      constraints:
-        assumptions:Assumptions.t ->
-        target:Type.Primitive.t ->
-        ?parameters:Type.Parameter.t list ->
-        instantiated:Type.t ->
-        unit ->
-        ConstraintsSet.Solution.t;
-      resolve_literal: assumptions:Assumptions.t -> Expression.expression Node.t -> Type.t;
-      resolve_define:
-        assumptions:Assumptions.t ->
-        implementation:Define.Signature.t option ->
-        overloads:Define.Signature.t list ->
-        resolved_define;
-      signature_select:
-        assumptions:Assumptions.t ->
-        resolve_with_locals:
-          (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
-        arguments:SignatureSelectionTypes.arguments ->
-        callable:Type.Callable.t ->
-        self_argument:Type.t option ->
-        skip_marking_escapees:bool ->
-        SignatureSelectionTypes.sig_t;
-      resolve_mutable_literals:
-        assumptions:Assumptions.t ->
-        resolve:(Expression.expression Node.t -> Type.t) ->
-        expression:Expression.expression Node.t option ->
-        resolved:Type.t ->
-        expected:Type.t ->
-        WeakenMutableLiterals.weakened_type;
-      constraints_solution_exists:
-        assumptions:Assumptions.t ->
-        get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
-        left:Type.t ->
-        right:Type.t ->
-        bool;
-      constructor: assumptions:Assumptions.t -> Type.Primitive.t -> instantiated:Type.t -> Type.t;
-      instantiate_attribute:
-        assumptions:Assumptions.t ->
-        accessed_through_class:bool ->
-        ?instantiated:Type.t ->
-        ?apply_descriptors:bool ->
-        UninstantiatedAnnotation.t AnnotatedAttribute.t ->
-        AnnotatedAttribute.instantiated;
-      get_typed_dictionary:
-        assumptions:Assumptions.t -> Type.t -> Type.t Type.Record.TypedDictionary.record option;
-    }
-
-    let get_typed_dictionary
-        { class_metadata_environment; dependency; attribute; _ }
-        ~assumptions
-        annotation
-      =
+class base class_metadata_environment dependency =
+  object (self)
+    method get_typed_dictionary ~assumptions annotation =
       match annotation with
       | Type.Primitive class_name
         when ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
@@ -1361,7 +1254,7 @@ module Implementation = struct
                ?dependency
                class_name ->
           let fields =
-            attribute
+            self#attribute
               ~assumptions
               ~transitive:false
               ~accessed_through_class:true
@@ -1379,23 +1272,10 @@ module Implementation = struct
           fields >>| fun fields -> { Type.Record.TypedDictionary.fields; name = class_name }
       | _ -> None
 
-
-    let full_order
-        ( {
-            class_metadata_environment;
-            dependency;
-            constructor;
-            attribute;
-            all_attributes;
-            metaclass;
-            instantiate_attribute;
-            _;
-          } as open_recurser )
-        ~assumptions
-      =
+    method full_order ~assumptions =
       let constructor instantiated ~protocol_assumptions =
         let constructor assumptions class_name =
-          constructor ~assumptions class_name ~instantiated:(Primitive class_name)
+          self#constructor ~assumptions class_name ~instantiated:(Type.Primitive class_name)
         in
 
         instantiated
@@ -1417,7 +1297,7 @@ module Implementation = struct
       let attribute class_type ~assumptions ~name =
         resolve class_type
         >>= fun { instantiated; accessed_through_class; class_name } ->
-        attribute
+        self#attribute
           ~assumptions
           ~transitive:true
           ~accessed_through_class
@@ -1430,14 +1310,20 @@ module Implementation = struct
       let all_attributes class_type ~assumptions =
         resolve class_type
         >>= fun { instantiated; accessed_through_class; class_name } ->
-        all_attributes
+        self#all_attributes
           ~assumptions
           ~transitive:true
           ~accessed_through_class
           ~include_generated_attributes:true
           ?special_method:None
           class_name
-        >>| List.map ~f:(instantiate_attribute ~assumptions ~instantiated ~accessed_through_class)
+        >>| List.map
+              ~f:
+                (self#instantiate_attribute
+                   ~assumptions
+                   ~instantiated
+                   ~accessed_through_class
+                   ?apply_descriptors:None)
       in
 
       let is_protocol annotation ~protocol_assumptions:_ =
@@ -1457,7 +1343,7 @@ module Implementation = struct
              class_metadata_environment)
           ?dependency
           class_name
-        >>| metaclass ~assumptions
+        >>| self#metaclass ~assumptions
       in
       {
         ConstraintsSet.class_hierarchy =
@@ -1473,16 +1359,11 @@ module Implementation = struct
         all_attributes;
         is_protocol;
         assumptions;
-        get_typed_dictionary = get_typed_dictionary open_recurser ~assumptions;
+        get_typed_dictionary = self#get_typed_dictionary ~assumptions;
         metaclass;
       }
 
-
-    let check_invalid_type_parameters
-        { class_metadata_environment; dependency; full_order; _ }
-        ~assumptions
-        annotation
-      =
+    method check_invalid_type_parameters ~assumptions annotation =
       let open TypeParameterValidationTypes in
       let module InvalidTypeParametersTransform = Type.Transform.Make (struct
         type state = type_parameters_mismatch list
@@ -1520,7 +1401,7 @@ module Implementation = struct
                     match generic, given with
                     | Type.Variable.Unary generic, Type.Parameter.Single given ->
                         let invalid =
-                          let order = full_order ~assumptions in
+                          let order = self#full_order ~assumptions in
                           let pair = Type.Variable.UnaryPair (generic, given) in
                           TypeOrder.OrderedConstraints.add_lower_bound
                             TypeConstraints.empty
@@ -1595,16 +1476,13 @@ module Implementation = struct
       in
       InvalidTypeParametersTransform.visit [] annotation
 
-
-    let parse_annotation
-        { class_metadata_environment; dependency; check_invalid_type_parameters; _ }
+    method parse_annotation
         ~assumptions
         ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
-        expression
-      =
+        expression =
       let modify_aliases = function
         | Type.TypeAlias alias ->
-            check_invalid_type_parameters alias ~assumptions
+            self#check_invalid_type_parameters alias ~assumptions
             |> snd
             |> fun alias -> Type.TypeAlias alias
         | result -> result
@@ -1627,16 +1505,14 @@ module Implementation = struct
       let result =
         match validation with
         | ValidatePrimitivesAndTypeParameters ->
-            check_invalid_type_parameters annotation ~assumptions |> snd
+            self#check_invalid_type_parameters annotation ~assumptions |> snd
         | NoValidation
         | ValidatePrimitives ->
             annotation
       in
       result
 
-
-    let typed_dictionary_special_methods_table
-        ~create_attribute
+    method typed_dictionary_special_methods_table
         ~assumptions
         ~include_generated_attributes
         ~in_test
@@ -1644,8 +1520,7 @@ module Implementation = struct
         ?dependency
         ~class_metadata_environment
         ~class_name
-        ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition)
-      =
+        ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
         let class_definition =
@@ -1697,7 +1572,7 @@ module Implementation = struct
           Class.attributes ~include_generated_attributes ~in_test attribute_components
           |> Identifier.SerializableMap.bindings
           |> List.map ~f:(fun (_, field_attribute) ->
-                 ( create_attribute
+                 ( self#create_attribute
                      ~assumptions
                      ~parent:parent_definition
                      ?defined:(Some true)
@@ -1789,19 +1664,20 @@ module Implementation = struct
       if include_generated_attributes then add_special_methods ();
       table
 
-
-    let single_uninstantiated_attribute_table
-        { class_metadata_environment; dependency; create_attribute; instantiate_attribute; _ }
+    method single_uninstantiated_attribute_table
         ~assumptions
         ~include_generated_attributes
         ~accessed_via_metaclass
-        class_name
-      =
+        class_name =
       let handle ({ Node.value = { ClassSummary.attribute_components; _ }; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
         let add_actual () =
           let collect_attributes attribute =
-            create_attribute (Node.value attribute) ~assumptions ~parent ~accessed_via_metaclass
+            self#create_attribute
+              (Node.value attribute)
+              ~assumptions
+              ~parent
+              ~accessed_via_metaclass
             |> UninstantiatedAttributeTable.add table
           in
           Class.attributes ~include_generated_attributes ~in_test attribute_components
@@ -1857,9 +1733,9 @@ module Implementation = struct
             ClassDecorators.apply
               ~definition:parent
               ~class_metadata_environment
-              ~create_attribute:(create_attribute ~assumptions)
+              ~create_attribute:(self#create_attribute ~assumptions)
               ~instantiate_attribute:
-                (instantiate_attribute
+                (self#instantiate_attribute
                    ~assumptions
                    ?instantiated:None
                    ~accessed_through_class:
@@ -1888,8 +1764,7 @@ module Implementation = struct
       | Some definition, Some { is_typed_dictionary; is_test = in_test; _ } ->
           let table =
             if is_typed_dictionary then
-              typed_dictionary_special_methods_table
-                ~create_attribute
+              self#typed_dictionary_special_methods_table
                 ~assumptions
                 ~include_generated_attributes
                 ~in_test
@@ -1904,25 +1779,16 @@ module Implementation = struct
           Some table
       | _ -> None
 
-
-    let uninstantiated_attribute_tables
-        {
-          class_metadata_environment;
-          dependency;
-          metaclass;
-          single_uninstantiated_attribute_table;
-          _;
-        }
+    method uninstantiated_attribute_tables
         ~assumptions
         ~transitive
         ~accessed_through_class
         ~include_generated_attributes
         ~special_method
-        class_name
-      =
+        class_name =
       let handle { ClassMetadataEnvironment.successors; _ } =
         let get_table ~accessed_via_metaclass =
-          single_uninstantiated_attribute_table
+          self#single_uninstantiated_attribute_table
             ~assumptions
             ~include_generated_attributes
             ~accessed_via_metaclass
@@ -1959,7 +1825,7 @@ module Implementation = struct
                        class_metadata_environment)
                     ?dependency
                     class_name
-                  >>| metaclass ~assumptions
+                  >>| self#metaclass ~assumptions
                   >>| Type.split
                   >>| fst
                   >>= Type.primitive_name
@@ -1981,9 +1847,7 @@ module Implementation = struct
         class_name
       >>| handle
 
-
-    let attribute
-        { instantiate_attribute; uninstantiated_attribute_tables; full_order; _ }
+    method attribute
         ~assumptions
         ~transitive
         ~accessed_through_class
@@ -1992,9 +1856,8 @@ module Implementation = struct
         ?instantiated
         ?apply_descriptors
         ~attribute_name
-        class_name
-      =
-      let order () = full_order ~assumptions in
+        class_name =
+      let order () = self#full_order ~assumptions in
       match callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order with
       | Some callable ->
           AnnotatedAttribute.create
@@ -2014,7 +1877,7 @@ module Implementation = struct
             ~problem:None
           |> Option.some
       | None ->
-          uninstantiated_attribute_tables
+          self#uninstantiated_attribute_tables
             ~assumptions
             ~transitive
             ~accessed_through_class
@@ -2023,22 +1886,19 @@ module Implementation = struct
             class_name
           >>= Sequence.find_map ~f:(fun table ->
                   UninstantiatedAttributeTable.lookup_name table attribute_name)
-          >>| instantiate_attribute
+          >>| self#instantiate_attribute
                 ~assumptions
                 ~accessed_through_class
                 ?instantiated
                 ?apply_descriptors
 
-
-    let all_attributes
-        { uninstantiated_attribute_tables; _ }
+    method all_attributes
         ~assumptions
         ~transitive
         ~accessed_through_class
         ~include_generated_attributes
         ?(special_method = false)
-        class_name
-      =
+        class_name =
       let collect sofar table =
         let add ((sofar_list, sofar_set) as sofar) attribute =
           let name = AnnotatedAttribute.name attribute in
@@ -2049,7 +1909,7 @@ module Implementation = struct
         in
         UninstantiatedAttributeTable.to_list table |> List.fold ~f:add ~init:sofar
       in
-      uninstantiated_attribute_tables
+      self#uninstantiated_attribute_tables
         ~assumptions
         ~transitive
         ~accessed_through_class
@@ -2060,16 +1920,13 @@ module Implementation = struct
       >>| fst
       >>| List.rev
 
-
-    let attribute_names
-        { uninstantiated_attribute_tables; _ }
+    method attribute_names
         ~assumptions
         ~transitive
         ~accessed_through_class
         ~include_generated_attributes
         ?(special_method = false)
-        class_name
-      =
+        class_name =
       let collect sofar table =
         let add ((sofar_list, sofar_set) as sofar) name =
           if Set.mem sofar_set name then
@@ -2079,7 +1936,7 @@ module Implementation = struct
         in
         UninstantiatedAttributeTable.names table |> List.fold ~f:add ~init:sofar
       in
-      uninstantiated_attribute_tables
+      self#uninstantiated_attribute_tables
         ~assumptions
         ~transitive
         ~accessed_through_class
@@ -2090,24 +1947,13 @@ module Implementation = struct
       >>| fst
       >>| List.rev
 
-
-    let instantiate_attribute
-        {
-          class_metadata_environment;
-          dependency;
-          constraints;
-          full_order;
-          attribute = get_attribute;
-          signature_select;
-          constructor;
-          _;
-        }
+    method instantiate_attribute
         ~assumptions
         ~accessed_through_class
         ?instantiated
         ?(apply_descriptors = true)
-        attribute
-      =
+        attribute =
+      let get_attribute = self#attribute in
       let class_name = AnnotatedAttribute.parent attribute in
       let attribute_name = AnnotatedAttribute.name attribute in
       let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
@@ -2126,7 +1972,7 @@ module Implementation = struct
         match instantiated with
         | None -> annotation
         | Some instantiated -> (
-            let solution = constraints ~target:class_name ~instantiated ~assumptions () in
+            let solution = self#constraints ~target:class_name ~instantiated ~assumptions () in
             let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
             match annotation with
             | Attribute annotation -> UninstantiatedAnnotation.Attribute (instantiate annotation)
@@ -2284,7 +2130,7 @@ module Implementation = struct
               "__call__",
               "type" )
             when accessed_via_metaclass ->
-              constructor ~assumptions name ~instantiated
+              self#constructor ~assumptions name ~instantiated
           | _ -> Type.Callable callable
         in
 
@@ -2297,7 +2143,7 @@ module Implementation = struct
               match value_annotation with
               | None -> Type.Top
               | Some annotation -> (
-                  let order = full_order ~assumptions in
+                  let order = self#full_order ~assumptions in
                   let constraints =
                     match self_annotation with
                     | Some annotation ->
@@ -2323,7 +2169,7 @@ module Implementation = struct
               | Type.Callable callable -> special_case_methods callable
               | other -> other
             in
-            let order () = full_order ~assumptions in
+            let order () = self#full_order ~assumptions in
             let special =
               callable_call_special_cases
                 ~instantiated:(Some instantiated)
@@ -2341,10 +2187,10 @@ module Implementation = struct
                    && apply_descriptors -> (
                 let call_dunder_get (descriptor, callable) =
                   let selection_result =
-                    signature_select
+                    self#signature_select
                       ~assumptions
                       ~arguments:
-                        (Resolved
+                        (SignatureSelectionTypes.Resolved
                            [
                              { kind = Positional; expression = None; resolved = descriptor };
                              {
@@ -2365,7 +2211,7 @@ module Implementation = struct
                       ~skip_marking_escapees:true
                   in
                   match selection_result with
-                  | NotFound _ -> None
+                  | SignatureSelectionTypes.NotFound _ -> None
                   | Found { selected_return_annotation = return } -> Some return
                 in
                 let invert_dunder_set (descriptor, callable) ~order =
@@ -2404,7 +2250,7 @@ module Implementation = struct
                     Type.Callable callable
                   else if (not (String.equal class_name "object")) && instantiated_is_protocol ()
                   then (* TODO(T66895305): Find a way to remove this without tanking Pysa perf *)
-                    let order = full_order ~assumptions in
+                    let order = self#full_order ~assumptions in
                     partial_apply_self callable ~order ~self_type:instantiated
                     |> fun callable -> Type.Callable { callable with kind = Anonymous }
                   else
@@ -2531,22 +2377,12 @@ module Implementation = struct
         ~original_annotation:original
         ~uninstantiated_annotation
 
-
-    let create_attribute
-        {
-          class_metadata_environment;
-          dependency;
-          parse_annotation;
-          resolve_literal;
-          resolve_define;
-          _;
-        }
+    method create_attribute
         ~assumptions
         ~parent
         ?(defined = true)
         ~accessed_via_metaclass
-        { Attribute.name = attribute_name; kind }
-      =
+        { Attribute.name = attribute_name; kind } =
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
@@ -2554,7 +2390,7 @@ module Implementation = struct
         match kind with
         | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
-            let parsed_annotation = annotation >>| parse_annotation ~assumptions in
+            let parsed_annotation = annotation >>| self#parse_annotation ~assumptions in
             (* Account for class attributes. *)
             let annotation, final, class_variable =
               parsed_annotation
@@ -2608,7 +2444,7 @@ module Implementation = struct
               match annotation, value with
               | Some annotation, _ -> annotation
               | None, Some value ->
-                  let literal_value_annotation = resolve_literal ~assumptions value in
+                  let literal_value_annotation = self#resolve_literal ~assumptions value in
                   let is_dataclass_attribute =
                     let get_decorator =
                       AstEnvironment.ReadOnly.get_decorator
@@ -2657,7 +2493,7 @@ module Implementation = struct
                 List.fold ~init:(None, []) ~f:to_signature overloads
               in
               let { decorated; undecorated_signature } =
-                resolve_define ~implementation ~overloads ~assumptions
+                self#resolve_define ~implementation ~overloads ~assumptions
               in
               let annotation =
                 match decorated with
@@ -2682,7 +2518,9 @@ module Implementation = struct
             in
             callable, false, visibility, Some undecorated_signature, problem
         | Property { kind; _ } -> (
-            let parse_annotation_option annotation = annotation >>| parse_annotation ~assumptions in
+            let parse_annotation_option annotation =
+              annotation >>| self#parse_annotation ~assumptions
+            in
             match kind with
             | ReadWrite
                 {
@@ -2765,17 +2603,12 @@ module Implementation = struct
         ~undecorated_signature
         ~problem
 
-
-    let metaclass
-        { class_metadata_environment; dependency; parse_annotation; metaclass; full_order; _ }
-        ~assumptions
-        ({ Node.value = { ClassSummary.bases; _ }; _ } as original)
-      =
+    method metaclass ~assumptions ({ Node.value = { ClassSummary.bases; _ }; _ } as original) =
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
       let open Expression in
-      let parse_annotation = parse_annotation ~assumptions in
+      let parse_annotation = self#parse_annotation ~assumptions in
       let metaclass_candidates =
         let explicit_metaclass =
           let find_explicit_metaclass = function
@@ -2816,7 +2649,7 @@ module Implementation = struct
                   not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
                 base_metaclasses
           in
-          explicit_bases |> List.map ~f:(metaclass ~assumptions) |> filter_generic_meta
+          explicit_bases |> List.map ~f:(self#metaclass ~assumptions) |> filter_generic_meta
         in
         match explicit_metaclass with
         | Some metaclass -> metaclass :: metaclass_of_bases
@@ -2825,7 +2658,7 @@ module Implementation = struct
       match metaclass_candidates with
       | [] -> Type.Primitive "type"
       | first :: candidates -> (
-          let order = full_order ~assumptions in
+          let order = self#full_order ~assumptions in
           let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
           match candidate with
           | Type.Bottom ->
@@ -2833,15 +2666,7 @@ module Implementation = struct
               first
           | _ -> candidate )
 
-
-    let constraints
-        { class_metadata_environment; dependency; full_order; _ }
-        ~assumptions
-        ~target
-        ?parameters
-        ~instantiated
-        ()
-      =
+    method constraints ~assumptions ~target ?parameters ~instantiated () =
       let parameters =
         match parameters with
         | None ->
@@ -2866,7 +2691,7 @@ module Implementation = struct
                Anys *)
             ConstraintsSet.Solution.empty
         | _ ->
-            let order = full_order ~assumptions in
+            let order = self#full_order ~assumptions in
             TypeOrder.OrderedConstraintsSet.add
               ConstraintsSet.empty
               ~new_constraint:(LessOrEqual { left = instantiated; right })
@@ -2875,22 +2700,9 @@ module Implementation = struct
             (* TODO(T39598018): error in this case somehow, something must be wrong *)
             |> Option.value ~default:ConstraintsSet.Solution.empty
 
-
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
-    let resolve_literal
-        {
-          class_metadata_environment;
-          dependency;
-          full_order;
-          resolve_literal;
-          parse_annotation;
-          resolve_define;
-          _;
-        }
-        ~assumptions
-        expression
-      =
+    method resolve_literal ~assumptions expression =
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
@@ -2904,7 +2716,7 @@ module Implementation = struct
       in
       let fully_specified_type = function
         | { Node.value = Expression.Name name; _ } as annotation when is_simple_name name ->
-            let class_type = parse_annotation ~assumptions annotation in
+            let class_type = self#parse_annotation ~assumptions annotation in
             if
               Type.is_none class_type || is_concrete_class class_type |> Option.value ~default:false
             then
@@ -2932,7 +2744,7 @@ module Implementation = struct
             _;
           } as annotation
           when is_simple_name generic_name ->
-            let class_type = parse_annotation ~assumptions annotation in
+            let class_type = self#parse_annotation ~assumptions annotation in
             if is_concrete_class class_type >>| not |> Option.value ~default:false then
               Some class_type
             else
@@ -2952,18 +2764,18 @@ module Implementation = struct
           Type.Any
       in
 
-      let order = full_order ~assumptions in
+      let order = self#full_order ~assumptions in
       match Node.value expression with
       | Expression.Await expression ->
-          resolve_literal ~assumptions expression
+          self#resolve_literal ~assumptions expression
           |> Type.awaitable_value
           |> Option.value ~default:Type.Any
       | BooleanOperator { BooleanOperator.left; right; _ } ->
           let annotation =
             TypeOrder.join
               order
-              (resolve_literal ~assumptions left)
-              (resolve_literal ~assumptions right)
+              (self#resolve_literal ~assumptions left)
+              (self#resolve_literal ~assumptions right)
           in
           if Type.is_concrete annotation then annotation else Type.Any
       | Call { callee; _ } -> (
@@ -2992,7 +2804,10 @@ module Implementation = struct
                 List.map defines ~f:(fun { define; _ } -> define)
                 |> List.partition_tf ~f:Define.Signature.is_overloaded_function
                 |> fun (overloads, implementations) ->
-                resolve_define ~assumptions ~implementation:(List.last implementations) ~overloads
+                self#resolve_define
+                  ~assumptions
+                  ~implementation:(List.last implementations)
+                  ~overloads
               in
               Result.ok decorated |> Option.value ~default:Type.Any
           | _ -> resolve_name expression )
@@ -3001,8 +2816,8 @@ module Implementation = struct
       | Dictionary { Dictionary.entries; keywords = [] } ->
           let key_annotation, value_annotation =
             let join_entry (key_annotation, value_annotation) { Dictionary.Entry.key; value } =
-              ( TypeOrder.join order key_annotation (resolve_literal ~assumptions key),
-                TypeOrder.join order value_annotation (resolve_literal ~assumptions value) )
+              ( TypeOrder.join order key_annotation (self#resolve_literal ~assumptions key),
+                TypeOrder.join order value_annotation (self#resolve_literal ~assumptions value) )
             in
             List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
           in
@@ -3016,7 +2831,7 @@ module Implementation = struct
       | List elements ->
           let parameter =
             let join sofar element =
-              TypeOrder.join order sofar (resolve_literal ~assumptions element)
+              TypeOrder.join order sofar (self#resolve_literal ~assumptions element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -3024,7 +2839,7 @@ module Implementation = struct
       | Set elements ->
           let parameter =
             let join sofar element =
-              TypeOrder.join order sofar (resolve_literal ~assumptions element)
+              TypeOrder.join order sofar (self#resolve_literal ~assumptions element)
             in
             List.fold ~init:Type.Bottom ~f:join elements
           in
@@ -3037,30 +2852,16 @@ module Implementation = struct
           let annotation =
             TypeOrder.join
               order
-              (resolve_literal ~assumptions target)
-              (resolve_literal ~assumptions alternative)
+              (self#resolve_literal ~assumptions target)
+              (self#resolve_literal ~assumptions alternative)
           in
           if Type.is_concrete annotation then annotation else Type.Any
       | True -> Type.bool
-      | Tuple elements -> Type.tuple (List.map elements ~f:(resolve_literal ~assumptions))
+      | Tuple elements -> Type.tuple (List.map elements ~f:(self#resolve_literal ~assumptions))
       | Expression.Yield _ -> Type.yield Type.Any
       | _ -> Type.Any
 
-
-    let resolve_define
-        {
-          class_metadata_environment;
-          dependency;
-          full_order;
-          parse_annotation;
-          resolve_literal;
-          signature_select;
-          _;
-        }
-        ~assumptions
-        ~implementation
-        ~overloads
-      =
+    method resolve_define ~assumptions ~implementation ~overloads =
       let apply_decorator (argument : Type.t) { Decorator.name; arguments } =
         let decorator =
           Node.value name
@@ -3086,7 +2887,7 @@ module Implementation = struct
                || Set.mem Recognized.asyncio_contextmanager_decorators name ->
             let process_overload ({ Type.Callable.annotation; _ } as overload) =
               let joined =
-                let order = full_order ~assumptions in
+                let order = self#full_order ~assumptions in
                 try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
                 | ClassHierarchy.Untracked _ ->
                     (* create_overload gets called when building the environment, which is unsound
@@ -3116,7 +2917,7 @@ module Implementation = struct
         | "contextlib.contextmanager", Callable callable ->
             let process_overload ({ Type.Callable.annotation; _ } as overload) =
               let joined =
-                let order = full_order ~assumptions in
+                let order = self#full_order ~assumptions in
                 try TypeOrder.join order annotation (Type.iterator Type.Bottom) with
                 | ClassHierarchy.Untracked _ ->
                     (* create_overload gets called when building the environment, which is unsound
@@ -3161,14 +2962,14 @@ module Implementation = struct
               with
               | Some callable, Some arguments -> (
                   let resolve_with_locals ~locals:_ expression =
-                    let resolved = resolve_literal ~assumptions expression in
+                    let resolved = self#resolve_literal ~assumptions expression in
                     if Type.is_partially_typed resolved then
                       Type.Top
                     else
                       resolved
                   in
                   match
-                    signature_select
+                    self#signature_select
                       ~assumptions
                       ~resolve_with_locals
                       ~arguments:(Unresolved arguments)
@@ -3186,7 +2987,7 @@ module Implementation = struct
             match resolved_decorator with
             | Some resolved_decorator -> (
                 match
-                  signature_select
+                  self#signature_select
                     ~assumptions
                     ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
                     ~arguments:
@@ -3205,7 +3006,7 @@ module Implementation = struct
       let parse =
         let parser =
           {
-            AnnotatedCallable.parse_annotation = parse_annotation ~assumptions;
+            AnnotatedCallable.parse_annotation = self#parse_annotation ~assumptions;
             parse_as_concatenation =
               AliasEnvironment.ReadOnly.parse_as_concatenation
                 (alias_environment class_metadata_environment)
@@ -3304,18 +3105,15 @@ module Implementation = struct
       in
       { undecorated_signature; decorated }
 
-
-    let signature_select
-        { full_order; resolve_mutable_literals; _ }
+    method signature_select
         ~assumptions
         ~resolve_with_locals
         ~arguments
         ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
         ~self_argument
-        ~skip_marking_escapees
-      =
+        ~skip_marking_escapees =
       let open SignatureSelectionTypes in
-      let order = full_order ~assumptions in
+      let order = self#full_order ~assumptions in
       let open Type.Callable in
       let match_arity ~all_parameters signature_match ~arguments ~parameters =
         let all_arguments = arguments in
@@ -3763,7 +3561,7 @@ module Implementation = struct
                         let argument_annotation, weakening_error =
                           if Type.Variable.all_variables_are_resolved parameter_annotation then
                             let { WeakenMutableLiterals.resolved; typed_dictionary_errors } =
-                              resolve_mutable_literals
+                              self#resolve_mutable_literals
                                 ~assumptions
                                 ~resolve:(resolve_with_locals ~locals:[])
                                 ~expression
@@ -4172,26 +3970,14 @@ module Implementation = struct
       else
         get_match overloads
 
-
-    let resolve_mutable_literals
-        ({ constraints_solution_exists; _ } as open_recurser)
-        ~assumptions
-        ~resolve
-      =
+    method resolve_mutable_literals ~assumptions ~resolve =
       WeakenMutableLiterals.weaken_mutable_literals
         resolve
-        ~get_typed_dictionary:(get_typed_dictionary open_recurser ~assumptions)
-        ~comparator:(constraints_solution_exists ~assumptions)
+        ~get_typed_dictionary:(self#get_typed_dictionary ~assumptions)
+        ~comparator:(self#constraints_solution_exists ~assumptions)
 
-
-    let constraints_solution_exists
-        { full_order; _ }
-        ~assumptions
-        ~get_typed_dictionary_override
-        ~left
-        ~right
-      =
-      let ({ ConstraintsSet.get_typed_dictionary; _ } as order) = full_order ~assumptions in
+    method constraints_solution_exists ~assumptions ~get_typed_dictionary_override ~left ~right =
+      let ({ ConstraintsSet.get_typed_dictionary; _ } as order) = self#full_order ~assumptions in
       let order =
         {
           order with
@@ -4209,13 +3995,7 @@ module Implementation = struct
       |> TypeOrder.OrderedConstraintsSet.solve ~order
       |> Option.is_some
 
-
-    let constructor
-        { class_metadata_environment; dependency; attribute; _ }
-        ~assumptions
-        class_name
-        ~instantiated
-      =
+    method constructor ~assumptions class_name ~instantiated =
       let return_annotation =
         let generics =
           ClassHierarchyEnvironment.ReadOnly.variables
@@ -4261,7 +4041,7 @@ module Implementation = struct
       let signature_index_and_parent ~name =
         let signature, parent_name =
           match
-            attribute
+            self#attribute
               ~assumptions
               ~transitive:true
               ~accessed_through_class:false
@@ -4315,67 +4095,6 @@ module Implementation = struct
       | _ -> signature
   end
 
-  include Indent
-end
-
-let make_open_recurser
-    ~given_single_uninstantiated_attribute_table
-    ~given_parse_annotation
-    ~class_metadata_environment
-    ~dependency
-  =
-  let rec open_recurser =
-    {
-      Implementation.class_metadata_environment;
-      dependency;
-      full_order;
-      single_uninstantiated_attribute_table;
-      uninstantiated_attribute_tables;
-      attribute;
-      all_attributes;
-      check_invalid_type_parameters;
-      parse_annotation;
-      create_attribute;
-      metaclass;
-      constraints;
-      resolve_literal;
-      resolve_define;
-      signature_select;
-      resolve_mutable_literals;
-      constraints_solution_exists;
-      constructor;
-      instantiate_attribute;
-      get_typed_dictionary;
-    }
-  and single_uninstantiated_attribute_table ~assumptions =
-    given_single_uninstantiated_attribute_table open_recurser ~assumptions
-  and parse_annotation ~assumptions = given_parse_annotation open_recurser ~assumptions
-  and full_order ~assumptions = Implementation.full_order open_recurser ~assumptions
-  and uninstantiated_attribute_tables ~assumptions =
-    Implementation.uninstantiated_attribute_tables open_recurser ~assumptions
-  and attribute ~assumptions = Implementation.attribute open_recurser ~assumptions
-  and all_attributes ~assumptions = Implementation.all_attributes open_recurser ~assumptions
-  and check_invalid_type_parameters ~assumptions =
-    Implementation.check_invalid_type_parameters open_recurser ~assumptions
-  and create_attribute ~assumptions = Implementation.create_attribute open_recurser ~assumptions
-  and metaclass ~assumptions = Implementation.metaclass open_recurser ~assumptions
-  and constraints ~assumptions = Implementation.constraints open_recurser ~assumptions
-  and resolve_literal ~assumptions = Implementation.resolve_literal open_recurser ~assumptions
-  and resolve_define ~assumptions = Implementation.resolve_define open_recurser ~assumptions
-  and signature_select ~assumptions = Implementation.signature_select open_recurser ~assumptions
-  and resolve_mutable_literals ~assumptions =
-    Implementation.resolve_mutable_literals open_recurser ~assumptions
-  and constraints_solution_exists ~assumptions =
-    Implementation.constraints_solution_exists open_recurser ~assumptions
-  and constructor ~assumptions = Implementation.constructor open_recurser ~assumptions
-  and instantiate_attribute ~assumptions =
-    Implementation.instantiate_attribute open_recurser ~assumptions
-  and get_typed_dictionary ~assumptions =
-    Implementation.get_typed_dictionary open_recurser ~assumptions
-  in
-  open_recurser
-
-
 let empty_assumptions =
   {
     protocol_assumptions = ProtocolAssumptions.empty;
@@ -4408,19 +4127,8 @@ module ParseAnnotationCache = struct
         { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
         ~dependency
       =
-      let uncached_open_recurser =
-        make_open_recurser
-          ~given_single_uninstantiated_attribute_table:
-            Implementation.single_uninstantiated_attribute_table
-          ~given_parse_annotation:Implementation.parse_annotation
-          ~class_metadata_environment
-          ~dependency
-      in
-      Implementation.parse_annotation
-        uncached_open_recurser
-        ~assumptions:empty_assumptions
-        ~validation
-        expression
+      let implementation = new base class_metadata_environment dependency in
+      implementation#parse_annotation ~assumptions:empty_assumptions ~validation expression
 
 
     let filter_upstream_dependency = function
@@ -4436,14 +4144,16 @@ module ParseAnnotationCache = struct
   module ReadOnly = struct
     include Cache.ReadOnly
 
-    let cached_parse_annotation
-        read_only
-        { Implementation.dependency; _ }
-        ~assumptions:_
-        ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
-        expression
-      =
-      get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
+    class with_cached_parse_annotation dependency read_only =
+      object
+        inherit base (upstream_environment read_only) dependency
+
+        method! parse_annotation
+            ~assumptions:_
+            ?(validation = SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitivesAndTypeParameters)
+            expression =
+          get read_only ?dependency { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
+      end
   end
 end
 
@@ -4475,20 +4185,12 @@ module Cache = ManagedCache.Make (struct
       }
       ~dependency
     =
-    let class_metadata_environment =
-      ParseAnnotationCache.ReadOnly.upstream_environment parse_annotation_cache
+    let implementation_with_cached_parse_annotation =
+      new ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+        dependency
+        parse_annotation_cache
     in
-    let open_recurser_with_parse_annotation_cache =
-      make_open_recurser
-        ~given_single_uninstantiated_attribute_table:
-          Implementation.single_uninstantiated_attribute_table
-        ~given_parse_annotation:
-          (ParseAnnotationCache.ReadOnly.cached_parse_annotation parse_annotation_cache)
-        ~dependency
-        ~class_metadata_environment
-    in
-    Implementation.single_uninstantiated_attribute_table
-      open_recurser_with_parse_annotation_cache
+    implementation_with_cached_parse_annotation#single_uninstantiated_attribute_table
       ~include_generated_attributes
       ~accessed_via_metaclass
       ~assumptions:empty_assumptions
@@ -4515,10 +4217,9 @@ module ReadOnly = struct
     ParseAnnotationCache.ReadOnly.upstream_environment (upstream_environment read_only)
 
 
-  let cached_single_attribute_table
+  let cached_single_uninstantiated_attribute_table
       read_only
-      { Implementation.dependency; _ }
-      ~assumptions:_
+      dependency
       ~include_generated_attributes
       ~accessed_via_metaclass
       name
@@ -4533,69 +4234,81 @@ module ReadOnly = struct
       }
 
 
-  let open_recurser_with_both_caches read_only ~dependency =
-    make_open_recurser
-      ~given_single_uninstantiated_attribute_table:(cached_single_attribute_table read_only)
-      ~given_parse_annotation:
-        (ParseAnnotationCache.ReadOnly.cached_parse_annotation (parse_annotation_cache read_only))
-      ~class_metadata_environment:(class_metadata_environment read_only)
-      ~dependency
+  class with_uninstantiated_attributes_cache dependency read_only =
+    object
+      inherit base (class_metadata_environment read_only) dependency
 
+      method! single_uninstantiated_attribute_table ~assumptions:_ =
+        cached_single_uninstantiated_attribute_table read_only dependency
+    end
+
+  class with_both_caches dependency read_only =
+    object
+      inherit
+        ParseAnnotationCache.ReadOnly.with_cached_parse_annotation
+          dependency
+          (parse_annotation_cache read_only)
+
+      method! single_uninstantiated_attribute_table ~assumptions:_ =
+        cached_single_uninstantiated_attribute_table read_only dependency
+    end
 
   let add_both_caches_and_empty_assumptions f read_only ?dependency =
-    f (open_recurser_with_both_caches read_only ~dependency) ~assumptions:empty_assumptions
+    new with_both_caches dependency read_only
+    |> f
+    |> fun method_ -> method_ ~assumptions:empty_assumptions
 
 
   let instantiate_attribute =
-    add_both_caches_and_empty_assumptions
-      (Implementation.instantiate_attribute ?apply_descriptors:None)
+    add_both_caches_and_empty_assumptions (fun o -> o#instantiate_attribute ?apply_descriptors:None)
 
 
   let attribute =
-    add_both_caches_and_empty_assumptions (Implementation.attribute ?apply_descriptors:None)
+    add_both_caches_and_empty_assumptions (fun o -> o#attribute ?apply_descriptors:None)
 
 
-  let all_attributes = add_both_caches_and_empty_assumptions Implementation.all_attributes
+  let all_attributes = add_both_caches_and_empty_assumptions (fun o -> o#all_attributes)
 
-  let attribute_names = add_both_caches_and_empty_assumptions Implementation.attribute_names
+  let attribute_names = add_both_caches_and_empty_assumptions (fun o -> o#attribute_names)
 
   let check_invalid_type_parameters =
-    add_both_caches_and_empty_assumptions Implementation.check_invalid_type_parameters
+    add_both_caches_and_empty_assumptions (fun o -> o#check_invalid_type_parameters)
 
 
-  let parse_annotation = add_both_caches_and_empty_assumptions Implementation.parse_annotation
+  let parse_annotation read_only ?dependency =
+    let attributes_cached_but_not_annotations =
+      new with_uninstantiated_attributes_cache dependency read_only
+    in
+    attributes_cached_but_not_annotations#parse_annotation ~assumptions:empty_assumptions
 
-  let metaclass = add_both_caches_and_empty_assumptions Implementation.metaclass
 
-  let constraints = add_both_caches_and_empty_assumptions Implementation.constraints
+  let metaclass = add_both_caches_and_empty_assumptions (fun o -> o#metaclass)
 
-  let resolve_literal = add_both_caches_and_empty_assumptions Implementation.resolve_literal
+  let constraints = add_both_caches_and_empty_assumptions (fun o -> o#constraints)
 
-  let resolve_define = add_both_caches_and_empty_assumptions Implementation.resolve_define
+  let resolve_literal = add_both_caches_and_empty_assumptions (fun o -> o#resolve_literal)
+
+  let resolve_define = add_both_caches_and_empty_assumptions (fun o -> o#resolve_define)
 
   let resolve_mutable_literals =
-    add_both_caches_and_empty_assumptions Implementation.resolve_mutable_literals
+    add_both_caches_and_empty_assumptions (fun o -> o#resolve_mutable_literals)
 
 
   let constraints_solution_exists =
-    add_both_caches_and_empty_assumptions Implementation.constraints_solution_exists
+    add_both_caches_and_empty_assumptions (fun o -> o#constraints_solution_exists)
 
 
-  let constructor = add_both_caches_and_empty_assumptions Implementation.constructor
+  let constructor = add_both_caches_and_empty_assumptions (fun o -> o#constructor)
 
   let full_order ?dependency read_only =
-    Implementation.full_order
-      (open_recurser_with_both_caches read_only ~dependency)
-      ~assumptions:empty_assumptions
+    let implementation = new with_both_caches dependency read_only in
+    implementation#full_order ~assumptions:empty_assumptions
 
 
-  let get_typed_dictionary =
-    add_both_caches_and_empty_assumptions Implementation.get_typed_dictionary
-
+  let get_typed_dictionary = add_both_caches_and_empty_assumptions (fun o -> o#get_typed_dictionary)
 
   let signature_select =
-    add_both_caches_and_empty_assumptions
-      (Implementation.signature_select ~skip_marking_escapees:false)
+    add_both_caches_and_empty_assumptions (fun o -> o#signature_select ~skip_marking_escapees:false)
 end
 
 module AttributeReadOnly = ReadOnly
