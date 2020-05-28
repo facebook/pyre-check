@@ -191,10 +191,7 @@ let test_add_constraint context =
       let class_hierarchy =
         GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
       in
-      let metaclass name ~assumptions:_ =
-        GlobalResolution.class_definition resolution (Primitive name)
-        >>| GlobalResolution.metaclass ~resolution
-      in
+      let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
       let order =
         {
           ConstraintsSet.class_hierarchy;

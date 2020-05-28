@@ -1838,7 +1838,6 @@ let test_constraints context =
 
 let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
-    let qualifier = Reference.create "test" in
     let target = "test." ^ target in
     let metaclass =
       if metaclass = "type" then
@@ -1846,30 +1845,11 @@ let test_metaclasses context =
       else
         "test." ^ metaclass
     in
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let source =
-      AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
-    in
-    let source = Option.value_exn source in
-    let { Source.statements; _ } = source in
-    let target =
-      let target = function
-        | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when Reference.show (Node.value name) = target ->
-            { Node.location; value = definition }
-            |> Node.map ~f:(ClassSummary.create ~qualifier)
-            |> Option.some
-        | _ -> None
-      in
-      List.find_map ~f:target statements
-    in
     let resolution = GlobalResolution.create global_environment in
-    match target with
-    | Some target ->
-        assert_equal (Type.Primitive metaclass) (GlobalResolution.metaclass ~resolution target)
-    | None -> assert_unreached ()
+    assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass ~resolution target)
   in
   assert_metaclass ~source:{|
        class C:

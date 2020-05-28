@@ -186,7 +186,7 @@ val instantiate_attribute
   AttributeResolution.uninstantiated_attribute ->
   AnnotatedAttribute.instantiated
 
-val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
+val metaclass : resolution:t -> Type.Primitive.t -> Type.t option
 
 val attribute_from_class_name
   :  resolution:t ->

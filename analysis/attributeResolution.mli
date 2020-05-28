@@ -215,7 +215,7 @@ module AttributeReadOnly : sig
     string ->
     uninstantiated_attribute list option
 
-  val metaclass : t -> ?dependency:DependencyKey.registered -> ClassSummary.t Node.t -> Type.t
+  val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
 
   val constraints
     :  t ->

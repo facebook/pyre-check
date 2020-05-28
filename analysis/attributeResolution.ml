@@ -1337,14 +1337,7 @@ class base class_metadata_environment dependency =
           ?dependency
           (class_hierarchy_environment class_metadata_environment)
       in
-      let metaclass class_name ~assumptions =
-        UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-          (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
-             class_metadata_environment)
-          ?dependency
-          class_name
-        >>| self#metaclass ~assumptions
-      in
+      let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
       {
         ConstraintsSet.class_hierarchy =
           {
@@ -1820,12 +1813,7 @@ class base class_metadata_environment dependency =
                       ?dependency
                       class_name
                   in
-                  UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-                    (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
-                       class_metadata_environment)
-                    ?dependency
-                    class_name
-                  >>| self#metaclass ~assumptions
+                  self#metaclass ~assumptions class_name
                   >>| Type.split
                   >>| fst
                   >>= Type.primitive_name
@@ -2603,68 +2591,77 @@ class base class_metadata_environment dependency =
         ~undecorated_signature
         ~problem
 
-    method metaclass ~assumptions ({ Node.value = { ClassSummary.bases; _ }; _ } as original) =
+    method metaclass ~assumptions target =
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
-      let open Expression in
-      let parse_annotation = self#parse_annotation ~assumptions in
-      let metaclass_candidates =
-        let explicit_metaclass =
-          let find_explicit_metaclass = function
-            | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
-                Some (parse_annotation value)
-            | _ -> None
-          in
-          List.find_map ~f:find_explicit_metaclass bases
-        in
-        let metaclass_of_bases =
-          let explicit_bases =
-            let base_to_class { Call.Argument.value; _ } =
-              delocalize value |> parse_annotation |> Type.split |> fst
+      let rec handle ({ Node.value = { ClassSummary.bases; _ }; _ } as original) =
+        let open Expression in
+        let parse_annotation = self#parse_annotation ~assumptions ?validation:None in
+        let metaclass_candidates =
+          let explicit_metaclass =
+            let find_explicit_metaclass = function
+              | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
+                  Some (parse_annotation value)
+              | _ -> None
             in
-            List.filter
-              ~f:(function
-                | { Call.Argument.name = None; _ } -> true
-                | _ -> false)
-              bases
-            |> List.map ~f:base_to_class
-            |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
-            |> List.filter ~f:(fun base_class ->
-                   not (Node.equal ClassSummary.equal base_class original))
+            List.find_map ~f:find_explicit_metaclass bases
           in
-          let filter_generic_meta base_metaclasses =
-            (* We only want a class directly inheriting from Generic to have a metaclass of
-               GenericMeta. *)
-            if
-              List.exists
-                ~f:(fun base ->
-                  Reference.equal (Reference.create "typing.Generic") (class_name base))
-                explicit_bases
-            then
-              base_metaclasses
-            else
+          let metaclass_of_bases =
+            let explicit_bases =
+              let base_to_class { Call.Argument.value; _ } =
+                delocalize value |> parse_annotation |> Type.split |> fst
+              in
               List.filter
-                ~f:(fun metaclass ->
-                  not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
+                ~f:(function
+                  | { Call.Argument.name = None; _ } -> true
+                  | _ -> false)
+                bases
+              |> List.map ~f:base_to_class
+              |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
+              |> List.filter ~f:(fun base_class ->
+                     not (Node.equal ClassSummary.equal base_class original))
+            in
+            let filter_generic_meta base_metaclasses =
+              (* We only want a class directly inheriting from Generic to have a metaclass of
+                 GenericMeta. *)
+              if
+                List.exists
+                  ~f:(fun base ->
+                    Reference.equal (Reference.create "typing.Generic") (class_name base))
+                  explicit_bases
+              then
                 base_metaclasses
+              else
+                List.filter
+                  ~f:(fun metaclass ->
+                    not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
+                  base_metaclasses
+            in
+            explicit_bases |> List.map ~f:handle |> filter_generic_meta
           in
-          explicit_bases |> List.map ~f:(self#metaclass ~assumptions) |> filter_generic_meta
+          match explicit_metaclass with
+          | Some metaclass -> metaclass :: metaclass_of_bases
+          | None -> metaclass_of_bases
         in
-        match explicit_metaclass with
-        | Some metaclass -> metaclass :: metaclass_of_bases
-        | None -> metaclass_of_bases
+        match metaclass_candidates with
+        | [] -> Type.Primitive "type"
+        | first :: candidates -> (
+            let order = self#full_order ~assumptions in
+            let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
+            match candidate with
+            | Type.Bottom ->
+                (* If we get Bottom here, we don't have a "most derived metaclass", so default to
+                   one. *)
+                first
+            | _ -> candidate )
       in
-      match metaclass_candidates with
-      | [] -> Type.Primitive "type"
-      | first :: candidates -> (
-          let order = self#full_order ~assumptions in
-          let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
-          match candidate with
-          | Type.Bottom ->
-              (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
-              first
-          | _ -> candidate )
+      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+        (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+           class_metadata_environment)
+        ?dependency
+        target
+      >>| handle
 
     method constraints ~assumptions ~target ?parameters ~instantiated () =
       let parameters =
