@@ -73,7 +73,7 @@ val meet : t -> Type.t -> Type.t -> Type.t
 
 val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
 
-val resolve_exports : t -> reference:Reference.t -> Reference.t
+val legacy_resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val ast_environment : t -> AstEnvironment.ReadOnly.t
 

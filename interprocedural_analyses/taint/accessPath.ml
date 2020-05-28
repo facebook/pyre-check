@@ -263,7 +263,7 @@ let get_global ~resolution name =
         name >>= Option.some_if (is_module base_name && not (is_module name))
     | _ -> None
   in
-  global >>| fun reference -> GlobalResolution.resolve_exports global_resolution ~reference
+  global >>| fun reference -> GlobalResolution.legacy_resolve_exports global_resolution ~reference
 
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)

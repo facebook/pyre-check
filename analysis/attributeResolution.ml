@@ -3044,7 +3044,7 @@ module Implementation = struct
     let apply_decorator (argument : Type.t) { Decorator.name; arguments } =
       let decorator =
         Node.value name
-        |> AstEnvironment.ReadOnly.resolve_exports
+        |> AstEnvironment.ReadOnly.legacy_resolve_exports
              (ast_environment class_metadata_environment)
              ?dependency
         |> Reference.show

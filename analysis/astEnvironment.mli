@@ -54,7 +54,11 @@ module ReadOnly : sig
 
   val module_exists : t -> ?dependency:DependencyKey.registered -> Reference.t -> bool
 
-  val resolve_exports : t -> ?dependency:DependencyKey.registered -> Reference.t -> Reference.t
+  val legacy_resolve_exports
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    Reference.t
 
   val resolve_decorator_if_matches
     :  t ->

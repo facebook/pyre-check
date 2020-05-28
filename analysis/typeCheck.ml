@@ -1611,7 +1611,7 @@ module State (Context : Context) = struct
       |> correct_bottom
     in
     let forward_reference ~resolution ~errors reference =
-      let reference = GlobalResolution.resolve_exports global_resolution ~reference in
+      let reference = GlobalResolution.legacy_resolve_exports global_resolution ~reference in
       let annotation =
         let local_annotation = Resolution.get_local resolution ~reference in
         match local_annotation, Reference.prefix reference with
@@ -5560,7 +5560,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
            against the current class definition to determine if it is shadowing an imported class. *)
         let class_name = ClassSummary.name definition in
         let exported_name =
-          GlobalResolution.resolve_exports global_resolution ~reference:class_name
+          GlobalResolution.legacy_resolve_exports global_resolution ~reference:class_name
         in
         if not (Reference.equal class_name exported_name) then
           let is_shadowed_class_imported =

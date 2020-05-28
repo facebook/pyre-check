@@ -667,7 +667,7 @@ module ReadOnly = struct
 
   let module_exists { module_exists; _ } = module_exists
 
-  let resolve_exports read_only ?dependency reference =
+  let legacy_resolve_exports read_only ?dependency reference =
     (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
     let widening_threshold = 25 in
     let rec resolve_exports_fixpoint ~reference ~visited ~count =
@@ -689,7 +689,7 @@ module ReadOnly = struct
               else
                 get_module_metadata ?dependency read_only (Reference.create_from_list lead)
                 >>| (fun definition ->
-                      match Module.aliased_export definition (Reference.create head) with
+                      match Module.legacy_aliased_export definition (Reference.create head) with
                       | Some export -> Reference.combine export (Reference.create_from_list tail)
                       | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
                 |> Option.value ~default:reference
@@ -716,7 +716,7 @@ module ReadOnly = struct
       ({ Ast.Statement.Decorator.name; _ } as decorator)
       ~target
     =
-    let resolved_name = Node.map name ~f:(resolve_exports read_only ?dependency) in
+    let resolved_name = Node.map name ~f:(legacy_resolve_exports read_only ?dependency) in
     if String.equal (Node.value resolved_name |> Reference.show) target then
       Some { decorator with name = resolved_name }
     else

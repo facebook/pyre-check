@@ -28,7 +28,7 @@ let test_aliased_export _ =
     let assert_aliased_export (source, expected_target) =
       let actual_target =
         Reference.create source
-        |> Module.aliased_export module_definition
+        |> Module.legacy_aliased_export module_definition
         |> (fun value -> Option.value value ~default:(Reference.create "$not_exported"))
         |> Reference.show
       in

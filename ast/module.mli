@@ -7,7 +7,7 @@ type t [@@deriving eq, sexp, show, compare]
 
 val empty_stub : t -> bool
 
-val aliased_export : t -> Reference.t -> Reference.t option
+val legacy_aliased_export : t -> Reference.t -> Reference.t option
 
 val create : Source.t -> t
 

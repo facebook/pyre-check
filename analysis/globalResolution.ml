@@ -408,8 +408,8 @@ let signature_select ~global_resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
-let resolve_exports ({ dependency; _ } as resolution) ~reference =
-  AstEnvironment.ReadOnly.resolve_exports ?dependency (ast_environment resolution) reference
+let legacy_resolve_exports ({ dependency; _ } as resolution) ~reference =
+  AstEnvironment.ReadOnly.legacy_resolve_exports ?dependency (ast_environment resolution) reference
 
 
 let widen resolution = full_order resolution |> TypeOrder.widen

@@ -6,13 +6,13 @@
 open Core
 open Statement
 
-type aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
+type legacy_aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
 
-let compare_aliased_exports = Reference.Map.Tree.compare_direct Reference.compare
+let compare_legacy_aliased_exports = Reference.Map.Tree.compare_direct Reference.compare
 
 type t =
   | Explicit of {
-      aliased_exports: aliased_exports;
+      legacy_aliased_exports: legacy_aliased_exports;
       empty_stub: bool;
       local_mode: Source.local_mode Node.t option;
     }
@@ -22,7 +22,8 @@ type t =
 let pp format printed_module =
   let aliased_exports, empty_stub =
     match printed_module with
-    | Explicit { aliased_exports; empty_stub; _ } -> Map.Tree.to_alist aliased_exports, empty_stub
+    | Explicit { legacy_aliased_exports; empty_stub; _ } ->
+        Map.Tree.to_alist legacy_aliased_exports, empty_stub
     | Implicit { empty_stub } -> [], empty_stub
   in
   let aliased_exports =
@@ -45,7 +46,7 @@ let empty_stub = function
 let create_for_testing ~local_mode ~stub =
   Explicit
     {
-      aliased_exports = Reference.Map.empty |> Map.to_tree;
+      legacy_aliased_exports = Reference.Map.empty |> Map.to_tree;
       empty_stub = stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode = None;
     }
@@ -59,7 +60,7 @@ let create
       _;
     }
   =
-  let aliased_exports =
+  let legacy_aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
       | Statement.Import { Import.from = Some from; imports } ->
@@ -101,7 +102,7 @@ let create
   in
   Explicit
     {
-      aliased_exports;
+      legacy_aliased_exports;
       empty_stub = is_stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode;
     }
@@ -109,10 +110,10 @@ let create
 
 let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
 
-let aliased_export considered_module reference =
+let legacy_aliased_export considered_module reference =
   match considered_module with
-  | Explicit { aliased_exports; _ } ->
-      let aliased_exports = Reference.Map.of_tree aliased_exports in
+  | Explicit { legacy_aliased_exports; _ } ->
+      let aliased_exports = Reference.Map.of_tree legacy_aliased_exports in
       Map.find aliased_exports reference
   | Implicit _ -> None
 
