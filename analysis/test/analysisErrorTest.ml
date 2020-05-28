@@ -703,10 +703,6 @@ let test_filter context =
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
 
-  (* Suppress errors due to importing builtins. *)
-  let undefined_import import = UndefinedImport !&import in
-  assert_filtered (undefined_import "builtins");
-  assert_unfiltered (undefined_import "sys");
   let abstract_class_instantiation name =
     InvalidClassInstantiation
       (AbstractClassInstantiation { class_name = !&name; abstract_methods = [] })

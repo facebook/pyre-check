@@ -2183,12 +2183,6 @@ let due_to_analysis_limitations { kind; _ } =
       false
 
 
-let due_to_builtin_import { kind; _ } =
-  match kind with
-  | UndefinedImport import -> String.equal (Reference.show import) "builtins"
-  | _ -> false
-
-
 let less_or_equal ~resolution left right =
   let less_or_equal_mismatch left right =
     GlobalResolution.less_or_equal resolution ~left:left.actual ~right:right.actual
@@ -2955,12 +2949,6 @@ let filter ~resolution errors =
       | { kind = IncompatibleReturnType { is_unimplemented; _ }; _ } -> is_unimplemented
       | _ -> false
     in
-    let is_builtin_import_error = function
-      | { kind = UndefinedImport builtins; _ }
-        when String.equal (Reference.show builtins) "builtins" ->
-          true
-      | _ -> false
-    in
 
     let is_unnecessary_missing_annotation_error { kind; _ } =
       (* Ignore missing annotations thrown at assigns but not thrown where global or attribute was
@@ -3034,7 +3022,6 @@ let filter ~resolution errors =
     is_stub_error error
     || is_mock_error error
     || is_unimplemented_return_error error
-    || is_builtin_import_error error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
     || is_callable_attribute_error error
@@ -3049,7 +3036,6 @@ let suppress ~mode ~ignore_codes error =
       true
     else
       match kind with
-      | UndefinedImport _ -> due_to_builtin_import error
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true
