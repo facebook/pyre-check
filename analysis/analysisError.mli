@@ -158,6 +158,13 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
+and undefined_import =
+  | UndefinedModule of Reference.t
+  | UndefinedName of {
+      from: Reference.t;
+      name: Identifier.t;
+    }
+
 and incompatible_overload_kind =
   | ReturnType of {
       implementation_annotation: Type.t;
@@ -298,7 +305,7 @@ type kind =
       attribute: Identifier.t;
       origin: origin;
     }
-  | UndefinedImport of Reference.t
+  | UndefinedImport of undefined_import
   | UndefinedType of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;

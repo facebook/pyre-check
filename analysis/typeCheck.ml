@@ -4977,7 +4977,8 @@ module State (Context : Context) = struct
         in
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors reference ->
-              emit_error ~errors ~location ~kind:(Error.UndefinedImport reference)) )
+              emit_error ~errors ~location ~kind:(Error.UndefinedImport (UndefinedModule reference)))
+        )
     | Class { Class.bases; _ } when bases <> [] ->
         (* Check that variance isn't widened on inheritence *)
         let check_base errors { Call.Argument.value = base; _ } =

@@ -400,7 +400,7 @@ let test_concise context =
           y = x["year"]
     |}
     [
-      "Undefined import [21]: Could not find `mypy_extensions`.";
+      "Undefined import [21]: Could not find module `mypy_extensions`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`.";
     ];
 
@@ -418,7 +418,7 @@ let test_concise context =
     {|
       from a.b import c
     |}
-    ["Undefined import [21]: Could not find `a`."];
+    ["Undefined import [21]: Could not find module `a`."];
   assert_type_errors
     {|
       def foo() -> None:

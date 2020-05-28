@@ -167,6 +167,13 @@ and unawaited_awaitable = {
   expression: Expression.t;
 }
 
+and undefined_import =
+  | UndefinedModule of Reference.t
+  | UndefinedName of {
+      from: Reference.t;
+      name: Identifier.t;
+    }
+
 and incompatible_overload_kind =
   | ReturnType of {
       implementation_annotation: Type.t;
@@ -307,7 +314,7 @@ type kind =
       attribute: Identifier.t;
       origin: origin;
     }
-  | UndefinedImport of Reference.t
+  | UndefinedImport of undefined_import
   | UndefinedType of Type.t
   | UnexpectedKeyword of {
       name: Identifier.t;
@@ -1855,14 +1862,34 @@ let messages ~concise ~signature location kind =
         | Module name -> Format.asprintf "Module `%a`" pp_reference name
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
-  | UndefinedImport reference when concise ->
-      [Format.asprintf "Could not find `%a`." pp_reference reference]
-  | UndefinedImport reference ->
+  | UndefinedImport (UndefinedModule reference) when concise ->
+      [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized reference]
+  | UndefinedImport (UndefinedName { from; name }) when concise ->
+      [
+        Format.asprintf
+          "Could not find name `%a` in `%a`."
+          pp_identifier
+          name
+          Reference.pp_sanitized
+          from;
+      ]
+  | UndefinedImport (UndefinedModule reference) ->
       [
         Format.asprintf
           "Could not find a module corresponding to import `%a`."
-          pp_reference
+          Reference.pp_sanitized
           reference;
+        "For common reasons, see \
+         https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import";
+      ]
+  | UndefinedImport (UndefinedName { from; name }) ->
+      [
+        Format.asprintf
+          "Could not find a name `%a` defined in module `%a`."
+          pp_identifier
+          name
+          Reference.pp_sanitized
+          from;
         "For common reasons, see \
          https://pyre-check.org/docs/error-types.html#pyre-errors-1821-undefined-name-undefined-import";
       ]
@@ -2376,7 +2403,7 @@ let less_or_equal ~resolution left right =
   | UnexpectedKeyword left, UnexpectedKeyword right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
       && Identifier.equal left.name right.name
-  | UndefinedImport left, UndefinedImport right -> Reference.equal_sanitized left right
+  | UndefinedImport left, UndefinedImport right -> [%compare.equal: undefined_import] left right
   | UnusedIgnore left, UnusedIgnore right ->
       IntSet.is_subset (IntSet.of_list left) ~of_:(IntSet.of_list right)
   | ( UnusedLocalMode { unused_mode = left_unused_mode; actual_mode = left_actual_mode },
@@ -2693,7 +2720,8 @@ let join ~resolution left right =
       when Option.equal Reference.equal_sanitized left.callee right.callee
            && Identifier.equal left.name right.name ->
         UnexpectedKeyword left
-    | UndefinedImport left, UndefinedImport right when Reference.equal_sanitized left right ->
+    | UndefinedImport left, UndefinedImport right when [%compare.equal: undefined_import] left right
+      ->
         UndefinedImport left
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (IntSet.to_list (IntSet.union (IntSet.of_list left) (IntSet.of_list right)))
@@ -2877,8 +2905,13 @@ let join_at_source ~resolution errors =
         Type.show parent ^ Reference.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } -> Reference.show_sanitized name
     | { kind = MissingOverloadImplementation name; _ } -> Reference.show_sanitized name
-    | { kind = UndefinedImport name; _ } ->
+    | { kind = UndefinedImport (UndefinedModule name); _ } ->
         Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
+    | { kind = UndefinedImport (UndefinedName { name; from }); _ } ->
+        Format.asprintf
+          "Unknown[%a]"
+          Reference.pp_sanitized
+          (Reference.create name |> Reference.combine from)
     | { kind = UnboundName name; _ }
     | { kind = UndefinedType (Type.Primitive name); _ } ->
         Format.asprintf "Unbound[%s]" name
