@@ -6,12 +6,40 @@
 open Core
 open Statement
 
+module Export = struct
+  type t =
+    | NameAlias of {
+        from: Reference.t;
+        name: Identifier.t;
+      }
+    | Module of Reference.t
+    | Class
+    | Define
+    | GlobalVariable
+  [@@deriving sexp, compare, hash]
+end
+
+module ExportMap = struct
+  type t = Export.t Identifier.Map.Tree.t [@@deriving sexp]
+
+  let empty = Identifier.Map.Tree.empty
+
+  let lookup = Identifier.Map.Tree.find
+
+  let to_alist = Identifier.Map.Tree.to_alist
+
+  let compare = Identifier.Map.Tree.compare_direct Export.compare
+
+  let equal = [%compare.equal: t]
+end
+
 type legacy_aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
 
 let compare_legacy_aliased_exports = Reference.Map.Tree.compare_direct Reference.compare
 
 type t =
   | Explicit of {
+      exports: ExportMap.t;
       legacy_aliased_exports: legacy_aliased_exports;
       empty_stub: bool;
       local_mode: Source.local_mode Node.t option;
@@ -46,6 +74,7 @@ let empty_stub = function
 let create_for_testing ~local_mode ~stub =
   Explicit
     {
+      exports = ExportMap.empty;
       legacy_aliased_exports = Reference.Map.empty |> Map.to_tree;
       empty_stub = stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode = None;
@@ -53,13 +82,41 @@ let create_for_testing ~local_mode ~stub =
 
 
 let create
-    {
-      Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
-      statements;
-      metadata = { Source.Metadata.local_mode; _ };
-      _;
-    }
+    ( {
+        Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
+        statements;
+        metadata = { Source.Metadata.local_mode; _ };
+        _;
+      } as source )
   =
+  let exports =
+    let open UnannotatedGlobal in
+    let collect_export sofar { Collector.Result.name; unannotated_global } =
+      match unannotated_global with
+      | Imported ImportEntry.(Module { implicit_alias; _ } | Name { implicit_alias; _ })
+        when implicit_alias && is_stub ->
+          (* Stub files do not re-export unaliased imports *)
+          sofar
+      | Imported (ImportEntry.Module { target; implicit_alias }) ->
+          let exported_module_name =
+            if implicit_alias then
+              Option.value_exn (Reference.head target)
+            else
+              target
+          in
+          Identifier.Map.set sofar ~key:name ~data:(Export.Module exported_module_name)
+      | Imported (ImportEntry.Name { from; target; _ }) ->
+          Identifier.Map.set sofar ~key:name ~data:(Export.NameAlias { from; name = target })
+      | Define _ -> Identifier.Map.set sofar ~key:name ~data:Export.Define
+      | Class -> Identifier.Map.set sofar ~key:name ~data:Export.Class
+      | SimpleAssign _
+      | TupleAssign _ ->
+          Identifier.Map.set sofar ~key:name ~data:Export.GlobalVariable
+    in
+    Collector.from_source source
+    |> List.fold ~init:Identifier.Map.empty ~f:collect_export
+    |> Map.to_tree
+  in
   let legacy_aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
@@ -102,6 +159,7 @@ let create
   in
   Explicit
     {
+      exports;
       legacy_aliased_exports;
       empty_stub = is_stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode;
@@ -109,6 +167,23 @@ let create
 
 
 let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
+
+let get_export considered_module name =
+  match considered_module with
+  | Explicit { exports; _ } -> ExportMap.lookup exports name
+  | Implicit _ -> None
+
+
+let get_all_exports considered_module =
+  match considered_module with
+  | Explicit { exports; _ } -> ExportMap.to_alist exports
+  | Implicit _ -> []
+
+
+let is_implicit = function
+  | Explicit _ -> false
+  | Implicit _ -> true
+
 
 let legacy_aliased_export considered_module reference =
   match considered_module with

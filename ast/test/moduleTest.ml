@@ -99,7 +99,99 @@ let test_aliased_export _ =
   ()
 
 
+let test_exports context =
+  let assert_exports ?(is_stub = false) ~expected source_text =
+    let actual =
+      let handle = if is_stub then "test.pyi" else "test.py" in
+      parse ~handle source_text |> Module.create |> Module.get_all_exports
+    in
+    let expected = List.sort expected ~compare:[%compare: Identifier.t * Module.Export.t] in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: (Identifier.t * Module.Export.t) list]
+      ~printer:(fun exports ->
+        Sexp.to_string_hum [%message (exports : (Identifier.t * Module.Export.t) list)])
+      expected
+      actual
+  in
+
+  let open Module.Export in
+  assert_exports
+    {|
+      import a.b
+      import c.d as e
+      from f.g import h
+      from i.j import k as l
+    |}
+    ~expected:
+      [
+        "a", Module !&"a";
+        "e", Module !&"c.d";
+        "h", NameAlias { from = !&"f.g"; name = "h" };
+        "l", NameAlias { from = !&"i.j"; name = "k" };
+      ];
+  assert_exports
+    {|
+      import a.b
+      import c.d as e
+      from f.g import h
+      from i.j import k as l
+    |}
+    ~is_stub:true
+    ~expected:["e", Module !&"c.d"; "l", NameAlias { from = !&"i.j"; name = "k" }];
+  assert_exports
+    {|
+       def foo() -> None: pass
+       class Bar: pass
+       baz = 42
+    |}
+    ~expected:["foo", Define; "Bar", Class; "baz", GlobalVariable];
+  assert_exports
+    {|
+       if derp():
+         x = 42
+       else:
+         if herp():
+           y = 43
+         z = 44
+    |}
+    ~expected:["x", GlobalVariable; "y", GlobalVariable; "z", GlobalVariable];
+  assert_exports
+    {|
+       try:
+         try:
+           x = 42
+         except:
+           y = 43
+       except:
+         z = 43
+       finally:
+         w = 44
+    |}
+    ~expected:["x", GlobalVariable; "y", GlobalVariable; "z", GlobalVariable; "w", GlobalVariable];
+  assert_exports
+    {|
+       import foo
+       def foo(): pass
+    |} (* Last definition wins *)
+    ~expected:["foo", Define];
+  assert_exports
+    {|
+       if derp():
+         from bar import foo
+       else:
+         foo = 42
+    |}
+    (* Unfortunately since we don't really follow control we can't really join the two. *)
+    ~expected:["foo", GlobalVariable];
+  ()
+
+
 let () =
   "module"
-  >::: ["empty_stub" >:: test_empty_stub; "aliased_export" >:: test_aliased_export]
+  >::: [
+         "empty_stub" >:: test_empty_stub;
+         "aliased_export" >:: test_aliased_export;
+         "exports" >:: test_exports;
+       ]
   |> Test.run

@@ -640,7 +640,15 @@ let test_builtin_modules context =
   let assert_nonempty qualifier =
     match AstEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
     | None -> assert_failure "Module does not exist"
-    | Some metadata -> assert_bool "empty stub not expected" (not (Module.empty_stub metadata))
+    | Some metadata ->
+        assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
+        assert_bool "implicit module not expected" (not (Module.is_implicit metadata));
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: Module.Export.t option]
+          ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
+          (Some Module.Export.GlobalVariable)
+          (Module.get_export metadata "foo")
   in
   assert_nonempty Reference.empty;
   assert_nonempty !&"builtins";
