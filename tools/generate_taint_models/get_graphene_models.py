@@ -10,7 +10,11 @@ import re
 from typing import Callable, Iterable, List, Optional
 
 from ...api.connection import PyreConnection
-from .generator_specifications import AnnotationSpecification, WhitelistSpecification
+from .generator_specifications import (
+    AnnotationSpecification,
+    WhitelistSpecification,
+    default_entrypoint_taint,
+)
 from .get_methods_of_subclasses import MethodsOfSubclassesGenerator
 from .get_models_filtered_by_callable import ModelsFilteredByCallableGenerator
 from .model import PyreFunctionDefinitionModel
@@ -30,13 +34,7 @@ class GrapheneModelsGenerator(ModelGenerator[PyreFunctionDefinitionModel]):
         self.pyre_connection = pyre_connection
 
         self.annotations: AnnotationSpecification = (
-            annotations
-            or AnnotationSpecification(
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
-                returns="TaintSink[ReturnedToUser]",
-            )
+            annotations or default_entrypoint_taint
         )
         self.whitelist: WhitelistSpecification = whitelist or WhitelistSpecification(
             parameter_name={"self", "cls", "*_"},

@@ -37,3 +37,11 @@ class DecoratorAnnotationSpecification(NamedTuple):
     decorator: str
     annotations: Optional[AnnotationSpecification] = None
     whitelist: Optional[WhitelistSpecification] = None
+
+
+default_entrypoint_taint = AnnotationSpecification(
+    arg="TaintSource[UserControlled]",
+    vararg="TaintSource[UserControlled]",
+    kwarg="TaintSource[UserControlled]",
+    returns="TaintSink[ReturnedToUser]",
+)
