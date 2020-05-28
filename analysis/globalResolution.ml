@@ -126,6 +126,10 @@ let module_exists ({ dependency; _ } as resolution) =
   AstEnvironment.ReadOnly.module_exists ?dependency (ast_environment resolution)
 
 
+let get_module_metadata ({ dependency; _ } as resolution) =
+  AstEnvironment.ReadOnly.get_module_metadata ?dependency (ast_environment resolution)
+
+
 let function_definitions ({ dependency; _ } as resolution) reference =
   let unannotated_global_environment = unannotated_global_environment resolution in
   UnannotatedGlobalEnvironment.ReadOnly.get_define

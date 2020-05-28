@@ -886,6 +886,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Any = object()
         overload = object()
         final = object()
+        TypedDict = object()
 
         Callable: _SpecialForm = ...
         Protocol: _SpecialForm = ...
@@ -893,6 +894,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Tuple: _SpecialForm = ...
         Generic: _SpecialForm = ...
         Final: _SpecialForm = ...
+        ClassVar: _SpecialForm = ...
+        NoReturn: _SpecialForm = ...
 
         class GenericMeta(type): ...
 
@@ -1056,6 +1059,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     "builtins.pyi", builtins;
     ( "django/http.pyi",
       {|
+        class HttpRequest: ...
+        class HttpResponse: ...
         class Request:
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
@@ -1064,8 +1069,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     "django/__init__.pyi", "import django.http";
     ( "dataclasses.pyi",
       {|
-        _T = typing.TypeVar('_T')
-        class InitVar(typing.Generic[_T]): ...
+        from typing import TypeVar, Generic, Type
+        _T = TypeVar('_T')
+        class InitVar(Generic[_T]): ...
+        def dataclass(_cls: Type[_T]) -> Type[_T]: ...
         |}
     );
     ( "functools.pyi",
@@ -1144,6 +1151,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
     ( "typing_extensions.pyi",
       {|
+        from typing import Final as Final
         class _SpecialForm:
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
@@ -1253,7 +1261,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from unittest import case
         from unittest import mock
-        from unittest.case import TestCase
+        from unittest.case import TestCase as TestCase
         curdir: str
         pardir: str
         sep: str
@@ -1286,6 +1294,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "pyre_extensions/__init__.pyi",
       {|
         from typing import List, Optional, Type, TypeVar
+        from typing import Generic as Generic
         import type_variable_operators
 
         _T = TypeVar("_T")
@@ -1302,7 +1311,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         from typing import List, Optional, Type, TypeVar, _SpecialForm
         Map: _SpecialForm
         PositionalArgumentsOf: _SpecialForm
+        KeywordArgumentsOf: _SpecialForm
         ArgumentsOf: _SpecialForm
+        Concatenate: _SpecialForm
         |}
     );
     ( "numbers.pyi",

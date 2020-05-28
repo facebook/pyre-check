@@ -1540,7 +1540,10 @@ let test_check_getattr context =
       def foo() -> str:
         return any_attribute
     |}
-    [];
+    [
+      "Undefined import [21]: Could not find a name `any_attribute` defined in module \
+       `has_getattr_str`.";
+    ];
   assert_test_getattr
     {|
       import has_getattr_invalid_arity

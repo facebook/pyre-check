@@ -418,7 +418,7 @@ let test_concise context =
     {|
       from a.b import c
     |}
-    ["Undefined import [21]: Could not find module `a`."];
+    ["Undefined import [21]: Could not find module `a.b`."];
   assert_type_errors
     {|
       def foo() -> None:

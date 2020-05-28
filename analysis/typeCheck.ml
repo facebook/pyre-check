@@ -4949,36 +4949,82 @@ module State (Context : Context) = struct
         in
         Some resolution, []
     | Import { Import.from; imports } ->
-        let check_import import =
-          let rec check_lead lead = function
-            | [] -> None
-            | name :: rest -> (
-                let lead = lead @ [name] in
-                let reference = Reference.create_from_list lead in
-                match GlobalResolution.module_exists global_resolution reference with
-                | true -> check_lead lead rest
-                | false -> (
-                    match resolve_reference_type ~resolution reference with
-                    | Type.Any ->
-                        (* Import from Any is ok *)
-                        None
-                    | _ -> Some reference ) )
-          in
-          match GlobalResolution.is_suppressed_module global_resolution import with
-          | true -> None
-          | false -> check_lead [] (Reference.as_list import)
+        let has_getattr_any name =
+          let define_name = Reference.create "__getattr__" |> Reference.combine name in
+          match GlobalResolution.global global_resolution define_name with
+          | Some
+              {
+                AnnotatedGlobalEnvironment.annotation =
+                  {
+                    Annotation.annotation =
+                      Type.Callable
+                        {
+                          Type.Callable.implementation =
+                            {
+                              Type.Callable.annotation = Type.Any;
+                              parameters =
+                                Type.Callable.Defined
+                                  [
+                                    ( Type.Callable.Parameter.PositionalOnly { annotation; _ }
+                                    | Type.Callable.Parameter.Named { annotation; _ }
+                                    | Type.Callable.Parameter.KeywordOnly { annotation; _ } );
+                                  ];
+                            };
+                          _;
+                        };
+                    _;
+                  };
+                _;
+              }
+            when Type.equal annotation Type.string ->
+              true
+          | _ -> false
         in
         let undefined_imports =
           match from with
-          | Some { Node.value = from; _ } -> Option.to_list (check_import from)
           | None ->
               List.filter_map imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
-                  check_import name)
+                  match GlobalResolution.module_exists global_resolution name with
+                  | true -> None
+                  | false -> (
+                      match GlobalResolution.is_suppressed_module global_resolution name with
+                      | true -> None
+                      | false -> Some (Error.UndefinedModule name) ))
+          | Some { Node.value = from; _ } -> (
+              match GlobalResolution.get_module_metadata global_resolution from with
+              | None ->
+                  if GlobalResolution.is_suppressed_module global_resolution from then
+                    []
+                  else
+                    [Error.UndefinedModule from]
+              | Some module_metadata ->
+                  List.filter_map
+                    imports
+                    ~f:(fun { Import.name = { Node.value = name_reference; _ }; _ } ->
+                      let name = Reference.show name_reference in
+                      match Module.get_export module_metadata name with
+                      | Some _ ->
+                          (* `name` is defined inside the module. *)
+                          None
+                      | None ->
+                          if
+                            GlobalResolution.module_exists
+                              global_resolution
+                              (Reference.combine from name_reference)
+                          then (* `name` is a submodule of the current package. *)
+                            None
+                          else if has_getattr_any from then
+                            (* The current module has `__getattr_: str -> Any` defined. *)
+                            None
+                          else if GlobalResolution.is_suppressed_module global_resolution from then
+                            (* The current module descendant of a placeholder-stub module. *)
+                            None
+                          else
+                            Some (Error.UndefinedName { from; name })) )
         in
         ( Some resolution,
-          List.fold undefined_imports ~init:[] ~f:(fun errors reference ->
-              emit_error ~errors ~location ~kind:(Error.UndefinedImport (UndefinedModule reference)))
-        )
+          List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
+              emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
     | Class { Class.bases; _ } when bases <> [] ->
         (* Check that variance isn't widened on inheritence *)
         let check_base errors { Call.Argument.value = base; _ } =

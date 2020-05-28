@@ -97,6 +97,8 @@ val base_is_from_placeholder_stub : t -> Expression.Call.Argument.t -> bool
 
 val module_exists : t -> Reference.t -> bool
 
+val get_module_metadata : t -> Reference.t -> Module.t option
+
 val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata option
 
 val is_protocol : t -> Type.t -> bool
