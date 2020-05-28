@@ -137,11 +137,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         else:
             new_targets = []
             targets_files = []
-            for path, target_names in all_targets.items():
+            for path, targets in all_targets.items():
                 targets_files.append(Path(path))
                 new_targets += [
-                    "//" + path.replace("/TARGETS", "") + ":" + name
-                    for name in target_names
+                    "//" + path.replace("/TARGETS", "") + ":" + target.name
+                    for target in targets
                 ]
 
         configuration_path = directory / ".pyre_configuration.local"

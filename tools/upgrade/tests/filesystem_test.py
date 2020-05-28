@@ -8,12 +8,12 @@ import unittest
 from textwrap import dedent
 from typing import List
 
-from ..filesystem import TargetCollector
+from ..filesystem import Target, TargetCollector
 
 
 class FilesystemTest(unittest.TestCase):
     def assert_collector(
-        self, source: str, expected_targets: List[str], pyre_only: bool
+        self, source: str, expected_targets: List[Target], pyre_only: bool
     ) -> None:
         target_collector = TargetCollector(pyre_only)
         tree = ast.parse(dedent(source))
@@ -59,7 +59,7 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = ["target_name"]
+        expected_targets = [Target("target_name", strict=False, pyre=True)]
         self.assert_collector(source, expected_targets, False)
 
         source = """
@@ -85,7 +85,10 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = ["target_name", "test_target_name"]
+        expected_targets = [
+            Target("target_name", strict=False, pyre=True),
+            Target("test_target_name", strict=False, pyre=True),
+        ]
         self.assert_collector(source, expected_targets, False)
 
         source = """
@@ -112,7 +115,7 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = ["target_name"]
+        expected_targets = [Target("target_name", strict=False, pyre=True)]
         self.assert_collector(source, expected_targets, True)
 
         source = """
@@ -139,5 +142,5 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
         """
-        expected_targets = ["target_name"]
+        expected_targets = [Target("target_name", strict=False, pyre=True)]
         self.assert_collector(source, expected_targets, True)

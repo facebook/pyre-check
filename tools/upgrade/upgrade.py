@@ -30,7 +30,7 @@ from .commands.strict_default import StrictDefault
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
 from .errors import errors_from_targets
-from .filesystem import LocalMode, add_local_mode, find_targets, path_exists
+from .filesystem import LocalMode, Target, add_local_mode, find_targets, path_exists
 from .repository import Repository
 
 
@@ -168,8 +168,8 @@ class FixmeTargets(ErrorSuppressingCommand):
         all_targets = find_targets(search_root)
         if not all_targets:
             return
-        for path, target_names in all_targets.items():
-            self._run_fixme_targets_file(project_directory, path, target_names)
+        for path, targets in all_targets.items():
+            self._run_fixme_targets_file(project_directory, path, targets)
 
         self._repository.submit_changes(
             commit=(not self._no_commit),
@@ -178,14 +178,14 @@ class FixmeTargets(ErrorSuppressingCommand):
         )
 
     def _run_fixme_targets_file(
-        self, project_directory: Path, path: str, target_names: List[str]
+        self, project_directory: Path, path: str, targets: List[Target]
     ) -> None:
         LOG.info("Processing %s...", path)
-        targets = [
-            path.replace("/TARGETS", "") + ":" + name + "-pyre-typecheck"
-            for name in target_names
+        target_names = [
+            path.replace("/TARGETS", "") + ":" + target.name + "-pyre-typecheck"
+            for target in targets
         ]
-        errors = errors_from_targets(project_directory, path, targets)
+        errors = errors_from_targets(project_directory, path, target_names)
         if not errors:
             return
         LOG.info("Found %d type errors in %s.", len(errors), path)
@@ -199,7 +199,7 @@ class FixmeTargets(ErrorSuppressingCommand):
             return
 
         if self._repository.format():
-            errors = errors_from_targets(project_directory, path, targets)
+            errors = errors_from_targets(project_directory, path, target_names)
             if not errors:
                 LOG.info("Errors unchanged after linting.")
                 return

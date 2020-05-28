@@ -6,13 +6,15 @@
 # pyre-unsafe
 
 import json
-import libcst
 import unittest
 from pathlib import Path
 from textwrap import dedent
 from unittest.mock import MagicMock, call, mock_open, patch
 
+import libcst
+
 from ... import errors, upgrade
+from ...filesystem import Target
 from ...repository import Repository
 from .. import targets_to_configuration
 from ..targets_to_configuration import TargetPyreRemover, TargetsToConfiguration
@@ -165,8 +167,11 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.no_commit = False
         arguments.pyre_only = False
         find_targets.return_value = {
-            "subdirectory/a/TARGETS": ["target_one"],
-            "subdirectory/b/c/TARGETS": ["target_three", "target_two"],
+            "subdirectory/a/TARGETS": [Target("target_one", strict=False, pyre=True)],
+            "subdirectory/b/c/TARGETS": [
+                Target("target_three", strict=False, pyre=True),
+                Target("target_two", strict=False, pyre=True),
+            ],
         }
         filesystem_list = MagicMock()
         filesystem_list.return_value = []

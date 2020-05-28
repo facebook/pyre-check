@@ -5,12 +5,11 @@
 
 import ast as builtin_ast
 import logging
-import os
 import re
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, NamedTuple
 
 from ...client.filesystem import get_filesystem
 from . import ast
@@ -31,15 +30,23 @@ class LocalMode(Enum):
         return "# " + self.value
 
 
+class Target(NamedTuple):
+    name: str
+    strict: bool
+    pyre: bool
+
+
 class TargetCollector(builtin_ast.NodeVisitor):
     def __init__(self, pyre_only: bool) -> None:
         self._pyre_only: bool = pyre_only
-        self._targets: List[str] = []
+        self._targets: List[Target] = []
+        self._contains_strict: bool = False
 
     def visit_Call(self, node: builtin_ast.Call) -> None:
         target_fields = node.keywords
         check_types = False
         uses_pyre = True
+        is_strict = False
         name = None
         for field in target_fields:
             value = field.value
@@ -52,11 +59,19 @@ class TargetCollector(builtin_ast.NodeVisitor):
             elif field.arg == "check_types_options":
                 if isinstance(value, builtin_ast.Str):
                     uses_pyre = uses_pyre and "mypy" not in value.s.lower()
+                    is_strict = is_strict or (uses_pyre and "strict" in value.s.lower())
+            elif field.arg == "typing_options":
+                if isinstance(value, builtin_ast.Str):
+                    is_strict = is_strict or "strict" in value.s.lower()
         if name and check_types and (not self._pyre_only or uses_pyre):
-            self._targets.append(name)
+            self._targets.append(Target(name, is_strict, uses_pyre))
+        self._contains_strict = self._contains_strict or is_strict
 
-    def result(self) -> List[str]:
+    def result(self) -> List[Target]:
         return self._targets
+
+    def contains_strict(self) -> bool:
+        return self._contains_strict
 
 
 def path_exists(filename: str) -> Path:
@@ -66,7 +81,7 @@ def path_exists(filename: str) -> Path:
     return path
 
 
-def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[str]]:
+def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[Target]]:
     LOG.info("Finding typecheck targets in %s", search_root)
     target_files = find_files(search_root, "TARGETS")
     target_names = {}
