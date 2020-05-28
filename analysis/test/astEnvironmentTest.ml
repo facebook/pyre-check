@@ -611,6 +611,43 @@ let test_ast_change _ =
   ()
 
 
+let test_builtin_modules context =
+  let ast_environment =
+    let ast_environment, _ =
+      let sources = ["builtins.py", "foo: int = 42"] in
+      ScratchProject.setup
+        ~context
+        ~include_typeshed_stubs:false
+        ~include_helper_builtins:false
+        sources
+      |> ScratchProject.parse_sources
+    in
+    AstEnvironment.read_only ast_environment
+  in
+  assert_bool
+    "empty qualifier module exists"
+    (AstEnvironment.ReadOnly.module_exists ast_environment Reference.empty);
+  assert_bool
+    "random qualifier doesn't exist"
+    (not (AstEnvironment.ReadOnly.module_exists ast_environment !&"derp"));
+  assert_bool
+    "`builtins` exists"
+    (AstEnvironment.ReadOnly.module_exists ast_environment !&"builtins");
+  assert_bool
+    "`future.builtins` exists"
+    (AstEnvironment.ReadOnly.module_exists ast_environment !&"future.builtins");
+
+  let assert_nonempty qualifier =
+    match AstEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
+    | None -> assert_failure "Module does not exist"
+    | Some metadata -> assert_bool "empty stub not expected" (not (Module.empty_stub metadata))
+  in
+  assert_nonempty Reference.empty;
+  assert_nonempty !&"builtins";
+  assert_nonempty !&"future.builtins";
+  ()
+
+
 let test_register_modules context =
   let assert_module_exports ?(is_stub = false) raw_source expected_exports =
     let ast_environment =
@@ -1123,6 +1160,7 @@ let () =
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
          "ast_change" >:: test_ast_change;
+         "builtins" >:: test_builtin_modules;
          "register_modules" >:: test_register_modules;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update;

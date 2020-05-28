@@ -736,27 +736,31 @@ end
 
 let read_only ({ module_tracker } as environment) =
   let get_module_metadata ?dependency qualifier =
-    match Reference.as_list qualifier with
-    | ["future"; "builtins"]
-    | ["builtins"] ->
-        Some (Module.create_implicit ~empty_stub:true ())
-    | _ -> (
-        match ModuleMetadata.get ?dependency qualifier with
-        | Some _ as result -> result
-        | None -> (
-            match ModuleTracker.is_module_tracked module_tracker qualifier with
-            | true -> Some (Module.create_implicit ())
-            | false -> None ) )
+    let qualifier =
+      match Reference.as_list qualifier with
+      | ["future"; "builtins"]
+      | ["builtins"] ->
+          Reference.empty
+      | _ -> qualifier
+    in
+    match ModuleMetadata.get ?dependency qualifier with
+    | Some _ as result -> result
+    | None -> (
+        match ModuleTracker.is_module_tracked module_tracker qualifier with
+        | true -> Some (Module.create_implicit ())
+        | false -> None )
   in
   let module_exists ?dependency qualifier =
-    match Reference.as_list qualifier with
-    | ["future"; "builtins"]
-    | ["builtins"] ->
-        true
-    | _ -> (
-        match ModuleMetadata.mem ?dependency qualifier with
-        | true -> true
-        | false -> ModuleTracker.is_module_tracked module_tracker qualifier )
+    let qualifier =
+      match Reference.as_list qualifier with
+      | ["future"; "builtins"]
+      | ["builtins"] ->
+          Reference.empty
+      | _ -> qualifier
+    in
+    match ModuleMetadata.mem ?dependency qualifier with
+    | true -> true
+    | false -> ModuleTracker.is_module_tracked module_tracker qualifier
   in
   {
     ReadOnly.get_source = get_source environment;
