@@ -34,7 +34,7 @@ let create_concatenation ?head ?tail ?mappers variable
 module DiamondOrder = struct
   type t = unit
 
-  let always_less_or_equal _ ~left ~right =
+  let rec always_less_or_equal _ ~left ~right =
     match left, right with
     | _, _ when Type.equal left right -> true
     | _, Type.Top -> true
@@ -44,6 +44,8 @@ module DiamondOrder = struct
     | Type.Primitive "Child", Type.Primitive "Grandparent" -> true
     | Type.Primitive "left_parent", Type.Primitive "Grandparent" -> true
     | Type.Primitive "right_parent", Type.Primitive "Grandparent" -> true
+    | left, Union rights ->
+        List.exists rights ~f:(fun right -> always_less_or_equal () ~left ~right)
     | _ -> false
 
 
@@ -96,6 +98,16 @@ let test_add_bound _ =
   let explicit_parent_a_parent_b = variable (Type.Variable.Explicit [left_parent; right_parent]) in
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent)));
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
+  assert_add_bound_succeeds
+    (`Lower
+      (UnaryPair
+         ( explicit_parent_a_parent_b,
+           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
+  assert_add_bound_succeeds
+    (`Upper
+      (UnaryPair
+         ( explicit_parent_a_parent_b,
+           Variable (Type.Variable.Unary.mark_as_bound explicit_parent_a_parent_b) )));
   assert_add_bound_fails
     ~preconstraints:
       (add_bound (Some empty) (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent))))
@@ -217,6 +229,59 @@ let test_single_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, grandparent))]
     None;
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (UnaryPair
+             ( explicit_int_string_parent_A,
+               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+      ]
+    (Some
+       [
+         UnaryPair
+           ( explicit_int_string_parent_A,
+             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+       ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Upper
+          (UnaryPair
+             ( explicit_int_string_parent_A,
+               Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) ));
+      ]
+    (Some
+       [
+         UnaryPair
+           ( explicit_int_string_parent_A,
+             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+       ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower
+          (UnaryPair
+             ( explicit_int_string_parent_A,
+               Type.optional
+                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+      ]
+    None;
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Upper
+          (UnaryPair
+             ( explicit_int_string_parent_A,
+               Type.optional
+                 (Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A)) ));
+      ]
+    (Some
+       [
+         UnaryPair
+           ( explicit_int_string_parent_A,
+             Variable (Type.Variable.Unary.mark_as_bound explicit_int_string_parent_A) );
+       ]);
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
   let empty_parameters = Type.Callable.Defined [] in
   let one_named_parameter =

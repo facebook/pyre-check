@@ -410,19 +410,26 @@ module OrderedConstraints (Order : OrderType) = struct
       in
       match exogenous_constraint with
       | Explicit explicits ->
+          let collect annotation sofar =
+            let add_to_explicits_if_safe sofar candidate =
+              match candidate with
+              | { Type.Variable.Unary.constraints = Explicit left_constraints; _ } as candidate ->
+                  let exists_in_explicits left_constraint =
+                    List.exists explicits ~f:(Type.equal left_constraint)
+                  in
+                  if List.for_all left_constraints ~f:exists_in_explicits then
+                    (* The only other thing that an explicit type variable can instantiate to is
+                       another type variable with a subset of its values *)
+                    Type.Variable candidate :: sofar
+                  else
+                    sofar
+              | _ -> sofar
+            in
+            Type.Variable.GlobalTransforms.Unary.collect_all annotation
+            |> List.fold ~f:add_to_explicits_if_safe ~init:sofar
+          in
           let explicits =
-            match lower_bound interval with
-            | Type.Variable { constraints = Explicit left_constraints; _ } ->
-                let exists_in_explicits left_constraint =
-                  List.exists explicits ~f:(Type.equal left_constraint)
-                in
-                if List.for_all left_constraints ~f:exists_in_explicits then
-                  (* The only other thing that an explicit type variable can instantiate to is
-                     another type variable with a subset of its values *)
-                  lower_bound interval :: explicits
-                else
-                  explicits
-            | _ -> explicits
+            collect (lower_bound interval) explicits |> collect (upper_bound interval)
           in
           let contains { upper_bound; lower_bound } candidate ~order =
             Order.always_less_or_equal order ~left:candidate ~right:upper_bound

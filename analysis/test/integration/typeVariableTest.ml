@@ -108,6 +108,27 @@ let test_check_bounded_variables context =
         return a
     |}
     [];
+
+  assert_type_errors
+    {|
+      from typing import TypeVar, List, Tuple, Optional, Callable
+      T = TypeVar("T", int, str)
+      def f(x: Callable[[T], None]) -> None:
+        y = g(x)
+      def g(x: Callable[[T], None]) -> None:
+        ...
+      |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, List, Tuple, Optional, Callable
+      T = TypeVar("T", int, str)
+      def f(x: Optional[Callable[[Optional[T]], None]]) -> None:
+        y = g(x)
+      def g(x: Optional[Callable[[Optional[T]], None]]) -> None:
+        ...
+      |}
+    [];
   ()
 
 
