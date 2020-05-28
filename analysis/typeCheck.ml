@@ -192,10 +192,10 @@ module State (Context : Context) = struct
     =
     let mismatch =
       match mismatch with
-      | AttributeResolution.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
-        ->
+      | WeakenMutableLiterals.FieldTypeMismatch
+          { field_name; expected_type; actual_type; class_name } ->
           Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
-      | AttributeResolution.MissingRequiredField { field_name; class_name } ->
+      | MissingRequiredField { field_name; class_name } ->
           Error.MissingRequiredField { field_name; class_name }
     in
     define_location, Error.TypedDictionaryInitializationError mismatch

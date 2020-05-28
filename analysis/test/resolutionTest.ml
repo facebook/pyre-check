@@ -10,6 +10,7 @@ open Ast
 open Pyre
 open Statement
 open Test
+open WeakenMutableLiterals
 
 let test_set_local context =
   let assert_local ~resolution ~name ~expected =
@@ -333,10 +334,10 @@ let test_resolve_mutable_literals context =
         ~expected
     in
     let expected_weakened_type =
-      AttributeResolution.make_weakened_type (parse_annotation expected_output)
+      WeakenMutableLiterals.make_weakened_type (parse_annotation expected_output)
     in
     assert_equal
-      ~printer:[%show: AttributeResolution.weakened_type]
+      ~printer:[%show: WeakenMutableLiterals.weakened_type]
       expected_weakened_type
       actual_weakened_type
   in
@@ -620,10 +621,10 @@ let test_resolve_mutable_literal_to_complex_type context =
         ~expected
     in
     let expected_weakened_type =
-      AttributeResolution.make_weakened_type (parse_annotation expected_output)
+      WeakenMutableLiterals.make_weakened_type (parse_annotation expected_output)
     in
     assert_equal
-      ~printer:[%show: AttributeResolution.weakened_type]
+      ~printer:[%show: WeakenMutableLiterals.weakened_type]
       expected_weakened_type
       actual_weakened_type
   in
@@ -756,7 +757,6 @@ let test_resolve_mutable_literals_typed_dictionary context =
         name: str
     |}
   in
-  let open AttributeResolution in
   let resolve_expression_with_fresh_namespace resolution expression =
     Type.Variable.Namespace.reset ();
     Resolution.resolve_expression_to_type resolution expression
@@ -769,11 +769,11 @@ let test_resolve_mutable_literals_typed_dictionary context =
         { Node.value = expected_mismatch; _ }
         { Node.value = actual_mismatch; _ }
       =
-      AttributeResolution.equal_typed_dictionary_mismatch expected_mismatch actual_mismatch
+      WeakenMutableLiterals.equal_typed_dictionary_mismatch expected_mismatch actual_mismatch
     in
     let location_insensitive_equal_weakened_type
-        { resolved = expected_resolved; typed_dictionary_errors = expected }
-        { resolved = actual_resolved; typed_dictionary_errors = actual }
+        { WeakenMutableLiterals.resolved = expected_resolved; typed_dictionary_errors = expected }
+        { WeakenMutableLiterals.resolved = actual_resolved; typed_dictionary_errors = actual }
       =
       List.equal location_insensitive_equal_mismatch expected actual
       && Type.equal expected_resolved actual_resolved
@@ -1062,31 +1062,28 @@ let test_distribute_union_over_parametric _ =
     assert_equal ~cmp:[%equal: Type.t option] ~printer:[%show: Type.t option] expected actual
   in
   assert_distributed
-    (AttributeResolution.distribute_union_over_parametric
-       ~parametric_name:"list"
-       ~number_of_parameters:1
-       Type.integer)
+    (distribute_union_over_parametric ~parametric_name:"list" ~number_of_parameters:1 Type.integer)
     None;
   assert_distributed
-    (AttributeResolution.distribute_union_over_parametric
+    (distribute_union_over_parametric
        ~parametric_name:"list"
        ~number_of_parameters:1
        (Type.union [Type.list Type.integer; Type.integer]))
     None;
   assert_distributed
-    (AttributeResolution.distribute_union_over_parametric
+    (distribute_union_over_parametric
        ~parametric_name:"list"
        ~number_of_parameters:2
        (Type.union [Type.list Type.integer; Type.list Type.string]))
     None;
   assert_distributed
-    (AttributeResolution.distribute_union_over_parametric
+    (distribute_union_over_parametric
        ~parametric_name:"list"
        ~number_of_parameters:1
        (Type.union [Type.list Type.integer; Type.list Type.string]))
     (Some (Type.list (Type.union [Type.integer; Type.string])));
   assert_distributed
-    (AttributeResolution.distribute_union_over_parametric
+    (distribute_union_over_parametric
        ~parametric_name:"dict"
        ~number_of_parameters:2
        (Type.union

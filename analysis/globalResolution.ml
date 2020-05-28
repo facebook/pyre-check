@@ -309,7 +309,7 @@ let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation
   |> Option.value ~default:false
 
 
-let resolved_type = AttributeResolution.resolved_type
+let resolved_type = WeakenMutableLiterals.resolved_type
 
 let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
   let comparator =
@@ -319,7 +319,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
   in
 
   let left =
-    AttributeResolution.weaken_mutable_literals
+    WeakenMutableLiterals.weaken_mutable_literals
       resolve
       ~get_typed_dictionary:(get_typed_dictionary ~resolution)
       ~expression

@@ -54,3 +54,4 @@ module EnvironmentSharedMemory = EnvironmentSharedMemory
 module IndexTracker = IndexTracker
 module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
 module UndecoratedFunctionEnvironment = UndecoratedFunctionEnvironment
+module WeakenMutableLiterals = WeakenMutableLiterals

@@ -8,57 +8,10 @@ open SharedMemoryKeys
 open Statement
 open Core
 
-type typed_dictionary_mismatch =
-  | MissingRequiredField of {
-      field_name: Identifier.t;
-      class_name: Identifier.t;
-    }
-  | FieldTypeMismatch of {
-      field_name: Identifier.t;
-      expected_type: Type.t;
-      actual_type: Type.t;
-      class_name: Identifier.t;
-    }
-[@@deriving compare, eq, show]
-
-type weakened_type = {
-  resolved: Type.t;
-  typed_dictionary_errors: typed_dictionary_mismatch Node.t list;
-}
-[@@deriving eq, show]
-
-val resolved_type : weakened_type -> Type.t
-
-val typed_dictionary_errors : weakened_type -> typed_dictionary_mismatch Node.t list
-
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
   decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
 }
-
-val make_weakened_type
-  :  ?typed_dictionary_errors:typed_dictionary_mismatch Node.t list ->
-  Type.t ->
-  weakened_type
-
-val distribute_union_over_parametric
-  :  parametric_name:Identifier.t ->
-  number_of_parameters:int ->
-  Type.t ->
-  Type.t option
-
-val weaken_mutable_literals
-  :  (Expression.expression Node.t -> Type.t) ->
-  get_typed_dictionary:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
-  expression:Expression.expression Node.t option ->
-  resolved:Type.t ->
-  expected:Type.t ->
-  comparator:
-    (get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
-    left:Type.t ->
-    right:Type.t ->
-    bool) ->
-  weakened_type
 
 type generic_type_problems =
   | IncorrectNumberOfParameters of {
@@ -126,7 +79,8 @@ type reason =
       expected: int;
       provided: int;
     }
-  | TypedDictionaryInitializationError of typed_dictionary_mismatch Node.t list
+  | TypedDictionaryInitializationError of
+      WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
@@ -256,7 +210,7 @@ module AttributeReadOnly : sig
     expression:Expression.expression Node.t option ->
     resolved:Type.t ->
     expected:Type.t ->
-    weakened_type
+    WeakenMutableLiterals.weakened_type
 
   val constraints_solution_exists
     :  t ->

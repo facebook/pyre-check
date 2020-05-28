@@ -139,7 +139,7 @@ val annotation_parser
   t ->
   AnnotatedCallable.annotation_parser
 
-val resolved_type : AttributeResolution.weakened_type -> Type.t
+val resolved_type : WeakenMutableLiterals.weakened_type -> Type.t
 
 val resolve_mutable_literals
   :  t ->
@@ -147,7 +147,7 @@ val resolve_mutable_literals
   expression:Ast.Expression.t option ->
   resolved:Type.t ->
   expected:Type.t ->
-  AttributeResolution.weakened_type
+  WeakenMutableLiterals.weakened_type
 
 val get_typed_dictionary
   :  resolution:t ->
