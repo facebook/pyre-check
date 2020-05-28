@@ -21,6 +21,7 @@ from .get_annotated_free_functions_with_decorator import (  # noqa
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
 from .get_class_sources import ClassSourceGenerator  # noqa
+from .get_django_class_based_view_models import DjangoClassBasedViewModels  # noqa
 from .get_exit_nodes import ExitNodeGenerator  # noqa
 from .get_filtered_sources import FilteredSourceGenerator  # noqa
 from .get_globals import GlobalModelGenerator  # noqa
