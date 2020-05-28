@@ -19,6 +19,7 @@ class SubclassGeneratorTest(unittest.TestCase):
     ) -> None:
         class_hierarchy = query.ClassHierarchy(
             {
+                "GrandChild": ["WantedChild1"],
                 "WantedChild1": ["WantedParent"],
                 "WantedChild2": ["WantedParent"],
                 "UnwantedChild1": ["UnwantedParent"],
@@ -29,10 +30,22 @@ class SubclassGeneratorTest(unittest.TestCase):
         )
         get_class_hierarchy_mock.return_value = class_hierarchy
 
+        # Ensure we don't find 'GrandChild' when 'transitive' is defaulted to False
         self.assertEqual(
             # pyre-ignore[6]
             subclass_generator.get_all_subclasses_from_pyre(["WantedParent"], None),
             {"WantedParent": ["WantedChild1", "WantedChild2"]},
+        )
+
+        # Ensure we do find 'GrandChild' when 'transitive' is True
+        self.assertEqual(
+            subclass_generator.get_all_subclasses_from_pyre(
+                ["WantedParent"],
+                # pyre-ignore[6]
+                None,
+                True,
+            ),
+            {"WantedParent": ["GrandChild", "WantedChild1", "WantedChild2"]},
         )
 
     @patch.object(query, "defines")
