@@ -600,6 +600,27 @@ let decoded_equal first second =
   | _ -> None
 
 
+module ResolvedReference = struct
+  type export =
+    | FromModuleGetattr
+    | Exported of Module.Export.t
+  [@@deriving sexp, compare, hash]
+
+  type t =
+    | Module of Reference.t
+    | ModuleAttribute of {
+        from: Reference.t;
+        name: Identifier.t;
+        export: export;
+        remaining: Identifier.t list;
+      }
+    | PlaceholderStub of {
+        stub_module: Reference.t;
+        remaining: Identifier.t list;
+      }
+  [@@deriving sexp, compare, hash]
+end
+
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
@@ -708,6 +729,100 @@ module ReadOnly = struct
         | _ -> reference
     in
     resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
+  module ResolveExportItem = struct
+    module T = struct
+      type t = {
+        current_module: Reference.t;
+        name: Identifier.t;
+      }
+      [@@deriving sexp, compare, hash]
+    end
+
+    include T
+    include Hashable.Make (T)
+  end
+
+  let resolve_exports read_only ?dependency ?(from = Reference.empty) reference =
+    let visited_set = ResolveExportItem.Hash_set.create () in
+    let rec resolve_module_alias ~current_module ~names_to_resolve () =
+      match get_module_metadata ?dependency read_only current_module with
+      | None ->
+          let rec resolve_placeholder_stub sofar = function
+            | [] -> None
+            | name :: prefixes -> (
+                let checked_module = List.rev prefixes |> Reference.create_from_list in
+                let sofar = name :: sofar in
+                match get_module_metadata ?dependency read_only checked_module with
+                | Some module_metadata when Module.empty_stub module_metadata ->
+                    Some
+                      (ResolvedReference.PlaceholderStub
+                         { stub_module = checked_module; remaining = sofar })
+                | _ -> resolve_placeholder_stub sofar prefixes )
+          in
+          (* Make sure none of the parent of `current_module` is placeholder stub *)
+          resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
+      | Some module_metadata -> (
+          match Module.empty_stub module_metadata with
+          | true ->
+              Some
+                (ResolvedReference.PlaceholderStub
+                   { stub_module = current_module; remaining = names_to_resolve })
+          | false -> (
+              match names_to_resolve with
+              | [] -> Some (ResolvedReference.Module current_module)
+              | next_name :: rest_names -> (
+                  let item = { ResolveExportItem.current_module; name = next_name } in
+                  match Hash_set.strict_add visited_set item with
+                  | Result.Error _ ->
+                      (* Module alias cycle detected. Abort resolution. *)
+                      None
+                  | Result.Ok _ -> (
+                      match Module.get_export module_metadata next_name with
+                      | None -> (
+                          match Module.get_export module_metadata "__getattr__" with
+                          | Some (Module.Export.Define { is_getattr_any = true }) ->
+                              Some
+                                (ResolvedReference.ModuleAttribute
+                                   {
+                                     from = current_module;
+                                     name = next_name;
+                                     export = ResolvedReference.FromModuleGetattr;
+                                     remaining = rest_names;
+                                   })
+                          | _ ->
+                              (* We could be hitting an implicit module, or we could be hitting an
+                                 explicit module whose name is a prefix of another explicit module.
+                                 Keep moving through the current reference chain to make sure we
+                                 don't mis-handle those cases. *)
+                              resolve_module_alias
+                                ~current_module:
+                                  (Reference.create next_name |> Reference.combine current_module)
+                                ~names_to_resolve:rest_names
+                                () )
+                      | Some (Module.Export.NameAlias { from; name }) ->
+                          (* We don't know if `name` refers to a module or not. Move forward on the
+                             alias chain. *)
+                          resolve_module_alias
+                            ~current_module:from
+                            ~names_to_resolve:(name :: rest_names)
+                            ()
+                      | Some (Module.Export.Module name) ->
+                          (* `name` is definitely a module. *)
+                          resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
+                      | Some (Module.Export.(Class | Define _ | GlobalVariable) as export) ->
+                          (* We find a non-module. *)
+                          Some
+                            (ResolvedReference.ModuleAttribute
+                               {
+                                 from = current_module;
+                                 name = next_name;
+                                 export = ResolvedReference.Exported export;
+                                 remaining = rest_names;
+                               }) ) ) ) )
+    in
+    resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
 
   let resolve_decorator_if_matches

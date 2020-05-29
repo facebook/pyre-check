@@ -6,6 +6,27 @@
 open Ast
 open SharedMemoryKeys
 
+module ResolvedReference : sig
+  type export =
+    | FromModuleGetattr
+    | Exported of Module.Export.t
+  [@@deriving sexp, compare, hash]
+
+  type t =
+    | Module of Reference.t
+    | ModuleAttribute of {
+        from: Reference.t;
+        name: Identifier.t;
+        export: export;
+        remaining: Identifier.t list;
+      }
+    | PlaceholderStub of {
+        stub_module: Reference.t;
+        remaining: Identifier.t list;
+      }
+  [@@deriving sexp, compare, hash]
+end
+
 type t
 
 module ReadOnly : sig
@@ -59,6 +80,13 @@ module ReadOnly : sig
     ?dependency:DependencyKey.registered ->
     Reference.t ->
     Reference.t
+
+  val resolve_exports
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    ?from:Reference.t ->
+    Reference.t ->
+    ResolvedReference.t option
 
   val resolve_decorator_if_matches
     :  t ->
