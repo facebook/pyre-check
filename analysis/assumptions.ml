@@ -49,8 +49,19 @@ module CallableAssumptions = struct
   let empty = []
 end
 
+module DecoratorAssumptions = struct
+  type t = Reference.t list [@@deriving compare, sexp, hash, show]
+
+  let add sofar ~assume_is_not_a_decorator = assume_is_not_a_decorator :: sofar
+
+  let not_a_decorator sofar ~candidate = List.exists sofar ~f:(Reference.equal candidate)
+
+  let empty = []
+end
+
 type t = {
   protocol_assumptions: ProtocolAssumptions.t;
   callable_assumptions: CallableAssumptions.t;
+  decorator_assumptions: DecoratorAssumptions.t;
 }
 [@@deriving compare, sexp, hash, show]

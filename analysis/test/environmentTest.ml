@@ -780,37 +780,6 @@ let test_populate context =
   in
   assert_superclasses ~environment "test.CallMe" ~superclasses:["object"];
   ();
-  let environment = populate ~context ["test.py", {|
-      def foo(x: int) -> str: ...
-    |}] in
-  let global_resolution = GlobalResolution.create environment in
-  let undecorated_function_environment =
-    GlobalResolution.class_metadata_environment global_resolution
-    |> ClassMetadataEnvironment.ReadOnly.undecorated_function_environment
-  in
-  assert_equal
-    ~cmp:(Option.equal Type.Callable.equal)
-    ~printer:(function
-      | None -> "None"
-      | Some callable -> Format.asprintf "Some (%a)" Type.Callable.pp callable)
-    (UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
-       undecorated_function_environment
-       (Reference.create "test.foo"))
-    (Some
-       {
-         Type.Callable.kind = Named (Reference.create "test.foo");
-         implementation =
-           {
-             Type.Callable.annotation = Type.string;
-             parameters =
-               Type.Callable.Defined
-                 [
-                   Type.Callable.Parameter.Named
-                     { annotation = Type.integer; name = "x"; default = false };
-                 ];
-           };
-         overloads = [];
-       });
   ()
 
 

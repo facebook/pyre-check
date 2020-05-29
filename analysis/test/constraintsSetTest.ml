@@ -203,6 +203,7 @@ let test_add_constraint context =
             {
               protocol_assumptions = ProtocolAssumptions.empty;
               callable_assumptions = CallableAssumptions.empty;
+              decorator_assumptions = DecoratorAssumptions.empty;
             };
           get_typed_dictionary;
           metaclass;
@@ -950,6 +951,7 @@ let test_instantiate_protocol_parameters context =
           {
             protocol_assumptions = ProtocolAssumptions.empty;
             callable_assumptions = CallableAssumptions.empty;
+            decorator_assumptions = DecoratorAssumptions.empty;
           };
         get_typed_dictionary;
         metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
@@ -1135,6 +1137,7 @@ let test_mark_escaped_as_escaped context =
           {
             protocol_assumptions = ProtocolAssumptions.empty;
             callable_assumptions = CallableAssumptions.empty;
+            decorator_assumptions = DecoratorAssumptions.empty;
           };
         get_typed_dictionary;
         metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));

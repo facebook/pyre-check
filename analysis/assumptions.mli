@@ -37,8 +37,19 @@ module CallableAssumptions : sig
   val empty : t
 end
 
+module DecoratorAssumptions : sig
+  type t
+
+  val add : t -> assume_is_not_a_decorator:Reference.t -> t
+
+  val not_a_decorator : t -> candidate:Reference.t -> bool
+
+  val empty : t
+end
+
 type t = {
   protocol_assumptions: ProtocolAssumptions.t;
   callable_assumptions: CallableAssumptions.t;
+  decorator_assumptions: DecoratorAssumptions.t;
 }
 [@@deriving compare, sexp, hash, show]

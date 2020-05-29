@@ -81,8 +81,6 @@ val annotated_global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
 val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
 
-val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
-
 val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
 val alias_environment : t -> AliasEnvironment.ReadOnly.t

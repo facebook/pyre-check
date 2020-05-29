@@ -77,7 +77,7 @@ end
 
 let resolve_callable_protocol
     ~assumption
-    ~order:{ attribute; assumptions = { protocol_assumptions; callable_assumptions }; _ }
+    ~order:{ attribute; assumptions = { callable_assumptions; _ } as assumptions; _ }
     annotation
   =
   match
@@ -87,7 +87,7 @@ let resolve_callable_protocol
   | None -> (
       let new_assumptions =
         {
-          protocol_assumptions;
+          assumptions with
           callable_assumptions =
             CallableAssumptions.add ~candidate:annotation ~callable:assumption callable_assumptions;
         }

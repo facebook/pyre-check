@@ -289,12 +289,6 @@ let is_suppressed_module class_metadata_environment ~dependency reference =
     reference
 
 
-let undecorated_signature class_metadata_environment ~dependency =
-  UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
-    ?dependency
-    (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment class_metadata_environment)
-
-
 let is_final_class class_metadata_environment ~dependency class_name =
   match
     ClassMetadataEnvironment.ReadOnly.get_class_metadata
@@ -2444,13 +2438,31 @@ class base class_metadata_environment dependency =
             Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
         | name, _ -> (
             let resolved_decorator =
-              match
-                ( undecorated_signature
-                    class_metadata_environment
-                    (Reference.create name)
-                    ~dependency,
-                  arguments )
-              with
+              let fetched =
+                let name = Reference.create name |> Reference.delocalize in
+                let { decorator_assumptions; _ } = assumptions in
+                if
+                  Assumptions.DecoratorAssumptions.not_a_decorator
+                    decorator_assumptions
+                    ~candidate:name
+                then
+                  None
+                else
+                  let assumptions =
+                    {
+                      assumptions with
+                      decorator_assumptions =
+                        Assumptions.DecoratorAssumptions.add
+                          decorator_assumptions
+                          ~assume_is_not_a_decorator:name;
+                    }
+                  in
+                  match self#global_annotation ~assumptions name with
+                  | Some { Global.annotation = { annotation = Type.Callable callable; _ }; _ } ->
+                      Some callable
+                  | _ -> None
+              in
+              match fetched, arguments with
               | Some callable, Some arguments -> (
                   let resolve_with_locals ~locals:_ expression =
                     let resolved = self#resolve_literal ~assumptions expression in
@@ -3719,6 +3731,7 @@ let empty_assumptions =
   {
     protocol_assumptions = ProtocolAssumptions.empty;
     callable_assumptions = CallableAssumptions.empty;
+    decorator_assumptions = DecoratorAssumptions.empty;
   }
 
 

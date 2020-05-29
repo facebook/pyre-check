@@ -97,6 +97,7 @@ let less_or_equal
         {
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
+          decorator_assumptions = DecoratorAssumptions.empty;
         };
       get_typed_dictionary;
       metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
@@ -116,6 +117,7 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
         {
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
+          decorator_assumptions = DecoratorAssumptions.empty;
         };
       get_typed_dictionary;
       metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
@@ -139,6 +141,7 @@ let join
         {
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
+          decorator_assumptions = DecoratorAssumptions.empty;
         };
       get_typed_dictionary;
       metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
@@ -158,6 +161,7 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
         {
           protocol_assumptions = ProtocolAssumptions.empty;
           callable_assumptions = CallableAssumptions.empty;
+          decorator_assumptions = DecoratorAssumptions.empty;
         };
       get_typed_dictionary;
       metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));

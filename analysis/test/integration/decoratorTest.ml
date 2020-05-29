@@ -431,11 +431,10 @@ let test_check_user_decorators context =
     |}
     ["Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[[str], int]`."];
 
-  (* We currently ignore decorating decorators. *)
   assert_type_errors
     {|
       import typing
-      meta_type = typing.Callable[[typing.Callable[[int], int]], typing.Callable[[str], str]]
+      meta_type = typing.Callable[[typing.Callable[[int], str]], typing.Callable[[str], str]]
       def meta_decorate(f: typing.Any) -> meta_type:
         ...
       @meta_decorate
@@ -449,7 +448,7 @@ let test_check_user_decorators context =
     |}
     [
       "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[[str], int]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[[str], str]`.";
     ];
   assert_type_errors
     {|
@@ -547,6 +546,62 @@ let test_check_user_decorators context =
       reveal_type(foo)
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `int`."];
+  (* Avoid infinite looping *)
+  assert_type_errors
+    {|
+      @bar
+      def foo() -> None:
+        pass
+      @foo
+      def bar() -> None:
+        pass
+      reveal_type(foo)
+      reveal_type(bar)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], None]`.";
+      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable(bar)[[], None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      def f(x: object) -> int:
+        return 42
+
+      local_global: Callable[[object], int] = f
+
+      @local_global
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "other.py";
+          source =
+            {|
+              from typing import Callable
+              def f(x: object) -> int:
+                return 42
+
+              foreign_global: Callable[[object], int] = f
+            |};
+        };
+      ]
+    {|
+      from other import foreign_global
+
+      @foreign_global
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
   ()
 
 

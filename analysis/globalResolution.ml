@@ -27,11 +27,6 @@ let class_metadata_environment resolution =
   |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
 
 
-let undecorated_function_environment resolution =
-  class_metadata_environment resolution
-  |> ClassMetadataEnvironment.ReadOnly.undecorated_function_environment
-
-
 let class_hierarchy_environment resolution =
   class_metadata_environment resolution
   |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment

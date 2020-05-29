@@ -28,12 +28,10 @@ module MetadataReadOnly : sig
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
-  val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
-
   val successors : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> string list
 end
 
 include
   Environment.S
     with module ReadOnly = MetadataReadOnly
-     and module PreviousEnvironment = UndecoratedFunctionEnvironment
+     and module PreviousEnvironment = ClassHierarchyEnvironment
