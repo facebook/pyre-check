@@ -828,12 +828,17 @@ module ReadOnly = struct
   let resolve_decorator_if_matches
       read_only
       ?dependency
-      ({ Ast.Statement.Decorator.name; _ } as decorator)
+      ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator)
       ~target
     =
-    let resolved_name = Node.map name ~f:(legacy_resolve_exports read_only ?dependency) in
-    if String.equal (Node.value resolved_name |> Reference.show) target then
-      Some { decorator with name = resolved_name }
+    let resolved_name =
+      match resolve_exports read_only ?dependency name with
+      | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+          Reference.create_from_list (name :: remaining) |> Reference.combine from
+      | _ -> name
+    in
+    if String.equal (Reference.show resolved_name) target then
+      Some { decorator with name = { Node.value = resolved_name; location } }
     else
       None
 

@@ -1125,7 +1125,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     "multiprocessing/__init__.pyi", "from multiprocessing.context import Process as Process";
     ( "enum.pyi",
       {|
-        from abc import ABCMeta
+        from abc import ABCMeta as ABCMeta
         from typing import Type, Mapping
         _T = typing.TypeVar('_T')
         class EnumMeta(ABCMeta):
@@ -1463,6 +1463,31 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             @property
             def denominator(self) -> int: ...
         |}
+    );
+    ( "attr/__init__.pyi",
+      {|
+        from typing import Optional, TypeVar, Any, Dict
+        _C = TypeVar("_C", bound=type)
+        def s(
+            maybe_cls: None = ...,
+            these: Optional[Dict[str, Any]] = ...,
+            repr_ns: Optional[str] = ...,
+            repr: bool = ...,
+            cmp: Optional[bool] = ...,
+            hash: Optional[bool] = ...,
+            init: bool = ...,
+            slots: bool = ...,
+            frozen: bool = ...,
+            weakref_slot: bool = ...,
+            str: bool = ...,
+            auto_attribs: bool = ...,
+            kw_only: bool = ...,
+            cache_hash: bool = ...,
+            auto_exc: bool = ...,
+            eq: Optional[bool] = ...,
+            order: Optional[bool] = ...,
+        ) -> Callable[[_C], _C]: ...
+      |}
     );
     ( "click/__init__.pyi",
       {|

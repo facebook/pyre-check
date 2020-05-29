@@ -171,6 +171,7 @@ let test_get_decorator context =
   assert_get_decorator
     (* `enum` imports `ABCMeta` from `abc`. *)
     {|
+      import enum
       @enum.ABCMeta
       class A:
         pass
@@ -617,6 +618,7 @@ let test_class_attributes context =
   let resolution =
     setup
       {|
+        from dataclasses import dataclass
         from placeholder_stub import StubParent
 
         class Metaclass:

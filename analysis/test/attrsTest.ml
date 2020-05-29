@@ -11,6 +11,7 @@ let test_transform_environment context =
   let assert_equivalent_attributes = assert_equivalent_attributes ~context in
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         ...
@@ -36,6 +37,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       if 1 > 2:
         @attr.s
         class Foo:
@@ -62,6 +64,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         def foo() -> None:
@@ -91,6 +94,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         def __init__(self) -> None:
@@ -120,6 +124,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         name = 'abc'
@@ -146,6 +151,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         name: str
@@ -172,6 +178,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class Foo:
         name: str
@@ -204,6 +211,7 @@ let test_transform_environment context =
   (* Boolean arguments *)
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s(init = False)
       class Foo:
         def foo(self) -> None:
@@ -230,6 +238,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s(repr = False)
       class Foo:
         def foo(self) -> None:
@@ -256,6 +265,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s(cmp = False)
       class Foo:
         def foo(self) -> None:
@@ -274,6 +284,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s(auto_attribs = True)
       class Foo:
         def foo(self) -> None:
@@ -304,6 +315,7 @@ let test_transform_environment context =
   (* Inheritance *)
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class C(Base):
         z: int = 10
@@ -357,6 +369,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class C(Base):
         z: int = 10
@@ -410,6 +423,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class C(Base):
         z: int = 10
@@ -461,6 +475,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class C(B):
         z: int = 10
@@ -520,6 +535,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       @attr.s
       class C1(B1, A1):
         z: int = 10
@@ -588,6 +604,7 @@ let test_transform_environment context =
     ];
   assert_equivalent_attributes
     {|
+      import attr
       class NoAttr:
         x: int = 15
       @attr.s
