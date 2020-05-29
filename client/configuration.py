@@ -488,8 +488,7 @@ class Configuration:
                 ignore_all_errors = configuration.consume(
                     "ignore_all_errors", default=[]
                 )
-                # Deprecated.
-                ignore_all_errors += configuration.consume("do_not_check", default=[])
+
                 configuration_path = os.path.dirname(os.path.realpath(path))
                 self.ignore_all_errors.extend(
                     [
@@ -593,6 +592,10 @@ class Configuration:
                 self.other_critical_files = configuration.consume(
                     "critical_files", default=[]
                 )
+
+                # Warn on deprecated fields.
+                for deprecated_field in configuration._deprecated.keys():
+                    configuration.consume(deprecated_field)
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
