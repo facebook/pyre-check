@@ -141,11 +141,54 @@ let test_exports context =
     ~expected:["e", Module !&"c.d"; "l", NameAlias { from = !&"i.j"; name = "k" }];
   assert_exports
     {|
+       from typing import Any
        def foo() -> None: pass
+       def bar(x: str) -> Any:
+         return x
+       def __getattr__(name: str) -> Any: ...
+    |}
+    ~expected:
+      [
+        "Any", NameAlias { from = !&"typing"; name = "Any" };
+        "foo", Define { is_getattr_any = false };
+        "bar", Define { is_getattr_any = false };
+        "__getattr__", Define { is_getattr_any = true };
+      ];
+  assert_exports
+    {|
+       import typing
+       def __getattr__(name) -> typing.Any: ...
+    |}
+    ~expected:["typing", Module !&"typing"; "__getattr__", Define { is_getattr_any = true }];
+  (* Unannotated __getattr__ doesn't count *)
+  assert_exports
+    {|
+       def __getattr__(name): ...
+    |}
+    ~expected:["__getattr__", Define { is_getattr_any = false }];
+  (* __getattr__ with wrong annotations doesn't count *)
+  assert_exports
+    {|
+       def __getattr__(name: int) -> Any: ...
+    |}
+    ~expected:["__getattr__", Define { is_getattr_any = false }];
+  assert_exports
+    {|
+       def __getattr__(name: str) -> int: ...
+    |}
+    ~expected:["__getattr__", Define { is_getattr_any = false }];
+  (* __getattr__ with wrong param count doesn't count *)
+  assert_exports
+    {|
+       def __getattr__(name: str, value: int) -> Any: ...
+    |}
+    ~expected:["__getattr__", Define { is_getattr_any = false }];
+  assert_exports
+    {|
        class Bar: pass
        baz = 42
     |}
-    ~expected:["foo", Define; "Bar", Class; "baz", GlobalVariable];
+    ~expected:["Bar", Class; "baz", GlobalVariable];
   assert_exports
     {|
        if derp():
@@ -172,9 +215,9 @@ let test_exports context =
   assert_exports
     {|
        import foo
-       def foo(): pass
+       foo = 42
     |} (* Last definition wins *)
-    ~expected:["foo", Define];
+    ~expected:["foo", GlobalVariable];
   assert_exports
     {|
        if derp():

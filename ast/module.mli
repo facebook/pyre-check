@@ -11,7 +11,7 @@ module Export : sig
       }
     | Module of Reference.t
     | Class
-    | Define
+    | Define of { is_getattr_any: bool }
     | GlobalVariable
   [@@deriving sexp, compare, hash]
 end

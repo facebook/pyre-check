@@ -14,7 +14,7 @@ module Export = struct
       }
     | Module of Reference.t
     | Class
-    | Define
+    | Define of { is_getattr_any: bool }
     | GlobalVariable
   [@@deriving sexp, compare, hash]
 end
@@ -91,6 +91,37 @@ let create
   =
   let exports =
     let open UnannotatedGlobal in
+    let is_getattr_any
+        {
+          UnannotatedDefine.define =
+            { Define.Signature.name = { Node.value = name; _ }; parameters; return_annotation; _ };
+          _;
+        }
+      =
+      match Reference.last name with
+      | "__getattr__" -> (
+          match parameters with
+          | [{ Node.value = { Expression.Parameter.annotation = parameter_annotation; _ }; _ }] -> (
+              match parameter_annotation, return_annotation with
+              | ( (Some { Node.value = Name (Identifier "str"); _ } | None),
+                  Some
+                    {
+                      Node.value =
+                        Name
+                          ( Identifier "Any"
+                          | Attribute
+                              {
+                                base = { Node.value = Name (Identifier "typing"); _ };
+                                attribute = "Any";
+                                special = false;
+                              } );
+                      _;
+                    } ) ->
+                  true
+              | _ -> false )
+          | _ -> false )
+      | _ -> false
+    in
     let collect_export sofar { Collector.Result.name; unannotated_global } =
       match unannotated_global with
       | Imported ImportEntry.(Module { implicit_alias; _ } | Name { implicit_alias; _ })
@@ -107,7 +138,11 @@ let create
           Identifier.Map.set sofar ~key:name ~data:(Export.Module exported_module_name)
       | Imported (ImportEntry.Name { from; target; _ }) ->
           Identifier.Map.set sofar ~key:name ~data:(Export.NameAlias { from; name = target })
-      | Define _ -> Identifier.Map.set sofar ~key:name ~data:Export.Define
+      | Define defines ->
+          Identifier.Map.set
+            sofar
+            ~key:name
+            ~data:(Export.Define { is_getattr_any = List.exists defines ~f:is_getattr_any })
       | Class -> Identifier.Map.set sofar ~key:name ~data:Export.Class
       | SimpleAssign _
       | TupleAssign _ ->

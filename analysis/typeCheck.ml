@@ -4949,37 +4949,6 @@ module State (Context : Context) = struct
         in
         Some resolution, []
     | Import { Import.from; imports } ->
-        let has_getattr_any name =
-          let define_name = Reference.create "__getattr__" |> Reference.combine name in
-          match GlobalResolution.global global_resolution define_name with
-          | Some
-              {
-                AttributeResolution.Global.annotation =
-                  {
-                    Annotation.annotation =
-                      Type.Callable
-                        {
-                          Type.Callable.implementation =
-                            {
-                              Type.Callable.annotation = Type.Any;
-                              parameters =
-                                Type.Callable.Defined
-                                  [
-                                    ( Type.Callable.Parameter.PositionalOnly { annotation; _ }
-                                    | Type.Callable.Parameter.Named { annotation; _ }
-                                    | Type.Callable.Parameter.KeywordOnly { annotation; _ } );
-                                  ];
-                            };
-                          _;
-                        };
-                    _;
-                  };
-                _;
-              }
-            when Type.equal annotation Type.string ->
-              true
-          | _ -> false
-        in
         let undefined_imports =
           match from with
           | None ->
@@ -5006,21 +4975,23 @@ module State (Context : Context) = struct
                       | Some _ ->
                           (* `name` is defined inside the module. *)
                           None
-                      | None ->
-                          if
-                            GlobalResolution.module_exists
-                              global_resolution
-                              (Reference.combine from name_reference)
-                          then (* `name` is a submodule of the current package. *)
-                            None
-                          else if has_getattr_any from then
-                            (* The current module has `__getattr_: str -> Any` defined. *)
-                            None
-                          else if GlobalResolution.is_suppressed_module global_resolution from then
-                            (* The current module descendant of a placeholder-stub module. *)
-                            None
-                          else
-                            Some (Error.UndefinedName { from; name })) )
+                      | None -> (
+                          match Module.get_export module_metadata "__getattr__" with
+                          | Some (Module.Export.Define { is_getattr_any = true }) ->
+                              (* The current module has `__getattr__: str -> Any` defined. *)
+                              None
+                          | _ ->
+                              if
+                                (* `name` is a submodule of the current package. *)
+                                GlobalResolution.module_exists
+                                  global_resolution
+                                  (Reference.combine from name_reference)
+                                || (* The current module is descendant of a placeholder-stub module. *)
+                                GlobalResolution.is_suppressed_module global_resolution from
+                              then
+                                None
+                              else
+                                Some (Error.UndefinedName { from; name }) )) )
         in
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
