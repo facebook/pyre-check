@@ -9,7 +9,7 @@ import enum
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Type
 
 import libcst as cst
 from libcst._exceptions import ParserSyntaxError
@@ -63,12 +63,21 @@ def _parse_paths(paths: List[Path]) -> List[Path]:
     return parsed_paths
 
 
-def _count(
-    paths: List[cst.Module], collector: StatisticsCollector
-) -> StatisticsCollector:
-    for path in paths:
-        path.visit(collector)
-    return collector
+def _path_wise_counts(
+    paths: Dict[str, cst.Module],
+    collector_class: Type[StatisticsCollector],
+    strict: bool = False,
+) -> Dict[str, StatisticsCollector]:
+    collected_counts = {}
+    for path, module in paths.items():
+        collector = (
+            StrictCountCollector(strict)
+            if collector_class == StrictCountCollector
+            else collector_class()
+        )
+        module.visit(collector)
+        collected_counts[str(path)] = collector
+    return collected_counts
 
 
 def _pyre_configuration_directory(local_configuration: Optional[str]) -> Path:
@@ -171,25 +180,32 @@ class Statistics(Command):
             help="Log the statistics results to external tables.",
         )
 
+    def _collect_statistics(self, modules: Dict[str, cst.Module]) -> Dict[str, Any]:
+        annotations = _path_wise_counts(modules, AnnotationCountCollector)
+        fixmes = _path_wise_counts(modules, FixmeCountCollector)
+        ignores = _path_wise_counts(modules, IgnoreCountCollector)
+        strict_files = _path_wise_counts(modules, StrictCountCollector, self._strict)
+        return {
+            "annotations": {
+                path: counts.build_json() for path, counts in annotations.items()
+            },
+            "fixmes": {path: counts.build_json() for path, counts in fixmes.items()},
+            "ignores": {path: counts.build_json() for path, counts in ignores.items()},
+            "strict": {
+                path: counts.build_json() for path, counts in strict_files.items()
+            },
+        }
+
     def _run(self) -> None:
         if self._collect is None:
             paths = self._find_paths()
-            modules = []
+            modules = {}
             for path in _parse_paths(paths):
                 module = parse_path_to_module(path)
                 if module is not None:
-                    modules.append(module)
-            annotations = _count(modules, AnnotationCountCollector())
-            fixmes = _count(modules, FixmeCountCollector())
-            ignores = _count(modules, IgnoreCountCollector())
-            strict_files = _count(modules, StrictCountCollector(self._strict))
-            data = {
-                "annotations": annotations.build_json(),
-                "fixmes": fixmes.build_json(),
-                "ignores": ignores.build_json(),
-                "strict": strict_files.build_json(),
-            }
-            log.stdout.write(json.dumps(data))
+                    modules[path] = module
+            data = self._collect_statistics(modules)
+            log.stdout.write(json.dumps(data, indent=4))
             if self._log_results:
                 self._log_to_scuba(data)
         elif self._collect == QualityType.MISSING_ANNOTATIONS:
@@ -233,28 +249,39 @@ class Statistics(Command):
     def _log_to_scuba(self, data: Dict[str, Any]) -> None:
         if self._configuration and self._configuration.logger:
             root = str(_pyre_configuration_directory(self._local_configuration))
-            statistics.log(
-                statistics.LoggerCategory.ANNOTATION_COUNTS,
-                configuration=self._configuration,
-                integers=data["annotations"],
-                normals={"root": root},
-            )
-            self._log_fixmes("fixme", data["fixmes"], root)
-            self._log_fixmes("ignore", data["ignores"], root)
-            statistics.log(
-                statistics.LoggerCategory.STRICT_ADOPTION,
-                configuration=self._configuration,
-                integers=data["strict"],
-                normals={"root": root},
-            )
+            for path, counts in data["annotations"].items():
+                statistics.log(
+                    statistics.LoggerCategory.ANNOTATION_COUNTS,
+                    configuration=self._configuration,
+                    integers=counts,
+                    normals={"root": root, "path": path},
+                )
+            for path, counts in data["fixmes"].items():
+                self._log_fixmes("fixme", counts, root, path)
+            for path, counts in data["ignores"].items():
+                self._log_fixmes("ignore", counts, root, path)
+            for path, counts in data["strict"].items():
+                statistics.log(
+                    statistics.LoggerCategory.STRICT_ADOPTION,
+                    configuration=self._configuration,
+                    integers=counts,
+                    normals={"root": root, "path": path},
+                )
 
-    def _log_fixmes(self, fixme_type: str, data: Dict[str, int], root: str) -> None:
+    def _log_fixmes(
+        self, fixme_type: str, data: Dict[str, int], root: str, path: str
+    ) -> None:
         for error_code, count in data.items():
             statistics.log(
                 statistics.LoggerCategory.FIXME_COUNTS,
                 configuration=self._configuration,
                 integers={"count": count},
-                normals={"root": root, "code": error_code, "type": fixme_type},
+                normals={
+                    "root": root,
+                    "code": error_code,
+                    "type": fixme_type,
+                    "path": path,
+                },
             )
 
     def _find_paths(self) -> List[Path]:
