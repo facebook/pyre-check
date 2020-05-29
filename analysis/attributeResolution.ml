@@ -2457,10 +2457,55 @@ class base class_metadata_environment dependency =
                           ~assume_is_not_a_decorator:name;
                     }
                   in
-                  match self#global_annotation ~assumptions name with
-                  | Some { Global.annotation = { annotation = Type.Callable callable; _ }; _ } ->
-                      Some callable
-                  | _ -> None
+                  let resolve_attribute_access base ~attribute_name =
+                    let access { Type.instantiated; accessed_through_class; class_name } =
+                      self#attribute
+                        ~assumptions
+                        ~transitive:true
+                        ~accessed_through_class
+                        ~include_generated_attributes:true
+                        ?special_method:None
+                        ~attribute_name
+                        ~instantiated
+                        class_name
+                    in
+                    let join_all = function
+                      | head :: tail ->
+                          let order = self#full_order ~assumptions in
+                          List.fold tail ~init:head ~f:(TypeOrder.join order) |> Option.some
+                      | [] -> None
+                    in
+                    Type.resolve_class base
+                    >>| List.map ~f:access
+                    >>= Option.all
+                    >>| List.map ~f:AnnotatedAttribute.annotation
+                    >>| List.map ~f:Annotation.annotation
+                    >>= join_all
+                  in
+                  let rec resolver name =
+                    match
+                      self#global_annotation ~assumptions name, Reference.as_list name |> List.rev
+                    with
+                    | Some { Global.annotation = { annotation; _ }; _ }, _ -> Some annotation
+                    | None, ([] | [_]) -> None
+                    | None, attribute_name :: reversed_head ->
+                        resolver (Reference.create_from_list (List.rev reversed_head))
+                        >>= resolve_attribute_access ~attribute_name
+                  in
+                  match resolver name with
+                  | None -> None
+                  | Some (Type.Callable callable) -> Some callable
+                  | Some other -> (
+                      match resolve_attribute_access other ~attribute_name:"__call__" with
+                      | None -> None
+                      | Some (Type.Callable callable) -> Some callable
+                      | Some other -> (
+                          (* We potentially need to go specifically two layers in order to support
+                             when name resolves to Type[X], which has a __call__ of its constructor
+                             that is itself a BoundMethod, which has a Callable __call__ *)
+                          match resolve_attribute_access other ~attribute_name:"__call__" with
+                          | Some (Callable callable) -> Some callable
+                          | _ -> None ) )
               in
               match fetched, arguments with
               | Some callable, Some arguments -> (

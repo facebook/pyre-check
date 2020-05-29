@@ -274,6 +274,8 @@ let test_check_click_command context =
 
 
       reveal_type(main)
+      reveal_type(run)
+      reveal_type(run2)
 
       # Pyre should not raise any errors on the arguments with the presence of the click decorators
       main()
@@ -282,7 +284,11 @@ let test_check_click_command context =
       run(x=1)
       run2()
     |}
-    ["Revealed type [-1]: Revealed type for `test.main` is `click.core.Group`."];
+    [
+      "Revealed type [-1]: Revealed type for `test.main` is `click.core.Group`.";
+      "Revealed type [-1]: Revealed type for `test.run` is `click.core.Command`.";
+      "Revealed type [-1]: Revealed type for `test.run2` is `click.core.Command`.";
+    ];
   assert_type_errors
     {|
       import click
@@ -602,13 +608,40 @@ let test_check_user_decorators context =
       reveal_type(bar)
     |}
     ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
+  assert_type_errors
+    {|
+      class D:
+        def __init__(self, x: object) -> None:
+          pass
+
+      @D
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `D`."];
+  assert_type_errors
+    {|
+      class H:
+        def method(self, x: object) -> int:
+          return 42
+
+      h: H = H()
+
+      @h.method
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
   ()
 
 
 let test_check_callable_class_decorators context =
   let assert_type_errors = assert_type_errors ~context in
-  (* This should not work because that's a __call__ on the *instance* not the class. In principle we
-     could support metaclass __call__ methods, but we're not now *)
+  (* This should not work because that's a __call__ on the *instance* not the class. *)
   assert_type_errors
     {|
       import typing
@@ -632,7 +665,6 @@ let test_check_callable_class_decorators context =
        str]]`.";
     ];
 
-  (* We don't support overloaded callable classes either. *)
   assert_type_errors
     {|
       import typing
@@ -646,7 +678,9 @@ let test_check_callable_class_decorators context =
         @typing.overload
         def __call__(self, coroutine: int) -> int: ...
         def __call__(self, coroutine: typing.Any) -> typing.Any: ...
-      @synchronize
+
+      s: synchronize = synchronize()
+      @s
       async def am_i_async(x: int) -> str:
         return str(x)
       reveal_type(am_i_async)
@@ -654,10 +688,49 @@ let test_check_callable_class_decorators context =
     [
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
-       str]]`.";
-    ]
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Callable[..., str]`.";
+    ];
+
+  (* accessing metaclass methods via the class *)
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      class m:
+        def __call__(
+           self,
+           coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
+        ) -> typing.Callable[..., T]: ...
+
+      class synchronize(metaclass=m):
+        pass
+
+      @synchronize
+      async def am_i_async(x: int) -> str:
+        return str(x)
+      reveal_type(am_i_async)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+       contain `Any`.";
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Callable[..., str]`.";
+    ];
+  assert_type_errors
+    {|
+      class H:
+        def __call__(self, x: object) -> int:
+          return 42
+
+      h: H = H()
+
+      @h
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
+  ()
 
 
 let test_decorator_factories context =
