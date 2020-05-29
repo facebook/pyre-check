@@ -23,7 +23,10 @@ let test_simple_registration context =
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
     in
-    let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
+    let read_only =
+      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
+      |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+    in
     let location_insensitive_compare left right =
       Option.compare Annotation.compare left right = 0
     in
@@ -31,7 +34,7 @@ let test_simple_registration context =
       global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
     in
     let expectation = expected >>| Annotation.create_immutable ?original in
-    AnnotatedGlobalEnvironment.ReadOnly.get_global read_only (Reference.create name)
+    AttributeResolution.ReadOnly.get_global read_only (Reference.create name)
     >>| (fun { annotation; _ } -> annotation)
     |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
   in
@@ -98,7 +101,10 @@ let test_updates context =
         ()
     in
     let configuration = ScratchProject.configuration_of project in
-    let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
+    let read_only =
+      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
+      |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+    in
     let execute_action = function
       | global_name, dependency, expectation ->
           let location_insensitive_compare left right =
@@ -108,7 +114,7 @@ let test_updates context =
             global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
           in
           let expectation = expectation >>| Annotation.create_immutable in
-          AnnotatedGlobalEnvironment.ReadOnly.get_global
+          AttributeResolution.ReadOnly.get_global
             read_only
             (Reference.create global_name)
             ~dependency

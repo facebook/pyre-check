@@ -5,17 +5,8 @@
 open Ast
 open SharedMemoryKeys
 
-type global = {
-  annotation: Annotation.t;
-  undecorated_signature: Type.Callable.t option;
-  problem: AnnotatedAttribute.problem option;
-}
-[@@deriving eq, show, compare, sexp]
-
 module AnnotatedReadOnly : sig
   include Environment.ReadOnly
-
-  val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> global option
 
   val get_global_location
     :  t ->

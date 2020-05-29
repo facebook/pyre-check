@@ -124,7 +124,7 @@ val parse_as_parameter_specification_instance_annotation
   keywords_parameter_annotation:Expression.t ->
   Type.Variable.Variadic.Parameters.t option
 
-val global : t -> Reference.t -> AnnotatedGlobalEnvironment.global option
+val global : t -> Reference.t -> AttributeResolution.Global.t option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 

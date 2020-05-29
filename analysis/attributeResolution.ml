@@ -9,6 +9,15 @@ open Ast
 open Statement
 open Assumptions
 
+module Global = struct
+  type t = {
+    annotation: Annotation.t;
+    undecorated_signature: Type.Callable.t option;
+    problem: AnnotatedAttribute.problem option;
+  }
+  [@@deriving eq, show, compare, sexp]
+end
+
 module UninstantiatedAnnotation = struct
   type property_annotation = {
     self: Type.t option;
@@ -3575,6 +3584,135 @@ class base class_metadata_environment dependency =
               parameters = [Single (Callable (with_return callable)); Single self_type];
             }
       | _ -> signature
+
+    method global_annotation ~assumptions name =
+      let process_unannotated_global global =
+        let produce_assignment_global ~is_explicit annotation =
+          let original =
+            if is_explicit then
+              None
+            else if
+              (* Treat literal globals as having been explicitly annotated. *)
+              Type.is_partially_typed annotation
+            then
+              Some Type.Top
+            else
+              None
+          in
+          Annotation.create_immutable ~original annotation
+        in
+        match global with
+        | UnannotatedGlobal.Define defines ->
+            let { undecorated_signature; decorated } =
+              List.map defines ~f:(fun { define; _ } -> define)
+              |> List.partition_tf ~f:Define.Signature.is_overloaded_function
+              |> fun (overloads, implementations) ->
+              self#resolve_define
+                ~implementation:(List.last implementations)
+                ~overloads
+                ~assumptions
+            in
+            let annotation =
+              Result.ok decorated |> Option.value ~default:Type.Any |> Annotation.create_immutable
+            in
+            Some
+              {
+                Global.annotation;
+                undecorated_signature = Some undecorated_signature;
+                problem = Result.error decorated;
+              }
+        | SimpleAssign
+            {
+              explicit_annotation = None;
+              value =
+                {
+                  Node.value =
+                    Call
+                      {
+                        callee =
+                          {
+                            value =
+                              Name
+                                (Attribute
+                                  {
+                                    base = { Node.value = Name (Identifier "typing"); _ };
+                                    attribute = "TypeAlias";
+                                    _;
+                                  });
+                            _;
+                          };
+                        _;
+                      };
+                  _;
+                };
+              target_location = location;
+            } ->
+            let location = Location.strip_module location in
+            Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
+            |> Node.create ~location
+            |> self#parse_annotation ~validation:ValidatePrimitives ~assumptions
+            |> Type.meta
+            |> Annotation.create_immutable
+            |> fun annotation ->
+            Some { Global.annotation; undecorated_signature = None; problem = None }
+        | SimpleAssign { explicit_annotation; value; _ } ->
+            let explicit_annotation =
+              explicit_annotation
+              >>| self#parse_annotation ~assumptions
+              >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
+            in
+            let annotation =
+              match explicit_annotation with
+              | Some explicit -> explicit
+              | None -> self#resolve_literal value ~assumptions
+            in
+            produce_assignment_global ~is_explicit:(Option.is_some explicit_annotation) annotation
+            |> fun annotation ->
+            Some { Global.annotation; undecorated_signature = None; problem = None }
+        | TupleAssign { value; index; total_length; _ } ->
+            let extracted =
+              match self#resolve_literal ~assumptions value with
+              | Type.Tuple (Type.Bounded (Concrete parameters))
+                when List.length parameters = total_length ->
+                  List.nth parameters index
+                  (* This should always be Some, but I don't think its worth being fragile here *)
+                  |> Option.value ~default:Type.Top
+              | Type.Tuple (Type.Unbounded parameter) -> parameter
+              | _ -> Type.Top
+            in
+            produce_assignment_global ~is_explicit:false extracted
+            |> fun annotation ->
+            Some { Global.annotation; undecorated_signature = None; problem = None }
+        | _ -> None
+      in
+      let class_lookup =
+        Reference.show name
+        |> UnannotatedGlobalEnvironment.ReadOnly.class_exists
+             (unannotated_global_environment class_metadata_environment)
+             ?dependency
+      in
+      if class_lookup then
+        let primitive = Type.Primitive (Reference.show name) in
+        Annotation.create_immutable (Type.meta primitive)
+        |> fun annotation ->
+        Some { Global.annotation; undecorated_signature = None; problem = None }
+      else
+        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+          (unannotated_global_environment class_metadata_environment)
+          ?dependency
+          name
+        >>= fun global ->
+        let timer = Timer.start () in
+        let result = process_unannotated_global global in
+        Statistics.performance
+          ~flush:false
+          ~randomly_log_every:500
+          ~section:`Check
+          ~name:"SingleGlobalTypeCheck"
+          ~timer
+          ~normals:["name", Reference.show name; "request kind", "SingleGlobalTypeCheck"]
+          ();
+        result
   end
 
 let empty_assumptions =
@@ -3704,61 +3842,189 @@ module MetaclassCache = struct
   end
 end
 
-module Cache = ManagedCache.Make (struct
-  module PreviousEnvironment = MetaclassCache
-  module Key = SharedMemoryKeys.AttributeTableKey
+module AttributeCache = struct
+  module Cache = ManagedCache.Make (struct
+    module PreviousEnvironment = MetaclassCache
+    module Key = SharedMemoryKeys.AttributeTableKey
 
-  module Value = struct
-    type t = UninstantiatedAttributeTable.t option [@@deriving compare]
+    module Value = struct
+      type t = UninstantiatedAttributeTable.t option [@@deriving compare]
 
-    let prefix = Prefix.make ()
+      let prefix = Prefix.make ()
 
-    let description = "attributes"
+      let description = "attributes"
 
-    let unmarshall value = Marshal.from_string value 0
-  end
+      let unmarshall value = Marshal.from_string value 0
+    end
 
-  module KeySet = SharedMemoryKeys.AttributeTableKey.Set
-  module HashableKey = SharedMemoryKeys.AttributeTableKey
+    module KeySet = SharedMemoryKeys.AttributeTableKey.Set
+    module HashableKey = SharedMemoryKeys.AttributeTableKey
 
-  let lazy_incremental = true
+    let lazy_incremental = true
 
-  let produce_value
-      metaclass_cache
-      {
-        SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
-        accessed_via_metaclass;
-        name;
-      }
-      ~dependency
-    =
-    let implementation_with_cached_parse_annotation =
-      new MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
-        dependency
+    let produce_value
         metaclass_cache
-    in
-    implementation_with_cached_parse_annotation#single_uninstantiated_attribute_table
-      ~include_generated_attributes
-      ~accessed_via_metaclass
-      ~assumptions:empty_assumptions
-      name
+        {
+          SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
+          accessed_via_metaclass;
+          name;
+        }
+        ~dependency
+      =
+      let implementation_with_cached_parse_annotation =
+        new MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
+          dependency
+          metaclass_cache
+      in
+      implementation_with_cached_parse_annotation#single_uninstantiated_attribute_table
+        ~include_generated_attributes
+        ~accessed_via_metaclass
+        ~assumptions:empty_assumptions
+        name
 
 
-  let filter_upstream_dependency = function
-    | SharedMemoryKeys.AttributeTable key -> Some key
-    | _ -> None
+    let filter_upstream_dependency = function
+      | SharedMemoryKeys.AttributeTable key -> Some key
+      | _ -> None
 
 
-  let trigger_to_dependency key = SharedMemoryKeys.AttributeTable key
-end)
+    let trigger_to_dependency key = SharedMemoryKeys.AttributeTable key
+  end)
+
+  include Cache
+
+  module ReadOnly = struct
+    include Cache.ReadOnly
+
+    let metaclass_cache = upstream_environment
+
+    let cached_single_uninstantiated_attribute_table
+        read_only
+        dependency
+        ~include_generated_attributes
+        ~accessed_via_metaclass
+        name
+      =
+      get
+        read_only
+        ?dependency
+        {
+          SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
+          accessed_via_metaclass;
+          name;
+        }
+
+
+    class with_parse_annotation_metaclass_and_attribute_caches dependency read_only =
+      object
+        inherit
+          MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
+            dependency
+            (metaclass_cache read_only)
+
+        method! single_uninstantiated_attribute_table ~assumptions:_ =
+          cached_single_uninstantiated_attribute_table read_only dependency
+      end
+  end
+end
+
+module GlobalAnnotationCache = struct
+  module Cache = Environment.EnvironmentTable.WithCache (struct
+    let legacy_invalidated_keys upstream =
+      let previous_classes =
+        UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
+        |> Type.Primitive.Set.to_list
+        |> List.map ~f:Reference.create
+      in
+      let previous_unannotated_globals =
+        UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream
+      in
+      List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
+
+
+    let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+
+    let show_key = Reference.show
+
+    module PreviousEnvironment = AttributeCache
+    module Key = SharedMemoryKeys.ReferenceKey
+
+    module Value = struct
+      type t = Global.t option
+
+      let prefix = Prefix.make ()
+
+      let description = "Global"
+
+      let unmarshall value = Marshal.from_string value 0
+
+      let compare = Option.compare Global.compare
+    end
+
+    type trigger = Reference.t [@@deriving sexp, compare]
+
+    let convert_trigger = Fn.id
+
+    let key_to_trigger = Fn.id
+
+    module TriggerSet = Reference.Set
+
+    let lazy_incremental = false
+
+    let produce_value attribute_cache key ~dependency =
+      let implementation_with_preceding_caches =
+        new AttributeCache.ReadOnly.with_parse_annotation_metaclass_and_attribute_caches
+          dependency
+          attribute_cache
+      in
+      implementation_with_preceding_caches#global_annotation ~assumptions:empty_assumptions key
+
+
+    let filter_upstream_dependency = function
+      | SharedMemoryKeys.AnnotateGlobal name -> Some name
+      | _ -> None
+
+
+    let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobal name
+
+    let serialize_value = function
+      | Some annotation -> Global.sexp_of_t annotation |> Sexp.to_string
+      | None -> "None"
+
+
+    let equal_value = Option.equal Global.equal
+  end)
+
+  include Cache
+
+  module ReadOnly = struct
+    include Cache.ReadOnly
+
+    let attribute_cache = upstream_environment
+
+    class with_all_caches dependency read_only =
+      object
+        inherit
+          AttributeCache.ReadOnly.with_parse_annotation_metaclass_and_attribute_caches
+            dependency
+            (attribute_cache read_only)
+
+        method! global_annotation ~assumptions:_ = get read_only ?dependency
+      end
+  end
+end
 
 module PreviousEnvironment = ClassMetadataEnvironment
-include Cache
+include GlobalAnnotationCache
 
 module ReadOnly = struct
-  include Cache.ReadOnly
+  include GlobalAnnotationCache.ReadOnly
 
-  let metaclass_cache = upstream_environment
+  let attribute_cache = upstream_environment
+
+  let metaclass_cache read_only =
+    attribute_cache read_only |> AttributeCache.ReadOnly.upstream_environment
+
 
   let parse_annotation_cache read_only =
     metaclass_cache read_only |> MetaclassCache.ReadOnly.upstream_environment
@@ -3768,62 +4034,36 @@ module ReadOnly = struct
     ParseAnnotationCache.ReadOnly.upstream_environment (parse_annotation_cache read_only)
 
 
-  let cached_single_uninstantiated_attribute_table
-      read_only
-      dependency
-      ~include_generated_attributes
-      ~accessed_via_metaclass
-      name
-    =
-    get
-      read_only
-      ?dependency
-      {
-        SharedMemoryKeys.AttributeTableKey.include_generated_attributes;
-        accessed_via_metaclass;
-        name;
-      }
-
-
   class with_uninstantiated_attributes_cache dependency read_only =
     object
       inherit base (class_metadata_environment read_only) dependency
 
       method! single_uninstantiated_attribute_table ~assumptions:_ =
-        cached_single_uninstantiated_attribute_table read_only dependency
-    end
-
-  class with_all_caches dependency read_only =
-    object
-      inherit
-        MetaclassCache.ReadOnly.with_parse_annotation_and_metaclass_caches
+        AttributeCache.ReadOnly.cached_single_uninstantiated_attribute_table
+          (attribute_cache read_only)
           dependency
-          (metaclass_cache read_only)
-
-      method! single_uninstantiated_attribute_table ~assumptions:_ =
-        cached_single_uninstantiated_attribute_table read_only dependency
     end
 
-  let add_both_caches_and_empty_assumptions f read_only ?dependency =
-    new with_all_caches dependency read_only
+  let add_all_caches_and_empty_assumptions f read_only ?dependency =
+    new GlobalAnnotationCache.ReadOnly.with_all_caches dependency read_only
     |> f
     |> fun method_ -> method_ ~assumptions:empty_assumptions
 
 
   let instantiate_attribute =
-    add_both_caches_and_empty_assumptions (fun o -> o#instantiate_attribute ?apply_descriptors:None)
+    add_all_caches_and_empty_assumptions (fun o -> o#instantiate_attribute ?apply_descriptors:None)
 
 
   let attribute =
-    add_both_caches_and_empty_assumptions (fun o -> o#attribute ?apply_descriptors:None)
+    add_all_caches_and_empty_assumptions (fun o -> o#attribute ?apply_descriptors:None)
 
 
-  let all_attributes = add_both_caches_and_empty_assumptions (fun o -> o#all_attributes)
+  let all_attributes = add_all_caches_and_empty_assumptions (fun o -> o#all_attributes)
 
-  let attribute_names = add_both_caches_and_empty_assumptions (fun o -> o#attribute_names)
+  let attribute_names = add_all_caches_and_empty_assumptions (fun o -> o#attribute_names)
 
   let check_invalid_type_parameters =
-    add_both_caches_and_empty_assumptions (fun o -> o#check_invalid_type_parameters)
+    add_all_caches_and_empty_assumptions (fun o -> o#check_invalid_type_parameters)
 
 
   let parse_annotation read_only ?dependency =
@@ -3833,33 +4073,36 @@ module ReadOnly = struct
     attributes_cached_but_not_annotations#parse_annotation ~assumptions:empty_assumptions
 
 
-  let metaclass = add_both_caches_and_empty_assumptions (fun o -> o#metaclass)
+  let metaclass = add_all_caches_and_empty_assumptions (fun o -> o#metaclass)
 
-  let constraints = add_both_caches_and_empty_assumptions (fun o -> o#constraints)
+  let constraints = add_all_caches_and_empty_assumptions (fun o -> o#constraints)
 
-  let resolve_literal = add_both_caches_and_empty_assumptions (fun o -> o#resolve_literal)
+  let resolve_literal = add_all_caches_and_empty_assumptions (fun o -> o#resolve_literal)
 
-  let resolve_define = add_both_caches_and_empty_assumptions (fun o -> o#resolve_define)
+  let resolve_define = add_all_caches_and_empty_assumptions (fun o -> o#resolve_define)
 
   let resolve_mutable_literals =
-    add_both_caches_and_empty_assumptions (fun o -> o#resolve_mutable_literals)
+    add_all_caches_and_empty_assumptions (fun o -> o#resolve_mutable_literals)
 
 
   let constraints_solution_exists =
-    add_both_caches_and_empty_assumptions (fun o -> o#constraints_solution_exists)
+    add_all_caches_and_empty_assumptions (fun o -> o#constraints_solution_exists)
 
 
-  let constructor = add_both_caches_and_empty_assumptions (fun o -> o#constructor)
+  let constructor = add_all_caches_and_empty_assumptions (fun o -> o#constructor)
 
   let full_order ?dependency read_only =
     let implementation = new with_all_caches dependency read_only in
     implementation#full_order ~assumptions:empty_assumptions
 
 
-  let get_typed_dictionary = add_both_caches_and_empty_assumptions (fun o -> o#get_typed_dictionary)
+  let get_typed_dictionary = add_all_caches_and_empty_assumptions (fun o -> o#get_typed_dictionary)
 
   let signature_select =
-    add_both_caches_and_empty_assumptions (fun o -> o#signature_select ~skip_marking_escapees:false)
+    add_all_caches_and_empty_assumptions (fun o -> o#signature_select ~skip_marking_escapees:false)
+
+
+  let get_global = add_all_caches_and_empty_assumptions (fun o -> o#global_annotation)
 end
 
 module AttributeReadOnly = ReadOnly

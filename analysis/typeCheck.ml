@@ -4954,7 +4954,7 @@ module State (Context : Context) = struct
           match GlobalResolution.global global_resolution define_name with
           | Some
               {
-                AnnotatedGlobalEnvironment.annotation =
+                AttributeResolution.Global.annotation =
                   {
                     Annotation.annotation =
                       Type.Callable

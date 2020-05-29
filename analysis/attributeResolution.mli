@@ -8,6 +8,15 @@ open SharedMemoryKeys
 open Statement
 open Core
 
+module Global : sig
+  type t = {
+    annotation: Annotation.t;
+    undecorated_signature: Type.Callable.t option;
+    problem: AnnotatedAttribute.problem option;
+  }
+  [@@deriving eq, show, compare, sexp]
+end
+
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
   decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
@@ -234,6 +243,8 @@ module AttributeReadOnly : sig
     ?instantiated:Type.t ->
     uninstantiated_attribute ->
     AnnotatedAttribute.instantiated
+
+  val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 end
 
 include Environment.S with module ReadOnly = AttributeReadOnly
