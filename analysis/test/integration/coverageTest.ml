@@ -95,7 +95,13 @@ let test_check_coverage context =
     "await ERROR";
 
   (* Binary operator. *)
-  assert_covered "ERROR | 1";
+  assert_covered
+    ~additional_errors:
+      [
+        "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+         `int.__ror__` but got `unknown`.";
+      ]
+    "ERROR | 1";
   assert_covered
     ~additional_errors:
       [

@@ -2042,14 +2042,6 @@ module State (Context : Context) = struct
           in
           { resolution; errors; resolved = Type.Any; resolved_annotation = None; base = None }
     in
-    let is_terminating_error { Error.kind; _ } =
-      let open Error in
-      match kind with
-      | UndefinedAttribute _
-      | UnboundName _ ->
-          true
-      | _ -> false
-    in
     match value with
     | Await expression -> (
         let { Resolved.resolution; resolved; errors; _ } =
@@ -2430,19 +2422,13 @@ module State (Context : Context) = struct
                 ~resolved:resolved_callee
                 ~arguments
         in
-        if
-          List.is_empty (List.filter ~f:is_terminating_error callee_errors)
-          || not (Type.is_top resolved_callee)
-        then
-          {
-            resolution = updated_resolution;
-            errors = updated_errors;
-            resolved;
-            resolved_annotation = None;
-            base = None;
-          }
-        else (* Do not throw more errors if callee already contains terminating error. *)
-          { resolution; errors = callee_errors; resolved; resolved_annotation = None; base = None }
+        {
+          resolution = updated_resolution;
+          errors = updated_errors;
+          resolved;
+          resolved_annotation = None;
+          base = None;
+        }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let resolve_in_call
@@ -3094,19 +3080,13 @@ module State (Context : Context) = struct
               else
                 Some (Instance resolved_base)
         in
-        if
-          List.is_empty (List.filter ~f:is_terminating_error base_errors)
-          || not (Type.is_top resolved_base)
-        then
-          {
-            resolution = updated_resolution;
-            errors = List.append base_errors updated_errors;
-            resolved;
-            resolved_annotation;
-            base;
-          }
-        else (* Do not throw more errors if base already contains terminating error. *)
-          { resolution; errors = base_errors; resolved; resolved_annotation; base }
+        {
+          resolution = updated_resolution;
+          errors = List.append base_errors updated_errors;
+          resolved;
+          resolved_annotation;
+          base;
+        }
     | Set elements ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_elements ~resolution ~errors:[] ~elements
