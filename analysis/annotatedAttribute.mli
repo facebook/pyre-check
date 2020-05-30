@@ -21,7 +21,14 @@ type initialized =
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 
-type problem = DifferingDecorators of { offender: Type.t Type.Callable.overload }
+type invalid_decorator_reason = CouldNotResolve [@@deriving eq, show, compare, sexp]
+
+type problem =
+  | DifferingDecorators of { offender: Type.t Type.Callable.overload }
+  | InvalidDecorator of {
+      index: int;
+      reason: invalid_decorator_reason;
+    }
 [@@deriving eq, show, compare, sexp]
 
 type 'a t [@@deriving eq, show, compare, sexp]

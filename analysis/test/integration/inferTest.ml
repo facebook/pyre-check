@@ -383,7 +383,7 @@ let test_check_missing_return context =
           return None
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Union[None, int, str]` "
+      "Missing return annotation [3]: Returning `typing.Union[int, None, int, str]` "
       ^ "but no return type is specified.";
     ];
   assert_type_errors

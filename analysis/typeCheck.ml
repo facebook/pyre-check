@@ -5582,6 +5582,21 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             overloads = [];
           }
       in
+      let is_scapegoat =
+        match undecorated_signature with
+        | {
+         Type.Callable.implementation = { annotation = Type.Top; parameters = Undefined };
+         overloads;
+         _;
+        } ->
+            (* if there is no implementation we blame the first overload *)
+            List.hd overloads
+            >>| Type.Callable.equal_overload Type.equal current_overload
+            |> Option.value ~default:false
+        | _ ->
+            (* otherwise blame the implementation *)
+            not (Define.is_overloaded_function define)
+      in
       let check_implementation_exists errors =
         let { Type.Callable.implementation; _ } = undecorated_signature in
         if
@@ -5692,23 +5707,51 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             error :: errors
         | _ -> errors
       in
-      let check_misplaced_overload_decorator errors =
+      let overload_decorator_misplaced =
         match signature with
         | { decorators = _ :: (_ :: _ as tail_decorators); _ } ->
             let is_overload_decorator decorator =
               Ast.Statement.Define.Signature.is_overloaded_function
                 { signature with decorators = [decorator] }
             in
-            if List.exists tail_decorators ~f:is_overload_decorator then
-              let error =
-                Error.create
-                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                  ~define:Context.define
-                  ~kind:(Error.IncompatibleOverload MisplacedOverloadDecorator)
-              in
-              error :: errors
-            else
-              errors
+            List.exists tail_decorators ~f:is_overload_decorator
+        | _ -> false
+      in
+      let check_misplaced_overload_decorator errors =
+        if overload_decorator_misplaced then
+          let error =
+            Error.create
+              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~define:Context.define
+              ~kind:(Error.IncompatibleOverload MisplacedOverloadDecorator)
+          in
+          error :: errors
+        else
+          errors
+      in
+      let check_invalid_decorator errors =
+        match problem with
+        | Some (AnnotatedAttribute.InvalidDecorator { index; reason })
+          when is_scapegoat && not overload_decorator_misplaced ->
+            let adjusted_index =
+              if Define.is_overloaded_function define then
+                index + 1
+              else
+                index
+            in
+            let add_error ({ Decorator.name = { Node.location; _ }; _ } as decorator) =
+              match reason with
+              | CouldNotResolve ->
+                  let error =
+                    Error.create
+                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                      ~define:Context.define
+                      ~kind:(Error.InvalidDecoration { decorator; reason = CouldNotResolve })
+                  in
+                  error :: errors
+            in
+            let { StatementDefine.Signature.decorators; _ } = signature in
+            List.nth decorators adjusted_index >>| add_error |> Option.value ~default:errors
         | _ -> errors
       in
       errors
@@ -5717,6 +5760,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       |> check_unmatched_overloads
       |> check_differing_decorators
       |> check_misplaced_overload_decorator
+      |> check_invalid_decorator
     in
     match GlobalResolution.global global_resolution name with
     | Some { undecorated_signature = Some undecorated_signature; problem; _ } ->

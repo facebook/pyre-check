@@ -869,7 +869,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "typing.pyi",
       {|
-        from abc import ABCMeta
+        from abc import ABCMeta, abstractmethod
         import collections
         class _SpecialForm:
           def __getitem__(self, typeargs: Any) -> Any: ...
@@ -885,15 +885,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Union = TypeAlias(object)
         Any = object()
         overload = object()
-        final = object()
-        TypedDict = object()
+        if sys.version_info >= (3, 8):
+          Final: _SpecialForm = ...
+          _F = TypeVar('_F', bound=Callable[..., Any])
+          def final(f: _F) -> _F: ...
+          Literal: _SpecialForm = ...
+          # TypedDict is a (non-subscriptable) special form.
+          TypedDict: object
 
         Callable: _SpecialForm = ...
         Protocol: _SpecialForm = ...
         Type: _SpecialForm = ...
         Tuple: _SpecialForm = ...
         Generic: _SpecialForm = ...
-        Final: _SpecialForm = ...
         ClassVar: _SpecialForm = ...
         NoReturn: _SpecialForm = ...
 
@@ -1035,6 +1039,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from typing import Type, TypeVar
         _T = TypeVar('_T')
+        _FuncT = TypeVar('FuncT')
         class ABCMeta(type):
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         def abstractmethod(callable: _FuncT) -> _FuncT: ...
@@ -2705,6 +2710,7 @@ let assert_errors
     ?(concise = false)
     ?(handle = "test.py")
     ?(update_environment_with = [])
+    ?(include_line_numbers = false)
     ~context
     ~check
     source
@@ -2764,9 +2770,15 @@ let assert_errors
         in
         Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
     assert_false found_any;
-    List.map
-      ~f:(fun error -> AnalysisError.Instantiated.description error ~show_error_traces ~concise)
-      errors
+    let to_string error =
+      let description = AnalysisError.Instantiated.description error ~show_error_traces ~concise in
+      if include_line_numbers then
+        let line = AnalysisError.Instantiated.location error |> Location.WithPath.line in
+        Format.sprintf "%d: %s" line description
+      else
+        description
+    in
+    List.map ~f:to_string errors
   in
   Memory.reset_shared_memory ();
   assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions

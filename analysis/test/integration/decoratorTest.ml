@@ -372,7 +372,10 @@ let test_decorators context =
       def f(x: int) -> int:
         return x
     |}
-    ["Unbound name [10]: Name `my_decorator` is used but not defined in the current scope."];
+    [
+      "Invalid decoration [56]: Decorator `my_decorator` could not be resolved in a global scope.";
+      "Unbound name [10]: Name `my_decorator` is used but not defined in the current scope.";
+    ];
   assert_type_errors
     {|
       from typing import Any
@@ -882,6 +885,70 @@ let test_general_decorators context =
   ()
 
 
+let test_invalid_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+    @dec
+    def foo() -> None:
+      pass
+    reveal_type(foo)
+
+    |}
+    [
+      "Invalid decoration [56]: Decorator `dec` could not be resolved in a global scope.";
+      "Unbound name [10]: Name `dec` is used but not defined in the current scope.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+    from typing import overload
+
+    @overload
+    @dec
+    def bar(x: int) -> int: ...
+
+    @overload
+    @dec
+    def bar(x: str) -> str: ...
+
+    # pyre-ignore[56] we locate the error on the implementation if it exists
+    @dec
+    def bar(x: object) -> object:
+      return x
+
+    reveal_type(bar)
+
+    |}
+    [
+      "Unbound name [10]: Name `dec` is used but not defined in the current scope.";
+      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Any`.";
+    ];
+
+  assert_type_errors
+    {|
+    from typing import overload
+
+    @overload
+    # pyre-ignore[56] if there is no overload, we locate it on the top overload
+    @dec
+    def baz(x: int) -> int: ...
+
+    @overload
+    @dec
+    def baz(x: str) -> str: ...
+
+    reveal_type(baz)
+
+    |}
+    [
+      "Unbound name [10]: Name `dec` is used but not defined in the current scope.";
+      "Missing overload implementation [42]: Overloaded function `baz` must have an implementation.";
+      "Revealed type [-1]: Revealed type for `test.baz` is `typing.Any`.";
+    ];
+  ()
+
+
 let () =
   "decorator"
   >::: [
@@ -894,5 +961,6 @@ let () =
          "decorators" >:: test_decorators;
          "decorator_factories" >:: test_decorator_factories;
          "general_decorators" >:: test_general_decorators;
+         "invalid_decorators" >:: test_invalid_decorators;
        ]
   |> Test.run

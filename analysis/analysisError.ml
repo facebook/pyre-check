@@ -193,6 +193,14 @@ and incompatible_overload_kind =
   | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_decoration_reason = CouldNotResolve [@@deriving compare, eq, sexp, show, hash]
+
+type invalid_decoration = {
+  decorator: Decorator.t;
+  reason: invalid_decoration_reason;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -237,6 +245,7 @@ type kind =
     }
   | InvalidArgument of invalid_argument
   | InvalidClassInstantiation of invalid_class_instantiation
+  | InvalidDecoration of invalid_decoration
   | InvalidException of {
       expression: Expression.t;
       annotation: Type.t;
@@ -406,6 +415,7 @@ let code = function
   | MissingCaptureAnnotation _ -> 53
   | TypedDictionaryInvalidOperation _ -> 54
   | TypedDictionaryInitializationError _ -> 55
+  | InvalidDecoration _ -> 56
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -430,6 +440,7 @@ let name = function
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidClassInstantiation _ -> "Invalid class instantiation"
+  | InvalidDecoration _ -> "Invalid decoration"
   | InvalidException _ -> "Invalid Exception"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
@@ -947,6 +958,9 @@ let messages ~concise ~signature location kind =
               variable
               unconcatenatable;
           ] )
+  | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      [Format.asprintf "Decorator `%s` could not be resolved in a global scope." name]
   | InvalidException { expression; annotation } ->
       [
         Format.asprintf
@@ -2170,6 +2184,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidArgument (ListVariadicVariable _)
+  | InvalidDecoration _
   | InvalidMethodSignature _
   | InvalidTypeParameters _
   | InvalidTypeVariable _
@@ -2326,6 +2341,7 @@ let less_or_equal ~resolution left right =
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
   | MissingCaptureAnnotation left_name, MissingCaptureAnnotation right_name ->
       Identifier.equal_sanitized left_name right_name
+  | InvalidDecoration left, InvalidDecoration right -> equal_invalid_decoration left right
   | InvalidException left, InvalidException right ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
@@ -2435,6 +2451,7 @@ let less_or_equal ~resolution left right =
   | IncompatibleVariableType _, _
   | InconsistentOverride _, _
   | InvalidArgument _, _
+  | InvalidDecoration _, _
   | InvalidException _, _
   | InvalidMethodSignature _, _
   | InvalidType _, _
@@ -2665,6 +2682,8 @@ let join ~resolution left right =
     | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
       ->
         InvalidAssignment left
+    | InvalidDecoration left, InvalidDecoration right when equal_invalid_decoration left right ->
+        InvalidDecoration left
     | InvalidException left, InvalidException right
       when Expression.equal left.expression right.expression ->
         InvalidException
@@ -2801,6 +2820,7 @@ let join ~resolution left right =
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
+    | InvalidDecoration _, _
     | InvalidException _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
@@ -3390,6 +3410,7 @@ let dequalify
             overridden_method = dequalify_identifier overridden_method;
             override = WeakenedPostcondition (dequalify_mismatch mismatch);
           }
+    | InvalidDecoration expression -> InvalidDecoration expression
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->

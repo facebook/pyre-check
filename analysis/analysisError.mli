@@ -184,6 +184,14 @@ and incompatible_overload_kind =
   | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_decoration_reason = CouldNotResolve [@@deriving compare, eq, sexp, show, hash]
+
+type invalid_decoration = {
+  decorator: Statement.Decorator.t;
+  reason: invalid_decoration_reason;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -228,6 +236,7 @@ type kind =
     }
   | InvalidArgument of invalid_argument
   | InvalidClassInstantiation of invalid_class_instantiation
+  | InvalidDecoration of invalid_decoration
   | InvalidException of {
       expression: Expression.t;
       annotation: Type.t;
