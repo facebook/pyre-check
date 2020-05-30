@@ -46,24 +46,6 @@ module Sources =
     (SharedMemoryKeys.DependencyKey)
     (SourceValue)
 
-module WildcardExportsValue = struct
-  type t = Identifier.t list
-
-  let prefix = Prefix.make ()
-
-  let description = "Wildcard exports"
-
-  let compare = List.compare Identifier.compare
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module WildcardExports =
-  DependencyTrackedMemory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.DependencyKey)
-    (WildcardExportsValue)
-
 module ModuleMetadataValue = struct
   type t = Module.t
 
@@ -149,7 +131,6 @@ end
 
 let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   Sources.add qualifier source;
-  WildcardExports.write_through qualifier (wildcard_exports_of source);
   ModuleMetadata.add qualifier (Module.create source)
 
 
@@ -157,7 +138,6 @@ let remove_sources _ qualifiers =
   let keys = Sources.KeySet.of_list qualifiers in
   RawSources.remove_batch keys;
   Sources.remove_batch keys;
-  WildcardExports.remove_batch keys;
   ModuleMetadata.remove_batch keys
 
 
@@ -166,7 +146,6 @@ let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifie
   let (), dependency_set =
     SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
     |> Sources.add_to_transaction ~keys
-    |> WildcardExports.add_to_transaction ~keys
     |> ModuleMetadata.add_to_transaction ~keys
     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
   in
@@ -555,8 +534,6 @@ let update
       }
 
 
-let get_wildcard_exports _ = WildcardExports.get
-
 let get_source_path { module_tracker } = ModuleTracker.lookup_source_path module_tracker
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
@@ -572,7 +549,6 @@ let shared_memory_hash_to_key_map qualifiers =
   in
   RawSources.compute_hashes_to_keys ~keys:qualifiers
   |> extend_map ~new_map:(Sources.compute_hashes_to_keys ~keys:qualifiers)
-  |> extend_map ~new_map:(WildcardExports.compute_hashes_to_keys ~keys:qualifiers)
 
 
 let serialize_decoded decoded =
@@ -581,11 +557,6 @@ let serialize_decoded decoded =
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
   | Sources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
-  | WildcardExports.Decoded (key, value) ->
-      Some
-        ( WildcardExportsValue.description,
-          Reference.show key,
-          Option.map value ~f:(List.to_string ~f:Fn.id) )
   | _ -> None
 
 
@@ -595,8 +566,6 @@ let decoded_equal first second =
       Some (Option.equal Source.equal first second)
   | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
-  | WildcardExports.Decoded (_, first), WildcardExports.Decoded (_, second) ->
-      Some (Option.equal (List.equal Identifier.equal) first second)
   | _ -> None
 
 
@@ -624,7 +593,6 @@ end
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
-    get_wildcard_exports: Reference.t -> Identifier.t list option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
@@ -635,7 +603,6 @@ module ReadOnly = struct
 
   let create
       ?(get_source = fun _ -> None)
-      ?(get_wildcard_exports = fun _ -> None)
       ?(get_source_path = fun _ -> None)
       ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
@@ -645,7 +612,6 @@ module ReadOnly = struct
     =
     {
       get_source;
-      get_wildcard_exports;
       get_source_path;
       is_module;
       all_explicit_modules;
@@ -657,8 +623,6 @@ module ReadOnly = struct
   let get_source { get_source; _ } = get_source
 
   let get_source_path { get_source_path; _ } = get_source_path
-
-  let get_wildcard_exports { get_wildcard_exports; _ } = get_wildcard_exports
 
   let get_relative read_only qualifier =
     let open Option in
@@ -884,7 +848,6 @@ let read_only ({ module_tracker } as environment) =
   in
   {
     ReadOnly.get_source = get_source environment;
-    get_wildcard_exports = get_wildcard_exports environment;
     get_source_path = get_source_path environment;
     is_module = ModuleTracker.is_module_tracked module_tracker;
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);

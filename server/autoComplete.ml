@@ -47,18 +47,6 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
   |> Reference.create
 
 
-let get_exported_imports ~ast_environment module_reference =
-  let open Statement in
-  AstEnvironment.ReadOnly.get_source ast_environment module_reference
-  >>| Source.statements
-  >>| List.concat_map ~f:(function
-          | { Node.value = Statement.Import { imports; _ }; _ } ->
-              List.map imports ~f:(fun import -> Node.value import.name)
-          | _ -> [])
-  >>| Reference.Set.of_list
-  |> Option.value ~default:Reference.Set.empty
-
-
 let get_completion_item ~range ~item_name ~item_type ~global_resolution =
   (* Filter away special functions like __len__() *)
   if String.is_prefix ~prefix:"__" item_name then
@@ -124,24 +112,27 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
   let position = Position.from_pyre_position ~line ~column in
   let text_edit_range = { Range.start = position; end_ = position } in
   let global_resolution = Resolution.global_resolution resolution in
-  let ast_environment = GlobalResolution.ast_environment global_resolution in
-  let exported_imports = get_exported_imports ~ast_environment module_reference in
-  let get_member_name_and_type member_name =
-    (* We remove members which are exported by importing some other modules. They should not show up
-       in autocompletion. *)
-    let member_reference = Reference.create member_name in
-    if Reference.Set.mem exported_imports member_reference then
-      None
-    else
-      let fully_qualified_member_reference = Reference.combine module_reference member_reference in
-      get_completion_item
-        ~range:text_edit_range
-        ~item_name:(Reference.last member_reference)
-        ~item_type:(Resolution.resolve_reference resolution fully_qualified_member_reference)
-        ~global_resolution
+  let get_member_name_and_type (member_name, member_export) =
+    let fully_qualified_member_reference =
+      Reference.create member_name |> Reference.combine module_reference
+    in
+    let item_type =
+      match member_export with
+      | Module.Export.Class ->
+          Type.meta (Type.Primitive (Reference.show fully_qualified_member_reference))
+      | Module.Export.(Define _ | GlobalVariable) -> (
+          match GlobalResolution.global global_resolution fully_qualified_member_reference with
+          | Some { AttributeResolution.Global.annotation; _ } -> Annotation.annotation annotation
+          | _ -> Type.Any )
+      | Module.Export.(Module _ | NameAlias _) ->
+          (* Don't bother with these. *)
+          Type.Any
+    in
+    get_completion_item ~range:text_edit_range ~item_name:member_name ~item_type ~global_resolution
   in
-  AstEnvironment.ReadOnly.get_wildcard_exports ast_environment module_reference
-  >>= fun wildcard_exports -> Some (List.filter_map wildcard_exports ~f:get_member_name_and_type)
+  GlobalResolution.get_module_metadata global_resolution module_reference
+  >>= fun module_metadata ->
+  Some (List.filter_map (Module.get_all_exports module_metadata) ~f:get_member_name_and_type)
 
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =

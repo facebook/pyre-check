@@ -34,7 +34,6 @@ module ReadOnly : sig
 
   val create
     :  ?get_source:(Reference.t -> Source.t option) ->
-    ?get_wildcard_exports:(Reference.t -> Identifier.t list option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
@@ -44,8 +43,6 @@ module ReadOnly : sig
     t
 
   val get_source : t -> Reference.t -> Source.t option
-
-  val get_wildcard_exports : t -> Reference.t -> Identifier.t list option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
 
