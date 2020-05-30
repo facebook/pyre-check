@@ -611,16 +611,6 @@ let test_check_attributes context =
       "Undefined attribute [16]: Optional type has no attribute `debug`.";
     ];
 
-  (* Check for class definitions that conflict with imports *)
-  assert_type_errors
-    ~handle:"test.py"
-    ~update_environment_with:[{ handle = "foo.py"; source = "class Bar: pass" }]
-    {|
-      from foo import Bar
-      class Bar: pass
-    |}
-    ["Redefined class [50]: Class `test.Bar` conflicts with imported class `foo.Bar`."];
-
   assert_type_errors
     {|
       import typing
