@@ -78,7 +78,7 @@ module TraceInfo = struct
   let name = "trace"
 
   type t =
-    | Declaration
+    | Declaration of { leaf_name_provided: bool }
     | Origin of Location.WithModule.t
     | CallSite of {
         port: AccessPath.Root.t;
@@ -91,7 +91,7 @@ module TraceInfo = struct
   let _ = show (* shadowed below *)
 
   let show = function
-    | Declaration -> "declaration"
+    | Declaration _ -> "declaration"
     | Origin location -> Format.asprintf "@%a" Location.WithModule.pp location
     | CallSite { location; callees; port; path } ->
         let port = AccessPath.create port path |> AccessPath.show in
@@ -128,7 +128,7 @@ module TraceInfo = struct
 
   let create_json ~location_to_json ~trace_length trace : string * Yojson.Safe.json =
     match trace with
-    | Declaration -> "decl", `Null
+    | Declaration _ -> "decl", `Null
     | Origin location ->
         let location_json = location_to_json location in
         "root", location_json
@@ -183,7 +183,7 @@ module TraceInfo = struct
     | Origin _ -> Origin Location.WithModule.any
     | CallSite { port; path; location = _; callees } ->
         CallSite { port; path; location = Location.WithModule.any; callees }
-    | Declaration -> Declaration
+    | Declaration _ -> Declaration { leaf_name_provided = false }
 end
 
 module TraceLength = Abstract.SimpleDomain.Make (struct
@@ -320,7 +320,7 @@ end = struct
   let add ?location map leaf =
     let trace =
       match location with
-      | None -> TraceInfo.Declaration
+      | None -> TraceInfo.Declaration { leaf_name_provided = false }
       | Some location -> TraceInfo.Origin location
     in
     let leaf_taint = LeafDomain.singleton leaf in
@@ -361,17 +361,27 @@ end = struct
         let gather_json { Abstract.OverUnderSetDomain.element; in_under } (breadcrumbs, tito, leaves)
           =
           match element with
-          | Features.Simple.LeafName name ->
+          | Features.Simple.LeafName { leaf = name; port } ->
+              let port_assoc =
+                match port with
+                | Some port -> ["port", `String port]
+                | None -> []
+              in
               ( breadcrumbs,
                 tito,
                 `Assoc
-                  ["kind", leaf_kind_json; "name", `String name; "on_all_flows", `Bool in_under]
+                  ( port_assoc
+                  @ ["kind", leaf_kind_json; "name", `String name; "on_all_flows", `Bool in_under]
+                  )
                 :: leaves )
           | TitoPosition location ->
               let tito_location_json = location_to_json location in
               breadcrumbs, tito_location_json :: tito, leaves
           | ViaValueOf _ ->
               (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
+              breadcrumbs, tito, leaves
+          | CrossRepositoryTaintInformation _ ->
+              (* TODO(T67571285): Also emit this as a leaf annotation. *)
               breadcrumbs, tito, leaves
           | Breadcrumb breadcrumb ->
               let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
@@ -453,19 +463,24 @@ end = struct
             |> LeafDomain.transform TraceLength.Self (Abstract.Domain.Map increase_length)
           in
           trace_info, leaf_taint
-      | Declaration ->
+      | Declaration { leaf_name_provided } ->
           let trace_info = Origin location in
           let add_leaf_names info_set =
-            let open Features in
-            let add_leaf_name info_set callee =
-              Abstract.OverUnderSetDomain.
-                {
-                  element = Simple.LeafName (Interprocedural.Callable.external_target_name callee);
-                  in_under = true;
-                }
-              :: info_set
-            in
-            List.fold callees ~f:add_leaf_name ~init:info_set
+            if leaf_name_provided then
+              info_set
+            else
+              let open Features in
+              let add_leaf_name info_set callee =
+                Abstract.OverUnderSetDomain.
+                  {
+                    element =
+                      Simple.LeafName
+                        { leaf = Interprocedural.Callable.external_target_name callee; port = None };
+                    in_under = true;
+                  }
+                :: info_set
+              in
+              List.fold callees ~f:add_leaf_name ~init:info_set
           in
           let leaf_taint =
             LeafDomain.transform
@@ -514,7 +529,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let compute_essential_features ~essential_complex_features tree =
     let essential_trace_info = function
-      | _ -> TraceInfo.Declaration
+      | _ -> TraceInfo.Declaration { leaf_name_provided = false }
     in
     let essential_simple_features _ = Features.SimpleSet.bottom in
     transform Taint.trace_info Abstract.Domain.(Map essential_trace_info) tree
@@ -636,7 +651,7 @@ module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 let local_return_taint =
   BackwardTaint.create
     [
-      Part (BackwardTaint.trace_info, TraceInfo.Declaration);
+      Part (BackwardTaint.trace_info, TraceInfo.Declaration { leaf_name_provided = false });
       Part (BackwardTaint.leaf, Sinks.LocalReturn);
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
       Part (Features.SimpleSet.Self, Features.SimpleSet.empty);

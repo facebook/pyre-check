@@ -58,7 +58,15 @@ module Simple = struct
   let name = "simple features"
 
   type t =
-    | LeafName of string
+    | LeafName of {
+        leaf: string;
+        port: string option;
+      }
+    | CrossRepositoryTaintInformation of {
+        producer_id: int;
+        canonical_name: string;
+        canonical_port: string;
+      }
     | TitoPosition of Location.WithModule.t
     | Breadcrumb of Breadcrumb.t
     | ViaValueOf of { position: int }

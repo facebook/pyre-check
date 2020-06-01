@@ -90,11 +90,13 @@ type taint_annotation =
       sink: Sinks.t;
       breadcrumbs: breadcrumbs;
       path: Abstract.TreeDomain.Label.path;
+      leaf_name_provided: bool;
     }
   | Source of {
       source: Sources.t;
       breadcrumbs: breadcrumbs;
       path: Abstract.TreeDomain.Label.path;
+      leaf_name_provided: bool;
     }
   | Tito of {
       tito: Sinks.t;
@@ -206,13 +208,24 @@ let rec parse_annotations ~configuration ~parameters annotation =
     let kinds, breadcrumbs = extract_leafs expression in
     List.map kinds ~f:(fun kind ->
         Source
-          { source = Sources.parse ~allowed:configuration.sources kind; breadcrumbs; path = [] })
+          {
+            source = Sources.parse ~allowed:configuration.sources kind;
+            breadcrumbs;
+            path = [];
+            leaf_name_provided = false;
+          })
   in
   let get_sink_kinds expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
     List.map kinds ~f:(fun kind ->
-        Sink { sink = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs; path = [] })
+        Sink
+          {
+            sink = Sinks.parse ~allowed:configuration.sinks kind;
+            breadcrumbs;
+            path = [];
+            leaf_name_provided = false;
+          })
   in
   let get_taint_in_taint_out expression =
     let open Configuration in
@@ -302,17 +315,49 @@ let rec parse_annotations ~configuration ~parameters annotation =
                      Expression.Tuple
                        [
                          { Node.value = taint; _ };
-                         { Node.value = Expression.String { StringLiteral.value = _; _ }; _ };
-                         { Node.value = Expression.String { StringLiteral.value = _; _ }; _ };
-                         { Node.value = Expression.Integer _; _ };
+                         {
+                           Node.value =
+                             Expression.String { StringLiteral.value = canonical_name; _ };
+                           _;
+                         };
+                         {
+                           Node.value =
+                             Expression.String { StringLiteral.value = canonical_port; _ };
+                           _;
+                         };
+                         { Node.value = Expression.Integer producer_id; _ };
                        ];
                    _;
                  };
                _;
              };
             ] ->
-                (* TODO(T67571285): Thread the producer_id and canonical_port information through. *)
-                parse_annotation taint
+                let add_cross_repository_information annotation =
+                  let leaf_name =
+                    Features.Simple.LeafName
+                      {
+                        leaf = Format.sprintf "producer:%d:%s" producer_id canonical_name;
+                        port = Some canonical_port;
+                      }
+                  in
+                  match annotation with
+                  | Source source ->
+                      Source
+                        {
+                          source with
+                          breadcrumbs = leaf_name :: source.breadcrumbs;
+                          leaf_name_provided = true;
+                        }
+                  | Sink sink ->
+                      Sink
+                        {
+                          sink with
+                          breadcrumbs = leaf_name :: sink.breadcrumbs;
+                          leaf_name_provided = true;
+                        }
+                  | _ -> annotation
+                in
+                parse_annotation taint |> List.map ~f:add_cross_repository_information
             | _ ->
                 raise_invalid_model
                   "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
@@ -340,6 +385,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                       sink = Sinks.Attach;
                       breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
                       path = [];
+                      leaf_name_provided = false;
                     };
                 ]
             | Some "AttachToTito" ->
@@ -358,6 +404,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                       source = Sources.Attach;
                       breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
                       path = [];
+                      leaf_name_provided = false;
                     };
                 ]
             | Some "PartialSink" ->
@@ -403,7 +450,15 @@ let rec parse_annotations ~configuration ~parameters annotation =
                       kind, label
                   | _ -> raise_invalid_annotation ()
                 in
-                [Sink { sink = Sinks.PartialSink { kind; label }; breadcrumbs = []; path = [] }]
+                [
+                  Sink
+                    {
+                      sink = Sinks.PartialSink { kind; label };
+                      breadcrumbs = [];
+                      path = [];
+                      leaf_name_provided = false;
+                    };
+                ]
             | _ -> raise_invalid_annotation () )
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
@@ -419,6 +474,7 @@ let introduce_sink_taint
     ~root
     ~sinks_to_keep
     ~path
+    ~leaf_name_provided
     ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
     breadcrumbs
@@ -436,11 +492,25 @@ let introduce_sink_taint
       match taint_sink_kind with
       | Sinks.LocalReturn -> raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
       | _ ->
+          let transform_trace_information taint =
+            if leaf_name_provided then
+              BackwardTaint.transform
+                BackwardTaint.trace_info
+                Abstract.Domain.(
+                  Map
+                    (function
+                    | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
+                    | trace_info -> trace_info))
+                taint
+            else
+              taint
+          in
           let leaf_taint =
             BackwardTaint.singleton taint_sink_kind
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
                  Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+            |> transform_trace_information
             |> BackwardState.Tree.create_leaf
           in
           let sink_taint = assign_backward_taint sink_taint leaf_taint in
@@ -497,6 +567,7 @@ let introduce_source_taint
     ~root
     ~sources_to_keep
     ~path
+    ~leaf_name_provided
     ({ TaintResult.forward = { source_taint }; _ } as taint)
     taint_source_kind
     breadcrumbs
@@ -510,11 +581,26 @@ let introduce_source_taint
     raise_invalid_model "`Attach` must be accompanied by a list of features to attach.";
   if should_keep_taint then
     let source_taint =
+      let transform_trace_information taint =
+        if leaf_name_provided then
+          ForwardTaint.transform
+            ForwardTaint.trace_info
+            Abstract.Domain.(
+              Map
+                (function
+                | TraceInfo.Declaration _ -> TraceInfo.Declaration { leaf_name_provided = true }
+                | trace_info -> trace_info))
+            taint
+        else
+          taint
+      in
+
       let leaf_taint =
         ForwardTaint.singleton taint_source_kind
         |> ForwardTaint.transform
              ForwardTaint.simple_feature_set
              Abstract.Domain.(Map (add_breadcrumbs breadcrumbs))
+        |> transform_trace_information
         |> ForwardState.Tree.create_leaf
       in
       ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
@@ -578,14 +664,14 @@ let taint_parameter
   =
   let add_to_model model annotation =
     match annotation with
-    | Sink { sink; breadcrumbs; path } ->
+    | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
         List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
-    | Source { source; breadcrumbs; path } ->
+        |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+    | Source { source; breadcrumbs; path; leaf_name_provided } ->
         List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~path ~sources_to_keep model source
+        |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
     | Tito { tito; breadcrumbs; path } ->
         (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
         List.map ~f:Features.SimpleSet.inject breadcrumbs
@@ -598,7 +684,13 @@ let taint_parameter
     | AddFeatureToArgument { breadcrumbs; path } ->
         List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~path ~sinks_to_keep model Sinks.AddFeatureToArgument
+        |> introduce_sink_taint
+             ~root
+             ~path
+             ~leaf_name_provided:false
+             ~sinks_to_keep
+             model
+             Sinks.AddFeatureToArgument
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
     | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
   in
@@ -619,14 +711,14 @@ let taint_return
   let add_to_model model annotation =
     let root = AccessPath.Root.LocalResult in
     match annotation with
-    | Sink { sink; breadcrumbs; path } ->
+    | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
         List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
-    | Source { source; breadcrumbs; path } ->
+        |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+    | Source { source; breadcrumbs; path; leaf_name_provided } ->
         List.map ~f:Features.SimpleSet.inject breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~path ~sources_to_keep model source
+        |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | AddFeatureToArgument _ ->
         raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
