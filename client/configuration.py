@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import glob
 import hashlib
 import json
 import logging
@@ -277,6 +278,15 @@ class Configuration:
                     "Please note that the `typeshed` configuration must point at "
                     "the root of the `typeshed` directory.".format(self.typeshed)
                 )
+
+            expanded_ignore_paths = []
+            for path in self.ignore_all_errors:
+                expanded = glob.glob(path)
+                if not expanded:
+                    expanded_ignore_paths.append(path)
+                else:
+                    expanded_ignore_paths += expanded
+            self.ignore_all_errors = expanded_ignore_paths
 
             non_existent_ignore_paths = [
                 path for path in self.ignore_all_errors if not os.path.exists(path)
