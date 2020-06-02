@@ -1020,6 +1020,19 @@ class base class_metadata_environment dependency =
         List.map attributes ~f:unannotated_attribute
       in
       let add_constructor table =
+        let successor_definitions =
+          let class_definition =
+            UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+              (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+                 class_metadata_environment)
+              ?dependency
+          in
+          ClassMetadataEnvironment.ReadOnly.successors
+            class_metadata_environment
+            ?dependency
+            (Reference.show name)
+          |> List.filter_map ~f:class_definition
+        in
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
@@ -1038,8 +1051,13 @@ class base class_metadata_environment dependency =
               in
               Some (name, annotation)
           in
-          unannotated_attributes ~include_generated_attributes:false ~in_test:false parent
+          parent :: successor_definitions
+          |> List.concat_map
+               ~f:(unannotated_attributes ~include_generated_attributes:false ~in_test:false)
           |> List.filter_map ~f:name_annotation_pair
+          (* Pick the overriding attribute. *)
+          |> Identifier.Map.of_alist_reduce ~f:(fun first _ -> first)
+          |> Identifier.Map.to_alist
         in
         let class_name = Reference.show name in
         let parameters =

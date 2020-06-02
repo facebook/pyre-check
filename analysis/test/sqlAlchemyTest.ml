@@ -34,6 +34,12 @@ let test_transform_environment context =
         # User-defined constructor is allowed to have any signature.
         def __init__(self) -> None:
           pass
+
+      class Employee(User):
+        __tablename__ = 'employees'
+        badge_number: Column[Optional[int]] = Column(Integer())
+        # Income in words, let's say. This overrides the attribute in User.
+        income: Column[Optional[str]] = Column(String())
     |}
     [
       {|
@@ -65,6 +71,24 @@ let test_transform_environment context =
 
           # User-defined constructor is allowed to have any signature.
           def __init__(self) -> None:
+            pass
+      |};
+      {|
+        class Employee(User):
+          __tablename__ = 'employees'
+          badge_number: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer())
+          # Income in words, let's say. This overrides the attribute in User.
+          income: sqlalchemy.Column[typing.Optional[str]] = sqlalchemy.Column(sqlalchemy.String())
+
+          def __init__(
+            self,
+            *,
+            age: typing.Optional[int] = ...,
+            badge_number: typing.Optional[int] = ...,
+            id: int = ...,
+            income: typing.Optional[str] = ...,
+            non_column: str = ...,
+          ) -> None:
             pass
       |};
     ];
