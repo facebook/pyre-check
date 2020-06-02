@@ -2677,8 +2677,8 @@ class base class_metadata_environment dependency =
                             | { Node.value = Expression.Expression.Name name; _ } ->
                                 Expression.name_to_reference name
                                 >>| Reference.delocalize
-                                >>| AstEnvironment.ReadOnly.legacy_resolve_exports
-                                      (ast_environment class_metadata_environment)
+                                >>| UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+                                      (unannotated_global_environment class_metadata_environment)
                                 >>= resolver
                                 >>| make_argument
                                 |> Result.of_option
