@@ -49,15 +49,6 @@ module ParseAnnotationKey : sig
   include Core.Hashable with type t := t
 end
 
-module ReferenceSet : Set.S with type elt = Reference.t
-
-module ReferenceDependencyKey :
-  DependencyTrackedMemory.DependencyKey.S
-    with type key = Reference.t
-     and type registered = Reference.t
-     and module RegisteredSet = ReferenceSet
-     and module KeySet = ReferenceSet
-
 type dependency =
   | TypeCheckDefine of Reference.t
   | AliasRegister of Reference.t
@@ -70,6 +61,7 @@ type dependency =
   | AttributeTable of AttributeTableKey.t
   | ParseAnnotation of ParseAnnotationKey.t
   | Metaclass of Type.Primitive.t
+  | WildcardImport of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : sig

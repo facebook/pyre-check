@@ -25,7 +25,7 @@ end
 module RawSources =
   DependencyTrackedMemory.DependencyTrackedTableNoCache
     (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
+    (SharedMemoryKeys.DependencyKey)
     (RawSourceValue)
 
 module SourceValue = struct
@@ -116,14 +116,20 @@ module Raw = struct
   let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
     let update_result, dependency_set =
-      SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty ~scheduler ~configuration
+      SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
       |> RawSources.add_to_transaction ~keys
-      |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
+      |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
     in
-    ( update_result,
-      List.fold qualifiers ~init:dependency_set ~f:(fun sofar qualifier ->
-          SharedMemoryKeys.ReferenceDependencyKey.KeySet.add qualifier sofar)
-      |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements )
+    let updated_modules =
+      let fold_key registered sofar =
+        match SharedMemoryKeys.DependencyKey.get_key registered with
+        | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
+        | _ -> sofar
+      in
+      SharedMemoryKeys.DependencyKey.RegisteredSet.fold fold_key dependency_set keys
+      |> RawSources.KeySet.elements
+    in
+    update_result, updated_modules
 
 
   let get_source _ = RawSources.get
@@ -234,6 +240,10 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     ()
 
 
+let wildcard_import_dependency qualifier =
+  SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.WildcardImport qualifier)
+
+
 let expand_wildcard_imports
     ~ast_environment
     ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
@@ -293,7 +303,10 @@ let expand_wildcard_imports
           | Some { Import.name = { Node.location; _ }; _ } ->
               let expanded_import =
                 match
-                  get_transitive_exports (Node.value from) ~ast_environment ~dependency:qualifier
+                  get_transitive_exports
+                    (Node.value from)
+                    ~ast_environment
+                    ~dependency:(wildcard_import_dependency qualifier)
                 with
                 | [] -> statement
                 | exports ->
@@ -325,7 +338,9 @@ let process_sources
   in
   let process_sources_job =
     let process qualifier =
-      match Raw.get_source ast_environment qualifier ~dependency:qualifier with
+      match
+        Raw.get_source ast_environment qualifier ~dependency:(wildcard_import_dependency qualifier)
+      with
       | None -> ()
       | Some source ->
           let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
