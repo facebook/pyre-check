@@ -206,8 +206,6 @@ class Configuration:
             self.excludes.extend(excludes)
 
         if local_configuration:
-            # Handle local configuration explicitly configured on the
-            # commandline.
             self._check_read_local_configuration(local_configuration)
         if log_directory:
             self.ignore_all_errors.append(log_directory)
