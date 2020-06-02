@@ -1023,7 +1023,7 @@ class base class_metadata_environment dependency =
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
-            if Expression.is_dunder_attribute name then
+            if Expression.is_dunder_attribute name || Expression.is_private_attribute name then
               None
             else
               let annotation =

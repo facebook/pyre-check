@@ -21,6 +21,11 @@ let test_transform_environment context =
         id: Column[int] = Column(Integer(), primary_key=True)
         age: Column[Optional[int]] = Column(Integer(), primary_key=False)
         income: Column[Optional[int]] = Column(Integer())
+        non_column: str = "foo"
+        __private_attribute: str = "bar"
+
+        def some_helper(self) -> None:
+          pass
 
       class UserWithExistingConstructor(Base):
         __tablename__ = 'users'
@@ -37,14 +42,20 @@ let test_transform_environment context =
           id: sqlalchemy.Column[int] = sqlalchemy.Column(sqlalchemy.Integer(), primary_key=True)
           age: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer(), primary_key=False)
           income: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer())
+          non_column: str = "foo"
+          __private_attribute: str = "bar"
 
           def __init__(
             self,
             *,
             age: typing.Optional[int] = ...,
             id: int = ...,
-            income: typing.Optional[int] = ...
+            income: typing.Optional[int] = ...,
+            non_column: str = ...,
           ) -> None:
+            pass
+
+          def some_helper(self) -> None:
             pass
       |};
       {|
