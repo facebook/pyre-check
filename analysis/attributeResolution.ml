@@ -2660,12 +2660,20 @@ class base class_metadata_environment dependency =
                 | Some fetched -> (
                     match extract_callable fetched, arguments with
                     | Some callable, Some arguments ->
-                        (let resolve_with_locals ~locals:_ expression =
-                           let resolved = self#resolve_literal ~assumptions expression in
-                           if Type.is_partially_typed resolved then
-                             Type.Top
-                           else
-                             resolved
+                        (let resolve_with_locals ~locals:_ = function
+                           | { Node.value = Expression.Expression.Name name; _ } ->
+                               Expression.name_to_reference name
+                               >>| Reference.delocalize
+                               >>| AstEnvironment.ReadOnly.legacy_resolve_exports
+                                     (ast_environment class_metadata_environment)
+                               >>= resolver
+                               |> Option.value ~default:Type.Top
+                           | expression ->
+                               let resolved = self#resolve_literal ~assumptions expression in
+                               if Type.is_partially_typed resolved then
+                                 Type.Top
+                               else
+                                 resolved
                          in
                          match
                            self#signature_select

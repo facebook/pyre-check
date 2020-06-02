@@ -813,11 +813,7 @@ let test_decorator_factories context =
 
      reveal_type(foo)
     |}
-    [
-      (* We don't handle globals as arguments *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
-       str)], int]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
   assert_type_errors
     {|
      from typing import Callable, overload
@@ -842,6 +838,81 @@ let test_decorator_factories context =
     [
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], int]`.";
       "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable[[], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      from typing import Callable, overload
+      import enum
+
+      class StringEnum(enum.Enum, str):
+        pass
+
+      class Foo(StringEnum):
+        A = "A"
+
+      class Bar(StringEnum):
+        A = "BarA"
+
+      @overload
+      def decorator_factory(e: Foo) -> Callable[[object], int]: ...
+      @overload
+      def decorator_factory(e: Bar) -> Callable[[object], str]: ...
+
+      @decorator_factory(Foo.A)
+      def f(x: str) -> bool:
+        return True
+
+      @decorator_factory(Bar.A)
+      def g(x: str) -> bool:
+        return True
+
+      reveal_type(f)
+      reveal_type(g)
+    |}
+    [
+      "Missing overload implementation [42]: Overloaded function `decorator_factory` must have an \
+       implementation.";
+      "Revealed type [-1]: Revealed type for `test.f` is `int`.";
+      "Revealed type [-1]: Revealed type for `test.g` is `str`.";
+    ];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "second.py";
+          source =
+            {|
+                import enum
+
+                class StringEnum(enum.Enum, str):
+                  pass
+
+                class Foo(StringEnum):
+                  A = "A"
+            |};
+        };
+        { handle = "other.py"; source = {|
+              from second import Foo
+            |} };
+      ]
+    {|
+      from typing import Callable, TypeVar
+      from other import Foo
+
+      T = TypeVar("T")
+
+      def df(x: T) -> Callable[[object], T]: ...
+
+      @df(Foo.A)
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.bar` is \
+       `typing_extensions.Literal[second.Foo.A]`.";
     ];
   ()
 
