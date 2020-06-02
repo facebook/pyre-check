@@ -38,6 +38,6 @@ type aggregate = {
 
 val coverage
   :  configuration:Configuration.Analysis.t ->
-  ast_environment:AstEnvironment.ReadOnly.t ->
+  unannotated_global_environment:UnannotatedGlobalEnvironment.ReadOnly.t ->
   Reference.t list ->
   aggregate

@@ -46,24 +46,6 @@ module Sources =
     (SharedMemoryKeys.DependencyKey)
     (SourceValue)
 
-module ModuleMetadataValue = struct
-  type t = Module.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Module"
-
-  let unmarshall value = Marshal.from_string value 0
-
-  let compare = Module.compare
-end
-
-module ModuleMetadata =
-  DependencyTrackedMemory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.DependencyKey)
-    (ModuleMetadataValue)
-
 let create module_tracker = { module_tracker }
 
 let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
@@ -136,15 +118,13 @@ module Raw = struct
 end
 
 let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  Sources.add qualifier source;
-  ModuleMetadata.add qualifier (Module.create source)
+  Sources.add qualifier source
 
 
 let remove_sources _ qualifiers =
   let keys = Sources.KeySet.of_list qualifiers in
   RawSources.remove_batch keys;
-  Sources.remove_batch keys;
-  ModuleMetadata.remove_batch keys
+  Sources.remove_batch keys
 
 
 let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
@@ -152,7 +132,6 @@ let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifie
   let (), dependency_set =
     SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
     |> Sources.add_to_transaction ~keys
-    |> ModuleMetadata.add_to_transaction ~keys
     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
   in
   dependency_set
@@ -584,36 +563,13 @@ let decoded_equal first second =
   | _ -> None
 
 
-module ResolvedReference = struct
-  type export =
-    | FromModuleGetattr
-    | Exported of Module.Export.t
-  [@@deriving sexp, compare, hash]
-
-  type t =
-    | Module of Reference.t
-    | ModuleAttribute of {
-        from: Reference.t;
-        name: Identifier.t;
-        export: export;
-        remaining: Identifier.t list;
-      }
-    | PlaceholderStub of {
-        stub_module: Reference.t;
-        remaining: Identifier.t list;
-      }
-  [@@deriving sexp, compare, hash]
-end
-
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
-    get_module_metadata:
-      ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> Module.t option;
-    module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
+    is_module_tracked: Reference.t -> bool;
   }
 
   let create
@@ -621,18 +577,10 @@ module ReadOnly = struct
       ?(get_source_path = fun _ -> None)
       ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
-      ?(get_module_metadata = fun ?dependency:_ _ -> None)
-      ?(module_exists = fun ?dependency:_ _ -> false)
+      ?(is_module_tracked = fun _ -> false)
       ()
     =
-    {
-      get_source;
-      get_source_path;
-      is_module;
-      all_explicit_modules;
-      get_module_metadata;
-      module_exists;
-    }
+    { get_source; get_source_path; is_module; all_explicit_modules; is_module_tracked }
 
 
   let get_source { get_source; _ } = get_source
@@ -661,211 +609,17 @@ module ReadOnly = struct
 
   let is_module { is_module; _ } = is_module
 
+  let is_module_tracked { is_module_tracked; _ } = is_module_tracked
+
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
-
-  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
-
-  let module_exists { module_exists; _ } = module_exists
-
-  let legacy_resolve_exports read_only ?dependency reference =
-    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-    let widening_threshold = 25 in
-    let rec resolve_exports_fixpoint ~reference ~visited ~count =
-      if Set.mem visited reference || count > widening_threshold then
-        reference
-      else
-        let rec resolve_exports ~lead ~tail =
-          match tail with
-          | head :: tail ->
-              let incremented_lead = lead @ [head] in
-              if
-                Option.is_some
-                  (get_module_metadata
-                     ?dependency
-                     read_only
-                     (Reference.create_from_list incremented_lead))
-              then
-                resolve_exports ~lead:incremented_lead ~tail
-              else
-                get_module_metadata ?dependency read_only (Reference.create_from_list lead)
-                >>| (fun definition ->
-                      match Module.legacy_aliased_export definition (Reference.create head) with
-                      | Some export -> Reference.combine export (Reference.create_from_list tail)
-                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
-                |> Option.value ~default:reference
-          | _ -> reference
-        in
-        match Reference.as_list reference with
-        | head :: tail ->
-            let exported_reference = resolve_exports ~lead:[head] ~tail in
-            if Reference.is_strict_prefix ~prefix:reference exported_reference then
-              reference
-            else
-              resolve_exports_fixpoint
-                ~reference:exported_reference
-                ~visited:(Set.add visited reference)
-                ~count:(count + 1)
-        | _ -> reference
-    in
-    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
-
-
-  module ResolveExportItem = struct
-    module T = struct
-      type t = {
-        current_module: Reference.t;
-        name: Identifier.t;
-      }
-      [@@deriving sexp, compare, hash]
-    end
-
-    include T
-    include Hashable.Make (T)
-  end
-
-  let resolve_exports read_only ?dependency ?(from = Reference.empty) reference =
-    let visited_set = ResolveExportItem.Hash_set.create () in
-    let rec resolve_module_alias ~current_module ~names_to_resolve () =
-      match get_module_metadata ?dependency read_only current_module with
-      | None ->
-          let rec resolve_placeholder_stub sofar = function
-            | [] -> None
-            | name :: prefixes -> (
-                let checked_module = List.rev prefixes |> Reference.create_from_list in
-                let sofar = name :: sofar in
-                match get_module_metadata ?dependency read_only checked_module with
-                | Some module_metadata when Module.empty_stub module_metadata ->
-                    Some
-                      (ResolvedReference.PlaceholderStub
-                         { stub_module = checked_module; remaining = sofar })
-                | _ -> resolve_placeholder_stub sofar prefixes )
-          in
-          (* Make sure none of the parent of `current_module` is placeholder stub *)
-          resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
-      | Some module_metadata -> (
-          match Module.empty_stub module_metadata with
-          | true ->
-              Some
-                (ResolvedReference.PlaceholderStub
-                   { stub_module = current_module; remaining = names_to_resolve })
-          | false -> (
-              match names_to_resolve with
-              | [] -> Some (ResolvedReference.Module current_module)
-              | next_name :: rest_names -> (
-                  let item = { ResolveExportItem.current_module; name = next_name } in
-                  match Hash_set.strict_add visited_set item with
-                  | Result.Error _ ->
-                      (* Module alias cycle detected. Abort resolution. *)
-                      None
-                  | Result.Ok _ -> (
-                      match Module.get_export module_metadata next_name with
-                      | None -> (
-                          match Module.get_export module_metadata "__getattr__" with
-                          | Some (Module.Export.Define { is_getattr_any = true }) ->
-                              Some
-                                (ResolvedReference.ModuleAttribute
-                                   {
-                                     from = current_module;
-                                     name = next_name;
-                                     export = ResolvedReference.FromModuleGetattr;
-                                     remaining = rest_names;
-                                   })
-                          | _ ->
-                              (* We could be hitting an implicit module, or we could be hitting an
-                                 explicit module whose name is a prefix of another explicit module.
-                                 Keep moving through the current reference chain to make sure we
-                                 don't mis-handle those cases. *)
-                              resolve_module_alias
-                                ~current_module:
-                                  (Reference.create next_name |> Reference.combine current_module)
-                                ~names_to_resolve:rest_names
-                                () )
-                      | Some (Module.Export.NameAlias { from; name }) ->
-                          (* We don't know if `name` refers to a module or not. Move forward on the
-                             alias chain. *)
-                          resolve_module_alias
-                            ~current_module:from
-                            ~names_to_resolve:(name :: rest_names)
-                            ()
-                      | Some (Module.Export.Module name) ->
-                          (* `name` is definitely a module. *)
-                          resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
-                      | Some (Module.Export.(Class | Define _ | GlobalVariable) as export) ->
-                          (* We find a non-module. *)
-                          Some
-                            (ResolvedReference.ModuleAttribute
-                               {
-                                 from = current_module;
-                                 name = next_name;
-                                 export = ResolvedReference.Exported export;
-                                 remaining = rest_names;
-                               }) ) ) ) )
-    in
-    resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
-
-
-  let resolve_decorator_if_matches
-      read_only
-      ?dependency
-      ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator)
-      ~target
-    =
-    let resolved_name =
-      match resolve_exports read_only ?dependency name with
-      | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-          Reference.create_from_list (name :: remaining) |> Reference.combine from
-      | _ -> name
-    in
-    if String.equal (Reference.show resolved_name) target then
-      Some { decorator with name = { Node.value = resolved_name; location } }
-    else
-      None
-
-
-  let get_decorator
-      read_only
-      ?dependency
-      { Node.value = { ClassSummary.decorators; _ }; _ }
-      ~decorator
-    =
-    List.filter_map
-      ~f:(resolve_decorator_if_matches read_only ?dependency ~target:decorator)
-      decorators
 end
 
 let read_only ({ module_tracker } as environment) =
-  let get_module_metadata ?dependency qualifier =
-    let qualifier =
-      match Reference.as_list qualifier with
-      | ["future"; "builtins"]
-      | ["builtins"] ->
-          Reference.empty
-      | _ -> qualifier
-    in
-    match ModuleMetadata.get ?dependency qualifier with
-    | Some _ as result -> result
-    | None -> (
-        match ModuleTracker.is_module_tracked module_tracker qualifier with
-        | true -> Some (Module.create_implicit ())
-        | false -> None )
-  in
-  let module_exists ?dependency qualifier =
-    let qualifier =
-      match Reference.as_list qualifier with
-      | ["future"; "builtins"]
-      | ["builtins"] ->
-          Reference.empty
-      | _ -> qualifier
-    in
-    match ModuleMetadata.mem ?dependency qualifier with
-    | true -> true
-    | false -> ModuleTracker.is_module_tracked module_tracker qualifier
-  in
+  let is_module_tracked qualifier = ModuleTracker.is_module_tracked module_tracker qualifier in
   {
     ReadOnly.get_source = get_source environment;
     get_source_path = get_source_path environment;
     is_module = ModuleTracker.is_module_tracked module_tracker;
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
-    get_module_metadata;
-    module_exists;
+    is_module_tracked;
   }

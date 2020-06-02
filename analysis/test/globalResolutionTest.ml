@@ -68,8 +68,8 @@ let test_get_decorator context =
           let actual =
             Node.create_with_default_location definition
             |> Node.map ~f:(ClassSummary.create ~qualifier:Reference.empty)
-            |> AstEnvironment.ReadOnly.get_decorator
-                 (GlobalResolution.ast_environment resolution)
+            |> UnannotatedGlobalEnvironment.ReadOnly.get_decorator
+                 (GlobalResolution.unannotated_global_environment resolution)
                  ~decorator
           in
           let equal_decorator left right =

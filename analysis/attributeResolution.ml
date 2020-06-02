@@ -264,11 +264,6 @@ let unannotated_global_environment class_metadata_environment =
   |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let ast_environment class_metadata_environment =
-  unannotated_global_environment class_metadata_environment
-  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-
-
 let class_definition class_metadata_environment annotation ~dependency =
   Type.split annotation
   |> fst
@@ -326,8 +321,8 @@ module ClassDecorators = struct
       let get_decorator decorator =
         List.filter_map
           ~f:
-            (AstEnvironment.ReadOnly.resolve_decorator_if_matches
-               (ast_environment class_metadata_environment)
+            (UnannotatedGlobalEnvironment.ReadOnly.resolve_decorator_if_matches
+               (unannotated_global_environment class_metadata_environment)
                ?dependency
                ~target:decorator)
           decorators
@@ -2072,8 +2067,8 @@ class base class_metadata_environment dependency =
                   let literal_value_annotation = self#resolve_literal ~assumptions value in
                   let is_dataclass_attribute =
                     let get_decorator =
-                      AstEnvironment.ReadOnly.get_decorator
-                        (ast_environment class_metadata_environment)
+                      UnannotatedGlobalEnvironment.ReadOnly.get_decorator
+                        (unannotated_global_environment class_metadata_environment)
                         ?dependency
                     in
                     let get_dataclass_decorator annotated =
@@ -2499,8 +2494,8 @@ class base class_metadata_environment dependency =
       let apply_decorator (index, { Decorator.name; arguments }) argument =
         let decorator =
           Node.value name
-          |> AstEnvironment.ReadOnly.legacy_resolve_exports
-               (ast_environment class_metadata_environment)
+          |> UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+               (unannotated_global_environment class_metadata_environment)
                ?dependency
           |> Reference.show
         in

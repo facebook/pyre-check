@@ -57,8 +57,11 @@ type aggregate = {
   source_files: int;
 }
 
-let coverage ~configuration ~ast_environment qualifiers =
+let coverage ~configuration ~unannotated_global_environment qualifiers =
   let qualifiers =
+    let ast_environment =
+      UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+    in
     let is_not_external qualifier =
       AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
       >>| (fun { SourcePath.is_external; _ } -> not is_external)
@@ -68,7 +71,9 @@ let coverage ~configuration ~ast_environment qualifiers =
   in
   let number_of_files = List.length qualifiers in
   let strict_coverage, declare_coverage =
-    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_module_metadata ast_environment)
+    List.filter_map
+      qualifiers
+      ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata unannotated_global_environment)
     |> List.map ~f:Module.local_mode
     |> List.fold ~init:(0, 0) ~f:(fun (prev_strict, prev_declare) local_mode ->
            let mode = Source.mode ~local_mode ~configuration in

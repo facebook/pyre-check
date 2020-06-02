@@ -20,6 +20,8 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val get_errors : t -> Reference.t -> Error.t list
 
   val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option

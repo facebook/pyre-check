@@ -233,8 +233,8 @@ let infer_class_models ~environment =
   in
   let compute_models class_name class_summary =
     let is_dataclass =
-      AstEnvironment.ReadOnly.get_decorator
-        (TypeEnvironment.ReadOnly.ast_environment environment)
+      UnannotatedGlobalEnvironment.ReadOnly.get_decorator
+        (TypeEnvironment.ReadOnly.unannotated_global_environment environment)
         class_summary
         ~decorator:"dataclasses.dataclass"
       |> fun decorators -> not (List.is_empty decorators)

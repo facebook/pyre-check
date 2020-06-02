@@ -1745,12 +1745,315 @@ let test_updates context =
   ()
 
 
+let test_builtin_modules context =
+  let ast_environment =
+    let ast_environment, ast_environment_update_result =
+      let sources = ["builtins.py", "foo: int = 42"] in
+      ScratchProject.setup
+        ~context
+        ~include_typeshed_stubs:false
+        ~include_helper_builtins:false
+        sources
+      |> ScratchProject.parse_sources
+    in
+    let update_result =
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+        (AstEnvironment.read_only ast_environment)
+        ~scheduler:(mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+        ~ast_environment_update_result
+        (Reference.Set.singleton Reference.empty)
+    in
+    UnannotatedGlobalEnvironment.UpdateResult.read_only update_result
+  in
+  assert_bool
+    "empty qualifier module exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment Reference.empty);
+  assert_bool
+    "random qualifier doesn't exist"
+    (not (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"derp"));
+  assert_bool
+    "`builtins` exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"builtins");
+  assert_bool
+    "`future.builtins` exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"future.builtins");
+
+  let assert_nonempty qualifier =
+    match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
+    | None -> assert_failure "Module does not exist"
+    | Some metadata ->
+        assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
+        assert_bool "implicit module not expected" (not (Module.is_implicit metadata));
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: Module.Export.t option]
+          ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
+          (Some Module.Export.GlobalVariable)
+          (Module.get_export metadata "foo")
+  in
+  assert_nonempty Reference.empty;
+  assert_nonempty !&"builtins";
+  assert_nonempty !&"future.builtins";
+  ()
+
+
+let test_resolve_exports context =
+  let open UnannotatedGlobalEnvironment in
+  let assert_resolved ~expected ?from ~reference sources =
+    Memory.reset_shared_memory ();
+    ScratchProject.setup
+      ~context
+      ~include_typeshed_stubs:false
+      ~include_helper_builtins:false
+      ~external_sources:["builtins.py", ""]
+      sources
+    |> ScratchProject.parse_sources
+    |> fun (ast_environment, ast_environment_update_result) ->
+    let update_result =
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+        (AstEnvironment.read_only ast_environment)
+        ~scheduler:(mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+        ~ast_environment_update_result
+        (Reference.Set.of_list
+           (AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.all_explicit_modules))
+    in
+    let unannotated_global_environment = UpdateResult.read_only update_result in
+    let actual = ReadOnly.resolve_exports unannotated_global_environment ?from reference in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: ResolvedReference.t option]
+      ~printer:(fun result -> Sexp.to_string_hum [%message (result : ResolvedReference.t option)])
+      expected
+      actual
+  in
+  let resolved_module name = ResolvedReference.Module name in
+  let resolved_attribute ?(remaining = []) ?export from name =
+    let export =
+      match export with
+      | None -> ResolvedReference.FromModuleGetattr
+      | Some export -> ResolvedReference.Exported export
+    in
+    ResolvedReference.ModuleAttribute { from; name; export; remaining }
+  in
+  let resolved_placeholder_stub ?(remaining = []) stub_module =
+    ResolvedReference.PlaceholderStub { stub_module; remaining }
+  in
+
+  let open Module in
+  assert_resolved [] ~reference:!&"derp" ~expected:None;
+  assert_resolved ["derp.py", ""] ~reference:!&"derp" ~expected:(Some (resolved_module !&"derp"));
+  assert_resolved ["derp.py", ""] ~reference:!&"derp.foo" ~expected:None;
+  assert_resolved
+    ["derp.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"derp" ~remaining:["foo"]));
+  assert_resolved
+    ["derp/foo.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"derp.foo"));
+  assert_resolved
+    ["derp/foo.py", ""]
+    ~reference:!&"derp"
+    ~expected:(Some (resolved_module !&"derp"));
+  assert_resolved
+    ["derp/foo.py", ""]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_module !&"derp.foo"));
+  assert_resolved ["derp/foo.py", ""] ~reference:!&"derp.foo.bar" ~expected:None;
+  assert_resolved
+    ["derp/__init__.py", ""; "derp/foo.py", ""]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_module !&"derp.foo"));
+  assert_resolved
+    ["derp/__init__.py", "foo = 1"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.GlobalVariable));
+  assert_resolved
+    ["derp.py", "foo = 1"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.GlobalVariable));
+  assert_resolved
+    ["derp.py", "def foo(): pass"]
+    ~reference:!&"derp.foo"
+    ~expected:
+      (Some (resolved_attribute !&"derp" "foo" ~export:(Export.Define { is_getattr_any = false })));
+  assert_resolved
+    ["derp.py", "class foo: pass"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Class));
+  assert_resolved
+    ["derp.py", "class foo: pass"]
+    ~reference:!&"derp.foo.bar.baz"
+    ~expected:
+      (Some (resolved_attribute !&"derp" "foo" ~export:Export.Class ~remaining:["bar"; "baz"]));
+
+  assert_resolved ["a.py", "import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a.py", "import b"; "b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved
+    ["a.py", "import b"; "b/c.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved
+    ["a.py", "import b"; "b/c.py", ""]
+    ~reference:!&"a.b.c"
+    ~expected:(Some (resolved_module !&"b.c"));
+  assert_resolved
+    ["a.py", "import b as c"; "b.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved ["a.py", "from b import c"] ~reference:!&"a.c" ~expected:None;
+  assert_resolved ["a.py", "from b import c"; "b.py", ""] ~reference:!&"a.c" ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"c"));
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
+    ~reference:!&"a.c.d"
+    ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "c = 42"]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+  assert_resolved
+    ["a.py", "from b import c as d"; "b.py", "c = 42"]
+    ~reference:!&"a.d"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+  assert_resolved
+    ["a.py", "from b import c as d"; "b.py", "c = 42"]
+    ~reference:!&"a.d.e"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable ~remaining:["e"]));
+
+  (* Transitive import tests *)
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "c = 42"]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"d" "c" ~export:Export.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import c";
+      "b.py", "from d import c";
+      "d.py", "from e import f as c";
+      "e.py", "f = 42";
+    ]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"e" "f" ~export:Export.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import foo";
+      "b.py", "from c import bar as foo";
+      "c.py", "from d import cow as bar";
+      "d.py", "cow = 1";
+    ]
+    ~reference:!&"a.foo"
+    ~expected:(Some (resolved_attribute !&"d" "cow" ~export:Export.GlobalVariable));
+
+  (* Getattr-any tests *)
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_attribute !&"a" "b" ~export:Export.GlobalVariable));
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"a" "c"));
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.c.d"
+    ~expected:(Some (resolved_attribute !&"a" "c" ~remaining:["d"]));
+  assert_resolved
+    [
+      "a.py", "from b import c";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import d";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.d"
+    ~expected:(Some (resolved_attribute !&"b" "d"));
+  assert_resolved
+    [
+      "a.py", "from b import d";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.d.e"
+    ~expected:(Some (resolved_attribute !&"b" "d" ~remaining:["e"]));
+
+  (* Access into placeholder stub *)
+  assert_resolved
+    ["a.py", "from b import c"; "b.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"a.c.d"
+    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
+  (* Cyclic imports *)
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "from b import c"]
+    ~reference:!&"a.c"
+    ~expected:None;
+  (* Runtime does not allow `from X import ...` when `X` is itself a module alias. *)
+  assert_resolved
+    ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
+    ~reference:!&"a.d"
+    ~expected:None;
+  (* ... but we do pretend placeholder stubs exist. *)
+  assert_resolved
+    ["a.py", "from b.nonexistent import foo"; "b.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"a.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["nonexistent"; "foo"]));
+  (* Package takes precedence over module of the same name. *)
+  assert_resolved
+    [
+      "qualifier.py", "from qualifier.foo import foo";
+      "qualifier/__init__.py", "";
+      "qualifier/foo/__init__.py", "foo = 1";
+    ]
+    ~reference:!&"qualifier.foo.foo"
+    ~expected:(Some (resolved_attribute !&"qualifier.foo" "foo" ~export:Export.GlobalVariable));
+
+  (* Illustrate why the `from` argument matters. *)
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~reference:!&"qualifier.a"
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "bar" ~export:Export.GlobalVariable));
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~reference:!&"qualifier.a.foo"
+    ~expected:
+      (Some
+         (resolved_attribute !&"qualifier.a" "bar" ~export:Export.GlobalVariable ~remaining:["foo"]));
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~from:!&"qualifier.a"
+    ~reference:!&"foo"
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.GlobalVariable));
+  ()
+
+
 let () =
   "environment"
   >::: [
          "global_registration" >:: test_global_registration;
          "define_registration" >:: test_define_registration;
          "simple_globals" >:: test_simple_global_registration;
+         "builtins" >:: test_builtin_modules;
+         "resolve_exports" >:: test_resolve_exports;
          "updates" >:: test_updates;
        ]
   |> Test.run

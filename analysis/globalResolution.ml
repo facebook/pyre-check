@@ -118,11 +118,15 @@ let base_is_from_placeholder_stub resolution =
 
 
 let module_exists ({ dependency; _ } as resolution) =
-  AstEnvironment.ReadOnly.module_exists ?dependency (ast_environment resolution)
+  UnannotatedGlobalEnvironment.ReadOnly.module_exists
+    ?dependency
+    (unannotated_global_environment resolution)
 
 
 let get_module_metadata ({ dependency; _ } as resolution) =
-  AstEnvironment.ReadOnly.get_module_metadata ?dependency (ast_environment resolution)
+  UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+    ?dependency
+    (unannotated_global_environment resolution)
 
 
 let function_definitions ({ dependency; _ } as resolution) reference =
@@ -408,7 +412,10 @@ let signature_select ~global_resolution:({ dependency; _ } as resolution) =
 
 
 let legacy_resolve_exports ({ dependency; _ } as resolution) ~reference =
-  AstEnvironment.ReadOnly.legacy_resolve_exports ?dependency (ast_environment resolution) reference
+  UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+    ?dependency
+    (unannotated_global_environment resolution)
+    reference
 
 
 let widen resolution = full_order resolution |> TypeOrder.widen

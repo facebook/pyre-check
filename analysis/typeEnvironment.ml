@@ -97,6 +97,10 @@ module ReadOnly = struct
     AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
 
 
+  let unannotated_global_environment { global_environment; _ } =
+    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
+
+
   let get_errors { get_errors; _ } = get_errors
 
   let get_local_annotations { get_local_annotations; _ } = get_local_annotations

@@ -6,27 +6,6 @@
 open Ast
 open SharedMemoryKeys
 
-module ResolvedReference : sig
-  type export =
-    | FromModuleGetattr
-    | Exported of Module.Export.t
-  [@@deriving sexp, compare, hash]
-
-  type t =
-    | Module of Reference.t
-    | ModuleAttribute of {
-        from: Reference.t;
-        name: Identifier.t;
-        export: export;
-        remaining: Identifier.t list;
-      }
-    | PlaceholderStub of {
-        stub_module: Reference.t;
-        remaining: Identifier.t list;
-      }
-  [@@deriving sexp, compare, hash]
-end
-
 type t
 
 module ReadOnly : sig
@@ -37,8 +16,7 @@ module ReadOnly : sig
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
-    ?get_module_metadata:(?dependency:DependencyKey.registered -> Reference.t -> Module.t option) ->
-    ?module_exists:(?dependency:DependencyKey.registered -> Reference.t -> bool) ->
+    ?is_module_tracked:(Reference.t -> bool) ->
     unit ->
     t
 
@@ -64,40 +42,7 @@ module ReadOnly : sig
 
   val all_explicit_modules : t -> Reference.t list
 
-  val get_module_metadata
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    Module.t option
-
-  val module_exists : t -> ?dependency:DependencyKey.registered -> Reference.t -> bool
-
-  val legacy_resolve_exports
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    Reference.t
-
-  val resolve_exports
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    ?from:Reference.t ->
-    Reference.t ->
-    ResolvedReference.t option
-
-  val resolve_decorator_if_matches
-    :  t ->
-    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Ast.Statement.Decorator.t ->
-    target:string ->
-    Ast.Statement.Decorator.t option
-
-  val get_decorator
-    :  t ->
-    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    ClassSummary.t Node.t ->
-    decorator:string ->
-    Ast.Statement.Decorator.t list
+  val is_module_tracked : t -> Reference.t -> bool
 end
 
 (* Store the environment to saved-state *)

@@ -11,17 +11,16 @@ let test_coverage context =
   let assert_coverage ?external_sources sources expected =
     let project = Test.ScratchProject.setup ~context ?external_sources sources in
     let configuration = Test.ScratchProject.configuration_of project in
-    let ast_environment, ast_environment_update_result =
-      Test.ScratchProject.parse_sources project
+    let { Test.ScratchProject.BuiltGlobalEnvironment.sources; global_environment; _ } =
+      Test.ScratchProject.build_global_environment project
     in
-    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    let sources =
-      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-      |> List.map ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
-             qualifier)
+    let unannotated_global_environment =
+      AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
     in
-    Coverage.coverage ~configuration ~ast_environment sources |> assert_equal expected
+    List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+        qualifier)
+    |> Coverage.coverage ~configuration ~unannotated_global_environment
+    |> assert_equal expected
   in
   assert_coverage
     [
