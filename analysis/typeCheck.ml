@@ -5739,17 +5739,29 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               else
                 index
             in
-            let add_error ({ Decorator.name = { Node.location; _ }; _ } as decorator) =
+            let add_error ({ Decorator.name = { Node.location; _ }; arguments } as decorator) =
+              let make_error reason =
+                let error =
+                  Error.create
+                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                    ~define:Context.define
+                    ~kind:(Error.InvalidDecoration { decorator; reason })
+                in
+                error :: errors
+              in
               match reason with
-              | CouldNotResolve ->
-                  let error =
-                    Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                      ~define:Context.define
-                      ~kind:(Error.InvalidDecoration { decorator; reason = CouldNotResolve })
+              | CouldNotResolve -> make_error CouldNotResolve
+              | CouldNotResolveArgument { argument_index } ->
+                  let add_error argument =
+                    let argument, _ = Ast.Expression.Call.Argument.unpack argument in
+                    make_error (CouldNotResolveArgument argument)
                   in
-                  error :: errors
+                  arguments
+                  >>= (fun arguments -> List.nth arguments argument_index)
+                  >>| add_error
+                  |> Option.value ~default:errors
             in
+
             let { StatementDefine.Signature.decorators; _ } = signature in
             List.nth decorators adjusted_index >>| add_error |> Option.value ~default:errors
         | _ -> errors

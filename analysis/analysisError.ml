@@ -193,7 +193,10 @@ and incompatible_overload_kind =
   | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
-type invalid_decoration_reason = CouldNotResolve [@@deriving compare, eq, sexp, show, hash]
+type invalid_decoration_reason =
+  | CouldNotResolve
+  | CouldNotResolveArgument of Expression.t
+[@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
   decorator: Decorator.t;
@@ -961,6 +964,14 @@ let messages ~concise ~signature location kind =
   | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
       [Format.asprintf "Decorator `%s` could not be resolved in a global scope." name]
+  | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolveArgument argument } ->
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      [
+        Format.asprintf
+          "Argument `%s` to decorator factory `%s` could not be resolved in a global scope."
+          (show_sanitized_expression argument)
+          name;
+      ]
   | InvalidException { expression; annotation } ->
       [
         Format.asprintf

@@ -184,7 +184,10 @@ and incompatible_overload_kind =
   | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
-type invalid_decoration_reason = CouldNotResolve [@@deriving compare, eq, sexp, show, hash]
+type invalid_decoration_reason =
+  | CouldNotResolve
+  | CouldNotResolveArgument of Expression.t
+[@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
   decorator: Statement.Decorator.t;

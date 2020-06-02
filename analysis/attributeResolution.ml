@@ -2660,35 +2660,56 @@ class base class_metadata_environment dependency =
                 | Some fetched -> (
                     match extract_callable fetched, arguments with
                     | Some callable, Some arguments ->
-                        (let resolve_with_locals ~locals:_ = function
-                           | { Node.value = Expression.Expression.Name name; _ } ->
-                               Expression.name_to_reference name
-                               >>| Reference.delocalize
-                               >>| AstEnvironment.ReadOnly.legacy_resolve_exports
-                                     (ast_environment class_metadata_environment)
-                               >>= resolver
-                               |> Option.value ~default:Type.Top
-                           | expression ->
-                               let resolved = self#resolve_literal ~assumptions expression in
-                               if Type.is_partially_typed resolved then
-                                 Type.Top
-                               else
-                                 resolved
-                         in
-                         match
-                           self#signature_select
-                             ~assumptions
-                             ~resolve_with_locals
-                             ~arguments:(Unresolved arguments)
-                             ~callable
-                             ~self_argument:None
-                             ~skip_marking_escapees:false
-                         with
-                         | SignatureSelectionTypes.Found
-                             { selected_return_annotation = Type.Callable callable; _ } ->
-                             Some callable
-                         | _ -> None)
-                        |> Result.return
+                        let arguments =
+                          let resolve argument_index argument =
+                            let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+                            let make_argument resolved =
+                              {
+                                SignatureSelectionTypes.Argument.kind;
+                                expression = Some expression;
+                                resolved;
+                              }
+                            in
+                            let error =
+                              AnnotatedAttribute.CouldNotResolveArgument { argument_index }
+                            in
+                            match expression with
+                            | { Node.value = Expression.Expression.Name name; _ } ->
+                                Expression.name_to_reference name
+                                >>| Reference.delocalize
+                                >>| AstEnvironment.ReadOnly.legacy_resolve_exports
+                                      (ast_environment class_metadata_environment)
+                                >>= resolver
+                                >>| make_argument
+                                |> Result.of_option
+                                     ~error:
+                                       (AnnotatedAttribute.InvalidDecorator
+                                          { index; reason = error })
+                            | expression ->
+                                let resolved = self#resolve_literal ~assumptions expression in
+                                if Type.is_partially_typed resolved then
+                                  make_error error
+                                else
+                                  Ok (make_argument resolved)
+                          in
+                          List.mapi arguments ~f:resolve |> Result.all
+                        in
+                        let select arguments =
+                          self#signature_select
+                            ~assumptions
+                            ~resolve_with_locals:(fun ~locals:_ _ -> Type.Top)
+                            ~arguments:(Resolved arguments)
+                            ~callable
+                            ~self_argument:None
+                            ~skip_marking_escapees:false
+                        in
+                        let extract = function
+                          | SignatureSelectionTypes.Found
+                              { selected_return_annotation = Type.Callable callable; _ } ->
+                              Some callable
+                          | _ -> None
+                        in
+                        Result.map arguments ~f:select |> Result.map ~f:extract
                     | Some callable, None -> Some callable |> Result.return
                     | None, _ -> Ok None )
               in

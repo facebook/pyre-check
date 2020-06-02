@@ -22,7 +22,10 @@ type initialized =
   | NotInitialized
 [@@deriving eq, show, compare, sexp]
 
-type invalid_decorator_reason = CouldNotResolve [@@deriving eq, show, compare, sexp]
+type invalid_decorator_reason =
+  | CouldNotResolve
+  | CouldNotResolveArgument of { argument_index: int }
+[@@deriving eq, show, compare, sexp]
 
 type problem =
   | DifferingDecorators of { offender: Type.t Type.Callable.overload }

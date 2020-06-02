@@ -395,6 +395,8 @@ let test_decorators context =
     |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Invalid decoration [56]: Argument `1.__add__(\"foo\")` to decorator factory \
+       `test.my_decorator` could not be resolved in a global scope.";
       "Incompatible parameter type [6]: Expected `int` for 1st positional only "
       ^ "parameter to call `int.__add__` but got `str`.";
     ];
@@ -795,9 +797,9 @@ let test_decorator_factories context =
      reveal_type(foo)
     |}
     [
-      (* We don't handle non-literal expressions as arguments *)
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
-       str)], int]`.";
+      "Invalid decoration [56]: Argument `3.__add__(4)` to decorator factory \
+       `test.decorator_factory` could not be resolved in a global scope.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
   assert_type_errors
     {|
