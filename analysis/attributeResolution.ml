@@ -999,6 +999,7 @@ class base class_metadata_environment dependency =
         ~in_test
         ~accessed_via_metaclass
         ({ Node.value = { ClassSummary.name; _ }; _ } as parent) =
+      let class_name = Reference.show name in
       let unannotated_attributes
           ~include_generated_attributes
           ~in_test
@@ -1059,7 +1060,6 @@ class base class_metadata_environment dependency =
           |> Identifier.Map.of_alist_reduce ~f:(fun first _ -> first)
           |> Identifier.Map.to_alist
         in
-        let class_name = Reference.show name in
         let parameters =
           let keyword_only_parameter (name, annotation) =
             Type.Record.Callable.RecordParameter.KeywordOnly
@@ -1094,11 +1094,39 @@ class base class_metadata_environment dependency =
           ~problem:None
         |> UninstantiatedAttributeTable.add table
       in
+      let add_special_attribute ~name ~annotation table =
+        AnnotatedAttribute.create_uninstantiated
+          ~abstract:false
+          ~uninstantiated_annotation:
+            {
+              UninstantiatedAnnotation.accessed_via_metaclass = false;
+              kind = UninstantiatedAnnotation.Attribute annotation;
+            }
+          ~async:false
+          ~class_variable:false
+          ~defined:true
+          ~initialized:OnClass
+          ~name
+          ~parent:class_name
+          ~visibility:ReadWrite
+          ~property:false
+          ~undecorated_signature:None
+          ~problem:None
+        |> UninstantiatedAttributeTable.add table
+      in
       let table = UninstantiatedAttributeTable.create () in
       unannotated_attributes ~include_generated_attributes ~in_test parent
       |> List.iter ~f:(UninstantiatedAttributeTable.add table);
       if include_generated_attributes then
         add_constructor table;
+      add_special_attribute
+        ~name:"metadata"
+        ~annotation:(Type.Primitive "sqlalchemy.sql.schema.MetaData")
+        table;
+      add_special_attribute
+        ~name:"__table__"
+        ~annotation:(Type.Primitive "sqlalchemy.sql.schema.Table")
+        table;
       table
 
     method typed_dictionary_special_methods_table

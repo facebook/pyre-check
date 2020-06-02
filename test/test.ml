@@ -888,6 +888,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
               def __get__(self, instance: object, owner: Any) -> _T: ...
           |}
       );
+      ( "sqlalchemy/sql/schema.pyi",
+        {|
+            class Table: ...
+            class MetaData: ...
+        |} );
     ]
   in
   [

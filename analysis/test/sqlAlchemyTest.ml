@@ -50,6 +50,8 @@ let test_transform_environment context =
           income: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer())
           non_column: str = "foo"
           __private_attribute: str = "bar"
+          __table__: sqlalchemy.sql.schema.Table = sqlalchemy.sql.schema.Table()
+          metadata: sqlalchemy.sql.schema.MetaData = sqlalchemy.sql.schema.MetaData()
 
           def __init__(
             self,
@@ -68,6 +70,8 @@ let test_transform_environment context =
         class UserWithExistingConstructor(Base):
           __tablename__: str = 'users'
           id: sqlalchemy.Column[int] = sqlalchemy.Column(sqlalchemy.Integer(), primary_key=True)
+          __table__: sqlalchemy.sql.schema.Table = sqlalchemy.sql.schema.Table()
+          metadata: sqlalchemy.sql.schema.MetaData = sqlalchemy.sql.schema.MetaData()
 
           # User-defined constructor is allowed to have any signature.
           def __init__(self) -> None:
@@ -79,6 +83,8 @@ let test_transform_environment context =
           badge_number: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer())
           # Income in words, let's say. This overrides the attribute in User.
           income: sqlalchemy.Column[typing.Optional[str]] = sqlalchemy.Column(sqlalchemy.String())
+          __table__: sqlalchemy.sql.schema.Table = sqlalchemy.sql.schema.Table()
+          metadata: sqlalchemy.sql.schema.MetaData = sqlalchemy.sql.schema.MetaData()
 
           def __init__(
             self,
