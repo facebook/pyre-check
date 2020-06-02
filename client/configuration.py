@@ -203,9 +203,7 @@ class Configuration:
         if local_configuration:
             # Handle local configuration explicitly configured on the
             # commandline.
-            self._check_read_local_configuration(
-                local_configuration, fail_on_error=True
-            )
+            self._check_read_local_configuration(local_configuration)
         if log_directory:
             self.ignore_all_errors.append(log_directory)
 
@@ -425,26 +423,19 @@ class Configuration:
         else:
             return None
 
-    def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
-        if fail_on_error and not os.path.exists(path):
+    def _check_read_local_configuration(self, path: str) -> None:
+        if not os.path.exists(path):
             raise EnvironmentException(
                 "Local configuration path `{}` does not exist.".format(path)
             )
 
         if os.path.isdir(path):
             local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
-
             if not os.path.exists(local_configuration):
-                if fail_on_error:
-                    raise EnvironmentException(
-                        "Local configuration directory `{}` does not contain "
-                        "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
-                    )
-                else:
-                    LOG.debug(
-                        "Configuration will be read from the project root: "
-                        "`{}`".format(os.getcwd())
-                    )
+                raise EnvironmentException(
+                    "Local configuration directory `{}` does not contain "
+                    "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
+                )
             else:
                 self.local_configuration = local_configuration
         else:
