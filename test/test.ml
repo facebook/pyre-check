@@ -851,6 +851,42 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
                 def __setattr__(cls, key, value): ...
           |}
       );
+      ( "sqlalchemy/__init__.pyi",
+        {|
+            from typing import Generic, Optional, Text as typing_Text, Type, TypeVar, final, overload
+            from typing_extensions import Literal
+            _T_co = TypeVar('_T_co', covariant=True)
+            _T = TypeVar('_T')
+            class TypeEngine(Generic[_T_co]): ...
+            class Integer(TypeEngine[int]): ...
+
+            @final
+            class Column(Generic[_T]):
+              @overload
+              def __new__(
+                cls, type_: TypeEngine[_T],
+              ) -> Column[Optional[_T]]: ...
+              @overload
+              def __new__(
+                cls, type_: TypeEngine[_T],
+                primary_key: Literal[True] = ...
+              ) -> Column[_T]: ...
+              @overload
+              def __new__(
+                cls, type_: TypeEngine[_T],
+                primary_key: Literal[False] = ...
+              ) -> Column[Optional[_T]]: ...
+              def __new__(
+                cls, type_: TypeEngine[_T],
+                primary_key: bool = ...
+              ) -> Union[Column[_T], Column[Optional[_T]]]: ...
+
+              @overload
+              def __get__(self, instance: None, owner: Any) -> Column[_T]: ...
+              @overload
+              def __get__(self, instance: object, owner: Any) -> _T: ...
+          |}
+      );
     ]
   in
   [

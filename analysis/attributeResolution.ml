@@ -993,6 +993,96 @@ class base class_metadata_environment dependency =
       in
       result
 
+    method sqlalchemy_attribute_table
+        ~assumptions
+        ~include_generated_attributes
+        ~in_test
+        ~accessed_via_metaclass
+        ({ Node.value = { ClassSummary.name; _ }; _ } as parent) =
+      let unannotated_attributes
+          ~include_generated_attributes
+          ~in_test
+          { Node.value = { ClassSummary.attribute_components; _ }; _ }
+        =
+        let attributes =
+          Class.attributes ~include_generated_attributes ~in_test attribute_components
+          |> Identifier.SerializableMap.bindings
+          |> List.map ~f:(fun (_, attribute) -> attribute)
+        in
+        let unannotated_attribute { Node.value = attribute; _ } =
+          self#create_attribute
+            ~assumptions
+            ~parent
+            ?defined:(Some true)
+            ~accessed_via_metaclass
+            attribute
+        in
+        List.map attributes ~f:unannotated_attribute
+      in
+      let add_constructor table =
+        let name_annotation_pairs =
+          let name_annotation_pair attribute =
+            let name = AnnotatedAttribute.name attribute in
+            if Expression.is_dunder_attribute name then
+              None
+            else
+              let annotation =
+                self#instantiate_attribute
+                  ~assumptions
+                  ~accessed_through_class:false
+                  ?instantiated:None
+                  ?apply_descriptors:None
+                  attribute
+                |> AnnotatedAttribute.annotation
+                |> Annotation.annotation
+              in
+              Some (name, annotation)
+          in
+          unannotated_attributes ~include_generated_attributes:false ~in_test:false parent
+          |> List.filter_map ~f:name_annotation_pair
+        in
+        let class_name = Reference.show name in
+        let parameters =
+          let keyword_only_parameter (name, annotation) =
+            Type.Record.Callable.RecordParameter.KeywordOnly
+              { name = Format.asprintf "$parameter$%s" name; annotation; default = true }
+          in
+          let self_parameter =
+            Type.Callable.Parameter.Named
+              { name = "$parameter$self"; annotation = Type.Primitive class_name; default = false }
+          in
+          List.map ~f:keyword_only_parameter name_annotation_pairs
+          |> fun parameters -> Type.Record.Callable.Defined (self_parameter :: parameters)
+        in
+        let constructor =
+          {
+            Type.Callable.kind = Named (Reference.create ~prefix:name "__init__");
+            implementation = { annotation = Type.none; parameters };
+            overloads = [];
+          }
+        in
+        AnnotatedAttribute.create_uninstantiated
+          ~abstract:false
+          ~uninstantiated_annotation:(create_uninstantiated_method constructor)
+          ~async:false
+          ~class_variable:false
+          ~defined:true
+          ~initialized:OnClass
+          ~name:"__init__"
+          ~parent:class_name
+          ~visibility:ReadWrite
+          ~property:false
+          ~undecorated_signature:(Some constructor)
+          ~problem:None
+        |> UninstantiatedAttributeTable.add table
+      in
+      let table = UninstantiatedAttributeTable.create () in
+      unannotated_attributes ~include_generated_attributes ~in_test parent
+      |> List.iter ~f:(UninstantiatedAttributeTable.add table);
+      if include_generated_attributes then
+        add_constructor table;
+      table
+
     method typed_dictionary_special_methods_table
         ~assumptions
         ~include_generated_attributes
@@ -1243,6 +1333,12 @@ class base class_metadata_environment dependency =
             class_name )
       with
       | Some definition, Some { is_typed_dictionary; is_test = in_test; _ } ->
+          let is_declarative_sqlalchemy_class () =
+            Option.equal
+              Type.equal
+              (self#metaclass ~assumptions class_name)
+              (Some (Type.Primitive "sqlalchemy.ext.declarative.api.DeclarativeMeta"))
+          in
           let table =
             if is_typed_dictionary then
               self#typed_dictionary_special_methods_table
@@ -1253,6 +1349,13 @@ class base class_metadata_environment dependency =
                 ~class_metadata_environment
                 ?dependency
                 ~class_name
+                definition
+            else if is_declarative_sqlalchemy_class () then
+              self#sqlalchemy_attribute_table
+                ~assumptions
+                ~include_generated_attributes
+                ~in_test
+                ~accessed_via_metaclass
                 definition
             else
               handle definition ~in_test

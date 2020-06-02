@@ -1407,6 +1407,10 @@ let is_private_attribute attribute_name =
   String.is_prefix ~prefix:"__" attribute_name && not (String.is_suffix ~suffix:"__" attribute_name)
 
 
+let is_dunder_attribute attribute_name =
+  String.is_prefix ~prefix:"__" attribute_name && String.is_suffix ~suffix:"__" attribute_name
+
+
 let inverse_operator = function
   (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
   | "__add__" -> Some "__radd__"

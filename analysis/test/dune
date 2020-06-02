@@ -36,6 +36,7 @@
   resolutionTest
   resolvedCallableTest
   scopeTest
+  sqlAlchemyTest
   typeCheckTest
   typeConstraintsTest
   typeOrderTest
