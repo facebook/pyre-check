@@ -31,34 +31,16 @@ def find_local_root(
     original_directory: str, local_root: Optional[str] = None
 ) -> Optional[str]:
     if local_root:
-        _check_nested_configurations(local_root)
         return local_root
 
     global_root = find_root(original_directory, CONFIGURATION_FILE)
     local_root = find_root(original_directory, LOCAL_CONFIGURATION_FILE)
-    # Check for illegal nested local configuration.
-    _check_nested_configurations(local_root)
 
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):
         local_root = None
     if local_root:
         return local_root
-
-
-def _check_nested_configurations(local_root: Optional[str]) -> None:
-    if local_root:
-        parent_local_root = find_root(
-            os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
-        )
-        if parent_local_root:
-            LOG.warning(
-                "Local configuration is nested under another local configuration at "
-                "`{}`.\n   Please combine the sources into a single configuration or "
-                "split the parent configuration to avoid inconsistent errors.".format(
-                    parent_local_root
-                )
-            )
 
 
 def _find_directory_upwards(base: str, target: str) -> Optional[str]:

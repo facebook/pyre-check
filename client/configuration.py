@@ -19,8 +19,13 @@ from logging import Logger
 from typing import Dict, List, Optional, Union
 
 from .exceptions import EnvironmentException
-from .filesystem import assert_readable_directory, expand_relative_path
-from .find_directories import BINARY_NAME, CONFIGURATION_FILE, find_typeshed
+from .filesystem import assert_readable_directory, expand_relative_path, find_root
+from .find_directories import (
+    BINARY_NAME,
+    CONFIGURATION_FILE,
+    LOCAL_CONFIGURATION_FILE,
+    find_typeshed,
+)
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -423,6 +428,19 @@ class Configuration:
         else:
             return None
 
+    def _check_nested_configurations(self, local_root: str) -> None:
+        parent_local_root = find_root(
+            os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
+        )
+        if parent_local_root:
+            LOG.warning(
+                "Local configuration is nested under another local configuration at "
+                "`{}`.\n   Please combine the sources into a single configuration or "
+                "split the parent configuration to avoid inconsistent errors.".format(
+                    parent_local_root
+                )
+            )
+
     def _check_read_local_configuration(self, path: str) -> None:
         if not os.path.exists(path):
             raise EnvironmentException(
@@ -431,16 +449,18 @@ class Configuration:
 
         if os.path.isdir(path):
             local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
+            local_root = path
             if not os.path.exists(local_configuration):
                 raise EnvironmentException(
                     "Local configuration directory `{}` does not contain "
                     "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
                 )
-            else:
-                self.local_configuration = local_configuration
         else:
             local_configuration = path
-            self.local_configuration = local_configuration
+            local_root = path[: -len(LOCAL_CONFIGURATION_FILE)]
+
+        self.local_configuration = local_configuration
+        self._check_nested_configurations(local_root)
         self._read(local_configuration)
 
     def _read(self, path: str) -> None:
