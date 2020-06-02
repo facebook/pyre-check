@@ -16,6 +16,10 @@ type typed_dictionary_mismatch =
       actual_type: Type.t;
       class_name: Identifier.t;
     }
+  | UndefinedField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
 [@@deriving compare, eq, show, sexp]
 
 type weakened_type = {

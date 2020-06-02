@@ -197,6 +197,7 @@ module State (Context : Context) = struct
           Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
       | MissingRequiredField { field_name; class_name } ->
           Error.MissingRequiredField { field_name; class_name }
+      | UndefinedField { field_name; class_name } -> Error.UndefinedField { field_name; class_name }
     in
     define_location, Error.TypedDictionaryInitializationError mismatch
 

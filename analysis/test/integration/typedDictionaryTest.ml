@@ -861,7 +861,7 @@ let test_check_typed_dictionaries context =
       def f() -> None:
         foo({'name' : "Blade Runner", 'year' : 1982, 'extra_key': 1})
     |}
-    [];
+    ["TypedDict initialization error [55]: TypedDict `Movie` has no field `extra_key`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -880,7 +880,10 @@ let test_check_typed_dictionaries context =
         reveal_type(movie)
         return movie['name']
     |}
-    ["Revealed type [-1]: Revealed type for `movie` is `Movie`."];
+    [
+      "TypedDict initialization error [55]: TypedDict `Movie` has no field `bonus`.";
+      "Revealed type [-1]: Revealed type for `movie` is `Movie`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions

@@ -871,7 +871,13 @@ let test_resolve_mutable_literals_typed_dictionary context =
   assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999, 'extra_key': 1 }"
     ~against_type:(Type.Primitive "test.ClassBasedMovie")
-    (make_weakened_type (Type.Primitive "test.ClassBasedMovie"));
+    (make_weakened_type
+       ~typed_dictionary_errors:
+         [
+           UndefinedField { field_name = "extra_key"; class_name = "test.ClassBasedMovie" }
+           |> Node.create_with_default_location;
+         ]
+       (Type.Primitive "test.ClassBasedMovie"));
   assert_resolve_mutable_literals
     ~source:"{'hello': { 'name': 'The Matrix', 'year': 1999 }}"
     ~against_type:(Type.dictionary ~key:Type.string ~value:(Type.Primitive "test.ClassBasedMovie"))

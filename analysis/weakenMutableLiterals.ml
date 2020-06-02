@@ -18,6 +18,10 @@ type typed_dictionary_mismatch =
       actual_type: Type.t;
       class_name: Identifier.t;
     }
+  | UndefinedField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
 [@@deriving compare, eq, show, sexp]
 
 type weakened_type = {
@@ -39,6 +43,21 @@ let combine_weakened_types weakened_types =
     resolved = Type.union (List.map weakened_types ~f:resolved_type);
     typed_dictionary_errors = List.concat_map weakened_types ~f:typed_dictionary_errors;
   }
+
+
+let undefined_field_mismatches
+    ~location
+    ~expected_typed_dictionary:
+      { Type.Record.TypedDictionary.fields = expected_fields; name = class_name }
+    ~resolved_typed_dictionary:{ Type.Record.TypedDictionary.fields = resolved_fields; _ }
+  =
+  let make_undefined_field_mismatch { Type.Record.TypedDictionary.name; annotation = _; _ } =
+    UndefinedField { field_name = name; class_name } |> Node.create ~location
+  in
+  let is_undefined_field field =
+    not (List.exists expected_fields ~f:(Type.TypedDictionary.same_name field))
+  in
+  List.filter resolved_fields ~f:is_undefined_field |> List.map ~f:make_undefined_field_mismatch
 
 
 let distribute_union_over_parametric ~parametric_name ~number_of_parameters annotation =
@@ -199,7 +218,8 @@ let rec weaken_mutable_literals
       Type.Primitive _ ) -> (
       let open Type.Record.TypedDictionary in
       match get_typed_dictionary expected with
-      | Some { fields = expected_fields; name = expected_class_name } ->
+      | Some ({ fields = expected_fields; name = expected_class_name } as expected_typed_dictionary)
+        ->
           let find_matching_field ~name =
             let matching_name ({ name = expected_name; _ } : Type.t typed_dictionary_field) =
               String.equal name expected_name
@@ -262,7 +282,13 @@ let rec weaken_mutable_literals
                 ~right:expected
             in
             if less_than_expected then
-              make_weakened_type expected
+              make_weakened_type
+                ~typed_dictionary_errors:
+                  (undefined_field_mismatches
+                     ~location
+                     ~resolved_typed_dictionary
+                     ~expected_typed_dictionary)
+                expected
             else
               let type_mismatches =
                 let make_type_mismatch

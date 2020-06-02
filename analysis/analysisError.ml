@@ -77,6 +77,10 @@ and typed_dictionary_initialization_mismatch =
       expected_type: Type.t;
       actual_type: Type.t;
     }
+  | UndefinedField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
 
 and incompatible_type = {
   name: Reference.t;
@@ -1818,7 +1822,9 @@ let messages ~concise ~signature location kind =
               field_name
               pp_type
               actual_type;
-          ] )
+          ]
+      | UndefinedField { field_name; class_name } ->
+          [Format.asprintf "TypedDict `%s` has no field `%s`." class_name field_name] )
   | Unpack { expected_count; unpack_problem } -> (
       match unpack_problem with
       | UnacceptableType bad_type ->
@@ -3452,6 +3458,12 @@ let dequalify
                   field_name = dequalify_identifier field_name;
                   expected_type = dequalify expected_type;
                   actual_type = dequalify actual_type;
+                  class_name = dequalify_identifier class_name;
+                }
+          | UndefinedField { field_name; class_name } ->
+              UndefinedField
+                {
+                  field_name = dequalify_identifier field_name;
                   class_name = dequalify_identifier class_name;
                 }
         in

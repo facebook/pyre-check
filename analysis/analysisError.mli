@@ -68,6 +68,10 @@ and typed_dictionary_initialization_mismatch =
       expected_type: Type.t;
       actual_type: Type.t;
     }
+  | UndefinedField of {
+      field_name: Identifier.t;
+      class_name: Identifier.t;
+    }
 
 and incompatible_type = {
   name: Reference.t;
