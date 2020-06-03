@@ -95,6 +95,10 @@ class StatisticsTest(unittest.TestCase):
         path.read_text = MagicMock(return_value=textwrap.dedent(valid_python.rstrip()))
         self.assertIsNotNone(parse_path_to_module(path))
 
+    @patch.object(Path, "read_text", side_effect=FileNotFoundError)
+    def test_parse_module__file_not_found(self, read_text: MagicMock) -> None:
+        self.assertIsNone(parse_path_to_module(Path("foo.txt")))
+
 
 class AnnotationCountCollectorTest(unittest.TestCase):
     @staticmethod

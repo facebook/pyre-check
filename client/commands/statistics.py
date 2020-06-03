@@ -41,7 +41,7 @@ def _get_paths(target_directory: Path) -> List[Path]:
 def parse_path_to_module(path: Path) -> Optional[cst.Module]:
     try:
         return cst.parse_module(path.read_text())
-    except ParserSyntaxError:
+    except (ParserSyntaxError, FileNotFoundError):
         return None
 
 
