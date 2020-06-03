@@ -2916,15 +2916,15 @@ let preprocess_phase0 source =
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
+  |> expand_string_annotations
+  |> expand_format_string
+  |> expand_implicit_returns
 
 
 let preprocess_phase1 source =
   source
-  |> expand_string_annotations
-  |> expand_format_string
   |> populate_unbound_names
   |> qualify
-  |> expand_implicit_returns
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
