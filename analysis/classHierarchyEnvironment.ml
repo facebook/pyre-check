@@ -255,14 +255,14 @@ let update_this_and_all_preceding_environments
     ast_environment
     ~scheduler
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
-    ast_environment_update_result
+    ast_environment_trigger
   =
   let result =
     Edges.update_this_and_all_preceding_environments
       ast_environment
       ~scheduler
       ~configuration
-      ast_environment_update_result
+      ast_environment_trigger
   in
   let read_only = Edges.UpdateResult.read_only result in
   if debug then

@@ -2516,13 +2516,13 @@ let update_environments
     ?(scheduler = mock_scheduler ())
     ~configuration
     ~ast_environment
-    ast_environment_update_result
+    ast_environment_trigger
   =
   AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
     ast_environment
     ~scheduler
     ~configuration
-    ast_environment_update_result
+    ast_environment_trigger
 
 
 module ScratchProject = struct
@@ -2634,7 +2634,7 @@ module ScratchProject = struct
     |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-  let parse_sources { context; configuration; module_tracker } =
+  let build_ast_environment { context; configuration; module_tracker } =
     let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
@@ -2646,6 +2646,11 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
+    ast_environment
+
+
+  let parse_sources ({ configuration; module_tracker; _ } as project) =
+    let ast_environment = build_ast_environment project in
     let ast_environment_update_result =
       Analysis.ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun source_path -> ModuleTracker.IncrementalUpdate.NewExplicit source_path)
@@ -2669,18 +2674,15 @@ module ScratchProject = struct
 
 
   let build_global_environment ({ configuration; _ } as project) =
-    let ast_environment, ast_environment_update_result = parse_sources project in
+    let ast_environment = build_ast_environment project in
+    let update_result = update_environments ~ast_environment ~configuration ColdStart in
     let sources =
-      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
+      |> AstEnvironment.UpdateResult.reparsed
+      |> List.filter_map
+           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
     in
-    let global_environment =
-      let update_result =
-        update_environments ~ast_environment ~configuration ast_environment_update_result
-      in
-      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
-    in
+    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
 
 

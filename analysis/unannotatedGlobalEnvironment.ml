@@ -970,10 +970,13 @@ module UpdateResult = struct
 
   let unannotated_global_environment_update_result = Fn.id
 
+  let ast_environment_update_result = upstream
+
   let read_only { read_only; _ } = read_only
 end
 
-let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration upstream =
+let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration trigger =
+  let upstream = AstEnvironment.update ~configuration ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =

@@ -32,6 +32,8 @@ module type PreviousUpdateResult = sig
   val unannotated_global_environment_update_result
     :  t ->
     UnannotatedGlobalEnvironment.UpdateResult.t
+
+  val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
 end
 
 module type PreviousEnvironment = sig
@@ -43,7 +45,7 @@ module type PreviousEnvironment = sig
     :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    AstEnvironment.UpdateResult.t ->
+    AstEnvironment.trigger ->
     UpdateResult.t
 end
 
@@ -79,6 +81,11 @@ module UpdateResult = struct
 
     let unannotated_global_environment_update_result { upstream; _ } =
       PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
+
+
+    let ast_environment_update_result previous =
+      unannotated_global_environment_update_result previous
+      |> UnannotatedGlobalEnvironment.UpdateResult.upstream
   end
 end
 
@@ -96,7 +103,7 @@ module type S = sig
     :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    AstEnvironment.UpdateResult.t ->
+    AstEnvironment.trigger ->
     UpdateResult.t
 end
 
@@ -185,7 +192,7 @@ module EnvironmentTable = struct
       :  AstEnvironment.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
-      AstEnvironment.UpdateResult.t ->
+      AstEnvironment.trigger ->
       UpdateResult.t
   end
 
@@ -368,13 +375,13 @@ module EnvironmentTable = struct
         ast_environment
         ~scheduler
         ~configuration
-        ast_environment_update_result
+        ast_environment_trigger
       =
       In.PreviousEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ast_environment_update_result
+        ast_environment_trigger
       |> update_only_this_environment ~scheduler ~configuration
   end
 

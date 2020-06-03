@@ -144,6 +144,8 @@ module UpdateResult : sig
 
   val unannotated_global_environment_update_result : t -> t
 
+  val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
+
   val read_only : t -> read_only
 end
 
@@ -151,5 +153,5 @@ val update_this_and_all_preceding_environments
   :  AstEnvironment.t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  AstEnvironment.UpdateResult.t ->
+  AstEnvironment.trigger ->
   UpdateResult.t

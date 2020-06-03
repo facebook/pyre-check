@@ -521,12 +521,12 @@ let test_connect_type_order context =
         );
       ]
   in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+  let ast_environment = ScratchProject.build_ast_environment project in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ast_environment_update_result
+      ColdStart
   in
   let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
   let order = class_hierarchy environment in
@@ -1132,12 +1132,12 @@ let test_connect_annotations_to_top context =
         );
       ]
   in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+  let ast_environment = ScratchProject.build_ast_environment project in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ast_environment_update_result
+      ColdStart
   in
   let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
@@ -1160,12 +1160,12 @@ let test_deduplicate context =
         );
       ]
   in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+  let ast_environment = ScratchProject.build_ast_environment project in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ast_environment_update_result
+      ColdStart
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1212,12 +1212,12 @@ let test_remove_extra_edges_to_object context =
         );
       ]
   in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+  let ast_environment = ScratchProject.build_ast_environment project in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ast_environment_update_result
+      ColdStart
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1289,20 +1289,16 @@ let test_update_and_compute_dependencies context =
       delete_file project "source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
-      let ast_environment_update_result =
+      let update_result =
         let { ScratchProject.module_tracker; _ } = project in
         let configuration = ScratchProject.configuration_of project in
         let { Configuration.Analysis.local_root; _ } = configuration in
         let path = Path.create_relative ~root:local_root ~relative:"source.py" in
         ModuleTracker.update ~configuration ~paths:[path] module_tracker
         |> (fun updates -> AstEnvironment.Update updates)
-        |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
-      in
-      let update_result =
-        update_environments
-          ~ast_environment
-          ~configuration:(ScratchProject.configuration_of project)
-          ast_environment_update_result
+        |> update_environments
+             ~ast_environment
+             ~configuration:(ScratchProject.configuration_of project)
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

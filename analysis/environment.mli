@@ -31,6 +31,8 @@ module type PreviousUpdateResult = sig
   val unannotated_global_environment_update_result
     :  t ->
     UnannotatedGlobalEnvironment.UpdateResult.t
+
+  val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
 end
 
 module type PreviousEnvironment = sig
@@ -42,7 +44,7 @@ module type PreviousEnvironment = sig
     :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    AstEnvironment.UpdateResult.t ->
+    AstEnvironment.trigger ->
     UpdateResult.t
 end
 
@@ -70,7 +72,7 @@ module type S = sig
     :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    AstEnvironment.UpdateResult.t ->
+    AstEnvironment.trigger ->
     UpdateResult.t
 end
 
@@ -156,7 +158,7 @@ module EnvironmentTable : sig
       :  AstEnvironment.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
-      AstEnvironment.UpdateResult.t ->
+      AstEnvironment.trigger ->
       UpdateResult.t
   end
 

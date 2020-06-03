@@ -15,13 +15,13 @@ let test_simple_registration context =
     let project =
       ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
     in
-    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let ast_environment = ScratchProject.build_ast_environment project in
     let update_result =
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(Configuration.Analysis.create ())
-        ast_environment_update_result
+        ~configuration:(ScratchProject.configuration_of project)
+        ColdStart
     in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let printer v =
@@ -135,17 +135,17 @@ let test_updates context =
         original_sources
         ~context
     in
-    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
-    let update ~ast_environment_update_result () =
+    let update trigger =
       let scheduler = Test.mock_scheduler () in
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ast_environment_update_result
+        trigger
     in
-    let update_result = update ~ast_environment_update_result () in
+    let update_result = update ColdStart in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let execute_action (class_name, dependency, expectation) =
       let printer v =
@@ -172,7 +172,7 @@ let test_updates context =
     in
     List.iter original_sources ~f:(fun (path, _) -> delete_file project path);
     List.iter new_sources ~f:(fun (relative, content) -> add_file project ~relative content);
-    let ast_environment_update_result =
+    let update_result =
       let { ScratchProject.module_tracker; _ } = project in
       let { Configuration.Analysis.local_root; _ } = configuration in
       let paths =
@@ -181,9 +181,8 @@ let test_updates context =
       in
       ModuleTracker.update ~configuration ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
-      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+      |> update
     in
-    let update_result = update ~ast_environment_update_result () in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
       |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key

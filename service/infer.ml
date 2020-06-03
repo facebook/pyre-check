@@ -75,11 +75,7 @@ let infer
 
   let module_tracker = ModuleTracker.create configuration in
   let ast_environment = AstEnvironment.create module_tracker in
-  let ast_environment_update_result =
-    AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
-  in
-  let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-  let global_environment =
+  let global_environment, qualifiers =
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
@@ -88,11 +84,13 @@ let infer
         ast_environment
         ~scheduler
         ~configuration
-        ast_environment_update_result
+        ColdStart
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     Statistics.performance ~name:"full environment built" ~timer ();
-    global_environment
+    ( global_environment,
+      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
+      |> AstEnvironment.UpdateResult.reparsed )
   in
   let errors =
     let qualifiers =

@@ -34,11 +34,7 @@ let check
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
   let ast_environment = Analysis.AstEnvironment.create module_tracker in
-  let ast_environment_update_result =
-    Analysis.AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
-  in
-  let qualifiers = Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-  let environment =
+  let environment, qualifiers =
     let open Analysis in
     Log.info "Building type environment...";
 
@@ -48,7 +44,7 @@ let check
         ast_environment
         ~scheduler
         ~configuration
-        ast_environment_update_result
+        ColdStart
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let environment = TypeEnvironment.create global_environment in
@@ -77,7 +73,9 @@ let check
         ~name:"shared memory size"
         ~integers:["size", Memory.heap_size ()]
         () );
-    environment
+    ( environment,
+      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
+      |> AstEnvironment.UpdateResult.reparsed )
   in
   let errors =
     Analysis.TypeCheck.legacy_run_on_modules

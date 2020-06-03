@@ -13,12 +13,12 @@ open Test
 let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
-    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let ast_environment = ScratchProject.build_ast_environment project in
     let update_result =
       update_environments
         ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
-        ast_environment_update_result
+        ColdStart
     in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
@@ -87,12 +87,12 @@ let test_updates context =
         sources
         ~context
     in
-    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let ast_environment = ScratchProject.build_ast_environment project in
     let update_result =
       update_environments
         ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
-        ast_environment_update_result
+        ColdStart
     in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
@@ -138,15 +138,11 @@ let test_updates context =
     let { Configuration.Analysis.local_root; _ } = configuration in
     let path = Path.create_relative ~root:local_root ~relative:"test.py" in
     let update_result =
-      let ast_environment_update_result =
-        ModuleTracker.update ~configuration ~paths:[path] module_tracker
-        |> (fun updates -> AstEnvironment.Update updates)
-        |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
-      in
-      update_environments
-        ~ast_environment
-        ~configuration:(ScratchProject.configuration_of project)
-        ast_environment_update_result
+      ModuleTracker.update ~configuration ~paths:[path] module_tracker
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> update_environments
+           ~ast_environment
+           ~configuration:(ScratchProject.configuration_of project)
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

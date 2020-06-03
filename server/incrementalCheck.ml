@@ -36,24 +36,8 @@ let recheck
     "Incremental Module Update %a"
     Sexp.pp
     [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
-  let ast_environment_update_result =
-    AstEnvironment.update ~configuration ~scheduler ast_environment (Update module_updates)
-  in
-  let reparsed_sources = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-  Log.log
-    ~section:`Server
-    "Incremental Parser Update %s"
-    (List.to_string ~f:Reference.show reparsed_sources);
   (* Repopulate the environment. *)
-  let invalidated_environment_qualifiers =
-    match incremental_style with
-    | FineGrained
-    | Shallow ->
-        Reference.Set.of_list reparsed_sources
-  in
-  Log.info
-    "Repopulating the environment for %d modules."
-    (Set.length invalidated_environment_qualifiers);
+  Log.info "Repopulating the environment...";
   StatusUpdate.write
     ~message:"Repopulating the environment"
     ~connections
@@ -64,7 +48,12 @@ let recheck
       ast_environment
       ~configuration
       ~scheduler
-      ast_environment_update_result
+      (Update module_updates)
+  in
+  let reparsed_modules =
+    AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result
+      annotated_global_environment_update_result
+    |> AstEnvironment.UpdateResult.reparsed
   in
   let environment =
     TypeEnvironment.create
@@ -125,7 +114,7 @@ let recheck
           (* For each rechecked function, its containing module needs to be included in
              postprocessing *)
           List.fold
-            ~init:invalidated_environment_qualifiers
+            ~init:(Reference.Set.of_list reparsed_modules)
             (Reference.Map.keys function_triggers)
             ~f:(fun sofar define_name ->
               let unannotated_global_environment =
@@ -156,11 +145,10 @@ let recheck
 
         recheck_modules, errors, Map.length recheck_functions
     | _ ->
-        let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
         Log.log
           ~section:`Server
           "(Old) Incremental Environment Builder Update %s"
-          (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
+          (List.to_string ~f:Reference.show reparsed_modules);
 
         let total_rechecked_functions =
           let unannotated_global_environment_update_result =
@@ -178,7 +166,7 @@ let recheck
                 unannotated_global_environment_update_result
             in
             List.concat_map
-              invalidated_environment_qualifiers
+              reparsed_modules
               ~f:
                 (UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
                    unannotated_global_environment)
@@ -193,14 +181,14 @@ let recheck
             ~scheduler
             ~configuration
             ~environment
-            invalidated_environment_qualifiers;
+            reparsed_modules;
           Analysis.Postprocessing.run
             ~scheduler
             ~configuration
             ~environment:(Analysis.TypeEnvironment.read_only environment)
-            invalidated_environment_qualifiers
+            reparsed_modules
         in
-        invalidated_environment_qualifiers, errors, total_rechecked_functions
+        reparsed_modules, errors, total_rechecked_functions
   in
   Statistics.event
     ~section:`Memory
@@ -226,8 +214,7 @@ let recheck
       [
         "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
-        "number of parser updates", List.length reparsed_sources;
-        "number of environment builder updates", Set.length invalidated_environment_qualifiers;
+        "number of parser updates", List.length reparsed_modules;
         "number of rechecked modules", List.length recheck_modules;
         "number of re-checked functions", total_rechecked_functions;
       ]
