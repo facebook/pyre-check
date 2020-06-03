@@ -977,6 +977,40 @@ let test_decorator_factories context =
       reveal_type(bar)
     |}
     ["Revealed type [-1]: Revealed type for `test.bar` is `str`."];
+  assert_type_errors
+    {|
+      not_a_factory: int = 42
+
+      @not_a_factory(1, 2)
+      def foo(x: int) -> None:
+        pass
+
+      reveal_type(foo)
+    |}
+    [
+      "Invalid decoration [56]: Decorator factory `not_a_factory` could not be called, because its \
+       type `int` is not callable.";
+      "Call error [29]: `int` is not a function.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any
+
+      maybe_a_factory: Any
+
+      @maybe_a_factory(1, 2)
+      def foo(x: int) -> None:
+        pass
+
+      reveal_type(foo)
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `maybe_a_factory` must be \
+       specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, int)], \
+       None]`.";
+    ];
   ()
 
 

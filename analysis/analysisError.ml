@@ -200,6 +200,7 @@ and incompatible_overload_kind =
 type invalid_decoration_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of Expression.t
+  | NonCallableDecoratorFactory of Type.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -975,6 +976,15 @@ let messages ~concise ~signature location kind =
           "Argument `%s` to decorator factory `%s` could not be resolved in a global scope."
           (show_sanitized_expression argument)
           name;
+      ]
+  | InvalidDecoration { decorator = { name; _ }; reason = NonCallableDecoratorFactory result } ->
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      [
+        Format.asprintf
+          "Decorator factory `%s` could not be called, because its type `%a` is not callable."
+          name
+          pp_type
+          result;
       ]
   | InvalidException { expression; annotation } ->
       [

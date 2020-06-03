@@ -24,6 +24,7 @@ type initialized =
 type invalid_decorator_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of { argument_index: int }
+  | NonCallableDecoratorFactory of Type.t
 [@@deriving eq, show, compare, sexp]
 
 type problem =
