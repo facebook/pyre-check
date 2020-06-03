@@ -50,10 +50,10 @@ let recheck
       ~scheduler
       (Update module_updates)
   in
-  let reparsed_modules =
+  let invalidated_modules =
     AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result
       annotated_global_environment_update_result
-    |> AstEnvironment.UpdateResult.reparsed
+    |> AstEnvironment.UpdateResult.invalidated_modules
   in
   let environment =
     TypeEnvironment.create
@@ -114,7 +114,7 @@ let recheck
           (* For each rechecked function, its containing module needs to be included in
              postprocessing *)
           List.fold
-            ~init:(Reference.Set.of_list reparsed_modules)
+            ~init:(Reference.Set.of_list invalidated_modules)
             (Reference.Map.keys function_triggers)
             ~f:(fun sofar define_name ->
               let unannotated_global_environment =
@@ -148,7 +148,7 @@ let recheck
         Log.log
           ~section:`Server
           "(Old) Incremental Environment Builder Update %s"
-          (List.to_string ~f:Reference.show reparsed_modules);
+          (List.to_string ~f:Reference.show invalidated_modules);
 
         let total_rechecked_functions =
           let unannotated_global_environment_update_result =
@@ -166,7 +166,7 @@ let recheck
                 unannotated_global_environment_update_result
             in
             List.concat_map
-              reparsed_modules
+              invalidated_modules
               ~f:
                 (UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
                    unannotated_global_environment)
@@ -181,14 +181,14 @@ let recheck
             ~scheduler
             ~configuration
             ~environment
-            reparsed_modules;
+            invalidated_modules;
           Analysis.Postprocessing.run
             ~scheduler
             ~configuration
             ~environment:(Analysis.TypeEnvironment.read_only environment)
-            reparsed_modules
+            invalidated_modules
         in
-        reparsed_modules, errors, total_rechecked_functions
+        invalidated_modules, errors, total_rechecked_functions
   in
   Statistics.event
     ~section:`Memory
@@ -214,7 +214,7 @@ let recheck
       [
         "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
-        "number of parser updates", List.length reparsed_modules;
+        "number of parser updates", List.length invalidated_modules;
         "number of rechecked modules", List.length recheck_modules;
         "number of re-checked functions", total_rechecked_functions;
       ]

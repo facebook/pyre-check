@@ -90,7 +90,7 @@ let infer
     Statistics.performance ~name:"full environment built" ~timer ();
     ( global_environment,
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.reparsed )
+      |> AstEnvironment.UpdateResult.invalidated_modules )
   in
   let errors =
     let qualifiers =

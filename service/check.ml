@@ -75,7 +75,7 @@ let check
         () );
     ( environment,
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.reparsed )
+      |> AstEnvironment.UpdateResult.invalidated_modules )
   in
   let errors =
     Analysis.TypeCheck.legacy_run_on_modules

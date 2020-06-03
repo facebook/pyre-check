@@ -68,7 +68,7 @@ module UpdateResult : sig
 
   val triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
-  val reparsed : t -> Reference.t list
+  val invalidated_modules : t -> Reference.t list
 
   val syntax_errors : t -> SourcePath.t list
 

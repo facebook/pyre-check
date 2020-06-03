@@ -119,7 +119,7 @@ let test_parse_source context =
   in
   let sources =
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+    AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
     |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
@@ -192,7 +192,7 @@ let test_parse_sources context =
     let ast_environment = Analysis.AstEnvironment.create module_tracker in
     let update_result = AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart in
     let sources =
-      AstEnvironment.UpdateResult.reparsed update_result
+      AstEnvironment.UpdateResult.invalidated_modules update_result
       |> List.filter_map
            ~f:
              (AstEnvironment.ReadOnly.get_processed_source
@@ -250,7 +250,7 @@ let test_parse_sources context =
       |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
     in
     let sources =
-      AstEnvironment.UpdateResult.reparsed update_result
+      AstEnvironment.UpdateResult.invalidated_modules update_result
       |> List.filter_map
            ~f:
              (AstEnvironment.ReadOnly.get_processed_source
@@ -625,7 +625,7 @@ let test_parse_repository context =
       |> fun (ast_environment, ast_environment_update_result) ->
       let sources =
         let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-        AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+        AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
         |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
       List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
@@ -721,7 +721,7 @@ module IncrementalTest = struct
       in
       let ast_environment, update_result = ScratchProject.parse_sources project in
       if preprocess_all_sources then
-        AstEnvironment.UpdateResult.reparsed update_result
+        AstEnvironment.UpdateResult.invalidated_modules update_result
         |> List.iter ~f:(fun qualifier ->
                AstEnvironment.ReadOnly.get_processed_source
                  ~track_dependency:true
@@ -749,7 +749,7 @@ module IncrementalTest = struct
         "Check if the actual parser dependency overapproximates the expected one"
         (Set.is_subset expected_set ~of_:actual_set)
     in
-    AstEnvironment.UpdateResult.reparsed update_result
+    AstEnvironment.UpdateResult.invalidated_modules update_result
     |> assert_parser_dependency expected_dependencies;
 
     Memory.reset_shared_memory ()

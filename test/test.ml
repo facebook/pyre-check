@@ -2678,7 +2678,7 @@ module ScratchProject = struct
     let update_result = update_environments ~ast_environment ~configuration ColdStart in
     let sources =
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.reparsed
+      |> AstEnvironment.UpdateResult.invalidated_modules
       |> List.filter_map
            ~f:
              (AstEnvironment.ReadOnly.get_processed_source

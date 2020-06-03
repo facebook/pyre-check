@@ -990,7 +990,7 @@ let update_this_and_all_preceding_environments ast_environment ~scheduler ~confi
     in
     List.iter sources ~f:register
   in
-  let modified_qualifiers = AstEnvironment.UpdateResult.reparsed upstream in
+  let modified_qualifiers = AstEnvironment.UpdateResult.invalidated_modules upstream in
   let update () =
     Scheduler.iter
       scheduler

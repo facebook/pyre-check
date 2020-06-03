@@ -312,14 +312,14 @@ let log_parse_errors ~syntax_error ~system_error =
 module UpdateResult = struct
   type t = {
     triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
-    reparsed: Reference.t list;
+    invalidated_modules: Reference.t list;
     syntax_error: SourcePath.t list;
     system_error: SourcePath.t list;
   }
 
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
-  let reparsed { reparsed; _ } = reparsed
+  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
   let syntax_errors { syntax_error; _ } = syntax_error
 
@@ -328,7 +328,7 @@ module UpdateResult = struct
   let create_for_testing () =
     {
       triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-      reparsed = [];
+      invalidated_modules = [];
       syntax_error = [];
       system_error = [];
     }
@@ -363,7 +363,7 @@ let update
           in
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-            reparsed = List.append updated_submodules parsed;
+            invalidated_modules = List.append updated_submodules parsed;
             syntax_error;
             system_error;
           }
@@ -393,7 +393,7 @@ let update
                   ~scheduler
                   ~configuration)
           in
-          let reparsed =
+          let invalidated_modules =
             let fold_key registered sofar =
               match SharedMemoryKeys.DependencyKey.get_key registered with
               | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
@@ -405,7 +405,7 @@ let update
               (RawSources.KeySet.of_list changed_modules)
             |> RawSources.KeySet.elements
           in
-          { UpdateResult.triggered_dependencies; reparsed; syntax_error; system_error } )
+          { UpdateResult.triggered_dependencies; invalidated_modules; syntax_error; system_error } )
   | ColdStart ->
       let timer = Timer.start () in
       Log.info
@@ -423,7 +423,7 @@ let update
         ~timer
         ();
       {
-        UpdateResult.reparsed = parsed;
+        UpdateResult.invalidated_modules = parsed;
         triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
         syntax_error;
         system_error;
