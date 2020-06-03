@@ -63,6 +63,126 @@ module type Signature = sig
   include Fixpoint.State with type t := t
 end
 
+let error_and_location_from_typed_dictionary_mismatch
+    { Node.value = mismatch; location = define_location }
+  =
+  let mismatch =
+    match mismatch with
+    | WeakenMutableLiterals.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
+      ->
+        Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
+    | MissingRequiredField { field_name; class_name } ->
+        Error.MissingRequiredField { field_name; class_name }
+    | UndefinedField { field_name; class_name } -> Error.UndefinedField { field_name; class_name }
+  in
+  define_location, Error.TypedDictionaryInitializationError mismatch
+
+
+let errors_from_not_found
+    ~callable:({ Type.Callable.kind; _ } as callable)
+    ~self_argument
+    ~reason
+    ~global_resolution
+    ~arguments
+  =
+  let callee =
+    match kind with
+    | Type.Callable.Named callable -> Some callable
+    | _ -> None
+  in
+  match reason with
+  | SignatureSelectionTypes.AbstractClassInstantiation { class_name; abstract_methods } ->
+      [
+        ( None,
+          Error.InvalidClassInstantiation
+            (Error.AbstractClassInstantiation { class_name; abstract_methods }) );
+      ]
+  | CallingParameterVariadicTypeVariable -> [None, Error.NotCallable (Type.Callable callable)]
+  | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
+      [
+        ( Some location,
+          Error.InvalidArgument
+            (Error.Keyword { expression; annotation; require_string_keys = true }) );
+      ]
+  | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
+      [Some location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
+  | Mismatch mismatch ->
+      let { SignatureSelectionTypes.actual; expected; name; position } = Node.value mismatch in
+      let mismatch, name, position, location =
+        ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
+          name,
+          position,
+          Node.location mismatch )
+      in
+      let kind =
+        let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
+        let typed_dictionary_error
+            ~method_name
+            ~position
+            { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
+          =
+          if
+            Type.TypedDictionary.is_special_mismatch
+              ~class_name:typed_dictionary_name
+              ~method_name
+              ~position
+              ~total:(Type.TypedDictionary.are_fields_total fields)
+          then
+            match actual with
+            | Type.Literal (Type.String field_name) ->
+                let required_field_exists =
+                  List.exists
+                    ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
+                      String.equal name field_name && required)
+                    fields
+                in
+                if required_field_exists then
+                  Error.TypedDictionaryInvalidOperation
+                    { typed_dictionary_name; field_name; method_name; mismatch }
+                else
+                  Error.TypedDictionaryKeyNotFound
+                    { typed_dictionary_name; missing_key = field_name }
+            | Type.Primitive "str" ->
+                Error.TypedDictionaryAccessWithNonLiteral
+                  (List.map fields ~f:(fun { name; _ } -> name))
+            | _ -> normal
+          else
+            match method_name, arguments with
+            | ( "__setitem__",
+                Some
+                  ({
+                     AttributeResolution.Argument.expression =
+                       Some { Node.value = String { value = field_name; _ }; _ };
+                     _;
+                   }
+                  :: _) ) ->
+                Error.TypedDictionaryInvalidOperation
+                  { typed_dictionary_name; field_name; method_name; mismatch }
+            | _ -> normal
+        in
+        match self_argument, callee >>| Reference.as_list with
+        | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
+            GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
+            >>| typed_dictionary_error ~method_name ~position
+            |> Option.value ~default:normal
+        | _ -> normal
+      in
+      [Some location, kind]
+  | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
+      [None, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })]
+  | MissingArgument parameter -> [None, Error.MissingArgument { callee; parameter }]
+  | MutuallyRecursiveTypeVariables -> [None, Error.MutuallyRecursiveTypeVariables callee]
+  | ProtocolInstantiation class_name ->
+      [None, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)]
+  | TooManyArguments { expected; provided } ->
+      [None, Error.TooManyArguments { callee; expected; provided }]
+  | TypedDictionaryInitializationError mismatches ->
+      List.map mismatches ~f:(fun mismatch ->
+          error_and_location_from_typed_dictionary_mismatch mismatch)
+      |> List.map ~f:(fun (location, error) -> Some location, error)
+  | UnexpectedKeyword name -> [None, Error.UnexpectedKeyword { callee; name }]
+
+
 module State (Context : Context) = struct
   type partitioned = {
     consistent_with_boundary: Type.t;
@@ -185,21 +305,6 @@ module State (Context : Context) = struct
           emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     errors, List.is_empty untracked
-
-
-  let error_and_location_from_typed_dictionary_mismatch
-      { Node.value = mismatch; location = define_location }
-    =
-    let mismatch =
-      match mismatch with
-      | WeakenMutableLiterals.FieldTypeMismatch
-          { field_name; expected_type; actual_type; class_name } ->
-          Error.FieldTypeMismatch { field_name; expected_type; actual_type; class_name }
-      | MissingRequiredField { field_name; class_name } ->
-          Error.MissingRequiredField { field_name; class_name }
-      | UndefinedField { field_name; class_name } -> Error.UndefinedField { field_name; class_name }
-    in
-    define_location, Error.TypedDictionaryInitializationError mismatch
 
 
   let parse_and_check_annotation
@@ -1895,110 +2000,6 @@ module State (Context : Context) = struct
         in
         callables >>| List.map ~f:signature_with_unpacked_callable_and_self_argument
       in
-      let errors_from_not_found
-          ~unpacked_callable_and_self_argument:
-            { callable = { Type.Callable.kind; _ } as callable; self_argument }
-          ~reason
-        =
-        let callee =
-          match kind with
-          | Type.Callable.Named callable -> Some callable
-          | _ -> None
-        in
-        match reason with
-        | SignatureSelectionTypes.AbstractClassInstantiation { class_name; abstract_methods } ->
-            [
-              ( location,
-                Error.InvalidClassInstantiation
-                  (Error.AbstractClassInstantiation { class_name; abstract_methods }) );
-            ]
-        | CallingParameterVariadicTypeVariable ->
-            [location, Error.NotCallable (Type.Callable callable)]
-        | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
-            [
-              ( location,
-                Error.InvalidArgument
-                  (Error.Keyword { expression; annotation; require_string_keys = true }) );
-            ]
-        | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-            [location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
-        | Mismatch mismatch ->
-            let { SignatureSelectionTypes.actual; expected; name; position } =
-              Node.value mismatch
-            in
-            let mismatch, name, position, location =
-              ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
-                name,
-                position,
-                Node.location mismatch )
-            in
-            let kind =
-              let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
-              let typed_dictionary_error
-                  ~method_name
-                  ~position
-                  { Type.Record.TypedDictionary.fields; name = typed_dictionary_name }
-                =
-                if
-                  Type.TypedDictionary.is_special_mismatch
-                    ~class_name:typed_dictionary_name
-                    ~method_name
-                    ~position
-                    ~total:(Type.TypedDictionary.are_fields_total fields)
-                then
-                  match actual with
-                  | Type.Literal (Type.String field_name) ->
-                      let required_field_exists =
-                        List.exists
-                          ~f:(fun { Type.Record.TypedDictionary.name; required; _ } ->
-                            String.equal name field_name && required)
-                          fields
-                      in
-                      if required_field_exists then
-                        Error.TypedDictionaryInvalidOperation
-                          { typed_dictionary_name; field_name; method_name; mismatch }
-                      else
-                        Error.TypedDictionaryKeyNotFound
-                          { typed_dictionary_name; missing_key = field_name }
-                  | Type.Primitive "str" ->
-                      Error.TypedDictionaryAccessWithNonLiteral
-                        (List.map fields ~f:(fun { name; _ } -> name))
-                  | _ -> normal
-                else
-                  match method_name, arguments with
-                  | ( "__setitem__",
-                      {
-                        AttributeResolution.Argument.expression =
-                          Some { Node.value = String { value = field_name; _ }; _ };
-                        _;
-                      }
-                      :: _ ) ->
-                      Error.TypedDictionaryInvalidOperation
-                        { typed_dictionary_name; field_name; method_name; mismatch }
-                  | _ -> normal
-              in
-              match self_argument, callee >>| Reference.as_list with
-              | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
-                  GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
-                  >>| typed_dictionary_error ~method_name ~position
-                  |> Option.value ~default:normal
-              | _ -> normal
-            in
-            [location, kind]
-        | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
-            [location, Error.InvalidArgument (ListVariadicVariable { variable; mismatch })]
-        | MissingArgument parameter -> [location, Error.MissingArgument { callee; parameter }]
-        | MutuallyRecursiveTypeVariables -> [location, Error.MutuallyRecursiveTypeVariables callee]
-        | ProtocolInstantiation class_name ->
-            [location, Error.InvalidClassInstantiation (ProtocolInstantiation class_name)]
-        | TooManyArguments { expected; provided } ->
-            [location, Error.TooManyArguments { callee; expected; provided }]
-        | TypedDictionaryInitializationError mismatches ->
-            List.map mismatches ~f:(fun mismatch ->
-                error_and_location_from_typed_dictionary_mismatch mismatch)
-        | UnexpectedKeyword name -> [location, Error.UnexpectedKeyword { callee; name }]
-      in
-
       let not_found = function
         | SignatureSelectionTypes.NotFound _, _ -> true
         | _ -> false
@@ -2011,9 +2012,20 @@ module State (Context : Context) = struct
             :: _,
             _ ) ->
           let errors =
-            let error_kinds = errors_from_not_found ~reason ~unpacked_callable_and_self_argument in
-            List.fold error_kinds ~init:errors ~f:(fun errors (error_location, error_kind) ->
-                emit_error ~errors ~location:error_location ~kind:error_kind)
+            let error_kinds =
+              let { callable; self_argument } = unpacked_callable_and_self_argument in
+              errors_from_not_found
+                ~reason
+                ~callable
+                ~self_argument
+                ~global_resolution
+                ~arguments:(Some arguments)
+            in
+            let emit errors (more_specific_error_location, kind) =
+              let location = Option.value more_specific_error_location ~default:location in
+              emit_error ~errors ~location ~kind
+            in
+            List.fold error_kinds ~init:errors ~f:emit
           in
           {
             Resolved.resolution;
