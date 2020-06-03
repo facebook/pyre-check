@@ -521,10 +521,10 @@ let variadic_order =
           (Type.Variable.Variadic.Parameters.self_reference
              (Type.Variable.Variadic.Parameters.create "TParams"));
       ];
-  insert order "InvalidChildClassParametricOnParamSpec";
+  insert order "ConcreteChildClassParametricOnParamSpec";
   connect
     order
-    ~predecessor:"InvalidChildClassParametricOnParamSpec"
+    ~predecessor:"ConcreteChildClassParametricOnParamSpec"
     ~successor:"ClassParametricOnParamSpec"
     ~parameters:[Single Type.integer];
   handler order
@@ -680,9 +680,13 @@ let test_instantiate_successors_parameters _ =
     ~printer
     (instantiate_successors_parameters
        variadic_order
-       ~source:(Primitive "InvalidChildClassParametricOnParamSpec")
+       ~source:(Primitive "ConcreteChildClassParametricOnParamSpec")
        ~target:"ClassParametricOnParamSpec")
-    (Some [CallableParameters Undefined]);
+    (Some
+       [
+         CallableParameters
+           (Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }]);
+       ]);
   ()
 
 

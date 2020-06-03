@@ -1347,6 +1347,58 @@ let test_callable_parameter_variadics context =
        `Model.__call__` but got `int`.";
       "Revealed type [-1]: Revealed type for `z` is `str`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import Generic, TypeVar
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+      class H(Generic[T, P]):
+        def f(self, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+
+      def foo(x: H[bool, [int, str]]) -> None:
+        reveal_type(x.f.__call__)
+
+        # incorrect
+        x.f()
+        x.f("A", 1)
+
+        # correct
+        z = x.f(1, "A")
+        reveal_type(z)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x.f.__call__` is `typing.Callable[[int, str], bool]`.";
+      "Missing argument [20]: Call `H.f` expects argument in position 1.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `H.f` but got `str`.";
+      "Revealed type [-1]: Revealed type for `z` is `bool`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification
+      from typing import Generic
+      P = ParameterSpecification("P")
+      class H(Generic[P]):
+        def f(self, /, *args: P.args, **kwargs: P.kwargs) -> int:
+          return 5
+
+      def foo(x: H[int, str]) -> None:
+        reveal_type(x.f.__call__)
+
+        # incorrect
+        x.f()
+        x.f("A", 1)
+
+        # correct
+        x.f(1, "A")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x.f.__call__` is `typing.Callable[[int, str], int]`.";
+      "Missing argument [20]: Call `H.f` expects argument in position 1.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `H.f` but got `str`.";
+    ];
   ()
 
 

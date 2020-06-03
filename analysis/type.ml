@@ -3485,20 +3485,34 @@ end = struct
     |> Option.value ~default:parameters
 
 
+  let correct_concrete_group_into_parameters ~variable parameter =
+    match variable, parameter with
+    | ParameterVariadic _, Parameter.Group (Concrete group) ->
+        Parameter.CallableParameters
+          (Defined (Callable.prepend_anonymous_parameters ~head:group ~tail:[]))
+    | _, other -> other
+
+
   let zip_on_parameters ~parameters variables =
     let parameters =
       match variables with
-      | [ListVariadic _] -> coalesce_if_all_single parameters
+      | [ParameterVariadic _]
+      | [ListVariadic _] ->
+          coalesce_if_all_single parameters
       | _ -> parameters
     in
     match List.zip parameters variables with
-    | Ok zipped -> Some zipped
+    | Ok zipped ->
+        List.map zipped ~f:(fun (parameter, variable) ->
+            correct_concrete_group_into_parameters ~variable parameter, variable)
+        |> Option.some
     | Unequal_lengths -> None
 
 
   let zip_on_two_parameter_lists ~left_parameters ~right_parameters variables =
     let left_parameters, right_parameters =
       match variables with
+      | [ParameterVariadic _]
       | [ListVariadic _] ->
           coalesce_if_all_single left_parameters, coalesce_if_all_single right_parameters
       | _ -> left_parameters, right_parameters
@@ -3507,8 +3521,12 @@ end = struct
     | Ok zipped -> (
         match List.zip zipped variables with
         | Ok zipped ->
-            List.map zipped ~f:(fun ((left, right), variable) -> left, right, variable)
-            |> Option.some
+            let handle ((left, right), variable) =
+              let left = correct_concrete_group_into_parameters ~variable left in
+              let right = correct_concrete_group_into_parameters ~variable right in
+              left, right, variable
+            in
+            List.map zipped ~f:handle |> Option.some
         | _ -> None )
     | Unequal_lengths -> None
 
