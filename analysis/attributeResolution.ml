@@ -2632,18 +2632,20 @@ class base class_metadata_environment dependency =
                 in
                 let extract = function
                   | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
-                      Some selected_return_annotation
-                  | _ -> None
+                      Result.Ok selected_return_annotation
+                  | NotFound { reason; _ } ->
+                      make_error
+                        (FactorySignatureSelectionFailed { reason; callable = factory_callable })
                 in
-                Result.map arguments ~f:select |> Result.map ~f:extract
+                Result.map arguments ~f:select |> Result.bind ~f:extract
               in
               let resolved_decorator =
                 match resolver name with
                 | None -> make_error CouldNotResolve
-                | Some Any -> Ok (Some Type.Any)
+                | Some Any -> Ok Type.Any
                 | Some fetched -> (
                     match arguments with
-                    | None -> Ok (Some fetched)
+                    | None -> Ok fetched
                     | Some arguments -> (
                         match extract_callable fetched with
                         | None -> make_error (NonCallableDecoratorFactory fetched)
@@ -2652,9 +2654,8 @@ class base class_metadata_environment dependency =
               in
               match resolved_decorator with
               | Error error -> Result.Error error
-              | Ok None -> Ok argument
-              | Ok (Some Any) -> Ok Any
-              | Ok (Some resolved_decorator) -> (
+              | Ok Any -> Ok Any
+              | Ok resolved_decorator -> (
                   match extract_callable resolved_decorator with
                   | None -> make_error (NonCallableDecorator resolved_decorator)
                   | Some callable -> (

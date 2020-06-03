@@ -26,6 +26,10 @@ type invalid_decorator_reason =
   | CouldNotResolveArgument of { argument_index: int }
   | NonCallableDecoratorFactory of Type.t
   | NonCallableDecorator of Type.t
+  | FactorySignatureSelectionFailed of {
+      reason: SignatureSelectionTypes.reason option;
+      callable: Type.Callable.t;
+    }
 [@@deriving eq, show, compare, sexp]
 
 type problem =

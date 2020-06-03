@@ -1016,6 +1016,27 @@ let test_decorator_factories context =
        specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
+
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(name: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+     @decorator_factory(42)
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    [
+      "Invalid decoration [56]: While applying decorator factory `test.decorator_factory`: \
+       Expected `str` for 1st positional only parameter to call `test.decorator_factory` but got \
+       `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
+       `decorator_factory` but got `int`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+    ];
   ()
 
 

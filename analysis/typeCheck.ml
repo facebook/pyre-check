@@ -5778,6 +5778,20 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               | NonCallableDecoratorFactory resolved ->
                   make_error (NonCallableDecoratorFactory resolved)
               | NonCallableDecorator result -> make_error (NonCallableDecorator result)
+              | FactorySignatureSelectionFailed { reason; callable } ->
+                  let convert reason =
+                    errors_from_not_found
+                      ~callable
+                      ~self_argument:None
+                      ~reason
+                      ~global_resolution
+                      ~arguments:None
+                  in
+                  reason
+                  >>| convert
+                  >>= List.hd
+                  >>| (fun (_, kind) -> kind)
+                  |> fun kind -> make_error (DecoratorFactoryFailedToApply kind)
             in
 
             let { StatementDefine.Signature.decorators; _ } = signature in

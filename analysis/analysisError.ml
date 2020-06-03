@@ -202,15 +202,14 @@ type invalid_decoration_reason =
   | CouldNotResolveArgument of Expression.t
   | NonCallableDecoratorFactory of Type.t
   | NonCallableDecorator of Type.t
-[@@deriving compare, eq, sexp, show, hash]
+  | DecoratorFactoryFailedToApply of kind option
 
-type invalid_decoration = {
+and invalid_decoration = {
   decorator: Decorator.t;
   reason: invalid_decoration_reason;
 }
-[@@deriving compare, eq, sexp, show, hash]
 
-type kind =
+and kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
@@ -570,7 +569,7 @@ let weaken_literals kind =
   | _ -> kind
 
 
-let messages ~concise ~signature location kind =
+let rec messages ~concise ~signature location kind =
   let {
     Location.WithPath.start = { Location.line = start_line; _ };
     stop = { Location.line = stop_line; _ };
@@ -998,6 +997,14 @@ let messages ~concise ~signature location kind =
           pp_type
           result;
       ]
+  | InvalidDecoration
+      { decorator = { name; _ }; reason = DecoratorFactoryFailedToApply inner_reason } -> (
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      let recurse = messages ~concise ~signature location in
+      match inner_reason >>| recurse >>= List.hd with
+      | Some inner_message ->
+          [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
+      | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name] )
   | InvalidException { expression; annotation } ->
       [
         Format.asprintf

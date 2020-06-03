@@ -193,15 +193,14 @@ type invalid_decoration_reason =
   | CouldNotResolveArgument of Expression.t
   | NonCallableDecoratorFactory of Type.t
   | NonCallableDecorator of Type.t
-[@@deriving compare, eq, sexp, show, hash]
+  | DecoratorFactoryFailedToApply of kind option
 
-type invalid_decoration = {
+and invalid_decoration = {
   decorator: Statement.Decorator.t;
   reason: invalid_decoration_reason;
 }
-[@@deriving compare, eq, sexp, show, hash]
 
-type kind =
+and kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
