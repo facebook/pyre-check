@@ -248,7 +248,9 @@ let get_and_preprocess_source ?dependency ({ module_tracker } as ast_environment
   let module_exists qualifier =
     ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some
   in
-  Raw.get_source ast_environment qualifier ?dependency
+  (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No need
+     to explicitly record the dependency. *)
+  Raw.get_source ast_environment qualifier ?dependency:None
   >>| fun source ->
   let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
   expand_wildcard_imports ?dependency ~ast_environment source |> Preprocessing.preprocess_phase1
