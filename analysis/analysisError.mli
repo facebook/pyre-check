@@ -194,6 +194,7 @@ type invalid_decoration_reason =
   | NonCallableDecoratorFactory of Type.t
   | NonCallableDecorator of Type.t
   | DecoratorFactoryFailedToApply of kind option
+  | ApplicationFailed of kind option
 
 and invalid_decoration = {
   decorator: Statement.Decorator.t;

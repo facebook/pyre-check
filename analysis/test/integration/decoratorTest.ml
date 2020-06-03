@@ -521,8 +521,10 @@ let test_check_user_decorators context =
       reveal_type(function_returning_callable)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.function_returning_callable` is \
-       `typing.Callable(function_returning_callable)[[], typing.Callable[[int], str]]`.";
+      "Invalid decoration [56]: While applying decorator `test.not_a_decorator`: Expected `int` \
+       for 1st positional only parameter to call `test.not_a_decorator` but got \
+       `typing.Callable(test.function_returning_callable)[[], typing.Callable[[int], str]]`.";
+      "Revealed type [-1]: Revealed type for `test.function_returning_callable` is `typing.Any`.";
     ];
   assert_type_errors
     {|
@@ -671,9 +673,9 @@ let test_check_callable_class_decorators context =
     [
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
-      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
-       str]]`.";
+      "Invalid decoration [56]: While applying decorator `test.synchronize`: PositionalOnly call \
+       expects 0 positional arguments, 1 was provided.";
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Any`.";
     ];
 
   assert_type_errors

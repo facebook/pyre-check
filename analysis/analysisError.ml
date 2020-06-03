@@ -197,17 +197,18 @@ and incompatible_overload_kind =
   | MisplacedOverloadDecorator
 [@@deriving compare, eq, sexp, show, hash]
 
-type invalid_decoration_reason =
+type invalid_decoration = {
+  decorator: Decorator.t;
+  reason: invalid_decoration_reason;
+}
+
+and invalid_decoration_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of Expression.t
   | NonCallableDecoratorFactory of Type.t
   | NonCallableDecorator of Type.t
   | DecoratorFactoryFailedToApply of kind option
-
-and invalid_decoration = {
-  decorator: Decorator.t;
-  reason: invalid_decoration_reason;
-}
+  | ApplicationFailed of kind option
 
 and kind =
   | AnalysisFailure of Type.t
@@ -1005,6 +1006,15 @@ let rec messages ~concise ~signature location kind =
       | Some inner_message ->
           [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
       | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name] )
+  | InvalidDecoration { decorator = { name; arguments }; reason = ApplicationFailed inner_reason }
+    -> (
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      let arguments = if Option.is_some arguments then "(...)" else "" in
+      let recurse = messages ~concise ~signature location in
+      match inner_reason >>| recurse >>= List.hd with
+      | Some inner_message ->
+          [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message]
+      | None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments] )
   | InvalidException { expression; annotation } ->
       [
         Format.asprintf

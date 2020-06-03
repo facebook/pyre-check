@@ -2672,9 +2672,8 @@ class base class_metadata_environment dependency =
                       with
                       | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
                           Ok selected_return_annotation
-                      | NotFound _ ->
-                          (* If we failed, just default to the old annotation. *)
-                          Ok argument ) ) )
+                      | NotFound { reason; _ } ->
+                          make_error (ApplicationFailed { reason; callable }) ) ) )
       in
       let parse =
         let parser =

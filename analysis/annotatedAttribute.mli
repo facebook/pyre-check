@@ -30,6 +30,10 @@ type invalid_decorator_reason =
       reason: SignatureSelectionTypes.reason option;
       callable: Type.Callable.t;
     }
+  | ApplicationFailed of {
+      callable: Type.Callable.t;
+      reason: SignatureSelectionTypes.reason option;
+    }
 [@@deriving eq, show, compare, sexp]
 
 type problem =
