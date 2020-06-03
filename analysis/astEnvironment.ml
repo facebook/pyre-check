@@ -28,24 +28,6 @@ module RawSources =
     (SharedMemoryKeys.DependencyKey)
     (RawSourceValue)
 
-module SourceValue = struct
-  type t = Source.t
-
-  let prefix = Prefix.make ()
-
-  let description = "AST"
-
-  let compare = Source.compare
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module Sources =
-  DependencyTrackedMemory.DependencyTrackedTableNoCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.DependencyKey)
-    (SourceValue)
-
 let create module_tracker = { module_tracker }
 
 let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
@@ -97,47 +79,15 @@ module Raw = struct
 
   let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
-    let update_result, dependency_set =
-      SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
-      |> RawSources.add_to_transaction ~keys
-      |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
-    in
-    let updated_modules =
-      let fold_key registered sofar =
-        match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
-        | _ -> sofar
-      in
-      SharedMemoryKeys.DependencyKey.RegisteredSet.fold fold_key dependency_set keys
-      |> RawSources.KeySet.elements
-    in
-    update_result, updated_modules
+    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
+    |> RawSources.add_to_transaction ~keys
+    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
 
 
   let get_source _ = RawSources.get
+
+  let remove_sources _ qualifiers = RawSources.KeySet.of_list qualifiers |> RawSources.remove_batch
 end
-
-let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  Sources.add qualifier source
-
-
-let remove_sources _ qualifiers =
-  let keys = Sources.KeySet.of_list qualifiers in
-  RawSources.remove_batch keys;
-  Sources.remove_batch keys
-
-
-let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
-  let keys = Sources.KeySet.of_list qualifiers in
-  let (), dependency_set =
-    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
-    |> Sources.add_to_transaction ~keys
-    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
-  in
-  dependency_set
-
-
-let get_source _ = Sources.get
 
 type parse_result =
   | Success of Source.t
@@ -219,21 +169,14 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     ()
 
 
-let wildcard_import_dependency qualifier =
-  SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.WildcardImport qualifier)
-
-
-let expand_wildcard_imports
-    ~ast_environment
-    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let expand_wildcard_imports ?dependency ~ast_environment source =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
     type t = unit
 
-    let get_transitive_exports ~dependency ~ast_environment qualifier =
+    let get_transitive_exports ?dependency ~ast_environment qualifier =
       let module Visitor = Visit.MakeStatementVisitor (struct
         type t = Reference.t list
 
@@ -259,7 +202,7 @@ let expand_wildcard_imports
               match Hash_set.strict_add visited_modules qualifier with
               | Error _ -> ()
               | Ok () -> (
-                  match Raw.get_source ast_environment qualifier ~dependency with
+                  match Raw.get_source ast_environment qualifier ?dependency with
                   | None -> ()
                   | Some source ->
                       wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
@@ -281,12 +224,7 @@ let expand_wildcard_imports
           match starred_import with
           | Some { Import.name = { Node.location; _ }; _ } ->
               let expanded_import =
-                match
-                  get_transitive_exports
-                    (Node.value from)
-                    ~ast_environment
-                    ~dependency:(wildcard_import_dependency qualifier)
-                with
+                match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
                 | [] -> statement
                 | exports ->
                     List.map exports ~f:(fun name ->
@@ -306,41 +244,14 @@ let expand_wildcard_imports
   Transform.transform () source |> Transform.source
 
 
-let process_sources
-    ~configuration
-    ~scheduler
-    ~ast_environment:({ module_tracker } as ast_environment)
-    qualifiers
-  =
+let get_and_preprocess_source ?dependency ({ module_tracker } as ast_environment) qualifier =
   let module_exists qualifier =
     ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some
   in
-  let process_sources_job =
-    let process qualifier =
-      match
-        Raw.get_source ast_environment qualifier ~dependency:(wildcard_import_dependency qualifier)
-      with
-      | None -> ()
-      | Some source ->
-          let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
-          let stored =
-            expand_wildcard_imports ~ast_environment source |> Preprocessing.preprocess_phase1
-          in
-          add_source ast_environment stored
-    in
-    List.iter ~f:process
-  in
-  Scheduler.iter
-    scheduler
-    ~policy:
-      (Scheduler.Policy.fixed_chunk_count
-         ~minimum_chunks_per_worker:1
-         ~minimum_chunk_size:100
-         ~preferred_chunks_per_worker:5
-         ())
-    ~configuration
-    ~f:process_sources_job
-    ~inputs:qualifiers
+  Raw.get_source ast_environment qualifier ?dependency
+  >>| fun source ->
+  let source = ProjectSpecificPreprocessing.preprocess ~module_exists source in
+  expand_wildcard_imports ?dependency ~ast_environment source |> Preprocessing.preprocess_phase1
 
 
 type parse_sources_result = {
@@ -353,7 +264,6 @@ let parse_sources ~configuration ~scheduler ~ast_environment source_paths =
   let { RawParseResult.parsed; syntax_error; system_error } =
     parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
   in
-  process_sources ~configuration ~scheduler ~ast_environment parsed;
   { parsed = List.sort parsed ~compare:Reference.compare; syntax_error; system_error }
 
 
@@ -447,7 +357,7 @@ let update
           let directly_changed_modules =
             List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
           in
-          remove_sources ast_environment (List.append removed_modules directly_changed_modules);
+          Raw.remove_sources ast_environment (List.append removed_modules directly_changed_modules);
           let { parsed; syntax_error; system_error } =
             parse_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
           in
@@ -471,7 +381,7 @@ let update
             log_parse_errors ~syntax_error ~system_error;
             result
           in
-          let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
+          let { RawParseResult.syntax_error; system_error; _ }, triggered_dependencies =
             Profiling.track_duration_and_shared_memory
               "Parse Raw Sources"
               ~tags:["phase_name", "Parsing"]
@@ -483,27 +393,19 @@ let update
                   ~scheduler
                   ~configuration)
           in
-          let update_processed_sources () =
-            process_sources ~configuration ~scheduler ~ast_environment raw_dependencies
+          let reparsed =
+            let fold_key registered sofar =
+              match SharedMemoryKeys.DependencyKey.get_key registered with
+              | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
+              | _ -> sofar
+            in
+            SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+              fold_key
+              triggered_dependencies
+              (RawSources.KeySet.of_list changed_modules)
+            |> RawSources.KeySet.elements
           in
-          let triggered_dependencies =
-            Profiling.track_duration_and_shared_memory
-              "Parse Processed Sources"
-              ~tags:["phase_name", "Preprocessing"]
-              ~f:(fun _ ->
-                update_and_compute_dependencies
-                  ast_environment
-                  raw_dependencies
-                  ~update:update_processed_sources
-                  ~scheduler
-                  ~configuration)
-          in
-          {
-            UpdateResult.triggered_dependencies;
-            reparsed = raw_dependencies;
-            syntax_error;
-            system_error;
-          } )
+          { UpdateResult.triggered_dependencies; reparsed; syntax_error; system_error } )
   | ColdStart ->
       let timer = Timer.start () in
       Log.info
@@ -537,28 +439,18 @@ let store _ = ()
 
 let load = create
 
-let shared_memory_hash_to_key_map qualifiers =
-  let extend_map map ~new_map =
-    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
-  in
-  RawSources.compute_hashes_to_keys ~keys:qualifiers
-  |> extend_map ~new_map:(Sources.compute_hashes_to_keys ~keys:qualifiers)
-
+let shared_memory_hash_to_key_map qualifiers = RawSources.compute_hashes_to_keys ~keys:qualifiers
 
 let serialize_decoded decoded =
   match decoded with
   | RawSources.Decoded (key, value) ->
-      Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
-  | Sources.Decoded (key, value) ->
-      Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
+      Some (RawSourceValue.description, Reference.show key, Option.map value ~f:Source.show)
   | _ -> None
 
 
 let decoded_equal first second =
   match first, second with
   | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
-      Some (Option.equal Source.equal first second)
-  | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
   | _ -> None
 
@@ -628,7 +520,17 @@ module ReadOnly = struct
 end
 
 let read_only ({ module_tracker } as environment) =
-  let get_processed_source ~track_dependency:_ qualifier = get_source environment qualifier in
+  let get_processed_source ~track_dependency qualifier =
+    let dependency =
+      if track_dependency then
+        Some
+          (SharedMemoryKeys.DependencyKey.Registry.register
+             (SharedMemoryKeys.WildcardImport qualifier))
+      else
+        None
+    in
+    get_and_preprocess_source ?dependency environment qualifier
+  in
   let is_module_tracked qualifier = ModuleTracker.is_module_tracked module_tracker qualifier in
   {
     ReadOnly.get_processed_source;
