@@ -735,6 +735,24 @@ let test_check_callable_class_decorators context =
       reveal_type(bar)
     |}
     ["Revealed type [-1]: Revealed type for `test.bar` is `int`."];
+  assert_type_errors
+    {|
+      class Meta(type):
+        def __call__(self, x: object) -> str:
+          return "lol"
+
+      class H(metaclass=Meta):
+        @classmethod
+        def __call__(self, x: object) -> int:
+          return 42
+
+      @H
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `str`."];
   ()
 
 

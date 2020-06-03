@@ -2606,14 +2606,14 @@ class base class_metadata_environment dependency =
                 }
               in
               let resolved_decorator =
-                let resolve_attribute_access base ~attribute_name =
+                let resolve_attribute_access ?special_method base ~attribute_name =
                   let access { Type.instantiated; accessed_through_class; class_name } =
                     self#attribute
                       ~assumptions
                       ~transitive:true
                       ~accessed_through_class
                       ~include_generated_attributes:true
-                      ?special_method:None
+                      ?special_method
                       ~attribute_name
                       ~instantiated
                       class_name
@@ -2644,14 +2644,24 @@ class base class_metadata_environment dependency =
                 let extract_callable = function
                   | Type.Callable callable -> Some callable
                   | other -> (
-                      match resolve_attribute_access other ~attribute_name:"__call__" with
+                      match
+                        resolve_attribute_access
+                          other
+                          ~attribute_name:"__call__"
+                          ~special_method:true
+                      with
                       | None -> None
                       | Some (Type.Callable callable) -> Some callable
                       | Some other -> (
                           (* We potentially need to go specifically two layers in order to support
                              when name resolves to Type[X], which has a __call__ of its constructor
                              that is itself a BoundMethod, which has a Callable __call__ *)
-                          match resolve_attribute_access other ~attribute_name:"__call__" with
+                          match
+                            resolve_attribute_access
+                              other
+                              ~attribute_name:"__call__"
+                              ~special_method:true
+                          with
                           | Some (Callable callable) -> Some callable
                           | _ -> None ) )
                 in
