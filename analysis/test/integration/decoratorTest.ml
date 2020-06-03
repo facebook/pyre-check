@@ -383,8 +383,12 @@ let test_decorators context =
       @my_decorator(1)
       def f(x: int) -> int:
         return x
+      reveal_type(f)
     |}
-    ["Missing return annotation [3]: Return type must be specified as type other than `Any`."];
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
+    ];
   assert_type_errors
     {|
       from typing import Any
@@ -570,8 +574,10 @@ let test_check_user_decorators context =
       reveal_type(bar)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], None]`.";
-      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Callable(bar)[[], None]`.";
+      (* Neither of these error because the error only comes up on each others' inner application.
+         Not super concerned about that, mostly just don't want to hang the type checker *)
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test.bar` is `typing.Any`.";
     ];
   assert_type_errors
     {|
@@ -1008,8 +1014,7 @@ let test_decorator_factories context =
     [
       "Missing global annotation [5]: Globally accessible variable `maybe_a_factory` must be \
        specified as type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(x, int)], \
-       None]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
   ()
 
@@ -1113,6 +1118,22 @@ let test_invalid_decorators context =
       "Unbound name [10]: Name `dec` is used but not defined in the current scope.";
       "Missing overload implementation [42]: Overloaded function `baz` must have an implementation.";
       "Revealed type [-1]: Revealed type for `test.baz` is `typing.Any`.";
+    ];
+
+  assert_type_errors
+    {|
+      from typing import Any
+      def my_decorator(x: int) -> int:
+        return x
+      @my_decorator(1)
+      def f(x: int) -> int:
+        return x
+      reveal_type(f)
+    |}
+    [
+      "Invalid decoration [56]: Decorator `test.my_decorator(...)` could not be called, because \
+       its type `int` is not callable.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
     ];
   ()
 

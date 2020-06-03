@@ -201,6 +201,7 @@ type invalid_decoration_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of Expression.t
   | NonCallableDecoratorFactory of Type.t
+  | NonCallableDecorator of Type.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -983,6 +984,17 @@ let messages ~concise ~signature location kind =
         Format.asprintf
           "Decorator factory `%s` could not be called, because its type `%a` is not callable."
           name
+          pp_type
+          result;
+      ]
+  | InvalidDecoration { decorator = { name; arguments }; reason = NonCallableDecorator result } ->
+      let name = Node.value name |> Reference.sanitized |> Reference.show in
+      let arguments = if Option.is_some arguments then "(...)" else "" in
+      [
+        Format.asprintf
+          "Decorator `%s%s` could not be called, because its type `%a` is not callable."
+          name
+          arguments
           pp_type
           result;
       ]

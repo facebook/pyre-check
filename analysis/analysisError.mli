@@ -192,6 +192,7 @@ type invalid_decoration_reason =
   | CouldNotResolve
   | CouldNotResolveArgument of Expression.t
   | NonCallableDecoratorFactory of Type.t
+  | NonCallableDecorator of Type.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {

@@ -2724,9 +2724,10 @@ class base class_metadata_environment dependency =
               match resolved_decorator with
               | Error error -> Result.Error error
               | Ok None -> Ok argument
+              | Ok (Some Any) -> Ok Any
               | Ok (Some resolved_decorator) -> (
                   match extract_callable resolved_decorator with
-                  | None -> Ok argument
+                  | None -> make_error (NonCallableDecorator resolved_decorator)
                   | Some callable -> (
                       match
                         self#signature_select

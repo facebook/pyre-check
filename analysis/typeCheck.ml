@@ -5763,6 +5763,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                   |> Option.value ~default:errors
               | NonCallableDecoratorFactory resolved ->
                   make_error (NonCallableDecoratorFactory resolved)
+              | NonCallableDecorator result -> make_error (NonCallableDecorator result)
             in
 
             let { StatementDefine.Signature.decorators; _ } = signature in
