@@ -735,6 +735,36 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     ]
     |> List.map ~f:Node.create_with_default_location
   in
+  let generic_meta_body =
+    [
+      Statement.Define
+        {
+          signature =
+            {
+              name =
+                Reference.create "typing.GenericMeta.__getitem__"
+                |> Node.create_with_default_location;
+              parameters =
+                [
+                  { Parameter.name = "cls"; value = None; annotation = None }
+                  |> Node.create_with_default_location;
+                  { Parameter.name = "arg"; value = None; annotation = None }
+                  |> Node.create_with_default_location;
+                ];
+              decorators = [];
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = Some (Reference.create "typing.GenericMeta");
+              nesting_define = None;
+            };
+          captures = [];
+          unbound_names = [];
+          body = [];
+        }
+      |> Node.create_with_default_location;
+    ]
+  in
 
   let typing_classes =
     [
@@ -750,6 +780,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
       make "typing.ClassMethod" ~bases:single_unary_generic ~body:classmethod_body;
       make "typing.StaticMethod" ~bases:single_unary_generic ~body:staticmethod_body;
+      make "typing.GenericMeta" ~bases:[Primitive "type"] ~body:generic_meta_body;
     ]
   in
   let typing_extension_classes =
@@ -818,38 +849,6 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
             Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
           in
           { definition with Class.bases = [{ name = None; value }] }
-      | "typing.GenericMeta" ->
-          let body =
-            [
-              Statement.Define
-                {
-                  signature =
-                    {
-                      name =
-                        Reference.create "typing.GenericMeta.__getitem__"
-                        |> Node.create_with_default_location;
-                      parameters =
-                        [
-                          { Parameter.name = "cls"; value = None; annotation = None }
-                          |> Node.create_with_default_location;
-                          { Parameter.name = "arg"; value = None; annotation = None }
-                          |> Node.create_with_default_location;
-                        ];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent = Some (Reference.create "typing.GenericMeta");
-                      nesting_define = None;
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [];
-                }
-              |> Node.create_with_default_location;
-            ]
-          in
-          { definition with body }
       | _ -> definition
     in
     WriteOnly.set_class_definition
