@@ -1834,7 +1834,7 @@ module State (Context : Context) = struct
               ~self_argument
           in
           match signature, callable with
-          | AttributeResolution.NotFound _, _ -> (
+          | NotFound _, _ -> (
               match Node.value callee, callable, arguments with
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
@@ -1854,7 +1854,7 @@ module State (Context : Context) = struct
                           unpacked_callable_and_self_argument ))
                   |> Option.value ~default:(signature, unpacked_callable_and_self_argument)
               | _ -> signature, unpacked_callable_and_self_argument )
-          | AttributeResolution.Found { selected_return_annotation; _ }, { kind = Named access; _ }
+          | Found { selected_return_annotation; _ }, { kind = Named access; _ }
             when String.equal "__init__" (Reference.last access) ->
               Type.split selected_return_annotation
               |> fst
@@ -1871,7 +1871,7 @@ module State (Context : Context) = struct
                           |> List.map ~f:Annotated.Attribute.name
                         in
                         if not (List.is_empty abstract_methods) then
-                          AttributeResolution.NotFound
+                          SignatureSelectionTypes.NotFound
                             {
                               closest_return_annotation = selected_return_annotation;
                               reason =
@@ -1882,7 +1882,7 @@ module State (Context : Context) = struct
                         else if
                           GlobalResolution.is_protocol global_resolution (Primitive class_name)
                         then
-                          AttributeResolution.NotFound
+                          NotFound
                             {
                               closest_return_annotation = selected_return_annotation;
                               reason = Some (ProtocolInstantiation (Reference.create class_name));
@@ -1906,7 +1906,7 @@ module State (Context : Context) = struct
           | _ -> None
         in
         match reason with
-        | AttributeResolution.AbstractClassInstantiation { class_name; abstract_methods } ->
+        | SignatureSelectionTypes.AbstractClassInstantiation { class_name; abstract_methods } ->
             [
               ( location,
                 Error.InvalidClassInstantiation
@@ -1923,7 +1923,9 @@ module State (Context : Context) = struct
         | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
             [location, Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })]
         | Mismatch mismatch ->
-            let { AttributeResolution.actual; expected; name; position } = Node.value mismatch in
+            let { SignatureSelectionTypes.actual; expected; name; position } =
+              Node.value mismatch
+            in
             let mismatch, name, position, location =
               ( Error.create_mismatch ~resolution:global_resolution ~actual ~expected ~covariant:true,
                 name,
@@ -1998,13 +2000,13 @@ module State (Context : Context) = struct
       in
 
       let not_found = function
-        | AttributeResolution.NotFound _, _ -> true
+        | SignatureSelectionTypes.NotFound _, _ -> true
         | _ -> false
       in
       match signatures >>| List.partition_tf ~f:not_found with
       (* Prioritize missing signatures for union type checking. *)
       | Some
-          ( ( AttributeResolution.NotFound { closest_return_annotation; reason = Some reason },
+          ( ( SignatureSelectionTypes.NotFound { closest_return_annotation; reason = Some reason },
               unpacked_callable_and_self_argument )
             :: _,
             _ ) ->
@@ -2023,7 +2025,7 @@ module State (Context : Context) = struct
       | Some ([], head :: tail) ->
           let resolved =
             let extract = function
-              | AttributeResolution.Found { selected_return_annotation }, _ ->
+              | SignatureSelectionTypes.Found { selected_return_annotation }, _ ->
                   selected_return_annotation
               | _ -> failwith "Not all signatures were found."
             in

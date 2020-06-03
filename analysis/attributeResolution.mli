@@ -43,62 +43,6 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type mismatch = {
-  actual: Type.t;
-  expected: Type.t;
-  name: Identifier.t option;
-  position: int;
-}
-[@@deriving eq, show, compare]
-
-type invalid_argument = {
-  expression: Expression.t option;
-  annotation: Type.t;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-type missing_argument =
-  | Named of Identifier.t
-  | PositionalOnly of int
-[@@deriving eq, show, compare, sexp, hash]
-
-type mismatch_with_list_variadic_type_variable =
-  | NotDefiniteTuple of invalid_argument
-  | CantConcatenate of Type.OrderedTypes.t list
-  | ConstraintFailure of Type.OrderedTypes.t
-[@@deriving compare, eq, show, sexp, hash]
-
-type reason =
-  | AbstractClassInstantiation of {
-      class_name: Reference.t;
-      abstract_methods: string list;
-    }
-  | CallingParameterVariadicTypeVariable
-  | InvalidKeywordArgument of invalid_argument Node.t
-  | InvalidVariableArgument of invalid_argument Node.t
-  | Mismatch of mismatch Node.t
-  | MismatchWithListVariadicTypeVariable of {
-      variable: Type.OrderedTypes.t;
-      mismatch: mismatch_with_list_variadic_type_variable;
-    }
-  | MissingArgument of missing_argument
-  | MutuallyRecursiveTypeVariables
-  | ProtocolInstantiation of Reference.t
-  | TooManyArguments of {
-      expected: int;
-      provided: int;
-    }
-  | TypedDictionaryInitializationError of
-      WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
-  | UnexpectedKeyword of Identifier.t
-[@@deriving eq, show, compare]
-
-type closest = {
-  closest_return_annotation: Type.t;
-  reason: reason option;
-}
-[@@deriving show]
-
 module Argument : sig
   type t = {
     expression: Expression.t option;
@@ -110,11 +54,6 @@ end
 type arguments =
   | Resolved of Argument.t list
   | Unresolved of Ast.Expression.Call.Argument.t list
-
-type sig_t =
-  | Found of { selected_return_annotation: Type.t }
-  | NotFound of closest
-[@@deriving eq, show, sexp]
 
 type uninstantiated
 
@@ -210,7 +149,7 @@ module AttributeReadOnly : sig
     arguments:arguments ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
-    sig_t
+    SignatureSelectionTypes.sig_t
 
   val resolve_mutable_literals
     :  t ->

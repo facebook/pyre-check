@@ -41,6 +41,7 @@ module RefinementUnit = RefinementUnit
 module Resolution = Resolution
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
+module SignatureSelectionTypes = SignatureSelectionTypes
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeEnvironment = TypeEnvironment

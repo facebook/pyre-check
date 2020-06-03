@@ -49,6 +49,50 @@ type resolved_define = {
   decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
 }
 
+module Argument = struct
+  type t = {
+    expression: Expression.t option;
+    kind: Ast.Expression.Call.Argument.kind;
+    resolved: Type.t;
+  }
+
+  module WithPosition = struct
+    type t = {
+      position: int;
+      expression: Expression.t option;
+      kind: Ast.Expression.Call.Argument.kind;
+      resolved: Type.t;
+    }
+  end
+end
+
+type arguments =
+  | Resolved of Argument.t list
+  | Unresolved of Ast.Expression.Call.Argument.t list
+
+type argument =
+  | Argument of Argument.WithPosition.t
+  | Default
+
+type ranks = {
+  arity: int;
+  annotation: int;
+  position: int;
+}
+
+type reasons = {
+  arity: SignatureSelectionTypes.reason list;
+  annotation: SignatureSelectionTypes.reason list;
+}
+
+type signature_match = {
+  callable: Type.Callable.t;
+  argument_mapping: argument list Type.Callable.Parameter.Map.t;
+  constraints_set: TypeConstraints.t list;
+  ranks: ranks;
+  reasons: reasons;
+}
+
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
   { UninstantiatedAnnotation.accessed_via_metaclass; kind = Attribute (Callable callable) }
 
@@ -133,117 +177,6 @@ module TypeParameterValidationTypes = struct
     kind: generic_type_problems;
   }
   [@@deriving compare, eq, sexp, show, hash]
-end
-
-module SignatureSelectionTypes = struct
-  type mismatch = {
-    actual: Type.t;
-    expected: Type.t;
-    name: Identifier.t option;
-    position: int;
-  }
-  [@@deriving eq, show, compare, sexp]
-
-  type invalid_argument = {
-    expression: Expression.t option;
-    annotation: Type.t;
-  }
-  [@@deriving compare, eq, show, sexp, hash]
-
-  type missing_argument =
-    | Named of Identifier.t
-    | PositionalOnly of int
-  [@@deriving eq, show, compare, sexp, hash]
-
-  type mismatch_with_list_variadic_type_variable =
-    | NotDefiniteTuple of invalid_argument
-    | CantConcatenate of Type.OrderedTypes.t list
-    | ConstraintFailure of Type.OrderedTypes.t
-  [@@deriving compare, eq, show, sexp, hash]
-
-  type reason =
-    | AbstractClassInstantiation of {
-        class_name: Reference.t;
-        abstract_methods: string list;
-      }
-    | CallingParameterVariadicTypeVariable
-    | InvalidKeywordArgument of invalid_argument Node.t
-    | InvalidVariableArgument of invalid_argument Node.t
-    | Mismatch of mismatch Node.t
-    | MismatchWithListVariadicTypeVariable of {
-        variable: Type.OrderedTypes.t;
-        mismatch: mismatch_with_list_variadic_type_variable;
-      }
-    | MissingArgument of missing_argument
-    | MutuallyRecursiveTypeVariables
-    | ProtocolInstantiation of Reference.t
-    | TooManyArguments of {
-        expected: int;
-        provided: int;
-      }
-    | TypedDictionaryInitializationError of
-        WeakenMutableLiterals.typed_dictionary_mismatch Node.t list
-    | UnexpectedKeyword of Identifier.t
-  [@@deriving eq, show, compare, sexp]
-
-  type closest = {
-    closest_return_annotation: Type.t;
-    reason: reason option;
-  }
-  [@@deriving show, sexp]
-
-  let equal_closest (left : closest) (right : closest) =
-    (* Ignore rank. *)
-    Type.equal left.closest_return_annotation right.closest_return_annotation
-    && Option.equal equal_reason left.reason right.reason
-
-
-  type sig_t =
-    | Found of { selected_return_annotation: Type.t }
-    | NotFound of closest
-  [@@deriving eq, show, sexp]
-
-  module Argument = struct
-    type t = {
-      expression: Expression.t option;
-      kind: Ast.Expression.Call.Argument.kind;
-      resolved: Type.t;
-    }
-  end
-
-  type argument_with_position = {
-    position: int;
-    expression: Expression.t option;
-    kind: Ast.Expression.Call.Argument.kind;
-    resolved: Type.t;
-  }
-
-  type arguments =
-    | Resolved of Argument.t list
-    | Unresolved of Ast.Expression.Call.Argument.t list
-
-  type argument =
-    | Argument of argument_with_position
-    | Default
-
-  type ranks = {
-    arity: int;
-    annotation: int;
-    position: int;
-  }
-
-  type reasons = {
-    arity: reason list;
-    annotation: reason list;
-  }
-
-  type signature_match = {
-    callable: Type.Callable.t;
-    argument_mapping: argument list Type.Callable.Parameter.Map.t;
-    constraints_set: TypeConstraints.t list;
-    ranks: ranks;
-    reasons: reasons;
-  }
 end
 
 let class_hierarchy_environment class_metadata_environment =
@@ -1810,7 +1743,7 @@ class base class_metadata_environment dependency =
                     self#signature_select
                       ~assumptions
                       ~arguments:
-                        (SignatureSelectionTypes.Resolved
+                        (Resolved
                            [
                              { kind = Positional; expression = None; resolved = descriptor };
                              {
@@ -2666,11 +2599,7 @@ class base class_metadata_environment dependency =
                   let resolve argument_index argument =
                     let expression, kind = Ast.Expression.Call.Argument.unpack argument in
                     let make_argument resolved =
-                      {
-                        SignatureSelectionTypes.Argument.kind;
-                        expression = Some expression;
-                        resolved;
-                      }
+                      { Argument.kind; expression = Some expression; resolved }
                     in
                     let error = AnnotatedAttribute.CouldNotResolveArgument { argument_index } in
                     match expression with
@@ -2876,7 +2805,7 @@ class base class_metadata_environment dependency =
             | Defined all_parameters ->
                 let matched_keyword_arguments =
                   let is_keyword_argument = function
-                    | { SignatureSelectionTypes.kind = Named _; _ } -> true
+                    | { Argument.WithPosition.kind = Named _; _ } -> true
                     | _ -> false
                   in
                   List.filter ~f:is_keyword_argument all_arguments
@@ -2909,7 +2838,7 @@ class base class_metadata_environment dependency =
           | [], [] ->
               (* Both empty *)
               signature_match
-          | { SignatureSelectionTypes.kind = SingleStar; _ } :: arguments_tail, []
+          | { Argument.WithPosition.kind = SingleStar; _ } :: arguments_tail, []
           | { kind = DoubleStar; _ } :: arguments_tail, [] ->
               (* Starred or double starred arguments; parameters empty *)
               consume ~arguments:arguments_tail ~parameters signature_match
@@ -3074,7 +3003,7 @@ class base class_metadata_environment dependency =
                   _;
                 },
               [
-                SignatureSelectionTypes.Argument
+                Argument
                   {
                     expression =
                       Some
@@ -3111,7 +3040,7 @@ class base class_metadata_environment dependency =
                       | Argument argument -> argument
                       | Default -> failwith "Variable parameters do not have defaults")
                 in
-                let extract { SignatureSelectionTypes.kind; resolved; expression; _ } =
+                let extract { Argument.WithPosition.kind; resolved; expression; _ } =
                   match kind with
                   | SingleStar -> (
                       match resolved with
@@ -3573,9 +3502,7 @@ class base class_metadata_environment dependency =
              ~default:
                (NotFound { closest_return_annotation = default_return_annotation; reason = None })
       in
-      let rec check_arity_and_annotations
-          implementation
-          ~(arguments : SignatureSelectionTypes.argument_with_position list)
+      let rec check_arity_and_annotations implementation ~(arguments : Argument.WithPosition.t list)
         =
         let base_signature_match =
           {
@@ -3597,7 +3524,7 @@ class base class_metadata_environment dependency =
           when Type.Variable.Variadic.Parameters.is_free variable -> (
             let front, back =
               let is_labeled = function
-                | { SignatureSelectionTypes.kind = Named _; _ } -> true
+                | { Argument.WithPosition.kind = Named _; _ } -> true
                 | _ -> false
               in
               let labeled, unlabeled = List.partition_tf arguments ~f:is_labeled in
@@ -3681,19 +3608,24 @@ class base class_metadata_environment dependency =
             match arguments with
             | Resolved resolved ->
                 let add_index index { Argument.expression; kind; resolved } =
-                  { position = index + 1; expression; kind; resolved }
+                  { Argument.WithPosition.position = index + 1; expression; kind; resolved }
                 in
                 List.mapi resolved ~f:add_index
             | Unresolved unresolved ->
                 let create_argument index argument =
                   let expression, kind = Ast.Expression.Call.Argument.unpack argument in
                   let resolved = resolve_with_locals ~locals:[] expression in
-                  { position = index + 1; expression = Some expression; kind; resolved }
+                  {
+                    Argument.WithPosition.position = index + 1;
+                    expression = Some expression;
+                    kind;
+                    resolved;
+                  }
                 in
                 List.mapi unresolved ~f:create_argument
           in
           let is_labeled = function
-            | { SignatureSelectionTypes.kind = Named _; _ } -> true
+            | { Argument.WithPosition.kind = Named _; _ } -> true
             | _ -> false
           in
           let labeled_arguments, unlabeled_arguments =
@@ -3701,7 +3633,13 @@ class base class_metadata_environment dependency =
           in
           let self_argument =
             self_argument
-            >>| (fun resolved -> { position = 0; expression = None; kind = Positional; resolved })
+            >>| (fun resolved ->
+                  {
+                    Argument.WithPosition.position = 0;
+                    expression = None;
+                    kind = Positional;
+                    resolved;
+                  })
             |> Option.to_list
           in
           self_argument @ labeled_arguments @ unlabeled_arguments
@@ -4363,4 +4301,3 @@ end
 
 module AttributeReadOnly = ReadOnly
 include TypeParameterValidationTypes
-include SignatureSelectionTypes

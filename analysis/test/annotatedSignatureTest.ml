@@ -28,32 +28,34 @@ let variable_r, escaped_variable_r =
 
 
 let compare_sig_t left right =
-  let default = AttributeResolution.equal_sig_t left right in
+  let default = SignatureSelectionTypes.equal_sig_t left right in
   match left, right with
-  | ( AttributeResolution.NotFound
+  | ( SignatureSelectionTypes.NotFound
         { reason = Some left_reason; closest_return_annotation = left_closest },
-      AttributeResolution.NotFound
+      SignatureSelectionTypes.NotFound
         { reason = Some right_reason; closest_return_annotation = right_closest } )
     when Type.equal left_closest right_closest -> (
       let equal_invalid_argument left right =
         Option.compare
           Expression.location_insensitive_compare
-          left.AttributeResolution.expression
-          right.AttributeResolution.expression
+          left.SignatureSelectionTypes.expression
+          right.SignatureSelectionTypes.expression
         = 0
         && Type.equal left.annotation right.annotation
       in
       let equal_mismatch_with_list_variadic_type_variable left right =
         match left, right with
-        | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right ->
+        | ( SignatureSelectionTypes.NotDefiniteTuple left,
+            SignatureSelectionTypes.NotDefiniteTuple right ) ->
             equal_invalid_argument left right
-        | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
+        | _ -> SignatureSelectionTypes.equal_mismatch_with_list_variadic_type_variable left right
       in
       match left_reason, right_reason with
       | InvalidKeywordArgument left, InvalidKeywordArgument right
       | InvalidVariableArgument left, InvalidVariableArgument right ->
           equal_invalid_argument left.value right.value
-      | Mismatch left, Mismatch right -> AttributeResolution.equal_mismatch left.value right.value
+      | Mismatch left, Mismatch right ->
+          SignatureSelectionTypes.equal_mismatch left.value right.value
       | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
           Type.OrderedTypes.equal left.variable right.variable
           && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
@@ -180,7 +182,7 @@ let test_unresolved_select context =
       replace_specials return |> parse_single_expression |> Type.create ~aliases:(fun _ -> None)
     in
     let expected =
-      let open AttributeResolution in
+      let open SignatureSelectionTypes in
       match expected with
       | `Found expected -> Found { selected_return_annotation = parse_return expected }
       | `NotFoundNoReason -> NotFound { closest_return_annotation; reason = None }
@@ -250,7 +252,7 @@ let test_unresolved_select context =
       | `NotFound (closest, reason) ->
           NotFound { closest_return_annotation = parse_return closest; reason }
     in
-    assert_equal ~printer:AttributeResolution.show_sig_t ~cmp:compare_sig_t expected signature
+    assert_equal ~printer:SignatureSelectionTypes.show_sig_t ~cmp:compare_sig_t expected signature
   in
   let assert_select_direct ~arguments ~callable expected =
     Type.Variable.Namespace.reset ();
@@ -264,7 +266,7 @@ let test_unresolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = AttributeResolution.sexp_of_sig_t x |> Sexp.to_string_hum in
+    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
     assert_equal ~cmp:compare_sig_t ~printer expected signature
   in
   (* Undefined callables always match. *)
@@ -503,7 +505,7 @@ let test_unresolved_select context =
              (Mismatch
                 (Node.create_with_default_location
                    {
-                     AttributeResolution.actual = Type.literal_string "string";
+                     SignatureSelectionTypes.actual = Type.literal_string "string";
                      expected = variable_r;
                      name = None;
                      position = 1;
@@ -533,7 +535,7 @@ let test_unresolved_select context =
              (Mismatch
                 (Node.create_with_default_location
                    {
-                     AttributeResolution.actual = Type.list Type.string;
+                     SignatureSelectionTypes.actual = Type.list Type.string;
                      expected = Type.list variable_r;
                      name = None;
                      position = 1;
@@ -758,7 +760,7 @@ let test_unresolved_select context =
     (NotFound
        {
          closest_return_annotation = Type.integer;
-         reason = Some AttributeResolution.CallingParameterVariadicTypeVariable;
+         reason = Some SignatureSelectionTypes.CallingParameterVariadicTypeVariable;
        });
   assert_select "[Ts, int]" "(1, 'string', 1, 'string')" (`Found "int");
   assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "int");
@@ -772,7 +774,7 @@ let test_unresolved_select context =
     (`NotFound
       ( "int",
         Some
-          (AttributeResolution.MismatchWithListVariadicTypeVariable
+          (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
              {
                variable =
                  Concatenation
@@ -793,7 +795,7 @@ let test_unresolved_select context =
     (`NotFound
       ( "int",
         Some
-          (AttributeResolution.MismatchWithListVariadicTypeVariable
+          (SignatureSelectionTypes.MismatchWithListVariadicTypeVariable
              {
                variable =
                  Concatenation
@@ -831,7 +833,7 @@ let test_resolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = AttributeResolution.sexp_of_sig_t x |> Sexp.to_string_hum in
+    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
     assert_equal ~cmp:compare_sig_t ~printer expected signature
   in
   assert_select

@@ -99,7 +99,7 @@ and invalid_argument =
     }
   | ListVariadicVariable of {
       variable: Type.OrderedTypes.t;
-      mismatch: AttributeResolution.mismatch_with_list_variadic_type_variable;
+      mismatch: SignatureSelectionTypes.mismatch_with_list_variadic_type_variable;
     }
 
 and precondition_mismatch =
@@ -281,7 +281,7 @@ type kind =
   | InvalidAssignment of invalid_assignment_kind
   | MissingArgument of {
       callee: Reference.t option;
-      parameter: AttributeResolution.missing_argument;
+      parameter: SignatureSelectionTypes.missing_argument;
     }
   | MissingAttributeAnnotation of {
       parent: Type.t;
@@ -1329,9 +1329,9 @@ let messages ~concise ~signature location kind =
               class_name
               (if concise then "." else method_message);
           ] )
-  | MissingArgument { parameter = AttributeResolution.Named name; _ } when concise ->
+  | MissingArgument { parameter = Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
-  | MissingArgument { parameter = AttributeResolution.PositionalOnly index; _ } when concise ->
+  | MissingArgument { parameter = PositionalOnly index; _ } when concise ->
       [Format.asprintf "Argument `%d` expected." index]
   | MissingArgument { callee; parameter } ->
       let callee =
@@ -3320,8 +3320,9 @@ let dequalify
     | InvalidArgument (ListVariadicVariable { variable; mismatch }) ->
         let mismatch =
           match mismatch with
-          | AttributeResolution.NotDefiniteTuple { expression; annotation } ->
-              AttributeResolution.NotDefiniteTuple { expression; annotation = dequalify annotation }
+          | NotDefiniteTuple { expression; annotation } ->
+              SignatureSelectionTypes.NotDefiniteTuple
+                { expression; annotation = dequalify annotation }
           | _ ->
               (* TODO(T45656387): implement dequalify ordered_types *)
               mismatch

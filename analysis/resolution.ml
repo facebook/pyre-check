@@ -307,10 +307,8 @@ let fallback_attribute ~resolution ~name class_name =
                   ~callable
                   ~self_argument:(Some self_argument)
               with
-              | AttributeResolution.Found { selected_return_annotation } ->
-                  selected_return_annotation
-              | AttributeResolution.NotFound _ ->
-                  Type.Callable.Overload.return_annotation implementation
+              | Found { selected_return_annotation } -> selected_return_annotation
+              | NotFound _ -> Type.Callable.Overload.return_annotation implementation
             in
             Some
               (AnnotatedAttribute.create

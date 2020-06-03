@@ -215,7 +215,7 @@ val signature_select
   arguments:AttributeResolution.arguments ->
   callable:Type.Callable.t ->
   self_argument:Type.t option ->
-  AttributeResolution.sig_t
+  SignatureSelectionTypes.sig_t
 
 val resolve_define
   :  resolution:t ->
