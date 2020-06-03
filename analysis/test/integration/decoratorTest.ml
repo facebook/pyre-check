@@ -696,6 +696,31 @@ let test_check_callable_class_decorators context =
       "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Callable[..., str]`.";
     ];
 
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      class synchronize:
+        @typing.overload
+        def __call__(
+           self,
+           coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
+        ) -> typing.Callable[..., T]: ...
+        @typing.overload
+        def __call__(self, coroutine: int) -> int: ...
+        def __call__(self, coroutine: typing.Any) -> typing.Any: ...
+
+      @synchronize()
+      async def am_i_async(x: int) -> str:
+        return str(x)
+      reveal_type(am_i_async)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is `typing.Callable[..., str]`.";
+    ];
+
   (* accessing metaclass methods via the class *)
   assert_type_errors
     {|
@@ -934,6 +959,24 @@ let test_decorator_factories context =
       "Revealed type [-1]: Revealed type for `test.bar` is \
        `typing_extensions.Literal[second.Foo.A]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable, TypeVar
+
+      class C:
+        def __call__(self, x: object) -> str:
+          return "lol"
+
+      def df() -> C:
+        return C()
+
+      @df()
+      def bar() -> None:
+        pass
+
+      reveal_type(bar)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.bar` is `str`."];
   ()
 
 

@@ -2714,9 +2714,8 @@ class base class_metadata_environment dependency =
                             ~skip_marking_escapees:false
                         in
                         let extract = function
-                          | SignatureSelectionTypes.Found
-                              { selected_return_annotation = Type.Callable callable; _ } ->
-                              Some callable
+                          | SignatureSelectionTypes.Found { selected_return_annotation; _ } ->
+                              extract_callable selected_return_annotation
                           | _ -> None
                         in
                         Result.map arguments ~f:select |> Result.map ~f:extract
