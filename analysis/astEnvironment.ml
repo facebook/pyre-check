@@ -565,7 +565,8 @@ let decoded_equal first second =
 
 module ReadOnly = struct
   type t = {
-    get_source: Reference.t -> Source.t option;
+    get_processed_source: track_dependency:bool -> Reference.t -> Source.t option;
+    get_raw_source: Reference.t -> Source.t option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
@@ -573,17 +574,29 @@ module ReadOnly = struct
   }
 
   let create
-      ?(get_source = fun _ -> None)
+      ?(get_processed_source = fun ~track_dependency:_ _ -> None)
+      ?(get_raw_source = fun _ -> None)
       ?(get_source_path = fun _ -> None)
       ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
       ?(is_module_tracked = fun _ -> false)
       ()
     =
-    { get_source; get_source_path; is_module; all_explicit_modules; is_module_tracked }
+    {
+      get_processed_source;
+      get_raw_source;
+      get_source_path;
+      is_module;
+      all_explicit_modules;
+      is_module_tracked;
+    }
 
 
-  let get_source { get_source; _ } = get_source
+  let get_processed_source { get_processed_source; _ } ?(track_dependency = false) =
+    get_processed_source ~track_dependency
+
+
+  let get_raw_source { get_raw_source; _ } = get_raw_source
 
   let get_source_path { get_source_path; _ } = get_source_path
 
@@ -615,9 +628,11 @@ module ReadOnly = struct
 end
 
 let read_only ({ module_tracker } as environment) =
+  let get_processed_source ~track_dependency:_ qualifier = get_source environment qualifier in
   let is_module_tracked qualifier = ModuleTracker.is_module_tracked module_tracker qualifier in
   {
-    ReadOnly.get_source = get_source environment;
+    ReadOnly.get_processed_source;
+    get_raw_source = RawSources.get;
     get_source_path = get_source_path environment;
     is_module = ModuleTracker.is_module_tracked module_tracker;
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);

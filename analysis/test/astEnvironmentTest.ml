@@ -78,7 +78,7 @@ let test_parse_stubs_modules_list context =
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
       match
-        Analysis.AstEnvironment.ReadOnly.get_source
+        Analysis.AstEnvironment.ReadOnly.get_processed_source
           (AstEnvironment.read_only ast_environment)
           qualifier
       with
@@ -120,14 +120,16 @@ let test_parse_source context =
   let sources =
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
     AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
   assert_equal handles ["x.py"];
   let source =
-    Analysis.AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) !&"x"
+    Analysis.AstEnvironment.ReadOnly.get_processed_source
+      (AstEnvironment.read_only ast_environment)
+      !&"x"
   in
   assert_equal (Option.is_some source) true;
   let {
@@ -192,7 +194,9 @@ let test_parse_sources context =
     let sources =
       AstEnvironment.UpdateResult.reparsed update_result
       |> List.filter_map
-           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+           ~f:
+             (AstEnvironment.ReadOnly.get_processed_source
+                (AstEnvironment.read_only ast_environment))
     in
     let is_source_sorted =
       let compare
@@ -248,7 +252,9 @@ let test_parse_sources context =
     let sources =
       AstEnvironment.UpdateResult.reparsed update_result
       |> List.filter_map
-           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+           ~f:
+             (AstEnvironment.ReadOnly.get_processed_source
+                (AstEnvironment.read_only ast_environment))
     in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
@@ -263,7 +269,7 @@ let test_parse_sources context =
     source_handles
     ["stub.pyi"; "a.py"];
   match
-    Analysis.AstEnvironment.ReadOnly.get_source
+    Analysis.AstEnvironment.ReadOnly.get_processed_source
       (AstEnvironment.read_only ast_environment)
       (Reference.create "c")
   with
@@ -620,7 +626,7 @@ let test_parse_repository context =
       let sources =
         let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
         AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
       List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
           relative, source)

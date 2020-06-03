@@ -82,7 +82,7 @@ let test_decorate context =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
       ( Option.value_exn
-          (AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.ReadOnly.get_processed_source
              (AstEnvironment.read_only ast_environment)
              (Reference.create "test")),
         global_environment )

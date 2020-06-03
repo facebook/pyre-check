@@ -1721,7 +1721,9 @@ let test_expand_wildcard_imports context =
       (Source.statements (parse expected))
       (Source.statements
          (Option.value_exn
-            (AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) !&"test")))
+            (AstEnvironment.ReadOnly.get_processed_source
+               (AstEnvironment.read_only ast_environment)
+               !&"test")))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

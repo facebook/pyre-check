@@ -393,7 +393,7 @@ let initialize
       errors )
   in
   let source =
-    AstEnvironment.ReadOnly.get_source
+    AstEnvironment.ReadOnly.get_processed_source
       ast_environment
       (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
     |> fun option -> Option.value_exn option

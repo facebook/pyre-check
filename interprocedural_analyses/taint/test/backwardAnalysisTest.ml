@@ -23,7 +23,9 @@ let assert_taint ~context source expected =
     |> Test.ScratchProject.build_type_environment
   in
   let source =
-    AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
+    AstEnvironment.ReadOnly.get_processed_source
+      (AstEnvironment.read_only ast_environment)
+      qualifier
     |> fun option -> Option.value_exn option
   in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in

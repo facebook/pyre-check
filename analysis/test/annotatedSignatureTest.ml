@@ -141,7 +141,7 @@ let test_unresolved_select context =
       let callable, signature =
         let arguments, expression =
           match
-            AstEnvironment.ReadOnly.get_source
+            AstEnvironment.ReadOnly.get_processed_source
               (AstEnvironment.read_only ast_environment)
               (Reference.create "test")
             >>| Source.statements

@@ -2680,7 +2680,9 @@ module ScratchProject = struct
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
       |> AstEnvironment.UpdateResult.reparsed
       |> List.filter_map
-           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+           ~f:
+             (AstEnvironment.ReadOnly.get_processed_source
+                (AstEnvironment.read_only ast_environment))
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     { BuiltGlobalEnvironment.sources; ast_environment; global_environment }

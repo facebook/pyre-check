@@ -16,7 +16,9 @@ let test_callables context =
       Option.value_exn
         ( Analysis.GlobalResolution.ast_environment resolution
         |> fun environment ->
-        Analysis.AstEnvironment.ReadOnly.get_source environment (Ast.Reference.create "test") )
+        Analysis.AstEnvironment.ReadOnly.get_processed_source
+          environment
+          (Ast.Reference.create "test") )
     in
     Service.StaticAnalysis.callables ~resolution ~source
     |> List.map ~f:fst

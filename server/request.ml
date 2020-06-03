@@ -449,7 +449,7 @@ let rec process_type_query_request
           in
           let defines =
             module_name
-            >>= AstEnvironment.ReadOnly.get_source ast_environment
+            >>= AstEnvironment.ReadOnly.get_processed_source ast_environment
             >>| Analysis.FunctionDefinition.collect_defines
             >>| List.map ~f:snd
             >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies
@@ -511,7 +511,7 @@ let rec process_type_query_request
             |> fun callees -> { Protocol.TypeQuery.caller; callees }
           in
           let ast_environment = Analysis.AstEnvironment.read_only state.ast_environment in
-          AstEnvironment.ReadOnly.get_source ast_environment module_qualifier
+          AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
           >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
           >>| List.map ~f:callees
           |> Option.value ~default:[]

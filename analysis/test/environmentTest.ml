@@ -406,7 +406,8 @@ let test_register_implicit_submodules context =
   let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c") |> Option.is_some);
+    ( AstEnvironment.ReadOnly.get_raw_source ast_environment (Reference.create "a.b.c")
+    |> Option.is_some );
   assert_bool
     "Can get the module definition of a/b/c.py"
     (GlobalResolution.module_exists global_resolution (Reference.create "a.b.c"));

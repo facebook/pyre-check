@@ -191,7 +191,7 @@ let get_inference_errors ~context source =
     let configuration = ScratchProject.configuration_of project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let source =
-      AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "test")
+      AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     ( source,

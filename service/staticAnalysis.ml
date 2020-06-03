@@ -95,14 +95,18 @@ let analyze
       (module TypeCheck.DummyContext)
   in
 
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  let get_source qualifier =
+    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+    AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+  in
+
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
     let build_overrides overrides qualifier =
       try
-        match AstEnvironment.ReadOnly.get_source ast_environment qualifier with
+        match get_source qualifier with
         | None -> overrides
         | Some source ->
             let new_overrides = DependencyGraph.create_overrides ~environment ~source in
@@ -135,7 +139,7 @@ let analyze
   let callgraph =
     let build_call_graph call_graph qualifier =
       try
-        AstEnvironment.ReadOnly.get_source ast_environment qualifier
+        get_source qualifier
         >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
         |> Option.value ~default:call_graph
       with
@@ -171,7 +175,7 @@ let analyze
         callable :: callables, stubs
     in
     let make_callables result qualifier =
-      AstEnvironment.ReadOnly.get_source ast_environment qualifier
+      get_source qualifier
       >>| (fun source ->
             callables ~resolution:global_resolution ~source
             |> List.fold ~f:classify_source ~init:result)
@@ -181,7 +185,7 @@ let analyze
   in
   let filtered_callables =
     let make_callables result qualifier =
-      AstEnvironment.ReadOnly.get_source ast_environment qualifier
+      get_source qualifier
       >>| (fun source ->
             if
               GlobalResolution.source_is_unit_test (Resolution.global_resolution resolution) ~source

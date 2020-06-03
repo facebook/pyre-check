@@ -29,7 +29,9 @@ let assert_taint ?models ~context source expect =
     Test.ScratchProject.build_type_environment project
   in
   let source =
-    AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
+    AstEnvironment.ReadOnly.get_processed_source
+      (AstEnvironment.read_only ast_environment)
+      qualifier
     |> fun option -> Option.value_exn option
   in
   let global_resolution = TypeEnvironment.global_resolution environment in

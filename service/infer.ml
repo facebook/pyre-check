@@ -35,7 +35,7 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
         let new_errors = Inference.run ~configuration ~global_resolution ~source in
         List.append new_errors errors, number_files + 1
     in
-    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
     |> List.fold ~init:([], 0) ~f:analyze_source
   in
   let reduce (left_errors, left_number_files) (right_errors, right_number_files) =

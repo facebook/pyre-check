@@ -24,7 +24,9 @@ let test_inferred_generic_base context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
-      AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) qualifier
+      AstEnvironment.ReadOnly.get_processed_source
+        (AstEnvironment.read_only ast_environment)
+        qualifier
     in
     let source = Option.value_exn source in
     let { Source.statements; _ } = source in

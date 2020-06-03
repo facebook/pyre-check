@@ -1239,7 +1239,7 @@ let test_check_typed_dictionary_inheritance context =
   in
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Base, Child, GrandChild, child, grandchild
         d: Base
         reveal_type(d)
         d: GrandChild = child
@@ -1267,7 +1267,7 @@ let test_check_typed_dictionary_inheritance context =
   (* No attribute access allowed for TypedDictionary. *)
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import child, Child
         child.bar
         reveal_type(child.bar)
         child.non_existent
@@ -1281,7 +1281,7 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Base, Child, GrandChild
         wrong1: Base = {}
         wrong2: Child = {"foo": 3}
         wrong3: GrandChild = {"foo": 3, "bar": "hello"}
@@ -1297,7 +1297,7 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Base, base, child, grandchild, explicit_child, non_child
 
         x0: Base = base
         x1: Base = child
@@ -1308,7 +1308,7 @@ let test_check_typed_dictionary_inheritance context =
     [];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Base, Child, NonChild, child, base, grandchild, explicit_child, non_child
         from typing_extensions import *
         x0: Child = child
         x1: Child = base
@@ -1324,7 +1324,8 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Base, Child, ExplicitChild, NonChild, GrandChild
+        from helpers import grandchild, base, child, explicit_child, non_child
         x0: GrandChild = grandchild
         x1: GrandChild = base
         x2: GrandChild = child
@@ -1343,7 +1344,8 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import ExplicitChild, Base, NonChild
+        from helpers import explicit_child, base, child, grandchild, non_child
         x0: ExplicitChild = explicit_child
         x1: ExplicitChild = base
         x2: ExplicitChild = child
@@ -1358,7 +1360,8 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import NonChild, Child, Base, ExplicitChild
+        from helpers import explicit_child, base, child, grandchild, non_child
         x0: NonChild = non_child
         x1: NonChild = base
         x2: NonChild = child
@@ -1375,7 +1378,7 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-      from helpers import *
+      from helpers import takes_base, base, child, grandchild, explicit_child, non_child
 
       takes_base(base)
       takes_base(child)
@@ -1386,7 +1389,8 @@ let test_check_typed_dictionary_inheritance context =
     [];
   assert_test_typed_dictionary
     {|
-      from helpers import *
+      from helpers import Base, Child, NonChild
+      from helpers import takes_child, base, child, grandchild, explicit_child, non_child
 
       takes_child(base)
       takes_child(child)
@@ -1402,7 +1406,8 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-      from helpers import *
+      from helpers import Base, GrandChild, Child, ExplicitChild, NonChild
+      from helpers import takes_grandchild, base, child, grandchild, explicit_child, non_child
 
       takes_grandchild(base)
       takes_grandchild(child)
@@ -1422,7 +1427,8 @@ let test_check_typed_dictionary_inheritance context =
     ];
   assert_test_typed_dictionary
     {|
-      from helpers import *
+      from helpers import Base, NonChild, Child, ExplicitChild
+      from helpers import takes_nonchild, base, child, grandchild, explicit_child, non_child
 
       takes_nonchild(base)
       takes_nonchild(child)
@@ -1505,7 +1511,7 @@ let test_check_typed_dictionary_inheritance context =
   (* TypedDict operations. *)
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Child, child
 
         child: Child
         child["foo"]
@@ -1540,7 +1546,7 @@ let test_check_typed_dictionary_inheritance context =
   (* Multiple inheritance. *)
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import MultipleInheritance
 
         d: MultipleInheritance
         reveal_type(d)
@@ -1788,7 +1794,7 @@ let test_check_typed_dictionary_in_alias context =
   in
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import child, Child
         from typing import List
         X = Child
         xs: X = child
@@ -1806,7 +1812,7 @@ let test_check_typed_dictionary_in_alias context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Child, child
         from typing import List
         X = List[Child]
         xs: X = [child, child]
@@ -1818,7 +1824,7 @@ let test_check_typed_dictionary_in_alias context =
     ];
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Child, Base, grandchild, base, child
         from typing import Callable, List
 
         f: Callable[[Child], None]
@@ -1833,7 +1839,7 @@ let test_check_typed_dictionary_in_alias context =
     ];
   assert_test_typed_dictionary
     {|
-      from helpers import *
+      from helpers import Child, Base, GrandChild, base, child
       from typing import Generic, TypeVar
       T = TypeVar("T")
       class G(Generic[T]):
@@ -1955,7 +1961,7 @@ let test_check_typed_dictionary_in_alias context =
   (* Decorators that use a TypedDict subclass. *)
   assert_test_typed_dictionary
     {|
-        from helpers import *
+        from helpers import Child
         from typing import Callable, List
         def decorator(f: Callable[[int], str]) -> Callable[[Child], Child]: ...
         @decorator

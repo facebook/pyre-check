@@ -16,7 +16,7 @@ let run_additional_check ~configuration ~environment ~source_paths ~check =
             if is_external then
               None
             else
-              AstEnvironment.ReadOnly.get_source ast_environment qualifier)
+              AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier)
       in
       List.concat_map sources ~f:(fun source ->
           Check.run ~configuration ~environment:(TypeEnvironment.read_only environment) ~source)

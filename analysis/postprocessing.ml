@@ -130,6 +130,8 @@ let filter_errors
   |> Error.join_at_source ~resolution:global_resolution
 
 
+(* TODO: Take `Source.Metadata.t` instead of `Source.t` to prevent this function from relying on the
+   actual AST. *)
 let run_on_source
     ~configuration
     ~global_resolution
@@ -150,7 +152,7 @@ let run ~scheduler ~configuration ~environment sources =
   let map _ modules =
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let run_on_module module_name =
-      match AstEnvironment.ReadOnly.get_source ast_environment module_name with
+      match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
       | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
           if is_external then

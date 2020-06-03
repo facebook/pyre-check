@@ -53,7 +53,7 @@ let containing_source resolution reference =
     | _ -> lead
   in
   qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> AstEnvironment.ReadOnly.get_source ast_environment
+  |> AstEnvironment.ReadOnly.get_processed_source ast_environment
 
 
 let class_definitions resolution reference =

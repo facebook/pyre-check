@@ -12,7 +12,8 @@ module ReadOnly : sig
   type t
 
   val create
-    :  ?get_source:(Reference.t -> Source.t option) ->
+    :  ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
+    ?get_raw_source:(Reference.t -> Source.t option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
@@ -20,7 +21,9 @@ module ReadOnly : sig
     unit ->
     t
 
-  val get_source : t -> Reference.t -> Source.t option
+  val get_processed_source : t -> ?track_dependency:bool -> Reference.t -> Source.t option
+
+  val get_raw_source : t -> Reference.t -> Source.t option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
 

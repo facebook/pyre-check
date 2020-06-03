@@ -980,7 +980,7 @@ let update_this_and_all_preceding_environments ast_environment ~scheduler ~confi
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
-      AstEnvironment.ReadOnly.get_source ast_environment qualifier
+      AstEnvironment.ReadOnly.get_processed_source ~track_dependency:true ast_environment qualifier
       >>| (fun source ->
             WriteOnly.set_module_metadata ~qualifier (Module.create source);
             register_class_definitions source;
