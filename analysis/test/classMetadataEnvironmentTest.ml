@@ -16,14 +16,12 @@ let test_simple_registration context =
       ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
     in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
-        ~ast_environment_update_result
-        (Reference.Set.singleton (Reference.create source_name))
+        ast_environment_update_result
     in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let printer v =
@@ -141,14 +139,11 @@ let test_updates context =
     let configuration = ScratchProject.configuration_of project in
     let update ~ast_environment_update_result () =
       let scheduler = Test.mock_scheduler () in
-      let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-      let ast_environment = AstEnvironment.read_only ast_environment in
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        (Reference.Set.of_list qualifiers)
+        ast_environment_update_result
     in
     let update_result = update ~ast_environment_update_result () in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in

@@ -40,11 +40,10 @@ module type PreviousEnvironment = sig
   module UpdateResult : PreviousUpdateResult with type read_only := ReadOnly.t
 
   val update_this_and_all_preceding_environments
-    :  AstEnvironment.ReadOnly.t ->
+    :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
-    Ast.Reference.Set.t ->
+    AstEnvironment.UpdateResult.t ->
     UpdateResult.t
 end
 
@@ -94,11 +93,10 @@ module type S = sig
        and type read_only = ReadOnly.t
 
   val update_this_and_all_preceding_environments
-    :  AstEnvironment.ReadOnly.t ->
+    :  AstEnvironment.t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
-    Ast.Reference.Set.t ->
+    AstEnvironment.UpdateResult.t ->
     UpdateResult.t
 end
 
@@ -184,11 +182,10 @@ module EnvironmentTable = struct
          and type read_only = ReadOnly.t
 
     val update_this_and_all_preceding_environments
-      :  AstEnvironment.ReadOnly.t ->
+      :  AstEnvironment.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
-      ast_environment_update_result:AstEnvironment.UpdateResult.t ->
-      Ast.Reference.Set.t ->
+      AstEnvironment.UpdateResult.t ->
       UpdateResult.t
   end
 
@@ -371,15 +368,13 @@ module EnvironmentTable = struct
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        modified_qualifiers
+        ast_environment_update_result
       =
       In.PreviousEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        modified_qualifiers
+        ast_environment_update_result
       |> update_only_this_environment ~scheduler ~configuration
   end
 

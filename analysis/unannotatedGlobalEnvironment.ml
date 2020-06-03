@@ -973,13 +973,8 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update_this_and_all_preceding_environments
-    ast_environment
-    ~scheduler
-    ~configuration
-    ~ast_environment_update_result:upstream
-    modified_qualifiers
-  =
+let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration upstream =
+  let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
       AstEnvironment.ReadOnly.get_source ast_environment qualifier
@@ -992,7 +987,7 @@ let update_this_and_all_preceding_environments
     in
     List.iter sources ~f:register
   in
-  let modified_qualifiers = Set.to_list modified_qualifiers in
+  let modified_qualifiers = AstEnvironment.UpdateResult.reparsed upstream in
   let update () =
     Scheduler.iter
       scheduler

@@ -17,14 +17,11 @@ let test_simple_registration context =
     let configuration = ScratchProject.configuration_of project in
     let update_result =
       let scheduler = Test.mock_scheduler () in
-      let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-      let ast_environment = AstEnvironment.read_only ast_environment in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        (Reference.Set.of_list qualifiers)
+        ast_environment_update_result
     in
     let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
     let expected_edges =
@@ -128,23 +125,9 @@ let test_inferred_generic_base context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context ~incremental_style:Shallow in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let sources =
-      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    in
-    let qualifiers =
-      List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-          qualifier)
-    in
     let configuration = ScratchProject.configuration_of project in
     let update_result =
-      Test.update_environments
-        ~ast_environment:(AstEnvironment.read_only ast_environment)
-        ~configuration
-        ~ast_environment_update_result
-        ~qualifiers:(Reference.Set.of_list qualifiers)
-        ()
+      Test.update_environments ~ast_environment ~configuration ast_environment_update_result
     in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
@@ -253,13 +236,11 @@ let test_updates context =
     let configuration = ScratchProject.configuration_of project in
     let update ~ast_environment_update_result () =
       let scheduler = Test.mock_scheduler () in
-      let ast_environment = AstEnvironment.read_only ast_environment in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        (Reference.Set.singleton (Reference.create "test"))
+        ast_environment_update_result
     in
     let update_result = update ~ast_environment_update_result () in
     let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in

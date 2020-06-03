@@ -80,7 +80,6 @@ let infer
   in
   let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
   let global_environment =
-    let ast_environment = AstEnvironment.read_only ast_environment in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
@@ -89,8 +88,7 @@ let infer
         ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        (Ast.Reference.Set.of_list qualifiers)
+        ast_environment_update_result
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     Statistics.performance ~name:"full environment built" ~timer ();

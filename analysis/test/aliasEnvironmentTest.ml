@@ -14,14 +14,12 @@ let test_simple_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
       AliasEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
-        ~ast_environment_update_result
-        (Reference.Set.singleton (Reference.create "test"))
+        ast_environment_update_result
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
@@ -64,23 +62,12 @@ let test_harder_registrations context =
   let assert_registers source name ~parser expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let sources =
-      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    in
-    let qualifiers =
-      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
-      |> Reference.Set.of_list
-    in
-    let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
       AliasEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
-        ~ast_environment_update_result
-        qualifiers
+        ast_environment_update_result
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
@@ -151,18 +138,13 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let read_only_ast_environment = AstEnvironment.read_only ast_environment in
     let update ~ast_environment_update_result () =
-      let qualifiers =
-        AstEnvironment.UpdateResult.reparsed ast_environment_update_result |> Reference.Set.of_list
-      in
       let scheduler = Test.mock_scheduler () in
       AliasEnvironment.update_this_and_all_preceding_environments
-        read_only_ast_environment
+        ast_environment
         ~scheduler
         ~configuration
-        ~ast_environment_update_result
-        qualifiers
+        ast_environment_update_result
     in
     let update_result = update ~ast_environment_update_result () in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in

@@ -2516,16 +2516,13 @@ let update_environments
     ?(scheduler = mock_scheduler ())
     ~configuration
     ~ast_environment
-    ~ast_environment_update_result
-    ~qualifiers
-    ()
+    ast_environment_update_result
   =
   AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
     ast_environment
     ~scheduler
     ~configuration
-    ~ast_environment_update_result
-    qualifiers
+    ast_environment_update_result
 
 
 module ScratchProject = struct
@@ -2679,17 +2676,8 @@ module ScratchProject = struct
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
     let global_environment =
-      let qualifiers =
-        List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-            qualifier)
-      in
       let update_result =
-        update_environments
-          ~ast_environment:(AstEnvironment.read_only ast_environment)
-          ~configuration
-          ~ast_environment_update_result
-          ~qualifiers:(Reference.Set.of_list qualifiers)
-          ()
+        update_environments ~ast_environment ~configuration ast_environment_update_result
       in
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
     in

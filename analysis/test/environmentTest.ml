@@ -524,11 +524,9 @@ let test_connect_type_order context =
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let update_result =
     update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ~ast_environment_update_result
-      ()
+      ast_environment_update_result
   in
   let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
   let order = class_hierarchy environment in
@@ -1137,11 +1135,9 @@ let test_connect_annotations_to_top context =
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let update_result =
     update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.of_list [Reference.create ""; Reference.create "test"])
-      ~ast_environment_update_result
-      ()
+      ast_environment_update_result
   in
   let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
@@ -1165,14 +1161,11 @@ let test_deduplicate context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let ast_environment = AstEnvironment.read_only ast_environment in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ~ast_environment_update_result
-      ()
+      ast_environment_update_result
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1220,14 +1213,11 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let ast_environment = AstEnvironment.read_only ast_environment in
   let update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ~ast_environment_update_result
-      ()
+      ast_environment_update_result
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1310,11 +1300,9 @@ let test_update_and_compute_dependencies context =
       in
       let update_result =
         update_environments
-          ~ast_environment:(AstEnvironment.read_only ast_environment)
+          ~ast_environment
           ~configuration:(ScratchProject.configuration_of project)
-          ~qualifiers:(Reference.Set.singleton (Reference.create "source"))
-          ~ast_environment_update_result
-          ()
+          ast_environment_update_result
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

@@ -14,14 +14,11 @@ let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
       update_environments
         ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
-        ~ast_environment_update_result
-        ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-        ()
+        ast_environment_update_result
     in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
@@ -91,14 +88,11 @@ let test_updates context =
         ~context
     in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let read_only_ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
       update_environments
-        ~ast_environment:read_only_ast_environment
+        ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
-        ~ast_environment_update_result
-        ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-        ()
+        ast_environment_update_result
     in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
@@ -150,11 +144,9 @@ let test_updates context =
         |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
       in
       update_environments
-        ~ast_environment:(AstEnvironment.read_only ast_environment)
+        ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
-        ~ast_environment_update_result
-        ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-        ()
+        ast_environment_update_result
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

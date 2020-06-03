@@ -40,28 +40,6 @@ type expectation = {
   analysis_mode: Taint.Result.mode;
 }
 
-let environment
-    ~sources
-    ?(configuration = Configuration.Analysis.create ())
-    ?(ast_environment = AstEnvironment.ReadOnly.create ())
-    ?(ast_environment_update_result = AstEnvironment.UpdateResult.create_for_testing ())
-    ()
-  =
-  let qualifiers =
-    List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-        qualifier)
-  in
-  let _update_result =
-    Test.update_environments
-      ~ast_environment
-      ~configuration
-      ~qualifiers:(Reference.Set.of_list qualifiers)
-      ~ast_environment_update_result
-      ()
-  in
-  ast_environment
-
-
 let outcome
     ~kind
     ?(source_parameters = [])

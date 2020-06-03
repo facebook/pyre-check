@@ -58,15 +58,13 @@ let recheck
     ~message:"Repopulating the environment"
     ~connections
     ~message_type:WarningMessage;
-  let ast_environment = AstEnvironment.read_only ast_environment in
 
   let annotated_global_environment_update_result =
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       ast_environment
       ~configuration
       ~scheduler
-      ~ast_environment_update_result
-      invalidated_environment_qualifiers
+      ast_environment_update_result
   in
   let environment =
     TypeEnvironment.create
