@@ -336,8 +336,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   let leaf_name =
                     Features.Simple.LeafName
                       {
-                        leaf = Format.sprintf "producer:%d:%s" producer_id canonical_name;
-                        port = Some canonical_port;
+                        leaf = canonical_name;
+                        port = Some (Format.sprintf "producer:%d:%s" producer_id canonical_port);
                       }
                   in
                   match annotation with

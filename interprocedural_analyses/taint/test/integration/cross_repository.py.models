@@ -24,9 +24,9 @@
             },
             "leaves": [
               {
-                "port": "result",
+                "port": "producer:1:result",
                 "kind": "UserControlled",
-                "name": "producer:1:crossRepositorySource",
+                "name": "crossRepositorySource",
                 "on_all_flows": true
               }
             ]
@@ -66,9 +66,9 @@
             "decl": null,
             "leaves": [
               {
-                "port": "formal(0)",
+                "port": "producer:1:formal(0)",
                 "kind": "UserControlled",
-                "name": "producer:1:crossRepositorySource",
+                "name": "crossRepositorySource",
                 "on_all_flows": true
               }
             ]
@@ -123,9 +123,9 @@
             },
             "leaves": [
               {
-                "port": "formal(0)",
+                "port": "producer:1:formal(0)",
                 "kind": "UserControlled",
-                "name": "producer:1:crossRepositorySource",
+                "name": "crossRepositorySource",
                 "on_all_flows": true
               }
             ]
@@ -165,9 +165,9 @@
             "decl": null,
             "leaves": [
               {
-                "port": "result",
+                "port": "producer:1:result",
                 "kind": "UserControlled",
-                "name": "producer:1:crossRepositorySource",
+                "name": "crossRepositorySource",
                 "on_all_flows": true
               }
             ]
