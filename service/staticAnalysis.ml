@@ -167,6 +167,8 @@ let analyze
   Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
   if dump_call_graph then
     DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
+  let timer = Timer.start () in
+  Log.info "Fetching initial callables to analyze...";
   let callables, stubs =
     let classify_source (callables, stubs) (callable, { Node.value = define; _ }) =
       if Define.is_stub define then
@@ -200,31 +202,39 @@ let analyze
     in
     List.fold qualifiers ~f:make_callables ~init:Callable.Set.empty
   in
-  let configuration_json =
-    let taint_model_paths =
-      configuration.Configuration.Analysis.taint_model_paths
-      |> List.map ~f:Path.absolute
-      |> List.map ~f:(fun directory -> `String directory)
-    in
-    let rule_settings =
-      match rule_filter with
-      | Some rule_filter -> ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
-      | None -> []
-    in
-    `Assoc
-      [
-        ( "taint",
-          `Assoc
-            ( ["model_paths", `List taint_model_paths; "verify_models", `Bool verify_models]
-            @ rule_settings ) );
-      ]
-  in
+  Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in
+  let timer = Timer.start () in
+  Log.info "Initializing analysis...";
   (* Initialize and add initial models of analyses to shared mem. *)
   let () =
+    let configuration_json =
+      let taint_model_paths =
+        configuration.Configuration.Analysis.taint_model_paths
+        |> List.map ~f:Path.absolute
+        |> List.map ~f:(fun directory -> `String directory)
+      in
+      let rule_settings =
+        match rule_filter with
+        | Some rule_filter ->
+            ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
+        | None -> []
+      in
+      `Assoc
+        [
+          ( "taint",
+            `Assoc
+              ( ["model_paths", `List taint_model_paths; "verify_models", `Bool verify_models]
+              @ rule_settings ) );
+        ]
+    in
+
     Analysis.initialize analyses ~configuration:configuration_json ~environment ~functions:callables
     |> Analysis.record_initial_models ~functions:callables ~stubs
   in
+  Statistics.performance ~name:"Computed initial analysis state" ~timer ();
+  let timer = Timer.start () in
+  Log.info "Computing overrides...";
   let override_dependencies = DependencyGraph.from_overrides overrides in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
@@ -238,6 +248,7 @@ let analyze
     in
     List.iter override_targets ~f:add_predefined
   in
+  Statistics.performance ~name:"Computed overrides" ~timer ();
   let all_callables = List.rev_append override_targets callables in
   Log.info
     "Analysis fixpoint started for %d overrides %d functions..."
