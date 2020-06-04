@@ -170,28 +170,51 @@ let analyze
       else
         callable :: callables, stubs
     in
-    let make_callables
-        ((existing_callables, existing_stubs, filtered_callables) as result)
-        qualifier
-      =
-      get_source qualifier
-      >>| (fun source ->
-            let callables, new_filtered_callables =
-              regular_and_filtered_callables ~resolution:global_resolution ~source
-            in
-            let callables, stubs =
-              List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
-            in
-            let updated_filtered_callables =
-              List.fold
-                new_filtered_callables
-                ~init:filtered_callables
-                ~f:(Fn.flip Callable.Set.add)
-            in
-            callables, stubs, updated_filtered_callables)
-      |> Option.value ~default:result
+    let map result qualifiers =
+      let make_callables
+          ((existing_callables, existing_stubs, filtered_callables) as result)
+          qualifier
+        =
+        get_source qualifier
+        >>| (fun source ->
+              let callables, new_filtered_callables =
+                regular_and_filtered_callables ~resolution:global_resolution ~source
+              in
+              let callables, stubs =
+                List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
+              in
+              let updated_filtered_callables =
+                List.fold
+                  new_filtered_callables
+                  ~init:filtered_callables
+                  ~f:(Fn.flip Callable.Set.add)
+              in
+              callables, stubs, updated_filtered_callables)
+        |> Option.value ~default:result
+      in
+      List.fold qualifiers ~f:make_callables ~init:result
     in
-    List.fold qualifiers ~f:make_callables ~init:([], [], Callable.Set.empty)
+    let reduce
+        (new_callables, new_stubs, new_filtered_callables)
+        (callables, stubs, filtered_callables)
+      =
+      ( List.rev_append new_callables callables,
+        List.rev_append new_stubs stubs,
+        Callable.Set.union new_filtered_callables filtered_callables )
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunk_size:50
+           ~preferred_chunks_per_worker:1
+           ())
+      ~map
+      ~reduce
+      ~initial:([], [], Callable.Set.empty)
+      ~inputs:qualifiers
+      ()
   in
   Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in
