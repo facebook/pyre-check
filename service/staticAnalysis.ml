@@ -60,15 +60,16 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
   List.filter_map ~f:record_toplevel_definition defines
 
 
-let callables ~resolution ~source =
+let regular_and_filtered_callables ~resolution ~source =
+  let callables = unfiltered_callables ~resolution ~source in
   if GlobalResolution.source_is_unit_test resolution ~source then
-    []
+    [], List.map callables ~f:fst
   else if Ast.SourcePath.is_stub source.source_path then
-    let callables = unfiltered_callables ~resolution ~source in
-    List.filter callables ~f:(fun (_, { Node.value = define; _ }) ->
-        not (Define.is_toplevel define || Define.is_class_toplevel define))
+    ( List.filter callables ~f:(fun (_, { Node.value = define; _ }) ->
+          not (Define.is_toplevel define || Define.is_class_toplevel define)),
+      [] )
   else
-    unfiltered_callables ~resolution ~source
+    callables, []
 
 
 let analyze
@@ -88,13 +89,6 @@ let analyze
     ()
   =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let resolution =
-    TypeCheck.resolution
-      global_resolution
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-  in
-
   let get_source qualifier =
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
@@ -169,38 +163,35 @@ let analyze
     DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
   let timer = Timer.start () in
   Log.info "Fetching initial callables to analyze...";
-  let callables, stubs =
+  let callables, stubs, filtered_callables =
     let classify_source (callables, stubs) (callable, { Node.value = define; _ }) =
       if Define.is_stub define then
         callables, callable :: stubs
       else
         callable :: callables, stubs
     in
-    let make_callables result qualifier =
+    let make_callables
+        ((existing_callables, existing_stubs, filtered_callables) as result)
+        qualifier
+      =
       get_source qualifier
       >>| (fun source ->
-            callables ~resolution:global_resolution ~source
-            |> List.fold ~f:classify_source ~init:result)
-      |> Option.value ~default:result
-    in
-    List.fold qualifiers ~f:make_callables ~init:([], [])
-  in
-  let filtered_callables =
-    let make_callables result qualifier =
-      get_source qualifier
-      >>| (fun source ->
-            if
-              GlobalResolution.source_is_unit_test (Resolution.global_resolution resolution) ~source
-            then
+            let callables, new_filtered_callables =
+              regular_and_filtered_callables ~resolution:global_resolution ~source
+            in
+            let callables, stubs =
+              List.fold callables ~f:classify_source ~init:(existing_callables, existing_stubs)
+            in
+            let updated_filtered_callables =
               List.fold
-                (unfiltered_callables ~resolution:global_resolution ~source)
-                ~f:(fun result (callable, _) -> Callable.Set.add callable result)
-                ~init:result
-            else
-              result)
+                new_filtered_callables
+                ~init:filtered_callables
+                ~f:(Fn.flip Callable.Set.add)
+            in
+            callables, stubs, updated_filtered_callables)
       |> Option.value ~default:result
     in
-    List.fold qualifiers ~f:make_callables ~init:Callable.Set.empty
+    List.fold qualifiers ~f:make_callables ~init:([], [], Callable.Set.empty)
   in
   Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in

@@ -435,7 +435,8 @@ let initialize
   in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let callables, stubs =
-    Service.StaticAnalysis.callables ~resolution:global_resolution ~source
+    Service.StaticAnalysis.regular_and_filtered_callables ~resolution:global_resolution ~source
+    |> fst
     |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in

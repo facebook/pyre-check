@@ -16,10 +16,10 @@ val record_and_merge_call_graph
 
 val record_overrides : DependencyGraph.overrides -> unit
 
-val callables
+val regular_and_filtered_callables
   :  resolution:GlobalResolution.t ->
   source:Source.t ->
-  (Callable.real_target * Define.t Node.t) list
+  (Callable.real_target * Define.t Node.t) list * Callable.real_target list
 
 val analyze
   :  scheduler:Scheduler.t ->

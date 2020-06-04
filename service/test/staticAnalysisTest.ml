@@ -20,7 +20,8 @@ let test_callables context =
           environment
           (Ast.Reference.create "test") )
     in
-    Service.StaticAnalysis.callables ~resolution ~source
+    Service.StaticAnalysis.regular_and_filtered_callables ~resolution ~source
+    |> fst
     |> List.map ~f:fst
     |> assert_equal
          ~printer:(List.to_string ~f:Interprocedural.Callable.show_real_target)
