@@ -1061,7 +1061,7 @@ let rec process
           (* Make sure the IDE flushes its state about this file, by sending back all the errors for
              this file. *)
           update_open_documents ~state path;
-          { state; response = None }
+          process_display_type_errors_request ~state ~configuration [path]
       | CloseDocument path ->
           let { State.open_documents; _ } = state in
           let relative_path =
