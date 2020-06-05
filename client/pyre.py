@@ -40,42 +40,7 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
         arguments.command = commands.Check.from_arguments
 
 
-# Need the default argument here since this is our entry point in setup.py
-def main(argv: List[str] = sys.argv[1:]) -> int:
-    start = time.time()
-
-    parser = argparse.ArgumentParser(
-        allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog="environment variables:"
-        "\n   `PYRE_BINARY` overrides the pyre binary used."
-        "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
-        "configuration files.",
-    )
-    commands.Command.add_arguments(parser)
-
-    # Subcommands.
-    subcommand_names = ", ".join(
-        [command.NAME for command in commands.COMMANDS if not command.HIDDEN]
-    )
-    parsed_commands = parser.add_subparsers(
-        metavar="{}".format(subcommand_names),
-        help="""
-        The pyre command to run; defaults to `incremental`.
-        Run `pyre command --help` for documentation on a specific command.
-        """,
-    )
-
-    for command in commands.COMMANDS:
-        command.add_subparser(parsed_commands)
-
-    arguments = parser.parse_args(argv)
-
-    log.initialize(arguments.noninteractive)
-
-    if not hasattr(arguments, "command"):
-        _set_default_command(arguments)
-
+def run_pyre(arguments: argparse.Namespace, start_time: float) -> int:
     command: Optional[CommandParser] = None
     client_exception_message = ""
     # Having this as a fails-by-default helps flag unexpected exit
@@ -150,7 +115,7 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
                     configuration=configuration,
                     integers={
                         "exit_code": exit_code,
-                        "runtime": int((time.time() - start) * 1000),
+                        "runtime": int((time.time() - start_time) * 1000),
                     },
                     normals={
                         "root": configuration.local_configuration_root,
@@ -163,6 +128,45 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
                 )
 
     return exit_code
+
+
+# Need the default argument here since this is our entry point in setup.py
+def main(argv: List[str] = sys.argv[1:]) -> int:
+    start_time = time.time()
+
+    parser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="environment variables:"
+        "\n   `PYRE_BINARY` overrides the pyre binary used."
+        "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
+        "configuration files.",
+    )
+    commands.Command.add_arguments(parser)
+
+    # Subcommands.
+    subcommand_names = ", ".join(
+        [command.NAME for command in commands.COMMANDS if not command.HIDDEN]
+    )
+    parsed_commands = parser.add_subparsers(
+        metavar="{}".format(subcommand_names),
+        help="""
+        The pyre command to run; defaults to `incremental`.
+        Run `pyre command --help` for documentation on a specific command.
+        """,
+    )
+
+    for command in commands.COMMANDS:
+        command.add_subparser(parsed_commands)
+
+    arguments = parser.parse_args(argv)
+
+    log.initialize(arguments.noninteractive)
+
+    if not hasattr(arguments, "command"):
+        _set_default_command(arguments)
+
+    return run_pyre(arguments, start_time)
 
 
 if __name__ == "__main__":
