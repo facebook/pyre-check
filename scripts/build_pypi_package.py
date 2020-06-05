@@ -21,7 +21,7 @@ RUNTIME_DEPENDENCIES = [
     "dataclasses",
     "pywatchman",
     "psutil",
-    "libcst",
+    "libcst>=0.3.6",
     "pyre_extensions",
 ]
 
@@ -74,7 +74,7 @@ def add_init_files(build_root: Path) -> None:
     mkdir_and_init(module_path)
     mkdir_and_init(module_path / "tools")
     mkdir_and_init(module_path / "tools/upgrade")
-    (module_path / "client").mkdir()
+    mkdir_and_init(module_path / "client")
 
 
 def rsync_files(

@@ -40,7 +40,8 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
         arguments.command = commands.Check.from_arguments
 
 
-def main(argv: List[str]) -> int:
+# Need the default argument here since this is our entry point in setup.py
+def main(argv: List[str] = sys.argv[1:]) -> int:
     start = time.time()
 
     parser = argparse.ArgumentParser(
