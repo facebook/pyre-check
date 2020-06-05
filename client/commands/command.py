@@ -32,6 +32,7 @@ from ..find_directories import (
 )
 from ..log import StreamLogger
 from ..process import register_non_unique_process
+from ..recently_used_configurations import log_as_recently_used
 from ..resources import LOG_DIRECTORY, find_log_directory
 from ..socket_connection import SocketConnection, SocketException
 
@@ -609,6 +610,10 @@ class Command(CommandParser, ABC):
         if configuration and configuration.disabled:
             LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
         else:
+            log_as_recently_used(
+                local_configuration=self.relative_local_root,
+                dot_pyre_directory=self._dot_pyre_directory,
+            )
             self._run()
         return self
 

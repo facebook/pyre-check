@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import IO, List, Optional
 from unittest.mock import MagicMock, patch
 
-from ... import commands
+from ... import commands, filesystem
 from ...analysis_directory import AnalysisDirectory
 from ...commands.command import Result
 from ...commands.rage import Rage
@@ -76,11 +76,14 @@ class RageTest(unittest.TestCase):
         )
         self.assert_output(stdout)
 
+    @patch.object(filesystem, "acquire_lock")
     @patch("subprocess.run")
     @patch.object(
         commands.Command, "_call_client", side_effect=_call_client_side_effect
     )
-    def test_file_output(self, call_client: MagicMock, run: MagicMock) -> None:
+    def test_file_output(
+        self, call_client: MagicMock, run: MagicMock, acquire_lock: MagicMock
+    ) -> None:
         arguments = mock_arguments(local_configuration="foo/bar")
         configuration = mock_configuration()
         original_directory = "/original/directory"
@@ -94,15 +97,24 @@ class RageTest(unittest.TestCase):
         output_file.write = output_content.write
         output_file.flush = output_content.flush
 
-        with patch("builtins.open", return_value=output_file) as open:
+        outer_output_file: IO[str] = output_file
+
+        output_path: str = "/output"
+
+        def _open(file: str, mode: str) -> IO[str]:
+            if file == output_path:
+                return outer_output_file
+            return MagicMock()
+
+        with patch("builtins.open", side_effect=_open) as open:
             Rage(
                 arguments,
                 original_directory=original_directory,
                 configuration=configuration,
                 analysis_directory=analysis_directory,
-                output_path="/output",
+                output_path=output_path,
             ).run()
-            open.assert_called_once_with("/output", "w")
+            open.assert_called_once_with(output_path, "w")
             call_client.assert_called_once_with(
                 command=Rage.NAME, capture_output=False, stdout=output_file
             )
