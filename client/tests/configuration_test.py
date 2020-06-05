@@ -12,6 +12,7 @@ import unittest
 from typing import Any, NamedTuple, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
+from .. import configuration
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
 from ..find_directories import CONFIGURATION_FILE
@@ -492,8 +493,16 @@ class ConfigurationTest(unittest.TestCase):
     # run - it's not important for this test anyway.
     @patch.object(Configuration, "_apply_defaults")
     @patch.object(Configuration, "_validate")
+    @patch(f"{configuration.__name__}.expand_relative_path")
+    @patch(f"{configuration.__name__}.find_root")
+    @patch(f"{configuration.__name__}.Path.resolve")
+    @patch("json.loads")
     def test_configurations(
         self,
+        json_loads,
+        path_resolve,
+        find_root,
+        expand_relative_path,
         configuration_validate,
         configuration_defaults,
         os_access,
@@ -501,11 +510,17 @@ class ConfigurationTest(unittest.TestCase):
         os_path_isdir,
         os_path_isfile,
     ) -> None:
+        # Do not expand test paths against real filesystem
+        expand_relative_path.side_effect = lambda root, path: path
+
+        # Assume no nested configurations.
+        find_root.return_value = None
+
         # Assume all paths are valid.
         os_access.return_value = True
         os_path_exists.return_value = True
 
-        # Try with directories first.
+        # Test configuration directories.
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
 
@@ -551,19 +566,78 @@ class ConfigurationTest(unittest.TestCase):
                 "local/" + CONFIGURATION_FILE + ".local",
             )
 
-        # Try with regular configuration files then.
+        # Test configuration files.
         os_path_isdir.return_value = False
         os_path_isfile.return_value = True
         with patch.object(Configuration, "_read") as Configuration_read:
             configuration = Configuration(
-                local_configuration="local/.some_configuration"
+                local_configuration="local/.pyre_configuration.local"
             )
             Configuration_read.assert_has_calls(
-                [call("local/.some_configuration"), call(CONFIGURATION_FILE)]
+                [call("local/.pyre_configuration.local"), call(CONFIGURATION_FILE)]
             )
             self.assertEqual(
-                configuration.local_configuration, "local/.some_configuration"
+                configuration.local_configuration, "local/.pyre_configuration.local"
             )
+
+        # Test nested configurations.
+        find_root.side_effect = ["root", None]
+        os_path_isdir.return_value = True
+        os_path_isfile.return_value = False
+        json_loads.side_effect = [
+            {
+                "source_directories": ["a"],
+                "binary": "abc",
+                "logger": "/usr/logger",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "strict": False,
+                "extensions": [".a", ".b", ""],
+                "ignore_all_errors": ["root/local"],
+            },
+            {},
+            {
+                "source_directories": ["a"],
+                "binary": "abc",
+                "logger": "/usr/logger",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "strict": False,
+                "extensions": [".a", ".b", ""],
+            },
+            {},
+        ]
+        try:
+            Configuration(local_configuration="root/local")
+        except BaseException:
+            self.fail("Configuration should not raise.")
+
+        find_root.side_effect = ["root", None]
+        json_loads.side_effect = [
+            {
+                "source_directories": ["a"],
+                "binary": "abc",
+                "logger": "/usr/logger",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "strict": False,
+                "ignore_all_errors": ["not_local"],
+                "extensions": [".a", ".b", ""],
+            },
+            {},
+            {
+                "source_directories": ["a"],
+                "binary": "abc",
+                "logger": "/usr/logger",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "strict": False,
+                "extensions": [".a", ".b", ""],
+            },
+            {},
+        ]
+        with self.assertRaises(EnvironmentException):
+            Configuration(local_configuration="root/local")
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")

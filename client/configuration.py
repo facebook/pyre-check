@@ -16,6 +16,7 @@ import site
 import subprocess
 import sys
 from logging import Logger
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from .exceptions import EnvironmentException
@@ -427,17 +428,48 @@ class Configuration:
             return None
 
     def _check_nested_configurations(self, local_root: str) -> None:
+        # TODO(T67874463): Handle sanity checks against project configurations
         parent_local_root = find_root(
             os.path.dirname(local_root.rstrip("/")), LOCAL_CONFIGURATION_FILE
         )
-        if parent_local_root:
-            LOG.warning(
-                "Local configuration is nested under another local configuration at "
-                "`{}`.\n   Please combine the sources into a single configuration or "
-                "split the parent configuration to avoid inconsistent errors.".format(
-                    parent_local_root
-                )
+        if not parent_local_root:
+            return
+
+        parent_error = None
+        excluded_from_parent = False
+        try:
+            parent_local_configuration = Configuration(
+                local_configuration=parent_local_root,
+                search_path=[search_path.root for search_path in self._search_path],
+                binary=self._binary,
+                typeshed=self._typeshed,
+                buck_builder_binary=self._buck_builder_binary,
+                excludes=self.excludes,
+                logger=self.logger,
+                formatter=self.formatter,
+                log_directory=self._log_directory,
             )
+            for ignore_element in parent_local_configuration.ignore_all_errors:
+                paths_to_ignore = list(Path(local_root).parents) + [Path(local_root)]
+                if Path(ignore_element) in paths_to_ignore:
+                    excluded_from_parent = True
+        except EnvironmentException as error:
+            parent_error = error
+
+        if not excluded_from_parent:
+            relative_path = str(
+                Path(local_root).resolve().relative_to(parent_local_root)
+            )
+            error_message = (
+                "Local configuration is nested under another local configuration at "
+                f"`{parent_local_root}`.\nPlease add `{relative_path}` to the "
+                "`ignore_all_errors` field of the parent, or combine the sources "
+                "into a single configuration, or split the parent configuration to "
+                "avoid inconsistent errors."
+            )
+            raise EnvironmentException(error_message)
+        elif parent_error:
+            raise EnvironmentException(parent_error)
 
     def _check_read_local_configuration(self, path: str) -> None:
         if not os.path.exists(path):
