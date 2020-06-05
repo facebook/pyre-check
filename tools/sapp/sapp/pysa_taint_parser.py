@@ -6,7 +6,8 @@
 """Parse Pysa/Taint output for Zoncolan processing"""
 
 import logging
-from typing import IO, Any, Dict, Iterable, List, Tuple
+from collections import defaultdict
+from typing import IO, Any, Dict, Iterable, List, Optional, Tuple
 
 import ujson as json
 
@@ -183,12 +184,16 @@ class Parser(BaseParser):
         issue["message"] = json["message"]
         issue["filename"] = self._extract_filename(json["filename"])
 
-        issue["preconditions"], issue[
-            "final_sinks"
-        ], bw_features = self._parse_issue_traces(json["traces"], "backward", "sink")
-        issue["postconditions"], issue[
-            "initial_sources"
-        ], fw_features = self._parse_issue_traces(json["traces"], "forward", "source")
+        (
+            issue["preconditions"],
+            issue["final_sinks"],
+            bw_features,
+        ) = self._parse_issue_traces(json["traces"], "backward", "sink")
+        (
+            issue["postconditions"],
+            issue["initial_sources"],
+            fw_features,
+        ) = self._parse_issue_traces(json["traces"], "forward", "source")
         if "features" in json:
             issue["features"] = json["features"]
         else:
@@ -261,22 +266,33 @@ class Parser(BaseParser):
         # For now we don't have leaf distances.
         leaves = self._parse_leaves(trace.get("leaves", []))
         if "root" in trace:
-            yield {
-                "callee": "leaf",
-                "port": leaf_port,
-                "location": trace["root"],
-                "leaves": leaves,
-                "titos": trace.get("tito", []),
-                "features": trace.get("features", []),
-                "type_interval": {},
-            }
+            leaf_name_and_port_to_leaves = defaultdict(list)
+            for leaf_name, leaf_kind, distance, port in leaves:
+                port = port or leaf_port
+                callee_name = "leaf"
+                if leaf_name is not None:
+                    callee_name = leaf_name
+                leaf_name_and_port_to_leaves[(callee_name, port)].append(
+                    (leaf_name, leaf_kind, distance)
+                )
+
+            for ((callee_name, port), leaves) in leaf_name_and_port_to_leaves.items():
+                yield {
+                    "callee": callee_name,
+                    "port": port,
+                    "location": trace["root"],
+                    "leaves": leaves,
+                    "titos": trace.get("tito", []),
+                    "features": trace.get("features", []),
+                    "type_interval": {},
+                }
         elif "call" in trace:
             call = trace["call"]
             location = call["position"]
             port = call["port"]
             resolves_to = call.get("resolves_to", [])
             length = call.get("length", 0)
-            leaves = [(name, kind, length) for (name, kind, _) in leaves]
+            leaves = [(name, kind, length) for (name, kind, _, _) in leaves]
 
             for resolved in resolves_to:
                 yield {
@@ -292,9 +308,19 @@ class Parser(BaseParser):
     def _leaf_name(self, leaf) -> str:
         return leaf.get("name", None)
 
-    def _parse_leaves(self, leaves) -> List[Tuple[str, str, int]]:
-        """Returns a list of pairs (leaf_name, leaf_kind, distance)"""
-        return [(self._leaf_name(leaf), leaf["kind"], 0) for leaf in leaves]
+    def _leaf_port(self, leaf) -> str:
+        return leaf.get("port", None)
+
+    def _parse_leaves(self, leaves) -> List[Tuple[str, str, int, Optional[str]]]:
+        """
+        Returns a list of tuples ((leaf_name, leaf_kind, distance, port)).
+        We only return a port in the case that exactly one matches the leaf for the
+        trace frame.
+        """
+        return [
+            (self._leaf_name(leaf), leaf["kind"], 0, self._leaf_port(leaf))
+            for leaf in leaves
+        ]
 
     @staticmethod
     def is_supported(metadata: Metadata):
