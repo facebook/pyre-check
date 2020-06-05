@@ -55,7 +55,7 @@ DONT_CARE_PROGRESS_VALUE = 1
 def _resolve_filter_paths(
     source_directories: List[str],
     targets: List[str],
-    configuration: "Configuration",
+    configuration: Configuration,
     original_directory: str,
 ) -> Set[str]:
     filter_paths = set()
@@ -603,6 +603,14 @@ def resolve_analysis_directory(
     isolate: bool = False,
     relative_local_root: Optional[str] = None,
 ) -> AnalysisDirectory:
+    # Generate filter directories based on command-line input.
+    if filter_directory:
+        filter_paths = {filter_directory}
+    else:
+        filter_paths = _resolve_filter_paths(
+            source_directories, targets, configuration, original_directory
+        )
+
     # Only read from the configuration if no explicit targets are passed in.
     if not source_directories and not targets:
         source_directories = configuration.source_directories
@@ -620,13 +628,6 @@ def resolve_analysis_directory(
             "Setting up a `%s` with `%s` may reduce overhead.",
             configuration_name,
             command,
-        )
-
-    if filter_directory:
-        filter_paths = {filter_directory}
-    else:
-        filter_paths = _resolve_filter_paths(
-            source_directories, targets, configuration, original_directory
         )
 
     local_configuration_root = configuration.local_configuration_root

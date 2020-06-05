@@ -614,7 +614,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         "generate_source_directories",
         side_effect=lambda targets, build, prompt: targets,
     )
-    def test_resolve_analysis_directory(self, buck) -> None:  # pyre-fixme[2]
+    @patch.object(os.path, "relpath", side_effect=lambda path, relative: path)
+    def test_resolve_analysis_directory(self, relpath, buck) -> None:  # pyre-fixme[2]
         original_directory = "/project"
         current_directory = "/project"
 
@@ -680,6 +681,31 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory=original_directory,
             current_directory=current_directory,
             filter_directory="/filter",
+            use_buck_builder=False,
+            buck_mode=None,
+            debug=False,
+        )
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
+
+        configuration.source_directories = []
+        configuration.targets = ["//a/b/..."]
+        configuration.local_configuration_root = "a"
+        expected_analysis_directory = SharedAnalysisDirectory(
+            [],
+            ["//a/b/..."],
+            local_configuration_root="a",
+            original_directory="/project",
+            filter_paths={"a"},
+        )
+        analysis_directory = resolve_analysis_directory(
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory=original_directory,
+            current_directory=current_directory,
+            filter_directory=None,
             use_buck_builder=False,
             buck_mode=None,
             debug=False,
