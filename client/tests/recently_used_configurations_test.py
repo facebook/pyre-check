@@ -4,11 +4,16 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import os
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from .. import filesystem, recently_used_configurations
+from ..recently_used_configurations import (
+    RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE,
+    RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK,
+)
 
 
 class RecentlyUsedConfigurationsTest(unittest.TestCase):
@@ -110,4 +115,14 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
                     )
                 ],
             ],
+        )
+
+    @patch.object(os, "remove")
+    def test_delete_cache(self, remove: MagicMock) -> None:
+        recently_used_configurations.delete_cache(Path("/.pyre"))
+        remove.assert_has_calls(
+            [
+                call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK)),
+                call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE)),
+            ]
         )

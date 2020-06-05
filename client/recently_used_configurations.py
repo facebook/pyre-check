@@ -5,6 +5,7 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -46,6 +47,17 @@ def _load_recently_used_configurations(dot_pyre_directory: Path) -> List[str]:
             f"`{str(recently_used_configurations_path)}`"
         )
     return configurations
+
+
+def delete_cache(dot_pyre_directory: Path) -> None:
+    try:
+        os.remove(str(dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK))
+        os.remove(str(dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE))
+    except OSError as error:
+        LOG.debug(
+            "Error while trying to delete recently-used configurations files: "
+            f"{error}."
+        )
 
 
 def log_as_recently_used(

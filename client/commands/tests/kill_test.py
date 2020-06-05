@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import psutil
 
-from ... import watchman
+from ... import recently_used_configurations, watchman
 from ...analysis_directory import AnalysisDirectory
 from .. import kill
 from ..kill import Kill, _get_process_name
@@ -142,12 +142,14 @@ class KillTest(unittest.TestCase):
     @patch.object(
         subprocess, "check_output", return_value=b"/some/scratch/directory/pyre\n"
     )
+    @patch.object(recently_used_configurations, "delete_cache")
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(
         self,
         kill_init: MagicMock,
         remove_tree: MagicMock,
+        delete_recent_cache: MagicMock,
         check_output: MagicMock,
         path_glob: MagicMock,
     ) -> None:
@@ -173,6 +175,7 @@ class KillTest(unittest.TestCase):
                 call("/some/scratch/directory/pyre/.buck_builder_cache_isolated_1234"),
             ]
         )
+        delete_recent_cache.assert_called_once()
 
     @patch.object(subprocess, "check_output")
     @patch.object(shutil, "rmtree")

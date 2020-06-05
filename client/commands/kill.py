@@ -16,7 +16,7 @@ from typing import Optional
 
 import psutil
 
-from .. import configuration_monitor, watchman
+from .. import configuration_monitor, recently_used_configurations, watchman
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
@@ -158,6 +158,7 @@ class Kill(Command):
                         "Failed to delete buck builder cache due to exception: %s.",
                         exception,
                     )
+        recently_used_configurations.delete_cache(self._dot_pyre_directory)
 
     def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):
