@@ -41,11 +41,10 @@ class MonitorTest(unittest.TestCase):
         self.assertEqual(subscription.name, "pyre_file_change_subscription")
         self.assertEqual(subscription.subscription["fields"], ["name"])
         self.assertEqual(
-            subscription.subscription["expression"][0:3],
-            ["allof", ["type", "f"], ["not", "empty"]],
+            subscription.subscription["expression"][0:2], ["allof", ["type", "f"]]
         )
         self.assertCountEqual(
-            subscription.subscription["expression"][3],
+            subscription.subscription["expression"][2],
             [
                 "anyof",
                 ["suffix", "py"],
@@ -64,11 +63,10 @@ class MonitorTest(unittest.TestCase):
         self.assertEqual(subscription.name, "pyre_file_change_subscription")
         self.assertEqual(subscription.subscription["fields"], ["name"])
         self.assertEqual(
-            subscription.subscription["expression"][0:3],
-            ["allof", ["type", "f"], ["not", "empty"]],
+            subscription.subscription["expression"][0:2], ["allof", ["type", "f"]]
         )
         self.assertCountEqual(
-            subscription.subscription["expression"][3],
+            subscription.subscription["expression"][2],
             [
                 "anyof",
                 ["suffix", "py"],

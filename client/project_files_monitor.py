@@ -75,7 +75,6 @@ class ProjectFilesMonitor(Subscriber):
             "expression": [
                 "allof",
                 ["type", "f"],
-                ["not", "empty"],
                 [
                     "anyof",
                     *[["suffix", extension] for extension in self._extensions],

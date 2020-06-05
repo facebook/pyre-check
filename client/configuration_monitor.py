@@ -71,7 +71,6 @@ class ConfigurationMonitor(Subscriber):
                     "expression": [
                         "allof",
                         ["type", "f"],
-                        ["not", "empty"],
                         [
                             "anyof",
                             ["suffix", "pyre_configuration.local"],
