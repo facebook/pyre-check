@@ -216,6 +216,7 @@ let analyze
       ~inputs:qualifiers
       ()
   in
+  let callables = List.sort callables ~compare:Interprocedural.Callable.compare in
   Statistics.performance ~name:"Fetched initial callables to analyze" ~timer ();
   let analyses = [analysis_kind] in
   let timer = Timer.start () in

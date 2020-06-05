@@ -41,7 +41,28 @@ type t =
   [ non_override_target
   | override_target
   ]
-[@@deriving show, sexp, compare, hash, eq]
+[@@deriving show, sexp, hash, eq]
+
+(* Lower priority appears earlier in comparison. *)
+let priority = function
+  | `Function _ -> 0
+  | `Method _ -> 1
+  | `OverrideTarget _ -> 2
+  | `Object _ -> 3
+
+
+let compare left right =
+  let priority_comparison = Int.compare (priority left) (priority right) in
+  if priority_comparison <> 0 then
+    priority_comparison
+  else (* left and right must have the same variant. *)
+    match left, right with
+    | `Function first, `Function second -> String.compare first second
+    | `Method first, `Method second -> compare_method_name first second
+    | `OverrideTarget first, `OverrideTarget second -> compare_method_name first second
+    | `Object first, `Object second -> String.compare first second
+    | _ -> failwith "The compared targets must belong to the same variant."
+
 
 (* pp forces type to be equal to t, but we want [<t] *)
 let pretty_print formatter callable =
