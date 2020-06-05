@@ -8,7 +8,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import libcst
 from typing_extensions import Final
@@ -22,11 +22,11 @@ from ..filesystem import (
     find_files,
     find_targets,
     get_filesystem,
-    path_exists,
     remove_non_pyre_ignores,
 )
 from ..repository import Repository
 from .command import ErrorSuppressingCommand
+from .strict_default import StrictDefault
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
         self._pyre_only: bool = arguments.pyre_only
+        self._strict: bool = arguments.strict
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -88,6 +89,11 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             "--fixme-threshold",
             type=int,
             help="Ignore all errors in a file if fixme count exceeds threshold.",
+        )
+        parser.add_argument(
+            "--strict",
+            action="store_true",
+            help="Turn on default strict mode if any targets were strict.",
         )
         parser.add_argument(
             "--pyre-only",
@@ -144,6 +150,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     for target in targets
                 ]
 
+        apply_strict = self._strict and any(target.strict for target in targets)
         configuration_path = directory / ".pyre_configuration.local"
         if configuration_path.exists():
             LOG.warning(
@@ -203,6 +210,21 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     LOG.warning(f"Could not suppress all errors in {path}")
                     LOG.info("Run with --unsafe to force suppression anyway.")
                     self._repository.revert_all(remove_untracked=True)
+
+        if apply_strict:
+            LOG.info(
+                "Some targets were running strict type checking. "
+                "Adding strict setting to configuration."
+            )
+            # TODO(T67960514): Define constructors from concrete elements to
+            # avoid altering arguments.
+            strict_arguments = self._arguments
+            strict_arguments.lint = False
+            strict_arguments.fixme_threshold = 0
+            strict_arguments.local_configuration = directory
+            strict_arguments.remove_strict_headers = True
+            strict_codemod = StrictDefault(strict_arguments, self._repository)
+            strict_codemod.run()
 
         # Lint and re-run pyre once to resolve most formatting issues
         if self._lint:
