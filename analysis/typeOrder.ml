@@ -333,11 +333,7 @@ module OrderImplementation = struct
             | None -> union )
 
 
-    and meet
-        ({ constructor; is_protocol; assumptions = { protocol_assumptions; _ }; _ } as order)
-        left
-        right
-      =
+    and meet ({ is_protocol; assumptions = { protocol_assumptions; _ }; _ } as order) left right =
       if Type.equal left right then
         left
       else
@@ -426,12 +422,9 @@ module OrderImplementation = struct
             Type.Callable { Callable.kind = Callable.Named right; _ } )
           when Reference.equal left right ->
             callable
-        | Type.Callable callable, other
-        | other, Type.Callable callable ->
-            Option.some_if (Type.is_meta other) other
-            >>= constructor ~protocol_assumptions
-            >>| meet order (Type.Callable callable)
-            |> Option.value ~default:Type.Bottom
+        | Type.Callable _, _
+        | _, Type.Callable _ ->
+            Bottom
         | Type.Literal _, _
         | _, Type.Literal _ ->
             Type.Bottom
