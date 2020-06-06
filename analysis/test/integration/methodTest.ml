@@ -1716,6 +1716,43 @@ let test_check_callable_protocols context =
        provided.";
       "Revealed type [-1]: Revealed type for `f` is `typing.Callable[..., str]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      class C:
+        def __init__(self, x: int) -> None:
+          pass
+
+      f: Callable[[int], C] = C
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Callable
+      class C:
+        def __init__(self, x: int) -> None:
+          pass
+        def __call__(self, x: str) -> int:
+          return 42
+
+      f: Callable[[C, str], int] = C
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Callable
+      class C:
+        def __init__(self, x: int) -> None:
+          pass
+        def __call__(self, x: str) -> int:
+          return 42
+
+      f: Callable[[int], C] = C
+    |}
+    [
+      "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
+       is used as type `typing.Type[C]`.";
+    ];
   ()
 
 

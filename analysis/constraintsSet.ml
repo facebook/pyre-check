@@ -369,7 +369,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ( {
           class_hierarchy =
             { instantiate_successors_parameters; variables; is_transitive_successor; _ };
-          constructor;
           is_protocol;
           assumptions = { protocol_assumptions; _ } as assumptions;
           get_typed_dictionary;
@@ -536,8 +535,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     ~constraints
                     ~left:(Type.union (List.map ~f:Type.meta types))
                     ~right
-              | single_parameter ->
-                  constructor ~protocol_assumptions single_parameter
+              | _ ->
+                  resolve_callable_protocol ~order ~assumption:right left
                   >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
                   |> Option.value ~default:impossible )
           | _ -> impossible
