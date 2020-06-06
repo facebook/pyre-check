@@ -19,6 +19,7 @@ from .. import (
     configuration,
     pyre,
     recently_used_configurations,
+    statistics,
     terminal,
 )
 from ..commands import ExitCode
@@ -113,6 +114,24 @@ class PyreTest(unittest.TestCase):
         arguments = argparse.Namespace()
         _set_default_command(arguments)
         self.assertEqual(arguments.command, commands.Check.from_arguments)
+
+    @patch.object(statistics, "log")
+    def test_log_statistics(self, statistics_log: MagicMock) -> None:
+        arguments = argparse.Namespace()
+        command = mock_incremental_command()
+        command._configuration.logger = MagicMock()
+        pyre._log_statistics(command, arguments, 0.0, "foo", "bar", 42)
+        statistics_log.assert_called_once()
+
+    @patch.object(statistics, "log")
+    def test_log_statistics__should_rerun(self, statistics_log: MagicMock) -> None:
+        arguments = argparse.Namespace()
+        command = mock_incremental_command()
+        command._configuration.logger = MagicMock()
+        pyre._log_statistics(
+            command, arguments, 0.0, "foo", "bar", 42, should_log=False
+        )
+        statistics_log.assert_not_called()
 
     @patch.object(
         recently_used_configurations,

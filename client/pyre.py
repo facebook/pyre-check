@@ -55,11 +55,42 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
         arguments.command = commands.Check.from_arguments
 
 
+def _log_statistics(
+    command: CommandParser,
+    arguments: argparse.Namespace,
+    start_time: float,
+    client_exception_message: str,
+    error_message: Optional[str],
+    exit_code: int,
+    should_log: bool = True,
+) -> None:
+    configuration = command.configuration
+    if should_log and configuration and configuration.logger:
+        statistics.log(
+            category=statistics.LoggerCategory.USAGE,
+            arguments=arguments,
+            configuration=configuration,
+            integers={
+                "exit_code": exit_code,
+                "runtime": int((time.time() - start_time) * 1000),
+            },
+            normals={
+                "root": configuration.local_configuration_root,
+                "cwd": os.getcwd(),
+                "client_version": __version__,
+                "command": command.NAME,
+                "client_exception": client_exception_message,
+                "error_message": error_message,
+            },
+        )
+
+
 def run_pyre(arguments: argparse.Namespace) -> ExitCode:
     start_time = time.time()
 
     command: Optional[CommandParser] = None
     client_exception_message = ""
+    should_log_statistics = True
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -93,6 +124,7 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             client_exception_message = str(error)
             exit_code = ExitCode.FAILURE
         else:
+            should_log_statistics = False
             raise FailedOutsideLocalConfigurationException(
                 exit_code, command, str(error)
             )
@@ -132,26 +164,15 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             result = command.result()
             error_message = result.error if result else None
             command.cleanup()
-            configuration = command.configuration
-            if configuration and configuration.logger:
-                statistics.log(
-                    category=statistics.LoggerCategory.USAGE,
-                    arguments=arguments,
-                    configuration=configuration,
-                    integers={
-                        "exit_code": exit_code,
-                        "runtime": int((time.time() - start_time) * 1000),
-                    },
-                    normals={
-                        "root": configuration.local_configuration_root,
-                        "cwd": os.getcwd(),
-                        "client_version": __version__,
-                        "command": command.NAME,
-                        "client_exception": client_exception_message,
-                        "error_message": error_message,
-                    },
-                )
-
+            _log_statistics(
+                command,
+                arguments,
+                start_time,
+                client_exception_message,
+                error_message,
+                exit_code,
+                should_log_statistics,
+            )
     return exit_code
 
 
