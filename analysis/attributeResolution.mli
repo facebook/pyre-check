@@ -168,13 +168,6 @@ module AttributeReadOnly : sig
     right:Type.t ->
     bool
 
-  val constructor
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Type.Primitive.t ->
-    instantiated:Type.t ->
-    Type.t
-
   val instantiate_attribute
     :  t ->
     ?dependency:DependencyKey.registered ->

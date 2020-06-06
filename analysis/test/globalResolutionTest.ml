@@ -17,11 +17,6 @@ module Argument = Call.Argument
 
 let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
-let last_statement_exn = function
-  | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
-  | _ -> failwith "Could not parse last statement"
-
-
 let test_superclasses context =
   let resolution =
     ScratchProject.setup
@@ -183,38 +178,34 @@ let test_get_decorator context =
 let test_constructors context =
   let assert_constructor source instantiated constructors =
     let instantiated = "test." ^ instantiated in
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    let source =
-      AstEnvironment.ReadOnly.get_processed_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-    in
-    let source = Option.value_exn source in
     let instantiated =
       parse_single_expression instantiated
       |> GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
-    match last_statement_exn source with
-    | { Node.value = Statement.Class { name; _ }; _ } ->
-        let callable =
-          constructors
-          >>| (fun constructors ->
-                GlobalResolution.parse_annotation
-                  ~validation:NoValidation
-                  resolution
-                  (parse_single_expression constructors))
-          |> Option.value ~default:Type.Top
-        in
-        let actual =
-          Node.value name
-          |> Reference.show
-          |> GlobalResolution.constructor ~resolution ~instantiated
-        in
-        assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
-    | _ -> assert_unreached ()
+    let callable =
+      constructors
+      >>| (fun constructors ->
+            GlobalResolution.parse_annotation
+              ~validation:NoValidation
+              resolution
+              (parse_single_expression constructors))
+      |> Option.value ~default:Type.Top
+    in
+    let actual =
+      GlobalResolution.attribute_from_annotation
+        ~special_method:true
+        ~parent:(Type.meta instantiated)
+        resolution
+        ~name:"__call__"
+      |> (fun option -> Option.value_exn option)
+      |> Annotated.Attribute.annotation
+      |> Annotation.annotation
+    in
+    assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
   in
   (* Undefined constructors. *)
   assert_constructor

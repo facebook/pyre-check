@@ -331,10 +331,6 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
   comparator ~get_typed_dictionary_override:(fun _ -> None) ~left ~right
 
 
-let constructor ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.constructor ?dependency (attribute_resolution resolution)
-
-
 let is_transitive_successor ?placeholder_subclass_extends_all resolution ~predecessor ~successor =
   let class_hierarchy = class_hierarchy resolution in
   ClassHierarchy.is_transitive_successor

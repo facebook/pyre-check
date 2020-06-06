@@ -4287,8 +4287,6 @@ module ReadOnly = struct
     add_all_caches_and_empty_assumptions (fun o -> o#constraints_solution_exists)
 
 
-  let constructor = add_all_caches_and_empty_assumptions (fun o -> o#constructor)
-
   let full_order ?dependency read_only =
     let implementation = new with_all_caches dependency read_only in
     implementation#full_order ~assumptions:empty_assumptions

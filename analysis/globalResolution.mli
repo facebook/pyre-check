@@ -224,8 +224,6 @@ val resolve_define
   overloads:Define.Signature.t list ->
   AttributeResolution.resolved_define
 
-val constructor : resolution:t -> Type.Primitive.t -> instantiated:Type.t -> Type.t
-
 val attribute_names
   :  resolution:t ->
   ?transitive:bool ->
