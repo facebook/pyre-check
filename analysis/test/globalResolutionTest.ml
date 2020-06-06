@@ -888,6 +888,49 @@ let test_class_attributes context =
   ()
 
 
+let test_attribute_type context =
+  let assert_attribute ?(source = "") ~parent ~name expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      GlobalResolution.create global_environment
+    in
+    let parse annotation =
+      parse_single_expression ~preprocess:true annotation
+      |> GlobalResolution.parse_annotation global_resolution
+    in
+    let actual =
+      GlobalResolution.attribute_from_annotation ~parent:(parse parent) global_resolution ~name
+      >>| Annotated.Attribute.annotation
+      >>| Annotation.annotation
+      >>| Type.show
+    in
+    let printer = Option.value_map ~default:"None" ~f:Fn.id in
+    assert_equal ~cmp:(Option.equal String.equal) ~printer expected actual
+  in
+  assert_attribute
+    ~source:{|
+      class X:
+        def __init__(self, x: int) -> None:
+          pass
+    |}
+    ~parent:"typing.Type[test.X]"
+    ~name:"__call__"
+    (Some
+       "BoundMethod[typing.Callable(test.X.__init__)[[Named(self, test.X), Named(x, int)], \
+        test.X], test.X]");
+  assert_attribute
+    ~parent:"typing.Type[typing.Tuple[int, str, bool]]"
+    ~name:"__call__"
+    (Some
+       "BoundMethod[typing.Callable(tuple.__init__)[[Named(self, \
+        tuple[Variable[_T_co](covariant)]), Named(a, typing.List[Variable[_T_co](covariant)])], \
+        typing.Tuple[Variable[_T_co](covariant), ...]], typing.Tuple[Variable[_T_co](covariant), \
+        ...]]");
+  ()
+
+
 let test_typed_dictionary_attributes context =
   let assert_attributes sources ~class_name ~expected_attributes =
     let project = ScratchProject.setup ~context sources in
@@ -2142,5 +2185,6 @@ let () =
          "superclasses" >:: test_superclasses;
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
+         "test_attribute_from_annotation" >:: test_attribute_type;
        ]
   |> Test.run

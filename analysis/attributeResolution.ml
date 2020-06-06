@@ -1670,20 +1670,19 @@ class base class_metadata_environment dependency =
                           [] ) )
               in
               Type.Callable { callable with implementation; overloads }
-          | ( Parametric
-                {
-                  name = "type";
-                  parameters =
-                    [
-                      Single
-                        ( (Type.Primitive name as instantiated)
-                        | (Type.Parametric { name; _ } as instantiated) );
-                    ];
-                },
-              "__call__",
-              "type" )
+          | Parametric { name = "type"; parameters = [Single meta_parameter] }, "__call__", "type"
             when accessed_via_metaclass ->
-              self#constructor ~assumptions name ~instantiated
+              let get_constructor { Type.instantiated; accessed_through_class; class_name } =
+                if accessed_through_class then (* Type[Type[X]] is invalid *)
+                  None
+                else
+                  Some (self#constructor ~assumptions class_name ~instantiated)
+              in
+              Type.resolve_class meta_parameter
+              >>| List.map ~f:get_constructor
+              >>= Option.all
+              >>| Type.union
+              |> Option.value ~default:(Type.Callable callable)
           | _ -> Type.Callable callable
         in
 
