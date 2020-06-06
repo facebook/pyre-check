@@ -117,7 +117,6 @@ module OrderImplementation = struct
         ( {
             ConstraintsSet.class_hierarchy =
               { least_upper_bound; instantiate_successors_parameters; variables; _ };
-            constructor;
             is_protocol;
             assumptions = { protocol_assumptions; _ };
             _;
@@ -301,16 +300,12 @@ module OrderImplementation = struct
             else
               union
         | Type.Callable callable, other
-        | other, Type.Callable callable ->
-            let default =
-              match ConstraintsSet.resolve_callable_protocol ~order ~assumption:right other with
-              | Some other_callable -> join order other_callable (Type.Callable callable)
-              | None -> Type.union [left; right]
-            in
-            Option.some_if (Type.is_meta other) other
-            >>= constructor ~protocol_assumptions
-            >>| join order (Type.Callable callable)
-            |> Option.value ~default
+        | other, Type.Callable callable -> (
+            match
+              ConstraintsSet.resolve_callable_protocol ~order ~assumption:(Callable callable) other
+            with
+            | Some other_callable -> join order other_callable (Type.Callable callable)
+            | None -> Type.union [left; right] )
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)

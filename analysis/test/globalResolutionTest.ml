@@ -958,6 +958,46 @@ let test_meet context =
   ()
 
 
+let test_join context =
+  let assert_join ?(source = "") ~left ~right expected =
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      GlobalResolution.create global_environment
+    in
+    let parse annotation =
+      parse_single_expression ~preprocess:true annotation
+      |> GlobalResolution.parse_annotation global_resolution
+    in
+    let actual = GlobalResolution.join global_resolution (parse left) (parse right) in
+    assert_equal ~cmp:Type.equal ~printer:Type.show (parse expected) actual
+  in
+  assert_join
+    ~source:
+      {|
+      class B:
+        pass
+      class X(B):
+        pass
+      class Y(B):
+        pass
+    |}
+    ~left:"test.X"
+    ~right:"test.B"
+    "test.B";
+  assert_join
+    ~source:{|
+      class C:
+        def __init__(self, x: int) -> None:
+          pass
+    |}
+    ~left:"typing.Type[test.C]"
+    ~right:"typing.Callable[[int], test.C]"
+    "typing.Callable[[int], test.C]";
+  ()
+
+
 let test_typed_dictionary_attributes context =
   let assert_attributes sources ~class_name ~expected_attributes =
     let project = ScratchProject.setup ~context sources in
@@ -2214,5 +2254,6 @@ let () =
          "extract_type_parameter" >:: test_extract_type_parameter;
          "test_attribute_from_annotation" >:: test_attribute_type;
          "test_meet" >:: test_meet;
+         "test_join" >:: test_join;
        ]
   |> Test.run
