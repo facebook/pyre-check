@@ -6,10 +6,11 @@
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import List, Optional
 
-from . import filesystem
+from . import filesystem, terminal
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -100,6 +101,9 @@ def log_as_recently_used(
 
 
 def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:
+    if not terminal.is_capable(sys.stdin):
+        return None
+
     def _default_indicator(index: int) -> str:
         return " [default]" if index == 0 else ""
 

@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
-from .. import filesystem, recently_used_configurations
+from .. import filesystem, recently_used_configurations, terminal
 from ..recently_used_configurations import (
     RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE,
     RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK,
@@ -162,8 +162,11 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             ]
         )
 
+    @patch.object(terminal, "is_capable", return_value=True)
     @patch.object(builtins, "input", return_value="1")
-    def test_prompt_user_for_local_root(self, input: MagicMock) -> None:
+    def test_prompt_user_for_local_root(
+        self, input: MagicMock, is_capable: MagicMock
+    ) -> None:
         self.assertEqual(
             recently_used_configurations.prompt_user_for_local_root(
                 ["foo", "bar", "baz"]
@@ -171,8 +174,11 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             "bar",
         )
 
+    @patch.object(terminal, "is_capable", return_value=True)
     @patch.object(builtins, "input", return_value="")
-    def test_prompt_user_for_local_root__pressed_enter(self, input: MagicMock) -> None:
+    def test_prompt_user_for_local_root__pressed_enter(
+        self, input: MagicMock, is_capable: MagicMock
+    ) -> None:
         self.assertEqual(
             recently_used_configurations.prompt_user_for_local_root(
                 ["foo", "bar", "baz"]
@@ -180,8 +186,11 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             "foo",
         )
 
+    @patch.object(terminal, "is_capable", return_value=True)
     @patch.object(builtins, "input", side_effect=ValueError)
-    def test_prompt_user_for_local_root__interrupt(self, input: MagicMock) -> None:
+    def test_prompt_user_for_local_root__interrupt(
+        self, input: MagicMock, is_capable: MagicMock
+    ) -> None:
         self.assertEqual(
             recently_used_configurations.prompt_user_for_local_root(
                 ["foo", "bar", "baz"]
@@ -189,8 +198,23 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             None,
         )
 
+    @patch.object(terminal, "is_capable", return_value=True)
     @patch.object(builtins, "input", side_effect=KeyboardInterrupt)
-    def test_prompt_user_for_local_root__exception(self, input: MagicMock) -> None:
+    def test_prompt_user_for_local_root__exception(
+        self, input: MagicMock, is_capable: MagicMock
+    ) -> None:
+        self.assertEqual(
+            recently_used_configurations.prompt_user_for_local_root(
+                ["foo", "bar", "baz"]
+            ),
+            None,
+        )
+
+    @patch.object(terminal, "is_capable", return_value=False)
+    @patch.object(builtins, "input", return_value="42")
+    def test_prompt_user_for_local_root__not_terminal(
+        self, input: MagicMock, is_capable: MagicMock
+    ) -> None:
         self.assertEqual(
             recently_used_configurations.prompt_user_for_local_root(
                 ["foo", "bar", "baz"]
