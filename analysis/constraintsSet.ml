@@ -18,7 +18,6 @@ type class_hierarchy = {
 
 type order = {
   class_hierarchy: class_hierarchy;
-  constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   all_attributes:
     Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   attribute:

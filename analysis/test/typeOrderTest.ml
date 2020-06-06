@@ -80,7 +80,6 @@ let attribute_from_attributes attributes =
 
 
 let less_or_equal
-    ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     ?(attributes = fun _ ~assumptions:_ -> None)
     ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
     handler
@@ -89,7 +88,6 @@ let less_or_equal
   always_less_or_equal
     {
       class_hierarchy;
-      constructor;
       all_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol;
@@ -104,12 +102,11 @@ let less_or_equal
     }
 
 
-let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
+let is_compatible_with handler =
   let class_hierarchy = hierarchy handler in
   is_compatible_with
     {
       class_hierarchy;
-      constructor;
       all_attributes = (fun _ ~assumptions:_ -> None);
       attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -124,16 +121,11 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
     }
 
 
-let join
-    ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-    ?(attributes = fun _ ~assumptions:_ -> None)
-    handler
-  =
+let join ?(attributes = fun _ ~assumptions:_ -> None) handler =
   let class_hierarchy = hierarchy handler in
   join
     {
       class_hierarchy;
-      constructor;
       all_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -148,12 +140,11 @@ let join
     }
 
 
-let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
+let meet handler =
   let class_hierarchy = hierarchy handler in
   meet
     {
       class_hierarchy;
-      constructor;
       all_attributes = (fun _ ~assumptions:_ -> None);
       attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);

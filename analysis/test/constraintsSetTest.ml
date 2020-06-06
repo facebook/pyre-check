@@ -181,13 +181,6 @@ let test_add_constraint context =
       expected
     =
     let handler =
-      let constructor instantiated ~protocol_assumptions:_ =
-        instantiated
-        |> Type.split
-        |> fst
-        |> Type.primitive_name
-        >>| GlobalResolution.constructor ~instantiated ~resolution
-      in
       let class_hierarchy =
         GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
       in
@@ -195,7 +188,6 @@ let test_add_constraint context =
       let order =
         {
           ConstraintsSet.class_hierarchy;
-          constructor;
           all_attributes = attributes;
           attribute = attribute_from_attributes attributes;
           is_protocol;
@@ -943,7 +935,6 @@ let test_instantiate_protocol_parameters context =
       let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;
-        constructor = (fun _ ~protocol_assumptions:_ -> None);
         all_attributes = attributes;
         attribute = attribute_from_attributes attributes;
         is_protocol;
@@ -1129,7 +1120,6 @@ let test_mark_escaped_as_escaped context =
     let handler =
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;
-        constructor = (fun _ ~protocol_assumptions:_ -> None);
         all_attributes = (fun _ ~assumptions:_ -> None);
         attribute = (fun _ ~assumptions:_ ~name:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);

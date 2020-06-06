@@ -696,15 +696,6 @@ class base class_metadata_environment dependency =
       | _ -> None
 
     method full_order ~assumptions =
-      let constructor instantiated ~protocol_assumptions =
-        let constructor assumptions class_name =
-          self#constructor ~assumptions class_name ~instantiated:(Type.Primitive class_name)
-        in
-
-        instantiated
-        |> Type.primitive_name
-        >>| constructor { assumptions with protocol_assumptions }
-      in
       let resolve class_type =
         match Type.resolve_class class_type with
         | None -> None
@@ -770,7 +761,6 @@ class base class_metadata_environment dependency =
             variables = ClassHierarchy.variables class_hierarchy_handler;
             least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
           };
-        constructor;
         attribute;
         all_attributes;
         is_protocol;
