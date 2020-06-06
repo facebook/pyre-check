@@ -646,14 +646,21 @@ let partial_apply_self { Type.Callable.implementation; overloads; _ } ~order ~se
   }
 
 
-let callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order =
-  match instantiated, class_name, attribute_name with
-  | Some (Type.Callable _), "typing.Callable", "__call__" -> instantiated
+let callable_call_special_cases
+    ~instantiated
+    ~class_name
+    ~attribute_name
+    ~order
+    ~accessed_through_class
+  =
+  match instantiated, class_name, attribute_name, accessed_through_class with
+  | Some (Type.Callable _), "typing.Callable", "__call__", false -> instantiated
   | ( Some
         (Parametric
           { name = "BoundMethod"; parameters = [Single (Callable callable); Single self_type] }),
       "typing.Callable",
-      "__call__" ) ->
+      "__call__",
+      false ) ->
       let order = order () in
       partial_apply_self callable ~order ~self_type
       |> fun callable -> Type.Callable callable |> Option.some
@@ -1411,7 +1418,14 @@ class base class_metadata_environment dependency =
         ~attribute_name
         class_name =
       let order () = self#full_order ~assumptions in
-      match callable_call_special_cases ~instantiated ~class_name ~attribute_name ~order with
+      match
+        callable_call_special_cases
+          ~instantiated
+          ~class_name
+          ~attribute_name
+          ~accessed_through_class
+          ~order
+      with
       | Some callable ->
           AnnotatedAttribute.create
             ~annotation:callable
@@ -1728,6 +1742,7 @@ class base class_metadata_environment dependency =
                 ~class_name
                 ~attribute_name
                 ~order
+                ~accessed_through_class
               >>| fun callable -> callable, callable
             in
             match special with

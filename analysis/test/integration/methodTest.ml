@@ -1701,6 +1701,21 @@ let test_check_callable_protocols context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `str`."];
+  assert_type_errors
+    {|
+      from typing import Callable
+      def foo() -> None: 
+        q = Callable[[int], str]
+        reveal_type(q)
+        f = q(1)
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `q` is `typing.Type[typing.Callable[..., str]]`.";
+      "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 1 was \
+       provided.";
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable[..., str]`.";
+    ];
   ()
 
 
