@@ -115,12 +115,20 @@ class PyreTest(unittest.TestCase):
 
     @patch.object(
         recently_used_configurations,
+        "prompt_user_for_local_root",
+        return_value="foo/bar",
+    )
+    @patch.object(
+        recently_used_configurations,
         "get_recently_used_configurations",
         return_value=["foo/bar", "baz"],
     )
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry(
-        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+        self,
+        run_pyre: MagicMock,
+        get_recently_used_configurations: MagicMock,
+        prompt_user: MagicMock,
     ) -> None:
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
@@ -156,13 +164,19 @@ class PyreTest(unittest.TestCase):
         self.assertEqual(actual_exit_code, ExitCode.FAILURE)
 
     @patch.object(
+        recently_used_configurations, "prompt_user_for_local_root", return_value="foo"
+    )
+    @patch.object(
         recently_used_configurations,
         "get_recently_used_configurations",
         return_value=["foo"],
     )
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry__fail_again(
-        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+        self,
+        run_pyre: MagicMock,
+        get_recently_used_configurations: MagicMock,
+        prompt_user: MagicMock,
     ) -> None:
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
@@ -180,3 +194,28 @@ class PyreTest(unittest.TestCase):
         actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
         self.assertEqual(run_pyre.call_count, 2)
         self.assertEqual(actual_exit_code, commands.ExitCode.FAILURE)
+
+    @patch.object(
+        recently_used_configurations, "prompt_user_for_local_root", return_value=None
+    )
+    @patch.object(
+        recently_used_configurations,
+        "get_recently_used_configurations",
+        return_value=["foo"],
+    )
+    @patch.object(pyre, "run_pyre")
+    def test_run_pyre_with_retry__invalid_user_input(
+        self,
+        run_pyre: MagicMock,
+        get_recently_used_configurations: MagicMock,
+        prompt_user: MagicMock,
+    ) -> None:
+        run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
+            exit_code=ExitCode.FAILURE,
+            command=mock_incremental_command(),
+            exception_message="something",
+        )
+        command_line_arguments = argparse.Namespace()
+        actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
+        self.assertEqual(run_pyre.call_count, 1)
+        self.assertEqual(actual_exit_code, ExitCode.FAILURE)

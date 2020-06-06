@@ -97,3 +97,36 @@ def log_as_recently_used(
             f"Failed to acquire lock `{str(lock_path)}`. "
             "Not logging in recently-used configurations cache."
         )
+
+
+def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:
+    def _default_indicator(index: int) -> str:
+        return " [default]" if index == 0 else ""
+
+    local_root_choices = [
+        f"{i}. {local_root}{_default_indicator(i)}"
+        for i, local_root in enumerate(local_roots)
+    ]
+    prompt = (
+        "Enter the number of the local root you want to use "
+        "(`Enter` for the default; any other key to quit): "
+    )
+    message = "\n".join(
+        (
+            "Would you like to run the command with a local root?",
+            "",
+            "Recently-used local roots:",
+            *local_root_choices,
+            prompt,
+        )
+    )
+
+    LOG.info(message)
+
+    try:
+        user_input = input()
+        index = 0 if user_input == "" else int(user_input)
+        return local_roots[index]
+    except (Exception, KeyboardInterrupt):
+        LOG.error(f"No valid local root chosen. Quitting.")
+        return None

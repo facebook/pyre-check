@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import builtins
 import json
 import os
 import unittest
@@ -159,4 +160,40 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
                 call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK)),
                 call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE)),
             ]
+        )
+
+    @patch.object(builtins, "input", return_value="1")
+    def test_prompt_user_for_local_root(self, input: MagicMock) -> None:
+        self.assertEqual(
+            recently_used_configurations.prompt_user_for_local_root(
+                ["foo", "bar", "baz"]
+            ),
+            "bar",
+        )
+
+    @patch.object(builtins, "input", return_value="")
+    def test_prompt_user_for_local_root__pressed_enter(self, input: MagicMock) -> None:
+        self.assertEqual(
+            recently_used_configurations.prompt_user_for_local_root(
+                ["foo", "bar", "baz"]
+            ),
+            "foo",
+        )
+
+    @patch.object(builtins, "input", side_effect=ValueError)
+    def test_prompt_user_for_local_root__interrupt(self, input: MagicMock) -> None:
+        self.assertEqual(
+            recently_used_configurations.prompt_user_for_local_root(
+                ["foo", "bar", "baz"]
+            ),
+            None,
+        )
+
+    @patch.object(builtins, "input", side_effect=KeyboardInterrupt)
+    def test_prompt_user_for_local_root__exception(self, input: MagicMock) -> None:
+        self.assertEqual(
+            recently_used_configurations.prompt_user_for_local_root(
+                ["foo", "bar", "baz"]
+            ),
+            None,
         )

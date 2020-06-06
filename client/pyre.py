@@ -170,12 +170,16 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         LOG.error(client_exception_message)
         return exit_code
 
-    # TODO(T63999515): Prompt the user for the configuration.
-    local_root_for_rerun = configurations[0]
-    arguments.local_configuration = local_root_for_rerun
     LOG.warning(
         f"Could not find a Pyre local configuration at `{command._original_directory}`."
     )
+    local_root_for_rerun = recently_used_configurations.prompt_user_for_local_root(
+        configurations
+    )
+    if not local_root_for_rerun:
+        return exit_code
+
+    arguments.local_configuration = local_root_for_rerun
     LOG.warning(
         f"Rerunning the command in recent local configuration `{local_root_for_rerun}`."
     )
