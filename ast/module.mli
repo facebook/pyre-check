@@ -4,15 +4,21 @@
  * LICENSE file in the root directory of this source tree. *)
 
 module Export : sig
+  module Name : sig
+    type t =
+      | Class
+      | Define of { is_getattr_any: bool }
+      | GlobalVariable
+    [@@deriving sexp, compare, hash]
+  end
+
   type t =
     | NameAlias of {
         from: Reference.t;
         name: Identifier.t;
       }
     | Module of Reference.t
-    | Class
-    | Define of { is_getattr_any: bool }
-    | GlobalVariable
+    | Name of Name.t
   [@@deriving sexp, compare, hash]
 end
 

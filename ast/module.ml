@@ -7,15 +7,21 @@ open Core
 open Statement
 
 module Export = struct
+  module Name = struct
+    type t =
+      | Class
+      | Define of { is_getattr_any: bool }
+      | GlobalVariable
+    [@@deriving sexp, compare, hash]
+  end
+
   type t =
     | NameAlias of {
         from: Reference.t;
         name: Identifier.t;
       }
     | Module of Reference.t
-    | Class
-    | Define of { is_getattr_any: bool }
-    | GlobalVariable
+    | Name of Name.t
   [@@deriving sexp, compare, hash]
 end
 
@@ -142,11 +148,12 @@ let create
           Identifier.Map.set
             sofar
             ~key:name
-            ~data:(Export.Define { is_getattr_any = List.exists defines ~f:is_getattr_any })
-      | Class -> Identifier.Map.set sofar ~key:name ~data:Export.Class
+            ~data:
+              Export.(Name (Name.Define { is_getattr_any = List.exists defines ~f:is_getattr_any }))
+      | Class -> Identifier.Map.set sofar ~key:name ~data:Export.(Name Class)
       | SimpleAssign _
       | TupleAssign _ ->
-          Identifier.Map.set sofar ~key:name ~data:Export.GlobalVariable
+          Identifier.Map.set sofar ~key:name ~data:Export.(Name GlobalVariable)
     in
     Collector.from_source source
     |> List.fold ~init:Identifier.Map.empty ~f:collect_export

@@ -13,7 +13,7 @@ open SharedMemoryKeys
 module ResolvedReference = struct
   type export =
     | FromModuleGetattr
-    | Exported of Module.Export.t
+    | Exported of Module.Export.Name.t
   [@@deriving sexp, compare, hash]
 
   type t =
@@ -199,7 +199,7 @@ module ReadOnly = struct
                       match Module.get_export module_metadata next_name with
                       | None -> (
                           match Module.get_export module_metadata "__getattr__" with
-                          | Some (Module.Export.Define { is_getattr_any = true }) ->
+                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
                               Some
                                 (ResolvedReference.ModuleAttribute
                                    {
@@ -228,7 +228,7 @@ module ReadOnly = struct
                       | Some (Module.Export.Module name) ->
                           (* `name` is definitely a module. *)
                           resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
-                      | Some (Module.Export.(Class | Define _ | GlobalVariable) as export) ->
+                      | Some (Module.Export.Name export) ->
                           (* We find a non-module. *)
                           Some
                             (ResolvedReference.ModuleAttribute

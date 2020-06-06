@@ -150,45 +150,46 @@ let test_exports context =
     ~expected:
       [
         "Any", NameAlias { from = !&"typing"; name = "Any" };
-        "foo", Define { is_getattr_any = false };
-        "bar", Define { is_getattr_any = false };
-        "__getattr__", Define { is_getattr_any = true };
+        "foo", Name (Name.Define { is_getattr_any = false });
+        "bar", Name (Name.Define { is_getattr_any = false });
+        "__getattr__", Name (Name.Define { is_getattr_any = true });
       ];
   assert_exports
     {|
        import typing
        def __getattr__(name) -> typing.Any: ...
     |}
-    ~expected:["typing", Module !&"typing"; "__getattr__", Define { is_getattr_any = true }];
+    ~expected:
+      ["typing", Module !&"typing"; "__getattr__", Name (Name.Define { is_getattr_any = true })];
   (* Unannotated __getattr__ doesn't count *)
   assert_exports
     {|
        def __getattr__(name): ...
     |}
-    ~expected:["__getattr__", Define { is_getattr_any = false }];
+    ~expected:["__getattr__", Name (Name.Define { is_getattr_any = false })];
   (* __getattr__ with wrong annotations doesn't count *)
   assert_exports
     {|
        def __getattr__(name: int) -> Any: ...
     |}
-    ~expected:["__getattr__", Define { is_getattr_any = false }];
+    ~expected:["__getattr__", Name (Name.Define { is_getattr_any = false })];
   assert_exports
     {|
        def __getattr__(name: str) -> int: ...
     |}
-    ~expected:["__getattr__", Define { is_getattr_any = false }];
+    ~expected:["__getattr__", Name (Name.Define { is_getattr_any = false })];
   (* __getattr__ with wrong param count doesn't count *)
   assert_exports
     {|
        def __getattr__(name: str, value: int) -> Any: ...
     |}
-    ~expected:["__getattr__", Define { is_getattr_any = false }];
+    ~expected:["__getattr__", Name (Name.Define { is_getattr_any = false })];
   assert_exports
     {|
        class Bar: pass
        baz = 42
     |}
-    ~expected:["Bar", Class; "baz", GlobalVariable];
+    ~expected:["Bar", Name Name.Class; "baz", Name Name.GlobalVariable];
   assert_exports
     {|
        if derp():
@@ -198,7 +199,8 @@ let test_exports context =
            y = 43
          z = 44
     |}
-    ~expected:["x", GlobalVariable; "y", GlobalVariable; "z", GlobalVariable];
+    ~expected:
+      ["x", Name Name.GlobalVariable; "y", Name Name.GlobalVariable; "z", Name Name.GlobalVariable];
   assert_exports
     {|
        try:
@@ -211,13 +213,19 @@ let test_exports context =
        finally:
          w = 44
     |}
-    ~expected:["x", GlobalVariable; "y", GlobalVariable; "z", GlobalVariable; "w", GlobalVariable];
+    ~expected:
+      [
+        "x", Name Name.GlobalVariable;
+        "y", Name Name.GlobalVariable;
+        "z", Name Name.GlobalVariable;
+        "w", Name Name.GlobalVariable;
+      ];
   assert_exports
     {|
        import foo
        foo = 42
     |} (* Last definition wins *)
-    ~expected:["foo", GlobalVariable];
+    ~expected:["foo", Name Name.GlobalVariable];
   assert_exports
     {|
        if derp():
@@ -226,7 +234,7 @@ let test_exports context =
          foo = 42
     |}
     (* Unfortunately since we don't really follow control we can't really join the two. *)
-    ~expected:["foo", GlobalVariable];
+    ~expected:["foo", Name Name.GlobalVariable];
   ()
 
 

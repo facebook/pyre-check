@@ -4972,7 +4972,7 @@ module State (Context : Context) = struct
                           None
                       | None -> (
                           match Module.get_export module_metadata "__getattr__" with
-                          | Some (Module.Export.Define { is_getattr_any = true }) ->
+                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
                               (* The current module has `__getattr__: str -> Any` defined. *)
                               None
                           | _ ->

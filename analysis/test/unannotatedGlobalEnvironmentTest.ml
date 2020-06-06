@@ -1778,7 +1778,7 @@ let test_builtin_modules context =
           ~ctxt:context
           ~cmp:[%compare.equal: Module.Export.t option]
           ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
-          (Some Module.Export.GlobalVariable)
+          (Some Module.Export.(Name GlobalVariable))
           (Module.get_export metadata "foo")
   in
   assert_nonempty Reference.empty;
@@ -1859,25 +1859,26 @@ let test_resolve_exports context =
   assert_resolved
     ["derp/__init__.py", "foo = 1"]
     ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
   assert_resolved
     ["derp.py", "foo = 1"]
     ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
   assert_resolved
     ["derp.py", "def foo(): pass"]
     ~reference:!&"derp.foo"
     ~expected:
-      (Some (resolved_attribute !&"derp" "foo" ~export:(Export.Define { is_getattr_any = false })));
+      (Some
+         (resolved_attribute !&"derp" "foo" ~export:(Export.Name.Define { is_getattr_any = false })));
   assert_resolved
     ["derp.py", "class foo: pass"]
     ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Class));
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class));
   assert_resolved
     ["derp.py", "class foo: pass"]
     ~reference:!&"derp.foo.bar.baz"
     ~expected:
-      (Some (resolved_attribute !&"derp" "foo" ~export:Export.Class ~remaining:["bar"; "baz"]));
+      (Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class ~remaining:["bar"; "baz"]));
 
   assert_resolved ["a.py", "import b"] ~reference:!&"a.b" ~expected:None;
   assert_resolved
@@ -1909,21 +1910,22 @@ let test_resolve_exports context =
   assert_resolved
     ["a.py", "from b import c"; "b.py", "c = 42"]
     ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
   assert_resolved
     ["a.py", "from b import c as d"; "b.py", "c = 42"]
     ~reference:!&"a.d"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
   assert_resolved
     ["a.py", "from b import c as d"; "b.py", "c = 42"]
     ~reference:!&"a.d.e"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable ~remaining:["e"]));
+    ~expected:
+      (Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable ~remaining:["e"]));
 
   (* Transitive import tests *)
   assert_resolved
     ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "c = 42"]
     ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"d" "c" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"d" "c" ~export:Export.Name.GlobalVariable));
   assert_resolved
     [
       "a.py", "from b import c";
@@ -1932,7 +1934,7 @@ let test_resolve_exports context =
       "e.py", "f = 42";
     ]
     ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"e" "f" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"e" "f" ~export:Export.Name.GlobalVariable));
   assert_resolved
     [
       "a.py", "from b import foo";
@@ -1941,13 +1943,13 @@ let test_resolve_exports context =
       "d.py", "cow = 1";
     ]
     ~reference:!&"a.foo"
-    ~expected:(Some (resolved_attribute !&"d" "cow" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"d" "cow" ~export:Export.Name.GlobalVariable));
 
   (* Getattr-any tests *)
   assert_resolved
     ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
     ~reference:!&"a.b"
-    ~expected:(Some (resolved_attribute !&"a" "b" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"a" "b" ~export:Export.Name.GlobalVariable));
   assert_resolved
     ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
     ~reference:!&"a.c"
@@ -1962,7 +1964,7 @@ let test_resolve_exports context =
       "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
     ]
     ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
   assert_resolved
     [
       "a.py", "from b import d";
@@ -2006,7 +2008,7 @@ let test_resolve_exports context =
       "qualifier/foo/__init__.py", "foo = 1";
     ]
     ~reference:!&"qualifier.foo.foo"
-    ~expected:(Some (resolved_attribute !&"qualifier.foo" "foo" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"qualifier.foo" "foo" ~export:Export.Name.GlobalVariable));
 
   (* Illustrate why the `from` argument matters. *)
   assert_resolved
@@ -2015,7 +2017,7 @@ let test_resolve_exports context =
       "qualifier/a.py", "foo = 1\nbar = 1";
     ]
     ~reference:!&"qualifier.a"
-    ~expected:(Some (resolved_attribute !&"qualifier.a" "bar" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "bar" ~export:Export.Name.GlobalVariable));
   assert_resolved
     [
       "qualifier/__init__.py", "from qualifier.a import bar as a";
@@ -2024,7 +2026,11 @@ let test_resolve_exports context =
     ~reference:!&"qualifier.a.foo"
     ~expected:
       (Some
-         (resolved_attribute !&"qualifier.a" "bar" ~export:Export.GlobalVariable ~remaining:["foo"]));
+         (resolved_attribute
+            !&"qualifier.a"
+            "bar"
+            ~export:Export.Name.GlobalVariable
+            ~remaining:["foo"]));
   assert_resolved
     [
       "qualifier/__init__.py", "from qualifier.a import bar as a";
@@ -2032,7 +2038,7 @@ let test_resolve_exports context =
     ]
     ~from:!&"qualifier.a"
     ~reference:!&"foo"
-    ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.GlobalVariable));
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
   ()
 
 

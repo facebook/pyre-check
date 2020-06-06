@@ -118,9 +118,9 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
     in
     let item_type =
       match member_export with
-      | Module.Export.Class ->
+      | Module.Export.(Name Class) ->
           Type.meta (Type.Primitive (Reference.show fully_qualified_member_reference))
-      | Module.Export.(Define _ | GlobalVariable) -> (
+      | Module.Export.(Name (Define _ | GlobalVariable)) -> (
           match GlobalResolution.global global_resolution fully_qualified_member_reference with
           | Some { AttributeResolution.Global.annotation; _ } -> Annotation.annotation annotation
           | _ -> Type.Any )

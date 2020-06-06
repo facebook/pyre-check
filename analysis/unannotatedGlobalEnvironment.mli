@@ -11,7 +11,7 @@ open Core
 module ResolvedReference : sig
   type export =
     | FromModuleGetattr
-    | Exported of Module.Export.t
+    | Exported of Module.Export.Name.t
   [@@deriving sexp, compare, hash]
 
   type t =
