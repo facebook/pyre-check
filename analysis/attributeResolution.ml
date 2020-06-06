@@ -2612,6 +2612,7 @@ class base class_metadata_environment dependency =
                         >>| Reference.delocalize
                         >>| UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
                               (unannotated_global_environment class_metadata_environment)
+                              ?dependency
                         >>= resolver
                         >>| make_argument
                         |> Result.of_option
