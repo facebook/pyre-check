@@ -521,7 +521,7 @@ let test_check_method_parameters context =
     ["Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.Mapping[int, str]]`."];
   assert_strict_type_errors
     {|
-      class Meta:
+      class Meta(type):
           def foo(self) -> None: ...
 
       class Foo(metaclass=Meta):
@@ -538,7 +538,7 @@ let test_check_method_parameters context =
     ];
   assert_strict_type_errors
     {|
-      class Meta:
+      class Meta(type):
           def __getitem__(self, item: int) -> int: ...
 
       class Foo(metaclass=Meta):
@@ -1680,7 +1680,28 @@ let test_check_callable_protocols context =
       def foo_try_with_list(obj: typing.List[int]) -> None:
         type(obj)(v for v in obj)
     |}
-    []
+    [];
+
+  (* Calling is a special method access of `__call__`, thus calling Type[X] prefers a `__call__` in
+     a metaclass over both the constructor and a `__call__` on X *)
+  assert_type_errors
+    {|
+      from typing import Type
+
+      class Metaclass(type):
+        def __call__(self, x: int) -> str:
+          return "A"
+
+      class C(metaclass=Metaclass):
+        def __call__(self, y: str) -> bool:
+          return True
+
+      def f() -> None:
+        x = C(1)
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `str`."];
+  ()
 
 
 let test_check_explicit_method_call context =

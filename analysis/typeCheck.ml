@@ -1826,17 +1826,8 @@ module State (Context : Context) = struct
         | _ -> None
       in
 
-      let find_method ~parent ~name =
-        Type.split parent
-        |> fst
-        |> Type.primitive_name
-        >>= GlobalResolution.attribute_from_class_name
-              ~resolution:global_resolution
-              ~name
-              ~instantiated:parent
-              ~transitive:true
-        >>= fun attribute ->
-        Option.some_if (Annotated.Attribute.defined attribute) attribute
+      let find_method ~parent ~name ~special_method =
+        GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
         >>| Annotated.Attribute.annotation
         >>| Annotation.annotation
         >>= unpack_callable_and_self_argument
@@ -1855,34 +1846,10 @@ module State (Context : Context) = struct
       in
       let signatures =
         let callables, arguments, was_operator_inverted =
-          let callable = function
-            | meta when Type.is_meta meta -> (
-                let backup = find_method ~parent:meta ~name:"__call__" in
-                match Type.single_parameter meta with
-                | Variable { constraints = Type.Variable.Unconstrained; _ } -> backup
-                | Variable { constraints = Type.Variable.Explicit constraints; _ }
-                  when List.length constraints > 1 ->
-                    backup
-                | Any -> backup
-                | meta_parameter ->
-                    let parent =
-                      match meta_parameter with
-                      | Variable { constraints = Type.Variable.Explicit [parent]; _ } -> parent
-                      | Variable { constraints = Type.Variable.Bound parent; _ } -> parent
-                      | _ -> meta_parameter
-                    in
-                    parent
-                    |> Type.split
-                    |> fst
-                    |> Type.primitive_name
-                    >>| GlobalResolution.constructor
-                          ~instantiated:meta_parameter
-                          ~resolution:global_resolution
-                    >>= unpack_callable_and_self_argument )
-            | resolved -> (
-                match unpack_callable_and_self_argument resolved with
-                | Some unpacked -> Some unpacked
-                | _ -> find_method ~parent:resolved ~name:"__call__" )
+          let callable resolved =
+            match unpack_callable_and_self_argument resolved with
+            | Some unpacked -> Some unpacked
+            | _ -> find_method ~parent:resolved ~name:"__call__" ~special_method:true
           in
           let rec get_callables = function
             | Type.Union annotations ->
@@ -1893,7 +1860,7 @@ module State (Context : Context) = struct
                 | ( Expression.Name (Attribute { base; attribute; _ }),
                     [{ AttributeResolution.Argument.resolved; _ }] ) ->
                     inverse_operator attribute
-                    >>= (fun name -> find_method ~parent:resolved ~name)
+                    >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                     >>= (fun found_callable ->
                           let resolved_base = resolve_expression_type ~resolution base in
                           let inverted_arguments =
@@ -1946,7 +1913,7 @@ module State (Context : Context) = struct
                   [{ AttributeResolution.Argument.resolved; _ }] )
                 when not was_operator_inverted ->
                   inverse_operator (Reference.last name)
-                  >>= (fun name -> find_method ~parent:resolved ~name)
+                  >>= (fun name -> find_method ~parent:resolved ~name ~special_method:false)
                   >>| (fun ({ callable; self_argument } as unpacked_callable_and_self_argument) ->
                         let arguments = [{ Call.Argument.value = base; name = None }] in
                         ( GlobalResolution.signature_select
@@ -2049,6 +2016,7 @@ module State (Context : Context) = struct
           let errors =
             match resolved, potential_missing_operator_error with
             | Type.Top, Some kind -> emit_error ~errors ~location ~kind
+            | Parametric { name = "type"; parameters = [Single Any] }, _
             | Parametric { name = "BoundMethod"; parameters = [Single Any; _] }, _
             | Type.Any, _
             | Type.Top, _ ->

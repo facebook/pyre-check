@@ -280,7 +280,7 @@ let attribute_from_class_name
   |> access
 
 
-let attribute_from_annotation resolution ~parent:annotation ~name =
+let attribute_from_annotation ?special_method resolution ~parent:annotation ~name =
   match Type.resolve_class annotation with
   | None -> None
   | Some [] -> None
@@ -291,6 +291,7 @@ let attribute_from_annotation resolution ~parent:annotation ~name =
         ~instantiated
         ~accessed_through_class
         ~name
+        ?special_method
         class_name
       >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   | Some (_ :: _) -> None

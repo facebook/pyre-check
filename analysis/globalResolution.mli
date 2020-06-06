@@ -127,7 +127,8 @@ val global : t -> Reference.t -> AttributeResolution.Global.t option
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
 val attribute_from_annotation
-  :  t ->
+  :  ?special_method:bool ->
+  t ->
   parent:Type.t ->
   name:string ->
   AnnotatedAttribute.instantiated option
