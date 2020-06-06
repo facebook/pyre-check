@@ -48,6 +48,40 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         recently_used_configurations.log_as_recently_used("foo", Path("/.pyre/"))
         write_text.assert_not_called()
 
+    @patch.object(
+        recently_used_configurations,
+        "_load_recently_used_configurations",
+        return_value=["bar", "baz"],
+    )
+    @patch.object(filesystem, "acquire_lock")
+    def test_get_recently_used(
+        self, acquire_lock: MagicMock, load_recently_used_configurations: MagicMock
+    ) -> None:
+        self.assertEqual(
+            recently_used_configurations.get_recently_used_configurations(
+                Path("/.pyre/")
+            ),
+            ["bar", "baz"],
+        )
+        acquire_lock.assert_called_once_with(
+            "/.pyre/recently-used-local-configurations.lock", blocking=False
+        )
+
+    @patch.object(recently_used_configurations, "_load_recently_used_configurations")
+    @patch.object(filesystem, "acquire_lock", side_effect=OSError)
+    def test_get_recently_used__lock_not_acquired(
+        self, acquire_lock: MagicMock, load_recently_used_configurations: MagicMock
+    ) -> None:
+        self.assertEqual(
+            recently_used_configurations.get_recently_used_configurations(
+                Path("/.pyre/")
+            ),
+            [],
+        )
+        acquire_lock.assert_called_once_with(
+            "/.pyre/recently-used-local-configurations.lock", blocking=False
+        )
+
     @patch.object(filesystem, "acquire_lock")
     def test_log_recently_used__no_local_configuration(
         self, acquire_lock: MagicMock

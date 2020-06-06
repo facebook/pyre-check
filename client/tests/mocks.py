@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import MagicMock
 
-from ..commands.command import TEXT, CommandArguments
+from ..analysis_directory import AnalysisDirectory
+from ..commands.command import TEXT, CommandArguments, IncrementalStyle
+from ..commands.incremental import Incremental
 
 
 def mock_arguments(
@@ -85,3 +87,19 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.log_directory = ".pyre"
     configuration.disabled = False
     return configuration
+
+
+def mock_incremental_command() -> Incremental:
+    arguments = mock_arguments()
+    configuration = mock_configuration()
+    analysis_directory = AnalysisDirectory(".")
+    return Incremental(
+        arguments,
+        original_directory="/original/directory",
+        configuration=configuration,
+        analysis_directory=analysis_directory,
+        nonblocking=False,
+        incremental_style=IncrementalStyle.FINE_GRAINED,
+        no_start_server=False,
+        no_watchman=False,
+    )

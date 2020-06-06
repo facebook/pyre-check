@@ -16,9 +16,11 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import __name__ as client_name, buck, commands, filesystem
-from ..analysis_directory import SharedAnalysisDirectory
+from ..analysis_directory import (
+    NotWithinLocalConfigurationException,
+    SharedAnalysisDirectory,
+)
 from ..commands.command import __name__ as command_name
-from ..exceptions import EnvironmentException
 from ..filesystem import (
     Filesystem,
     MercurialBackedFilesystem,
@@ -387,7 +389,7 @@ class FilesystemTest(unittest.TestCase):
         configuration.use_buck_builder = False
         configuration.ignore_unbuilt_dependencies = False
 
-        with self.assertRaises(EnvironmentException):
+        with self.assertRaises(NotWithinLocalConfigurationException):
             buck_builder = buck.SimpleBuckBuilder()
             analysis_directory = SharedAnalysisDirectory(
                 [],

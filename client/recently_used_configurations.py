@@ -60,6 +60,19 @@ def delete_cache(dot_pyre_directory: Path) -> None:
         )
 
 
+def get_recently_used_configurations(dot_pyre_directory: Path) -> List[str]:
+    lock_path = dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK
+    try:
+        with filesystem.acquire_lock(str(lock_path), blocking=False):
+            return _load_recently_used_configurations(dot_pyre_directory)
+    except OSError:
+        LOG.debug(
+            f"Failed to acquire lock `{str(lock_path)}`. "
+            "Returning empty list of recently-used configurations."
+        )
+        return []
+
+
 def log_as_recently_used(
     local_configuration: Optional[str], dot_pyre_directory: Path
 ) -> None:

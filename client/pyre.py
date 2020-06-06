@@ -11,9 +11,17 @@ import shutil
 import sys
 import time
 import traceback
+from dataclasses import dataclass
 from typing import List, Optional
 
-from . import buck, commands, log, statistics
+from . import (
+    analysis_directory,
+    buck,
+    commands,
+    log,
+    recently_used_configurations,
+    statistics,
+)
 from .commands import CommandParser, ExitCode, IncrementalStyle
 from .exceptions import EnvironmentException
 from .find_directories import find_project_root
@@ -21,6 +29,13 @@ from .version import __version__
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FailedOutsideLocalConfigurationException(Exception):
+    exit_code: ExitCode
+    command: CommandParser
+    exception_message: str
 
 
 def _set_default_command(arguments: argparse.Namespace) -> None:
@@ -40,7 +55,9 @@ def _set_default_command(arguments: argparse.Namespace) -> None:
         arguments.command = commands.Check.from_arguments
 
 
-def run_pyre(arguments: argparse.Namespace, start_time: float) -> int:
+def run_pyre(arguments: argparse.Namespace) -> ExitCode:
+    start_time = time.time()
+
     command: Optional[CommandParser] = None
     client_exception_message = ""
     # Having this as a fails-by-default helps flag unexpected exit
@@ -71,6 +88,14 @@ def run_pyre(arguments: argparse.Namespace, start_time: float) -> int:
                 arguments.noninteractive, command.log_directory
             )
             exit_code = command.run().exit_code()
+    except analysis_directory.NotWithinLocalConfigurationException as error:
+        if not command:
+            client_exception_message = str(error)
+            exit_code = ExitCode.FAILURE
+        else:
+            raise FailedOutsideLocalConfigurationException(
+                exit_code, command, str(error)
+            )
     except (buck.BuckException, EnvironmentException) as error:
         if arguments.command == commands.Persistent.from_arguments:
             try:
@@ -130,10 +155,39 @@ def run_pyre(arguments: argparse.Namespace, start_time: float) -> int:
     return exit_code
 
 
+def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
+    try:
+        return run_pyre(arguments)
+    except FailedOutsideLocalConfigurationException as exception:
+        command = exception.command
+        exit_code = exception.exit_code
+        client_exception_message = exception.exception_message
+
+    configurations = recently_used_configurations.get_recently_used_configurations(
+        command._dot_pyre_directory
+    )
+    if not configurations:
+        LOG.error(client_exception_message)
+        return exit_code
+
+    # TODO(T63999515): Prompt the user for the configuration.
+    local_root_for_rerun = configurations[0]
+    arguments.local_configuration = local_root_for_rerun
+    LOG.warning(
+        f"Could not find a Pyre local configuration at `{command._original_directory}`."
+    )
+    LOG.warning(
+        f"Rerunning the command in recent local configuration `{local_root_for_rerun}`."
+    )
+    try:
+        return run_pyre(arguments)
+    except FailedOutsideLocalConfigurationException:
+        LOG.error(f"Failed to rerun command in `{local_root_for_rerun}`.")
+        return ExitCode.FAILURE
+
+
 # Need the default argument here since this is our entry point in setup.py
 def main(argv: List[str] = sys.argv[1:]) -> int:
-    start_time = time.time()
-
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -166,7 +220,7 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
     if not hasattr(arguments, "command"):
         _set_default_command(arguments)
 
-    return run_pyre(arguments, start_time)
+    return _run_pyre_with_retry(arguments)
 
 
 if __name__ == "__main__":

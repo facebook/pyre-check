@@ -12,9 +12,18 @@ import shutil
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from .. import analysis_directory, buck, commands, configuration, pyre
+from .. import (
+    analysis_directory,
+    buck,
+    commands,
+    configuration,
+    pyre,
+    recently_used_configurations,
+)
+from ..commands import ExitCode
 from ..exceptions import EnvironmentException
 from ..pyre import _set_default_command
+from .mocks import mock_incremental_command
 
 
 class PyreTest(unittest.TestCase):
@@ -103,3 +112,71 @@ class PyreTest(unittest.TestCase):
         arguments = argparse.Namespace()
         _set_default_command(arguments)
         self.assertEqual(arguments.command, commands.Check.from_arguments)
+
+    @patch.object(
+        recently_used_configurations,
+        "get_recently_used_configurations",
+        return_value=["foo/bar", "baz"],
+    )
+    @patch.object(pyre, "run_pyre")
+    def test_run_pyre_with_retry(
+        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+    ) -> None:
+        run_pyre.side_effect = [
+            pyre.FailedOutsideLocalConfigurationException(
+                exit_code=ExitCode.FAILURE,
+                command=mock_incremental_command(),
+                exception_message="something",
+            ),
+            0,
+        ]
+        command_line_arguments = argparse.Namespace()
+        actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
+        self.assertEqual(run_pyre.call_count, 2)
+        self.assertEqual(actual_exit_code, ExitCode.SUCCESS)
+        self.assertEqual(command_line_arguments.local_configuration, "foo/bar")
+
+    @patch.object(
+        recently_used_configurations,
+        "get_recently_used_configurations",
+        return_value=[],
+    )
+    @patch.object(pyre, "run_pyre")
+    def test_run_pyre_with_retry__no_recent_configurations(
+        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+    ) -> None:
+        run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
+            exit_code=ExitCode.FAILURE,
+            command=mock_incremental_command(),
+            exception_message="something",
+        )
+        command_line_arguments = argparse.Namespace()
+        actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
+        self.assertEqual(run_pyre.call_count, 1)
+        self.assertEqual(actual_exit_code, ExitCode.FAILURE)
+
+    @patch.object(
+        recently_used_configurations,
+        "get_recently_used_configurations",
+        return_value=["foo"],
+    )
+    @patch.object(pyre, "run_pyre")
+    def test_run_pyre_with_retry__fail_again(
+        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+    ) -> None:
+        run_pyre.side_effect = [
+            pyre.FailedOutsideLocalConfigurationException(
+                exit_code=ExitCode.FAILURE,
+                command=mock_incremental_command(),
+                exception_message="something",
+            ),
+            pyre.FailedOutsideLocalConfigurationException(
+                exit_code=ExitCode.FAILURE,
+                command=mock_incremental_command(),
+                exception_message="something",
+            ),
+        ]
+        command_line_arguments = argparse.Namespace()
+        actual_exit_code = pyre._run_pyre_with_retry(command_line_arguments)
+        self.assertEqual(run_pyre.call_count, 2)
+        self.assertEqual(actual_exit_code, commands.ExitCode.FAILURE)

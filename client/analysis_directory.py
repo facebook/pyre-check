@@ -52,6 +52,10 @@ REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 50
 DONT_CARE_PROGRESS_VALUE = 1
 
 
+class NotWithinLocalConfigurationException(Exception):
+    pass
+
+
 def _resolve_filter_paths(
     source_directories: List[str],
     targets: List[str],
@@ -240,7 +244,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             If it is in directory foo/, you can also run `pyre -l foo`.)
             See `pyre --help` for more details.
             """
-            raise EnvironmentException(textwrap.dedent(message).strip())
+            raise NotWithinLocalConfigurationException(textwrap.dedent(message).strip())
 
     def prepare(self) -> None:
         start = time()
