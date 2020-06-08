@@ -44,6 +44,20 @@ class GlobalVersionUpdate(Command):
         self._paths: List[Path] = self._arguments.paths
         self._submit: bool = self._arguments.submit
 
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        Command.add_arguments(parser)
+        parser.set_defaults(command=GlobalVersionUpdate)
+        parser.add_argument("hash", help="Hash of new Pyre version")
+        parser.add_argument(
+            "--paths",
+            nargs="*",
+            help="A list of paths to local Pyre projects.",
+            default=[],
+            type=path_exists,
+        )
+        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
         with open(global_configuration, "r") as global_configuration_file:
@@ -157,6 +171,15 @@ class FixmeTargets(ErrorSuppressingCommand):
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         ErrorSuppressingCommand.add_arguments(parser)
+        parser.set_defaults(command=FixmeTargets)
+        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--subdirectory", help="Only upgrade TARGETS files within this directory."
+        )
+        parser.add_argument(
+            "--no-commit", action="store_true", help="Keep changes in working state."
+        )
 
     def run(self) -> None:
         subdirectory = self._subdirectory
@@ -241,18 +264,7 @@ def run(repository: Repository) -> None:
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
-    update_global_version.set_defaults(command=GlobalVersionUpdate)
-    update_global_version.add_argument("hash", help="Hash of new Pyre version")
-    update_global_version.add_argument(
-        "--paths",
-        nargs="*",
-        help="A list of paths to local Pyre projects.",
-        default=[],
-        type=path_exists,
-    )
-    update_global_version.add_argument(
-        "--submit", action="store_true", help=argparse.SUPPRESS
-    )
+    GlobalVersionUpdate.add_arguments(update_global_version)
 
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
@@ -295,15 +307,6 @@ def run(repository: Repository) -> None:
     # Subcommand: Fixme all errors in targets running type checking
     fixme_targets = commands.add_parser("fixme-targets")
     FixmeTargets.add_arguments(fixme_targets)
-    fixme_targets.set_defaults(command=FixmeTargets)
-    fixme_targets.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-    fixme_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
-    fixme_targets.add_argument(
-        "--subdirectory", help="Only upgrade TARGETS files within this directory."
-    )
-    fixme_targets.add_argument(
-        "--no-commit", action="store_true", help="Keep changes in working state."
-    )
 
     # Subcommand: Remove targets integration and replace with configuration
     targets_to_configuration = commands.add_parser("targets-to-configuration")
