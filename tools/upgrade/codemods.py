@@ -24,7 +24,9 @@ class MissingOverrideReturnAnnotations(Command):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        Command.add_arguments(parser)
+        super(
+            MissingOverrideReturnAnnotations, MissingOverrideReturnAnnotations
+        ).add_arguments(parser)
         parser.set_defaults(command=MissingOverrideReturnAnnotations)
         parser.add_argument(
             "--only-fix-error-code",
@@ -82,7 +84,7 @@ class MissingGlobalAnnotations(Command):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        Command.add_arguments(parser)
+        super(MissingGlobalAnnotations, MissingGlobalAnnotations).add_arguments(parser)
         parser.set_defaults(command=MissingGlobalAnnotations)
         parser.add_argument(
             "--only-fix-error-code",

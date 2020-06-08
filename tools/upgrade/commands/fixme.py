@@ -32,7 +32,7 @@ class Fixme(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(Fixme, Fixme).add_arguments(parser)
         parser.set_defaults(command=Fixme)
         parser.add_argument(
             "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN

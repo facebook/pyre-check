@@ -32,7 +32,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(ExpandTargetCoverage, ExpandTargetCoverage).add_arguments(parser)
         parser.set_defaults(command=ExpandTargetCoverage)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."

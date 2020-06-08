@@ -72,7 +72,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(TargetsToConfiguration, TargetsToConfiguration).add_arguments(parser)
         parser.set_defaults(command=TargetsToConfiguration)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."

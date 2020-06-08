@@ -31,7 +31,9 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(
+            ConsolidateNestedConfigurations, ConsolidateNestedConfigurations
+        ).add_arguments(parser)
         parser.set_defaults(command=ConsolidateNestedConfigurations)
         parser.add_argument("--subdirectory")
         parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)

@@ -46,7 +46,7 @@ class GlobalVersionUpdate(Command):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        Command.add_arguments(parser)
+        super(GlobalVersionUpdate, GlobalVersionUpdate).add_arguments(parser)
         parser.set_defaults(command=GlobalVersionUpdate)
         parser.add_argument("hash", help="Hash of new Pyre version")
         parser.add_argument(
@@ -132,10 +132,12 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ProjectErrorSuppressingCommand.add_arguments(parser)
+        super(FixmeSingle, FixmeSingle).add_arguments(parser)
         parser.set_defaults(command=FixmeSingle)
         parser.add_argument(
-            "path", help="Path to project root with local configuration", type=path_exists
+            "path",
+            help="Path to project root with local configuration",
+            type=path_exists,
         )
 
     def run(self) -> None:
@@ -153,7 +155,7 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
 class FixmeAll(ProjectErrorSuppressingCommand):
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ProjectErrorSuppressingCommand.add_arguments(parser)
+        super(FixmeAll, FixmeAll).add_arguments(parser)
         parser.set_defaults(command=FixmeAll)
 
     def run(self) -> None:
@@ -175,7 +177,7 @@ class FixmeTargets(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(FixmeTargets, FixmeTargets).add_arguments(parser)
         parser.set_defaults(command=FixmeTargets)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)

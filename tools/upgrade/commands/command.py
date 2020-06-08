@@ -41,7 +41,7 @@ class ErrorSuppressingCommand(Command):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        Command.add_arguments(parser)
+        super(ErrorSuppressingCommand, ErrorSuppressingCommand).add_arguments(parser)
         parser.add_argument("--comment", help="Custom comment after fixme comments")
         parser.add_argument(
             "--max-line-length",
@@ -90,7 +90,9 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(
+            ProjectErrorSuppressingCommand, ProjectErrorSuppressingCommand
+        ).add_arguments(parser)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,

@@ -28,7 +28,7 @@ class StrictDefault(ErrorSuppressingCommand):
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
-        ErrorSuppressingCommand.add_arguments(parser)
+        super(StrictDefault, StrictDefault).add_arguments(parser)
         parser.set_defaults(command=StrictDefault)
         parser.add_argument(
             "-l",
