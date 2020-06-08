@@ -578,18 +578,24 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | ( Expression.Name (Name.Identifier "reveal_taint"),
               [{ Call.Argument.value = expression; _ }] ) ->
               let taint, _ = analyze_expression ~resolution ~state ~expression in
+              let location =
+                Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+              in
               Log.dump
                 "%a: Revealed forward taint for `%s`: %s"
-                Location.pp
-                (Node.location callee)
+                Location.WithModule.pp
+                location
                 (Ast.Transform.sanitize_expression expression |> Expression.show)
                 (ForwardState.Tree.show taint)
           | ( Expression.Name (Name.Identifier "reveal_type"),
               [{ Call.Argument.value = expression; _ }] ) ->
+              let location =
+                Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+              in
               Log.dump
                 "%a: Revealed type for %s: %s"
-                Location.pp
-                (Node.location callee)
+                Location.WithModule.pp
+                location
                 (Ast.Transform.sanitize_expression expression |> Expression.show)
                 (Resolution.resolve_expression_to_type resolution expression |> Type.show)
           | _ -> ()

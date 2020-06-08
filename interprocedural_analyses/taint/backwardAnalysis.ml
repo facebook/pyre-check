@@ -454,11 +454,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 let taint =
                   BackwardState.read state.taint ~root:(Root.Variable identifier) ~path:[]
                 in
-
                 Log.dump
                   "%a: Revealed backward taint for `%s`: %s"
-                  Location.pp
-                  location
+                  Location.WithModule.pp
+                  (Location.with_module location ~qualifier:FunctionContext.qualifier)
                   (Identifier.sanitized identifier)
                   (BackwardState.Tree.show taint);
                 state
