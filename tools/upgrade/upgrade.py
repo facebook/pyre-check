@@ -238,12 +238,6 @@ class FixmeTargets(ErrorSuppressingCommand):
 def run(repository: Repository) -> None:
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--only-fix-error-code",
-        type=int,
-        help="Only add fixmes for errors with this specific error code.",
-        default=None,
-    )
 
     commands = parser.add_subparsers()
 

@@ -38,6 +38,12 @@ class Fixme(ErrorSuppressingCommand):
             "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN
         )
         parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--only-fix-error-code",
+            type=int,
+            help="Only add fixmes for errors with this specific error code.",
+            default=None,
+        )
 
     def run(self) -> None:
         if self._error_source == ErrorSource.GENERATE:
