@@ -9,6 +9,7 @@ import os
 import site
 import sys
 import unittest
+from pathlib import Path
 from typing import Any, NamedTuple, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
@@ -582,6 +583,7 @@ class ConfigurationTest(unittest.TestCase):
 
         # Test nested configurations.
         find_root.side_effect = ["root", None]
+        path_resolve.side_effect = [Path("root/local"), Path("root/local")]
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
         json_loads.side_effect = [
@@ -613,6 +615,7 @@ class ConfigurationTest(unittest.TestCase):
             self.fail("Configuration should not raise.")
 
         find_root.side_effect = ["root", None]
+        path_resolve.side_effect = [Path("root/local"), Path("not_local")]
         json_loads.side_effect = [
             {
                 "source_directories": ["a"],

@@ -437,6 +437,7 @@ class Configuration:
 
         parent_error = None
         excluded_from_parent = False
+        local_root: Path = Path(local_root).resolve()
         try:
             parent_local_configuration = Configuration(
                 local_configuration=parent_local_root,
@@ -449,17 +450,15 @@ class Configuration:
                 formatter=self.formatter,
                 log_directory=self._log_directory,
             )
+            paths_to_ignore = list(local_root.parents) + [local_root]
             for ignore_element in parent_local_configuration.ignore_all_errors:
-                paths_to_ignore = list(Path(local_root).parents) + [Path(local_root)]
-                if Path(ignore_element) in paths_to_ignore:
+                if Path(ignore_element).resolve() in paths_to_ignore:
                     excluded_from_parent = True
         except EnvironmentException as error:
             parent_error = error
 
         if not excluded_from_parent:
-            relative_path = str(
-                Path(local_root).resolve().relative_to(parent_local_root)
-            )
+            relative_path = str(local_root.relative_to(parent_local_root))
             error_message = (
                 "Local configuration is nested under another local configuration at "
                 f"`{parent_local_root}`.\nPlease add `{relative_path}` to the "
