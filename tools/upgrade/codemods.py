@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import logging
 import pathlib
 import re
@@ -10,14 +11,30 @@ from logging import Logger
 
 from .commands.command import Command
 from .errors import Errors
+from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
 
 
 class MissingOverrideReturnAnnotations(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._only_fix_error_code: int = arguments.only_fix_error_code
+
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        Command.add_arguments(parser)
+        parser.set_defaults(command=MissingOverrideReturnAnnotations)
+        parser.add_argument(
+            "--only-fix-error-code",
+            type=int,
+            help="Only add fixmes for errors with this specific error code.",
+            default=None,
+        )
+
     def run(self) -> None:
-        errors = Errors.from_stdin(self._arguments.only_fix_error_code)
+        errors = Errors.from_stdin(self._only_fix_error_code)
         for path, errors in errors:
             LOG.info("Patching errors in `%s`.", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)
@@ -59,8 +76,23 @@ class MissingOverrideReturnAnnotations(Command):
 
 
 class MissingGlobalAnnotations(Command):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._only_fix_error_code: int = arguments.only_fix_error_code
+
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        Command.add_arguments(parser)
+        parser.set_defaults(command=MissingGlobalAnnotations)
+        parser.add_argument(
+            "--only-fix-error-code",
+            type=int,
+            help="Only add fixmes for errors with this specific error code.",
+            default=None,
+        )
+
     def run(self) -> None:
-        errors = Errors.from_stdin(self._arguments.only_fix_error_code)
+        errors = Errors.from_stdin(self._only_fix_error_code)
         for path, errors in errors:
             LOG.info("Patching errors in `%s`", path)
             errors = sorted(errors, key=lambda error: error["line"], reverse=True)

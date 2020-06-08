@@ -247,15 +247,15 @@ def run(repository: Repository) -> None:
         "missing-overridden-return-annotations",
         help="Add annotations according to errors inputted through stdin.",
     )
-    missing_overridden_return_annotations.set_defaults(
-        command=MissingOverrideReturnAnnotations
+    MissingOverrideReturnAnnotations.add_arguments(
+        missing_overridden_return_annotations
     )
 
     missing_global_annotations = commands.add_parser(
         "missing-global-annotations",
         help="Add annotations according to errors inputted through stdin.",
     )
-    missing_global_annotations.set_defaults(command=MissingGlobalAnnotations)
+    MissingGlobalAnnotations.add_arguments(missing_global_annotations)
 
     # Subcommand: Change default pyre mode to strict and adjust module headers.
     strict_default = commands.add_parser("strict-default")
