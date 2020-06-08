@@ -128,11 +128,15 @@ class GlobalVersionUpdate(Command):
 class FixmeSingle(ProjectErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
-        self._path: Path = Path(arguments.path)
+        self._path: Path = arguments.path
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         ProjectErrorSuppressingCommand.add_arguments(parser)
+        parser.set_defaults(command=FixmeSingle)
+        parser.add_argument(
+            "path", help="Path to project root with local configuration", type=path_exists
+        )
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
@@ -150,6 +154,7 @@ class FixmeAll(ProjectErrorSuppressingCommand):
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         ProjectErrorSuppressingCommand.add_arguments(parser)
+        parser.set_defaults(command=FixmeAll)
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
@@ -273,36 +278,10 @@ def run(repository: Repository) -> None:
     # Subcommand: Fixme all errors for a single project.
     fixme_single = commands.add_parser("fixme-single")
     FixmeSingle.add_arguments(fixme_single)
-    fixme_single.set_defaults(command=FixmeSingle)
-    fixme_single.add_argument(
-        "path", help="Path to project root with local configuration", type=path_exists
-    )
-    fixme_single.add_argument(
-        "--upgrade-version",
-        action="store_true",
-        help="Upgrade and clean project if a version override set.",
-    )
-    fixme_single.add_argument(
-        "--error-source", choices=["stdin", "generate"], default="generate"
-    )
-    fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-    fixme_single.add_argument(
-        "--no-commit", action="store_true", help=argparse.SUPPRESS
-    )
-    fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
     FixmeAll.add_arguments(fixme_all)
-    fixme_all.set_defaults(command=FixmeAll)
-    fixme_all.add_argument(
-        "--upgrade-version",
-        action="store_true",
-        help="Upgrade and clean projects with a version override set.",
-    )
-    fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-    fixme_all.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
-    fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in targets running type checking
     fixme_targets = commands.add_parser("fixme-targets")

@@ -79,9 +79,35 @@ class ErrorSuppressingCommand(Command):
 
 
 class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
+    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+        super().__init__(arguments, repository)
+        self._only_fix_error_code: int = arguments.only_fix_error_code
+        self._upgrade_version: bool = arguments.upgrade_version
+        self._error_source: str = arguments.error_source
+        self._lint: bool = arguments.lint
+        self._no_commit: bool = arguments.no_commit
+        self._submit: bool = arguments.submit
+
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         ErrorSuppressingCommand.add_arguments(parser)
+        parser.add_argument(
+            "--only-fix-error-code",
+            type=int,
+            help="Only add fixmes for errors with this specific error code.",
+            default=None,
+        )
+        parser.add_argument(
+            "--upgrade-version",
+            action="store_true",
+            help="Upgrade and clean project if a version override set.",
+        )
+        parser.add_argument(
+            "--error-source", choices=["stdin", "generate"], default="generate"
+        )
+        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     def _suppress_errors_in_project(
         self, configuration: Configuration, root: Path
@@ -89,23 +115,22 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         LOG.info("Processing %s", configuration.get_directory())
         if not configuration.is_local:
             return
-        if self._arguments.upgrade_version:
+        if self._upgrade_version:
             if configuration.version:
                 configuration.remove_version()
                 configuration.write()
             else:
                 return
         errors = (
-            Errors.from_stdin(self._arguments.only_fix_error_code)
-            if self._arguments.error_source == "stdin"
-            and not self._arguments.upgrade_version
+            Errors.from_stdin(self._only_fix_error_code)
+            if self._error_source == "stdin" and not self._upgrade_version
             else configuration.get_errors()
         )
         if len(errors) > 0:
             self._suppress_errors(errors)
 
             # Lint and re-run pyre once to resolve most formatting issues
-            if self._arguments.lint:
+            if self._lint:
                 if self._repository.format():
                     errors = configuration.get_errors(should_clean=False)
                     self._suppress_errors(errors)
@@ -113,13 +138,9 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         project_root = root.resolve()
         local_root = configuration.get_directory().resolve()
         title = "{} for {}".format(
-            "Update pyre version"
-            if self._arguments.upgrade_version
-            else "Suppress pyre errors",
+            "Update pyre version" if self._upgrade_version else "Suppress pyre errors",
             str(local_root.relative_to(project_root)),
         )
         self._repository.submit_changes(
-            commit=(not self._arguments.no_commit),
-            submit=self._arguments.submit,
-            title=title,
+            commit=(not self._no_commit), submit=self._submit, title=title
         )
