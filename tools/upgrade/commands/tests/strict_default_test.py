@@ -23,34 +23,34 @@ class StrictDefaultTest(unittest.TestCase):
     def test_add_local_mode(self, read_text) -> None:
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.UNSAFE)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.UNSAFE)
             path_write_text.assert_called_once_with("# pyre-unsafe\n1\n2")
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# comment\n1"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.UNSAFE)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.UNSAFE)
             path_write_text.assert_called_once_with(
                 "# comment\n# comment\n\n# pyre-unsafe\n1"
             )
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-strict\n1"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.UNSAFE)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.UNSAFE)
             path_write_text.assert_not_called()
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-ignore-all-errors\n1"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.UNSAFE)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.UNSAFE)
             path_write_text.assert_not_called()
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.STRICT)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.STRICT)
             path_write_text.assert_called_once_with("# pyre-strict\n1\n2")
 
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade.add_local_mode("local.py", upgrade.LocalMode.IGNORE)
+            strict_default.add_local_mode("local.py", strict_default.LocalMode.IGNORE)
             path_write_text.assert_called_once_with("# pyre-ignore-all-errors\n1\n2")
 
     @patch.object(

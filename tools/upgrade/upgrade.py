@@ -30,7 +30,7 @@ from .commands.strict_default import StrictDefault
 from .commands.targets_to_configuration import TargetsToConfiguration
 from .configuration import Configuration
 from .errors import errors_from_targets
-from .filesystem import LocalMode, Target, add_local_mode, find_targets, path_exists
+from .filesystem import Target, find_targets, path_exists
 from .repository import Repository
 
 
