@@ -1146,6 +1146,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
 let verify_model_syntax ~path ~source =
   try String.split ~on:'\n' source |> Parser.parse |> ignore with
   | exn ->
+      Log.error "Unable to parse model at `%s`: %s" (Path.show path) (Exn.to_string exn);
       raise
         (Model.InvalidModel
            (Format.sprintf "Invalid model at `%s`: %s" (Path.show path) (Exn.to_string exn)))
