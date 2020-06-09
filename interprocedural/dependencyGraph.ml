@@ -209,11 +209,13 @@ let dump call_graph ~configuration =
   Buffer.add_string buffer "}";
 
   (* Write to file. *)
-  Path.create_relative
-    ~root:(Configuration.Analysis.log_directory configuration)
-    ~relative:"call_graph.json"
-  |> File.create ~content:(Buffer.contents buffer)
-  |> File.write
+  let path =
+    Path.create_relative
+      ~root:(Configuration.Analysis.log_directory configuration)
+      ~relative:"call_graph.json"
+  in
+  Log.warning "Emitting the contents of the call graph to `%s`" (Path.absolute path);
+  path |> File.create ~content:(Buffer.contents buffer) |> File.write
 
 
 let from_callgraph callgraph =
