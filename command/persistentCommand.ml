@@ -15,44 +15,12 @@ type exit_code = int
 
 exception ClientExit of reason * exit_code
 
-let communicate
-    server_socket
-    all_uris
-    server_uuid
-    ~configuration:
-      {
-        Configuration.Analysis.perform_autocompletion = autocomplete;
-        features = { hover; click_to_fix; go_to_definition };
-        _;
-      }
-  =
+let communicate ~server_socket ~all_uris =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
     |> ShowMessage.to_yojson
     |> write_message Out_channel.stdout
   in
-  (* Read the initialize request *)
-  LanguageServer.Protocol.read_message In_channel.stdin
-  >>| InitializeRequest.of_yojson
-  >>| (function
-        | Ok request ->
-            Log.info "Request method: %s" request.InitializeRequest.method_;
-            request.InitializeRequest.id
-        | Error error ->
-            let message =
-              Format.sprintf "Could not parse initialize request message for record field: %s" error
-            in
-            Log.info "%s" message;
-            failwith message)
-  (* Write the initialize response *)
-  >>| InitializeResponse.default
-        ~server_uuid
-        ~features:{ click_to_fix; autocomplete; hover; go_to_definition }
-  >>| InitializeResponse.to_yojson
-  >>| LanguageServer.Protocol.write_message Out_channel.stdout
-  |> ignore;
-  Statistics.event ~flush:true ~name:"persistent_client_launch" ();
-
   (* Get all initial errors *)
   Socket.write server_socket (Protocol.Request.DisplayTypeErrors []);
   let rec listen server_socket () =
@@ -179,15 +147,7 @@ let run_command
             raise (ClientExit ("unexpected json response", 1)) );
         server_socket
       in
-      let server_uuid =
-        Socket.write server_socket Protocol.Request.GetServerUuid;
-        match Socket.read server_socket with
-        | Protocol.ServerUuidResponse server_uuid -> server_uuid
-        | _ ->
-            Log.error "Exiting due to missing server uuid.";
-            raise (ClientExit ("Missing server UUID", 1))
-      in
-      communicate server_socket all_uris server_uuid ~configuration
+      communicate ~server_socket ~all_uris
     with
     | ClientExit (reason, exit_code) ->
         Statistics.event

@@ -272,6 +272,7 @@ let parse_and_translate
               "Error: Could not parse initialize request message for record field: %s"
               error;
             None )
+    | "initialized" -> Some InitializedRequest
     | unmatched_method ->
         Log.log ~section:`Server "Unhandled %s" unmatched_method;
         None

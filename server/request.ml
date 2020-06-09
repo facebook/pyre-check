@@ -865,7 +865,9 @@ let rec process
   let { Configuration.Features.go_to_definition; click_to_fix; hover } =
     Configuration.Analysis.features configuration
   in
-  let { Configuration.Analysis.perform_autocompletion = autocomplete; _ } = configuration in
+  let { Configuration.Analysis.perform_autocompletion = autocomplete; expected_version; _ } =
+    configuration
+  in
   let timer = Timer.start () in
   let log_request_error ~error =
     Statistics.event
@@ -1136,6 +1138,16 @@ let rec process
             |> Option.some
           in
           { state; response }
+      | InitializedRequest ->
+          expected_version
+          >>| (fun expected_version ->
+                Statistics.event
+                  ~flush:true
+                  ~name:"LSP Initialized"
+                  ~normals:["reason", "LSP Initialized"; "server_version", expected_version]
+                  ())
+          |> ignore;
+          { state; response = None }
     with
     | Unix.Unix_error (kind, name, parameters) ->
         Log.log_unix_error (kind, name, parameters);

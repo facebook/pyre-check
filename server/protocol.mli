@@ -261,6 +261,7 @@ module Request : sig
     | GetDefinitionRequest of DefinitionRequest.t
     | HoverRequest of DefinitionRequest.t
     | InitializeRequest of LanguageServer.Types.RequestId.t
+    | InitializedRequest
     | GetServerUuid
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
