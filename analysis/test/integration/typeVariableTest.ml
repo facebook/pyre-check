@@ -1399,6 +1399,50 @@ let test_callable_parameter_variadics context =
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `H.f` but got `str`.";
     ];
+
+  assert_type_errors
+    {|
+      from typing import Callable
+      import pyre_extensions
+
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      def outer(f: Callable[TParams, int]) -> None:
+        def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        def bar(__x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        def baz(x: int, /, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          pass
+        reveal_type(foo)
+        reveal_type(bar)
+        reveal_type(baz)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+      "Revealed type [-1]: Revealed type for `bar` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+      "Revealed type [-1]: Revealed type for `baz` is \
+       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
+       None]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+      import pyre_extensions
+
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
+        def foo(x: int, *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          f( *args, **kwargs)
+        def bar( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          foo(1, *args, **kwargs) # Accepted
+          foo(x=1, *args, **kwargs) # Rejected
+        return bar
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `x` to anonymous call."];
   ()
 
 
