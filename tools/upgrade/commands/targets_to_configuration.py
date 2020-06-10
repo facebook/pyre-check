@@ -63,7 +63,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
         super().__init__(arguments, repository)
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._glob: int = arguments.glob
-        self._lint: bool = arguments.lint
         self._fixme_threshold: int = arguments.fixme_threshold
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
@@ -84,7 +83,6 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             Fall back to individual targets if errors per file ever hits given \
             threshold.",
         )
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--fixme-threshold",
             type=int,

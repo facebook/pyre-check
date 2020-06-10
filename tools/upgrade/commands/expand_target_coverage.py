@@ -28,7 +28,6 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         self._fixme_threshold: bool = arguments.fixme_threshold
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
-        self._lint: bool = arguments.lint
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -46,7 +45,6 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         subdirectory = self._subdirectory

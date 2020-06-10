@@ -24,7 +24,6 @@ class StrictDefault(ErrorSuppressingCommand):
         self._local_configuration: Path = arguments.local_configuration
         self._remove_strict_headers: bool = arguments.remove_strict_headers
         self._fixme_threshold: int = arguments.fixme_threshold
-        self._lint: bool = arguments.lint
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -48,7 +47,6 @@ class StrictDefault(ErrorSuppressingCommand):
             default=0,
             help="Mark file as unsafe if fixme count exceeds threshold.",
         )
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()

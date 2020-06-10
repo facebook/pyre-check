@@ -25,7 +25,6 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._lint: bool = arguments.lint
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
 
@@ -36,7 +35,6 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
         ).add_arguments(parser)
         parser.set_defaults(command=ConsolidateNestedConfigurations)
         parser.add_argument("--subdirectory")
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--no-commit", action="store_true", help="Keep changes in working state."
         )

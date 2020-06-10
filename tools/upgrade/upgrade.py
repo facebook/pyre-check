@@ -173,14 +173,12 @@ class FixmeTargets(ErrorSuppressingCommand):
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit
-        self._lint: bool = arguments.lint
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         super(FixmeTargets, FixmeTargets).add_arguments(parser)
         parser.set_defaults(command=FixmeTargets)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
         )

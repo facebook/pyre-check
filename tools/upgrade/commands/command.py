@@ -38,6 +38,7 @@ class ErrorSuppressingCommand(Command):
         self._force_format_unsuppressed: bool = getattr(
             arguments, "force_format_unsuppressed", False
         )
+        self._lint: bool = arguments.lint
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -62,6 +63,12 @@ class ErrorSuppressingCommand(Command):
         )
         parser.add_argument(
             "--force-format-unsuppressed", action="store_true", help=argparse.SUPPRESS
+        )
+        parser.add_argument(
+            "--lint",
+            action="store_true",
+            help="Run lint to ensure added fixmes comply with black formatting. \
+            Doubles the runtime of pyre-ugprade.",
         )
 
     def _suppress_errors(self, errors: Errors) -> None:

@@ -26,7 +26,6 @@ class ErrorSource(Enum):
 class Fixme(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
         super().__init__(arguments, repository)
-        self._lint: bool = arguments.lint
         self._error_source: str = arguments.error_source
         self._only_fix_error_code: Optional[int] = arguments.only_fix_error_code
 
@@ -37,7 +36,6 @@ class Fixme(ErrorSuppressingCommand):
         parser.add_argument(
             "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN
         )
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,
