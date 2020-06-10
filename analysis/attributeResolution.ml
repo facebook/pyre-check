@@ -2429,14 +2429,21 @@ class base class_metadata_environment dependency =
 
     method resolve_define ~assumptions ~implementation ~overloads =
       let apply_decorator (index, { Decorator.name; arguments }) argument =
+        let name = Node.value name |> Reference.delocalize in
         let decorator =
-          Node.value name
-          |> UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
-               (unannotated_global_environment class_metadata_environment)
-               ?dependency
-          |> Reference.show
+          UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+            (unannotated_global_environment class_metadata_environment)
+            ?dependency
+            name
         in
-        match decorator, argument with
+        let simple_decorator_name =
+          match decorator with
+          | Some (ModuleAttribute { from; name; remaining; _ }) ->
+              Reference.create_from_list (Reference.as_list from @ (name :: remaining))
+              |> Reference.show
+          | _ -> Reference.show name
+        in
+        match simple_decorator_name, argument with
         | ("click.decorators.pass_context" | "click.decorators.pass_obj"), Type.Callable callable ->
             (* Suppress caller/callee parameter matching by altering the click entry point to have a
                generic parameter list. *)
@@ -2522,11 +2529,10 @@ class base class_metadata_environment dependency =
         | "staticmethod", _ ->
             Type.Parametric { name = "typing.StaticMethod"; parameters = [Single argument] }
             |> Result.return
-        | name, _ -> (
+        | _ -> (
             let make_error reason =
               Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
             in
-            let name = Reference.create name |> Reference.delocalize in
             let { decorator_assumptions; _ } = assumptions in
             if
               Assumptions.DecoratorAssumptions.not_a_decorator decorator_assumptions ~candidate:name
@@ -2567,15 +2573,22 @@ class base class_metadata_environment dependency =
                 >>| List.map ~f:Annotation.annotation
                 >>= join_all
               in
-              let rec resolver name =
-                match
-                  self#global_annotation ~assumptions name, Reference.as_list name |> List.rev
-                with
-                | Some { Global.annotation = { annotation; _ }; _ }, _ -> Some annotation
-                | None, ([] | [_]) -> None
-                | None, attribute_name :: reversed_head ->
-                    resolver (Reference.create_from_list (List.rev reversed_head))
-                    >>= resolve_attribute_access ~attribute_name
+              let resolver = function
+                | UnannotatedGlobalEnvironment.ResolvedReference.Module _ -> None
+                | PlaceholderStub _ -> Some Type.Any
+                | ModuleAttribute { from; name; remaining; _ } ->
+                    let rec resolve_remaining base ~remaining =
+                      match remaining with
+                      | [] -> Some base
+                      | attribute_name :: remaining ->
+                          resolve_attribute_access base ~attribute_name
+                          >>= resolve_remaining ~remaining
+                    in
+                    Reference.create_from_list [name]
+                    |> Reference.combine from
+                    |> self#global_annotation ~assumptions
+                    >>| (fun { Global.annotation = { annotation; _ }; _ } -> annotation)
+                    >>= resolve_remaining ~remaining
               in
               let extract_callable = function
                 | Type.Callable callable -> Some callable
@@ -2610,7 +2623,7 @@ class base class_metadata_environment dependency =
                     | { Node.value = Expression.Expression.Name name; _ } ->
                         Expression.name_to_reference name
                         >>| Reference.delocalize
-                        >>| UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+                        >>= UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
                               (unannotated_global_environment class_metadata_environment)
                               ?dependency
                         >>= resolver
@@ -2645,7 +2658,7 @@ class base class_metadata_environment dependency =
                 Result.map arguments ~f:select |> Result.bind ~f:extract
               in
               let resolved_decorator =
-                match resolver name with
+                match decorator >>= resolver with
                 | None -> make_error CouldNotResolve
                 | Some Any -> Ok Type.Any
                 | Some fetched -> (
