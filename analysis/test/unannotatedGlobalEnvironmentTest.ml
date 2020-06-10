@@ -1789,16 +1789,19 @@ let test_builtin_modules context =
 
 let test_resolve_exports context =
   let open UnannotatedGlobalEnvironment in
-  let assert_resolved ~expected ?from ~reference sources =
+  let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
     Memory.reset_shared_memory ();
     let configuration, ast_environment =
       let project =
-        ScratchProject.setup
-          ~context
-          ~include_typeshed_stubs:false
-          ~include_helper_builtins:false
-          ~external_sources:["builtins.py", ""]
-          sources
+        if include_typeshed then
+          ScratchProject.setup ~context sources
+        else
+          ScratchProject.setup
+            ~context
+            ~include_typeshed_stubs:false
+            ~include_helper_builtins:false
+            ~external_sources:["builtins.py", ""]
+            sources
       in
       ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
     in
@@ -2039,6 +2042,12 @@ let test_resolve_exports context =
     ~from:!&"qualifier.a"
     ~reference:!&"foo"
     ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
+
+  assert_resolved
+    ~include_typeshed:true
+    ~expected:(Some (resolved_attribute !&"" "None" ~export:GlobalVariable))
+    ~reference:!&"None"
+    [];
   ()
 
 

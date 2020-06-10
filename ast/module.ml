@@ -155,9 +155,19 @@ let create
       | TupleAssign _ ->
           Identifier.Map.set sofar ~key:name ~data:Export.(Name GlobalVariable)
     in
-    Collector.from_source source
-    |> List.fold ~init:Identifier.Map.empty ~f:collect_export
-    |> Map.to_tree
+    let collected =
+      Collector.from_source source |> List.fold ~init:Identifier.Map.empty ~f:collect_export
+    in
+    let collected =
+      if Reference.is_empty qualifier then
+        (* We need to pretend None is in the builtins.pyi stub, even though it's missing *)
+        match Identifier.Map.add collected ~key:"None" ~data:Export.(Name GlobalVariable) with
+        | `Duplicate -> collected
+        | `Ok ok -> ok
+      else
+        collected
+    in
+    Map.to_tree collected
   in
   let legacy_aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
