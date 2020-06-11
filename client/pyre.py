@@ -120,7 +120,17 @@ def run_pyre(arguments: argparse.Namespace) -> ExitCode:
             )
             exit_code = command.run().exit_code()
     except analysis_directory.NotWithinLocalConfigurationException as error:
-        if not command:
+        if arguments.command == commands.Persistent.from_arguments:
+            try:
+                commands.Persistent.run_null_server(timeout=3600 * 12)
+                exit_code = ExitCode.SUCCESS
+            except Exception as error:
+                client_exception_message = str(error)
+                exit_code = ExitCode.FAILURE
+            except KeyboardInterrupt:
+                LOG.warning("Interrupted by user")
+                exit_code = ExitCode.SUCCESS
+        elif not command:
             client_exception_message = str(error)
             exit_code = ExitCode.FAILURE
         else:
