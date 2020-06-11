@@ -45,7 +45,9 @@ module.exports = {
   ],
 
   themeConfig: {
+    disableDarkMode: true,
     navbar: {
+      textColor: '#091E42',
       logo: {
         alt: 'Pyre Logo',
         src: 'img/integrated_logo_light.png',
@@ -61,7 +63,6 @@ module.exports = {
       ],
     },
       footer: {
-      style: 'dark',
       logo: {
         alt: 'Facebook Open Source Logo',
         src: 'https://docusaurus.io/img/oss_logo.png',

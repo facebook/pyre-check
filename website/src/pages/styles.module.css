@@ -25,7 +25,7 @@
 
 .buttons {
   display: flex;
-  align-items: center;
+  align-items: normal;
   justify-content: center;
 }
 
@@ -33,14 +33,10 @@
   display: flex;
   align-items: center;
   padding: 2rem 0;
-  width: 100%;
+  width: 105%;
 }
 
 .featureImage {
   height: 200px;
   width: 200px;
-}
-
-.footer.footer {
-    background-color: #c25725;
 }

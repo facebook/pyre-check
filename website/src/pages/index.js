@@ -73,7 +73,6 @@ function Home() {
       description="A performant type-checker for Python 3.<head />">
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
-          <br/>
           <img src='img/pyre.svg' alt="Pyre logo." width="100"/>
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>

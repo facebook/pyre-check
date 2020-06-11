@@ -1,9 +1,18 @@
 :root {
-  --ifm-color-primary: #e7542f;
-  --ifm-color-primary-dark: rgb(#c25725);
+  --ifm-color-primary: #ffffff;
+  --ifm-color-primary-dark: #c25725;
   --ifm-color-primary-darker: rgb(31, 165, 136);
   --ifm-color-primary-darkest: rgb(26, 136, 112);
   --ifm-color-primary-light: rgb(70, 203, 174);
   --ifm-color-primary-lighter: rgb(102, 212, 189);
   --ifm-color-primary-lightest: rgb(146, 224, 208);
+  --ifm-hero-text-color: #ffffff;
+  --ifm-font-color-base-inverse: #000000;
+  --ifm-footer-color: #c25725;
+  --ifm-footer-padding-vertical: 5px;
+  --ifm-navbar-background-color: rgb(40, 29, 29);
+  --ifm-footer-color:rgb(40, 29, 29);
+  --ifm-footer-background-color:rgb(40, 29, 29);
+  --ifm-navbar-link-color:rgb(233, 233, 233);
+  --ifm-link-color:#c25725;
 }
