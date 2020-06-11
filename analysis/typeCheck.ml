@@ -5885,13 +5885,14 @@ let check_define
       in
       exit_state ~resolution (module Context)
     in
-    let caller =
-      if Define.is_property_setter define then
-        Callgraph.PropertySetterCaller name
-      else
-        Callgraph.FunctionCaller name
-    in
-    Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees);
+    ( if not (Define.is_overloaded_function define) then
+        let caller =
+          if Define.is_property_setter define then
+            Callgraph.PropertySetterCaller name
+          else
+            Callgraph.FunctionCaller name
+        in
+        Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees) );
     { CheckResult.errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->

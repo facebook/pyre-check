@@ -23,88 +23,91 @@ let empty_overrides = Reference.Map.empty
 
 let create_callgraph ~environment ~source =
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let fold_defines
-      dependencies
-      ( { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as
-      define )
-    =
-    let module Callgraph = Analysis.Callgraph in
-    let create_target method_name =
-      if DependencyGraphSharedMemory.overrides_exist method_name then
-        Callable.create_override method_name
-      else
-        Callable.create_method method_name
-    in
-    let create_property_setter_target method_name =
-      if DependencyGraphSharedMemory.overrides_exist method_name then
-        Callable.create_property_setter_override method_name
-      else
-        Callable.create_property_setter method_name
-    in
-    let keep_subtypes class_name candidate =
-      let candidate_type = GlobalResolution.parse_reference resolution candidate in
-      GlobalResolution.less_or_equal resolution ~left:candidate_type ~right:class_name
-    in
+  let fold_defines dependencies = function
+    | { Node.value = define; _ } when Define.is_overloaded_function define -> dependencies
+    | { Node.value = { Define.signature = { name = { Node.value = name; _ }; _ }; _ }; _ } as define
+      ->
+        let module Callgraph = Analysis.Callgraph in
+        let create_target method_name =
+          if DependencyGraphSharedMemory.overrides_exist method_name then
+            Callable.create_override method_name
+          else
+            Callable.create_method method_name
+        in
+        let create_property_setter_target method_name =
+          if DependencyGraphSharedMemory.overrides_exist method_name then
+            Callable.create_property_setter_override method_name
+          else
+            Callable.create_property_setter method_name
+        in
+        let keep_subtypes class_name candidate =
+          let candidate_type = GlobalResolution.parse_reference resolution candidate in
+          GlobalResolution.less_or_equal resolution ~left:candidate_type ~right:class_name
+        in
 
-    let callees = function
-      | Callgraph.Function name -> [Callable.create_function name]
-      | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ }
-        when Reference.equal
-               direct_target
-               (Reference.create
-                  ~prefix:(Type.class_name class_name)
-                  (Reference.last direct_target)) ->
-          (* If the direct target is the same as the class name, we don't need to expand the
-             override. *)
-          [create_target direct_target]
-      | Callgraph.PropertySetter { direct_target; class_name }
-        when Reference.equal
-               direct_target
-               (Reference.create
-                  ~prefix:(Type.class_name class_name)
-                  (Reference.last direct_target)) ->
-          [create_property_setter_target direct_target]
-      | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ } ->
-          let override_targets =
-            match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
-            | None -> []
-            | Some overriding_types ->
-                (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes that
-                   subclass the direct target's parent but not the class being called from. *)
-                List.filter overriding_types ~f:(keep_subtypes class_name)
-                |> List.map ~f:(fun overriding_type ->
-                       create_target
-                         (Reference.create ~prefix:overriding_type (Reference.last direct_target)))
+        let callees = function
+          | Callgraph.Function name -> [Callable.create_function name]
+          | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ }
+            when Reference.equal
+                   direct_target
+                   (Reference.create
+                      ~prefix:(Type.class_name class_name)
+                      (Reference.last direct_target)) ->
+              (* If the direct target is the same as the class name, we don't need to expand the
+                 override. *)
+              [create_target direct_target]
+          | Callgraph.PropertySetter { direct_target; class_name }
+            when Reference.equal
+                   direct_target
+                   (Reference.create
+                      ~prefix:(Type.class_name class_name)
+                      (Reference.last direct_target)) ->
+              [create_property_setter_target direct_target]
+          | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ } ->
+              let override_targets =
+                match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
+                | None -> []
+                | Some overriding_types ->
+                    (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes
+                       that subclass the direct target's parent but not the class being called from. *)
+                    List.filter overriding_types ~f:(keep_subtypes class_name)
+                    |> List.map ~f:(fun overriding_type ->
+                           create_target
+                             (Reference.create
+                                ~prefix:overriding_type
+                                (Reference.last direct_target)))
+              in
+              Callable.create_method direct_target :: override_targets
+          | Callgraph.Method { direct_target; dispatch = Static; _ } ->
+              [Callable.create_method direct_target]
+          | Callgraph.PropertySetter { direct_target; class_name } ->
+              let override_targets =
+                match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
+                | None -> []
+                | Some overriding_types ->
+                    (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes
+                       that subclass the direct target's parent but not the class being called from. *)
+                    List.filter overriding_types ~f:(keep_subtypes class_name)
+                    |> List.map ~f:(fun overriding_type ->
+                           create_property_setter_target
+                             (Reference.create
+                                ~prefix:overriding_type
+                                (Reference.last direct_target)))
+              in
+              Callable.create_property_setter direct_target :: override_targets
+        in
+        let callees =
+          let caller =
+            if Define.is_property_setter (Node.value define) then
+              Callgraph.PropertySetterCaller name
+            else
+              Callgraph.FunctionCaller name
           in
-          Callable.create_method direct_target :: override_targets
-      | Callgraph.Method { direct_target; dispatch = Static; _ } ->
-          [Callable.create_method direct_target]
-      | Callgraph.PropertySetter { direct_target; class_name } ->
-          let override_targets =
-            match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
-            | None -> []
-            | Some overriding_types ->
-                (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes that
-                   subclass the direct target's parent but not the class being called from. *)
-                List.filter overriding_types ~f:(keep_subtypes class_name)
-                |> List.map ~f:(fun overriding_type ->
-                       create_property_setter_target
-                         (Reference.create ~prefix:overriding_type (Reference.last direct_target)))
-          in
-          Callable.create_property_setter direct_target :: override_targets
-    in
-    let callees =
-      let caller =
-        if Define.is_property_setter (Node.value define) then
-          Callgraph.PropertySetterCaller name
-        else
-          Callgraph.FunctionCaller name
-      in
-      Callgraph.get ~caller
-      |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)
-      |> List.concat_map ~f:callees
-    in
-    Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
+          Callgraph.get ~caller
+          |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)
+          |> List.concat_map ~f:callees
+        in
+        Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
   in
   Preprocessing.defines source |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 
