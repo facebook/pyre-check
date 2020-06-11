@@ -12,9 +12,9 @@
       "watchman-integration",
       "querying-pyre",
       {
-        "type": "subcategory",
+        "type": "category",
         "label": "Pyre Static Analysis (Pysa)",
-        "ids": [
+        "items": [
           "pysa-basics",
           "pysa-running",
           "pysa-features",
