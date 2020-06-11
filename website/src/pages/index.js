@@ -73,7 +73,7 @@ function Home() {
       description="A performant type-checker for Python 3.<head />">
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
-          <br/><br/>
+          <br/>
           <img src='img/pyre.svg' alt="Pyre logo." width="100"/>
           <h1 className="hero__title">{siteConfig.title}</h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
@@ -107,11 +107,8 @@ function Home() {
           </section>
         )}
       </main>
-      <script src="https://asciinema.org/a/u1v8WDqHIHhRD8Uk2hzrjNz14.js"
-          id="asciicast-u1v8WDqHIHhRD8Uk2hzrjNz14" async></script>
     </Layout>
   );
-
 }
 
 export default Home;
