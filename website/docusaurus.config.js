@@ -21,7 +21,7 @@ module.exports = {
   title: 'Pyre',
   tagline: 'A performant type-checker for Python 3',
   url: 'https://pyre-check.org',
-  baseUrl: '/',
+  baseUrl: '/pyre-check/',
   organizationName: 'facebook',
   projectName: 'pyre-check',
   favicon: 'img/favicon.ico',
