@@ -551,9 +551,7 @@ class Command(CommandParser, ABC):
         self._strict: bool = (
             self._command_arguments.strict or self._configuration.strict
         )
-        self._logger: Final[Optional[str]] = logger or (
-            configuration and configuration.logger
-        )
+        self._logger: Final[Optional[str]] = logger or (self._configuration.logger)
         self._ignore_all_errors_paths: Iterable[str] = (
             self._configuration.ignore_all_errors
         )

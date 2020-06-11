@@ -102,6 +102,28 @@ class CommandTest(unittest.TestCase):
                 ".pyre",
             ],
         )
+        with patch.object(
+            commands.Command, "generate_configuration", return_value=configuration
+        ):
+            test_command = commands.Command(
+                arguments,
+                original_directory=original_directory,
+                configuration=None,
+                analysis_directory=analysis_directory,
+            )
+            self.assertEqual(
+                test_command._flags(),
+                [
+                    "-logging-sections",
+                    "parser,-progress",
+                    "-project-root",
+                    ".",
+                    "-logger",
+                    "/foo/bar",
+                    "-log-directory",
+                    ".pyre",
+                ],
+            )
 
     @patch("os.path.isdir", Mock(return_value=True))
     @patch("os.listdir")
