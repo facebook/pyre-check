@@ -70,7 +70,7 @@ function Home() {
   return (
     <Layout
       title={`${siteConfig.title}`}
-      description="A performant type-checker for Python 3.<head />">
+      description="A performant type-checker for Python 3.">
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <img src='img/pyre.svg' alt="Pyre logo." width="100"/>
