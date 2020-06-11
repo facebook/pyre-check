@@ -46,7 +46,9 @@ class PyreConnection:
         return None
 
     def start_server(self) -> PyreCheckResult:
-        subprocess.run(["pyre", "start"], cwd=str(self.pyre_directory))
+        subprocess.run(
+            ["pyre", "--noninteractive", "start"], cwd=str(self.pyre_directory)
+        )
         result = subprocess.run(
             ["pyre", "--noninteractive", "incremental"],
             stdout=subprocess.PIPE,
@@ -67,14 +69,18 @@ class PyreConnection:
         return result
 
     def stop_server(self) -> None:
-        subprocess.run(["pyre", "stop"], check=True, cwd=str(self.pyre_directory))
+        subprocess.run(
+            ["pyre", "--noninteractive", "stop"],
+            check=True,
+            cwd=str(self.pyre_directory),
+        )
 
     def query_server(self, query: str) -> Optional[PyreQueryResult]:
         if not self.server_initialized:
             self.start_server()
         LOG.debug(f"Running query: `pyre query '{query}'`")
         result = subprocess.run(
-            ["pyre", "query", query],
+            ["pyre", "--noninteractive", "query", query],
             stdout=subprocess.PIPE,
             cwd=str(self.pyre_directory),
         )
