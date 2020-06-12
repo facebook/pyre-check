@@ -112,10 +112,9 @@ function Home() {
              alignItems: "center",
           }}>
            <h3>Pyre in Action</h3>
-           <br/>
+           <div class="clearfix"></div>
            <script src="https://asciinema.org/a/u1v8WDqHIHhRD8Uk2hzrjNz14.js"
            id="asciicast-u1v8WDqHIHhRD8Uk2hzrjNz14" async></script>
-           <br/>
        </div>
       </main>
     </Layout>
