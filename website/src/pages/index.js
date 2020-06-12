@@ -105,23 +105,6 @@ function Home() {
             </div>
           </section>
         )}
-        <div
-          style={{
-             display: "flex",
-             justifyContent: "center",
-             alignItems: "center",
-          }}>
-           <h3>Pyre in Action</h3>
-       </div>
-        <div
-          style={{
-             display: "flex",
-             justifyContent: "center",
-             alignItems: "center",
-          }}>
-           <script src="https://asciinema.org/a/u1v8WDqHIHhRD8Uk2hzrjNz14.js"
-           id="asciicast-u1v8WDqHIHhRD8Uk2hzrjNz14" async cols="80"></script>
-       </div>
       </main>
     </Layout>
   );
