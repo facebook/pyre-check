@@ -17,7 +17,10 @@ from typing_extensions import Final
 from ...client.commands import ExitCode
 from . import UserError
 from .ast import UnstableAST
-from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
+from .commands.codemods import (
+    MissingGlobalAnnotations,
+    MissingOverrideReturnAnnotations,
+)
 from .commands.command import (
     Command,
     CommandArguments,

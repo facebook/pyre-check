@@ -9,9 +9,9 @@ import pathlib
 import re
 from logging import Logger
 
-from .commands.command import Command
-from .errors import Errors
-from .repository import Repository
+from ..commands.command import Command
+from ..errors import Errors
+from ..repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
