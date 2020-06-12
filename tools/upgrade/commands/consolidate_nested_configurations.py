@@ -15,7 +15,7 @@ from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import find_files
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        command_arguments = CommandArguments.from_arguments(arguments)
+        super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit

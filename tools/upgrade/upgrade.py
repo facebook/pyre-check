@@ -20,6 +20,7 @@ from .ast import UnstableAST
 from .codemods import MissingGlobalAnnotations, MissingOverrideReturnAnnotations
 from .commands.command import (
     Command,
+    CommandArguments,
     ErrorSuppressingCommand,
     ProjectErrorSuppressingCommand,
 )
@@ -39,10 +40,10 @@ LOG: Logger = logging.getLogger(__name__)
 
 class GlobalVersionUpdate(Command):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._hash: str = self._arguments.hash
-        self._paths: List[Path] = self._arguments.paths
-        self._submit: bool = self._arguments.submit
+        super().__init__(repository)
+        self._hash: str = arguments.hash
+        self._paths: List[Path] = arguments.paths
+        self._submit: bool = arguments.submit
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -169,7 +170,8 @@ class FixmeAll(ProjectErrorSuppressingCommand):
 
 class FixmeTargets(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        command_arguments = CommandArguments.from_arguments(arguments)
+        super().__init__(command_arguments, repository)
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._no_commit: bool = arguments.no_commit
         self._submit: bool = arguments.submit

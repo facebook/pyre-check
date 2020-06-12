@@ -25,7 +25,7 @@ from ..filesystem import (
     remove_non_pyre_ignores,
 )
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 from .strict_default import StrictDefault
 
 
@@ -60,7 +60,9 @@ class TargetPyreRemover(libcst.CSTTransformer):
 
 class TargetsToConfiguration(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        command_arguments = CommandArguments.from_arguments(arguments)
+        super().__init__(command_arguments, repository)
+        self._arguments = arguments
         self._subdirectory: Final[Optional[str]] = arguments.subdirectory
         self._glob: int = arguments.glob
         self._fixme_threshold: int = arguments.fixme_threshold

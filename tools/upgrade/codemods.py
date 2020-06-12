@@ -19,7 +19,7 @@ LOG: Logger = logging.getLogger(__name__)
 
 class MissingOverrideReturnAnnotations(Command):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        super().__init__(repository)
         self._only_fix_error_code: int = arguments.only_fix_error_code
 
     @staticmethod
@@ -79,7 +79,7 @@ class MissingOverrideReturnAnnotations(Command):
 
 class MissingGlobalAnnotations(Command):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        super().__init__(repository)
         self._only_fix_error_code: int = arguments.only_fix_error_code
 
     @staticmethod

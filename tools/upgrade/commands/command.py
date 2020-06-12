@@ -5,6 +5,7 @@
 
 import argparse
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 from ..configuration import Configuration
@@ -15,9 +16,31 @@ from ..repository import Repository
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class CommandArguments:
+    comment: str
+    max_line_length: int
+    truncate: bool
+    unsafe: bool
+    force_format_unsuppressed: bool
+    lint: bool
+
+    @staticmethod
+    def from_arguments(arguments: argparse.Namespace) -> "CommandArguments":
+        return CommandArguments(
+            comment=arguments.comment,
+            max_line_length=arguments.max_line_length,
+            truncate=arguments.truncate,
+            unsafe=getattr(arguments, "unsafe", False),
+            force_format_unsuppressed=getattr(
+                arguments, "force_format_unsuppressed", False
+            ),
+            lint=arguments.lint,
+        )
+
+
 class Command:
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        self._arguments: argparse.Namespace = arguments
+    def __init__(self, repository: Repository) -> None:
         self._repository: Repository = repository
 
     @staticmethod
@@ -29,16 +52,19 @@ class Command:
 
 
 class ErrorSuppressingCommand(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._comment: str = arguments.comment
-        self._max_line_length: int = arguments.max_line_length
-        self._truncate: bool = arguments.truncate
-        self._unsafe: bool = getattr(arguments, "unsafe", False)
-        self._force_format_unsuppressed: bool = getattr(
-            arguments, "force_format_unsuppressed", False
+    def __init__(
+        self, command_arguments: CommandArguments, repository: Repository
+    ) -> None:
+        super().__init__(repository)
+        self._command_arguments: CommandArguments = command_arguments
+        self._comment: str = command_arguments.comment
+        self._max_line_length: int = command_arguments.max_line_length
+        self._truncate: bool = command_arguments.truncate
+        self._unsafe: bool = command_arguments.unsafe
+        self._force_format_unsuppressed: bool = (
+            command_arguments.force_format_unsuppressed
         )
-        self._lint: bool = arguments.lint
+        self._lint: bool = command_arguments.lint
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -87,7 +113,8 @@ class ErrorSuppressingCommand(Command):
 
 class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        command_arguments = CommandArguments.from_arguments(arguments)
+        super().__init__(command_arguments, repository)
         self._only_fix_error_code: int = arguments.only_fix_error_code
         self._upgrade_version: bool = arguments.upgrade_version
         self._error_source: str = arguments.error_source

@@ -12,7 +12,7 @@ from typing import Optional
 from ..configuration import Configuration
 from ..errors import Errors
 from ..repository import Repository
-from .command import ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -25,7 +25,8 @@ class ErrorSource(Enum):
 
 class Fixme(ErrorSuppressingCommand):
     def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
+        command_arguments = CommandArguments.from_arguments(arguments)
+        super().__init__(command_arguments, repository)
         self._error_source: str = arguments.error_source
         self._only_fix_error_code: Optional[int] = arguments.only_fix_error_code
 
