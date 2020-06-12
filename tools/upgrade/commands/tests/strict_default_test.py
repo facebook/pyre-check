@@ -78,7 +78,7 @@ class StrictDefaultTest(unittest.TestCase):
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(arguments, repository).run()
+            StrictDefault.from_arguments(arguments, repository).run()
             add_local_mode.assert_not_called()
             suppress_errors.assert_not_called()
 
@@ -100,7 +100,7 @@ class StrictDefaultTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(arguments, repository).run()
+            StrictDefault.from_arguments(arguments, repository).run()
             add_local_mode.assert_not_called()
             suppress_errors.assert_called_once_with(errors.Errors(pyre_errors))
 
@@ -136,6 +136,6 @@ class StrictDefaultTest(unittest.TestCase):
         get_errors.return_value = errors.Errors(pyre_errors)
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            StrictDefault(arguments, repository).run()
+            StrictDefault.from_arguments(arguments, repository).run()
             add_local_mode.assert_called_once()
             suppress_errors.assert_not_called()

@@ -19,17 +19,37 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class StrictDefault(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        local_configuration: Path,
+        remove_strict_headers: bool,
+        fixme_threshold: int,
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._local_configuration: Path = arguments.local_configuration
-        self._remove_strict_headers: bool = arguments.remove_strict_headers
-        self._fixme_threshold: int = arguments.fixme_threshold
+        self._local_configuration: Path = local_configuration
+        self._remove_strict_headers: bool = remove_strict_headers
+        self._fixme_threshold: int = fixme_threshold
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(StrictDefault, StrictDefault).add_arguments(parser)
-        parser.set_defaults(command=StrictDefault)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "StrictDefault":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return StrictDefault(
+            command_arguments,
+            repository=repository,
+            local_configuration=arguments.local_configuration,
+            remove_strict_headers=arguments.remove_strict_headers,
+            fixme_threshold=arguments.fixme_threshold,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(StrictDefault, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "-l",
             "--local-configuration",

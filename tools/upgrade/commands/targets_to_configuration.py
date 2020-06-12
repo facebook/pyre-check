@@ -216,14 +216,13 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 "Some targets were running strict type checking. "
                 "Adding strict setting to configuration."
             )
-            # TODO(T67960514): Define constructors from concrete elements to
-            # avoid altering arguments.
-            strict_arguments = self._arguments
-            strict_arguments.lint = False
-            strict_arguments.fixme_threshold = 0
-            strict_arguments.local_configuration = directory
-            strict_arguments.remove_strict_headers = True
-            strict_codemod = StrictDefault(strict_arguments, self._repository)
+            strict_codemod = StrictDefault(
+                self._command_arguments,
+                repository=self._repository,
+                local_configuration=directory,
+                remove_strict_headers=True,
+                fixme_threshold=0,
+            )
             strict_codemod.run()
 
         # Lint and re-run pyre once to resolve most formatting issues
