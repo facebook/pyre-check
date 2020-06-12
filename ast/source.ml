@@ -73,7 +73,7 @@ module Metadata = struct
   let ignore_location_regex = Str.regexp "# *\\(pyre-\\(ignore\\|fixme\\)\\|type: ignore\\)"
 
   let is_pyre_comment comment_substring line =
-    let comment_regex = Str.regexp ("^ ?# *" ^ comment_substring ^ " *$") in
+    let comment_regex = Str.regexp ("^ ?#+ *" ^ comment_substring ^ " *$") in
     Str.string_match comment_regex line 0
 
 

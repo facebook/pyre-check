@@ -34,6 +34,8 @@ let test_parse _ =
   assert_mode "  # pyre-ignore-all-errors" None;
   assert_mode "\t# pyre-ignore-all-errors" None;
   assert_mode " # pyre-strict" (Some (create_mode 1 1 14 Source.Strict));
+  assert_mode " ## pyre-strict" (Some (create_mode 1 1 15 Source.Strict));
+  assert_mode " #? pyre-strict" None;
   assert_mode " # pyre-stric" None;
   assert_mode "  # pyre-strict" None;
   assert_mode "\t# pyre-strict" None;
