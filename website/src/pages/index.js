@@ -95,7 +95,7 @@ function Home() {
               <div className="row">
                 {features.map(({title, imageUrl, description}) => (
                   <Feature
-                    key={title}
+                    key={title.id}
                     title={title}
                     imageUrl={imageUrl}
                     description={description}
@@ -105,6 +105,18 @@ function Home() {
             </div>
           </section>
         )}
+        <div
+          style={{
+             display: "flex",
+             justifyContent: "center",
+             alignItems: "center",
+          }}>
+           <h3>Pyre in Action</h3>
+           <br/>
+           <script src="https://asciinema.org/a/u1v8WDqHIHhRD8Uk2hzrjNz14.js"
+           id="asciicast-u1v8WDqHIHhRD8Uk2hzrjNz14" async></script>
+           <br/>
+       </div>
       </main>
     </Layout>
   );
