@@ -18,16 +18,22 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class MissingOverrideReturnAnnotations(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+    def __init__(self, *, repository: Repository, only_fix_error_code: int) -> None:
         super().__init__(repository)
-        self._only_fix_error_code: int = arguments.only_fix_error_code
+        self._only_fix_error_code: int = only_fix_error_code
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(
-            MissingOverrideReturnAnnotations, MissingOverrideReturnAnnotations
-        ).add_arguments(parser)
-        parser.set_defaults(command=MissingOverrideReturnAnnotations)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "MissingOverrideReturnAnnotations":
+        return MissingOverrideReturnAnnotations(
+            repository=repository, only_fix_error_code=arguments.only_fix_error_code
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(MissingOverrideReturnAnnotations, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,
@@ -78,14 +84,22 @@ class MissingOverrideReturnAnnotations(Command):
 
 
 class MissingGlobalAnnotations(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+    def __init__(self, *, repository: Repository, only_fix_error_code: int) -> None:
         super().__init__(repository)
-        self._only_fix_error_code: int = arguments.only_fix_error_code
+        self._only_fix_error_code: int = only_fix_error_code
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(MissingGlobalAnnotations, MissingGlobalAnnotations).add_arguments(parser)
-        parser.set_defaults(command=MissingGlobalAnnotations)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "MissingGlobalAnnotations":
+        return MissingGlobalAnnotations(
+            repository=repository, only_fix_error_code=arguments.only_fix_error_code
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(MissingGlobalAnnotations, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.add_arguments)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,
