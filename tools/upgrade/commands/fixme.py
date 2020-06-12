@@ -24,16 +24,34 @@ class ErrorSource(Enum):
 
 
 class Fixme(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        error_source: str,
+        only_fix_error_code: Optional[int] = None
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._error_source: str = arguments.error_source
-        self._only_fix_error_code: Optional[int] = arguments.only_fix_error_code
+        self._error_source: str = error_source
+        self._only_fix_error_code: Optional[int] = only_fix_error_code
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(Fixme, Fixme).add_arguments(parser)
-        parser.set_defaults(command=Fixme)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "Fixme":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return Fixme(
+            command_arguments,
+            repository=repository,
+            error_source=arguments.error_source,
+            only_fix_error_code=arguments.only_fix_error_code,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(Fixme, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN
         )

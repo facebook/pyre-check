@@ -29,7 +29,7 @@ class FixmeTest(unittest.TestCase):
         ) as errors_from_stdin, patch.object(
             ErrorSuppressingCommand, "_suppress_errors"
         ) as suppress_errors:
-            Fixme(arguments, repository).run()
+            Fixme.from_arguments(arguments, repository).run()
             errors_from_stdin.assert_called_once()
             suppress_errors.assert_called_once_with(mock_errors)
 
@@ -41,6 +41,6 @@ class FixmeTest(unittest.TestCase):
         ) as generate_errors, patch.object(
             ErrorSuppressingCommand, "_suppress_errors"
         ) as suppress_errors:
-            Fixme(arguments, repository).run()
+            Fixme.from_arguments(arguments, repository).run()
             generate_errors.assert_called_once()
             suppress_errors.assert_called_once_with(mock_errors)
