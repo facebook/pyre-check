@@ -24,7 +24,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         arguments = MagicMock()
         configurations = []
         expected_mapping = {}
-        mapping = ConsolidateNestedConfigurations(
+        mapping = ConsolidateNestedConfigurations.from_arguments(
             arguments, repository
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
@@ -38,7 +38,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             "a/.pyre_configuration.local": ["a/b/.pyre_configuration.local"],
             "b/.pyre_configuration.local": [],
         }
-        mapping = ConsolidateNestedConfigurations(
+        mapping = ConsolidateNestedConfigurations.from_arguments(
             arguments, repository
         ).gather_nested_configuration_mapping(configurations)
         self.assertEqual(expected_mapping, mapping)
@@ -70,7 +70,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ConsolidateNestedConfigurations(arguments, repository).consolidate(
+            ConsolidateNestedConfigurations.from_arguments(
+                arguments, repository
+            ).consolidate(
                 Path("subdirectory/.pyre_configuration.local"),
                 [
                     Path("subdirectory/a/.pyre_configuration.local"),
@@ -115,13 +117,13 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
 
         # Skip if no configurations found
         find_files.return_value = []
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_not_called()
         consolidate.assert_not_called()
 
         # Skip if only one configuration found
         find_files.return_value = ["subdirectory/.pyre_configuration.local"]
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_not_called()
         consolidate.assert_not_called()
 
@@ -138,7 +140,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
                 "subdirectory/b/.pyre_configuration.local",
             ]
         }
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_called_once_with(configurations)
         consolidate.assert_called_once_with(
             Path("subdirectory/.pyre_configuration.local"),
@@ -160,6 +162,6 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             "subdirectory/a/.pyre_configuration.local": [],
             "subdirectory/b/.pyre_configuration.local": [],
         }
-        ConsolidateNestedConfigurations(arguments, repository).run()
+        ConsolidateNestedConfigurations.from_arguments(arguments, repository).run()
         gather.assert_called_once_with(configurations)
         consolidate.assert_not_called()
