@@ -9,10 +9,13 @@
   --ifm-hero-text-color: #ffffff;
   --ifm-font-color-base-inverse: #000000;
   --ifm-footer-color: #c25725;
-  --ifm-footer-padding-vertical: 5px;
+  --ifm-footer-padding-vertical: -15px;
   --ifm-navbar-background-color: rgb(40, 29, 29);
   --ifm-footer-color:rgb(40, 29, 29);
   --ifm-footer-background-color:rgb(40, 29, 29);
-  --ifm-navbar-link-color:rgb(233, 233, 233);
+  --ifm-navbar-link-color:rgb(255, 255, 255);
   --ifm-link-color:#c25725;
+  --ifm-menu-color:#c25725;
+  --ifm-menu-color-background-active:#c25725;
+  --ifm-footer-color:#5e5e5e;
 }

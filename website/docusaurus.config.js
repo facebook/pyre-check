@@ -68,7 +68,7 @@ module.exports = {
         src: 'https://docusaurus.io/img/oss_logo.png',
         href: 'https://opensource.facebook.com/',
       },
-      copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc.`, // You can also put own HTML here.
+      copyright: `Copyright © ${new Date().getFullYear()} Facebook, Inc.`, 
     },
     image: 'img/docusaurus.png',
   },
