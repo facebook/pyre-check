@@ -425,12 +425,12 @@ class FixmeTargetsTest(unittest.TestCase):
         arguments.subdirectory = None
         arguments.no_commit = False
         find_targets.return_value = {}
-        FixmeTargets(arguments, repository).run()
+        FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_not_called()
         submit_changes.assert_not_called()
 
         find_targets.return_value = {"a/b/TARGETS": ["derp", "herp", "merp"]}
-        FixmeTargets(arguments, repository).run()
+        FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_called_once_with(
             Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
         )
@@ -444,7 +444,7 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.reset_mock()
         submit_changes.reset_mock()
         arguments.subdirectory = "derp"
-        FixmeTargets(arguments, repository).run()
+        FixmeTargets.from_arguments(arguments, repository).run()
         fix_file.assert_called_once_with(
             Path("."), "a/b/TARGETS", ["derp", "herp", "merp"]
         )
@@ -465,7 +465,7 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"
         subprocess.return_value = buck_return
-        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+        FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
             Path("."),
             "a/b",
             [
@@ -490,7 +490,7 @@ class FixmeTargetsTest(unittest.TestCase):
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
-        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+        FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
             Path("."),
             "a/b",
             [
@@ -567,7 +567,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 },
             ]
         )
-        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+        FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
             Path("."),
             "a/b",
             [
@@ -586,7 +586,7 @@ class FixmeTargetsTest(unittest.TestCase):
         buck_query_return = MagicMock()
         buck_query_return.stdout = b"//target/to:retry-pyre-typecheck"
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+        FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
             Path("."), "a/b", [Target("derp", strict=False, pyre=True)]
         )
         subprocess.assert_has_calls(
@@ -640,7 +640,7 @@ class FixmeTargetsTest(unittest.TestCase):
           //target/to:retry_non_typecheck
         """
         subprocess.side_effect = [failed_buck_return, buck_query_return, buck_return]
-        FixmeTargets(arguments, repository)._run_fixme_targets_file(
+        FixmeTargets.from_arguments(arguments, repository)._run_fixme_targets_file(
             Path("."), "a/b", [Target("derp", strict=False, pyre=True)]
         )
         subprocess.assert_has_calls(
@@ -719,7 +719,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate(arguments, repository).run()
+            GlobalVersionUpdate.from_arguments(arguments, repository).run()
             dump.assert_has_calls(
                 [
                     call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
@@ -761,7 +761,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ]
             open_mock.side_effect = mocks
 
-            GlobalVersionUpdate(arguments, repository).run()
+            GlobalVersionUpdate.from_arguments(arguments, repository).run()
             dump.assert_has_calls(
                 [call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True)]
             )

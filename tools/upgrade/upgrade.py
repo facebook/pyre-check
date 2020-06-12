@@ -42,16 +42,29 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class GlobalVersionUpdate(Command):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
+    def __init__(
+        self, *, repository: Repository, hash: str, paths: List[Path], submit: bool
+    ) -> None:
         super().__init__(repository)
-        self._hash: str = arguments.hash
-        self._paths: List[Path] = arguments.paths
-        self._submit: bool = arguments.submit
+        self._hash: str = hash
+        self._paths: List[Path] = paths
+        self._submit: bool = submit
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "GlobalVersionUpdate":
+        return GlobalVersionUpdate(
+            repository=repository,
+            hash=arguments.hash,
+            paths=arguments.paths,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(GlobalVersionUpdate, GlobalVersionUpdate).add_arguments(parser)
-        parser.set_defaults(command=GlobalVersionUpdate)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument("hash", help="Hash of new Pyre version")
         parser.add_argument(
             "--paths",
@@ -222,17 +235,37 @@ class FixmeAll(ProjectErrorSuppressingCommand):
 
 
 class FixmeTargets(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        no_commit: bool,
+        submit: bool,
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(FixmeTargets, FixmeTargets).add_arguments(parser)
-        parser.set_defaults(command=FixmeTargets)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "FixmeTargets":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return FixmeTargets(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(FixmeTargets, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
