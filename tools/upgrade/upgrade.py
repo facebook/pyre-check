@@ -130,14 +130,49 @@ class GlobalVersionUpdate(Command):
 
 
 class FixmeSingle(ProjectErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        super().__init__(arguments, repository)
-        self._path: Path = arguments.path
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        only_fix_error_code: int,
+        upgrade_version: bool,
+        error_source: str,
+        no_commit: bool,
+        submit: bool,
+        path: Path,
+    ) -> None:
+        super().__init__(
+            command_arguments,
+            repository=repository,
+            only_fix_error_code=only_fix_error_code,
+            upgrade_version=upgrade_version,
+            error_source=error_source,
+            no_commit=no_commit,
+            submit=submit,
+        )
+        self._path: Path = path
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(FixmeSingle, FixmeSingle).add_arguments(parser)
-        parser.set_defaults(command=FixmeSingle)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "FixmeSingle":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return FixmeSingle(
+            command_arguments,
+            repository=repository,
+            only_fix_error_code=arguments.only_fix_error_code,
+            upgrade_version=arguments.upgrade_version,
+            error_source=arguments.error_source,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+            path=arguments.path,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(FixmeSingle, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "path",
             help="Path to project root with local configuration",
@@ -158,9 +193,24 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
 
 class FixmeAll(ProjectErrorSuppressingCommand):
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(FixmeAll, FixmeAll).add_arguments(parser)
-        parser.set_defaults(command=FixmeAll)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "FixmeAll":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return FixmeAll(
+            command_arguments,
+            repository=repository,
+            only_fix_error_code=arguments.only_fix_error_code,
+            upgrade_version=arguments.upgrade_version,
+            error_source=arguments.error_source,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(FixmeAll, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
 
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()

@@ -7,6 +7,7 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from ..configuration import Configuration
 from ..errors import Errors, PartialErrorSuppression
@@ -112,21 +113,27 @@ class ErrorSuppressingCommand(Command):
 
 
 class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        only_fix_error_code: Optional[int],
+        upgrade_version: bool,
+        error_source: str,
+        no_commit: bool,
+        submit: bool,
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._only_fix_error_code: int = arguments.only_fix_error_code
-        self._upgrade_version: bool = arguments.upgrade_version
-        self._error_source: str = arguments.error_source
-        self._lint: bool = arguments.lint
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
+        self._only_fix_error_code: Optional[int] = only_fix_error_code
+        self._upgrade_version: bool = upgrade_version
+        self._error_source: str = error_source
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
 
-    @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(
-            ProjectErrorSuppressingCommand, ProjectErrorSuppressingCommand
-        ).add_arguments(parser)
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(ProjectErrorSuppressingCommand, cls).add_arguments(parser)
         parser.add_argument(
             "--only-fix-error-code",
             type=int,
@@ -141,7 +148,6 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
         parser.add_argument(
             "--error-source", choices=["stdin", "generate"], default="generate"
         )
-        parser.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
