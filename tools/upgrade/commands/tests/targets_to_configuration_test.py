@@ -202,9 +202,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
         with patch("json.dump") as dump_mock:
             mocks = [mock_open(read_data="{}").return_value]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).convert_directory(
-                Path("subdirectory")
-            )
+            TargetsToConfiguration.from_arguments(
+                arguments, repository
+            ).convert_directory(Path("subdirectory"))
             expected_configuration_contents = {
                 "targets": [
                     "//subdirectory/a:target_one",
@@ -242,9 +242,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).convert_directory(
-                Path("subdirectory")
-            )
+            TargetsToConfiguration.from_arguments(
+                arguments, repository
+            ).convert_directory(Path("subdirectory"))
             expected_configuration_contents = {
                 "targets": [
                     "//existing:target",
@@ -288,9 +288,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
         with patch("json.dump") as dump_mock:
             mocks = [mock_open(read_data="{}").return_value]
             open_mock.side_effect = mocks
-            TargetsToConfiguration(arguments, repository).convert_directory(
-                Path("subdirectory")
-            )
+            TargetsToConfiguration.from_arguments(
+                arguments, repository
+            ).convert_directory(Path("subdirectory"))
             expected_configuration_contents = {
                 "targets": [
                     "//subdirectory/a:target_one",
@@ -318,9 +318,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments = MagicMock()
         find_files.return_value = ["subdirectory/.pyre_configuration.local"]
         expected_directories = [Path("subdirectory")]
-        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
-            Path("subdirectory")
-        )
+        directories = TargetsToConfiguration.from_arguments(
+            arguments, repository
+        )._gather_directories(Path("subdirectory"))
         find_directories.assert_not_called()
         self.assertEqual(expected_directories, directories)
 
@@ -335,9 +335,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
             Path("subdirectory/b"),
             Path("subdirectory/c"),
         ]
-        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
-            Path("subdirectory")
-        )
+        directories = TargetsToConfiguration.from_arguments(
+            arguments, repository
+        )._gather_directories(Path("subdirectory"))
         find_directories.assert_called_once_with(Path("subdirectory"))
         self.assertEqual(expected_directories, directories)
 
@@ -358,9 +358,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
             Path("subdirectory/c/x"),
             Path("subdirectory/c/y"),
         ]
-        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
-            Path("subdirectory")
-        )
+        directories = TargetsToConfiguration.from_arguments(
+            arguments, repository
+        )._gather_directories(Path("subdirectory"))
         find_directories.assert_has_calls(
             [call(Path("subdirectory")), call(Path("subdirectory/c"))]
         )
@@ -384,9 +384,9 @@ class TargetsToConfigurationTest(unittest.TestCase):
             Path("subdirectory/layer/c/x"),
             Path("subdirectory/layer/c/y"),
         ]
-        directories = TargetsToConfiguration(arguments, repository)._gather_directories(
-            Path("subdirectory/layer/")
-        )
+        directories = TargetsToConfiguration.from_arguments(
+            arguments, repository
+        )._gather_directories(Path("subdirectory/layer/"))
         find_directories.assert_has_calls(
             [call(Path("subdirectory/layer")), call(Path("subdirectory/layer/c"))]
         )
@@ -410,7 +410,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
         arguments.no_commit = False
 
         gather_directories.return_value = [Path("subdirectory")]
-        TargetsToConfiguration(arguments, repository).run()
+        TargetsToConfiguration.from_arguments(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory"))
         submit_changes.assert_called_once()
 
@@ -419,7 +419,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             Path("subdirectory/a"),
             Path("subdirectory/b"),
         ]
-        TargetsToConfiguration(arguments, repository).run()
+        TargetsToConfiguration.from_arguments(arguments, repository).run()
         convert_directory.assert_has_calls(
             [call(Path("subdirectory/a")), call(Path("subdirectory/b"))]
         )
@@ -429,7 +429,7 @@ class TargetsToConfigurationTest(unittest.TestCase):
             Path("subdirectory/a"),
             Path("subdirectory/a"),
         ]
-        TargetsToConfiguration(arguments, repository).run()
+        TargetsToConfiguration.from_arguments(arguments, repository).run()
         convert_directory.assert_called_once_with(Path("subdirectory/a"))
 
     @patch("subprocess.check_output")

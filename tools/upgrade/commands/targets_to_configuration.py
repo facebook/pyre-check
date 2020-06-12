@@ -59,22 +59,49 @@ class TargetPyreRemover(libcst.CSTTransformer):
 
 
 class TargetsToConfiguration(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        glob: int,
+        fixme_threshold: int,
+        no_commit: bool,
+        submit: bool,
+        pyre_only: bool,
+        strict: bool,
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._arguments = arguments
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._glob: int = arguments.glob
-        self._fixme_threshold: int = arguments.fixme_threshold
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
-        self._pyre_only: bool = arguments.pyre_only
-        self._strict: bool = arguments.strict
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._glob: int = glob
+        self._fixme_threshold: int = fixme_threshold
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
+        self._pyre_only: bool = pyre_only
+        self._strict: bool = strict
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(TargetsToConfiguration, TargetsToConfiguration).add_arguments(parser)
-        parser.set_defaults(command=TargetsToConfiguration)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "TargetsToConfiguration":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return TargetsToConfiguration(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            glob=arguments.glob,
+            fixme_threshold=arguments.fixme_threshold,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+            pyre_only=arguments.pyre_only,
+            strict=arguments.strict,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(TargetsToConfiguration, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
         )
