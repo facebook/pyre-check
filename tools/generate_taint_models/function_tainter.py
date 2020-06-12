@@ -19,6 +19,8 @@ def taint_callable_functions(
     whitelisted_views: Optional[List[str]] = None,
     whitelisted_classes: Optional[List[str]] = None,
     parameter_name_whitelist: Optional[Set[str]] = None,
+    annotations: Optional[AnnotationSpecification] = None,
+    whitelist: Optional[WhitelistSpecification] = None,
 ) -> List[CallableModel]:
     whitelisted_views = whitelisted_views or []
     whitelisted_classes = whitelisted_classes or []
@@ -29,13 +31,15 @@ def taint_callable_functions(
         if qualified_name in whitelisted_views:
             continue
         try:
+            annotations = annotations or AnnotationSpecification(
+                arg=taint_annotation, vararg=taint_annotation, kwarg=taint_annotation
+            )
+            whitelist = whitelist or WhitelistSpecification(
+                parameter_type=set(whitelisted_classes),
+                parameter_name=parameter_name_whitelist,
+            )
             model = CallableModel(
-                callable_object=function,
-                arg=taint_annotation,
-                vararg=taint_annotation,
-                kwarg=taint_annotation,
-                parameter_type_whitelist=whitelisted_classes,
-                parameter_name_whitelist=parameter_name_whitelist,
+                callable_object=function, annotations=annotations, whitelist=whitelist
             )
             entry_points.add(model)
         except ValueError:
