@@ -22,18 +22,40 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ExpandTargetCoverage(ErrorSuppressingCommand):
-    def __init__(self, arguments: argparse.Namespace, repository: Repository) -> None:
-        command_arguments = CommandArguments.from_arguments(arguments)
+    def __init__(
+        self,
+        command_arguments: CommandArguments,
+        *,
+        repository: Repository,
+        subdirectory: Optional[str],
+        fixme_threshold: bool,
+        no_commit: bool,
+        submit: bool,
+    ) -> None:
         super().__init__(command_arguments, repository)
-        self._subdirectory: Final[Optional[str]] = arguments.subdirectory
-        self._fixme_threshold: bool = arguments.fixme_threshold
-        self._no_commit: bool = arguments.no_commit
-        self._submit: bool = arguments.submit
+        self._subdirectory: Final[Optional[str]] = subdirectory
+        self._fixme_threshold: bool = fixme_threshold
+        self._no_commit: bool = no_commit
+        self._submit: bool = submit
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
-        super(ExpandTargetCoverage, ExpandTargetCoverage).add_arguments(parser)
-        parser.set_defaults(command=ExpandTargetCoverage)
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "ExpandTargetCoverage":
+        command_arguments = CommandArguments.from_arguments(arguments)
+        return ExpandTargetCoverage(
+            command_arguments,
+            repository=repository,
+            subdirectory=arguments.subdirectory,
+            fixme_threshold=arguments.fixme_threshold,
+            no_commit=arguments.no_commit,
+            submit=arguments.submit,
+        )
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(ExpandTargetCoverage, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
             "--subdirectory", help="Only upgrade TARGETS files within this directory."
         )

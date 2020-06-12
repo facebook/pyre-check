@@ -76,7 +76,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
 
         # Skip if nested configurations found
         find_files.return_value = ["nested/.pyre_configuration.local"]
-        ExpandTargetCoverage(arguments, repository).run()
+        ExpandTargetCoverage.from_arguments(arguments, repository).run()
         open_mock.assert_not_called()
         suppress_errors.assert_not_called()
 
@@ -92,7 +92,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
@@ -120,7 +120,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
@@ -149,7 +149,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
-            ExpandTargetCoverage(arguments, repository).run()
+            ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
                 "targets": ["//existing:target", "//subdirectory/..."]
             }
