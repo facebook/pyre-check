@@ -2661,16 +2661,6 @@ module ScratchProject = struct
            ~scheduler:(mock_scheduler ())
            ast_environment
     in
-    (* Normally we shouldn't have any parse errors in tests *)
-    let errors =
-      AstEnvironment.UpdateResult.system_errors ast_environment_update_result
-      @ AstEnvironment.UpdateResult.syntax_errors ast_environment_update_result
-    in
-    ( if not (List.is_empty errors) then
-        let relative_paths =
-          List.map errors ~f:(fun { SourcePath.relative; _ } -> relative) |> String.concat ~sep:", "
-        in
-        raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
     ast_environment, ast_environment_update_result
 
 

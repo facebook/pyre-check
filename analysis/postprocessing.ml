@@ -154,7 +154,8 @@ let run ~scheduler ~configuration ~environment sources =
     let run_on_module module_name =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
-      | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
+      | Some (Result.Error _) -> []
+      | Some (Result.Ok ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source)) ->
           if is_external then
             []
           else

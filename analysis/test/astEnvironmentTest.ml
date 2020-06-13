@@ -659,7 +659,12 @@ let test_parse_repository context =
         "a.py", "def a.foo() -> int: ...";
         "b.pyi", "from a import foo as foo";
         "c.py", "from b import foo as foo";
-      ]
+      ];
+  (* Unparsable source turns into getattr-any *)
+  assert_repository_parses_to
+    ["a.py", "def foo() -> int:"]
+    ~expected:["a.py", "import typing\ndef a.__getattr__($parameter$name: str) -> typing.Any: ..."];
+  ()
 
 
 module IncrementalTest = struct
