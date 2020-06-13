@@ -212,6 +212,7 @@ and invalid_decoration_reason =
 
 and kind =
   | AnalysisFailure of Type.t
+  | ParserFailure of string
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
       expression: Expression.t;
@@ -425,6 +426,7 @@ let code = function
   | TypedDictionaryInvalidOperation _ -> 54
   | TypedDictionaryInitializationError _ -> 55
   | InvalidDecoration _ -> 56
+  | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -433,6 +435,7 @@ let code = function
 
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
+  | ParserFailure _ -> "Parsing failure"
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
@@ -623,6 +626,7 @@ let rec messages ~concise ~signature location kind =
       [Format.asprintf "Terminating analysis - type `%a` not defined." pp_type annotation]
   | AnalysisFailure annotation ->
       [Format.asprintf "Terminating analysis because type `%a` is not defined." pp_type annotation]
+  | ParserFailure message -> [message]
   | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
@@ -2234,6 +2238,7 @@ let due_to_analysis_limitations { kind; _ } =
   | Top -> true
   | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
+  | ParserFailure _
   | DeadStore _
   | Deobfuscation _
   | IllegalAnnotationTarget _
@@ -2290,6 +2295,8 @@ let less_or_equal ~resolution left right =
   &&
   match left.kind, right.kind with
   | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
+  | ParserFailure left_message, ParserFailure right_message ->
+      String.equal left_message right_message
   | DeadStore left, DeadStore right -> Identifier.equal left right
   | Deobfuscation left, Deobfuscation right -> Source.equal left right
   | IllegalAnnotationTarget left, IllegalAnnotationTarget right -> Expression.equal left right
@@ -2493,6 +2500,7 @@ let less_or_equal ~resolution left right =
       | _ -> false )
   | _, Top -> true
   | AnalysisFailure _, _
+  | ParserFailure _, _
   | DeadStore _, _
   | Deobfuscation _, _
   | IllegalAnnotationTarget _, _
@@ -2580,6 +2588,9 @@ let join ~resolution left right =
   let kind =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right -> AnalysisFailure (Type.union [left; right])
+    | ParserFailure left_message, ParserFailure right_message
+      when String.equal left_message right_message ->
+        ParserFailure left_message
     | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
     | Deobfuscation left, Deobfuscation right when Source.equal left right -> Deobfuscation left
     | IllegalAnnotationTarget left, IllegalAnnotationTarget right when Expression.equal left right
@@ -2862,6 +2873,7 @@ let join ~resolution left right =
     | _, Top ->
         Top
     | AnalysisFailure _, _
+    | ParserFailure _, _
     | DeadStore _, _
     | Deobfuscation _, _
     | IllegalAnnotationTarget _, _
@@ -3541,6 +3553,7 @@ let dequalify
         UnexpectedKeyword { name; callee = Option.map callee ~f:dequalify_reference }
     | MissingArgument { callee; parameter } ->
         MissingArgument { callee = Option.map callee ~f:dequalify_reference; parameter }
+    | ParserFailure failure -> ParserFailure failure
     | UnusedIgnore codes -> UnusedIgnore codes
     | UnusedLocalMode mode -> UnusedLocalMode mode
     | Unpack unpack -> Unpack unpack

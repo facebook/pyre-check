@@ -154,7 +154,33 @@ let run ~scheduler ~configuration ~environment sources =
     let run_on_module module_name =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
-      | Some (Result.Error _) -> []
+      | Some (Result.Error { AstEnvironment.ParserError.message; _ }) ->
+          let location =
+            {
+              Location.start = { Location.line = 1; column = 1 };
+              stop = { Location.line = 1; column = 1 };
+            }
+          in
+          let location_with_module =
+            {
+              Location.WithModule.path = module_name;
+              start = Location.start location;
+              stop = Location.stop location;
+            }
+          in
+          let define =
+            Statement.Define.create_toplevel
+              ~unbound_names:[]
+              ~qualifier:(Some module_name)
+              ~statements:[]
+            |> Node.create ~location
+          in
+          [
+            AnalysisError.create
+              ~location:location_with_module
+              ~kind:(AnalysisError.ParserFailure message)
+              ~define;
+          ]
       | Some (Result.Ok ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source)) ->
           if is_external then
             []

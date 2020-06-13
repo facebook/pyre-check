@@ -203,6 +203,7 @@ and invalid_decoration = {
 
 and kind =
   | AnalysisFailure of Type.t
+  | ParserFailure of string
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
       expression: Expression.t;
