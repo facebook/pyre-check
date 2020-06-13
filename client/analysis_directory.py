@@ -408,12 +408,28 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         old_symbolic_links = self._symbolic_links
         old_paths = set(self._symbolic_links.keys())
+
+        # We need to inform the server of any files updated in place by the
+        # rebuild, such as .pyi files from thrift.
+        rebuild_start_time = time()
+
         self.rebuild()
         new_paths = set(self._symbolic_links.keys())
 
         self._notify_about_rebuild(is_start_message=False)
 
-        tracked_paths.extend(new_paths - old_paths)
+        newly_created_paths = new_paths - old_paths
+        tracked_paths.extend(newly_created_paths)
+
+        # Using the modified time instead of a Watchman `since` query because
+        # these files will be in the buck builder cache or in /tmp, and Watchman
+        # doesn't track those.
+        updated_paths = [
+            shared_analysis_path
+            for shared_analysis_path, original_path in self._symbolic_links.items()
+            if os.path.getmtime(original_path) > rebuild_start_time
+        ]
+        tracked_paths.extend(updated_paths)
 
         # Translate the paths here because we need the old symbolic links
         # mapping to get their old scratch path.

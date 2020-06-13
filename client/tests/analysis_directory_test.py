@@ -559,10 +559,16 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertEqual(actual, expected)
         self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
 
+    @patch.object(analysis_directory, "time")
+    @patch.object(os.path, "getmtime")
     @patch.object(SharedAnalysisDirectory, "_notify_about_rebuild")
     @patch.object(SharedAnalysisDirectory, "rebuild")
     def test_process_rebuilt_files(
-        self, rebuild: MagicMock, notify_about_rebuild: MagicMock
+        self,
+        rebuild: MagicMock,
+        notify_about_rebuild: MagicMock,
+        get_modified_time: MagicMock,
+        time: MagicMock,
     ) -> None:
         shared_analysis_directory: SharedAnalysisDirectory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], search_path=["baz$hello"]
@@ -571,6 +577,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         def _update_paths_for_rebuild() -> None:
             shared_analysis_directory._symbolic_links = {
                 "project/tracked.py": "scratch/tracked.py",
+                "project/updated_by_thrift.pyi": "scratch/updated_by_thrift.pyi",
                 "project/something/new_file_from_rebuild.py": (
                     "scratch/new_file_from_rebuild.py"
                 ),
@@ -578,8 +585,19 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
         rebuild.side_effect = _update_paths_for_rebuild
 
+        TIME_VALUE: float = 42
+        time.return_value = TIME_VALUE
+
+        def _get_modified_time(filename: str) -> float:
+            if filename == "scratch/updated_by_thrift.pyi":
+                return TIME_VALUE + 1
+            return TIME_VALUE - 1
+
+        get_modified_time.side_effect = _get_modified_time
+
         shared_analysis_directory._symbolic_links = {
             "project/tracked.py": "scratch/tracked.py",
+            "project/updated_by_thrift.pyi": "scratch/updated_by_thrift.pyi",
             "project/deleted_by_rebuild.py": "scratch/deleted_by_rebuild.py",
         }
         actual = shared_analysis_directory._process_rebuilt_files(
@@ -596,6 +614,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 "baz/hello/new_file_tracked_because_of_search_path.py",
                 # New file from the rebuild.
                 "project/something/new_file_from_rebuild.py",
+                "project/updated_by_thrift.pyi",
             ],
             ["scratch/deleted_by_rebuild.py"],
         )
