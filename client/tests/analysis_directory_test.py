@@ -505,53 +505,50 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ("project/deleted.py", "scratch/bar/deleted.py"),
         )
 
-    @patch.object(SharedAnalysisDirectory, "rebuild")
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=True)
-    @patch.object(os, "getcwd", return_value="project")
-    @patch.object(os.path, "isfile")
-    @patch.object(os.path, "abspath", side_effect=lambda path: path)
-    def test_process_updated_files_rebuild(
+    @patch.object(SharedAnalysisDirectory, "_get_new_deleted_and_tracked_paths")
+    @patch.object(SharedAnalysisDirectory, "_process_rebuilt_files")
+    def test_process_updated_files__rebuild(
         self,
-        abspath: MagicMock,
-        isfile: MagicMock,
-        getcwd: MagicMock,
+        process_rebuilt_files: MagicMock,
+        get_new_deleted_and_tracked_paths: MagicMock,
         should_rebuild: MagicMock,
-        rebuild: MagicMock,
     ) -> None:
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], search_path=["baz$hello"]
         )
-        isfile.side_effect = lambda path: path != "project/deleted.py"
-
-        # pyre-fixme[53]: Captured variable `shared_analysis_directory` is not
-        #  annotated.
-        def update_paths_for_rebuild() -> None:
-            shared_analysis_directory._symbolic_links = {
-                "project/tracked.py": "scratch/tracked.py",
-                "project/something/new_file_from_rebuild.py": (
-                    "scratch/new_file_from_rebuild.py"
-                ),
-            }
-
-        rebuild.side_effect = update_paths_for_rebuild
-
         shared_analysis_directory._symbolic_links = {
-            "project/tracked.py": "scratch/tracked.py",
-            "project/deleted_by_rebuild.py": "scratch/deleted_by_rebuild.py",
+            "project/tracked.py": "scratch/bar/tracked.py"
         }
+
+        previously_tracked = [
+            "project/tracked.py",
+            "baz/hello/new_file_tracked_because_of_search_path.py",
+        ]
+        get_new_deleted_and_tracked_paths.return_value = (
+            ["project/something/new_file_not_tracked.py"],
+            previously_tracked,
+            [],
+        )
+
+        new_paths_from_the_rebuild = ["scratch/new_file_from_rebuild.py"]
+        deleted_scratch_paths_from_the_rebuild = ["scratch/deleted_by_rebuild.py"]
+        process_rebuilt_files.return_value = (
+            previously_tracked + new_paths_from_the_rebuild,
+            deleted_scratch_paths_from_the_rebuild,
+        )
+
         actual = shared_analysis_directory.process_updated_files(
-            [
-                "project/tracked.py",
+            previously_tracked
+            + [
                 "other_project/not_tracked.py",
-                "project/something/new_file.py",
-                "project/deleted.py",
-                "baz/hello/new_file_tracked_because_of_search_path.py",
+                "project/something/new_file_not_tracked.py",
             ]
         )
         expected = UpdatedPaths(
             updated_paths=[
                 # Tracked files.
-                "scratch/tracked.py",
+                "scratch/bar/tracked.py",
                 "baz/hello/new_file_tracked_because_of_search_path.py",
                 # New file from the rebuild.
                 "scratch/new_file_from_rebuild.py",
@@ -561,6 +558,48 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(actual, expected)
         self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
+
+    @patch.object(SharedAnalysisDirectory, "_notify_about_rebuild")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    def test_process_rebuilt_files(
+        self, rebuild: MagicMock, notify_about_rebuild: MagicMock
+    ) -> None:
+        shared_analysis_directory: SharedAnalysisDirectory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+
+        def _update_paths_for_rebuild() -> None:
+            shared_analysis_directory._symbolic_links = {
+                "project/tracked.py": "scratch/tracked.py",
+                "project/something/new_file_from_rebuild.py": (
+                    "scratch/new_file_from_rebuild.py"
+                ),
+            }
+
+        rebuild.side_effect = _update_paths_for_rebuild
+
+        shared_analysis_directory._symbolic_links = {
+            "project/tracked.py": "scratch/tracked.py",
+            "project/deleted_by_rebuild.py": "scratch/deleted_by_rebuild.py",
+        }
+        actual = shared_analysis_directory._process_rebuilt_files(
+            [
+                "project/tracked.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+            ],
+            [],
+        )
+        expected = (
+            [
+                # Tracked files.
+                "project/tracked.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+                # New file from the rebuild.
+                "project/something/new_file_from_rebuild.py",
+            ],
+            ["scratch/deleted_by_rebuild.py"],
+        )
+        self.assertEqual(actual, expected)
 
     def test_cache_last_deleted_link(self) -> None:
         shared_analysis_directory = SharedAnalysisDirectory(
