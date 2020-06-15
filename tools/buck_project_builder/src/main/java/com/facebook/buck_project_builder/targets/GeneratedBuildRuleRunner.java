@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
-final class GeneratedBuildRuleRunner {
+public final class GeneratedBuildRuleRunner {
 
   private GeneratedBuildRuleRunner() {}
 
@@ -66,11 +66,11 @@ final class GeneratedBuildRuleRunner {
     }
   }
 
-  static @Nullable String getBuiltTargetExecutable(String builderTarget, String buckRoot)
+  public static @Nullable String getBuiltTargetExecutable(String builderTarget, String buckRoot)
       throws IOException {
     try (InputStream inputStream =
         CommandLine.getCommandLineOutput(
-            new File(buckRoot), "buck", "build", "--show-json-output", builderTarget)) {
+            new File(buckRoot), "buck", "build", "@mode/opt", "--show-json-output", builderTarget)) {
       JsonElement builtOutputElement =
           new JsonParser()
               .parse(new InputStreamReader(inputStream))
