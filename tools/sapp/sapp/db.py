@@ -23,7 +23,6 @@ from .decorators import retryable
 log = logging.getLogger("sapp")
 
 
-# pyre-fixme[11]: Annotation `Enum` is not defined as a type.
 class DBType(sqlalchemy.Enum):
     XDB = "xdb"  # not yet implemented
     SQLITE = "sqlite"

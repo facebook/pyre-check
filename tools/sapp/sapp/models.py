@@ -290,12 +290,15 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
 
     __table_args__ = (Index("ix_messages_handle", "contents", "kind"),)
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, primary_key=True)
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     contents: str = Column(
         String(length=SHARED_TEXT_LENGTH), nullable=False, index=True
     )
 
+    # pyre-fixme[8]: Attribute has type `SharedTextKind`; used as `Column[str]`.
     kind: SharedTextKind = Column(
         Enum(SharedTextKind), server_default="feature", nullable=False, index=True
     )
@@ -397,6 +400,7 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     __tablename__ = "issue_instances"
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, primary_key=True)
 
     location = Column(
@@ -570,6 +574,7 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     __tablename__ = "issues"
 
+    # pyre-fixme[8]: Attribute has type `IssueDBID`; used as `Column[typing.Any]`.
     id: IssueDBID = Column(IssueBIGDBIDType, primary_key=True, nullable=False)
 
     handle = Column(
@@ -916,6 +921,7 @@ class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     __tablename__ = "issue_instance_fix_info"
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
     fix_info = Column(String(length=INNODB_MAX_INDEX_LENGTH), nullable=False)
@@ -938,6 +944,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         Index("ix_traceframe_run_callee_port", "run_id", "callee_id", "callee_port"),
     )
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
     kind = Column(Enum(TraceKind), nullable=False, index=False)
@@ -950,6 +957,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         uselist=False,
     )
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     caller_port: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
         nullable=False,
@@ -971,6 +979,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         doc="The location of the callee in the source code (line|start|end)",
     )
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     callee_port: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
         nullable=False,
@@ -1050,6 +1059,7 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "trace_frame_annotations"
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
     location = Column(
@@ -1058,6 +1068,7 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
 
     kind = Column(String(length=255), nullable=True, index=True)
 
+    # pyre-fixme[8]: Attribute has type `str`; used as `Column[str]`.
     message: str = Column(
         String(length=4096),
         doc="Message describing info about the trace",
@@ -1071,18 +1082,21 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         uselist=False,
     )
 
+    # pyre-fixme[8]: Attribute has type `Optional[str]`; used as `Column[str]`.
     link: Optional[str] = Column(
         String(length=4096),
         doc="An optional URL linking the message to more info (Quandary)",
         nullable=True,
     )
 
+    # pyre-fixme[8]: Attribute has type `Optional[str]`; used as `Column[str]`.
     trace_key: Optional[str] = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
         nullable=True,
         doc="Link to possible pre/post traces (caller_condition).",
     )
 
+    # pyre-fixme[8]: Attribute has type `DBID`; used as `Column[typing.Any]`.
     trace_frame_id: DBID = Column(BIGDBIDType, nullable=False, index=True)
     trace_frame = relationship(
         "TraceFrame",
@@ -1188,6 +1202,7 @@ class WarningCodeProperties(Base):  # noqa
         Enum(WarningCodeCategory),
         nullable=True,
         index=False,
+        # pyre-fixme[6]: Expected `str` for 4th param but got `Tuple[str]`.
         doc=(
             "The category of problems that issues in with this warning code "
             "can result in ",
@@ -1216,6 +1231,7 @@ class WarningCodeProperties(Base):  # noqa
         Float,
         nullable=True,
         index=False,
+        # pyre-fixme[6]: Expected `str` for 4th param but got `Tuple[str]`.
         doc=(
             "Average (min) length of forward traces for the given warning code "
             "(computed column)",
@@ -1226,6 +1242,7 @@ class WarningCodeProperties(Base):  # noqa
         Float,
         nullable=True,
         index=False,
+        # pyre-fixme[6]: Expected `str` for 4th param but got `Tuple[str]`.
         doc=(
             "Average (min) length of backward traces for the given warning "
             "code (computed column)",

@@ -1181,6 +1181,7 @@ details              show additional information about the current trace frame
         if isinstance(filter, list):
             if not filter:
                 raise UserError(f"'{argument_name}' should be non-empty.")
+            # pyre-fixme[6]: Expected `str` for 1st param but got `T`.
             return query.filter(or_(*[column.like(item) for item in filter]))
         raise UserError(
             f"'{argument_name}' should be {element_type} or " f"list of {element_type}."
