@@ -68,6 +68,7 @@ public final class BuckQuery {
       builder.add(mode);
     }
     return builder
+        .add("@mode/opt")
         .add(
             "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
         .addAll(targets.stream().map(BuckQuery::normalizeTarget).collect(Collectors.toList()))

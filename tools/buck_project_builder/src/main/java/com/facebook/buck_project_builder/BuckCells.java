@@ -26,7 +26,7 @@ public final class BuckCells {
     try {
       return parseCellMappings(
           IOUtils.toString(
-              CommandLine.getCommandLineOutput(ImmutableList.of("buck", "audit", "cell", "--json")),
+              CommandLine.getCommandLineOutput(ImmutableList.of("buck", "audit", "cell", "@mode/opt", "--json")),
               Charset.defaultCharset()));
     } catch (IOException exception) {
       throw new BuilderException(
