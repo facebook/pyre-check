@@ -67,9 +67,7 @@ class GetUndecoratedSourcesTest(unittest.TestCase):
                     str,
                     UndecoratedSourceGenerator(
                         source_generator=RESTApiSourceGenerator(
-                            django_urls=MagicMock(),
-                            whitelisted_classes=[],
-                            whitelisted_views=[],
+                            django_urls=MagicMock()
                         ),
                         root="/root",
                         decorators_to_filter=[],

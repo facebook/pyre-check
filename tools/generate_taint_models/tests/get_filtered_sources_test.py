@@ -56,9 +56,7 @@ class GetFilteredSourcesTest(unittest.TestCase):
                     str,
                     FilteredSourceGenerator(
                         superset_generator=RESTApiSourceGenerator(
-                            django_urls=MagicMock(),
-                            whitelisted_classes=[],
-                            whitelisted_views=[],
+                            django_urls=MagicMock()
                         ),
                         subset_generator=AnnotatedFreeFunctionWithDecoratorGenerator(
                             root="/root", annotation_specifications=[]
@@ -114,9 +112,7 @@ class GetFilteredSourcesTest(unittest.TestCase):
                     str,
                     FilteredSourceGenerator(
                         superset_generator=RESTApiSourceGenerator(
-                            django_urls=MagicMock(),
-                            whitelisted_classes=[],
-                            whitelisted_views=[],
+                            django_urls=MagicMock()
                         ),
                         subset_generator=AnnotatedFreeFunctionWithDecoratorGenerator(
                             root="/root", annotation_specifications=[]
@@ -163,9 +159,7 @@ class GetFilteredSourcesTest(unittest.TestCase):
                         str,
                         FilteredSourceGenerator(
                             superset_generator=RESTApiSourceGenerator(
-                                django_urls=MagicMock(),
-                                whitelisted_classes=[],
-                                whitelisted_views=[],
+                                django_urls=MagicMock()
                             ),
                             subset_generator=(
                                 AnnotatedFreeFunctionWithDecoratorGenerator(
