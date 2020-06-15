@@ -3,13 +3,12 @@
 
 from typing import TypeVar
 
-import pyre_extensions
 import torch
-from pyre_extensions import ListVariadic
+from pyre_extensions import Generic, ListVariadic
 from pyre_extensions.type_variable_operators import Concatenate
 from torch import cat, mm, randn, unsqueeze  # noqa
 
-from .nn import *  # noqa
+from .nn import Linear  # noqa
 
 
 # New Variadic Type Variadic, a place-holder for an unknown number of
@@ -23,5 +22,5 @@ float32 = float
 
 
 # Minimal Tensor stub
-class Tensor(pyre_extensions.Generic[Concatenate[DType, Shape]], torch.Tensor):
+class Tensor(Generic[DType, Shape], torch.Tensor):
     pass

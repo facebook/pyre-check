@@ -8,5 +8,5 @@ from typing_extensions import Literal
 N = TypeVar("N")
 
 def smooth_l1_loss(
-    refy: Tensor[DType, N, Literal[1]], y: Tensor[DType, N, Literal[1]]
-) -> Tensor[DType, Literal[1]]: ...
+    refy: Tensor[DType, [N, Literal[1]]], y: Tensor[DType, [N, Literal[1]]]
+) -> Tensor[DType, [Literal[1]]]: ...
