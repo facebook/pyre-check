@@ -21,29 +21,45 @@ const features = [
     // imageUrl: 'img/pyre.svg',
     description: (
       <>
-        Pyre is a fast, scalable type checker for large Python 3 codebases,
-        designed to help improve code quality and development speed by flagging
-        type errors interactively in your terminal or favorite editor.
+        Built from the ground up to support gradual typing
+        and deliver responsive incremental checks. Performant
+        on large codebases with millions of lines of Python.
+
       </>
     ),
   },
   {
-    title: <>Standards Based</>,
+    title: <>Integrated</>,
     // imageUrl: 'img/undraw_docusaurus_tree.svg',
     description: (
       <>
-        We follow the typing standards introduced in PEP484 and PEP526.
+        Designed to help improve code quality and development
+        speed by flagging type errors interactively in your
+        terminal or live in your favorite editor.
       </>
     ),
   },
   {
-    title: <>Powered by React</>,
+    title: <>Fully Featured</>,
     // imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Pyre is under active development. We hope you'll join the
-        community and try it out on your own projects, leave us
-        feedback, and consider contributing!
+        Follows the typing standards introduced in
+        PEPs 484, 526, & 612, and is built to support
+        custom static analyses on top of type checking.
+
+      </>
+    ),
+  },
+  {
+    title: <>Actively Developed</>,
+    // imageUrl: 'img/undraw_docusaurus_react.svg',
+    description: (
+      <>
+        Pyre is constantly being improved. We hope you'll
+        join the community and try it out on your own projects,
+        leave us feedback, and consider contributing!
+
       </>
     ),
   },
@@ -52,7 +68,7 @@ const features = [
 function Feature({imageUrl, title, description}) {
   const imgUrl = useBaseUrl(imageUrl);
   return (
-    <div className={classnames('col col--4', styles.feature)}>
+    <div className={classnames('col col--3', styles.feature)}>
       {imgUrl && (
         <div className="text--center">
           <img className={styles.featureImage} src={imgUrl} alt={title} />
