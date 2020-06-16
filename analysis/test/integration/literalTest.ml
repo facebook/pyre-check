@@ -189,10 +189,68 @@ let test_enumeration_literal context =
   ()
 
 
+let test_ternary_with_literals context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Union
+      from typing_extensions import Literal
+
+      def takes_literal(x: Union[Literal["a"], Literal["b"]]) -> None: ...
+
+      some_bool: bool
+
+      y = "a" if some_bool else "b"
+      reveal_type(y)
+      takes_literal(y)
+
+      reveal_type("a" if some_bool else "b")
+      takes_literal("a" if some_bool else "b")
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `str` (inferred: \
+       `Union[typing_extensions.Literal['a'], typing_extensions.Literal['b']]`).";
+      "Revealed type [-1]: Revealed type for `\"a\" if some_bool else \"b\"` is \
+       `Union[typing_extensions.Literal['a'], typing_extensions.Literal['b']]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Union
+      from typing_extensions import Literal
+      import enum
+
+      class ActualEnum(enum.Enum):
+        A = "a"
+        B = "b"
+
+      def takes_literal(x: Union[Literal[ActualEnum.A], Literal[ActualEnum.B]]) -> None: ...
+
+      some_bool: bool
+
+      y: Union[Literal[ActualEnum.A], Literal[ActualEnum.B]] = (
+        ActualEnum.A if some_bool else ActualEnum.B
+      )
+      reveal_type(y)
+      takes_literal(y)
+
+      reveal_type(ActualEnum.A if some_bool else ActualEnum.B)
+      takes_literal(ActualEnum.A if some_bool else ActualEnum.B)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is \
+       `Union[typing_extensions.Literal[ActualEnum.A], typing_extensions.Literal[ActualEnum.B]]`.";
+      "Revealed type [-1]: Revealed type for `test.ActualEnum.A if some_bool else \
+       test.ActualEnum.B` is `Union[typing_extensions.Literal[ActualEnum.A], \
+       typing_extensions.Literal[ActualEnum.B]]`.";
+    ];
+  ()
+
+
 let () =
   "literal"
   >::: [
          "boolean_literal" >:: test_boolean_literal;
          "enumeration_literal" >:: test_enumeration_literal;
+         "ternary_with_literals" >:: test_ternary_with_literals;
        ]
   |> Test.run

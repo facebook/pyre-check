@@ -772,7 +772,13 @@ let test_forward_expression context =
   assert_forward "f'string{undefined}'" Type.string;
 
   (* Ternaries. *)
-  assert_forward "3 if True else 1" Type.integer;
+  assert_forward "3 if True else 1" (Type.union [Type.literal_integer 3; Type.literal_integer 1]);
+  assert_forward
+    "True if True else False"
+    (Type.union [Type.Literal (Type.Boolean true); Type.Literal (Type.Boolean false)]);
+  assert_forward
+    "'foo' if True else 'bar'"
+    (Type.union [Type.literal_string "foo"; Type.literal_string "bar"]);
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
   assert_forward "undefined if True else 1" Type.Top;
