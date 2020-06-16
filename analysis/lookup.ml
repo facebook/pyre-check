@@ -232,10 +232,6 @@ module Visit = struct
                 precondition_visit (create_qualified_expression ~location))
               alias
           in
-          Option.iter
-            ~f:(fun { Node.value = from; location } ->
-              Ast.Expression.from_reference ~location from |> precondition_visit)
-            from;
           List.iter imports ~f:visit_import
       | _ -> visit_statement ~state statement
     in
