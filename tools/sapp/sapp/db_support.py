@@ -276,8 +276,6 @@ class PrimaryKeyBase(PrepareMixin, RecordMixin):  # noqa
     # pyre-fixme[8]: Attribute has type `int`; used as
     #  `Column[Variable[sqlalchemy.sql.type_api._U]]`.
     current_id: int = Column(
-        # pyre-fixme[6]: Expected `TypeEngine[Variable[sqlalchemy.sql.type_api._U]]`
-        #  for 1st param but got `Type[mysql.types.BIGINT]`.
         BIGINT(unsigned=True).with_variant(BIGINT, "sqlite"),
         doc="The current/latest id used in the table.",
         nullable=False,
