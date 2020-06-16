@@ -1127,8 +1127,8 @@ end = struct
         constructor_attributes
     in
     (* Merge with decreasing priority. *)
-    implicitly_assigned_attributes
-    |> Identifier.SerializableMap.merge merge_attribute_maps additional_attributes
+    additional_attributes
+    |> Identifier.SerializableMap.merge merge_attribute_maps implicitly_assigned_attributes
 
 
   let attributes
