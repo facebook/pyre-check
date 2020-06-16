@@ -26,34 +26,16 @@ class RESTApiSourceGenerator(ModelGenerator[CallableModel]):
     def __init__(
         self,
         django_urls: DjangoUrls,
-        whitelisted_classes: Optional[List[str]] = None,
-        whitelisted_views: Optional[List[str]] = None,
-        taint_annotation: str = "TaintSource[UserControlled]",
         annotations: Optional[AnnotationSpecification] = None,
         whitelisted_parameters: Optional[WhitelistSpecification] = None,
+        whitelisted_views: Optional[List[str]] = None,
     ) -> None:
         self.django_urls: DjangoUrls = django_urls
+        self.annotations = annotations or default_entrypoint_taint
+        self.whitelisted_parameters = whitelisted_parameters or WhitelistSpecification(
+            parameter_name={"self"}, parameter_type={"HttpRequest"}
+        )
         self.whitelisted_views: List[str] = whitelisted_views or []
-
-        if annotations:
-            self.annotations = annotations
-        elif taint_annotation != "TaintSource[UserControlled]":
-            self.annotations = AnnotationSpecification(
-                arg=taint_annotation, vararg=taint_annotation, kwarg=taint_annotation
-            )
-        else:
-            self.annotations = default_entrypoint_taint
-
-        if whitelisted_parameters:
-            self.whitelisted_parameters = whitelisted_parameters
-        elif whitelisted_classes:
-            self.whitelisted_parameters = WhitelistSpecification(
-                parameter_type=set(whitelisted_classes)
-            )
-        else:
-            self.whitelisted_parameters = WhitelistSpecification(
-                parameter_name={"self"}, parameter_type={"HttpRequest"}
-            )
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return get_all_views(self.django_urls)

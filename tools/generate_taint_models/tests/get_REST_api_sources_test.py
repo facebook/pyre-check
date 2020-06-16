@@ -8,7 +8,11 @@
 import unittest
 from unittest.mock import MagicMock
 
-from ..generator_specifications import AnnotationSpecification, WhitelistSpecification
+from ..generator_specifications import (
+    AnnotationSpecification,
+    WhitelistSpecification,
+    default_entrypoint_taint,
+)
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from .test_functions import __name__ as qualifier, all_functions
 
@@ -16,48 +20,54 @@ from .test_functions import __name__ as qualifier, all_functions
 class GetRESTApiSourcesTest(unittest.TestCase):
     def test_compute_models(self) -> None:
         # Test with default arguments
-        source = "Taint"
+        source = default_entrypoint_taint.arg
+        sink = default_entrypoint_taint.returns
         self.assertEqual(
             [
                 *map(
                     str,
-                    RESTApiSourceGenerator(
-                        django_urls=MagicMock(), taint_annotation=source
-                    ).compute_models(all_functions),
+                    RESTApiSourceGenerator(django_urls=MagicMock()).compute_models(
+                        all_functions
+                    ),
                 )
             ],
             [
-                f"def {qualifier}.TestClass.methodA(self, x: {source}): ...",
-                f"def {qualifier}.TestClass.methodB(self, *args: {source})" ": ...",
-                f"def {qualifier}.testA(): ...",
-                f"def {qualifier}.testB(x: {source}): ...",
-                f"def {qualifier}.testC(x: {source}): ...",
-                f"def {qualifier}.testD(x: {source}, *args: {source}): ...",
-                f"def {qualifier}.testE(x: {source}, **kwargs: {source}): ...",
+                f"def {qualifier}.TestClass.methodA(self, x: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.TestClass.methodB(self, *args: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.testA() -> {sink}: ...",
+                f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
+                f"def {qualifier}.testC(x: {source}) -> {sink}: ...",
+                f"def {qualifier}.testD(x: {source}, *args: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.testE(x: {source}, **kwargs: {source})"
+                + " -> {sink}: ...",
             ],
         )
 
-        # Test with old-style whitelisting
+        # Test with view whitelisting
         self.assertEqual(
             [
                 *map(
                     str,
                     RESTApiSourceGenerator(
                         django_urls=MagicMock(),
-                        whitelisted_classes=["int"],
                         whitelisted_views=[f"{qualifier}.testA"],
-                        taint_annotation=source,
                     ).compute_models(all_functions),
                 )
             ],
             [
-                f"def {qualifier}.TestClass.methodA(self: {source}, x): ...",
-                f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
-                ": ...",
-                f"def {qualifier}.testB(x: {source}): ...",
-                f"def {qualifier}.testC(x): ...",
-                f"def {qualifier}.testD(x, *args): ...",
-                f"def {qualifier}.testE(x, **kwargs: {source}): ...",
+                f"def {qualifier}.TestClass.methodA(self, x: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.TestClass.methodB(self, *args: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
+                f"def {qualifier}.testC(x: {source}) -> {sink}: ...",
+                f"def {qualifier}.testD(x: {source}, *args: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.testE(x: {source}, **kwargs: {source})"
+                + " -> {sink}: ...",
             ],
         )
 
@@ -96,17 +106,17 @@ class GetRESTApiSourcesTest(unittest.TestCase):
                         whitelisted_parameters=WhitelistSpecification(
                             parameter_name={"self"}, parameter_type={"int"}
                         ),
-                        taint_annotation=source,
                     ).compute_models(all_functions),
                 )
             ],
             [
-                f"def {qualifier}.TestClass.methodA(self, x): ...",
-                f"def {qualifier}.TestClass.methodB(self, *args: {source})" ": ...",
-                f"def {qualifier}.testA(): ...",
-                f"def {qualifier}.testB(x: {source}): ...",
-                f"def {qualifier}.testC(x): ...",
-                f"def {qualifier}.testD(x, *args): ...",
-                f"def {qualifier}.testE(x, **kwargs: {source}): ...",
+                f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
+                f"def {qualifier}.TestClass.methodB(self, *args: {source})"
+                + " -> {sink}: ...",
+                f"def {qualifier}.testA() -> {sink}: ...",
+                f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
+                f"def {qualifier}.testC(x) -> {sink}: ...",
+                f"def {qualifier}.testD(x, *args) -> {sink}: ...",
+                f"def {qualifier}.testE(x, **kwargs: {source}) -> {sink}: ...",
             ],
         )
