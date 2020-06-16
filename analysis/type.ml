@@ -2292,6 +2292,19 @@ let parameters = function
   | _ -> None
 
 
+let type_parameters_for_bounded_tuple_union = function
+  | Union annotations ->
+      let bounded_tuple_parameters = function
+        | Tuple (Bounded (Concrete parameters)) -> Some parameters
+        | _ -> None
+      in
+      List.map annotations ~f:bounded_tuple_parameters
+      |> Option.all
+      >>= List.transpose
+      >>| List.map ~f:union
+  | _ -> None
+
+
 let single_parameter = function
   | Parametric { parameters = [Single parameter]; _ } -> parameter
   | _ -> failwith "Type does not have single parameter"

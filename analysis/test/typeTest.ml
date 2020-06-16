@@ -915,6 +915,25 @@ let test_map_callable_annotation _ =
   ()
 
 
+let test_type_parameters_for_bounded_tuple_union _ =
+  let assert_type_parameters actual expected =
+    assert_equal
+      ~cmp:[%equal: Type.t list option]
+      ~printer:[%show: Type.t list option]
+      expected
+      (Type.type_parameters_for_bounded_tuple_union actual)
+  in
+  assert_type_parameters Type.integer None;
+  assert_type_parameters
+    (Type.union [Type.tuple [Type.integer; Type.string]; Type.tuple [Type.bool]])
+    None;
+  assert_type_parameters
+    (Type.union
+       [Type.tuple [Type.integer; Type.string]; Type.tuple [Type.bool; Type.list Type.integer]])
+    (Some [Type.union [Type.integer; Type.bool]; Type.union [Type.string; Type.list Type.integer]]);
+  ()
+
+
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
 let test_is_concrete _ =
@@ -2355,6 +2374,7 @@ let () =
          "infer_transform" >:: test_infer_transform;
          "fields_from_constructor" >:: test_fields_from_constructor;
          "map_callable_annotation" >:: test_map_callable_annotation;
+         "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

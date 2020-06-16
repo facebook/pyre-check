@@ -503,6 +503,8 @@ val coroutine_value : t -> t option
 
 val parameters : t -> Parameter.t list option
 
+val type_parameters_for_bounded_tuple_union : t -> t list option
+
 val single_parameter : t -> t
 
 val instantiate
