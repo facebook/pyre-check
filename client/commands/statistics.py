@@ -241,7 +241,7 @@ class Statistics(Command):
             for path, module in modules.items():
                 if module is not None:
                     collector.path = path
-                    collector.is_strict = is_default_strict
+                    collector.strict_by_default = is_default_strict
                     module.visit(collector)
         issues = [issue.build_json() for issue in collector.issues]
         log.stdout.write(json.dumps(issues))
