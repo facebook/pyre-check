@@ -105,27 +105,18 @@ def _report_results(
         print("\n".join([str(model) for model in sorted(all_models)]))
 
 
-def run_generators(
+def run_from_parsed_arguments(
     generator_options: Dict[str, ModelGenerator[Model]],
+    arguments: GenerationArguments,
     default_modes: List[str],
-    verbose: bool = False,
     logger_executable: Optional[str] = None,
 ) -> None:
-    arguments = _parse_arguments(generator_options)
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.DEBUG if verbose or arguments.verbose else logging.INFO,
-    )
-
     modes = arguments.mode or default_modes
     generated_models: Dict[str, Set[Model]] = {}
     for mode in modes:
         LOG.info("Computing models for `%s`", mode)
         start = time.time()
-
         generated_models[mode] = set(generator_options[mode].generate_models())
-
         elapsed_time_seconds = time.time() - start
         LOG.info(f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds.")
 
@@ -138,3 +129,20 @@ def run_generators(
                 logger=logger_executable,
             )
     _report_results(generated_models, arguments.output_directory)
+
+
+def run_generators(
+    generator_options: Dict[str, ModelGenerator[Model]],
+    default_modes: List[str],
+    verbose: bool = False,
+    logger_executable: Optional[str] = None,
+) -> None:
+    arguments = _parse_arguments(generator_options)
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.DEBUG if verbose or arguments.verbose else logging.INFO,
+    )
+    run_from_parsed_arguments(
+        generator_options, arguments, default_modes, logger_executable
+    )
