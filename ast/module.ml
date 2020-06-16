@@ -30,7 +30,19 @@ module ExportMap = struct
 
   let empty = Identifier.Map.Tree.empty
 
-  let lookup = Identifier.Map.Tree.find
+  let lookup map name =
+    match Identifier.Map.Tree.find map name with
+    | Some _ as export -> export
+    | None -> (
+        match name with
+        | "__doc__"
+        | "__file__"
+        | "__name__"
+        | "__package__"
+        | "__dict__" ->
+            Some (Export.Name Export.Name.GlobalVariable)
+        | _ -> None )
+
 
   let to_alist = Identifier.Map.Tree.to_alist
 
@@ -221,9 +233,12 @@ let create
 let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
 
 let get_export considered_module name =
-  match considered_module with
-  | Explicit { exports; _ } -> ExportMap.lookup exports name
-  | Implicit _ -> None
+  let exports =
+    match considered_module with
+    | Explicit { exports; _ } -> exports
+    | Implicit _ -> ExportMap.empty
+  in
+  ExportMap.lookup exports name
 
 
 let get_all_exports considered_module =

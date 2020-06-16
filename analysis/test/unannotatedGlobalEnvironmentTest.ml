@@ -2048,6 +2048,38 @@ let test_resolve_exports context =
     ~expected:(Some (resolved_attribute !&"" "None" ~export:GlobalVariable))
     ~reference:!&"None"
     [];
+
+  (* Special attribute tests. *)
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__doc__"
+    ~expected:(Some (resolved_attribute !&"foo" "__doc__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__file__"
+    ~expected:(Some (resolved_attribute !&"foo" "__file__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__package__"
+    ~expected:(Some (resolved_attribute !&"foo" "__package__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__dict__"
+    ~expected:(Some (resolved_attribute !&"foo" "__dict__" ~export:GlobalVariable));
+  (* Implicit modules also contain speical attributes. *)
+  assert_resolved
+    ["foo/bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  (* Explicitly defined special attributes take precedence over the default ones. *)
+  assert_resolved
+    ["foo.py", "from bar import __name__"; "bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"bar" "__name__" ~export:GlobalVariable));
   ()
 
 
