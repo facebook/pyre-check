@@ -391,6 +391,19 @@ let test_check_tuple context =
       X(dates="foo")
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import List, Tuple, Union
+      def foo() -> None:
+        union_of_bounded_tuples: Union[Tuple[int, str], Tuple[bool, List[int]]]
+        a, b = union_of_bounded_tuples
+        reveal_type(a)
+        reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `Union[bool, int]`.";
+      "Revealed type [-1]: Revealed type for `b` is `Union[List[int], str]`.";
+    ];
   ()
 
 
