@@ -169,13 +169,19 @@ let test_add_constraint context =
     in
     annotation |> Type.create ~aliases |> Type.expression
   in
-  let assert_add
+  let parse_annotation annotation ~do_prep =
+    annotation
+    |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
+    |> parse_single_expression
+    |> (if do_prep then prep else Fn.id)
+    |> GlobalResolution.parse_annotation ~validation:NoValidation resolution
+  in
+  let assert_add_direct
       ~left
       ~right
       ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
       ?(attributes = fun _ ~assumptions:_ -> None)
       ?constraints
-      ?(leave_unbound_in_left = [])
       ?(postprocess = default_postprocess)
       ?(do_prep = true)
       expected
@@ -222,53 +228,7 @@ let test_add_constraint context =
       in
       { order with all_attributes = attributes; attribute = attribute_from_attributes attributes }
     in
-    let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
-    let parse_annotation annotation =
-      annotation
-      |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
-      |> parse_single_expression
-      |> (if do_prep then prep else Fn.id)
-      |> GlobalResolution.parse_annotation ~validation:NoValidation resolution
-    in
-    let left =
-      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
-        if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
-          None
-        else
-          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
-      in
-      let mark_parameter_variadic variable =
-        if
-          List.mem
-            leave_unbound_in_left
-            (Type.Variable.Variadic.Parameters.name variable)
-            ~equal:Identifier.equal
-        then
-          None
-        else
-          Some
-            (Type.Callable.ParameterVariadicTypeVariable
-               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
-      in
-      let mark_list_variadic variable =
-        if
-          List.mem
-            leave_unbound_in_left
-            (Type.Variable.Variadic.List.name variable)
-            ~equal:Identifier.equal
-        then
-          None
-        else
-          Some
-            (Type.Variable.Variadic.List.self_reference
-               (Type.Variable.Variadic.List.mark_as_bound variable))
-      in
-      parse_annotation left
-      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
-      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
-      |> Type.Variable.GlobalTransforms.ListVariadic.replace_all mark_list_variadic
-    in
-    let right = parse_annotation right in
+    let parse_annotation = parse_annotation ~do_prep in
     let expected =
       let parse_pairs pairs =
         let parse_pair (variable, value) =
@@ -355,6 +315,51 @@ let test_add_constraint context =
           ~order:handler
       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler) )
   in
+  let assert_add ?(do_prep = true) ?(leave_unbound_in_left = []) ~left ~right =
+    let parse_annotation = parse_annotation ~do_prep in
+    let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
+    let left =
+      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
+        if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
+          None
+        else
+          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
+      in
+      let mark_parameter_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.Parameters.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Callable.ParameterVariadicTypeVariable
+               { head = []; variable = Type.Variable.Variadic.Parameters.mark_as_bound variable })
+      in
+      let mark_list_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.List.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Variable.Variadic.List.self_reference
+               (Type.Variable.Variadic.List.mark_as_bound variable))
+      in
+      parse_annotation left
+      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
+      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.ListVariadic.replace_all mark_list_variadic
+    in
+    let right = parse_annotation right in
+    assert_add_direct ~left ~right ~do_prep
+  in
+
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Optional[T_Unconstrained]"
@@ -879,6 +884,27 @@ let test_add_constraint context =
     ~left:"typing.Callable[[str], bool]"
     ~right:"BoundMethod[typing.Callable[[int, str], bool], int]"
     [];
+
+  let { Type.Variable.Variadic.Parameters.Components.positional_component; keyword_component } =
+    Type.Variable.Variadic.Parameters.create "TParams"
+    |> Type.Variable.Variadic.Parameters.decompose
+  in
+
+  assert_add_direct
+    ~left:positional_component
+    ~right:(parse_annotation "typing.Tuple[object, ...]")
+    [[]];
+  assert_add_direct
+    ~left:positional_component
+    ~right:(parse_annotation "typing.Iterable[object]")
+    [[]];
+  assert_add_direct ~left:positional_component ~right:(parse_annotation "typing.Iterable[int]") [];
+
+  assert_add_direct
+    ~left:keyword_component
+    ~right:(parse_annotation "typing.Mapping[str, object]")
+    [[]];
+  assert_add_direct ~left:keyword_component ~right:(parse_annotation "typing.Mapping[str, int]") [];
   ()
 
 

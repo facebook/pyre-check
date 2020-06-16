@@ -2669,6 +2669,8 @@ module Variable : sig
         }
 
         val combine : decomposition -> parameter_variadic_t option
+
+        val component : t -> component
       end
 
       val decompose : t -> Components.decomposition
@@ -3065,6 +3067,9 @@ end = struct
               in
               Some { name; namespace; variance; state = InFunction }
           | _ -> None
+
+
+        let component { component; _ } = component
       end
 
       let decompose { name = variable_name; variance; namespace = variable_namespace; _ } =

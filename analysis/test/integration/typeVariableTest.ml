@@ -1443,6 +1443,42 @@ let test_callable_parameter_variadics context =
         return bar
     |}
     ["Unexpected keyword [28]: Unexpected keyword argument `x` to anonymous call."];
+  assert_type_errors
+    {|
+      from typing import Protocol, Callable, TypeVar, overload, Union
+      import pyre_extensions
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+
+      def doesnt_care_positional( *args: object) -> None:
+        pass
+
+      def doesnt_care_keywords( **kwargs: object) -> None:
+        pass
+
+      def does_care_positional( *args: int) -> None:
+        pass
+
+      def does_care_keywords( **kwargs: int) -> None:
+        pass
+
+      def outer(f: Callable[TParams, int]) -> Callable[TParams, None]:
+        def foo( *args: TParams.args, **kwargs: TParams.kwargs) -> None:
+          doesnt_care_positional( *args)
+          doesnt_care_keywords( **kwargs)
+
+          does_care_positional( *args)
+          does_care_keywords( **kwargs)
+
+
+          f( *args, **kwargs)
+        return foo
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `does_care_positional` but got `object`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `does_care_keywords` but got `object`.";
+    ];
   ()
 
 

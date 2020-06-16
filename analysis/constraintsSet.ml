@@ -401,9 +401,19 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.Primitive "object" -> [constraints]
     | other, Type.Any -> [add_fallbacks other]
     | _, Type.Top -> [constraints]
-    | Type.ParameterVariadicComponent _, _
-    | _, Type.ParameterVariadicComponent _ ->
-        impossible
+    | Type.ParameterVariadicComponent component, _ ->
+        let left =
+          match Type.Variable.Variadic.Parameters.Components.component component with
+          | KeywordArguments ->
+              Type.Parametric
+                {
+                  name = Type.mapping_primitive;
+                  parameters = [Single Type.string; Single Type.object_primitive];
+                }
+          | PositionalArguments -> Type.Tuple (Unbounded Type.object_primitive)
+        in
+        solve_less_or_equal order ~constraints ~left ~right
+    | _, Type.ParameterVariadicComponent _ -> impossible
     | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
     | Type.Any, other -> [add_fallbacks other]

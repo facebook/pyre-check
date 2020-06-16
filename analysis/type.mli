@@ -726,12 +726,18 @@ module Variable : sig
           include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
         end
 
+        type component =
+          | KeywordArguments
+          | PositionalArguments
+
         type decomposition = {
           positional_component: type_t;
           keyword_component: type_t;
         }
 
         val combine : decomposition -> parameter_variadic_t option
+
+        val component : t -> component
       end
 
       val decompose : t -> Components.decomposition
