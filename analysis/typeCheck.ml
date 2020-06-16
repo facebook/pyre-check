@@ -2805,36 +2805,13 @@ module State (Context : Context) = struct
     | Name (Name.Identifier identifier) ->
         forward_reference ~resolution ~errors:[] (Reference.create identifier)
     | Name (Name.Attribute { base; attribute; special } as name) ->
-        let reference = name_to_reference name in
-        let { Resolved.errors = base_errors; resolved = resolved_base; base = super_base; _ } =
-          forward_expression ~resolution ~expression:base
-        in
-        let errors, resolved_base =
-          if Type.Variable.contains_escaped_free_variable resolved_base then
-            let errors =
-              emit_error
-                ~errors:[]
-                ~location
-                ~kind:
-                  (Error.IncompleteType
-                     {
-                       target = base;
-                       annotation = resolved_base;
-                       attempted_action = Error.AttributeAccess attribute;
-                     })
-            in
-            errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
-          else
-            [], resolved_base
-        in
-        let {
-          Resolved.resolution = updated_resolution;
-          errors = updated_errors;
-          resolved;
-          resolved_annotation;
-          _;
-        }
+        let resolve_attribute_access
+            ~base_resolved:
+              { Resolved.resolution; errors; resolved = resolved_base; base = super_base; _ }
+            ~special
+            attribute
           =
+          let reference = name_to_reference name in
           let access_as_attribute () =
             let find_attribute
                 ({ Type.instantiated; accessed_through_class; class_name } as resolved)
@@ -3006,70 +2983,91 @@ module State (Context : Context) = struct
                   base = None;
                 }
           in
-          match resolved_base with
-          (* Global or local. *)
-          | Type.Top ->
-              reference
-              >>| forward_reference ~resolution ~errors
-              |> Option.value
-                   ~default:
-                     {
-                       Resolved.resolution;
-                       errors;
-                       resolved = Type.Top;
-                       resolved_annotation = None;
-                       base = None;
-                     }
-          (* TODO(T63892020): We need to fix up qualification so nested classes and functions are
-             just normal locals rather than attributes of the enclosing function, which they really
-             are not *)
-          | Type.Parametric { name = "BoundMethod"; _ }
-          | Type.Callable _ -> (
-              let resolved =
-                reference >>= fun reference -> Resolution.get_local resolution ~reference
-              in
-              match resolved with
-              | Some annotation ->
-                  {
-                    resolution;
-                    errors;
-                    resolved = Annotation.annotation annotation;
-                    resolved_annotation = Some annotation;
-                    base = None;
-                  }
-              | None -> access_as_attribute () )
-          | _ ->
-              (* Attribute access. *)
-              access_as_attribute ()
-        in
-        let base =
-          match super_base with
-          | Some (Super _) -> super_base
-          | _ ->
-              let is_global_meta =
-                let is_global () =
-                  match base with
-                  | { Node.value = Name name; _ } ->
-                      name_to_identifiers name
-                      >>| Reference.create_from_list
-                      >>= GlobalResolution.global global_resolution
-                      |> Option.is_some
-                  | _ -> false
+          let resolved =
+            match resolved_base with
+            (* Global or local. *)
+            | Type.Top ->
+                reference
+                >>| forward_reference ~resolution ~errors
+                |> Option.value
+                     ~default:
+                       {
+                         Resolved.resolution;
+                         errors;
+                         resolved = Type.Top;
+                         resolved_annotation = None;
+                         base = None;
+                       }
+            (* TODO(T63892020): We need to fix up qualification so nested classes and functions are
+               just normal locals rather than attributes of the enclosing function, which they
+               really are not *)
+            | Type.Parametric { name = "BoundMethod"; _ }
+            | Type.Callable _ -> (
+                let resolved =
+                  reference >>= fun reference -> Resolution.get_local resolution ~reference
                 in
-                Type.is_meta resolved_base && is_global ()
-              in
-              if is_global_meta then
-                Some (Class resolved_base)
-              else
-                Some (Instance resolved_base)
+                match resolved with
+                | Some annotation ->
+                    {
+                      resolution;
+                      errors;
+                      resolved = Annotation.annotation annotation;
+                      resolved_annotation = Some annotation;
+                      base = None;
+                    }
+                | None -> access_as_attribute () )
+            | _ ->
+                (* Attribute access. *)
+                access_as_attribute ()
+          in
+          let base =
+            match super_base with
+            | Some (Super _) -> super_base
+            | _ ->
+                let is_global_meta =
+                  let is_global () =
+                    match base with
+                    | { Node.value = Name name; _ } ->
+                        name_to_identifiers name
+                        >>| Reference.create_from_list
+                        >>= GlobalResolution.global global_resolution
+                        |> Option.is_some
+                    | _ -> false
+                  in
+                  Type.is_meta resolved_base && is_global ()
+                in
+                if is_global_meta then
+                  Some (Class resolved_base)
+                else
+                  Some (Instance resolved_base)
+          in
+          { resolved with base }
         in
-        {
-          resolution = updated_resolution;
-          errors = List.append base_errors updated_errors;
-          resolved;
-          resolved_annotation;
-          base;
-        }
+        let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
+          forward_expression ~resolution ~expression:base
+        in
+        let errors, resolved_base =
+          if Type.Variable.contains_escaped_free_variable resolved_base then
+            let errors =
+              emit_error
+                ~errors
+                ~location
+                ~kind:
+                  (Error.IncompleteType
+                     {
+                       target = base;
+                       annotation = resolved_base;
+                       attempted_action = Error.AttributeAccess attribute;
+                     })
+            in
+            errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
+          else
+            errors, resolved_base
+        in
+        resolve_attribute_access
+          ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
+          ~special
+          attribute
     | Set elements ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_elements ~resolution ~errors:[] ~elements
