@@ -4041,7 +4041,9 @@ module State (Context : Context) = struct
                                   ~kind:(Error.IllegalAnnotationTarget target),
                                 false )
                             else if
-                              Annotated.Attribute.defined attribute && insufficiently_annotated
+                              Annotated.Attribute.defined attribute
+                              && (not (Annotated.Attribute.property attribute))
+                              && insufficiently_annotated
                             then
                               ( emit_error
                                   ~errors
