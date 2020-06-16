@@ -158,7 +158,7 @@ class Kill(Command):
                         "Failed to delete buck builder cache due to exception: %s.",
                         exception,
                     )
-        recently_used_configurations.delete_cache(self._dot_pyre_directory)
+        recently_used_configurations.Cache(self._dot_pyre_directory).delete()
 
     def _kill_processes_by_name(self, name: str) -> None:
         for process in psutil.process_iter(attrs=["name"]):

@@ -8,96 +8,76 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 from . import filesystem, terminal
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE = "recently-used-local-configurations.json"
-RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK = "recently-used-local-configurations.lock"
 MAXIMUM_RECENT_ITEMS = 10
 
 
-def _add_recently_used_configuration(
-    local_configuration: str, existing_configurations: List[str]
-) -> List[str]:
-    updated_configurations = [
-        local_configuration,
-        *(
-            configuration
-            for configuration in existing_configurations
-            if configuration != local_configuration
-        ),
-    ]
-    return updated_configurations[:MAXIMUM_RECENT_ITEMS]
+T = TypeVar("T")
 
 
-def _load_recently_used_configurations(dot_pyre_directory: Path) -> List[str]:
-    configurations = []
-    recently_used_configurations_path = (
-        dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE
-    )
-    try:
-        configurations = json.loads(recently_used_configurations_path.read_text())
-    except FileNotFoundError:
-        LOG.debug(f"No existing file `{str(recently_used_configurations_path)}`.")
-    except json.JSONDecodeError:
-        LOG.debug(
-            "Error when loading json from "
-            f"`{str(recently_used_configurations_path)}`"
-        )
-    return configurations
+class Cache(Generic[T]):
+    def __init__(
+        self,
+        cache_directory: Path,
+        file_base_name: str = "recently-used-local-configurations",
+    ) -> None:
+        self._file_path: Path = (cache_directory / f"{file_base_name}.json")
+        self._lock_path: Path = (cache_directory / f"{file_base_name}.lock")
 
+    @staticmethod
+    def _add_recent_item(new_item: T, existing_items: List[T]) -> List[T]:
+        updated_list = [
+            new_item,
+            *(item for item in existing_items if item != new_item),
+        ]
+        return updated_list[:MAXIMUM_RECENT_ITEMS]
 
-def delete_cache(dot_pyre_directory: Path) -> None:
-    try:
-        os.remove(str(dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK))
-        os.remove(str(dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE))
-    except OSError as error:
-        LOG.debug(
-            "Error while trying to delete recently-used configurations files: "
-            f"{error}."
-        )
+    def _load_items_from_file(self) -> List[T]:
+        items = []
+        try:
+            items = json.loads(self._file_path.read_text())
+        except FileNotFoundError:
+            LOG.debug(f"No existing file `{str(self._file_path)}`.")
+        except json.JSONDecodeError:
+            LOG.debug("Error when loading json from " f"`{str(self._file_path)}`")
+        return items
 
-
-def get_recently_used_configurations(dot_pyre_directory: Path) -> List[str]:
-    lock_path = dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK
-    try:
-        with filesystem.acquire_lock(str(lock_path), blocking=False):
-            return _load_recently_used_configurations(dot_pyre_directory)
-    except OSError:
-        LOG.debug(
-            f"Failed to acquire lock `{str(lock_path)}`. "
-            "Returning empty list of recently-used configurations."
-        )
-        return []
-
-
-def log_as_recently_used(
-    local_configuration: Optional[str], dot_pyre_directory: Path
-) -> None:
-    if not local_configuration:
-        return
-
-    lock_path = dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK
-    try:
-        with filesystem.acquire_lock(str(lock_path), blocking=False):
-            recently_used_configurations_path = (
-                dot_pyre_directory / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE
+    def put(self, new_item: T) -> None:
+        try:
+            with filesystem.acquire_lock(str(self._lock_path), blocking=False):
+                existing_items = self._load_items_from_file()
+                updated_items = self._add_recent_item(new_item, existing_items)
+                self._file_path.write_text(json.dumps(updated_items))
+        except OSError:
+            LOG.debug(
+                f"Failed to acquire lock `{str(self._lock_path)}`. "
+                "Not adding to recently-used items cache."
             )
-            existing_configurations = _load_recently_used_configurations(
-                dot_pyre_directory
+
+    def get_all_items(self) -> List[T]:
+        try:
+            with filesystem.acquire_lock(str(self._lock_path), blocking=False):
+                return self._load_items_from_file()
+        except OSError:
+            LOG.debug(
+                f"Failed to acquire lock `{str(self._lock_path)}`. "
+                "Returning empty list of recently-used items."
             )
-            new_configurations = _add_recently_used_configuration(
-                local_configuration, existing_configurations
+            return []
+
+    def delete(self) -> None:
+        try:
+            os.remove(str(self._lock_path))
+            os.remove(str(self._file_path))
+        except OSError as error:
+            LOG.debug(
+                "Error while trying to delete recently-used cache files: " f"{error}."
             )
-            recently_used_configurations_path.write_text(json.dumps(new_configurations))
-    except OSError:
-        LOG.debug(
-            f"Failed to acquire lock `{str(lock_path)}`. "
-            "Not logging in recently-used configurations cache."
-        )
 
 
 def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:

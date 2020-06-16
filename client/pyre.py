@@ -194,9 +194,9 @@ def _run_pyre_with_retry(arguments: argparse.Namespace) -> ExitCode:
         exit_code = exception.exit_code
         client_exception_message = exception.exception_message
 
-    configurations = recently_used_configurations.get_recently_used_configurations(
+    configurations = recently_used_configurations.Cache(
         command._dot_pyre_directory
-    )
+    ).get_all_items()
     if not configurations:
         LOG.error(client_exception_message)
         return exit_code

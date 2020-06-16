@@ -139,16 +139,13 @@ class PyreTest(unittest.TestCase):
         return_value="foo/bar",
     )
     @patch.object(
-        recently_used_configurations,
-        "get_recently_used_configurations",
+        recently_used_configurations.Cache,
+        "get_all_items",
         return_value=["foo/bar", "baz"],
     )
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry(
-        self,
-        run_pyre: MagicMock,
-        get_recently_used_configurations: MagicMock,
-        prompt_user: MagicMock,
+        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
     ) -> None:
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
@@ -164,14 +161,10 @@ class PyreTest(unittest.TestCase):
         self.assertEqual(actual_exit_code, ExitCode.SUCCESS)
         self.assertEqual(command_line_arguments.local_configuration, "foo/bar")
 
-    @patch.object(
-        recently_used_configurations,
-        "get_recently_used_configurations",
-        return_value=[],
-    )
+    @patch.object(recently_used_configurations.Cache, "get_all_items", return_value=[])
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry__no_recent_configurations(
-        self, run_pyre: MagicMock, get_recently_used_configurations: MagicMock
+        self, run_pyre: MagicMock, get_all_items: MagicMock
     ) -> None:
         run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,
@@ -187,16 +180,11 @@ class PyreTest(unittest.TestCase):
         recently_used_configurations, "prompt_user_for_local_root", return_value="foo"
     )
     @patch.object(
-        recently_used_configurations,
-        "get_recently_used_configurations",
-        return_value=["foo"],
+        recently_used_configurations.Cache, "get_all_items", return_value=["foo"]
     )
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry__fail_again(
-        self,
-        run_pyre: MagicMock,
-        get_recently_used_configurations: MagicMock,
-        prompt_user: MagicMock,
+        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
     ) -> None:
         run_pyre.side_effect = [
             pyre.FailedOutsideLocalConfigurationException(
@@ -219,16 +207,11 @@ class PyreTest(unittest.TestCase):
         recently_used_configurations, "prompt_user_for_local_root", return_value=None
     )
     @patch.object(
-        recently_used_configurations,
-        "get_recently_used_configurations",
-        return_value=["foo"],
+        recently_used_configurations.Cache, "get_all_items", return_value=["foo"]
     )
     @patch.object(pyre, "run_pyre")
     def test_run_pyre_with_retry__invalid_user_input(
-        self,
-        run_pyre: MagicMock,
-        get_recently_used_configurations: MagicMock,
-        prompt_user: MagicMock,
+        self, run_pyre: MagicMock, get_all_items: MagicMock, prompt_user: MagicMock
     ) -> None:
         run_pyre.side_effect = pyre.FailedOutsideLocalConfigurationException(
             exit_code=ExitCode.FAILURE,

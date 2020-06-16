@@ -142,7 +142,7 @@ class KillTest(unittest.TestCase):
     @patch.object(
         subprocess, "check_output", return_value=b"/some/scratch/directory/pyre\n"
     )
-    @patch.object(recently_used_configurations, "delete_cache")
+    @patch.object(recently_used_configurations.Cache, "delete")
     @patch.object(shutil, "rmtree")
     @patch.object(Kill, "__init__", return_value=None)
     def test_delete_caches(

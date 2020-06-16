@@ -11,130 +11,105 @@ from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
 from .. import filesystem, recently_used_configurations, terminal
-from ..recently_used_configurations import (
-    RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE,
-    RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK,
-)
 
 
 class RecentlyUsedConfigurationsTest(unittest.TestCase):
     @patch.object(Path, "write_text")
     @patch.object(
-        recently_used_configurations,
-        "_load_recently_used_configurations",
+        recently_used_configurations.Cache,
+        "_load_items_from_file",
         return_value=["bar", "baz"],
     )
     @patch.object(filesystem, "acquire_lock")
-    def test_log_recently_used(
+    def test_put(
         self,
         acquire_lock: MagicMock,
-        load_recently_used_configurations: MagicMock,
+        load_items_from_file: MagicMock,
         write_text: MagicMock,
     ) -> None:
-        recently_used_configurations.log_as_recently_used("foo", Path("/.pyre/"))
+        recently_used_configurations.Cache(Path("/.pyre")).put("foo")
         write_text.assert_called_once_with('["foo", "bar", "baz"]')
         acquire_lock.assert_called_once_with(
             "/.pyre/recently-used-local-configurations.lock", blocking=False
         )
 
     @patch.object(Path, "write_text")
-    @patch.object(recently_used_configurations, "_load_recently_used_configurations")
+    @patch.object(recently_used_configurations.Cache, "_load_items_from_file")
     @patch.object(filesystem, "acquire_lock", side_effect=OSError)
-    def test_log_recently_used__lock_not_acquired(
+    def test_put__lock_not_acquired(
         self,
         acquire_lock: MagicMock,
-        load_recently_used_configurations: MagicMock,
+        load_items_from_file: MagicMock,
         write_text: MagicMock,
     ) -> None:
-        recently_used_configurations.log_as_recently_used("foo", Path("/.pyre/"))
+        recently_used_configurations.Cache(Path("/.pyre")).put("foo")
         write_text.assert_not_called()
 
     @patch.object(
-        recently_used_configurations,
-        "_load_recently_used_configurations",
+        recently_used_configurations.Cache,
+        "_load_items_from_file",
         return_value=["bar", "baz"],
     )
     @patch.object(filesystem, "acquire_lock")
-    def test_get_recently_used(
-        self, acquire_lock: MagicMock, load_recently_used_configurations: MagicMock
+    def test_get_all_items(
+        self, acquire_lock: MagicMock, load_items_from_file: MagicMock
     ) -> None:
         self.assertEqual(
-            recently_used_configurations.get_recently_used_configurations(
-                Path("/.pyre/")
-            ),
+            recently_used_configurations.Cache(Path("/.pyre")).get_all_items(),
             ["bar", "baz"],
         )
         acquire_lock.assert_called_once_with(
             "/.pyre/recently-used-local-configurations.lock", blocking=False
         )
 
-    @patch.object(recently_used_configurations, "_load_recently_used_configurations")
+    @patch.object(recently_used_configurations.Cache, "_load_items_from_file")
     @patch.object(filesystem, "acquire_lock", side_effect=OSError)
-    def test_get_recently_used__lock_not_acquired(
-        self, acquire_lock: MagicMock, load_recently_used_configurations: MagicMock
+    def test_get_all_items__lock_not_acquired(
+        self, acquire_lock: MagicMock, load_items_from_file: MagicMock
     ) -> None:
         self.assertEqual(
-            recently_used_configurations.get_recently_used_configurations(
-                Path("/.pyre/")
-            ),
-            [],
+            recently_used_configurations.Cache(Path("/.pyre")).get_all_items(), []
         )
         acquire_lock.assert_called_once_with(
             "/.pyre/recently-used-local-configurations.lock", blocking=False
         )
 
-    @patch.object(filesystem, "acquire_lock")
-    def test_log_recently_used__no_local_configuration(
-        self, acquire_lock: MagicMock
-    ) -> None:
-        recently_used_configurations.log_as_recently_used(None, Path("/.pyre/"))
-        acquire_lock.assert_not_called()
-
     @patch.object(Path, "read_text", return_value='["bar", "baz"]')
-    def test_load_recently_used_configurations(self, read_text: MagicMock) -> None:
+    def test_load_items_from_file(self, read_text: MagicMock) -> None:
         self.assertEqual(
-            recently_used_configurations._load_recently_used_configurations(
-                Path("/.pyre")
-            ),
+            recently_used_configurations.Cache(Path("/.pyre"))._load_items_from_file(),
             ["bar", "baz"],
         )
 
     @patch.object(Path, "read_text", side_effect=FileNotFoundError)
-    def test_load_recently_used_configurations__no_existing_file(
-        self, read_text: MagicMock
-    ) -> None:
+    def test_load_items_from_file__no_existing_file(self, read_text: MagicMock) -> None:
         self.assertEqual(
-            recently_used_configurations._load_recently_used_configurations(
-                Path("/.pyre")
-            ),
+            recently_used_configurations.Cache(Path("/.pyre"))._load_items_from_file(),
             [],
         )
 
     @patch.object(json, "loads", side_effect=json.JSONDecodeError("foo", "bar", 0))
     @patch.object(Path, "read_text")
-    def test_load_recently_used_configurations__json_error(
+    def test_load_items_from_file__json_error(
         self, read_text: MagicMock, json_loads: MagicMock
     ) -> None:
         self.assertEqual(
-            recently_used_configurations._load_recently_used_configurations(
-                Path("/.pyre")
-            ),
+            recently_used_configurations.Cache(Path("/.pyre"))._load_items_from_file(),
             [],
         )
 
     def test_add_recently_used_configuration(self) -> None:
         self.assertEqual(
-            recently_used_configurations._add_recently_used_configuration("foo", []),
-            ["foo"],
+            recently_used_configurations.Cache._add_recent_item("foo", []), ["foo"]
         )
         self.assertEqual(
-            recently_used_configurations._add_recently_used_configuration(
+            recently_used_configurations.Cache._add_recent_item(
                 "foo", ["bar", "foo", "baz"]
             ),
             ["foo", "bar", "baz"],
         )
         self.assertEqual(
-            recently_used_configurations._add_recently_used_configuration(
+            recently_used_configurations.Cache._add_recent_item(
                 "foo",
                 [
                     f"bar{x}"
@@ -154,11 +129,13 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
 
     @patch.object(os, "remove")
     def test_delete_cache(self, remove: MagicMock) -> None:
-        recently_used_configurations.delete_cache(Path("/.pyre"))
+        recently_used_configurations.Cache(
+            Path("/.pyre"), file_base_name="some-file-name"
+        ).delete()
         remove.assert_has_calls(
             [
-                call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_LOCK)),
-                call(str(Path("/.pyre") / RECENTLY_USED_LOCAL_CONFIGURATIONS_FILE)),
+                call(str(Path("/.pyre") / "some-file-name.lock")),
+                call(str(Path("/.pyre") / "some-file-name.json")),
             ]
         )
 

@@ -20,7 +20,7 @@ from typing import IO, Iterable, List, Optional
 
 from typing_extensions import Final
 
-from .. import json_rpc, log, terminal
+from .. import json_rpc, log, recently_used_configurations, terminal
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
@@ -32,7 +32,6 @@ from ..find_directories import (
 )
 from ..log import StreamLogger
 from ..process import register_non_unique_process
-from ..recently_used_configurations import log_as_recently_used
 from ..resources import LOG_DIRECTORY, find_log_directory
 from ..socket_connection import SocketConnection, SocketException
 
@@ -608,10 +607,11 @@ class Command(CommandParser, ABC):
         if configuration and configuration.disabled:
             LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
         else:
-            log_as_recently_used(
-                local_configuration=self.relative_local_root,
-                dot_pyre_directory=self._dot_pyre_directory,
-            )
+            relative_local_root = self.relative_local_root
+            if relative_local_root:
+                recently_used_configurations.Cache(self._dot_pyre_directory).put(
+                    relative_local_root
+                )
             self._run()
         return self
 
