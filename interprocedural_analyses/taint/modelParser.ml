@@ -976,9 +976,15 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         (* Since properties and setters share the same undecorated name, we need to special-case
            them. *)
         let global_type () =
-          name
-          |> from_reference ~location:Location.any
-          |> Resolution.resolve_expression_to_annotation resolution
+          match GlobalResolution.global (Resolution.global_resolution resolution) name with
+          | Some { AttributeResolution.Global.undecorated_signature; annotation; _ } -> (
+              match undecorated_signature with
+              | Some signature -> Type.Callable signature |> Annotation.create
+              | None -> annotation )
+          | None ->
+              (* Fallback for fields, which are not globals. *)
+              from_reference name ~location:Location.any
+              |> Resolution.resolve_expression_to_annotation resolution
         in
         let parent = Option.value_exn (Reference.prefix name) in
         let get_matching_method ~predicate =

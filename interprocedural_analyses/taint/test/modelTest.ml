@@ -1032,6 +1032,38 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.f`: Cross repository taint must be of the form \
        CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+    ();
+  (* Ensure that we're verifying models against the undecorated signature. *)
+  assert_valid_model
+    ~source:
+      {|
+    from typing import Callable
+    def decorate(f: Callable[[int], int]) -> Callable[[], int]:
+      def g() -> int:
+        return f(42)
+      return g
+    @decorate
+    def foo(parameter: int) -> int:
+      return parameter
+    |}
+    ~model_source:"def test.foo(parameter): ..."
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+    from typing import Callable
+    def decorate(f: Callable[[int], int]) -> Callable[[], int]:
+      def g() -> int:
+        return f(42)
+      return g
+    @decorate
+    def foo(parameter: int) -> int:
+      return parameter
+    |}
+    ~model_source:"def test.foo(): ..."
+    ~expect:
+      "Invalid model for `test.foo`: Model signature parameters do not match implementation `def \
+       foo(parameter: int) -> int: ...`. Reason(s): missing named parameters: `parameter`."
     ()
 
 
