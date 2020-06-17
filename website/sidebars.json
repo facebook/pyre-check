@@ -13,7 +13,7 @@
       "querying-pyre",
       {
         "type": "subcategory",
-        "label": "Pyre Static Analysis (Pysa)",
+        "label": "Pysa: Python Static Analyzer",
         "ids": [
           "pysa-basics",
           "pysa-running",
