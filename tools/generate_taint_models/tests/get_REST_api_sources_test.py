@@ -33,16 +33,16 @@ class GetRESTApiSourcesTest(unittest.TestCase):
             ],
             [
                 f"def {qualifier}.TestClass.methodA(self, x: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.testA() -> {sink}: ...",
                 f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
                 f"def {qualifier}.testC(x: {source}) -> {sink}: ...",
                 f"def {qualifier}.testD(x: {source}, *args: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.testE(x: {source}, **kwargs: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
             ],
         )
 
@@ -59,15 +59,15 @@ class GetRESTApiSourcesTest(unittest.TestCase):
             ],
             [
                 f"def {qualifier}.TestClass.methodA(self, x: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
                 f"def {qualifier}.testC(x: {source}) -> {sink}: ...",
                 f"def {qualifier}.testD(x: {source}, *args: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.testE(x: {source}, **kwargs: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
             ],
         )
 
@@ -112,7 +112,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source})"
-                + f" -> {sink}: ...",
+                f" -> {sink}: ...",
                 f"def {qualifier}.testA() -> {sink}: ...",
                 f"def {qualifier}.testB(x: {source}) -> {sink}: ...",
                 f"def {qualifier}.testC(x) -> {sink}: ...",

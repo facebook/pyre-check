@@ -23,13 +23,17 @@ class ConnectionApiTest(unittest.TestCase):
             # pyre-ignore: _patch types are deficient.
             run.call_args_list,
             [
-                call(["pyre", "start"], cwd="/tmp"),
+                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
-                call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "query", "hi"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
             ],
         )
         # pyre-ignore: _patch types are deficient.
@@ -40,13 +44,17 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "start"], cwd="/tmp"),
+                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
-                call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "query", "hi"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
             ],
         )
         run.reset_mock()
@@ -57,14 +65,22 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "start"], cwd="/tmp"),
+                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
-                call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
-                call(["pyre", "query", "bye"], cwd="/tmp", stdout=subprocess.PIPE),
+                call(
+                    ["pyre", "--noninteractive", "query", "hi"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
+                call(
+                    ["pyre", "--noninteractive", "query", "bye"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
             ],
         )
         run.reset_mock()
@@ -74,14 +90,18 @@ class ConnectionApiTest(unittest.TestCase):
         self.assertEqual(
             run.call_args_list,
             [
-                call(["pyre", "start"], cwd="/tmp"),
+                call(["pyre", "--noninteractive", "start"], cwd="/tmp"),
                 call(
                     ["pyre", "--noninteractive", "incremental"],
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
-                call(["pyre", "query", "hi"], cwd="/tmp", stdout=subprocess.PIPE),
-                call(["pyre", "stop"], check=True, cwd="/tmp"),
+                call(
+                    ["pyre", "--noninteractive", "query", "hi"],
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
+                call(["pyre", "--noninteractive", "stop"], check=True, cwd="/tmp"),
             ],
         )
 
