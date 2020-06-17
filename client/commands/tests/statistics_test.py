@@ -61,7 +61,6 @@ class StatisticsTest(unittest.TestCase):
             configuration=configuration,
             analysis_directory=analysis_directory,
             filter_paths=["a.py", "b.py"],
-            collect=None,
             log_results=False,
         )._run()
         log.assert_not_called()
@@ -72,7 +71,6 @@ class StatisticsTest(unittest.TestCase):
             configuration=configuration,
             analysis_directory=analysis_directory,
             filter_paths=["a.py", "b.py"],
-            collect=None,
             log_results=True,
         )._run()
         log.assert_called()
