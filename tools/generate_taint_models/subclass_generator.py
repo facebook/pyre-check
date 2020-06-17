@@ -34,6 +34,8 @@ def get_all_subclasses_from_pyre(
         result: Dict[str, List[str]] = {}
         for base_class in targets:
             if transitive:
+                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+                #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
                 subclasses = sorted(_flatten_subclass_tree(base_class, class_hierarchy))
             else:
                 subclasses = class_hierarchy.subclasses(base_class)

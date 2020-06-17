@@ -577,6 +577,8 @@ class Infer(Reporting):
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         search_path = self._configuration.search_path + typeshed_search_path(
             self._configuration.typeshed

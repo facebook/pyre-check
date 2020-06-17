@@ -153,6 +153,8 @@ class Configuration:
     def deduplicate_targets(self) -> None:
         all_targets = self.targets
         if all_targets:
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
             all_targets = sorted(set(all_targets))
             deduplicated_targets = []
             expanded_targets = set()

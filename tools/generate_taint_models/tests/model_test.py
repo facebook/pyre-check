@@ -261,6 +261,8 @@ class ModelTest(unittest.TestCase):
                 annotation="TaintSink[Test]", target="do-not-generate"
             )
 
+    # pyre-fixme[56]: Argument `set()` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(model.RawCallableModel, "__abstractmethods__", set())
     def test_raw_callable_model(self) -> None:
 

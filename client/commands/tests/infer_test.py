@@ -574,6 +574,8 @@ class InferTest(unittest.TestCase):
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(json, "loads", return_value={"errors": []})
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
+    # pyre-fixme[56]: Argument `set()` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
         self, directories_to_analyze, json_loads, find_local_root, find_project_root
@@ -711,6 +713,8 @@ class InferTest(unittest.TestCase):
             call_client.assert_not_called()
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_empty_in_place(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
@@ -733,6 +737,8 @@ class InferTest(unittest.TestCase):
         )
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_in_place_directory(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
@@ -755,6 +761,8 @@ class InferTest(unittest.TestCase):
         )
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_no_match(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
@@ -773,6 +781,8 @@ class InferTest(unittest.TestCase):
         annotate_path.assert_not_called()
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_relative_file_path(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
@@ -795,6 +805,8 @@ class InferTest(unittest.TestCase):
         )
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_relative_file_path_not_local_root(
         self, annotate_path: MagicMock, recursive_glob: MagicMock
@@ -815,6 +827,8 @@ class InferTest(unittest.TestCase):
         )
 
     @patch.object(Path, "rglob")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.infer` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(infer, "annotate_path")
     def test_annotate_from_existing_stubs_relative_local_root(
         self, annotate_path: MagicMock, recursive_glob: MagicMock

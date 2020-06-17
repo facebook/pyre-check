@@ -25,9 +25,7 @@ class SocketConnection(object):
         self.socket: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.root = root
         self.socket_name = socket_name
-        # pyre-fixme[8]: Attribute has type `BinaryIO`; used as `TextIO`.
         self.input: BinaryIO = self.socket.makefile(mode="rb")
-        # pyre-fixme[8]: Attribute has type `BinaryIO`; used as `TextIO`.
         self.output: BinaryIO = self.socket.makefile(mode="wb")
 
     def connect(self) -> "SocketConnection":

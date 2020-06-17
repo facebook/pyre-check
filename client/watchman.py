@@ -68,6 +68,7 @@ class Subscriber(object):
             return pywatchman.client(timeout=None)
         except ImportError as exception:
             LOG.info(f"Not starting {self._name} due to {exception}")
+            # pyre-fixme[7]: Expected `client` but got implicit return value of `None`.
             sys.exit(1)
 
     def _subscribe_to_watchman(self, subscription: Subscription) -> None:

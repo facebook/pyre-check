@@ -34,6 +34,8 @@ class AnalysisDirectoryTest(unittest.TestCase):
         self.assertEqual(expected.get_filter_roots(), actual.get_filter_roots())
 
     @patch.object(os.path, "isfile")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files(self, abspath: MagicMock, isfile: MagicMock) -> None:
         analysis_directory = AnalysisDirectory(
@@ -58,6 +60,8 @@ class AnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(actual, expected)
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.buck` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(
         buck,
         "generate_source_directories",
@@ -133,6 +137,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
 
     @patch(f"{analysis_directory_name}.find_buck_root", return_value="/buck_root")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "exists", return_value=True)
     def test_filter_root(self, exists: MagicMock, buck_root: MagicMock) -> None:
         configuration = MagicMock()
@@ -157,6 +163,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
     @patch.object(os, "getcwd", return_value="/root")
     @patch.object(os.path, "isfile")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_get_new_deleted_and_tracked_paths_for_local_project(
         self,
@@ -208,6 +216,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
 
     @patch.object(os, "getcwd", return_value="/root")
     @patch.object(os.path, "isfile")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_get_new_deleted_and_tracked_paths_for_root_project(
         self,
@@ -324,6 +334,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
     @patch.object(os, "getcwd", return_value="project")
     @patch.object(os.path, "isfile", return_value=True)
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files_only_tracked_files(
         self,
@@ -376,6 +388,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
     @patch.object(os, "getcwd", return_value="project")
     @patch.object(os.path, "isfile", return_value=True)
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files_one_new_file(
         self,
@@ -427,6 +441,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
     @patch.object(os, "getcwd", return_value="project")
     @patch.object(os.path, "isfile", return_value=True)
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files_same_file_after_deletion(
         self,
@@ -474,6 +490,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
     @patch.object(os, "getcwd", return_value="project")
     @patch.object(os.path, "isfile")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_process_updated_files_one_deleted_file(
         self,
@@ -561,6 +579,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertIsNone(shared_analysis_directory._last_singly_deleted_path_and_link)
 
     @patch.object(analysis_directory, "time")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "getmtime")
     @patch.object(SharedAnalysisDirectory, "_notify_about_rebuild")
     @patch.object(SharedAnalysisDirectory, "rebuild")
@@ -673,6 +693,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         "generate_source_directories",
         side_effect=lambda targets, build, prompt: targets,
     )
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "relpath", side_effect=lambda path, relative: path)
     def test_resolve_analysis_directory(self, relpath, buck) -> None:  # pyre-fixme[2]
         original_directory = "/project"
@@ -814,6 +836,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(subprocess, "check_output")
     @patch.object(os, "makedirs")
     @patch.object(os.path, "exists")
+    # pyre-fixme[56]: Argument `os.path` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "realpath")
     def test_merge(
         self,
@@ -980,6 +1004,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 shared_analysis_directory._symbolic_links,
             )
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.analysis_directory` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(analysis_directory, "SocketConnection")
     def test_notify_about_rebuild(self, socket_connection_class: MagicMock) -> None:
         fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
@@ -1041,6 +1067,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         self.assertEqual(filter_paths, {"/project/local"})
 
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getpid", return_value=1234)
     def test_get_project_name(self, get_process_id: MagicMock) -> None:
         self.assertEqual(

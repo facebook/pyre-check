@@ -70,6 +70,8 @@ class MonitorTest(unittest.TestCase):
         _exit.assert_has_calls([call(0), call(1)])
 
     @patch("os.makedirs")
+    # pyre-fixme[56]: Argument `tools.pyre.client.watchman` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(watchman, "acquire_lock")
     def test_run(self, _lock: MagicMock, _makedirs: MagicMock) -> None:
         @contextmanager
@@ -104,6 +106,8 @@ class MonitorTest(unittest.TestCase):
         except ImportError:
             pass
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.stop` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(stop, "Stop")
     def test_handle_response(self, stop_command: MagicMock) -> None:
         arguments = mock_arguments()

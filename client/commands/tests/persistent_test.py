@@ -16,6 +16,8 @@ from .command_test import mock_arguments, mock_configuration
 class PersistentTest(unittest.TestCase):
     @patch.object(project_files_monitor, "ProjectFilesMonitor")
     @patch.object(commands.Persistent, "run_null_server", return_value=None)
+    # pyre-fixme[56]: Argument `set()` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_persistent(

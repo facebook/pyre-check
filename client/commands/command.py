@@ -113,6 +113,8 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
             continue
 
         # Always prefer newer version over older version
+        # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+        #  _SupportsLessThan)]]` for 1st param but got `List[str]`.
         version_names = sorted(os.listdir(typeshed_subdirectory), reverse=True)
         for version_name in version_names:
             # Anything under 2/ or 2.x is unusable for Pyre

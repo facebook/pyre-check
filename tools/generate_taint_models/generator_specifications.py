@@ -21,7 +21,11 @@ class WhitelistSpecification(NamedTuple):
         parameter_name = self.parameter_name
         return hash(
             (
+                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+                #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
                 parameter_type and tuple(sorted(parameter_type)),
+                # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+                #  _SupportsLessThan)]]` for 1st param but got `Set[str]`.
                 parameter_name and tuple(sorted(parameter_name)),
             )
         )

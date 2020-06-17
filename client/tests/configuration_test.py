@@ -45,6 +45,8 @@ class ConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch("hashlib.sha1")
     @patch("json.loads")
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getenv", return_value=None)
     @patch.object(Configuration, "_validate")
     def test_init(
@@ -723,6 +725,8 @@ class ConfigurationTest(unittest.TestCase):
     @patch("builtins.open")
     @patch("json.loads")
     @patch("hashlib.sha1")
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getenv", return_value=None)
     def test_validate_configuration(
         self,

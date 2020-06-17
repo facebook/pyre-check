@@ -15,6 +15,8 @@ from ..process import _register, get_process, get_processes
 
 
 class ProcessTest(unittest.TestCase):
+    # pyre-fixme[56]: Argument `tools.pyre.client.process` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(process, "remove_if_exists")
     @patch.object(Path, "mkdir")
     @patch.object(Path, "write_text")
@@ -31,6 +33,8 @@ class ProcessTest(unittest.TestCase):
             write_text.assert_called_once_with("123")
         remove_if_exists.assert_called_once_with(str(pid_path))
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.process` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(process, "remove_if_exists")
     @patch.object(Path, "mkdir")
     @patch.object(Path, "write_text")
@@ -46,6 +50,8 @@ class ProcessTest(unittest.TestCase):
             raise Exception
         remove_if_exists.assert_called_once_with(str(pid_path))
 
+    # pyre-fixme[56]: Argument `psutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(psutil, "Process")
     @patch.object(Path, "read_text", return_value="123")
     def test_get_process(self, read_text: MagicMock, process_class: MagicMock) -> None:
@@ -53,6 +59,8 @@ class ProcessTest(unittest.TestCase):
         process_class.assert_called_once_with(123)
         self.assertIsNotNone(process)
 
+    # pyre-fixme[56]: Argument `psutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(psutil, "Process")
     @patch.object(Path, "read_text")
     def test_get_process_file_not_found(
@@ -66,6 +74,8 @@ class ProcessTest(unittest.TestCase):
         process_class.assert_not_called()
         self.assertIsNone(process)
 
+    # pyre-fixme[56]: Argument `psutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(psutil, "Process")
     @patch.object(Path, "read_text", return_value="123")
     def test_get_process_error(
@@ -83,6 +93,8 @@ class ProcessTest(unittest.TestCase):
     @patch.object(
         Path, "glob", return_value=["foo-123.pid", "foo-456.pid", "foo-789.pid"]
     )
+    # pyre-fixme[56]: Argument `tools.pyre.client.process` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(process, "get_process")
     def test_get_processes(
         self, get_process: MagicMock, glob: MagicMock, process_class: MagicMock

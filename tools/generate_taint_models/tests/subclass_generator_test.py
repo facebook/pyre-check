@@ -13,6 +13,8 @@ from .. import subclass_generator
 
 
 class SubclassGeneratorTest(unittest.TestCase):
+    # pyre-fixme[56]: Argument `tools.pyre.api.query` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(query, "get_class_hierarchy")
     def test_get_all_subclasses_from_pyre(
         self, get_class_hierarchy_mock: MagicMock
@@ -49,6 +51,9 @@ class SubclassGeneratorTest(unittest.TestCase):
         )
 
     @patch.object(query, "defines")
+    # pyre-fixme[56]: Argument
+    #  `tools.pyre.tools.generate_taint_models.subclass_generator` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(subclass_generator, "get_all_subclasses_from_pyre")
     def test_get_all_subclass_defines_from_pyre(
         self, get_all_subclasses_from_pyre_mock: MagicMock, defines_mock: MagicMock

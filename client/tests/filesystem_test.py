@@ -65,7 +65,11 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            os.path.relpath(path, root) for path in find_python_paths(root)
+            # pyre-fixme[6]: Expected `Iterable[Variable[_LT (bound to
+            #  _SupportsLessThan)]]` for 1st param but got `Generator[str, None,
+            #  None]`.
+            os.path.relpath(path, root)
+            for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,
@@ -134,11 +138,15 @@ class FilesystemTest(unittest.TestCase):
             with acquire_lock(path, blocking=False):
                 pass
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=True)
         acquire_lock.assert_called_once()
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_acquire_lock_if_needed__not_needed(self, acquire_lock: MagicMock) -> None:
         acquire_lock_if_needed("/some/path", blocking=True, needed=False)
@@ -351,6 +359,9 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
     @patch("{}.find_project_root".format(command_name), return_value="/root/local")
+    # pyre-fixme[56]: Argument
+    #  `"{}.find_local_root".format(tools.pyre.client.commands.command.__name__)` to
+    #  decorator factory `unittest.mock.patch` could not be resolved in a global scope.
     @patch("{}.find_local_root".format(command_name), return_value=None)
     @patch("os.chdir")
     def test_resolve_source_directories(

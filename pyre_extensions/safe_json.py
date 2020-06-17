@@ -9,6 +9,7 @@ import json
 import sys
 from typing import Any, Dict, List, Type, TypeVar, cast
 
+# pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing_extensions`.
 from typing_extensions import _TypedDictMeta
 from typing_inspect import get_origin, is_optional_type
 
@@ -39,8 +40,7 @@ def _is_typed_dictionary(target_type: Type[object]) -> bool:
 def _validate_list(value: object, target_type: Type[List[object]]) -> None:
     if not isinstance(value, list):
         raise InvalidJson(f"`{value}` is not a list")
-
-    element_type, = get_args(target_type)
+    (element_type,) = get_args(target_type)
     for element in value:
         _validate_value(element, element_type)
 

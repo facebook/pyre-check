@@ -80,6 +80,8 @@ class ServersCommandTest(unittest.TestCase):
         )
 
     @patch.object(Path, "mkdir")
+    # pyre-fixme[56]: Argument `tools.pyre.client.commands.servers` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(servers, "Stop")
     def test_stop_servers(
         self, stop_class: MagicMock, make_directory: MagicMock

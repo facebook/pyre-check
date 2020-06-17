@@ -20,6 +20,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         "_load_items_from_file",
         return_value=["bar", "baz"],
     )
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_put(
         self,
@@ -35,6 +37,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
 
     @patch.object(Path, "write_text")
     @patch.object(recently_used_configurations.Cache, "_load_items_from_file")
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock", side_effect=OSError)
     def test_put__lock_not_acquired(
         self,
@@ -50,6 +54,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         "_load_items_from_file",
         return_value=["bar", "baz"],
     )
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     def test_get_all_items(
         self, acquire_lock: MagicMock, load_items_from_file: MagicMock
@@ -63,6 +69,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(recently_used_configurations.Cache, "_load_items_from_file")
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock", side_effect=OSError)
     def test_get_all_items__lock_not_acquired(
         self, acquire_lock: MagicMock, load_items_from_file: MagicMock
@@ -88,6 +96,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             [],
         )
 
+    # pyre-fixme[56]: Argument `json` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(json, "loads", side_effect=json.JSONDecodeError("foo", "bar", 0))
     @patch.object(Path, "read_text")
     def test_load_items_from_file__json_error(
@@ -127,6 +137,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
             ],
         )
 
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "remove")
     def test_delete_cache(self, remove: MagicMock) -> None:
         recently_used_configurations.Cache(
@@ -140,6 +152,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(terminal, "is_capable", return_value=True)
+    # pyre-fixme[56]: Argument `builtins` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(builtins, "input", return_value="1")
     def test_prompt_user_for_local_root(
         self, input: MagicMock, is_capable: MagicMock
@@ -152,6 +166,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(terminal, "is_capable", return_value=True)
+    # pyre-fixme[56]: Argument `builtins` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(builtins, "input", return_value="")
     def test_prompt_user_for_local_root__pressed_enter(
         self, input: MagicMock, is_capable: MagicMock
@@ -164,6 +180,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(terminal, "is_capable", return_value=True)
+    # pyre-fixme[56]: Argument `builtins` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(builtins, "input", side_effect=ValueError)
     def test_prompt_user_for_local_root__interrupt(
         self, input: MagicMock, is_capable: MagicMock
@@ -176,6 +194,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(terminal, "is_capable", return_value=True)
+    # pyre-fixme[56]: Argument `builtins` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(builtins, "input", side_effect=KeyboardInterrupt)
     def test_prompt_user_for_local_root__exception(
         self, input: MagicMock, is_capable: MagicMock
@@ -188,6 +208,8 @@ class RecentlyUsedConfigurationsTest(unittest.TestCase):
         )
 
     @patch.object(terminal, "is_capable", return_value=False)
+    # pyre-fixme[56]: Argument `builtins` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(builtins, "input", return_value="42")
     def test_prompt_user_for_local_root__not_terminal(
         self, input: MagicMock, is_capable: MagicMock

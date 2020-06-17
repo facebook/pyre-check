@@ -12,6 +12,9 @@ from ..generator_specifications import AnnotationSpecification, WhitelistSpecifi
 
 
 class MethodsOfSubclassesGeneratorTest(unittest.TestCase):
+    # pyre-fixme[56]: Argument
+    #  `tools.pyre.tools.generate_taint_models.get_methods_of_subclasses` to decorator
+    #  factory `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(get_methods_of_subclasses, "get_all_subclass_defines_from_pyre")
     def test_compute_models(
         self, get_all_subclass_defines_from_pyre_mock: MagicMock

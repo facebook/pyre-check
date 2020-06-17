@@ -10,6 +10,7 @@ import pathlib
 from logging import Logger
 from typing import Callable
 
+# pyre-fixme[21]: Could not find name `ListVariadic` in `pyre_extensions`.
 from pyre_extensions import ListVariadic
 from pyre_extensions.type_variable_operators import Concatenate
 

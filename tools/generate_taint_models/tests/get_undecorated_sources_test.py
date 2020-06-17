@@ -19,6 +19,10 @@ from .test_functions import TestClass, all_functions, testA, testB
 
 class GetUndecoratedSourcesTest(unittest.TestCase):
     @patch.object(RESTApiSourceGenerator, "generate_models")
+    # pyre-fixme[56]: Argument
+    #  `"{}.AnnotatedFreeFunctionWithDecoratorGenerator".format(tools.pyre.tools.generate_taint_models.get_undecorated_sources.__name__)`
+    #  to decorator factory `unittest.mock.patch` could not be resolved in a global
+    #  scope.
     @patch(
         "{}.AnnotatedFreeFunctionWithDecoratorGenerator".format(undecorated_source_name)
     )

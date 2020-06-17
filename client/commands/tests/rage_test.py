@@ -76,6 +76,8 @@ class RageTest(unittest.TestCase):
         )
         self.assert_output(stdout)
 
+    # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
     @patch("subprocess.run")
     @patch.object(
