@@ -51,6 +51,8 @@ REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 50
 
 DONT_CARE_PROGRESS_VALUE = 1
 
+BUCK_BUILDER_CACHE_PREFIX = ".buck_builder_cache"
+
 
 class NotWithinLocalConfigurationException(Exception):
     pass
@@ -549,12 +551,22 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             updated_paths=tracked_scratch_paths, deleted_paths=deleted_scratch_paths
         )
 
+    def _directories_to_clean_up(self) -> List[str]:
+        if not self._isolate:
+            return []
+
+        project_name = _get_project_name(self._isolate, self._local_configuration_root)
+        buck_builder_cache_path = os.path.join(
+            self.get_scratch_directory(), f"{BUCK_BUILDER_CACHE_PREFIX}_{project_name}"
+        )
+        return [self.get_root(), buck_builder_cache_path]
+
     def cleanup(self) -> None:
         try:
-            if self._isolate:
-                shutil.rmtree(self.get_root())
-        except Exception:
-            pass
+            for directory in self._directories_to_clean_up():
+                shutil.rmtree(directory)
+        except Exception as exception:
+            LOG.error(f"Could not clean up analysis directory: {exception}")
 
     def _clear(self) -> None:
         root = self.get_root()

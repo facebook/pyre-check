@@ -144,18 +144,6 @@ class FilesystemTest(unittest.TestCase):
         acquire_lock_if_needed("/some/path", blocking=True, needed=False)
         acquire_lock.assert_not_called()
 
-    @patch("shutil.rmtree")
-    def test_cleanup(self, rmtree) -> None:
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
-        shared_analysis_directory.cleanup()
-        rmtree.assert_not_called()
-
-        shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], [], isolate=True
-        )
-        shared_analysis_directory.cleanup()
-        rmtree.assert_called_with(shared_analysis_directory.get_root())
-
     def test_filesystem_list_bare(self):
         filesystem = Filesystem()
 

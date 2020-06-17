@@ -17,7 +17,7 @@ from typing import Optional
 import psutil
 
 from .. import configuration_monitor, recently_used_configurations, watchman
-from ..analysis_directory import AnalysisDirectory
+from ..analysis_directory import BUCK_BUILDER_CACHE_PREFIX, AnalysisDirectory
 from ..configuration import Configuration
 from ..find_directories import BINARY_NAME, CLIENT_NAME
 from ..project_files_monitor import ProjectFilesMonitor
@@ -145,7 +145,7 @@ class Kill(Command):
             LOG.debug("Could not find scratch path because of exception: %s", exception)
         if scratch_path is not None:
             for buck_builder_cache_directory in Path(scratch_path).glob(
-                ".buck_builder_cache*"
+                f"{BUCK_BUILDER_CACHE_PREFIX}*"
             ):
                 try:
                     LOG.debug(

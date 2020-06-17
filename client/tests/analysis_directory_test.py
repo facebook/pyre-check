@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -1054,4 +1055,55 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 isolate_per_process=False, relative_local_root="foo/bar/baz"
             ),
             "foo_bar_baz",
+        )
+
+    @patch.object(
+        SharedAnalysisDirectory,
+        "_directories_to_clean_up",
+        return_value=["foo", "bar/baz"],
+    )
+    @patch.object(shutil, "rmtree")
+    def test_cleanup(
+        self, remove_tree: MagicMock, directories_to_clean_up: MagicMock
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"]
+        )
+        shared_analysis_directory.cleanup()
+        remove_tree.assert_has_calls([call("foo"), call("bar/baz")])
+
+    @patch.object(
+        SharedAnalysisDirectory,
+        "_directories_to_clean_up",
+        return_value=["foo", "bar/baz"],
+    )
+    @patch.object(shutil, "rmtree", side_effect=Exception)
+    def test_cleanup__exception(
+        self, remove_tree: MagicMock, directories_to_clean_up: MagicMock
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"]
+        )
+        shared_analysis_directory.cleanup()
+
+    @patch.object(os, "getpid", return_value=42)
+    @patch.object(
+        SharedAnalysisDirectory, "get_scratch_directory", return_value="/scratch"
+    )
+    def test_directories_to_clean_up(
+        self, get_root: MagicMock, getpid: MagicMock
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], isolate=False
+        )
+        self.assertEqual(shared_analysis_directory._directories_to_clean_up(), [])
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], isolate=True
+        )
+        self.assertEqual(
+            shared_analysis_directory._directories_to_clean_up(),
+            [
+                "/scratch/shared_analysis_directory_42",
+                "/scratch/.buck_builder_cache_isolated_42",
+            ],
         )
