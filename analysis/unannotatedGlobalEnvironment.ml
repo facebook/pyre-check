@@ -219,12 +219,20 @@ module ReadOnly = struct
                                 ~names_to_resolve:rest_names
                                 () )
                       | Some (Module.Export.NameAlias { from; name }) ->
-                          (* We don't know if `name` refers to a module or not. Move forward on the
-                             alias chain. *)
-                          resolve_module_alias
-                            ~current_module:from
-                            ~names_to_resolve:(name :: rest_names)
-                            ()
+                          if Reference.equal current_module from then
+                            (* This could legitimately happen when an __init__ module trying to
+                               import its sibling modules *)
+                            resolve_module_alias
+                              ~current_module:(Reference.create name |> Reference.combine from)
+                              ~names_to_resolve:rest_names
+                              ()
+                          else
+                            (* We don't know if `name` refers to a module or not. Move forward on
+                               the alias chain. *)
+                            resolve_module_alias
+                              ~current_module:from
+                              ~names_to_resolve:(name :: rest_names)
+                              ()
                       | Some (Module.Export.Module name) ->
                           (* `name` is definitely a module. *)
                           resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()

@@ -1989,10 +1989,32 @@ let test_resolve_exports context =
     ~reference:!&"a.c.d"
     ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
   (* Cyclic imports *)
+  assert_resolved ["a.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from a import c"]
+    ~reference:!&"a.c"
+    ~expected:None;
   assert_resolved
     ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "from b import c"]
     ~reference:!&"a.c"
     ~expected:None;
+  (* Self-cycle is OK in certain circumstances. *)
+  assert_resolved ["a/__init__.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a/__init__.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  assert_resolved
+    ["a/__init__.py", "from a import b as c"; "a/b.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* TODO: We might want to ban this in the future since it is technically not OK at runtime. *)
+  assert_resolved
+    ["a.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* This is technically OK at runtime but we don't want to support it. *)
+  assert_resolved ["a.py", "b = 1\nfrom a import b"] ~reference:!&"a.b" ~expected:None;
   (* Runtime does not allow `from X import ...` when `X` is itself a module alias. *)
   assert_resolved
     ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
