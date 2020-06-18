@@ -10,6 +10,7 @@ from typing import IO, List, Optional
 
 from typing_extensions import Final
 
+from .. import recently_used_configurations
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..version import __version__
@@ -84,14 +85,17 @@ class Rage(Command):
             self._rage(sys.stdout)
 
     def _call_client_for_root_project(self, output_file: IO[str]) -> None:
-        all_servers = Servers(
+        servers = Servers(
             self._command_arguments,
             self._original_directory,
             configuration=self._configuration,
             analysis_directory=self._analysis_directory,
             subcommand="list",
-        )._all_server_details()
-        if any(server.is_root() for server in all_servers):
+        )
+        recent_local_roots = recently_used_configurations.Cache(
+            self._dot_pyre_directory
+        ).get_all_items()
+        if servers.is_root_server_running() or recent_local_roots == []:
             self._call_client(
                 command=self.NAME, capture_output=False, stdout=output_file
             ).check()
@@ -102,14 +106,19 @@ class Rage(Command):
             self._analysis_directory = AnalysisDirectory(".")
             print(
                 f"No server running for {self._original_directory}."
-                " Printing rage for all running servers.",
+                " Printing rage for all recently-used servers.",
                 file=output_file,
                 flush=True,
             )
             print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
-            for server in all_servers:
+            for local_root in recent_local_roots:
+                print(
+                    f"\nRage for configuration at `{local_root}`:\n",
+                    file=output_file,
+                    flush=True,
+                )
                 self._log_directory_for_binary = str(
-                    self._dot_pyre_directory / server.local_root
+                    self._dot_pyre_directory / local_root
                 )
                 self._call_client(
                     command=self.NAME, capture_output=False, stdout=output_file
