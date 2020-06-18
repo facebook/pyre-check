@@ -1090,6 +1090,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         "_directories_to_clean_up",
         return_value=["foo", "bar/baz"],
     )
+    # pyre-fixme[56]: Argument `shutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree")
     def test_cleanup(
         self, remove_tree: MagicMock, directories_to_clean_up: MagicMock
@@ -1105,6 +1107,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         "_directories_to_clean_up",
         return_value=["foo", "bar/baz"],
     )
+    # pyre-fixme[56]: Argument `shutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(shutil, "rmtree", side_effect=Exception)
     def test_cleanup__exception(
         self, remove_tree: MagicMock, directories_to_clean_up: MagicMock
@@ -1114,6 +1118,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         )
         shared_analysis_directory.cleanup()
 
+    # pyre-fixme[56]: Argument `os` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os, "getpid", return_value=42)
     @patch.object(
         SharedAnalysisDirectory, "get_scratch_directory", return_value="/scratch"
