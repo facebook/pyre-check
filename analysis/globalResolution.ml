@@ -415,6 +415,14 @@ let legacy_resolve_exports ({ dependency; _ } as resolution) ~reference =
     reference
 
 
+let resolve_exports ({ dependency; _ } as resolution) ?from reference =
+  UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+    ?dependency
+    (unannotated_global_environment resolution)
+    ?from
+    reference
+
+
 let widen resolution = full_order resolution |> TypeOrder.widen
 
 let join resolution = full_order resolution |> TypeOrder.join
