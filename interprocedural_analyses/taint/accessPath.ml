@@ -242,28 +242,26 @@ let to_json { root; path } =
 
 
 let get_global ~resolution name =
-  let global_resolution = Resolution.global_resolution resolution in
-  let global =
-    match Node.value name with
-    | Expression.Name (Name.Identifier identifier)
-      when not (Interprocedural.CallResolution.is_local identifier) ->
-        Some (Reference.create identifier)
-    | Name (Name.Identifier identifier) ->
-        let reference = Reference.delocalize (Reference.create identifier) in
-        if Resolution.is_global resolution ~reference then
-          Some reference
-        else
-          None
-    | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
-        let name = name_to_reference name in
-        let base_name = name_to_reference base_name in
-        let is_module name =
-          Option.value_map name ~default:false ~f:(GlobalResolution.module_exists global_resolution)
-        in
-        name >>= Option.some_if (is_module base_name && not (is_module name))
-    | _ -> None
-  in
-  global >>| fun reference -> GlobalResolution.legacy_resolve_exports global_resolution ~reference
+  match Node.value name with
+  | Expression.Name (Name.Identifier identifier)
+    when not (Interprocedural.CallResolution.is_local identifier) ->
+      Some (Reference.create identifier)
+  | Name (Name.Identifier identifier) ->
+      let reference = Reference.delocalize (Reference.create identifier) in
+      if Resolution.is_global resolution ~reference then
+        Some reference
+      else
+        None
+  | Name name -> (
+      name_to_reference name
+      >>= fun reference ->
+      GlobalResolution.resolve_exports (Resolution.global_resolution resolution) reference
+      >>= function
+      | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+          { from; name; remaining = []; _ } ->
+          Some (Reference.combine from (Reference.create name))
+      | _ -> None )
+  | _ -> None
 
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)
