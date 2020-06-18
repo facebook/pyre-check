@@ -3713,11 +3713,6 @@ module State (Context : Context) = struct
                               | _ -> None )
                         in
                         let check_assignment_compatibility errors =
-                          let resolved =
-                            match resolved with
-                            | Type.Parametric _ -> Type.weaken_literals resolved
-                            | _ -> resolved
-                          in
                           let is_valid_enumeration_assignment =
                             let parent_annotation =
                               match parent with
@@ -3753,6 +3748,11 @@ module State (Context : Context) = struct
                                      ~left:resolved
                                      ~right:expected))
                             && not is_valid_enumeration_assignment
+                          in
+                          let resolved =
+                            match resolved with
+                            | Type.Parametric _ -> Type.weaken_literals resolved
+                            | _ -> resolved
                           in
                           let open Annotated in
                           match attribute with
