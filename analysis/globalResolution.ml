@@ -254,7 +254,7 @@ let attribute_from_class_name
               ~original_annotation:Type.Top
               ~uninstantiated_annotation:(Some Type.Top)
               ~abstract:false
-              ~async:false
+              ~async_property:false
               ~class_variable:false
               ~defined:false
               ~initialized:NotInitialized

@@ -41,7 +41,7 @@ let make_attributes ~class_name =
       ~uninstantiated_annotation:(Some annotation)
       ~visibility:ReadWrite
       ~abstract:false
-      ~async:false
+      ~async_property:false
       ~class_variable:false
       ~defined:true
       ~initialized:OnClass

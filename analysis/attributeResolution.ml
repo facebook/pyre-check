@@ -382,7 +382,7 @@ module ClassDecorators = struct
               kind = Attribute (Callable callable);
             }
           ~abstract:false
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -1007,7 +1007,7 @@ class base class_metadata_environment dependency =
         AnnotatedAttribute.create_uninstantiated
           ~abstract:false
           ~uninstantiated_annotation:(create_uninstantiated_method constructor)
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -1027,7 +1027,7 @@ class base class_metadata_environment dependency =
               UninstantiatedAnnotation.accessed_via_metaclass = false;
               kind = UninstantiatedAnnotation.Attribute annotation;
             }
-          ~async:false
+          ~async_property:false
           ~class_variable:false
           ~defined:true
           ~initialized:OnClass
@@ -1183,7 +1183,7 @@ class base class_metadata_environment dependency =
           AnnotatedAttribute.create_uninstantiated
             ~uninstantiated_annotation
             ~abstract:false
-            ~async:false
+            ~async_property:false
             ~class_variable:false
             ~defined:true
             ~initialized:OnClass
@@ -1245,7 +1245,7 @@ class base class_metadata_environment dependency =
                        kind = Attribute (Callable callable);
                      }
                    ~abstract:false
-                   ~async:false
+                   ~async_property:false
                    ~class_variable:false
                    ~defined:true
                    ~initialized:OnClass
@@ -1423,7 +1423,7 @@ class base class_metadata_environment dependency =
             ~uninstantiated_annotation:None
             ~visibility:ReadWrite
             ~abstract:false
-            ~async:false
+            ~async_property:false
             ~class_variable:false
             ~defined:true
             ~initialized:OnClass
@@ -2144,7 +2144,7 @@ class base class_metadata_environment dependency =
           | Method { signatures; _ } ->
               List.exists signatures ~f:Define.Signature.is_abstract_method
           | _ -> false )
-        ~async:
+        ~async_property:
           ( match kind with
           | Property { async; _ } -> async
           | _ -> false )

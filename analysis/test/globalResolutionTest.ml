@@ -522,7 +522,7 @@ let test_class_attributes context =
       ~annotation
       ~original_annotation:annotation
       ~uninstantiated_annotation
-      ~async:false
+      ~async_property:false
       ~class_variable
       ~defined:true
       ~initialized
@@ -700,7 +700,7 @@ let test_class_attributes context =
          ~original_annotation:annotation
          ~uninstantiated_annotation
          ~abstract:false
-         ~async:false
+         ~async_property:false
          ~class_variable
          ~defined
          ~initialized
@@ -1134,7 +1134,7 @@ let test_typed_dictionary_individual_attributes context =
          ~original_annotation:annotation
          ~uninstantiated_annotation
          ~abstract:false
-         ~async:false
+         ~async_property:false
          ~class_variable:false
          ~defined
          ~initialized

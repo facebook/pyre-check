@@ -54,7 +54,7 @@ val create
   :  abstract:bool ->
   annotation:Type.t ->
   original_annotation:Type.t ->
-  async:bool ->
+  async_property:bool ->
   class_variable:bool ->
   defined:bool ->
   initialized:initialized ->
@@ -70,7 +70,7 @@ val create
 val create_uninstantiated
   :  abstract:bool ->
   uninstantiated_annotation:'a ->
-  async:bool ->
+  async_property:bool ->
   class_variable:bool ->
   defined:bool ->
   initialized:initialized ->
@@ -94,7 +94,7 @@ val name : 'a t -> Identifier.t
 
 val abstract : 'a t -> bool
 
-val async : 'a t -> bool
+val async_property : 'a t -> bool
 
 val parent : 'a t -> Type.Primitive.t
 

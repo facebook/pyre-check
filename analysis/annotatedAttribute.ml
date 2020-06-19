@@ -48,7 +48,7 @@ type problem =
 type 'a t = {
   payload: 'a;
   abstract: bool;
-  async: bool;
+  async_property: bool;
   class_variable: bool;
   defined: bool;
   initialized: initialized;
@@ -74,7 +74,7 @@ let create
     ~abstract
     ~annotation
     ~original_annotation
-    ~async
+    ~async_property
     ~class_variable
     ~defined
     ~initialized
@@ -89,7 +89,7 @@ let create
   {
     payload = { annotation; original_annotation; uninstantiated_annotation };
     abstract;
-    async;
+    async_property;
     class_variable;
     defined;
     initialized;
@@ -105,7 +105,7 @@ let create
 let create_uninstantiated
     ~abstract
     ~uninstantiated_annotation
-    ~async
+    ~async_property
     ~class_variable
     ~defined
     ~initialized
@@ -119,7 +119,7 @@ let create_uninstantiated
   {
     payload = uninstantiated_annotation;
     abstract;
-    async;
+    async_property;
     class_variable;
     defined;
     initialized;
@@ -132,9 +132,11 @@ let create_uninstantiated
   }
 
 
-let annotation { payload = { annotation; original_annotation; _ }; async; defined; visibility; _ } =
+let annotation
+    { payload = { annotation; original_annotation; _ }; async_property; defined; visibility; _ }
+  =
   let annotation, original =
-    if async then
+    if async_property then
       Type.awaitable annotation, Type.awaitable original_annotation
     else
       annotation, original_annotation
@@ -177,7 +179,7 @@ let class_variable { class_variable; _ } = class_variable
 
 let abstract { abstract; _ } = abstract
 
-let async { async; _ } = async
+let async_property { async_property; _ } = async_property
 
 let static { payload = { uninstantiated_annotation; _ }; _ } =
   match uninstantiated_annotation with
