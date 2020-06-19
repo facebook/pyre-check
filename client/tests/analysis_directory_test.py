@@ -140,7 +140,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     # pyre-fixme[56]: Argument `os.path` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "exists", return_value=True)
-    def test_filter_root(self, exists: MagicMock, buck_root: MagicMock) -> None:
+    def test_filter_root_for_buck(
+        self, exists: MagicMock, buck_root: MagicMock
+    ) -> None:
         configuration = MagicMock()
         configuration.targets = ["cell//pyre_root/local:target"]
         configuration.local_configuration_root = "/buck_root/pyre_root/local"
@@ -160,6 +162,26 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         self.assertEqual(
             analysis_directory.get_filter_roots(), {"/buck_root/pyre_root/local"}
         )
+
+    def test_filter_root_for_nonbuck(self) -> None:
+        configuration = MagicMock()
+        configuration.targets = []
+        configuration.source_directories = ["/foo/bar", "/foo/baz"]
+        configuration.local_configuration_root = "/foo"
+        analysis_directory = resolve_analysis_directory(
+            source_directories=[],
+            targets=[],
+            configuration=configuration,
+            original_directory="/foo",
+            current_directory="/foo",
+            filter_directory=None,
+            use_buck_builder=False,
+            debug=False,
+            buck_mode=None,
+            isolate=False,
+            relative_local_root=None,
+        )
+        self.assertEqual(analysis_directory.get_filter_roots(), {"/foo"})
 
     @patch.object(os, "getcwd", return_value="/root")
     @patch.object(os.path, "isfile")

@@ -214,15 +214,21 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def get_filter_roots(self) -> Set[str]:
         current_project_directories = self._filter_paths or {os.getcwd()}
-        buck_root = find_buck_root(os.getcwd())
-        if buck_root is None:
-            raise EnvironmentException(
-                "Cannot find buck root when constructing filter directories"
-            )
-        return {
-            translate_path(buck_root, filter_root)
-            for filter_root in current_project_directories
-        }
+        if len(self._targets) == 0:
+            return {
+                translate_path(os.getcwd(), filter_root)
+                for filter_root in current_project_directories
+            }
+        else:
+            buck_root = find_buck_root(os.getcwd())
+            if buck_root is None:
+                raise EnvironmentException(
+                    "Cannot find buck root when constructing filter directories"
+                )
+            return {
+                translate_path(buck_root, filter_root)
+                for filter_root in current_project_directories
+            }
 
     # Exposed for testing.
     def _resolve_source_directories(self) -> None:
