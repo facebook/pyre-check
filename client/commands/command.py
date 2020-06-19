@@ -165,7 +165,7 @@ class CommandArguments:
     logger: Optional[str]
     formatter: List[str]
     targets: List[str]
-    use_buck_builder: bool
+    use_buck_builder: Optional[bool]
     source_directories: List[str]
     filter_directory: Optional[str]
     buck_mode: Optional[str]
@@ -250,7 +250,9 @@ class CommandParser(ABC):
         self._formatter: List[str] = self._command_arguments.formatter
 
         self._targets: List[str] = self._command_arguments.targets
-        self._use_buck_builder: bool = self._command_arguments.use_buck_builder
+        self._use_buck_builder: Optional[
+            bool
+        ] = self._command_arguments.use_buck_builder
 
         self._source_directories: List[str] = self._command_arguments.source_directories
         self._filter_directory: Optional[str] = self._command_arguments.filter_directory
@@ -380,11 +382,22 @@ class CommandParser(ABC):
             default=[],
             help="The buck target to check",
         )
-        buck_arguments.add_argument(
+
+        use_buck_builder_group = buck_arguments.add_mutually_exclusive_group()
+        use_buck_builder_group.add_argument(
             "--use-buck-builder",
-            action="store_true",
+            action="store_const",
+            const=True,
             help="Use Pyre's experimental builder for Buck projects.",
         )
+        use_buck_builder_group.add_argument(
+            "--use-legacy-buck-builder",
+            dest="use_buck_builder",
+            action="store_const",
+            const=False,
+            help="Use the legacy builder for Buck projects.",
+        )
+
         buck_arguments.add_argument(
             "--buck-mode", type=str, help="Mode to pass to `buck query`"
         )

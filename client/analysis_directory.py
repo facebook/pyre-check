@@ -638,7 +638,7 @@ def resolve_analysis_directory(
     original_directory: str,
     current_directory: str,
     filter_directory: Optional[str],
-    use_buck_builder: bool,
+    use_buck_builder: Optional[bool],
     debug: bool,
     buck_mode: Optional[str],
     isolate: bool = False,
@@ -677,7 +677,11 @@ def resolve_analysis_directory(
             local_configuration_root, current_directory
         )
 
-    use_buck_builder = use_buck_builder or configuration.use_buck_builder
+    use_buck_builder: bool = (
+        use_buck_builder
+        if use_buck_builder is not None
+        else configuration.use_buck_builder
+    )
 
     if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(

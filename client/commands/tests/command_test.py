@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import io
 import unittest
 from pathlib import Path
@@ -157,3 +158,14 @@ class CommandTest(unittest.TestCase):
                 "root/third_party/2and3",
             ],
         )
+
+    def test_argument_parsing(self) -> None:
+        parser = argparse.ArgumentParser()
+        commands.Command.add_arguments(parser)
+        self.assertEqual(
+            parser.parse_args(["--use-buck-builder"]).use_buck_builder, True
+        )
+        self.assertEqual(
+            parser.parse_args(["--use-legacy-buck-builder"]).use_buck_builder, False
+        )
+        self.assertEqual(parser.parse_args([]).use_buck_builder, None)
