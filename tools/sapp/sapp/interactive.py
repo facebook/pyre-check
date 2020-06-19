@@ -463,6 +463,7 @@ details              show additional information about the current trace frame
         codes: Optional[Union[int, List[int]]] = None,
         callables: Optional[Union[str, List[str]]] = None,
         filenames: Optional[Union[str, List[str]]] = None,
+        features: Optional[Union[str, List[str]]] = None,
         exact_trace_length_to_sources: Optional[Union[int, List[int]]] = None,
         exact_trace_length_to_sinks: Optional[Union[int, List[int]]] = None,
         max_trace_length_to_sources: Optional[int] = None,
@@ -475,6 +476,7 @@ details              show additional information about the current trace frame
             codes: int or list[int]        issue codes to filter on
             callables: str or list[str]    callables to filter on (supports wildcards)
             filenames: str or list[str]    filenames to filter on (supports wildcards)
+            features: str or list[str]     features to filter on
             exact_trace_length_to_sources: int or list[int]
                 exact values for min trace length to sources to filter on
             exact_trace_length_to_sinks: int or list[int]
@@ -616,12 +618,25 @@ details              show additional information about the current trace frame
                 )
                 for issue in issues
             ]
-            issue_strings = [
-                self._create_issue_output_string(issue, sources, sinks, features)
-                for issue, sources, sinks, features in zip(
-                    issues, sources_list, sinks_list, features_list
-                )
-            ]
+
+            features_set = set()
+            if features:
+                if isinstance(features, list):
+                    features_set = set(features)
+                else:
+                    features_set = {features}
+
+            issue_strings = []
+            for issue, sources, sinks, features in zip(
+                issues, sources_list, sinks_list, features_list
+            ):
+                if (not features_set) or (features_set & features == features_set):
+                    issue_strings.append(
+                        self._create_issue_output_string(
+                            issue, sources, sinks, features
+                        )
+                    )
+
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)
         print(f"Found {len(issue_strings)} issues with run_id {self.current_run_id}.")

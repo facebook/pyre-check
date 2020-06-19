@@ -372,6 +372,49 @@ class InteractiveTest(TestCase):
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
+    def testListIssuesFilterFeature(self):
+        self._list_issues_filter_setup()
+
+        self.fakes.instance()
+        feature1 = self.fakes.feature("via:feature1")
+        feature2 = self.fakes.feature("via:feature2")
+        self.fakes.feature("via:feature3")
+
+        self.fakes.save_all(self.db)
+
+        assocs = [
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=feature1.id, issue_instance_id=1
+            ),
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=feature2.id, issue_instance_id=1
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, assocs)
+            session.commit()
+            self.interactive.setup()
+
+            self.interactive.issues(features="via:feature1")
+            output = self.stdout.getvalue().strip()
+            self.assertIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(features=["via:feature1", "via:feature2"])
+            output = self.stdout.getvalue().strip()
+            self.assertIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(features=["via:feature3"])
+            output = self.stdout.getvalue().strip()
+            self.assertNotIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(features=["via:feature1", "via:feature3"])
+            output = self.stdout.getvalue().strip()
+            self.assertNotIn("Issue 1", output)
+
     def testNoRunsFound(self):
         self.interactive.setup()
         stderr = self.stderr.getvalue().strip()
