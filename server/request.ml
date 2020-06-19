@@ -1117,14 +1117,6 @@ let rec process
           in
           update_function ~message ~state;
           { state; response = None }
-      | GetServerUuid ->
-          let { State.server_uuid; _ } = state in
-          let response =
-            server_uuid
-            >>| (fun server_uuid -> Some (ServerUuidResponse server_uuid))
-            |> Option.value ~default:None
-          in
-          { state; response }
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";

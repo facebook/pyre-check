@@ -420,7 +420,6 @@ module Request = struct
     | HoverRequest of DefinitionRequest.t
     | InitializeRequest of LanguageServer.Types.RequestId.t
     | InitializedRequest
-    | GetServerUuid
     | LanguageServerProtocolRequest of string
     | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t
@@ -459,7 +458,6 @@ module Request = struct
     | DocumentChange _ -> "DocumentChange"
     | ExecuteCommandRequest _ -> "ExecuteCommandRequest"
     | GetDefinitionRequest _ -> "GetDefinition"
-    | GetServerUuid -> "GetServerUuid"
     | HoverRequest _ -> "Hover"
     | InitializeRequest _ -> "Initialize"
     | InitializedRequest -> "Initialized"
