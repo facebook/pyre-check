@@ -561,6 +561,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if not self._isolate:
             return []
 
+        if not isinstance(self._buck_builder, buck.FastBuckBuilder):
+            return [self.get_root()]
+
         project_name = _get_project_name(self._isolate, self._local_configuration_root)
         buck_builder_cache_path = os.path.join(
             self.get_scratch_directory(), f"{BUCK_BUILDER_CACHE_PREFIX}_{project_name}"
@@ -572,7 +575,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             for directory in self._directories_to_clean_up():
                 shutil.rmtree(directory)
         except Exception as exception:
-            LOG.error(f"Could not clean up analysis directory: {exception}")
+            LOG.debug(f"Could not clean up analysis directory: {exception}")
 
     def _clear(self) -> None:
         root = self.get_root()

@@ -1153,8 +1153,23 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             source_directories=[], targets=["target1"], isolate=False
         )
         self.assertEqual(shared_analysis_directory._directories_to_clean_up(), [])
+
         shared_analysis_directory = SharedAnalysisDirectory(
-            source_directories=[], targets=["target1"], isolate=True
+            source_directories=[],
+            targets=["target1"],
+            isolate=True,
+            buck_builder=buck.SimpleBuckBuilder(),
+        )
+        self.assertEqual(
+            shared_analysis_directory._directories_to_clean_up(),
+            ["/scratch/shared_analysis_directory_42"],
+        )
+
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[],
+            targets=["target1"],
+            isolate=True,
+            buck_builder=buck.FastBuckBuilder(buck_root="dummy_buck_root"),
         )
         self.assertEqual(
             shared_analysis_directory._directories_to_clean_up(),
