@@ -17,6 +17,7 @@
   classHierarchyTest
   classHierarchyEnvironmentTest
   classMetadataEnvironmentTest
+  classSummaryTest
   constraintsSetTest
   coverageTest
   customAnalysisTest
