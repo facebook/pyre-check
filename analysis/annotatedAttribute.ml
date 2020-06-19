@@ -137,7 +137,10 @@ let annotation
   =
   let annotation, original =
     if async_property then
-      Type.awaitable annotation, Type.awaitable original_annotation
+      let coroutine annotation =
+        Type.coroutine [Single Type.Any; Single Type.Any; Single annotation]
+      in
+      coroutine annotation, coroutine original_annotation
     else
       annotation, original_annotation
   in
