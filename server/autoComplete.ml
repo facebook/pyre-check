@@ -37,7 +37,9 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
   >>= fun line ->
   let reference_end_position = dot_column - 1 in
   String.rfindi line ~pos:reference_end_position ~f:(fun _ character ->
-      character <> '.' && character <> '_' && not (Char.is_alphanum character))
+      (not (Char.equal character '.'))
+      && (not (Char.equal character '_'))
+      && not (Char.is_alphanum character))
   >>| ( + ) 1 (* Module start is one character after position of the non-identifier character. *)
   >>| fun module_start_column ->
   line

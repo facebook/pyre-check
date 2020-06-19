@@ -123,7 +123,7 @@ let signature_is_property signature =
 let rec parse_annotations ~configuration ~parameters annotation =
   let get_parameter_position name =
     let matches_parameter_name index { Node.value = parameter; _ } =
-      if parameter.Parameter.name = name then
+      if String.equal parameter.Parameter.name name then
         Some index
       else
         None
@@ -283,7 +283,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   { Call.Argument.value = { Node.value = expression; _ }; _ };
                 ];
             }
-          when base_name callee = Some "AppliesTo" ->
+          when [%compare.equal: string option] (base_name callee) (Some "AppliesTo") ->
             let extend_path annotation =
               let field =
                 match index with
@@ -305,7 +305,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   annotation
             in
             parse_annotation expression |> List.map ~f:extend_path
-        | Call { callee; arguments } when base_name callee = Some "CrossRepositoryTaint" -> (
+        | Call { callee; arguments }
+          when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
             match arguments with
             | [
              {
@@ -367,7 +368,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
               callee;
               arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _;
             }
-          when base_name callee = Some "Union" ->
+          when [%compare.equal: string option] (base_name callee) (Some "Union") ->
             List.concat_map expressions ~f:(fun expression ->
                 parse_annotations ~configuration ~parameters (Some expression))
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
@@ -617,8 +618,8 @@ let find_positional_parameter_annotation position parameters =
 let find_named_parameter_annotation search_name parameters =
   let has_name = function
     | Type.Record.Callable.RecordParameter.KeywordOnly { name; _ } ->
-        name = "$parameter$" ^ search_name
-    | Type.Record.Callable.RecordParameter.Named { name; _ } -> name = search_name
+        String.equal name ("$parameter$" ^ search_name)
+    | Type.Record.Callable.RecordParameter.Named { name; _ } -> String.equal name search_name
     | _ -> false
   in
   List.find ~f:has_name parameters >>= Type.Record.Callable.RecordParameter.annotation

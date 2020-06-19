@@ -315,7 +315,7 @@ let read_message channel =
     let content_buffer = Buffer.create 10 in
     let rec skip_header () =
       match In_channel.input_line channel with
-      | Some line when line <> "" -> skip_header ()
+      | Some line when not (String.is_empty line) -> skip_header ()
       | other -> other
     in
     skip_header () (* ignore any other header lines *)

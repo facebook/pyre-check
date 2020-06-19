@@ -1943,7 +1943,7 @@ let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
     let target = "test." ^ target in
     let metaclass =
-      if metaclass = "type" then
+      if String.equal metaclass "type" then
         metaclass
       else
         "test." ^ metaclass

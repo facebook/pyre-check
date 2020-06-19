@@ -1679,7 +1679,7 @@ yield:
          test
         |> Option.value ~default:(Location.create ~start ~stop)
       in
-      has_from <> None,
+      Option.is_some has_from,
       {
         Node.location;
         value = Expression.Yield test;

@@ -244,7 +244,7 @@ let test_add_constraint context =
                 | _ -> failwith "impossible"
               in
               let parse_ordered_types ordered =
-                if ordered = "" then
+                if String.equal ordered "" then
                   Type.OrderedTypes.Concrete []
                 else
                   match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with

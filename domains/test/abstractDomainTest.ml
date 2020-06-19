@@ -221,7 +221,8 @@ module Int = struct
 end
 
 module StringSet = struct
-  include AbstractSetDomain.Make (String)
+  module T = AbstractSetDomain.Make (String)
+  include T
 
   let singletons = ["a"; "b"; "c"]
 
@@ -230,7 +231,7 @@ module StringSet = struct
   let values =
     List.cartesian_product unrelated unrelated
     |> List.map ~f:(Tuple2.uncurry join)
-    |> List.dedup_and_sort ~compare
+    |> List.dedup_and_sort ~compare:Poly.compare
 
 
   let () = assert_equal 9 (List.length values)
@@ -309,7 +310,7 @@ module InvertedStringSet = struct
   let values =
     List.cartesian_product singletons singletons
     |> List.map ~f:(fun (a, b) -> singleton a |> add b)
-    |> List.dedup_and_sort ~compare
+    |> List.dedup_and_sort ~compare:Poly.compare
 
 
   let () = assert_equal 9 (List.length values)
@@ -414,7 +415,7 @@ module ToppedStringSet = struct
   let values =
     List.cartesian_product unrelated unrelated
     |> List.map ~f:(Tuple2.uncurry join)
-    |> List.dedup_and_sort ~compare
+    |> List.dedup_and_sort ~compare:Poly.compare
 
 
   let () = assert_equal 9 (List.length values)
@@ -1043,18 +1044,18 @@ module AbstractElement = struct
     | B
     | C of string * int
     | CSuper (* Above all Cs *)
-  [@@deriving show]
+  [@@deriving compare, show]
 
-  let equal = ( = )
+  let equal = [%compare.equal: t]
 
   let compare = Pervasives.compare
 
   let less_or_equal ~left ~right =
-    left = right
+    equal left right
     ||
     match left, right with
     | C _, CSuper -> true
-    | C (left, x), C (right, y) -> left = right && x <= y
+    | C (left, x), C (right, y) -> String.equal left right && x <= y
     | _ -> false
 
 
@@ -1713,7 +1714,7 @@ module PathDomain = struct
     let size = min (String.length a) (String.length b) in
     try
       for i = 0 to size - 1 do
-        if a.[i] <> b.[i] then raise (Length i)
+        if not (Char.equal a.[i] b.[i]) then raise (Length i)
       done;
       a
     with
@@ -1745,9 +1746,9 @@ module PathDomain = struct
       | _, Bottom -> left
       | Path p1, Path p2 ->
           let p = common_prefix p1 p2 in
-          if p = p1 then
+          if String.equal p p1 then
             left
-          else if p = p2 then
+          else if String.equal p p2 then
             right
           else
             Path p

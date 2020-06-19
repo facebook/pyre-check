@@ -140,7 +140,7 @@ let parse source_jsons =
     let parse_sink (sinks, acceptable_sink_labels) json =
       let sink = Json.Util.member "name" json |> Json.Util.to_string in
       let acceptable_sink_labels =
-        if List.exists ~f:(( = ) "multi_sink_labels") (Json.Util.keys json) then
+        if List.exists ~f:(String.equal "multi_sink_labels") (Json.Util.keys json) then
           Json.Util.member "multi_sink_labels" json
           |> Json.Util.to_list
           |> List.map ~f:Json.Util.to_string

@@ -73,7 +73,7 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
     | None -> (
         match target, callables with
         | Some parent, Some ([{ Type.Callable.kind = Named name; _ }] as callables)
-          when Reference.last name = "__init__" -> (
+          when String.equal (Reference.last name) "__init__" -> (
             (* If we've added a __init__ call, it originates from a constructor. Search for __new__
                and add it manually. This is not perfect (__init__ might have been explicitly called,
                meaning that __new__ wasn't called), but will, in the worst case, lead to

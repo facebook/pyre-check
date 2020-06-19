@@ -93,7 +93,7 @@ let test_parse_stubs_modules_list context =
               ];
             _;
           }
-        when Statement.Define.is_stub define = is_stub ->
+        when Bool.equal (Statement.Define.is_stub define) is_stub ->
           Node.value name
       | _ -> failwith "Could not get source."
     in

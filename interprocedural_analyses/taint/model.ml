@@ -212,7 +212,9 @@ let infer_class_models ~environment =
   let compute_named_tuple_model class_summary =
     let attributes = attributes class_summary |> Option.value ~default:[] in
     (* If a user-specified constructor exists, don't override it. *)
-    if List.exists attributes ~f:(fun attribute -> Annotated.Attribute.name attribute = "__init__")
+    if
+      List.exists attributes ~f:(fun attribute ->
+          String.equal (Annotated.Attribute.name attribute) "__init__")
     then
       None
     else

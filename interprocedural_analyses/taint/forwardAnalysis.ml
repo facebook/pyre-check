@@ -99,7 +99,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let open Features in
       let already_has_first feature =
         match feature.Abstract.OverUnderSetDomain.element with
-        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) -> has_kind = kind
+        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
+            [%compare.equal: Breadcrumb.first_kind] has_kind kind
         | _ -> false
       in
       if List.exists set ~f:already_has_first then
@@ -1379,7 +1380,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
        * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
        * self as implicitly returned here allows this handling to work and simulates runtime
        * behavior accurately. *)
-      if Reference.last name = "__init__" || Define.is_property_setter define then
+      if String.equal (Reference.last name) "__init__" || Define.is_property_setter define then
         match parameters with
         | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
             AccessPath.Root.Variable self_parameter

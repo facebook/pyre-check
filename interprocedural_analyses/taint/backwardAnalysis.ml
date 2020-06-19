@@ -495,7 +495,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
             let taint =
               (* Specially handle super.__init__ calls in constructors for tito *)
-              if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver
+              if
+                FunctionContext.is_constructor ()
+                && String.equal attribute "__init__"
+                && is_super receiver
               then
                 BackwardState.Tree.create_leaf Domains.local_return_taint
                 |> BackwardState.Tree.join taint

@@ -259,7 +259,7 @@ let resolve_call_targets ~resolution call =
   | Name (Name.Attribute { base; _ }) ->
       let receiver_type = resolve_ignoring_optional ~resolution base in
       resolve_target ~resolution ~receiver_type callee
-  | Name (Name.Identifier name) when name <> "super" ->
+  | Name (Name.Identifier name) when not (String.equal name "super") ->
       let receiver_type = resolve_ignoring_optional ~resolution callee in
       if Type.is_meta receiver_type then
         let callee =

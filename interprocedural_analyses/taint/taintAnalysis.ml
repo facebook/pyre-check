@@ -78,10 +78,9 @@ include TaintResult.Register (struct
       BackwardAnalysis.run ~environment ~qualifier ~define ~existing_model ~triggered_sinks
     in
     let model =
-      if mode = Normal then
-        { forward; backward; mode }
-      else
-        { empty_model with mode }
+      match mode with
+      | Normal -> { forward; backward; mode }
+      | _ -> { empty_model with mode }
     in
     result, model
 

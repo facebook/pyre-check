@@ -116,7 +116,7 @@ end) : Connections = struct
         let json_sockets, to_close =
           List.partition_tf
             ~f:(fun file_notifier_socket ->
-              if socket = file_notifier_socket then (
+              if Unix.File_descr.equal socket file_notifier_socket then (
                 Log.log ~section:`Server "Adding json socket to be removed.";
                 false )
               else
@@ -157,7 +157,8 @@ end) : Connections = struct
         let ({ State.adapter_sockets; _ } as cached_connections) = !connections in
         Socket.close socket;
         let adapter_sockets =
-          List.filter adapter_sockets ~f:(fun adapter_socket -> not (socket = adapter_socket))
+          List.filter adapter_sockets ~f:(fun adapter_socket ->
+              not (Unix.File_descr.equal socket adapter_socket))
         in
         connections := { cached_connections with adapter_sockets })
 

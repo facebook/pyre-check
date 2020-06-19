@@ -170,11 +170,11 @@ module TraceInfo = struct
             port = port_right;
             callees = callees_right;
           } ) ->
-        port_left = port_right
+        AccessPath.Root.equal port_left port_right
         && Location.WithModule.compare location_left location_right = 0
-        && callees_left = callees_right
+        && [%compare.equal: Interprocedural.Callable.t list] callees_left callees_right
         && Abstract.TreeDomain.Label.compare_path path_right path_left = 0
-    | _ -> left = right
+    | _ -> [%compare.equal: t] left right
 
 
   let widen set = set
@@ -402,7 +402,7 @@ end = struct
       in
       let trace_json = trace_info_to_json ~trace_length trace_info in
       let leaf_json =
-        if leaf_json = [] then
+        if List.is_empty leaf_json then
           [`Assoc ["kind", leaf_kind_json]]
         else
           leaf_json

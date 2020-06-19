@@ -2964,7 +2964,7 @@ let join_at_define ~resolution errors =
         | None -> error
         | Some existing_error ->
             let joined_error = join ~resolution existing_error error in
-            if joined_error.kind <> Top then
+            if not (equal_kind joined_error.kind Top) then
               joined_error
             else
               existing_error
@@ -3116,7 +3116,7 @@ let filter ~resolution errors =
           } ->
           true
       | UndefinedAttribute { origin = Class (Callable { kind = Named name; _ }); _ } ->
-          Reference.last name = "patch"
+          String.equal (Reference.last name) "patch"
       | _ -> false
     in
     let is_stub_error { kind; location = { Location.WithModule.path; _ }; _ } =

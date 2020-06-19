@@ -126,7 +126,7 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
   in
   let exceeds_timeout () =
     let current_time = Unix.time () in
-    current_time -. !last_flush_timestamp >= flush_timeout
+    Float.(current_time -. !last_flush_timestamp >= flush_timeout)
   in
   if flush || samples_count () >= size || exceeds_timeout () then
     flush_cache ()

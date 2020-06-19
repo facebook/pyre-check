@@ -196,14 +196,14 @@ let computation_thread
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
-          if current_time -. state.last_request_time > stop_after_idle_for then
+          if Float.(current_time -. state.last_request_time > stop_after_idle_for) then
             Mutex.critical_section state.connections.lock ~f:(fun () ->
                 Operations.stop ~reason:"idle" ~configuration);
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
             let integrity_check_every = 60.0 (* 1 minute *) in
-            if current_time -. state.last_integrity_check > integrity_check_every then
+            if Float.(current_time -. state.last_integrity_check > integrity_check_every) then
               try
                 let pid =
                   let pid_file = Path.absolute pid_path |> In_channel.create in

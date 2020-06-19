@@ -470,7 +470,7 @@ let to_json (module Handler : Handler) ~indices =
 
 
 let to_dot (module Handler : Handler) ~indices =
-  let indices = List.sort ~compare indices in
+  let indices = List.sort ~compare:IndexTracker.compare indices in
   let nodes = List.map indices ~f:(fun index -> index, IndexTracker.annotation index) in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
@@ -481,7 +481,7 @@ let to_dot (module Handler : Handler) ~indices =
     nodes;
   let add_edges index =
     Handler.edges index
-    >>| List.sort ~compare
+    >>| List.sort ~compare:Target.compare
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
             Format.asprintf "  %s -> %s" (IndexTracker.show index) (IndexTracker.show successor)
             |> Buffer.add_string buffer;

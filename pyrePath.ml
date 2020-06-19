@@ -92,7 +92,15 @@ module AppendOperator = struct
   let ( ^| ) path element = append path ~element
 end
 
-let is_directory path = absolute path |> fun path -> Sys.is_directory path = `Yes
+let is_directory path =
+  absolute path
+  |> fun path ->
+  match Sys.is_directory path with
+  | `Yes -> true
+  | `No
+  | `Unknown ->
+      false
+
 
 let get_suffix_path = function
   | Absolute path -> path
@@ -109,7 +117,15 @@ let is_python_stub path = get_suffix_path path |> is_path_python_stub
 
 let is_python_init path = get_suffix_path path |> is_path_python_init
 
-let file_exists path = absolute path |> fun path -> Sys.file_exists path = `Yes
+let file_exists path =
+  absolute path
+  |> fun path ->
+  match Sys.file_exists path with
+  | `Yes -> true
+  | `No
+  | `Unknown ->
+      false
+
 
 let last path =
   let absolute = absolute path in
@@ -136,21 +152,20 @@ let read_directory_ordered path =
 
 let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~root () =
   let rec list sofar path =
-    if Core.Sys.is_directory path = `Yes then
-      if directory_filter path then (
-        match read_directory_ordered path with
-        | entries ->
-            let collect sofar entry = list sofar (path ^/ entry) in
-            Array.fold ~init:sofar ~f:collect entries
-        | exception Sys_error _ ->
-            Log.error "Could not list `%s`" path;
-            sofar )
-      else
-        sofar
-    else if file_filter path then
-      create_relative ~root ~relative:path :: sofar
-    else
-      sofar
+    match Core.Sys.is_directory path with
+    | `Yes ->
+        if directory_filter path then (
+          match read_directory_ordered path with
+          | entries ->
+              let collect sofar entry = list sofar (path ^/ entry) in
+              Array.fold ~init:sofar ~f:collect entries
+          | exception Sys_error _ ->
+              Log.error "Could not list `%s`" path;
+              sofar )
+        else
+          sofar
+    | _ when file_filter path -> create_relative ~root ~relative:path :: sofar
+    | _ -> sofar
   in
   list [] (absolute root)
 
@@ -164,12 +179,10 @@ let directory_contains ~directory path =
 (* Walk up from the root to try and find a directory/target. *)
 let search_upwards ~target ~root =
   let rec directory_has_target directory =
-    if Sys.is_file (directory ^/ target) = `Yes then
-      Some (create_absolute directory)
-    else if Filename.dirname directory = directory then
-      None
-    else
-      directory_has_target (Filename.dirname directory)
+    match Sys.is_file (directory ^/ target) with
+    | `Yes -> Some (create_absolute directory)
+    | _ when [%compare.equal: path] (Filename.dirname directory) directory -> None
+    | _ -> directory_has_target (Filename.dirname directory)
   in
   directory_has_target (absolute root)
 

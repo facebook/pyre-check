@@ -1292,7 +1292,8 @@ let test_visit _ =
     let visit state annotation =
       let new_state, transformed_annotation =
         match annotation with
-        | Type.Primitive integer when integer = "int" && state > 0 -> state - 1, Type.string
+        | Type.Primitive integer when String.equal integer "int" && state > 0 ->
+            state - 1, Type.string
         | _ -> state, annotation
       in
       { Type.Transform.transformed_annotation; new_state }

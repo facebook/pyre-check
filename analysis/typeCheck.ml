@@ -764,7 +764,11 @@ module State (Context : Context) = struct
     let check_parameter_annotations resolution errors =
       let errors, annotation_store =
         let make_parameter_name name =
-          name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
+          name
+          |> String.filter ~f:(function
+                 | '*' -> false
+                 | _ -> true)
+          |> Reference.create
         in
         let check_parameter
             index
@@ -3604,8 +3608,8 @@ module State (Context : Context) = struct
                           match attribute with
                           | Some (attribute, _)
                             when AnnotatedAttribute.property attribute
-                                 && AnnotatedAttribute.visibility attribute
-                                    = AnnotatedAttribute.ReadWrite ->
+                                 && AnnotatedAttribute.(
+                                      equal_visibility (visibility attribute) ReadWrite) ->
                               Context.Builder.add_property_setter_callees
                                 ~attribute
                                 ~instantiated_parent:parent
@@ -4975,7 +4979,7 @@ module State (Context : Context) = struct
         ( Some resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->
               emit_error ~errors ~location ~kind:(Error.UndefinedImport undefined_import)) )
-    | Class { Class.bases; _ } when bases <> [] ->
+    | Class { Class.bases; _ } when not (List.is_empty bases) ->
         (* Check that variance isn't widened on inheritence *)
         let check_base errors { Call.Argument.value = base; _ } =
           let check_pair errors extended actual =

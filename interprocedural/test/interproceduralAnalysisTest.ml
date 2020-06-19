@@ -81,7 +81,7 @@ module ResultB = Interprocedural.Result.Make (struct
 
   let widen ~iteration ~previous ~next = join ~iteration previous next
 
-  let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
+  let reached_fixpoint ~iteration:_ ~previous ~next = String.(next <= previous)
 
   let externalize ~filename_lookup:_ callable result_option model =
     let result_json =

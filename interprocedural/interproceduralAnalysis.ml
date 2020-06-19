@@ -427,7 +427,7 @@ let get_errors results =
 let externalize_analysis ~filename_lookup kind callable models results =
   let open Result in
   let merge kind_candidate model_opt result_opt =
-    if kind_candidate = kind then
+    if Poly.equal kind_candidate kind then
       match model_opt, result_opt with
       | Some model, _ -> Some (model, result_opt)
       | None, Some (Pkg { kind = ResultPart kind; _ }) ->

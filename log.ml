@@ -153,7 +153,11 @@ let rotate ?(number_to_keep = 10) basename =
   let is_file_or_link path =
     try
       let { Unix.st_kind; _ } = Unix.lstat path in
-      st_kind = Unix.S_LNK || st_kind = Unix.S_REG
+      match st_kind with
+      | Unix.S_LNK
+      | Unix.S_REG ->
+          true
+      | _ -> false
     with
     | Unix.Unix_error _ -> false
   in
