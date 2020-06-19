@@ -96,7 +96,9 @@ let find_annotation ~state ~configuration ~path ~position =
 let find_all_annotations ~state ~configuration ~path =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let annotations = lookup >>| Lookup.get_all_annotations in
+  let annotations =
+    lookup >>| Lookup.get_all_annotations >>| List.sort ~compare:[%compare: Location.t * Type.t]
+  in
   let _ =
     match source_path, annotations with
     | Some { SourcePath.relative = handle; _ }, Some annotations ->
@@ -115,7 +117,9 @@ let find_all_annotations ~state ~configuration ~path =
 
 let find_all_annotations_batch ~state ~configuration ~paths =
   let get_annotations { path; lookup; _ } =
-    let annotations = lookup >>| Lookup.get_all_annotations in
+    let annotations =
+      lookup >>| Lookup.get_all_annotations >>| List.sort ~compare:[%compare: Location.t * Type.t]
+    in
     { path; types_by_location = annotations }
   in
   List.map ~f:get_annotations (get_lookups ~configuration ~state paths)
