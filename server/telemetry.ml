@@ -20,16 +20,13 @@ module Message = struct
         content: string;
       }
 
-  type t = {
-    uuid: string;
-    message: message;
-  }
+  type t = { message: message }
 
-  let to_normals { uuid; message } =
+  let to_normals { message } =
     match message with
-    | Base { root; hash } -> ["kind", "base"; "uuid", uuid; "root", root; "hash", hash]
+    | Base { root; hash } -> ["kind", "base"; "root", root; "hash", hash]
     | Update { root; hash; content } ->
-        ["kind", "update"; "uuid", uuid; "root", root; "hash", hash; "content", content]
+        ["kind", "update"; "root", root; "hash", hash; "content", content]
 end
 
 let get_shell_output ~command =
@@ -67,14 +64,14 @@ let hg_root project_root =
 (* Maximum diff size in characters. *)
 let maximum_diff_size = 5000
 
-let create_session_start_message ~local_root ~project_root ~server_uuid =
+let create_session_start_message ~local_root ~project_root =
   {
-    Message.uuid = server_uuid;
-    message = Message.Base { root = Path.last local_root; hash = hg_commit_hash project_root };
+    Message.message =
+      Message.Base { root = Path.last local_root; hash = hg_commit_hash project_root };
   }
 
 
-let create_update_message ~local_root ~project_root ~filter_directories ~server_uuid =
+let create_update_message ~local_root ~project_root ~filter_directories =
   Log.info "Sending telemetry update message...";
   let hg_root_absolute = hg_root project_root in
   let project_directory_absolute =
@@ -91,8 +88,7 @@ let create_update_message ~local_root ~project_root ~filter_directories ~server_
   in
   let diff = hg_diff project_root in
   {
-    Message.uuid = server_uuid;
-    message =
+    Message.message =
       Message.Update
         {
           root = Option.value ~default:"<error>" project_directory_relative;

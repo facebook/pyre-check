@@ -142,7 +142,6 @@ module Server : sig
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;
-    server_uuid: string;
   }
 
   val set_global : t -> unit

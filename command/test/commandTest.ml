@@ -213,6 +213,7 @@ module ScratchServer = struct
           };
         scheduler = Test.mock_scheduler ();
         open_documents = Ast.Reference.Table.create ();
+        server_uuid = None;
       }
     in
     { configuration; server_configuration; state }

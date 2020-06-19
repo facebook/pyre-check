@@ -254,6 +254,7 @@ let load
       connections;
       lookups = String.Table.create ();
       open_documents = Reference.Table.create ();
+      server_uuid = None;
     }
   in
   state

@@ -15,23 +15,15 @@ module Message : sig
         content: string;
       }
 
-  type t = {
-    uuid: string;
-    message: message;
-  }
+  type t = { message: message }
 end
 
-val create_session_start_message
-  :  local_root:PyrePath.t ->
-  project_root:PyrePath.t ->
-  server_uuid:string ->
-  Message.t
+val create_session_start_message : local_root:PyrePath.t -> project_root:PyrePath.t -> Message.t
 
 val create_update_message
   :  local_root:PyrePath.t ->
   project_root:PyrePath.t ->
   filter_directories:PyrePath.t list option ->
-  server_uuid:string ->
   Message.t
 
 val reset_budget : ?value:int -> unit -> unit

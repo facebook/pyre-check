@@ -33,4 +33,5 @@ type t = {
   last_request_time: float;
   connections: connections;
   open_documents: string Ast.Reference.Table.t;
+  server_uuid: string option;
 }

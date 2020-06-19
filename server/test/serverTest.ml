@@ -66,6 +66,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
       open_documents = Reference.Table.create ();
       errors;
       scheduler = Test.mock_scheduler ();
+      server_uuid = None;
     }
   in
   project, state

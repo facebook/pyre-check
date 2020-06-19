@@ -997,7 +997,12 @@ let rec process
           in
           let response =
             let open LanguageServer.Protocol in
-            let { Configuration.Server.server_uuid; _ } = server_configuration in
+            let { State.server_uuid; _ } = state in
+            let command =
+              server_uuid
+              >>| (fun server_uuid -> "add_pyre_annotation_" ^ server_uuid)
+              |> Option.value ~default:"add_pyre_annotation"
+            in
             let code_actions =
               diagnostics
               |> List.filter_map
@@ -1016,7 +1021,7 @@ let rec process
                                  Some
                                    {
                                      title = "Fix it";
-                                     command = "add_pyre_annotation_" ^ server_uuid;
+                                     command;
                                      arguments =
                                        [
                                          {
@@ -1095,13 +1100,8 @@ let rec process
               let { Configuration.Analysis.local_root; filter_directories; project_root; _ } =
                 configuration
               in
-              let { Configuration.Server.server_uuid; _ } = server_configuration in
               Telemetry.send_telemetry () ~f:(fun _ ->
-                  Telemetry.create_update_message
-                    ~local_root
-                    ~project_root
-                    ~filter_directories
-                    ~server_uuid) );
+                  Telemetry.create_update_message ~local_root ~project_root ~filter_directories) );
 
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
@@ -1116,17 +1116,21 @@ let rec process
             | _ -> StatusUpdate.warning
           in
           update_function ~message ~state;
-
           { state; response = None }
       | GetServerUuid ->
-          let { Configuration.Server.server_uuid; _ } = server_configuration in
-          { state; response = Some (ServerUuidResponse server_uuid) }
+          let { State.server_uuid; _ } = state in
+          let response =
+            server_uuid
+            >>| (fun server_uuid -> Some (ServerUuidResponse server_uuid))
+            |> Option.value ~default:None
+          in
+          { state; response }
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";
           { state; response = None }
       | InitializeRequest request_id ->
-          let { Configuration.Server.server_uuid; _ } = server_configuration in
+          let server_uuid = Uuid_unix.create () |> Uuid.to_string in
           let response =
             LanguageServer.Protocol.InitializeResponse.default
               ~server_uuid
@@ -1137,6 +1141,7 @@ let rec process
             |> (fun response -> LanguageServerProtocolResponse response)
             |> Option.some
           in
+          let state = { state with server_uuid = Some server_uuid } in
           { state; response }
       | InitializedRequest ->
           expected_version

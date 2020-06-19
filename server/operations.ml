@@ -61,7 +61,6 @@ let create_configuration ?(daemonize = true) ?log_path ?saved_state_action confi
     daemonize;
     saved_state_action;
     configuration;
-    server_uuid = Uuid_unix.create () |> Uuid.to_string;
   }
 
 
@@ -121,6 +120,7 @@ let start_from_scratch ~connections ~configuration () =
     connections;
     lookups = String.Table.create ();
     open_documents = Ast.Reference.Table.create ();
+    server_uuid = None;
   }
 
 
@@ -144,7 +144,6 @@ let start
               project_root;
               _;
             } as configuration;
-          server_uuid;
           saved_state_action;
           _;
         } as server_configuration )
@@ -181,7 +180,7 @@ let start
   | _ -> () );
   log_configuration configuration;
   Telemetry.send_telemetry () ~f:(fun _ ->
-      Telemetry.create_session_start_message ~local_root ~project_root ~server_uuid);
+      Telemetry.create_session_start_message ~local_root ~project_root);
   state
 
 
