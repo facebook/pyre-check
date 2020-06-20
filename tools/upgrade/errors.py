@@ -50,7 +50,7 @@ class Errors:
     @staticmethod
     def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":
         input = sys.stdin.read()
-        return Errors.from_json(input)
+        return Errors.from_json(input, only_fix_error_code)
 
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors

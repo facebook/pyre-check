@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import json
 import textwrap
 import unittest
 from typing import Dict, List, Optional
@@ -26,6 +27,39 @@ class ErrorsTest(unittest.TestCase):
             Errors.from_json('[{ "path": "test.py", "key": "value" }]'),
             Errors([{"path": "test.py", "key": "value"}]),
         )
+        with patch(
+            "sys.stdin.read", return_value='[{ "path": "test.py", "key": "value" }]'
+        ):
+            self.assertEqual(
+                Errors.from_stdin(), Errors([{"path": "test.py", "key": "value"}])
+            )
+
+        self.assertEqual(
+            Errors.from_json(
+                json.dumps(
+                    [
+                        {"path": "test.py", "key": "value", "code": 1},
+                        {"path": "test.py", "key": "value", "code": 2},
+                    ]
+                ),
+                only_fix_error_code=1,
+            ),
+            Errors([{"path": "test.py", "key": "value", "code": 1}]),
+        )
+        with patch(
+            "sys.stdin.read",
+            return_value=json.dumps(
+                [
+                    {"path": "test.py", "key": "value", "code": 1},
+                    {"path": "test.py", "key": "value", "code": 2},
+                ]
+            ),
+        ):
+            self.assertEqual(
+                Errors.from_stdin(only_fix_error_code=1),
+                Errors([{"path": "test.py", "key": "value", "code": 1}]),
+            )
+
         with self.assertRaises(UserError):
             Errors.from_json('[{ "path": "test.py", "key": "value" }')
 
