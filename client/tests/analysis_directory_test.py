@@ -379,7 +379,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             "project/tracked2.py": "scratch/bar/tracked2.py",
         }
         shared_analysis_directory._symbolic_links = old_symbolic_links
-        actual = shared_analysis_directory.process_updated_files(
+        actual = shared_analysis_directory._process_updated_files(
             [
                 "project/tracked.py",
                 "project/tracked2.py",
@@ -435,7 +435,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         shared_analysis_directory._symbolic_links = {
             "project/tracked.py": "scratch/bar/tracked.py"
         }
-        actual = shared_analysis_directory.process_updated_files(
+        actual = shared_analysis_directory._process_updated_files(
             ["project/tracked.py", "project/something/new_file.py"]
         )
         expected = UpdatedPaths(
@@ -488,7 +488,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             "project/foo2.py",
             "scratch/bar/foo2.py",
         )
-        actual = shared_analysis_directory.process_updated_files(["project/foo2.py"])
+        actual = shared_analysis_directory._process_updated_files(["project/foo2.py"])
         expected = UpdatedPaths(updated_paths=["scratch/bar/foo2.py"], deleted_paths=[])
         self.assertEqual(actual, expected)
         query_buck_relative_paths.assert_not_called()
@@ -532,7 +532,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         shared_analysis_directory._symbolic_links = {
             "project/deleted.py": "scratch/bar/deleted.py"
         }
-        actual = shared_analysis_directory.process_updated_files(["project/deleted.py"])
+        actual = shared_analysis_directory._process_updated_files(
+            ["project/deleted.py"]
+        )
         expected = UpdatedPaths(
             updated_paths=["scratch/bar/deleted.py"],
             deleted_paths=["scratch/bar/deleted.py"],
@@ -579,7 +581,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             deleted_scratch_paths_from_the_rebuild,
         )
 
-        actual = shared_analysis_directory.process_updated_files(
+        actual = shared_analysis_directory._process_updated_files(
             previously_tracked
             + [
                 "other_project/not_tracked.py",
@@ -662,6 +664,29 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             ["scratch/deleted_by_rebuild.py"],
         )
         self.assertEqual(actual, expected)
+
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="/scratch/foo")
+    # pyre-ignore[56]: Argument `tools.pyre.client.analysis_directory` to
+    # decorator factory `unittest.mock.patch.object` could not be resolved in a
+    # global scope.
+    @patch.object(analysis_directory, "acquire_lock")
+    @patch.object(SharedAnalysisDirectory, "_process_updated_files")
+    def test_process_updated_files__acquire_lock(
+        self,
+        private_process_updated_files: MagicMock,
+        acquire_lock: MagicMock,
+        get_root: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        shared_analysis_directory.process_updated_files(["foo.py"])
+        acquire_lock.assert_called_once_with(
+            "/scratch/foo/analysis_directory_reader_writer.lock",
+            blocking=True,
+            is_shared_reader=False,
+        )
+        private_process_updated_files.assert_called_once()
 
     def test_cache_last_deleted_link(self) -> None:
         shared_analysis_directory = SharedAnalysisDirectory(

@@ -12,7 +12,7 @@ import textwrap
 from itertools import chain
 from pathlib import Path
 from time import time
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import ContextManager, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import buck, json_rpc, log
 from .buck import BuckBuilder, find_buck_root
@@ -21,8 +21,10 @@ from .exceptions import EnvironmentException
 from .filesystem import (
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
+    acquire_lock,
     acquire_lock_if_needed,
     add_symbolic_link,
+    do_nothing,
     find_python_paths,
     is_empty,
     is_parent,
@@ -52,6 +54,9 @@ REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 50
 DONT_CARE_PROGRESS_VALUE = 1
 
 BUCK_BUILDER_CACHE_PREFIX = ".buck_builder_cache"
+
+
+READER_WRITER_LOCK = "analysis_directory_reader_writer.lock"
 
 
 class NotWithinLocalConfigurationException(Exception):
@@ -159,6 +164,12 @@ class AnalysisDirectory:
         return any(
             is_parent(directory, path) for directory in self._search_path_directories
         )
+
+    def acquire_shared_reader_lock(self) -> ContextManager[Optional[int]]:
+        return do_nothing()
+
+    def acquire_writer_lock(self) -> ContextManager[Optional[int]]:
+        return do_nothing()
 
 
 class SharedAnalysisDirectory(AnalysisDirectory):
@@ -516,7 +527,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         ]
         return new_paths, deleted_paths, tracked_paths
 
-    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
+    def _process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """Update the analysis directory for any new or deleted files.
         Rebuild the directory using buck if needed.
         Return the updated and deleted paths."""
@@ -556,6 +567,10 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         return UpdatedPaths(
             updated_paths=tracked_scratch_paths, deleted_paths=deleted_scratch_paths
         )
+
+    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
+        with self.acquire_writer_lock():
+            return self._process_updated_files(paths)
 
     def _directories_to_clean_up(self) -> List[str]:
         if not self._isolate:
@@ -619,6 +634,19 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 all_paths[relative] = absolute
             except FileNotFoundError:
                 continue
+
+    def _reader_writer_lock_path(self) -> str:
+        return os.path.join(self.get_root(), READER_WRITER_LOCK)
+
+    def acquire_shared_reader_lock(self) -> ContextManager[Optional[int]]:
+        return acquire_lock(
+            self._reader_writer_lock_path(), blocking=True, is_shared_reader=True
+        )
+
+    def acquire_writer_lock(self) -> ContextManager[Optional[int]]:
+        return acquire_lock(
+            self._reader_writer_lock_path(), blocking=True, is_shared_reader=False
+        )
 
 
 def _get_project_name(
