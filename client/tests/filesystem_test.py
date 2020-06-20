@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import builtins
 import errno
 import fcntl
 import os
@@ -137,6 +138,25 @@ class FilesystemTest(unittest.TestCase):
         with self.assertRaises(OSError):
             with acquire_lock(path, blocking=False):
                 pass
+
+    @patch.object(builtins, "open")
+    # pyre-ignore[56]: Argument `fcntl` to decorator factory
+    # `unittest.mock.patch.object` could not be resolved in a global scope.
+    @patch.object(fcntl, "lockf")
+    def test_acquire_lock__release_even_on_exception(
+        self, lock_file: MagicMock, open_file: MagicMock
+    ) -> None:
+        class SomeException(Exception):
+            pass
+
+        with self.assertRaises(SomeException):
+            with acquire_lock("foo.txt", blocking=True):
+                raise SomeException
+
+        file_descriptor = open_file().__enter__().fileno()
+        lock_file.assert_has_calls(
+            [call(file_descriptor, fcntl.LOCK_EX), call(file_descriptor, fcntl.LOCK_UN)]
+        )
 
     # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.

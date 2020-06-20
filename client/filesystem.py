@@ -219,15 +219,16 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
     LOG.debug("Trying to acquire lock on file %s", path)
     try:
         with open(path, "w+") as lockfile:
-            if not blocking:
-                lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
-            else:
-                lock_command = fcntl.LOCK_EX
+            try:
+                if not blocking:
+                    lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
+                else:
+                    lock_command = fcntl.LOCK_EX
 
-            fcntl.lockf(lockfile.fileno(), lock_command)
-            yield lockfile.fileno()
-            fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
-
+                fcntl.lockf(lockfile.fileno(), lock_command)
+                yield lockfile.fileno()
+            finally:
+                fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
     except FileNotFoundError:
         LOG.debug(f"Unable to acquire lock because lock file {path} was not found")
         yield
