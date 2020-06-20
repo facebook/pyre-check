@@ -15,25 +15,29 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class QueryTest(unittest.TestCase):
-    def test_query(self) -> None:
+    @patch.object(SocketConnection, "connect")
+    @patch.object(AnalysisDirectory, "acquire_shared_reader_lock")
+    def test_query(
+        self, acquire_shared_reader_lock: MagicMock, connect: MagicMock
+    ) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments(dot_pyre_directory=Path("/tmp/foo"))
         configuration = mock_configuration()
 
-        with patch.object(SocketConnection, "connect") as connect:
-            result = MagicMock()
-            result.output = "{}"
-            # pyre-fixme[16]: Callable `read_response` has no attribute `return_value`.
-            read_response.return_value = result
+        result = MagicMock()
+        result.output = "{}"
+        # pyre-fixme[16]: Callable `read_response` has no attribute `return_value`.
+        read_response.return_value = result
 
-            commands.Query(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory("."),
-                query="",
-            ).run()
-            connect.assert_called_once()
+        commands.Query(
+            arguments,
+            original_directory,
+            configuration=configuration,
+            analysis_directory=AnalysisDirectory("."),
+            query="",
+        ).run()
+        connect.assert_called_once()
+        acquire_shared_reader_lock.assert_called_once()
 
         self.assertEqual(
             commands.Query(
