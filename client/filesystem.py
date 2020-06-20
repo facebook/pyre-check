@@ -213,19 +213,33 @@ def add_symbolic_link(link_path: str, actual_path: str) -> None:
             LOG.error(str(error))
 
 
+def _lock_command(blocking: bool, is_shared_reader: bool) -> int:
+    lock_command = fcntl.LOCK_SH if is_shared_reader else fcntl.LOCK_EX
+    return lock_command if blocking else lock_command | fcntl.LOCK_NB
+
+
 @contextmanager
-def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, None]:
-    """Raises an OSError if the lock can't be acquired"""
-    LOG.debug("Trying to acquire lock on file %s", path)
+def acquire_lock(
+    path: str, blocking: bool, is_shared_reader: bool = False
+) -> Generator[Optional[int], None, None]:
+    """Raise an OSError if `blocking` is False and the lock can't be acquired.
+
+    If `is_shared_reader=True`, then other processes can acquire the same
+    lock with `is_shared_reader=True`, but not with `is_shared_reader=False`.
+    Conversely, if `is_shared_reader=False`, then no other process can
+    acquire the lock until it is released."""
+
+    LOG.debug(
+        "Trying to acquire %slock on file %s",
+        "shared reader " if is_shared_reader else "",
+        path,
+    )
     try:
         with open(path, "w+") as lockfile:
             try:
-                if not blocking:
-                    lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
-                else:
-                    lock_command = fcntl.LOCK_EX
-
-                fcntl.lockf(lockfile.fileno(), lock_command)
+                fcntl.lockf(
+                    lockfile.fileno(), _lock_command(blocking, is_shared_reader)
+                )
                 yield lockfile.fileno()
             finally:
                 fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)

@@ -158,6 +158,24 @@ class FilesystemTest(unittest.TestCase):
             [call(file_descriptor, fcntl.LOCK_EX), call(file_descriptor, fcntl.LOCK_UN)]
         )
 
+    def test_lock_command(self) -> None:
+        self.assertEqual(
+            filesystem._lock_command(blocking=True, is_shared_reader=True),
+            fcntl.LOCK_SH,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=True, is_shared_reader=False),
+            fcntl.LOCK_EX,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=False, is_shared_reader=True),
+            fcntl.LOCK_SH | fcntl.LOCK_NB,
+        )
+        self.assertEqual(
+            filesystem._lock_command(blocking=False, is_shared_reader=False),
+            fcntl.LOCK_EX | fcntl.LOCK_NB,
+        )
+
     # pyre-fixme[56]: Argument `tools.pyre.client.filesystem` to decorator factory
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(filesystem, "acquire_lock")
