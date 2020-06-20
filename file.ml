@@ -25,7 +25,15 @@ module T = struct
         | Sys_error _ -> None )
 
 
+  let content_exn { path; content } =
+    match content with
+    | Some content -> content
+    | None -> In_channel.read_all (Path.absolute path)
+
+
   let lines file = content file >>| String.split ~on:'\n'
+
+  let lines_exn file = content_exn file |> String.split ~on:'\n'
 
   let hash file = lines file >>| fun lines -> [%hash: string list] lines
 

@@ -117,10 +117,9 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
         Error error
   in
   let path = SourcePath.full_path ~configuration source_path in
-  match File.lines (File.create path) with
-  | Some lines -> parse_lines lines
-  | None ->
-      let message = Format.asprintf "Cannot open file %a" Path.pp path in
+  try File.lines_exn (File.create path) |> parse_lines with
+  | Sys_error error ->
+      let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
       Error message
 
 
