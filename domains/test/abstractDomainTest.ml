@@ -1044,9 +1044,9 @@ module AbstractElement = struct
     | B
     | C of string * int
     | CSuper (* Above all Cs *)
-  [@@deriving compare, show]
+  [@@deriving show]
 
-  let equal = [%compare.equal: t]
+  let equal = Poly.equal
 
   let compare = Pervasives.compare
 
