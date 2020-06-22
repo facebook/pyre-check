@@ -198,8 +198,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
     let kinds, breadcrumbs =
       extract_kinds expression
       |> List.partition_map ~f:(function
-             | Leaf l -> `Fst l
-             | Breadcrumbs b -> `Snd b)
+             | Leaf l -> Either.First l
+             | Breadcrumbs b -> Either.Second b)
     in
     kinds, List.concat breadcrumbs
   in

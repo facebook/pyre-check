@@ -829,7 +829,7 @@ let test_open_document_state context =
     let ({ state = { open_documents; _ }; _ } : Request.response) =
       Request.process ~configuration:server_configuration ~state ~request
     in
-    assert_true (Reference.Table.equal open_documents expected String.equal)
+    assert_true (Reference.Table.equal String.equal open_documents expected)
   in
   assert_open_documents
     ~start:(Reference.Table.create ())

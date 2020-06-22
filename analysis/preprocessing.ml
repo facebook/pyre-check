@@ -2113,8 +2113,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     in
                     Option.value annotation ~default:any
                   in
-                  `Fst (Node.create ~location (last, annotation, Some value))
-              | statement -> `Snd statement
+                  Either.First (Node.create ~location (last, annotation, Some value))
+              | statement -> Either.Second statement
             in
             let attributes, other = List.partition_map body ~f:extract_assign in
             let constructors =

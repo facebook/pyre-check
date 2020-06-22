@@ -24,8 +24,8 @@ let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ 
   let paths, nonexistent_paths =
     let get_source_path path =
       match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
-      | Some source_path -> `Fst (path, source_path)
-      | None -> `Snd path
+      | Some source_path -> Either.First (path, source_path)
+      | None -> Either.Second path
     in
     List.partition_map ~f:get_source_path paths
   in
@@ -33,8 +33,8 @@ let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ 
     let retrieve_cached (path, ({ SourcePath.qualifier; _ } as source_path)) =
       let cache_read = String.Table.find lookups (Reference.show qualifier) in
       match cache_read with
-      | Some lookup -> `Fst { path; source_path = Some source_path; lookup = Some lookup }
-      | None -> `Snd (path, source_path)
+      | Some lookup -> Either.First { path; source_path = Some source_path; lookup = Some lookup }
+      | None -> Either.Second (path, source_path)
     in
     List.partition_map ~f:retrieve_cached paths
   in

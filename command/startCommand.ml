@@ -443,7 +443,10 @@ let serve
     Signal.Expert.handle Signal.int (fun _ ->
         Operations.stop ~reason:"interrupt" ~configuration:server_configuration);
     Signal.Expert.handle Signal.pipe (fun _ -> ());
-    Thread.create request_handler_thread (server_configuration, connections, request_queue)
+    Thread.create
+      ~on_uncaught_exn:`Kill_whole_process
+      request_handler_thread
+      (server_configuration, connections, request_queue)
     |> ignore;
     let state = Operations.start ~connections ~configuration:server_configuration () in
     try computation_thread request_queue server_configuration state with

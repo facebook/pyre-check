@@ -151,15 +151,15 @@ test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
 
 opam install --yes \
-  base64.3.2.0 \
+  base64.3.4.0 \
   conf-sqlite3 \
-  core.v0.13.0 \
+  core.v0.14.0 \
   dune.2.6.0 \
   yojson.1.7.0 \
   ppx_deriving_yojson.3.5.2 \
   ounit.2.2.2 \
   sedlex.2.1 \
-  menhir.20190924 \
+  menhir.20200612 \
   && opam_install_dependencies_succeeded=1
 test "$opam_install_dependencies_succeeded" = 1 \
   || die 'Could not install dependencies'

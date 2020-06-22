@@ -703,8 +703,9 @@ let rec process_type_query_request
           >>| GlobalResolution.successors ~resolution:global_resolution
           >>| List.map ~f:(fun name -> Type.Primitive name)
           >>| (fun classes ->
-                `Fst { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
-          |> Option.value ~default:(`Snd class_name)
+                Either.First
+                  { TypeQuery.class_name = Type.class_name class_type; superclasses = classes })
+          |> Option.value ~default:(Either.Second class_name)
         in
         let results, errors = List.partition_map ~f:get_superclasses class_names in
         if List.is_empty errors then
@@ -745,8 +746,9 @@ let rec process_type_query_request
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
           | { LookupCache.path; types_by_location = Some types } ->
-              `Fst { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
-          | { LookupCache.path; _ } -> `Snd path
+              Either.First
+                { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
+          | { LookupCache.path; _ } -> Either.Second path
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then

@@ -895,8 +895,8 @@ let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; 
     let not_defines, defines =
       List.partition_map unannotated_globals_alist ~f:(function
           | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
-              `Snd (name, defines)
-          | x -> `Fst x)
+              Either.Second (name, defines)
+          | x -> Either.First x)
     in
     let add_to_map sofar (name, defines) =
       let merge_with_existing to_merge = function

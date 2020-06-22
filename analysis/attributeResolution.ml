@@ -3062,10 +3062,10 @@ class base class_metadata_environment dependency =
                   match kind with
                   | SingleStar -> (
                       match resolved with
-                      | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                      | Type.Tuple (Bounded ordered_types) -> Either.First ordered_types
                       (* We don't support expanding indefinite containers into ListVariadics *)
-                      | annotation -> `Snd { expression; annotation } )
-                  | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
+                      | annotation -> Either.Second { expression; annotation } )
+                  | _ -> Either.First (Type.OrderedTypes.Concrete [resolved])
                 in
                 List.rev arguments |> List.partition_map ~f:extract
               in
