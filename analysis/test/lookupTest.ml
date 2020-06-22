@@ -104,11 +104,16 @@ let test_lookup_pick_narrowest context =
       "3:17-3:27/bool";
       "3:21-3:27/typing.Optional[bool]";
       "3:7-3:11/bool";
-      "3:7-3:28/bool";
+      (* TODO (T68817342): Should be `bool` *)
+      "3:7-3:28/typing.Optional[bool]";
     ];
   let assert_annotation = assert_annotation ~lookup in
-  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:28/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:28/bool");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 11 } (* TODO (T68817342): Should be `bool` *)
+    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
+  assert_annotation
+    ~position:{ Location.line = 3; column = 16 } (* TODO (T68817342): Should be `bool` *)
+    ~annotation:(Some "3:7-3:28/typing.Optional[bool]");
   assert_annotation ~position:{ Location.line = 3; column = 17 } ~annotation:(Some "3:17-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 21 }

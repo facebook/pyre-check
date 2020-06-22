@@ -197,7 +197,7 @@ let computation_thread
           let current_time = Unix.time () in
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
           if Float.(current_time -. state.last_request_time > stop_after_idle_for) then
-            Mutex.critical_section state.connections.lock ~f:(fun () ->
+            Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
                 Operations.stop ~reason:"idle" ~configuration);
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
@@ -216,7 +216,7 @@ let computation_thread
                 current_time
               with
               | _ ->
-                  Mutex.critical_section state.connections.lock ~f:(fun () ->
+                  Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
                       Operations.stop ~reason:"failed integrity check" ~configuration)
             else
               state.last_integrity_check
@@ -316,7 +316,7 @@ let request_handler_thread
       _;
     }
       =
-      Mutex.critical_section lock ~f:(fun () -> !raw_connections)
+      Error_checking_mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
       Log.error
@@ -386,10 +386,12 @@ let request_handler_thread
         | Sys_error error
         | Yojson.Json_error error ->
             Log.warning "Failed to complete handshake: %s" error
-      else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
+      else if
+        Error_checking_mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket)
+      then
         handle_readable_persistent socket
       else if
-        Mutex.critical_section lock ~f:(fun () ->
+        Error_checking_mutex.critical_section lock ~f:(fun () ->
             List.mem ~equal:Unix.File_descr.equal adapter_sockets socket)
       then
         handle_readable_json_request ~remove_socket:Connections.remove_adapter_socket socket
@@ -423,7 +425,7 @@ let serve
     let request_queue = Squeue.create 25 in
     let connections =
       {
-        lock = Mutex.create ();
+        lock = Error_checking_mutex.create ();
         connections =
           ref
             {

@@ -17,7 +17,7 @@ type raw_connections = {
 }
 
 type connections = {
-  lock: Mutex.t;
+  lock: Error_checking_mutex.t;
   connections: raw_connections ref;
 }
 

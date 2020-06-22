@@ -171,6 +171,7 @@ let test_process_type_query_request context =
     {|
     {
         "response": {
+            "typing.Iterable.__iter__": [],
             "contextlib.ContextManager.__enter__": [],
             "await.bar": [
                 {
@@ -198,7 +199,6 @@ let test_process_type_query_request context =
             "str.substr": [],
             "str.lower": [],
             "str.format": [],
-            "typing.Iterable.__iter__": [],
             "test.foo": []
         }
     }
@@ -277,20 +277,20 @@ let test_process_type_query_request context =
     {
       "response": [
         {
-          "name": "define_test.with_var",
+          "name": "define_test.with_kwargs",
           "parameters": [
             {
-              "name": "*args",
+              "name": "**kwargs",
               "annotation": null
             }
           ],
           "return_annotation": null
         },
         {
-          "name": "define_test.with_kwargs",
+          "name": "define_test.with_var",
           "parameters": [
             {
-              "name": "**kwargs",
+              "name": "*args",
               "annotation": null
             }
           ],

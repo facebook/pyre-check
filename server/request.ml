@@ -897,7 +897,7 @@ let rec process
       match request with
       | TypeCheckRequest paths -> process_type_check_request ~state ~configuration paths
       | StopRequest ->
-          Mutex.critical_section connections.lock ~f:(fun () ->
+          Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | UnparsableQuery { query; reason } ->
@@ -1156,7 +1156,7 @@ let rec process
         { state; response = None }
     | Worker.Worker_exited_abnormally (pid, status) ->
         Statistics.log_worker_exception ~pid status ~origin:"server";
-        Mutex.critical_section connections.lock ~f:(fun () ->
+        Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
             Operations.stop ~reason:"Worker exited abnormally" ~configuration:server_configuration)
     | uncaught_exception ->
         let should_stop =
@@ -1168,7 +1168,7 @@ let rec process
         in
         Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
-          Mutex.critical_section connections.lock ~f:(fun () ->
+          Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop ~reason:"uncaught exception" ~configuration:server_configuration);
         { state; response = None }
   in

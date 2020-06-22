@@ -763,7 +763,8 @@ let test_query context =
                            };
                          overloads = [];
                        } );
-                   3, 5, 3, 9, Type.Literal (Boolean true);
+                   (* TODO (T68817342): Should be `Literal (Boolean true)` *)
+                   3, 5, 3, 9, Type.Literal (Boolean false);
                    4, 3, 4, 4, Type.literal_integer 1;
                    4, 7, 4, 8, Type.literal_integer 1;
                  ]

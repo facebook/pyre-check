@@ -139,73 +139,6 @@
     "callable": "overrides.testBase",
     "callable_line": 72,
     "code": 5002,
-    "line": 74,
-    "start": 14,
-    "end": 15,
-    "filename": "overrides.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 73,
-                "start": 8,
-                "end": 19
-              },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 74,
-                "start": 14,
-                "end": 15
-              },
-              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "overrides.testBase",
-    "callable_line": 72,
-    "code": 5002,
     "line": 75,
     "start": 20,
     "end": 21,
@@ -250,6 +183,73 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testBase",
+    "callable_line": 72,
+    "code": 5002,
+    "line": 74,
+    "start": 14,
+    "end": 15,
+    "filename": "overrides.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 73,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 74,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
               "port": "formal(arg)",
               "length": 1
             },

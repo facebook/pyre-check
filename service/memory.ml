@@ -51,7 +51,7 @@ let register prefix decoder =
 
 let decode ~key ~value =
   match String.index_exn key '$' with
-  | exception Not_found -> Result.Error `Malformed_key
+  | exception Not_found_s _ -> Result.Error `Malformed_key
   | dollar -> (
       let prefix_size = dollar + 1 in
       let prefix = String.sub key ~pos:0 ~len:prefix_size in

@@ -198,7 +198,7 @@ module ScratchServer = struct
         lookups = String.Table.create ();
         connections =
           {
-            lock = Mutex.create ();
+            lock = Error_checking_mutex.create ();
             connections =
               ref
                 {

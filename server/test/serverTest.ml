@@ -16,7 +16,7 @@ let connections persistent_clients =
     |> Network.Socket.Map.of_alist_exn
   in
   {
-    Server.State.lock = Mutex.create ();
+    Server.State.lock = Error_checking_mutex.create ();
     connections =
       ref
         {

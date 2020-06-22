@@ -13,9 +13,9 @@ module Cache : sig
 end = struct
   let cache = String.Table.create ()
 
-  let lock = Mutex.create ()
+  let lock = Error_checking_mutex.create ()
 
-  let with_cache ~f = Mutex.critical_section lock ~f:(fun () -> f cache)
+  let with_cache ~f = Error_checking_mutex.critical_section lock ~f:(fun () -> f cache)
 end
 
 let size = 500

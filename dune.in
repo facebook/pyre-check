@@ -43,7 +43,8 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
-  core))
+  core
+  core.time_stamp_counter))
 
 
 (library

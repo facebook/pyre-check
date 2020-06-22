@@ -68,68 +68,6 @@
     "callable_line": 46,
     "code": 5002,
     "line": 47,
-    "start": 35,
-    "end": 47,
-    "filename": "higher_order_functions.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "root": {
-              "filename": "higher_order_functions.py",
-              "line": 47,
-              "start": 49,
-              "end": 64
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 47,
-                "start": 35,
-                "end": 47
-              },
-              "resolves_to": [ "higher_order_functions.goes_to_sink" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "higher_order_functions.test_higher_order_function_and_sink",
-    "callable_line": 46,
-    "code": 5002,
-    "line": 47,
     "start": 49,
     "end": 64,
     "filename": "higher_order_functions.py",
@@ -170,6 +108,68 @@
               "resolves_to": [
                 "higher_order_functions.higher_order_function_and_sink"
               ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_higher_order_function_and_sink",
+    "callable_line": 46,
+    "code": 5002,
+    "line": 47,
+    "start": 35,
+    "end": 47,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "higher_order_functions.py",
+              "line": 47,
+              "start": 49,
+              "end": 64
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 47,
+                "start": 35,
+                "end": 47
+              },
+              "resolves_to": [ "higher_order_functions.goes_to_sink" ],
               "port": "formal(arg)",
               "length": 1
             },
