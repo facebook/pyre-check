@@ -3,45 +3,18 @@
  (public_name pyrelib.serverTest)
  (modules serverTest)
  (preprocess
-  (pps
-   ppx_sexp_conv
-   ppx_compare
-   ppx_deriving_yojson))
- (libraries
-  oUnit
-  pyrelib.commands
-  pyrelib.languageServer
-  pyrelib.server
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.analysis))
+  (pps ppx_sexp_conv ppx_compare ppx_deriving_yojson))
+ (libraries oUnit pyrelib.commands pyrelib.languageServer pyrelib.server
+   pyrelib.test pyrelib.ast pyrelib.analysis))
 
 (tests
- (names
-  autoCompleteTest
-  connectionsTest
-  incrementalCheckTest
-  incrementalStaticAnalysisTest
-  jsonrpcTest
-  lookupLocationTest
-  operationsTest
-  queryTest
-  requestTest
-  savedStateTest)
+ (names autoCompleteTest connectionsTest incrementalCheckTest
+   incrementalStaticAnalysisTest jsonrpcTest lookupLocationTest
+   operationsTest queryTest requestTest savedStateTest)
  (modules :standard \ serverTest)
  (preprocess
-  (pps
-   ppx_sexp_conv
-   ppx_compare
-   ppx_deriving_yojson))
- (libraries
-  oUnit
-  ppx_deriving
-  pyrelib.commandTest
-  pyrelib.serverTest
-  pyrelib.test
-  pyrelib.languageServer
-  pyrelib.network
-  pyrelib.server
-  pyrelib.ast)
-(deps locationTests.json))
+  (pps ppx_sexp_conv ppx_compare ppx_deriving_yojson))
+ (libraries oUnit ppx_deriving pyrelib.commandTest pyrelib.serverTest
+   pyrelib.test pyrelib.languageServer pyrelib.network pyrelib.server
+   pyrelib.ast)
+ (deps locationTests.json))

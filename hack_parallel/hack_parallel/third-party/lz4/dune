@@ -1,10 +1,8 @@
 (library
-  (name lz4)
-  (modules)
-  (c_names
-    lz4
-    lz4frame
-    lz4hc
-    xxhash)
-  (public_name hack_parallel.lz4)
-  (wrapped false))
+ (foreign_stubs
+  (language c)
+  (names lz4 lz4frame lz4hc xxhash))
+ (name lz4)
+ (modules)
+ (public_name hack_parallel.lz4)
+ (wrapped false))

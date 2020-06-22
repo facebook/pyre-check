@@ -1,9 +1,3 @@
 (tests
- (names
-  generatorTest
-  locationTest)
- (libraries
-  oUnit
-  pyrelib.test
-  pyrelib.ast
-  pyrelib.pyreParser))
+ (names generatorTest locationTest)
+ (libraries oUnit pyrelib.test pyrelib.ast pyrelib.pyreParser))

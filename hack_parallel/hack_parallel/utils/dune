@@ -1,22 +1,12 @@
 (copy_files ../../scripts/get_build_id.c)
 
 (library
-  (name utils)
-  (public_name hack_parallel.utils)
-  (wrapped false)
-  (modules (:standard))
-  (c_names 
-    files
-    get_build_id
-    handle_stubs
-    nproc
-    priorities
-    realpath
-    sysinfo)
-  (libraries
-    core
-    str
-    hack_parallel.collections
-    hack_parallel.disk
-    hack_parallel.hack_core
-    hack_parallel.hh_json))
+ (foreign_stubs
+  (language c)
+  (names files get_build_id handle_stubs nproc priorities realpath sysinfo))
+ (name utils)
+ (public_name hack_parallel.utils)
+ (wrapped false)
+ (modules (:standard))
+ (libraries core str hack_parallel.collections hack_parallel.disk
+   hack_parallel.hack_core hack_parallel.hh_json))

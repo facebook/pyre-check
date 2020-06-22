@@ -154,7 +154,7 @@ opam install --yes \
   base64.3.2.0 \
   conf-sqlite3 \
   core.v0.13.0 \
-  dune.1.11.4 \
+  dune.2.6.0 \
   yojson.1.7.0 \
   ppx_deriving_yojson.3.5.2 \
   ounit.2.2.2 \

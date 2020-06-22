@@ -1,4 +1,4 @@
 (library
-  (name collections)
-  (public_name hack_parallel.collections)
-  (wrapped false))
+ (name collections)
+ (public_name hack_parallel.collections)
+ (wrapped false))
