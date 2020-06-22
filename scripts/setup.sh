@@ -160,6 +160,7 @@ opam install --yes \
   ounit.2.2.2 \
   sedlex.2.1 \
   menhir.20200612 \
+  lwt.5.3.0 \
   && opam_install_dependencies_succeeded=1
 test "$opam_install_dependencies_succeeded" = 1 \
   || die 'Could not install dependencies'
