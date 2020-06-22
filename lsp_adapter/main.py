@@ -6,6 +6,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import os
 import random
 import re
@@ -29,6 +30,11 @@ def _should_run_null_server(null_server_flag: bool) -> bool:
     # TODO[T58989824]: We also need to check if the project can be run here.
     # Needs updating to mimic the current implementation (i.e. catch the buck errors)
     return null_server_flag
+
+
+def _get_log_file(current_directory: str) -> str:
+    local_root = find_local_root(original_directory=current_directory)
+    return str(log_directory(current_directory, local_root, "server") / "adapter.log")
 
 
 def _socket_exists(current_directory: str) -> bool:
@@ -146,11 +152,17 @@ def add_socket_connection(loop: AbstractEventLoop, root: str) -> SocketConnectio
 
 def error_handler(loop: AbstractEventLoop, context: Dict[str, Any]) -> None:
     if isinstance(context["exception"], AdapterException):
-        loop.stop()
-        loop.close()
+        try:
+            loop.stop()
+            loop.close()
+        except Exception as exception:
+            logging.debug(exception)
+    else:
+        logging.debug(context)
 
 
 def run_server(loop: AbstractEventLoop, root: str) -> None:
+    logging.info("Starting adapter.")
     socket_connection = add_socket_connection(loop, root)
     stdin_pipe_reader = loop.connect_read_pipe(
         lambda: AdapterProtocol(socket_connection, root), sys.stdin
@@ -162,6 +174,13 @@ def run_server(loop: AbstractEventLoop, root: str) -> None:
 
 def main(arguments: argparse.Namespace) -> None:
     root = arguments.root
+    logging.basicConfig(
+        filename=_get_log_file(root),
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        filemode="w",
+    )
     loop: AbstractEventLoop = asyncio.get_event_loop()
     try:
         if _should_run_null_server(arguments.null_server):
