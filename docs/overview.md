@@ -23,7 +23,7 @@ machine. If you already have a Pyre installation, you can take the
 [Guided Tour](guided_tour.md) to familiarize yourself the basic workflows 
 that we recommend.
 
-The [Configuring Pyre](http://configuration.html/) section contains information 
+The [Configuring Pyre](configuration.html) section contains information 
 on how to customize Pyre to work with your own projects. You can tune Pyre in 
 a number of different ways, depending on how strict you want to be with your 
 types, and how performant you want Pyre to be when run against your source base. 
