@@ -19,8 +19,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class CommandArguments:
-    comment: str
-    max_line_length: int
+    comment: Optional[str]
+    max_line_length: Optional[int]
     truncate: bool
     unsafe: bool
     force_format_unsuppressed: bool
@@ -58,8 +58,8 @@ class ErrorSuppressingCommand(Command):
     ) -> None:
         super().__init__(repository)
         self._command_arguments: CommandArguments = command_arguments
-        self._comment: str = command_arguments.comment
-        self._max_line_length: int = command_arguments.max_line_length
+        self._comment: Optional[str] = command_arguments.comment
+        self._max_line_length: Optional[int] = command_arguments.max_line_length
         self._truncate: bool = command_arguments.truncate
         self._unsafe: bool = command_arguments.unsafe
         self._force_format_unsuppressed: bool = (

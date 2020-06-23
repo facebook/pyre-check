@@ -75,8 +75,8 @@ class Errors:
 
     def suppress(
         self,
-        comment: str = "",
-        max_line_length: int = 0,
+        comment: Optional[str] = None,
+        max_line_length: Optional[int] = None,
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
@@ -91,7 +91,9 @@ class Errors:
                     input,
                     _build_error_map(errors),
                     comment,
-                    max_line_length if max_line_length > 0 else None,
+                    max_line_length
+                    if max_line_length and max_line_length > 0
+                    else None,
                     truncate,
                     unsafe,
                 )
