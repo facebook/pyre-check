@@ -82,24 +82,20 @@ class GlobalVersionUpdate(Command):
             if "mock_repository" in str(configuration_path):
                 # Skip local configurations we have for testing.
                 continue
-            with open(configuration_path) as configuration_file:
-                local_configuration = Configuration(
-                    configuration_path, json.load(configuration_file)
+            local_configuration = Configuration(configuration_path)
+            if local_configuration.version:
+                LOG.info(
+                    "Skipping %s as it already has a custom version field.",
+                    configuration_path,
                 )
-                if local_configuration.version:
-                    LOG.info(
-                        "Skipping %s as it already has a custom version field.",
-                        configuration_path,
-                    )
-                    continue
-                if local_configuration.differential:
-                    LOG.info(
-                        "Skipping differential configuration at `%s`",
-                        configuration_path,
-                    )
-                    continue
-                local_configuration.set_version(old_version)
-                local_configuration.write()
+                continue
+            if local_configuration.differential:
+                LOG.info(
+                    "Skipping differential configuration at `%s`", configuration_path
+                )
+                continue
+            local_configuration.set_version(old_version)
+            local_configuration.write()
 
     def _suppress_global_errors(self, global_configuration: Configuration) -> None:
         if global_configuration.targets or global_configuration.source_directories:
@@ -129,19 +125,15 @@ class GlobalVersionUpdate(Command):
         global_configuration = Configuration.find_project_configuration()
 
         # Update to new global version.
-        with open(global_configuration, "r") as global_configuration_file:
-            configuration = Configuration(
-                global_configuration, json.load(global_configuration_file)
+        configuration = Configuration(global_configuration)
+        old_version = configuration.version
+        if not old_version:
+            LOG.error(
+                "Global configuration at %s has no version field.", global_configuration
             )
-            old_version = configuration.version
-            if not old_version:
-                LOG.error(
-                    "Global configuration at %s has no version field.",
-                    global_configuration,
-                )
-                return
-            configuration.set_version(self._hash)
-            configuration.write()
+            return
+        configuration.set_version(self._hash)
+        configuration.write()
 
         paths = self._paths
         configuration_paths = (
@@ -210,13 +202,8 @@ class FixmeSingle(ProjectErrorSuppressingCommand):
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"
-        with open(configuration_path) as configuration_file:
-            configuration = Configuration(
-                configuration_path, json.load(configuration_file)
-            )
-            self._suppress_errors_in_project(
-                configuration, project_configuration.parent
-            )
+        configuration = Configuration(configuration_path)
+        self._suppress_errors_in_project(configuration, project_configuration.parent)
 
 
 class FixmeAll(ProjectErrorSuppressingCommand):

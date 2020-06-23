@@ -98,7 +98,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
@@ -126,7 +126,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
@@ -155,7 +155,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )

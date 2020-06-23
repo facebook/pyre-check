@@ -19,7 +19,12 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 class Configuration:
-    def __init__(self, path: Path, json_contents: Dict[str, Any]) -> None:
+    def __init__(
+        self, path: Path, json_contents: Optional[Dict[str, Any]] = None
+    ) -> None:
+        if json_contents is None:
+            with open(path, "r") as configuration_file:
+                json_contents = json.load(configuration_file)
         self._path: Path = path
         if path.name == ".pyre_configuration.local":
             self.is_local: bool = True

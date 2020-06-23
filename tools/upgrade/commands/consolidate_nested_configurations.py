@@ -91,18 +91,14 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
     def consolidate(self, topmost: Path, nested: List[Path]) -> None:
         total_targets = []
         for nested_configuration in nested:
-            with open(nested_configuration) as configuration_file:
-                configuration = Configuration(
-                    nested_configuration, json.load(configuration_file)
-                )
-                targets = configuration.targets
-                if targets:
-                    total_targets.extend(targets)
-        with open(topmost) as configuration_file:
-            configuration = Configuration(topmost, json.load(configuration_file))
-            configuration.add_targets(total_targets)
-            configuration.deduplicate_targets()
-            configuration.write()
+            configuration = Configuration(nested_configuration)
+            targets = configuration.targets
+            if targets:
+                total_targets.extend(targets)
+        configuration = Configuration(topmost)
+        configuration.add_targets(total_targets)
+        configuration.deduplicate_targets()
+        configuration.write()
         self._repository.remove_paths(nested)
 
         # Suppress errors

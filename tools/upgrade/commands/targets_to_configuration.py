@@ -185,13 +185,10 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 Amending targets to existing configuration.",
                 configuration_path,
             )
-            with open(configuration_path) as configuration_file:
-                configuration = Configuration(
-                    configuration_path, json.load(configuration_file)
-                )
-                configuration.add_targets(new_targets)
-                configuration.deduplicate_targets()
-                configuration.write()
+            configuration = Configuration(configuration_path)
+            configuration.add_targets(new_targets)
+            configuration.deduplicate_targets()
+            configuration.write()
         else:
             LOG.info("Creating local configuration at %s.", configuration_path)
             configuration_contents = {"targets": new_targets}

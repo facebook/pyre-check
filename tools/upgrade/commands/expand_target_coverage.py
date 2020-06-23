@@ -90,13 +90,10 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             LOG.warning("Could not find a local configuration to codemod.")
             return
         LOG.info("Expanding typecheck targets in `%s`", local_configuration)
-        with open(local_configuration) as configuration_file:
-            configuration = Configuration(
-                local_configuration, json.load(configuration_file)
-            )
-            configuration.add_targets(["//" + str(subdirectory) + "/..."])
-            configuration.deduplicate_targets()
-            configuration.write()
+        configuration = Configuration(local_configuration)
+        configuration.add_targets(["//" + str(subdirectory) + "/..."])
+        configuration.deduplicate_targets()
+        configuration.write()
 
         # Suppress errors
         all_errors = configuration.get_errors()

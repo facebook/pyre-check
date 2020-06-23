@@ -77,8 +77,5 @@ class Fixme(ErrorSuppressingCommand):
 
     def _generate_errors(self) -> Errors:
         configuration_path = Configuration.find_project_configuration()
-        with open(configuration_path) as configuration_file:
-            configuration = Configuration(
-                configuration_path, json.load(configuration_file)
-            )
-            return configuration.get_errors(self._only_fix_error_code)
+        configuration = Configuration(configuration_path)
+        return configuration.get_errors(self._only_fix_error_code)

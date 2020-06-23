@@ -84,9 +84,9 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             }
             open_mock.assert_has_calls(
                 [
-                    call(Path("subdirectory/a/.pyre_configuration.local")),
-                    call(Path("subdirectory/b/.pyre_configuration.local")),
-                    call(Path("subdirectory/.pyre_configuration.local")),
+                    call(Path("subdirectory/a/.pyre_configuration.local"), "r"),
+                    call(Path("subdirectory/b/.pyre_configuration.local"), "r"),
+                    call(Path("subdirectory/.pyre_configuration.local"), "r"),
                     call(Path("subdirectory/.pyre_configuration.local"), "w"),
                 ]
             )
