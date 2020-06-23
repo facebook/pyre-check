@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from ..client.find_directories import find_local_root
-from ..client.json_rpc import JSON, Request, Response
+from ..client.json_rpc import JSON, JSONRPC, Request, Response
 from ..client.resources import get_configuration_value, log_directory
 from ..client.socket_connection import SocketConnection
 
@@ -118,9 +118,10 @@ class AdapterProtocol(asyncio.Protocol):
                 if transport:
                     transport.close()
                 raise AdapterException
-
-        self.socket.output.write(data)
-        self.socket.output.flush()
+            else:
+                request = JSONRPC.from_json(json_body)
+                self.socket.output.write(request.format())
+                self.socket.output.flush()
 
 
 class SocketProtocol(asyncio.Protocol):
