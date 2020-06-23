@@ -681,8 +681,10 @@ class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value="/root"
+        upgrade.Configuration, "find_project_configuration", return_value=Path("/root")
     )
+    @patch.object(upgrade.Configuration, "set_version")
+    @patch.object(upgrade.Configuration, "write")
     @patch.object(
         upgrade.Configuration,
         "gather_local_configurations",
@@ -700,6 +702,8 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         self,
         open_mock,
         gather_local_configurations,
+        configuration_write,
+        configuration_set_version,
         find_project_configuration,
         submit_changes,
         subprocess,
@@ -711,7 +715,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         with patch("json.dump") as dump:
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
-                mock_open(read_data="{}").return_value,
                 mock_open(read_data='{"use_buck_builder": false}').return_value,
                 mock_open(read_data="{}").return_value,
                 mock_open(read_data='{"use_buck_builder": true}').return_value,
@@ -720,18 +723,19 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             open_mock.side_effect = mocks
 
             GlobalVersionUpdate.from_arguments(arguments, repository).run()
+            configuration_set_version.assert_called_once_with("abcd")
+            configuration_write.assert_called_once()
             dump.assert_has_calls(
                 [
-                    call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
                     call(
                         {"use_buck_builder": False, "version": "old"},
-                        mocks[3],
+                        mocks[2],
                         indent=2,
                         sort_keys=True,
                     ),
                     call(
                         {"use_buck_builder": True, "version": "old"},
-                        mocks[5],
+                        mocks[4],
                         indent=2,
                         sort_keys=True,
                     ),
@@ -745,9 +749,11 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 ignore_failures=True,
             )
 
-        # paths passed from arguments will override the local configuration list
+        # Paths passed from arguments will override the local configuration list
         # Therefore, we only read the first json configuration.
         subprocess.reset_mock()
+        configuration_set_version.reset_mock()
+        configuration_write.reset_mock()
         arguments.paths = [Path("foo/bar")]
         arguments.submit = False
         with patch("json.dump") as dump:
@@ -755,16 +761,12 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 mock_open(read_data='{"version": "old"}').return_value,
                 mock_open(read_data="{}").return_value,
                 mock_open(read_data="{}").return_value,
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data="{}").return_value,
-                mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
 
             GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            dump.assert_has_calls(
-                [call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True)]
-            )
+            configuration_set_version.assert_called_once_with("abcd")
+            configuration_write.assert_called_once()
             subprocess.assert_has_calls([])
 
 

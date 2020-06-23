@@ -132,6 +132,9 @@ class Configuration:
             return
         self.version = None
 
+    def set_version(self, version: str) -> None:
+        self.version = version
+
     def add_strict(self) -> None:
         if self.strict:
             LOG.info("Configuration is already strict.")

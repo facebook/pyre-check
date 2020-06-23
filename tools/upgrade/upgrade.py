@@ -77,27 +77,22 @@ class GlobalVersionUpdate(Command):
 
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
+
+        # Update to new global version.
         with open(global_configuration, "r") as global_configuration_file:
-            configuration = json.load(global_configuration_file)
-            if "version" not in configuration:
+            configuration = Configuration(
+                global_configuration, json.load(global_configuration_file)
+            )
+            if not configuration.version:
                 LOG.error(
                     "Global configuration at %s has no version field.",
                     global_configuration,
                 )
                 return
 
-            old_version = configuration["version"]
-
-        # Rewrite.
-        with open(global_configuration, "w") as global_configuration_file:
-            configuration["version"] = self._hash
-
-            # This will sort the keys in the configuration - we won't be clobbering
-            # comments since Python's JSON parser disallows comments either way.
-            json.dump(
-                configuration, global_configuration_file, sort_keys=True, indent=2
-            )
-            global_configuration_file.write("\n")
+            old_version = configuration.version
+            configuration.set_version(self._hash)
+            configuration.write()
 
         paths = self._paths
         configuration_paths = (
