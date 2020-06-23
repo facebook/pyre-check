@@ -106,7 +106,6 @@ class GlobalVersionUpdate(Command):
             else [
                 configuration.get_path()
                 for configuration in Configuration.gather_local_configurations()
-                if configuration.is_local
             ]
         )
         for configuration_path in configuration_paths:

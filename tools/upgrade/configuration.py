@@ -94,12 +94,7 @@ class Configuration:
         configuration_paths = Configuration.gather_local_configuration_paths(".")
         if not configuration_paths:
             LOG.info("No projects with local configurations found.")
-            project_configuration = Configuration.find_project_configuration()
-            if project_configuration:
-                configuration_paths = [project_configuration]
-            else:
-                LOG.error("No project configuration found.")
-                return []
+            return []
         configurations = []
         for configuration_path in configuration_paths:
             with open(configuration_path) as configuration_file:
@@ -114,7 +109,7 @@ class Configuration:
                         configuration_path,
                     )
         LOG.info(
-            "Found %d configuration%s",
+            "Found %d local configuration%s.",
             len(configurations),
             "s" if len(configurations) != 1 else "",
         )
