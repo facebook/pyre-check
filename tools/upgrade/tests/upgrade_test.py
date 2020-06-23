@@ -697,10 +697,12 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             ),
         ],
     )
+    @patch.object(upgrade.Fixme, "run")
     @patch("builtins.open")
     def test_run_global_version_update(
         self,
         open_mock,
+        run_fixme,
         gather_local_configurations,
         configuration_write,
         configuration_set_version,
@@ -739,7 +741,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         configuration_set_version.reset_mock()
         configuration_write.reset_mock()
         arguments.paths = [Path("foo/bar")]
-        arguments.submit = False
         with patch("json.dump"):
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
@@ -751,6 +752,36 @@ class UpdateGlobalVersionTest(unittest.TestCase):
             configuration_set_version.assert_has_calls([call("abcd"), call("old")])
             configuration_write.assert_has_calls([call(), call()])
             subprocess.assert_has_calls([])
+
+        # Run fixme if global version has sources.
+        subprocess.reset_mock()
+        configuration_set_version.reset_mock()
+        configuration_write.reset_mock()
+        submit_changes.reset_mock()
+        arguments.paths = []
+        with patch("json.dump"):
+            mocks = [
+                mock_open(
+                    read_data='{"version": "old", "source_directories": ["source"]}'
+                ).return_value,
+                mock_open(read_data='{"use_buck_builder": false}').return_value,
+                mock_open(read_data='{"use_buck_builder": true}').return_value,
+            ]
+            open_mock.side_effect = mocks
+
+            GlobalVersionUpdate.from_arguments(arguments, repository).run()
+            configuration_set_version.assert_has_calls(
+                [call("abcd"), call("old"), call("old")]
+            )
+            configuration_write.assert_has_calls([call(), call(), call()])
+            run_fixme.assert_called_once()
+            submit_changes.assert_called_once_with(
+                commit=True,
+                submit=False,
+                title="Update pyre global configuration version",
+                summary="Automatic upgrade to hash `abcd`",
+                ignore_failures=True,
+            )
 
 
 class FilterErrorTest(unittest.TestCase):

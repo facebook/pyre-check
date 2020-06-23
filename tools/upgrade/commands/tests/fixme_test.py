@@ -33,7 +33,7 @@ class FixmeTest(unittest.TestCase):
             errors_from_stdin.assert_called_once()
             suppress_errors.assert_called_once_with(mock_errors)
 
-        arguments.error_source = ErrorSource.GENERATE
+        arguments.error_source = "generate"
         arguments.lint = False
 
         with patch.object(

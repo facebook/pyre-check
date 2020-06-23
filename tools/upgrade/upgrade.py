@@ -75,6 +75,56 @@ class GlobalVersionUpdate(Command):
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
+    def _set_local_overrides(
+        self, configuration_paths: List[Path], old_version: str
+    ) -> None:
+        for configuration_path in configuration_paths:
+            if "mock_repository" in str(configuration_path):
+                # Skip local configurations we have for testing.
+                continue
+            with open(configuration_path) as configuration_file:
+                local_configuration = Configuration(
+                    configuration_path, json.load(configuration_file)
+                )
+                if local_configuration.version:
+                    LOG.info(
+                        "Skipping %s as it already has a custom version field.",
+                        configuration_path,
+                    )
+                    continue
+                if local_configuration.differential:
+                    LOG.info(
+                        "Skipping differential configuration at `%s`",
+                        configuration_path,
+                    )
+                    continue
+                local_configuration.set_version(old_version)
+                local_configuration.write()
+
+    def _suppress_global_errors(self, global_configuration: Configuration) -> None:
+        if global_configuration.targets or global_configuration.source_directories:
+            LOG.info("Suppressing errors after upgrading global version.")
+            command_arguments = CommandArguments(
+                comment=None,
+                max_line_length=None,
+                truncate=False,
+                unsafe=False,
+                force_format_unsuppressed=False,
+                lint=True,
+            )
+            fixme_command = Fixme(
+                command_arguments, repository=self._repository, error_source="generate"
+            )
+            fixme_command.run()
+
+        self._repository.submit_changes(
+            commit=True,
+            submit=self._submit,
+            title="Update pyre global configuration version",
+            summary=f"Automatic upgrade to hash `{self._hash}`",
+            ignore_failures=True,
+        )
+
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
 
@@ -102,36 +152,9 @@ class GlobalVersionUpdate(Command):
                 for configuration in Configuration.gather_local_configurations()
             ]
         )
-        for configuration_path in configuration_paths:
-            if "mock_repository" in str(configuration_path):
-                # Skip local configurations we have for testing.
-                continue
-            with open(configuration_path) as configuration_file:
-                local_configuration = Configuration(
-                    configuration_path, json.load(configuration_file)
-                )
-                if local_configuration.version:
-                    LOG.info(
-                        "Skipping %s as it already has a custom version field.",
-                        configuration_path,
-                    )
-                    continue
-                if local_configuration.differential:
-                    LOG.info(
-                        "Skipping differential configuration at `%s`",
-                        configuration_path,
-                    )
-                    continue
-                local_configuration.set_version(old_version)
-                local_configuration.write()
 
-        self._repository.submit_changes(
-            commit=True,
-            submit=self._submit,
-            title="Update pyre global configuration version",
-            summary=f"Automatic upgrade to hash `{self._hash}`",
-            ignore_failures=True,
-        )
+        self._set_local_overrides(configuration_paths, old_version)
+        self._suppress_global_errors(configuration)
 
 
 class FixmeSingle(ProjectErrorSuppressingCommand):
