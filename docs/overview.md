@@ -23,22 +23,22 @@ machine. If you already have a Pyre installation, you can take the
 [Guided Tour](guided_tour.md) to familiarize yourself the basic workflows 
 that we recommend.
 
-The [Configuring Pyre](http://configuration.html/) section contains information 
+The [Configuring Pyre](configuration.md) section contains information 
 on how to customize Pyre to work with your own projects. You can tune Pyre in 
 a number of different ways, depending on how strict you want to be with your 
 types, and how performant you want Pyre to be when run against your source base. 
 
 Pyre includes a number of key features, described in these pages:
 
-* [Gradual Typing](gradual-typing.html) - Not every expression is typed. Pyre 
+* [Gradual Typing](gradual-typing.md) - Not every expression is typed. Pyre 
    allows users to explicitly specify how strict the type checking should be 
    on a per-file basis.
-* [Error Suppression](error-suppression.html) - Pyre will suppress specified 
+* [Error Suppression](error-suppression.md) - Pyre will suppress specified 
    errors, depending on configuration. 
-* [Error Types](error-types.html) - Pyre identifies a number of different error 
+* [Error Types](error-types.md) - Pyre identifies a number of different error 
    types including incompatible variables, behavioral subtyping, missing 
    attributes, and much more. 
-* [Editor Integration](lsp-integration.html) - Pyre integrates with VS Code and 
+* [Editor Integration](lsp-integration.md) - Pyre integrates with VS Code and 
    Nuclide. 
-* [Watchman Integration](watchman-integration.html) - Allows for incremental 
+* [Watchman Integration](watchman-integration.md) - Allows for incremental 
    typechecking using terminal editors such as Vim or Emacs.

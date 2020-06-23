@@ -18,7 +18,7 @@ then you already have the `sapp` binary installed.
 ## Example
 
 This assumes you have followed the
-["Running Pysa" example](./pysa-running.html#example) already.
+["Running Pysa" example](pysa_running.md#example) already.
 
 ### Parsing the JSON
 
