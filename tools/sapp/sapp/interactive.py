@@ -463,7 +463,8 @@ details              show additional information about the current trace frame
         codes: Optional[Union[int, List[int]]] = None,
         callables: Optional[Union[str, List[str]]] = None,
         filenames: Optional[Union[str, List[str]]] = None,
-        features: Optional[Union[str, List[str]]] = None,
+        all_features: Optional[Union[str, List[str]]] = None,
+        any_features: Optional[Union[str, List[str]]] = None,
         exact_trace_length_to_sources: Optional[Union[int, List[int]]] = None,
         exact_trace_length_to_sinks: Optional[Union[int, List[int]]] = None,
         max_trace_length_to_sources: Optional[int] = None,
@@ -476,7 +477,8 @@ details              show additional information about the current trace frame
             codes: int or list[int]        issue codes to filter on
             callables: str or list[str]    callables to filter on (supports wildcards)
             filenames: str or list[str]    filenames to filter on (supports wildcards)
-            features: str or list[str]     features to filter on
+            all_features: str or list[str] features to filter on
+            any_features: str or list[str] features to inclusively filter on
             exact_trace_length_to_sources: int or list[int]
                 exact values for min trace length to sources to filter on
             exact_trace_length_to_sinks: int or list[int]
@@ -619,23 +621,33 @@ details              show additional information about the current trace frame
                 for issue in issues
             ]
 
-            features_set = set()
-            if features:
-                if isinstance(features, list):
-                    features_set = set(features)
-                else:
-                    features_set = {features}
-
             issue_strings = []
+            any_feature_set = set()
+            if any_features:
+                if isinstance(any_features, list):
+                    any_feature_set = set(any_features)
+                else:
+                    any_feature_set = {any_features}
+
+            all_feature_set = set()
+            if all_features:
+                if isinstance(all_features, list):
+                    all_feature_set = set(all_features)
+                else:
+                    all_feature_set = {all_features}
+
             for issue, sources, sinks, features in zip(
                 issues, sources_list, sinks_list, features_list
             ):
-                if (not features_set) or (features_set & features == features_set):
-                    issue_strings.append(
-                        self._create_issue_output_string(
-                            issue, sources, sinks, features
-                        )
-                    )
+                if any_feature_set and not (features & any_feature_set):
+                    continue
+                elif all_feature_set and not (
+                    features & all_feature_set == all_feature_set
+                ):
+                    continue
+                issue_strings.append(
+                    self._create_issue_output_string(issue, sources, sinks, features)
+                )
 
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)
