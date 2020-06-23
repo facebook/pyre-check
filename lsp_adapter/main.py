@@ -57,9 +57,12 @@ def _null_initialize_response(request_id: Optional[Union[str, int]]) -> None:
     response.write(sys.stdout.buffer)
 
 
-def _parse_json_rpc(data: bytes) -> JSON:
-    body = re.sub(r"Content-Length:.+\d*\r\n\r\n", "", data.decode("utf-8"))
-    return json.loads(body)
+def _parse_json_rpc(data: bytes) -> List[JSON]:
+    json_bodies = []
+    for request_data in re.split(r"Content-Length:.+\d*\r\n\r\n", data.decode("utf-8")):
+        if not request_data == "":
+            json_bodies.append(json.loads(request_data))
+    return json_bodies
 
 
 def _should_restart(data: JSON) -> bool:
@@ -95,7 +98,7 @@ class Notifications:
 class NullServerAdapterProtocol(asyncio.Protocol):
     def data_received(self, data: bytes) -> None:
         json_body = _parse_json_rpc(data)
-        _null_initialize_response(json_body["id"])
+        _null_initialize_response(json_body[0]["id"])
 
 
 class AdapterProtocol(asyncio.Protocol):
@@ -108,15 +111,16 @@ class AdapterProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data: bytes) -> None:
-        json_body = _parse_json_rpc(data)
-        if _should_restart(json_body):
-            transport = self.transport
-            if transport:
-                transport.close()
-            raise AdapterException
-        else:
-            self.socket.output.write(data)
-            self.socket.output.flush()
+        json_bodies = _parse_json_rpc(data)
+        for json_body in json_bodies:
+            if _should_restart(json_body):
+                transport = self.transport
+                if transport:
+                    transport.close()
+                raise AdapterException
+
+        self.socket.output.write(data)
+        self.socket.output.flush()
 
 
 class SocketProtocol(asyncio.Protocol):
