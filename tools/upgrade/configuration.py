@@ -35,6 +35,7 @@ class Configuration:
             "source_directories"
         )
         self.version: Optional[str] = json_contents.get("version")
+        self.differential: bool = json_contents.get("differential", False)
 
     def get_contents(self) -> Dict[str, Any]:
         contents: Dict[str, Any] = self.original_contents

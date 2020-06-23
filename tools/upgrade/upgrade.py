@@ -83,14 +83,13 @@ class GlobalVersionUpdate(Command):
             configuration = Configuration(
                 global_configuration, json.load(global_configuration_file)
             )
-            if not configuration.version:
+            old_version = configuration.version
+            if not old_version:
                 LOG.error(
                     "Global configuration at %s has no version field.",
                     global_configuration,
                 )
                 return
-
-            old_version = configuration.version
             configuration.set_version(self._hash)
             configuration.write()
 
@@ -108,24 +107,23 @@ class GlobalVersionUpdate(Command):
                 # Skip local configurations we have for testing.
                 continue
             with open(configuration_path) as configuration_file:
-                contents = json.load(configuration_file)
-                if "version" in contents:
+                local_configuration = Configuration(
+                    configuration_path, json.load(configuration_file)
+                )
+                if local_configuration.version:
                     LOG.info(
                         "Skipping %s as it already has a custom version field.",
                         configuration_path,
                     )
                     continue
-                if contents.get("differential"):
+                if local_configuration.differential:
                     LOG.info(
                         "Skipping differential configuration at `%s`",
                         configuration_path,
                     )
                     continue
-                contents["version"] = old_version
-
-            with open(configuration_path, "w") as configuration_file:
-                json.dump(contents, configuration_file, sort_keys=True, indent=2)
-                configuration_file.write("\n")
+                local_configuration.set_version(old_version)
+                local_configuration.write()
 
         self._repository.submit_changes(
             commit=True,

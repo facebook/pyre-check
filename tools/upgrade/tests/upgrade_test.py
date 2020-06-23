@@ -712,35 +712,19 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         arguments.submit = False
         arguments.hash = "abcd"
         arguments.paths = []
-        with patch("json.dump") as dump:
+        with patch("json.dump"):
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
                 mock_open(read_data='{"use_buck_builder": false}').return_value,
-                mock_open(read_data="{}").return_value,
                 mock_open(read_data='{"use_buck_builder": true}').return_value,
-                mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
 
             GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_version.assert_called_once_with("abcd")
-            configuration_write.assert_called_once()
-            dump.assert_has_calls(
-                [
-                    call(
-                        {"use_buck_builder": False, "version": "old"},
-                        mocks[2],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                    call(
-                        {"use_buck_builder": True, "version": "old"},
-                        mocks[4],
-                        indent=2,
-                        sort_keys=True,
-                    ),
-                ]
+            configuration_set_version.assert_has_calls(
+                [call("abcd"), call("old"), call("old")]
             )
+            configuration_write.assert_has_calls([call(), call(), call()])
             submit_changes.assert_called_once_with(
                 commit=True,
                 submit=False,
@@ -756,17 +740,16 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         configuration_write.reset_mock()
         arguments.paths = [Path("foo/bar")]
         arguments.submit = False
-        with patch("json.dump") as dump:
+        with patch("json.dump"):
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
-                mock_open(read_data="{}").return_value,
                 mock_open(read_data="{}").return_value,
             ]
             open_mock.side_effect = mocks
 
             GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_version.assert_called_once_with("abcd")
-            configuration_write.assert_called_once()
+            configuration_set_version.assert_has_calls([call("abcd"), call("old")])
+            configuration_write.assert_has_calls([call(), call()])
             subprocess.assert_has_calls([])
 
 
