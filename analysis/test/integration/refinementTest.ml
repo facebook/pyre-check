@@ -41,6 +41,22 @@ let test_assert_is_none context =
           self.x = x
 
       class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
+          self.assertIsNotNone(x, 'x should not be None')
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
         def foo(self, iter: typing.List[A]) -> None:
           a = None
           for i in iter:
@@ -88,7 +104,39 @@ let test_assert_is_none context =
         def foo(self) -> None:
           a = A(3)
           x = a.x
+          self.assertTrue(x is not None, "x should not be None")
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
           self.assertFalse(x is None)
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      import typing
+      import unittest
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
+        def foo(self) -> None:
+          a = A(3)
+          x = a.x
+          self.assertFalse(x is None, "x should not be None")
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `int`."];

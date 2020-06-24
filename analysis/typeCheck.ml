@@ -2319,7 +2319,9 @@ module State (Context : Context) = struct
               Node.value = Name (Name.Attribute { attribute = "assertIsNotNone" | "assertTrue"; _ });
               _;
             } as callee;
-          arguments = [{ Call.Argument.value = expression; _ }] as arguments;
+          arguments =
+            ( [{ Call.Argument.value = expression; _ }]
+            | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
         let resolution, resolved, errors =
           let resolution, assume_errors =
@@ -2338,7 +2340,9 @@ module State (Context : Context) = struct
         {
           callee =
             { Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ }); _ } as callee;
-          arguments = [{ Call.Argument.value = expression; _ }] as arguments;
+          arguments =
+            ( [{ Call.Argument.value = expression; _ }]
+            | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
         } ->
         let resolution, resolved, errors =
           let resolution, assume_errors =

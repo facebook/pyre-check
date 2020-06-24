@@ -1331,11 +1331,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "unittest/case.pyi",
       {|
         class TestCase:
-            def assertIsNotNone(self, x: Any) -> Bool:
+            def assertIsNotNone(self, x: Any, msg: Any = ...) -> Bool:
               ...
-            def assertTrue(self, x: Any) -> Bool:
+            def assertTrue(self, x: Any, msg: Any = ...) -> Bool:
               ...
-            def assertFalse(self, x: Any) -> Bool:
+            def assertFalse(self, x: Any, msg: Any = ...) -> Bool:
               ...
         |}
     );
