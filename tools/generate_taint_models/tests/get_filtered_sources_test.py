@@ -10,6 +10,7 @@ import unittest
 from typing import Callable, Iterable, Set
 from unittest.mock import MagicMock, patch
 
+from ..generator_specifications import AllParametersAnnotation
 from ..get_annotated_free_functions_with_decorator import (
     AnnotatedFreeFunctionWithDecoratorGenerator,
 )
@@ -33,18 +34,22 @@ class GetFilteredSourcesTest(unittest.TestCase):
         mock_RESTapi_decorator_generate_models.return_value = {
             CallableModel(
                 testB,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             )
         }
         mock_annotated_decorator_generate_models.return_value = {
             FunctionDefinitionModel(
                 # pyre-ignore: Incompatible parameter type [6]
                 function_definition,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
                 qualifier="tools.pyre.tools.generate_taint_models.tests.test_functions",
             )
         }
@@ -82,24 +87,30 @@ class GetFilteredSourcesTest(unittest.TestCase):
         mock_RESTapi_decorator_generate_models.return_value = {
             CallableModel(
                 testC,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             ),
             CallableModel(
                 testB,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             ),
         }
         mock_annotated_decorator_generate_models.return_value = {
             FunctionDefinitionModel(
                 # pyre-ignore: Incompatible parameter type [6]
                 function_definition,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
                 qualifier="tools.pyre.tools.generate_taint_models.tests.test_functions",
             )
         }
@@ -138,9 +149,11 @@ class GetFilteredSourcesTest(unittest.TestCase):
             mock_RESTapi_decorator_generate_models.return_value = {
                 CallableModel(
                     testB,
-                    arg="TaintSource[UserControlled]",
-                    vararg="TaintSource[UserControlled]",
-                    kwarg="TaintSource[UserControlled]",
+                    parameter_annotation=AllParametersAnnotation(
+                        arg="TaintSource[UserControlled]",
+                        vararg="TaintSource[UserControlled]",
+                        kwarg="TaintSource[UserControlled]",
+                    ),
                 )
             }
             mock_annotated_decorator_generate_models.return_value = {
@@ -184,8 +197,18 @@ class GetFilteredSourcesTest(unittest.TestCase):
 
             def generate_models(self) -> Set[Model]:
                 return {
-                    CallableModel(testB, arg="TaintSource[Super]"),
-                    CallableModel(testC, arg="TaintSource[Super]"),
+                    CallableModel(
+                        testB,
+                        parameter_annotation=AllParametersAnnotation(
+                            arg="TaintSource[Super]"
+                        ),
+                    ),
+                    CallableModel(
+                        testC,
+                        parameter_annotation=AllParametersAnnotation(
+                            arg="TaintSource[Super]"
+                        ),
+                    ),
                 }
 
         class SubsetGenerator(ModelGenerator):
@@ -198,7 +221,14 @@ class GetFilteredSourcesTest(unittest.TestCase):
                 return []
 
             def generate_models(self) -> Set[Model]:
-                return {CallableModel(testC, arg="TaintSource[Subset]")}
+                return {
+                    CallableModel(
+                        testC,
+                        parameter_annotation=AllParametersAnnotation(
+                            arg="TaintSource[Subset]"
+                        ),
+                    )
+                }
 
         self.assertEqual(
             [

@@ -8,7 +8,11 @@
 from typing import Callable, Iterable, List, Optional, Set
 
 from ...api import query
-from .generator_specifications import AnnotationSpecification, WhitelistSpecification
+from .generator_specifications import (
+    AllParametersAnnotation,
+    AnnotationSpecification,
+    WhitelistSpecification,
+)
 from .inspect_parser import extract_qualified_name
 from .model import CallableModel, PyreFunctionDefinitionModel
 
@@ -32,7 +36,11 @@ def taint_callable_functions(
             continue
         try:
             annotations = annotations or AnnotationSpecification(
-                arg=taint_annotation, vararg=taint_annotation, kwarg=taint_annotation
+                parameter_annotation=AllParametersAnnotation(
+                    arg=taint_annotation,
+                    vararg=taint_annotation,
+                    kwarg=taint_annotation,
+                )
             )
             whitelist = whitelist or WhitelistSpecification(
                 parameter_type=set(whitelisted_classes),

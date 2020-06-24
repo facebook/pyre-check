@@ -8,6 +8,7 @@ import ast
 import unittest
 from unittest.mock import MagicMock, patch
 
+from ..generator_specifications import AllParametersAnnotation
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from ..get_undecorated_sources import (
     UndecoratedSourceGenerator,
@@ -34,21 +35,27 @@ class GetUndecoratedSourcesTest(unittest.TestCase):
         mock_RESTapi_decorator_generate_models.return_value = {
             CallableModel(
                 testA,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             ),
             CallableModel(
                 testB,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             ),
             CallableModel(
                 TestClass().methodA,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
             ),
         }
         generator_instance = MagicMock()
@@ -56,9 +63,11 @@ class GetUndecoratedSourcesTest(unittest.TestCase):
             FunctionDefinitionModel(
                 # pyre-ignore: Incompatible parameter type [6]
                 ast.parse("def testA(): pass").body[0],
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
+                parameter_annotation=AllParametersAnnotation(
+                    arg="TaintSource[UserControlled]",
+                    vararg="TaintSource[UserControlled]",
+                    kwarg="TaintSource[UserControlled]",
+                ),
                 qualifier="tools.pyre.tools.generate_taint_models.tests.test_functions",
             )
         }

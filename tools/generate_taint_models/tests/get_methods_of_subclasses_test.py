@@ -8,7 +8,11 @@ from unittest.mock import MagicMock, patch
 
 from ....api import query
 from .. import get_methods_of_subclasses
-from ..generator_specifications import AnnotationSpecification, WhitelistSpecification
+from ..generator_specifications import (
+    AllParametersAnnotation,
+    AnnotationSpecification,
+    WhitelistSpecification,
+)
 
 
 class MethodsOfSubclassesGeneratorTest(unittest.TestCase):
@@ -20,7 +24,8 @@ class MethodsOfSubclassesGeneratorTest(unittest.TestCase):
         self, get_all_subclass_defines_from_pyre_mock: MagicMock
     ) -> None:
         annotations = AnnotationSpecification(
-            arg="ArgAnnotation", returns="ReturnAnnotation"
+            parameter_annotation=AllParametersAnnotation(arg="ArgAnnotation"),
+            returns="ReturnAnnotation",
         )
         whitelist = WhitelistSpecification(parameter_name={"ignored_arg"})
         generator = get_methods_of_subclasses.MethodsOfSubclassesGenerator(

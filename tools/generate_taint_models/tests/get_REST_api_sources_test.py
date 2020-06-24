@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from ..generator_specifications import (
+    AllParametersAnnotation,
     AnnotationSpecification,
     WhitelistSpecification,
     default_entrypoint_taint,
@@ -20,7 +21,7 @@ from .test_functions import __name__ as qualifier, all_functions
 class GetRESTApiSourcesTest(unittest.TestCase):
     def test_compute_models(self) -> None:
         # Test with default arguments
-        source = default_entrypoint_taint.arg
+        source = "TaintSource[UserControlled]"
         sink = default_entrypoint_taint.returns
         self.assertEqual(
             [
@@ -79,7 +80,10 @@ class GetRESTApiSourcesTest(unittest.TestCase):
                     RESTApiSourceGenerator(
                         django_urls=MagicMock(),
                         annotations=AnnotationSpecification(
-                            arg="Arg", vararg="VarArg", kwarg="KWArg", returns="Returns"
+                            parameter_annotation=AllParametersAnnotation(
+                                arg="Arg", vararg="VarArg", kwarg="KWArg"
+                            ),
+                            returns="Returns",
                         ),
                     ).compute_models(all_functions),
                 )

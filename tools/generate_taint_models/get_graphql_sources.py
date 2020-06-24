@@ -9,6 +9,7 @@ import os
 from importlib import import_module
 from typing import Any, Callable, Iterable, List, Type, Union
 
+from .generator_specifications import AllParametersAnnotation
 from .model import CallableModel
 from .model_generator import ModelGenerator
 
@@ -81,8 +82,10 @@ class GraphQLSourceGenerator(ModelGenerator[CallableModel]):
             try:
                 model = CallableModel(
                     callable_object=view_function,
-                    vararg=self.args_taint_annotation,
-                    kwarg=self.args_taint_annotation,
+                    parameter_annotation=AllParametersAnnotation(
+                        vararg=self.args_taint_annotation,
+                        kwarg=self.args_taint_annotation,
+                    ),
                     returns=self.return_taint_annotation,
                 )
                 graphql_models.add(model)

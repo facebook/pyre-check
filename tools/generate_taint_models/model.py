@@ -17,7 +17,12 @@ import _ast
 from typing_extensions import Final
 
 from ...api import query
-from .generator_specifications import AnnotationSpecification, WhitelistSpecification
+from .generator_specifications import (
+    AnnotationSpecification,
+    ArgumentKind,
+    ParameterAnnotation,
+    WhitelistSpecification,
+)
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
 
 
@@ -37,12 +42,6 @@ class Model(abc.ABC):
     @abc.abstractmethod
     def __hash__(self) -> int:
         ...
-
-
-class ArgumentKind(Enum):
-    ARG = auto()
-    VARARG = auto()
-    KWARG = auto()
 
 
 class Parameter(NamedTuple):
@@ -65,9 +64,7 @@ class RawCallableModel(Model):
 
     def __init__(
         self,
-        arg: Optional[str] = None,
-        vararg: Optional[str] = None,
-        kwarg: Optional[str] = None,
+        parameter_annotation: Optional[ParameterAnnotation] = None,
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
@@ -78,7 +75,7 @@ class RawCallableModel(Model):
             self.annotations = annotations
         else:
             self.annotations = AnnotationSpecification(
-                arg=arg, vararg=vararg, kwarg=kwarg, returns=returns
+                parameter_annotation=parameter_annotation, returns=returns
             )
 
         if whitelist:
@@ -112,30 +109,29 @@ class RawCallableModel(Model):
 
         name_whitelist = self.whitelist.parameter_name
         type_whitelist = self.whitelist.parameter_type
-        for parameter_name, annotation, kind in self.parameters:
+        for parameter in self.parameters:
             should_annotate = True
-            if name_whitelist is not None and parameter_name in name_whitelist:
+            if name_whitelist is not None and parameter.name in name_whitelist:
                 should_annotate = False
 
-            if type_whitelist is not None and annotation in type_whitelist:
+            if type_whitelist is not None and parameter.annotation in type_whitelist:
                 should_annotate = False
 
             if should_annotate:
-                if kind == ArgumentKind.KWARG:
-                    taint = self.annotations.kwarg
-                elif kind == ArgumentKind.VARARG:
-                    taint = self.annotations.vararg
-                else:  # kind == ArgumentKind.ARG:
-                    taint = self.annotations.arg
+                parameter_annotation = self.annotations.parameter_annotation
+                if parameter_annotation is not None:
+                    taint = parameter_annotation.get(parameter)
+                else:
+                    taint = None
             else:
                 taint = None
 
             # * parameters indicate kwargs after the parameter position, and can't be
             # tainted. Example: `def foo(x, *, y): ...`
-            if parameter_name != "*" and taint:
-                serialized_parameters.append(f"{parameter_name}: {taint}")
+            if parameter.name != "*" and taint:
+                serialized_parameters.append(f"{parameter.name}: {taint}")
             else:
-                serialized_parameters.append(parameter_name)
+                serialized_parameters.append(parameter.name)
 
         returns = self.annotations.returns
         if returns:
@@ -175,9 +171,7 @@ class CallableModel(RawCallableModel):
     def __init__(
         self,
         callable_object: Callable[..., object],
-        arg: Optional[str] = None,
-        vararg: Optional[str] = None,
-        kwarg: Optional[str] = None,
+        parameter_annotation: Optional[ParameterAnnotation] = None,
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
@@ -186,9 +180,7 @@ class CallableModel(RawCallableModel):
     ) -> None:
         self.callable_object = callable_object
         super().__init__(
-            arg=arg,
-            vararg=vararg,
-            kwarg=kwarg,
+            parameter_annotation=parameter_annotation,
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
@@ -232,9 +224,7 @@ class FunctionDefinitionModel(RawCallableModel):
         self,
         definition: FunctionDefinition,
         qualifier: Optional[str] = None,
-        arg: Optional[str] = None,
-        vararg: Optional[str] = None,
-        kwarg: Optional[str] = None,
+        parameter_annotation: Optional[ParameterAnnotation] = None,
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
@@ -244,9 +234,7 @@ class FunctionDefinitionModel(RawCallableModel):
         self.definition = definition
         self.qualifier = qualifier
         super().__init__(
-            arg=arg,
-            vararg=vararg,
-            kwarg=kwarg,
+            parameter_annotation=parameter_annotation,
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
@@ -323,9 +311,7 @@ class PyreFunctionDefinitionModel(RawCallableModel):
     def __init__(
         self,
         definition: query.Define,
-        arg: Optional[str] = None,
-        vararg: Optional[str] = None,
-        kwarg: Optional[str] = None,
+        parameter_annotation: Optional[ParameterAnnotation] = None,
         returns: Optional[str] = None,
         parameter_type_whitelist: Optional[Iterable[str]] = None,
         parameter_name_whitelist: Optional[Set[str]] = None,
@@ -334,9 +320,7 @@ class PyreFunctionDefinitionModel(RawCallableModel):
     ) -> None:
         self.definition = definition
         super().__init__(
-            arg=arg,
-            vararg=vararg,
-            kwarg=kwarg,
+            parameter_annotation=parameter_annotation,
             returns=returns,
             parameter_type_whitelist=parameter_type_whitelist,
             parameter_name_whitelist=parameter_name_whitelist,
