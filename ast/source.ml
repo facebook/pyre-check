@@ -301,20 +301,8 @@ let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
 let statements { statements; _ } = statements
 
 let top_level_define
-    {
-      source_path = { SourcePath.qualifier; _ };
-      top_level_unbound_names;
-      statements;
-      metadata = { Metadata.version; _ };
-      _;
-    }
+    { source_path = { SourcePath.qualifier; _ }; top_level_unbound_names; statements; _ }
   =
-  let statements =
-    if version < 3 then
-      []
-    else
-      statements
-  in
   Statement.Define.create_toplevel
     ~qualifier:(Some qualifier)
     ~unbound_names:top_level_unbound_names

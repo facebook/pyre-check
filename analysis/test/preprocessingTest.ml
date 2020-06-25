@@ -4312,6 +4312,15 @@ let test_populate_unbound_names _ =
           pass
     |}
     ~expected:[class_foo_toplevel_name, []];
+
+  (* Test that the pass does not nuke Python2 sources. *)
+  assert_unbound_names
+    {|
+      #!/usr/bin/env python2
+      def foo() -> None:
+        derp
+    |}
+    ~expected:[!&"foo", ["derp", location (4, 2) (4, 6)]];
   ()
 
 
