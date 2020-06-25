@@ -28,20 +28,13 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
-  let diagnostic_severity error =
-    let kind = AnalysisError.Instantiated.kind error in
-    match AnalysisError.language_server_hint kind with
-    | true -> Some DiagnosticSeverity.Information
-    | false -> Some DiagnosticSeverity.Error
-
-
   let of_errors path errors =
     let diagnostic_of_error error =
       let { Ast.Location.WithPath.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
       Diagnostic.
         {
           range = Range.create ~start ~stop;
-          severity = diagnostic_severity error;
+          severity = Some DiagnosticSeverity.Error;
           code = None;
           source = Some "Pyre";
           message =

@@ -780,9 +780,7 @@ let test_suppress _ =
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Any);
   assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
-  assert_not_suppressed Source.Unsafe (missing_return Type.integer);
   assert_suppressed Source.Unsafe (missing_return Type.Top);
-  assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.float);
 
   (* Should not be made *)
   assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.Any);

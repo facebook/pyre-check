@@ -3175,12 +3175,6 @@ let suppress ~mode ~ignore_codes error =
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
         true
     | MissingCaptureAnnotation _ -> true
-    | MissingReturnAnnotation { annotation = Some annotation; _ }
-    | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
-    | MissingParameterAnnotation { annotation = Some annotation; _ }
-    | MissingGlobalAnnotation { annotation = Some annotation; _ }
-      when Type.is_concrete annotation ->
-        false
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
@@ -3591,12 +3585,3 @@ let create_mismatch ~resolution ~actual ~expected ~covariant =
     actual;
     due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
   }
-
-
-let language_server_hint = function
-  | MissingReturnAnnotation _
-  | MissingAttributeAnnotation _
-  | MissingParameterAnnotation _
-  | MissingGlobalAnnotation _ ->
-      true
-  | _ -> false

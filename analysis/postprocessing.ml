@@ -108,8 +108,7 @@ let add_local_mode_errors
 
 
 let filter_errors
-    ~configuration:
-      ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
+    ~configuration
     ~global_resolution
     ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
     errors_by_define
@@ -119,13 +118,7 @@ let filter_errors
     let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
     List.filter ~f:keep_error errors
   in
-  let filter_hints errors =
-    match mode with
-    | Unsafe when (not include_hints) || not click_to_fix ->
-        List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
-    | _ -> errors
-  in
-  List.map errors_by_define ~f:(fun errors -> filter errors |> filter_hints)
+  List.map errors_by_define ~f:(fun errors -> filter errors)
   |> List.concat_map ~f:(Error.join_at_define ~resolution:global_resolution)
   |> Error.join_at_source ~resolution:global_resolution
 

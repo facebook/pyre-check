@@ -392,5 +392,3 @@ val create_mismatch
   expected:Type.t ->
   covariant:bool ->
   mismatch
-
-val language_server_hint : kind -> bool
