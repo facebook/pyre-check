@@ -19,11 +19,15 @@ from .exceptions import EnvironmentException
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def assert_readable_directory(directory: str) -> None:
+def assert_readable_directory(directory: str, error_message_prefix: str = "") -> None:
     if not os.path.isdir(directory):
-        raise EnvironmentException("{} is not a valid directory.".format(directory))
+        raise EnvironmentException(
+            f"{error_message_prefix}`{directory}` is not a valid directory."
+        )
     if not os.access(directory, os.R_OK):
-        raise EnvironmentException("{} is not a readable directory.".format(directory))
+        raise EnvironmentException(
+            f"{error_message_prefix}`{directory}` is not a readable directory."
+        )
 
 
 def readable_directory(directory: str) -> str:

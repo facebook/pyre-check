@@ -361,7 +361,10 @@ class Configuration:
 
             # Validate elements of the search path.
             for element in self._search_path:
-                assert_readable_directory(element.path())
+                assert_readable_directory(
+                    element.path(),
+                    error_message_prefix="Invalid search_path in configuration: ",
+                )
 
             if not is_list_of_strings(self.other_critical_files):
                 raise InvalidConfiguration(
