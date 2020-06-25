@@ -26,7 +26,6 @@ module Metadata : sig
     unused_local_modes: local_mode Node.t list;
     ignore_codes: int list;
     ignore_lines: Ignore.t list;
-    version: int;
     number_of_lines: int;
     raw_hash: int;
   }
@@ -40,7 +39,6 @@ module Metadata : sig
     ?unused_local_modes:local_mode Node.t list ->
     ?ignore_codes:int list ->
     ?ignore_lines:Ignore.t list ->
-    ?version:int ->
     ?raw_hash:int ->
     ?number_of_lines:int ->
     unit ->
