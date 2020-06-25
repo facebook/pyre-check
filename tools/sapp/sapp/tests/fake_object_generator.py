@@ -44,6 +44,7 @@ class FakeObjectGenerator:
         filename="/r/lib/server/posts/request.py",
         callable="lib.server.posts.request.new_post_request",
         handle=None,
+        code=None,
     ):
         self.handle += 1
         now = datetime.datetime.now()
@@ -52,7 +53,7 @@ class FakeObjectGenerator:
             handle=str(self.handle) if not handle else handle,
             callable_line=1,
             message="Tainted information may eventually flow...",
-            code=6015 + self.handle,
+            code=code or (6015 + self.handle),
             filename=filename,
             callable=callable,
             first_seen=now,
