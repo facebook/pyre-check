@@ -57,35 +57,9 @@ class AllParametersAnnotation(ParameterAnnotation):
             return self.kwarg
 
 
-class AnnotationSpecificationBase(NamedTuple):
+class AnnotationSpecification(NamedTuple):
     parameter_annotation: Optional[ParameterAnnotation] = None
     returns: Optional[str] = None
-
-
-class AnnotationSpecification(AnnotationSpecificationBase):
-    """This class is inheriting from AnnotationSpecificationBase as NamedTuple's don't
-    allow you to override new. The hackery exists for backwards compatibility."""
-
-    def __new__(
-        cls,
-        arg: Optional[str] = None,
-        vararg: Optional[str] = None,
-        kwarg: Optional[str] = None,
-        parameter_annotation: Optional[ParameterAnnotation] = None,
-        returns: Optional[str] = None,
-    ) -> "AnnotationSpecification":
-        if parameter_annotation is None and (
-            arg is not None or vararg is not None or kwarg is not None
-        ):
-            parameter_annotation = AllParametersAnnotation(
-                arg=arg, kwarg=kwarg, vararg=vararg
-            )
-        # pyre-ignore[7]: Lying to the type checker, as this morally belongs to the base
-        #  class, and we'd rather not have the consumers know about
-        #  AnnotationSpecificationBase.
-        return super().__new__(
-            cls, parameter_annotation=parameter_annotation, returns=returns
-        )
 
 
 class WhitelistSpecification(NamedTuple):
