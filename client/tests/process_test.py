@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import psutil
 
 from .. import process
-from ..process import _register, get_process, get_processes
+from ..process import Process
 
 
 class ProcessTest(unittest.TestCase):
@@ -28,7 +28,7 @@ class ProcessTest(unittest.TestCase):
     ) -> None:
         pid = 123
         pid_path = Path("/root/foo-123.pid")
-        with _register(pid, pid_path):
+        with Process._register(pid, pid_path):
             make_directory.assert_called_once_with(parents=True, exist_ok=True)
             write_text.assert_called_once_with("123")
         remove_if_exists.assert_called_once_with(str(pid_path))
@@ -46,7 +46,7 @@ class ProcessTest(unittest.TestCase):
     ) -> None:
         pid = 123
         pid_path = Path("/root/foo-123.pid")
-        with self.assertRaises(Exception), _register(pid, pid_path):
+        with self.assertRaises(Exception), Process._register(pid, pid_path):
             raise Exception
         remove_if_exists.assert_called_once_with(str(pid_path))
 
@@ -55,7 +55,7 @@ class ProcessTest(unittest.TestCase):
     @patch.object(psutil, "Process")
     @patch.object(Path, "read_text", return_value="123")
     def test_get_process(self, read_text: MagicMock, process_class: MagicMock) -> None:
-        process = get_process("/root/some-monitor.pid")
+        process = Process.get_process("/root/some-monitor.pid")
         process_class.assert_called_once_with(123)
         self.assertIsNotNone(process)
 
@@ -70,7 +70,7 @@ class ProcessTest(unittest.TestCase):
             raise FileNotFoundError
 
         read_text.side_effect = failed_read_text
-        process = get_process("/root/non-existent.pid")
+        process = Process.get_process("/root/non-existent.pid")
         process_class.assert_not_called()
         self.assertIsNone(process)
 
@@ -85,17 +85,17 @@ class ProcessTest(unittest.TestCase):
             raise psutil.Error
 
         process_class.side_effect = failed_process_instance
-        process = get_process("/root/failed-process.pid")
+        process = Process.get_process("/root/failed-process.pid")
         self.assertIsNone(process)
         process_class.assert_called_once_with(123)
 
+    # pyre-fixme[56]: Argument `psutil` to decorator factory
+    #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(psutil, "Process")
     @patch.object(
         Path, "glob", return_value=["foo-123.pid", "foo-456.pid", "foo-789.pid"]
     )
-    # pyre-fixme[56]: Argument `tools.pyre.client.process` to decorator factory
-    #  `unittest.mock.patch.object` could not be resolved in a global scope.
-    @patch.object(process, "get_process")
+    @patch.object(Process, "get_process")
     def test_get_processes(
         self, get_process: MagicMock, glob: MagicMock, process_class: MagicMock
     ) -> None:
@@ -105,7 +105,7 @@ class ProcessTest(unittest.TestCase):
             return psutil.Process(123)
 
         get_process.side_effect = _get_process
-        processes = get_processes(name="foo", log_directory="/root/")
+        processes = Process.get_processes(name="foo", log_directory="/root/")
         glob.assert_called_once_with("foo-*.pid")
         self.assertEqual(len(processes), 2)
         self.assertNotIn(None, processes)

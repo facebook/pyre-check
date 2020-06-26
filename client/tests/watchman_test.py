@@ -12,6 +12,7 @@ from typing import Generator, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import watchman
+from ..process import Process
 from ..watchman import Subscriber
 
 
@@ -24,7 +25,7 @@ def send_sigint_to_self(
 
 
 class SubscriberTest(unittest.TestCase):
-    @patch.object(watchman, "register_unique_process")
+    @patch.object(Process, "register_unique_process")
     @patch.object(watchman, "remove_if_exists")
     @patch.object(watchman, "acquire_lock")
     @patch.object(sys, "exit")

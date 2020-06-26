@@ -31,7 +31,7 @@ from ..find_directories import (
     find_project_root,
 )
 from ..log import StreamLogger
-from ..process import register_non_unique_process
+from ..process import Process
 from ..resources import LOG_DIRECTORY, find_log_directory
 from ..socket_connection import SocketConnection, SocketException
 
@@ -746,7 +746,7 @@ class Command(CommandParser, ABC):
             # pyre-fixme[6]: Expected `Iterable[str]` for 1st param but got
             #  `Optional[IO[typing.Any]]`.
             with StreamLogger(process.stderr) as stream_logger:
-                with register_non_unique_process(
+                with Process.register_non_unique_process(
                     process.pid, self.NAME, self.log_directory
                 ):
                     # Wait for the process to finish and clean up.
