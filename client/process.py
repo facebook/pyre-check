@@ -71,3 +71,14 @@ class Process:
         return list(
             filter(None, (Process.get_process(str(path)) for path in process_paths))
         )
+
+    @staticmethod
+    def is_alive(pid_path: Path) -> bool:
+        process = Process.get_process(str(pid_path))
+        if not process:
+            return False
+        try:
+            return process.is_running()
+        except psutil.Error as exception:
+            LOG.debug(f"Exception when checking if process was alive: `{exception}`")
+            return False

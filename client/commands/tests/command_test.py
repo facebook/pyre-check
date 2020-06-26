@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory
+from ...process import Process
 from ...tests.mocks import mock_arguments, mock_configuration
 from ..command import __name__ as client_name
 
@@ -42,29 +43,31 @@ class CommandTest(unittest.TestCase):
             ".",
         )
 
-    @patch("os.kill")
-    def test_state(self, os_kill) -> None:
+    @patch.object(Process, "is_alive", return_value=True)
+    def test_state__alive(self, is_alive: MagicMock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
         original_directory = "/original/directory"
+        self.assertEqual(
+            commands.Command(
+                arguments, original_directory, configuration, analysis_directory
+            )._state(),
+            commands.command.State.RUNNING,
+        )
 
-        with patch("builtins.open", mock_open()) as open:
-            open.side_effect = [io.StringIO("1")]
-            self.assertEqual(
-                commands.Command(
-                    arguments, original_directory, configuration, AnalysisDirectory(".")
-                )._state(),
-                commands.command.State.RUNNING,
-            )
-
-        with patch("builtins.open", mock_open()) as open:
-            open.side_effect = [io.StringIO("derp")]
-            self.assertEqual(
-                commands.Command(
-                    arguments, original_directory, configuration, AnalysisDirectory(".")
-                )._state(),
-                commands.command.State.DEAD,
-            )
+    @patch.object(Process, "is_alive", return_value=False)
+    def test_state__dead(self, is_alive: MagicMock) -> None:
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+        original_directory = "/original/directory"
+        self.assertEqual(
+            commands.Command(
+                arguments, original_directory, configuration, analysis_directory
+            )._state(),
+            commands.command.State.DEAD,
+        )
 
     @patch("{}.find_project_root".format(client_name), return_value=".")
     # pyre-fixme[56]: Argument

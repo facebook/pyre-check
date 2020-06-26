@@ -109,3 +109,20 @@ class ProcessTest(unittest.TestCase):
         glob.assert_called_once_with("foo-*.pid")
         self.assertEqual(len(processes), 2)
         self.assertNotIn(None, processes)
+
+    @patch.object(Path, "read_text")
+    @patch.object(psutil.Process, "is_running", return_value=True)
+    def test_is_alive(self, is_running: MagicMock, read_text: MagicMock) -> None:
+        self.assertTrue(Process.is_alive(Path("foo.pid")))
+
+    @patch.object(Path, "read_text")
+    @patch.object(psutil.Process, "is_running", return_value=False)
+    def test_is_alive__dead(self, is_running: MagicMock, read_text: MagicMock) -> None:
+        self.assertFalse(Process.is_alive(Path("foo.pid")))
+
+    @patch.object(Path, "read_text")
+    @patch.object(psutil.Process, "is_running", side_effect=psutil.Error)
+    def test_is_alive__exception(
+        self, is_running: MagicMock, read_text: MagicMock
+    ) -> None:
+        self.assertFalse(Process.is_alive(Path("foo.pid")))

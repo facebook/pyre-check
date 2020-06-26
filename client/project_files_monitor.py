@@ -6,6 +6,7 @@
 
 import functools
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Sequence, Set
 
 from . import json_rpc, watchman
@@ -13,6 +14,7 @@ from .analysis_directory import AnalysisDirectory
 from .buck import BuckException
 from .configuration import Configuration
 from .filesystem import find_root
+from .process import Process
 from .socket_connection import SocketConnection
 
 # We use the `LOG` from watchman due to its better formatting in log files
@@ -93,19 +95,6 @@ class ProjectFilesMonitor(Subscriber):
     def base_path(configuration: Configuration) -> str:
         return os.path.join(configuration.log_directory, ProjectFilesMonitor.NAME)
 
-    @staticmethod
-    def is_alive(configuration: Configuration) -> bool:
-        pid_path = watchman.compute_pid_path(
-            ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
-        )
-        try:
-            with open(pid_path) as file:
-                pid = int(file.read())
-                os.kill(pid, 0)  # throws if process is not running
-            return True
-        except Exception:
-            return False
-
     def _handle_response(self, response: Dict[str, Any]) -> None:
         try:
             absolute_paths = [
@@ -165,7 +154,10 @@ class ProjectFilesMonitor(Subscriber):
         current_directory: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        if ProjectFilesMonitor.is_alive(configuration):
+        pid_path = watchman.compute_pid_path(
+            ProjectFilesMonitor.base_path(configuration), ProjectFilesMonitor.NAME
+        )
+        if Process.is_alive(Path(pid_path)):
             return
         LOG.debug("File monitor is not running.")
         try:

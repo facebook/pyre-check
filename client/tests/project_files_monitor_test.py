@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 from .. import json_rpc, project_files_monitor
 from ..analysis_directory import AnalysisDirectory, UpdatedPaths
 from ..json_rpc import Request, read_request
+from ..process import Process
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from ..socket_connection import SocketConnection, SocketException
 from ..tests.mocks import mock_configuration
@@ -235,7 +236,7 @@ class MonitorTest(unittest.TestCase):
 
     @patch.object(ProjectFilesMonitor, "daemonize")
     @patch.object(ProjectFilesMonitor, "__init__", return_value=False)
-    @patch.object(ProjectFilesMonitor, "is_alive", return_value=True)
+    @patch.object(Process, "is_alive", return_value=True)
     def test_restart_if_dead_when_alive(
         self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
     ) -> None:
@@ -248,7 +249,7 @@ class MonitorTest(unittest.TestCase):
 
     @patch.object(ProjectFilesMonitor, "daemonize")
     @patch.object(ProjectFilesMonitor, "__init__", return_value=None)
-    @patch.object(ProjectFilesMonitor, "is_alive", return_value=False)
+    @patch.object(Process, "is_alive", return_value=False)
     def test_restart_if_dead_when_dead(
         self, is_alive: MagicMock, constructor: MagicMock, daemonize: MagicMock
     ) -> None:

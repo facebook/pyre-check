@@ -770,14 +770,8 @@ class Command(CommandParser, ABC):
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(self._log_directory, "server/server.pid")
-        try:
-            with open(pid_path) as file:
-                pid = int(file.read())
-                os.kill(pid, 0)  # throws if process is not running
-            return State.RUNNING
-        except Exception:
-            return State.DEAD
+        pid_path = Path(self._log_directory, "server/server.pid")
+        return State.RUNNING if Process.is_alive(pid_path) else State.DEAD
 
     # will open a socket, send a request, read the response and close the socket.
     def _send_and_handle_socket_request(
