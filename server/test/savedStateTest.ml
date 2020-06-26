@@ -67,7 +67,11 @@ let test_restore_symbolic_links context =
       ];
   assert_restored
     ~names:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
-    ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
+    ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"];
+
+  (* Do not drop paths even if they might not correspond to an old link. *)
+  assert_restored ~names:[path "nonexist.py"] ~expected:[path "nonexist.py"];
+  ()
 
 
 type locally_changed_file = {

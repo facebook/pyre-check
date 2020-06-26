@@ -72,7 +72,9 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
   (* We need to get the deleted paths from shared memory, as the version of the server launched from
      the saved state will have references to this files, whereas they won't be present in the new
      project root, meaning that we need to clean up the environment from them. *)
-  let removed_paths = List.filter_map removed_paths ~f:get_old_link_path in
+  let removed_paths =
+    List.map removed_paths ~f:(fun path -> get_old_link_path path |> Option.value ~default:path)
+  in
   (* Any member of new_paths might not have existed when the saved state was being created. *)
   let new_paths =
     let local_root_links =
