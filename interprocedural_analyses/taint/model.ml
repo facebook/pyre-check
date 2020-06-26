@@ -148,6 +148,15 @@ let get_global_tito_model ~resolution ~expression =
   get_global_model ~resolution ~expression >>| to_tito
 
 
+let global_is_sanitized ~resolution ~expression =
+  let is_sanitized (_, { model = { TaintResult.mode; _ }; _ }) =
+    match mode with
+    | TaintResult.Sanitize -> true
+    | _ -> false
+  in
+  get_global_model ~resolution ~expression >>| is_sanitized |> Option.value ~default:false
+
+
 let get_model_sources ~paths =
   let path_and_content file =
     match File.content file with

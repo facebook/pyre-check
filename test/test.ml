@@ -1105,11 +1105,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |}
     );
     "builtins.pyi", builtins;
-    ( "django/http.pyi",
+    ( "django/http/__init__.pyi",
       {|
-        class HttpRequest: ...
+        from django.http.request import HttpRequest as HttpRequest
+
         class HttpResponse: ...
         class Request:
+          GET: typing.Dict[str, typing.Any] = ...
+          POST: typing.Dict[str, typing.Any] = ...
+        |}
+    );
+    ( "django/http/request.pyi",
+      {|
+        class HttpRequest:
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
         |}

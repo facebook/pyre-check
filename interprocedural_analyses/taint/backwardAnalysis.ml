@@ -1028,28 +1028,36 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Statement.Assign { value = { Node.value = Expression.Ellipsis; _ }; _ } -> state
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
         -> (
-          match target_value with
-          | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-              let property_targets =
-                Interprocedural.CallResolution.resolve_property_targets
-                  ~resolution
-                  ~base
-                  ~attribute
-                  ~setter:true
-              in
-              match property_targets with
-              | Some targets ->
-                  let arguments = [{ Call.Argument.value; name = None }] in
-                  apply_call_targets
+          let target_is_sanitized =
+            match target_value with
+            | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
+            | _ -> false
+          in
+          if target_is_sanitized then
+            analyze_expression ~resolution ~taint:BackwardState.Tree.bottom ~state ~expression:value
+          else
+            match target_value with
+            | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+                let property_targets =
+                  Interprocedural.CallResolution.resolve_property_targets
                     ~resolution
-                    ~call_expression:(Expression.Call { Call.callee = target; arguments })
-                    location
-                    arguments
-                    state
-                    BackwardState.Tree.bottom
-                    targets
-              | None -> analyze_assignment ~resolution ~target ~value state )
-          | _ -> analyze_assignment ~resolution ~target ~value state )
+                    ~base
+                    ~attribute
+                    ~setter:true
+                in
+                match property_targets with
+                | Some targets ->
+                    let arguments = [{ Call.Argument.value; name = None }] in
+                    apply_call_targets
+                      ~resolution
+                      ~call_expression:(Expression.Call { Call.callee = target; arguments })
+                      location
+                      arguments
+                      state
+                      BackwardState.Tree.bottom
+                      targets
+                | None -> analyze_assignment ~resolution ~target ~value state )
+            | _ -> analyze_assignment ~resolution ~target ~value state )
       | Assert _
       | Break
       | Class _

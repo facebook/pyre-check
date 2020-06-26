@@ -1192,33 +1192,43 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> state )
       | Statement.Assign { target = { Node.location; value = target_value } as target; value; _ }
         -> (
-          match target_value with
-          | Name (Name.Attribute { base; attribute; _ }) -> (
-              let property_targets =
-                Interprocedural.CallResolution.resolve_property_targets
-                  ~resolution
-                  ~base
-                  ~attribute
-                  ~setter:true
-              in
-              match property_targets with
-              | Some targets ->
-                  let taint, state =
-                    apply_call_targets
-                      ~resolution
-                      ~callee:target
-                      (Location.with_module ~qualifier:FunctionContext.qualifier location)
-                      [{ Call.Argument.value; name = None }]
-                      state
-                      targets
-                  in
-                  store_taint_option (AccessPath.of_expression ~resolution base) taint state
-              | None ->
-                  let taint, state = analyze_expression ~resolution ~state ~expression:value in
-                  analyze_assignment ~resolution target taint taint state )
-          | _ ->
-              let taint, state = analyze_expression ~resolution ~state ~expression:value in
-              analyze_assignment ~resolution target taint taint state )
+          let target_is_sanitized =
+            (* Optimization: We only view names as being sanitizable to avoid unnecessary type
+               checking. *)
+            match Node.value target with
+            | Name (Name.Attribute _) -> Model.global_is_sanitized ~resolution ~expression:target
+            | _ -> false
+          in
+          if target_is_sanitized then
+            analyze_expression ~resolution ~state ~expression:value |> snd
+          else
+            match target_value with
+            | Name (Name.Attribute { base; attribute; _ }) -> (
+                let property_targets =
+                  Interprocedural.CallResolution.resolve_property_targets
+                    ~resolution
+                    ~base
+                    ~attribute
+                    ~setter:true
+                in
+                match property_targets with
+                | Some targets ->
+                    let taint, state =
+                      apply_call_targets
+                        ~resolution
+                        ~callee:target
+                        (Location.with_module ~qualifier:FunctionContext.qualifier location)
+                        [{ Call.Argument.value; name = None }]
+                        state
+                        targets
+                    in
+                    store_taint_option (AccessPath.of_expression ~resolution base) taint state
+                | None ->
+                    let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                    analyze_assignment ~resolution target taint taint state )
+            | _ ->
+                let taint, state = analyze_expression ~resolution ~state ~expression:value in
+                analyze_assignment ~resolution target taint taint state )
       | Assert { test; _ } -> analyze_condition ~resolution test state
       | Break
       | Class _

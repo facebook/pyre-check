@@ -948,6 +948,31 @@ let create ~resolution ?path ~configuration ~rule_filter source =
             }
           in
           Core.Result.Ok [signature, location, Callable.create_object name]
+      | {
+          Node.value =
+            Assign
+              {
+                Assign.target = { Node.value = Name name; location = name_location };
+                annotation = Some annotation;
+                _;
+              };
+          location;
+        }
+        when is_simple_name name && Expression.show annotation |> String.equal "Sanitize" ->
+          let name = name_to_reference_exn name in
+          let signature =
+            {
+              Define.Signature.name = Node.create ~location:name_location name;
+              parameters = [Parameter.create ~location:Location.any ~name:"$global" ()];
+              decorators = [];
+              return_annotation = Some annotation;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          Core.Result.Ok [signature, location, Callable.create_object name]
       | _ -> Core.Result.Ok []
     in
     String.split ~on:'\n' source

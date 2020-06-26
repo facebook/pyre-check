@@ -33,6 +33,8 @@ val get_global_tito_model
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 
+val global_is_sanitized : resolution:Resolution.t -> expression:Expression.t -> bool
+
 val get_model_sources : paths:Path.t list -> (Path.t * string) list
 
 val infer_class_models

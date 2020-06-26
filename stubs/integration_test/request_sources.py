@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from typing import Optional
+from typing import Dict, Optional
 
 from django.http import HttpRequest, HttpResponse
 
@@ -22,3 +22,10 @@ def test_getlist(request: HttpRequest):
 
 def test_optional(request: Optional[HttpRequest]):
     eval(request.GET["bad"])
+
+
+def test_assigning_to_request_fields(request: HttpRequest):
+    request.GET = request.GET.copy()
+    eval(request.GET["bad"])
+    request.POST = request.POST.copy()
+    eval(request.POST["bad"])
