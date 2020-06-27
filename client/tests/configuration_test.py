@@ -486,6 +486,19 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.other_critical_files, ["critical", "files"])
 
+        # Test oncall field
+        json_load.side_effect = [{"version": "VERSION", "oncall": "pyre"}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.oncall, ["pyre"])
+
+        json_load.side_effect = [{"version": "VERSION", "oncall": ["a", "b"]}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.oncall, ["a", "b"])
+
+        json_load.side_effect = [{"version": "VERSION"}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.oncall, [])
+
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")

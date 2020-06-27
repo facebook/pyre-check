@@ -145,7 +145,6 @@ class _ConfigurationFile:
             "unstable_client",
             "saved_state",
             "taint_models_path",
-            "oncall",
         }
 
 
@@ -183,6 +182,7 @@ class Configuration:
         self.strict: bool = False
         self._use_buck_builder: Optional[bool] = None
         self.ignore_infer: List[str] = []
+        self.oncall: List[str] = []
 
         self._search_path: List[SearchPathElement] = []
         if search_path:
@@ -249,6 +249,9 @@ class Configuration:
                 raise InvalidConfiguration(
                     "`ignore_infer` field must be a list of strings."
                 )
+
+            if not is_list_of_strings(self.oncall):
+                raise InvalidConfiguration("`oncall` field must be a list of strings.")
 
             if not is_list_of_strings(self.extensions):
                 raise InvalidConfiguration(
@@ -557,6 +560,12 @@ class Configuration:
                         for path in ignore_infer
                     ]
                 )
+
+                oncall = configuration.consume("oncall", default=[])
+                if isinstance(oncall, str):
+                    self.oncall = [oncall]
+                else:
+                    self.oncall.extend(oncall)
 
                 self.number_of_workers = int(
                     configuration.consume(
