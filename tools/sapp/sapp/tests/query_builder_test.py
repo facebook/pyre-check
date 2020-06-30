@@ -134,3 +134,37 @@ class QueryBuilderTest(TestCase):
         self.assertNotIn(1, issue_ids)
         self.assertNotIn(2, issue_ids)
         self.assertNotIn(3, issue_ids)
+
+    def testWhereFileNames(self) -> None:
+        with self.db.make_session() as session:
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_file_names_is_any_of(["1234"]).get()
+        }
+        self.assertNotIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_file_names_is_any_of(["module/s%"]).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_file_names_is_any_of(["%__init__.py"]).get()
+        }
+        self.assertNotIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertIn(3, issue_ids)

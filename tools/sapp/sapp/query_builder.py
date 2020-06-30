@@ -22,6 +22,7 @@ MessageText = aliased(SharedText)
 class Filter(Enum):
     codes = "codes"
     callables = "callables"
+    file_names = "file_names"
 
 
 class IssueQueryBuilder:
@@ -40,6 +41,9 @@ class IssueQueryBuilder:
                     column = Issue.code
                 elif filter_type == Filter.callables:
                     column = CallableText.contents
+                elif filter_type == Filter.file_names:
+                    column = FilenameText.contents
+
                 for filter_condition in filter_conditions:
                     query = query.filter(
                         or_(*[column.like(item) for item in filter_condition])
@@ -54,6 +58,10 @@ class IssueQueryBuilder:
 
     def where_callables_is_any_of(self, callables: List[str]) -> IssueQueryBuilder:
         self.issue_filters[Filter.callables].add(tuple(callables))
+        return self
+
+    def where_file_names_is_any_of(self, file_names: List[str]) -> IssueQueryBuilder:
+        self.issue_filters[Filter.file_names].add(tuple(file_names))
         return self
 
     def _get_session_query(self, session: Session) -> Query:
