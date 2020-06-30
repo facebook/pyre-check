@@ -9,7 +9,13 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import and_, or_
 
 from .db import DB
-from .models import Issue, IssueInstance, SharedText
+from .models import (
+    Issue,
+    IssueInstance,
+    IssueInstanceSharedTextAssoc,
+    SharedText,
+    SharedTextKind,
+)
 
 
 FilenameText = aliased(SharedText)
@@ -25,6 +31,8 @@ class Filter(Enum):
     file_names = "file_names"
     trace_length_to_sources = "trace_length_to_sources"
     trace_length_to_sinks = "trace_length_to_sinks"
+    any_features = "any_features"
+    all_features = "all_features"
 
 
 class IssueQueryBuilder:
@@ -34,8 +42,9 @@ class IssueQueryBuilder:
         self.issue_filters: Dict[
             Filter, Set[Tuple[Union[int, str, Tuple[int, int, ...]], ...]]
         ] = defaultdict(set)
+        self.breadcrumb_filters: Dict[Filter, List[str]] = defaultdict(list)
 
-    def get(self) -> Query:
+    def get(self) -> List:
         with self.db.make_session() as session:
             query = self._get_session_query(session)
             for filter_type, filter_conditions in self.issue_filters.items():
@@ -63,9 +72,37 @@ class IssueQueryBuilder:
                         query = query.filter(
                             or_(*[column.like(item) for item in filter_condition])
                         )
-            return query.join(Issue, IssueInstance.issue_id == Issue.id).join(
-                MessageText, MessageText.id == IssueInstance.message_id
+            issues = list(
+                query.join(Issue, IssueInstance.issue_id == Issue.id).join(
+                    MessageText, MessageText.id == IssueInstance.message_id
+                )
             )
+
+            any_feature_set = set()
+            all_feature_set = set()
+            for filter_type, filter_condition in self.breadcrumb_filters.items():
+                if filter_type == Filter.any_features:
+                    any_feature_set |= set(filter_condition)
+                else:
+                    all_feature_set |= set(filter_condition)
+                features_list = [
+                    self._get_leaves_issue_instance(
+                        session,
+                        int(issue.id),
+                        # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                        #  `(cls: SharedTextKind) -> Any`.
+                        SharedTextKind.FEATURE,
+                    )
+                    for issue in issues
+                ]
+                for issue, features in zip(issues, features_list):
+                    if any_feature_set and not (features & any_feature_set):
+                        issues.remove(issue)
+                    elif all_feature_set and not (
+                        features & all_feature_set == all_feature_set
+                    ):
+                        issues.remove(issue)
+            return issues
 
     def where_codes_is_any_of(self, codes: List[int]) -> IssueQueryBuilder:
         self.issue_filters[Filter.codes].add(tuple(codes))
@@ -91,6 +128,14 @@ class IssueQueryBuilder:
         self.issue_filters[Filter.trace_length_to_sources].add((minimum, maximum))
         return self
 
+    def where_any_features(self, features: List[str]) -> IssueQueryBuilder:
+        self.breadcrumb_filters[Filter.any_features] += features
+        return self
+
+    def where_all_features(self, features: List[str]) -> IssueQueryBuilder:
+        self.breadcrumb_filters[Filter.all_features] += features
+        return self
+
     def _get_session_query(self, session: Session) -> Query:
         return (
             session.query(
@@ -107,3 +152,25 @@ class IssueQueryBuilder:
             .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
             .join(CallableText, CallableText.id == IssueInstance.callable_id)
         )
+
+    def _get_leaves_issue_instance(
+        self, session: Session, issue_instance_id: int, kind: SharedTextKind
+    ) -> Set[str]:
+        message_ids = [
+            int(id)
+            for id, in session.query(SharedText.id)
+            .distinct(SharedText.id)
+            .join(
+                IssueInstanceSharedTextAssoc,
+                SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
+            )
+            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
+            .filter(SharedText.kind == kind)
+        ]
+        leaf_dict = {
+            int(id): contents
+            for id, contents in session.query(
+                SharedText.id, SharedText.contents
+            ).filter(SharedText.kind == kind)
+        }
+        return {leaf_dict[id] for id in message_ids if id in leaf_dict}

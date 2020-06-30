@@ -3,7 +3,12 @@ from unittest import TestCase
 from sqlalchemy.sql import func
 
 from ..db import DB, DBType
-from ..models import Run, RunStatus, create as create_models
+from ..models import (
+    IssueInstanceSharedTextAssoc,
+    Run,
+    RunStatus,
+    create as create_models,
+)
 from ..query_builder import IssueQueryBuilder
 from .fake_object_generator import FakeObjectGenerator
 
@@ -246,3 +251,117 @@ class QueryBuilderTest(TestCase):
         self.assertIn(1, issue_ids)
         self.assertNotIn(2, issue_ids)
         self.assertNotIn(3, issue_ids)
+
+    def testWhereAnyFeatures(self) -> None:
+        self.fakes.instance()
+        feature1 = self.fakes.feature("via:feature1")
+        feature2 = self.fakes.feature("via:feature2")
+        self.fakes.feature("via:feature3")
+
+        self.fakes.save_all(self.db)
+
+        with self.db.make_session() as session:
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature1.id, issue_instance_id=1
+                )
+            )
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature2.id, issue_instance_id=1
+                )
+            )
+            session.commit()
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_any_features(["via:feature1"]).get()
+        }
+        self.assertIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_any_features(
+                ["via:feature1", "via:feature2"]
+            ).get()
+        }
+        self.assertIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_any_features(
+                ["via:feature1", "via:feature3"]
+            ).get()
+        }
+        self.assertIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_any_features(["via:feature3"]).get()
+        }
+        self.assertNotIn(1, issue_ids)
+
+    def testAssertAllFeatures(self) -> None:
+        self.fakes.instance()
+        feature1 = self.fakes.feature("via:feature1")
+        feature2 = self.fakes.feature("via:feature2")
+        self.fakes.feature("via:feature3")
+
+        self.fakes.save_all(self.db)
+
+        with self.db.make_session() as session:
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature1.id, issue_instance_id=1
+                )
+            )
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature2.id, issue_instance_id=1
+                )
+            )
+            session.commit()
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_all_features(["via:feature1"]).get()
+        }
+        self.assertIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_all_features(
+                ["via:feature1", "via:feature2"]
+            ).get()
+        }
+        self.assertIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_all_features(["via:feature3"]).get()
+        }
+        self.assertNotIn(1, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_all_features(
+                ["via:feature1", "via:feature3"]
+            ).get()
+        }
+        self.assertNotIn(1, issue_ids)
