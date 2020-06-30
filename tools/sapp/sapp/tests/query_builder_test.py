@@ -168,3 +168,81 @@ class QueryBuilderTest(TestCase):
         self.assertNotIn(1, issue_ids)
         self.assertNotIn(2, issue_ids)
         self.assertIn(3, issue_ids)
+
+    def testWhereTraceLength(self) -> None:
+        with self.db.make_session() as session:
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sinks(1, 1).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sources(1, 1).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sources(0, 1).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sinks(0, 1).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sinks(0, 2).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id) for issue in builder.where_trace_length_to_sinks(0, 2).get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_trace_length_to_sources(0, 1)
+            .where_trace_length_to_sinks(0, 1)
+            .get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
+
+        builder = IssueQueryBuilder(self.db, latest_run_id)
+        issue_ids = {
+            int(issue.id)
+            for issue in builder.where_trace_length_to_sources(0, 1)
+            .where_trace_length_to_sinks(0, 2)
+            .get()
+        }
+        self.assertIn(1, issue_ids)
+        self.assertNotIn(2, issue_ids)
+        self.assertNotIn(3, issue_ids)
