@@ -699,9 +699,10 @@ let test_filter context =
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
 
-  (* Suppress return errors in unimplemented defines. *)
+  (* Return errors are not suppressed for unimplemented defines because they are shown in strict
+     mode. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
-  assert_filtered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
+  assert_unfiltered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
 
   let abstract_class_instantiation name =
     InvalidClassInstantiation

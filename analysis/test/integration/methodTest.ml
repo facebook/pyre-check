@@ -1704,7 +1704,7 @@ let test_check_callable_protocols context =
   assert_type_errors
     {|
       from typing import Callable
-      def foo() -> None: 
+      def foo() -> None:
         q = Callable[[int], str]
         reveal_type(q)
         f = q(1)

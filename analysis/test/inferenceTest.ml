@@ -206,16 +206,18 @@ let get_inference_errors ~context source =
             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
 
 
-let test_check_missing_parameter context =
-  let assert_inference_errors ~expected source =
-    let errors = get_inference_errors ~context source in
-    let actual =
-      List.map errors ~f:(fun error ->
-          AnalysisError.Instantiated.description error ~show_error_traces:false)
-    in
-    assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
-    Memory.reset_shared_memory ()
+let assert_inference_errors ~context ~expected source =
+  let errors = get_inference_errors ~context source in
+  let actual =
+    List.map errors ~f:(fun error ->
+        AnalysisError.Instantiated.description error ~show_error_traces:false)
   in
+  assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
+  Memory.reset_shared_memory ()
+
+
+let test_check_missing_parameter context =
+  let assert_inference_errors = assert_inference_errors ~context in
   assert_inference_errors
     {|
       def foo(x = 5) -> int:
@@ -811,6 +813,20 @@ let test_infer_backward context =
   ()
 
 
+let test_infer_return context =
+  let assert_inference_errors = assert_inference_errors ~context in
+  assert_inference_errors
+    {|
+      def foo():
+        pass
+    |}
+    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_inference_errors {|
+      def foo() -> int:
+        pass
+    |} ~expected:[]
+
+
 let () =
   "inference"
   >::: [
@@ -818,5 +834,6 @@ let () =
          "missing_parameter" >:: test_check_missing_parameter;
          "infer" >:: test_infer;
          "infer_backward" >:: test_infer_backward;
+         "infer_return" >:: test_infer_return;
        ]
   |> Test.run

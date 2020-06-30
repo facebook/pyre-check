@@ -582,6 +582,59 @@ let test_check_noreturn context =
     []
 
 
+let test_check_return_unimplemented context =
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_strict_type_errors
+    {|
+      def f() -> int:
+        pass
+    |}
+    ["Incompatible return type [7]: Expected `int` but got implicit return value of `None`."];
+  assert_strict_type_errors
+    {|
+      def f():
+        pass
+    |}
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_strict_type_errors
+    {|
+      class Foo():
+        def run(self) -> int:
+          pass
+    |}
+    ["Incompatible return type [7]: Expected `int` but got implicit return value of `None`."];
+  assert_strict_type_errors
+    {|
+      from abc import ABC, ABCMeta, abstractmethod
+
+      class MyABC(ABC):
+        @abstractmethod
+        def run(self) -> int:
+              pass
+
+      class MyABC2(meta=ABCMeta):
+        @abstractmethod
+        def run(self) -> int:
+            pass
+    |}
+    [];
+  assert_strict_type_errors {|
+      def f() -> None:
+        pass
+    |} [];
+  assert_default_type_errors {|
+      def f() -> int:
+        pass
+    |} [];
+  assert_default_type_errors
+    {|
+      def foo() -> int:
+        return ''
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."]
+
+
 let () =
   "return"
   >::: [
@@ -590,5 +643,6 @@ let () =
          "check_collections" >:: test_check_collections;
          "check_meta_annotations" >:: test_check_meta_annotations;
          "check_noreturn" >:: test_check_noreturn;
+         "check_return_unimplemented" >:: test_check_return_unimplemented;
        ]
   |> Test.run

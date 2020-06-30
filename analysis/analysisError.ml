@@ -3065,12 +3065,6 @@ let filter ~resolution errors =
           String.is_prefix ~prefix:"unittest.mock" (Reference.show callee)
       | _ -> false
     in
-    let is_unimplemented_return_error error =
-      match error with
-      | { kind = IncompatibleReturnType { is_unimplemented; _ }; _ } -> is_unimplemented
-      | _ -> false
-    in
-
     let is_unnecessary_missing_annotation_error { kind; _ } =
       (* Ignore missing annotations thrown at assigns but not thrown where global or attribute was
          originally defined. *)
@@ -3142,7 +3136,6 @@ let filter ~resolution errors =
     in
     is_stub_error error
     || is_mock_error error
-    || is_unimplemented_return_error error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
     || is_callable_attribute_error error
@@ -3186,6 +3179,7 @@ let suppress ~mode ~ignore_codes error =
     | UndefinedImport _ -> false
     | RevealedType _ -> false
     | UnsafeCast _ -> false
+    | IncompatibleReturnType { is_unimplemented = true; _ } -> true
     | _ ->
         due_to_analysis_limitations error
         || Define.Signature.is_untyped signature
