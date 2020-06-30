@@ -136,6 +136,45 @@ class IssueQueryBuilder:
         self.breadcrumb_filters[Filter.all_features] += features
         return self
 
+    def sources(self, issues) -> List:
+        with self.db.make_session() as session:
+            return [
+                self._get_leaves_issue_instance(
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SINK,
+                )
+                for issue in issues
+            ]
+
+    def sinks(self, issues) -> List:
+        with self.db.make_session() as session:
+            return [
+                self._get_leaves_issue_instance(
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.SOURCE,
+                )
+                for issue in issues
+            ]
+
+    def features(self, issues) -> List:
+        with self.db.make_session() as session:
+            return [
+                self._get_leaves_issue_instance(
+                    session,
+                    int(issue.id),
+                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
+                    #  `(cls: SharedTextKind) -> Any`.
+                    SharedTextKind.FEATURE,
+                )
+                for issue in issues
+            ]
+
     def _get_session_query(self, session: Session) -> Query:
         return (
             session.query(
@@ -167,10 +206,30 @@ class IssueQueryBuilder:
             .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
             .filter(SharedText.kind == kind)
         ]
-        leaf_dict = {
-            int(id): contents
-            for id, contents in session.query(
-                SharedText.id, SharedText.contents
-            ).filter(SharedText.kind == kind)
-        }
+        return self._leaf_dict_lookups(message_ids, kind, session)
+
+    def _leaf_dict_lookups(
+        self, message_ids: List[int], kind: SharedTextKind, session: Session
+    ) -> Set[str]:
+        if kind == SharedTextKind.SOURCE:
+            leaf_dict = {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == kind)
+            }
+        elif kind == SharedTextKind.SINK:
+            leaf_dict = {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == kind)
+            }
+        else:
+            leaf_dict = {
+                int(id): contents
+                for id, contents in session.query(
+                    SharedText.id, SharedText.contents
+                ).filter(SharedText.kind == kind)
+            }
         return {leaf_dict[id] for id in message_ids if id in leaf_dict}
