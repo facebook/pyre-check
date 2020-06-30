@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Dict, List, Set, Tuple, Union
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query
@@ -20,31 +21,39 @@ MessageText = aliased(SharedText)
 
 class Filter(Enum):
     codes = "codes"
+    callables = "callables"
 
 
 class IssueQueryBuilder:
     def __init__(self, database: DB, current_run_id: int):
         self.db = database
         self.current_run_id = current_run_id
-        self.issue_filters: Dict[Filter, Any] = {}
+        self.issue_filters: Dict[
+            Filter, Set[Tuple[Union[int, str, Tuple[int, int]], ...]]
+        ] = defaultdict(set)
 
     def get(self) -> Query:
         with self.db.make_session() as session:
             query = self._get_session_query(session)
-            for filter_type, filter_condition in self.issue_filters.items():
+            for filter_type, filter_conditions in self.issue_filters.items():
                 if filter_type == Filter.codes:
+                    column = Issue.code
+                elif filter_type == Filter.callables:
+                    column = CallableText.contents
+                for filter_condition in filter_conditions:
                     query = query.filter(
-                        or_(*[Issue.code.like(item) for item in filter_condition])
+                        or_(*[column.like(item) for item in filter_condition])
                     )
             return query.join(Issue, IssueInstance.issue_id == Issue.id).join(
                 MessageText, MessageText.id == IssueInstance.message_id
             )
 
-    def where_codes(self, codes: List[int]) -> IssueQueryBuilder:
-        if Filter.codes in self.issue_filters:
-            self.issue_filters[Filter.codes] = self.issue_filters[Filter.codes] + codes
-        else:
-            self.issue_filters[Filter.codes] = codes
+    def where_codes_is_any_of(self, codes: List[int]) -> IssueQueryBuilder:
+        self.issue_filters[Filter.codes].add(tuple(codes))
+        return self
+
+    def where_callables_is_any_of(self, callables: List[str]) -> IssueQueryBuilder:
+        self.issue_filters[Filter.callables].add(tuple(callables))
         return self
 
     def _get_session_query(self, session: Session) -> Query:
