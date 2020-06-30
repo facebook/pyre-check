@@ -60,6 +60,7 @@ from .models import (
     TraceKind,
     create as create_models,
 )
+from .query_builder import IssueQueryBuilder
 
 
 T = TypeVar("T")
@@ -465,8 +466,8 @@ details              show additional information about the current trace frame
         filenames: Optional[Union[str, List[str]]] = None,
         all_features: Optional[Union[str, List[str]]] = None,
         any_features: Optional[Union[str, List[str]]] = None,
-        exact_trace_length_to_sources: Optional[Union[int, List[int]]] = None,
-        exact_trace_length_to_sinks: Optional[Union[int, List[int]]] = None,
+        exact_trace_length_to_sources: Optional[int] = None,
+        exact_trace_length_to_sinks: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
         max_trace_length_to_sinks: Optional[int] = None,
     ):
@@ -479,9 +480,9 @@ details              show additional information about the current trace frame
             filenames: str or list[str]    filenames to filter on (supports wildcards)
             all_features: str or list[str] features to filter on
             any_features: str or list[str] features to inclusively filter on
-            exact_trace_length_to_sources: int or list[int]
+            exact_trace_length_to_sources: int
                 exact values for min trace length to sources to filter on
-            exact_trace_length_to_sinks: int or list[int]
+            exact_trace_length_to_sinks: int
                 exact values for min trace length to sinks to filter on
             max_trace_length_to_sources: int
                 maximum value for min trace length to sources to filter on
@@ -502,152 +503,102 @@ details              show additional information about the current trace frame
         """
         pager = self._resolve_pager(use_pager)
 
-        with self.db.make_session() as session:
-            query = (
-                session.query(
-                    IssueInstance.id,
-                    FilenameText.contents.label("filename"),
-                    IssueInstance.location,
-                    Issue.code,
-                    CallableText.contents.label("callable"),
-                    MessageText.contents.label("message"),
-                    IssueInstance.min_trace_length_to_sources,
-                    IssueInstance.min_trace_length_to_sinks,
+        builder = IssueQueryBuilder(self.db, self.current_run_id)
+
+        if codes is not None:
+            if not isinstance(codes, int) and not isinstance(codes, list):
+                raise UserError("'codes' should be int or list of int.")
+            if isinstance(codes, int):
+                codes = [codes]
+            builder = builder.where_codes_is_any_of(codes)
+
+        if callables is not None:
+            if not isinstance(callables, str) and not isinstance(callables, list):
+                raise UserError("'callables' should be str or list of str.")
+            if isinstance(callables, str):
+                callables = [callables]
+            builder = builder.where_callables_is_any_of(callables)
+
+        if filenames is not None:
+            if not isinstance(filenames, str) and not isinstance(filenames, list):
+                raise UserError("'filenames' should be str or list of str.")
+            if isinstance(filenames, str):
+                filenames = [filenames]
+            builder = builder.where_file_names_is_any_of(filenames)
+
+        if (exact_trace_length_to_sources is not None) and (
+            max_trace_length_to_sources is not None
+        ):
+            raise UserError(
+                (
+                    "'exact_trace_length_to_sources' and "
+                    "'max_trace_length_to_sources' can't be set together"
                 )
-                .filter(IssueInstance.run_id == self.current_run_id)
-                .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
-                .join(CallableText, CallableText.id == IssueInstance.callable_id)
             )
 
-            if codes is not None:
-                query = self._add_list_or_int_filter_to_query(
-                    codes, query, Issue.code, "codes"
+        if (exact_trace_length_to_sinks is not None) and (
+            max_trace_length_to_sinks is not None
+        ):
+            raise UserError(
+                (
+                    "'exact_trace_length_to_sinks' and "
+                    "'max_trace_length_to_sinks' can't be set together"
                 )
-
-            if callables is not None:
-                query = self._add_list_or_string_filter_to_query(
-                    callables, query, CallableText.contents, "callables"
-                )
-
-            if filenames is not None:
-                query = self._add_list_or_string_filter_to_query(
-                    filenames, query, FilenameText.contents, "filenames"
-                )
-
-            if (exact_trace_length_to_sources is not None) and (
-                max_trace_length_to_sources is not None
-            ):
-                raise UserError(
-                    (
-                        f"'exact_trace_length_to_sources' and "
-                        f"'max_trace_length_to_sources' can't be set together"
-                    )
-                )
-
-            if (exact_trace_length_to_sinks is not None) and (
-                max_trace_length_to_sinks is not None
-            ):
-                raise UserError(
-                    (
-                        f"'exact_trace_length_to_sinks' and "
-                        f"'max_trace_length_to_sinks' can't be set together"
-                    )
-                )
-
-            if exact_trace_length_to_sources is not None:
-                query = self._add_list_or_int_filter_to_query(
-                    exact_trace_length_to_sources,
-                    query,
-                    IssueInstance.min_trace_length_to_sources,
-                    "exact_trace_length_to_sources",
-                )
-
-            if exact_trace_length_to_sinks is not None:
-                query = self._add_list_or_int_filter_to_query(
-                    exact_trace_length_to_sinks,
-                    query,
-                    IssueInstance.min_trace_length_to_sinks,
-                    "exact_trace_length_to_sinks",
-                )
-
-            if max_trace_length_to_sources is not None:
-                query = self._add_max_int_filter_to_query(
-                    max_trace_length_to_sources,
-                    query,
-                    IssueInstance.min_trace_length_to_sources,
-                    "max_trace_length_to_sources",
-                )
-
-            if max_trace_length_to_sinks is not None:
-                query = self._add_max_int_filter_to_query(
-                    max_trace_length_to_sinks,
-                    query,
-                    IssueInstance.min_trace_length_to_sinks,
-                    "max_trace_length_to_sinks",
-                )
-
-            issues = query.join(Issue, IssueInstance.issue_id == Issue.id).join(
-                MessageText, MessageText.id == IssueInstance.message_id
             )
 
-            sources_list = [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.SOURCE,
-                )
-                for issue in issues
-            ]
-            sinks_list = [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.SINK,
-                )
-                for issue in issues
-            ]
-            features_list = [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.FEATURE,
-                )
-                for issue in issues
-            ]
+        if exact_trace_length_to_sources is not None:
+            if not isinstance(exact_trace_length_to_sources, int):
+                raise UserError("'exact_trace_length_to_sources' should be int.")
+            builder = builder.where_trace_length_to_sources(
+                exact_trace_length_to_sources, exact_trace_length_to_sources
+            )
 
-            issue_strings = []
-            any_feature_set = set()
-            if any_features:
-                if isinstance(any_features, list):
-                    any_feature_set = set(any_features)
-                else:
-                    any_feature_set = {any_features}
+        if exact_trace_length_to_sinks is not None:
+            if not isinstance(exact_trace_length_to_sinks, int):
+                raise UserError("'exact_trace_length_to_sinks' should be int.")
+            builder = builder.where_trace_length_to_sinks(
+                exact_trace_length_to_sinks, exact_trace_length_to_sinks
+            )
 
-            all_feature_set = set()
-            if all_features:
-                if isinstance(all_features, list):
-                    all_feature_set = set(all_features)
-                else:
-                    all_feature_set = {all_features}
+        if max_trace_length_to_sources is not None:
+            if not isinstance(max_trace_length_to_sources, int):
+                raise UserError("'max_trace_length_to_sources' should be int.")
+            builder = builder.where_trace_length_to_sources(
+                0, max_trace_length_to_sources
+            )
 
-            for issue, sources, sinks, features in zip(
-                issues, sources_list, sinks_list, features_list
-            ):
-                if any_feature_set and not (features & any_feature_set):
-                    continue
-                elif all_feature_set and not (
-                    features & all_feature_set == all_feature_set
-                ):
-                    continue
-                issue_strings.append(
-                    self._create_issue_output_string(issue, sources, sinks, features)
-                )
+        if max_trace_length_to_sinks is not None:
+            if not isinstance(max_trace_length_to_sinks, int):
+                raise UserError("'max_trace_length_to_sinks' should be int.")
+            builder = builder.where_trace_length_to_sinks(0, max_trace_length_to_sinks)
+
+        if all_features is not None:
+            if not isinstance(all_features, str) and not isinstance(all_features, list):
+                raise UserError("'all_features' should be str or list of str.")
+            if isinstance(all_features, str):
+                all_features = [all_features]
+            builder = builder.where_all_features(all_features)
+
+        if any_features is not None:
+            if not isinstance(any_features, str) and not isinstance(any_features, list):
+                raise UserError("'any_features' should be str or list of str.")
+            if isinstance(any_features, str):
+                any_features = [any_features]
+            builder = builder.where_any_features(any_features)
+
+        issues = builder.get()
+
+        sources_list = builder.sources(issues)
+        sinks_list = builder.sinks(issues)
+        features_list = builder.features(issues)
+
+        issue_strings = []
+        for issue, sources, sinks, features in zip(
+            issues, sources_list, sinks_list, features_list
+        ):
+            issue_strings.append(
+                self._create_issue_output_string(issue, sources, sinks, features)
+            )
 
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)

@@ -312,20 +312,6 @@ class InteractiveTest(TestCase):
         self.assertNotIn("Issue 3", output)
         self._clear_stdout()
 
-        self.interactive.issues(exact_trace_length_to_sources=[1, 2])
-        output = self.stdout.getvalue().strip()
-        self.assertIn("Issue 1", output)
-        self.assertIn("Issue 2", output)
-        self.assertNotIn("Issue 3", output)
-        self._clear_stdout()
-
-        self.interactive.issues(exact_trace_length_to_sinks=[1, 2])
-        output = self.stdout.getvalue().strip()
-        self.assertIn("Issue 1", output)
-        self.assertIn("Issue 2", output)
-        self.assertNotIn("Issue 3", output)
-        self._clear_stdout()
-
         self.interactive.issues(max_trace_length_to_sources=1)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)

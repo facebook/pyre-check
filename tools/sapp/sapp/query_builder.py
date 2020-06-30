@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query
-from sqlalchemy.sql.expression import and_, or_
+from sqlalchemy.sql.expression import or_
 
 from .db import DB
 from .models import (
@@ -136,7 +136,7 @@ class IssueQueryBuilder:
         self.breadcrumb_filters[Filter.all_features] += features
         return self
 
-    def sources(self, issues) -> List:
+    def sources(self, issues) -> List[Set[str]]:
         with self.db.make_session() as session:
             return [
                 self._get_leaves_issue_instance(
@@ -149,7 +149,7 @@ class IssueQueryBuilder:
                 for issue in issues
             ]
 
-    def sinks(self, issues) -> List:
+    def sinks(self, issues) -> List[Set[str]]:
         with self.db.make_session() as session:
             return [
                 self._get_leaves_issue_instance(
@@ -162,7 +162,7 @@ class IssueQueryBuilder:
                 for issue in issues
             ]
 
-    def features(self, issues) -> List:
+    def features(self, issues) -> List[Set[str]]:
         with self.db.make_session() as session:
             return [
                 self._get_leaves_issue_instance(
