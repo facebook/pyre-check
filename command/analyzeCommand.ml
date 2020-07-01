@@ -21,6 +21,7 @@ let run_analysis
     dump_call_graph
     repository_root
     rule_filter
+    find_obscure_flows
     verbose
     expected_version
     sections
@@ -144,6 +145,7 @@ let run_analysis
             dump_call_graph;
             verify_models = not no_verify;
             rule_filter;
+            find_obscure_flows;
           }
         ~filename_lookup
         ~environment:(Analysis.TypeEnvironment.read_only environment)
@@ -194,5 +196,9 @@ let command =
            "-rules"
            (optional (Arg_type.comma_separated int))
            ~doc:"If set, filter the analysis to only consider the provided rule numbers."
+      +> flag
+           "-find-obscure-flows"
+           no_arg
+           ~doc:"Perform a taint analysis to find flows through obscure models."
       ++ Specification.base_command_line_arguments)
     run_analysis

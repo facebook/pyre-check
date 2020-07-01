@@ -214,10 +214,10 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     Fixpoint.{ is_partial = true; model; result }
 
 
-let initialize kinds ~configuration ~environment ~functions =
+let initialize kinds ~configuration ~environment ~functions ~stubs =
   let initialize_each models (Result.Analysis { kind; analysis }) =
     let module Analysis = (val analysis) in
-    let new_models = Analysis.init ~configuration ~environment ~functions in
+    let new_models = Analysis.init ~configuration ~environment ~functions ~stubs in
     let add_analysis_model existing model =
       let open Result in
       let package = Pkg { kind = ModelPart kind; value = model } in
@@ -321,7 +321,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     let get_override_model override =
       match Fixpoint.get_model override with
       | None ->
-          (* inidicates this is the leaf and not explicitly represented *)
+          (* indicates this is the leaf and not explicitly represented *)
           Fixpoint.get_model (Callable.get_corresponding_method override)
       | model -> model
     in

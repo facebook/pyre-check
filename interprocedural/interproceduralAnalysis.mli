@@ -54,6 +54,7 @@ val initialize
   configuration:Yojson.Safe.json ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
+  stubs:Callable.t list ->
   InterproceduralResult.model_t Callable.Map.t
 
 val record_initial_models

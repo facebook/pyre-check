@@ -99,6 +99,7 @@ module type ANALYZER = sig
     :  configuration:Yojson.Safe.json ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
+    stubs:Callable.t list ->
     call_model Callable.Map.t
 end
 

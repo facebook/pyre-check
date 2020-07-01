@@ -158,5 +158,6 @@ module StaticAnalysis : sig
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
+    find_obscure_flows: bool;
   }
 end

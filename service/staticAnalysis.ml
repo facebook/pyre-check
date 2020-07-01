@@ -81,6 +81,7 @@ let analyze
           dump_call_graph;
           verify_models;
           rule_filter;
+          find_obscure_flows;
           _;
         } as analysis_configuration )
     ~filename_lookup
@@ -239,12 +240,21 @@ let analyze
         [
           ( "taint",
             `Assoc
-              ( ["model_paths", `List taint_model_paths; "verify_models", `Bool verify_models]
+              ( [
+                  "model_paths", `List taint_model_paths;
+                  "verify_models", `Bool verify_models;
+                  "find_obscure_flows", `Bool find_obscure_flows;
+                ]
               @ rule_settings ) );
         ]
     in
 
-    Analysis.initialize analyses ~configuration:configuration_json ~environment ~functions:callables
+    Analysis.initialize
+      analyses
+      ~configuration:configuration_json
+      ~environment
+      ~functions:callables
+      ~stubs
     |> Analysis.record_initial_models ~functions:callables ~stubs
   in
   Statistics.performance ~name:"Computed initial analysis state" ~timer ();

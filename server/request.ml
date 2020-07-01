@@ -768,7 +768,9 @@ let rec process_type_query_request
             | Some path -> [path]
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
-          let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~paths in
+          let configuration =
+            Taint.TaintConfiguration.create ~rule_filter:None ~find_obscure_flows:false ~paths
+          in
           let get_model_errors sources =
             let model_errors (path, source) =
               Taint.Model.parse
