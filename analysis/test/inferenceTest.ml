@@ -245,6 +245,20 @@ let test_check_missing_parameter context =
       ]
 
 
+let test_check_missing_return context =
+  let assert_inference_errors = assert_inference_errors ~context in
+  assert_inference_errors
+    {|
+      def foo():
+        pass
+    |}
+    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_inference_errors {|
+      def foo() -> int:
+        pass
+    |} ~expected:[]
+
+
 let assert_infer ?(fields = ["description"]) ~context source errors =
   let fields_of_error error =
     let field_of_error field =
@@ -813,27 +827,13 @@ let test_infer_backward context =
   ()
 
 
-let test_infer_return context =
-  let assert_inference_errors = assert_inference_errors ~context in
-  assert_inference_errors
-    {|
-      def foo():
-        pass
-    |}
-    ~expected:["Missing return annotation [3]: Returning `None` but no return type is specified."];
-  assert_inference_errors {|
-      def foo() -> int:
-        pass
-    |} ~expected:[]
-
-
 let () =
   "inference"
   >::: [
          "backward" >:: test_backward;
          "missing_parameter" >:: test_check_missing_parameter;
+         "missing_return" >:: test_check_missing_return;
          "infer" >:: test_infer;
          "infer_backward" >:: test_infer_backward;
-         "infer_return" >:: test_infer_return;
        ]
   |> Test.run
