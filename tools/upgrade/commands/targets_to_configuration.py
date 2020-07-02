@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json
 import logging
 import subprocess
 from pathlib import Path

@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 from ... import errors
 from ...repository import Repository
 from ..command import ErrorSuppressingCommand
-from ..fixme import ErrorSource, Fixme
+from ..fixme import Fixme
 
 
 repository = Repository()
