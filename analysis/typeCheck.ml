@@ -83,6 +83,8 @@ let errors_from_not_found
     ~self_argument
     ~reason
     ~global_resolution
+    ?original_target
+    ?callee_expression
     ~arguments
   =
   let callee =
@@ -163,6 +165,26 @@ let errors_from_not_found
             | _ -> normal
         in
         match self_argument, callee >>| Reference.as_list with
+        | Some self_annotation, Some callee_reference_list
+          when is_operator (List.last_exn callee_reference_list) -> (
+            let is_uninverted = Option.equal Type.equal self_argument original_target in
+            let operator_symbol =
+              if is_uninverted then
+                List.last_exn callee_reference_list |> operator_name_to_symbol
+              else
+                List.last_exn callee_reference_list |> inverse_operator >>= operator_name_to_symbol
+            in
+            match operator_symbol, callee_expression >>| Node.value with
+            | Some operator_name, Some (Expression.Name (Attribute { special = true; _ })) ->
+                let left_operand, right_operand =
+                  if is_uninverted then
+                    self_annotation, actual
+                  else
+                    actual, self_annotation
+                in
+                Error.IncompatibleParameterType
+                  (Operand { operator_name; left_operand; right_operand })
+            | _ -> normal )
         | Some (Type.Primitive _ as annotation), Some [_; method_name] ->
             GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
             >>| typed_dictionary_error ~method_name ~position
@@ -1846,8 +1868,13 @@ module State (Context : Context) = struct
         | Type.Top, Expression.Name (Attribute { attribute; _ }), Some target
           when Option.is_some (inverse_operator attribute)
                && (not (Type.is_any target))
-               && not (Type.is_unbound target) ->
-            Some (Error.UndefinedAttribute { attribute; origin = Error.Class target })
+               && not (Type.is_unbound target) -> (
+            match arguments, operator_name_to_symbol attribute with
+            | [{ AttributeResolution.Argument.resolved; _ }], Some operator_name ->
+                Some
+                  (Error.IncompatibleParameterType
+                     (Operand { operator_name; left_operand = target; right_operand = resolved }))
+            | _ -> Some (Error.UndefinedAttribute { attribute; origin = Error.Class target }) )
         | _ -> None
       in
       let signatures =
@@ -1992,6 +2019,8 @@ module State (Context : Context) = struct
                 ~callable
                 ~self_argument
                 ~global_resolution
+                ?original_target:target
+                ~callee_expression:callee
                 ~arguments:(Some arguments)
             in
             let emit errors (more_specific_error_location, kind) =
@@ -5769,6 +5798,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     ~self_argument:None
                     ~reason
                     ~global_resolution
+                    ?original_target:None
+                    ?callee_expression:None
                     ~arguments:None
                 in
                 reason >>| convert >>= List.hd >>| fun (_, kind) -> kind

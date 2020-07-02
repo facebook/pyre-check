@@ -356,3 +356,7 @@ val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> un
 val pp_expression_parameter_list : Format.formatter -> Parameter.t list -> unit
 
 val inverse_operator : string -> string option
+
+val is_operator : string -> bool
+
+val operator_name_to_symbol : string -> string option

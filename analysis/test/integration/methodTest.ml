@@ -199,6 +199,79 @@ let test_check_inverse_operator context =
   assert_type_errors
     ~context
     {|
+      from typing import Optional, Tuple
+      x: int
+      optional_x: Optional[int]
+
+      class C:
+        def __rrshift__(self, other: int) -> int: ...
+
+      class D:
+        def __rshift__(self, other: int) -> int: ...
+
+      # Only one of them has the operator.
+      x < optional_x
+      x + optional_x
+      optional_x + x
+      optional_x == x
+      optional_x != x
+
+      # Both have the operator.
+      "foo" >> C()
+      D() >> "foo"
+      D() >> C()
+
+      # Neither has the operator.
+      D() + C()
+      C() << C()
+    |}
+    [
+      "Incompatible parameter type [6]: `<` is not supported for operand types `int` and \
+       `Optional[int]`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `int` and \
+       `Optional[int]`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `Optional[int]` and \
+       `int`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `str` and `C`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `D` and `str`.";
+      "Incompatible parameter type [6]: `>>` is not supported for operand types `D` and `C`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `D` and `C`.";
+      "Incompatible parameter type [6]: `<<` is not supported for operand types `C` and `C`.";
+    ];
+  (* Explicit use of `__lt__` gets the full error message. *)
+  assert_type_errors
+    ~context
+    {|
+      from typing import Optional
+
+      x: int
+      optional_x: Optional[int]
+      x.__lt__(optional_x)
+      x < optional_x
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__lt__` but got `Optional[int]`.";
+      "Incompatible parameter type [6]: `<` is not supported for operand types `int` and \
+       `Optional[int]`.";
+    ];
+  (* TODO(T69286342): Inferred literal types give the incompatible parameter type error. *)
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        y = 1
+        reveal_type(y)
+        y += "some string"
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
+       `int.__add__` but got `str`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
       class C:
         def __rshift__(self, other: object) -> int:
           return 1
@@ -220,7 +293,7 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    ["Undefined attribute [16]: `C` has no attribute `__rshift__`."];
+    ["Incompatible parameter type [6]: `>>` is not supported for operand types `C` and `D`."];
   assert_type_errors
     ~context
     {|
@@ -270,11 +343,7 @@ let test_check_inverse_operator context =
       def foo() -> None:
         z = ("foo" >> C())
     |}
-    (* Make sure that if the operands don't typecheck, we raise an error for the left operand. *)
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `C.__rrshift__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `>>` is not supported for operand types `str` and `C`."];
   assert_type_errors
     ~context
     {|
@@ -456,10 +525,7 @@ let test_check_method_parameters context =
       def foo(input: str) -> None:
         input + 1
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__radd__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `str` and `int`."];
   assert_type_errors
     {|
       def foo(input: str) -> str:

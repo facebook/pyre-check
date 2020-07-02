@@ -401,8 +401,7 @@ let test_decorators context =
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Invalid decoration [56]: Argument `1.__add__(\"foo\")` to decorator factory \
        `test.my_decorator` could not be resolved in a global scope.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only "
-      ^ "parameter to call `int.__add__` but got `str`.";
+      "Incompatible parameter type [6]: `+` is not supported for operand types `int` and `str`.";
     ];
 
   assert_type_errors

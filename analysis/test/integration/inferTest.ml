@@ -296,10 +296,7 @@ let test_check_missing_return context =
     {|
       1 + 'asdf'  # report in top-level function
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int.__add__` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: `+` is not supported for operand types `int` and `str`."];
   assert_type_errors
     {|
       from builtins import condition

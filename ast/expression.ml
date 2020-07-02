@@ -1414,17 +1414,66 @@ let is_dunder_attribute attribute_name =
 let inverse_operator = function
   (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
   | "__add__" -> Some "__radd__"
+  | "__radd__" -> Some "__add__"
   | "__sub__" -> Some "__rsub__"
+  | "__rsub__" -> Some "__sub__"
   | "__mul__" -> Some "__rmul__"
+  | "__rmul__" -> Some "__mul__"
   | "__matmul__" -> Some "__rmatmul__"
+  | "__rmatmul__" -> Some "__matmul__"
   | "__truediv__" -> Some "__rtruediv__"
+  | "__rtruediv__" -> Some "__truediv__"
   | "__floordiv__" -> Some "__rfloordiv__"
+  | "__rfloordiv__" -> Some "__floordiv__"
   | "__mod__" -> Some "__rmod__"
+  | "__rmod__" -> Some "__mod__"
   | "__divmod__" -> Some "__rdivmod__"
+  | "__rdivmod__" -> Some "__divmod__"
   | "__pow__" -> Some "__rpow__"
+  | "__rpow__" -> Some "__pow__"
   | "__lshift__" -> Some "__rlshift__"
+  | "__rlshift__" -> Some "__lshift__"
   | "__rshift__" -> Some "__rrshift__"
+  | "__rrshift__" -> Some "__rshift__"
   | "__and__" -> Some "__rand__"
+  | "__rand__" -> Some "__and__"
   | "__xor__" -> Some "__rxor__"
+  | "__rxor__" -> Some "__xor__"
   | "__or__" -> Some "__ror__"
+  | "__ror__" -> Some "__or__"
+  | _ -> None
+
+
+let is_operator = function
+  | "__lt__"
+  | "__gt__"
+  | "__le__"
+  | "__ge__"
+  | "__eq__"
+  | "__ne__" ->
+      true
+  | name -> Option.is_some (inverse_operator name)
+
+
+let operator_name_to_symbol = function
+  | "__lt__" -> Some "<"
+  | "__gt__" -> Some ">"
+  | "__le__" -> Some "<="
+  | "__ge__" -> Some ">="
+  | "__eq__" -> Some "=="
+  | "__ne__" -> Some "!="
+  | "__add__" -> Some "+"
+  | "__sub__" -> Some "-"
+  | "__mul__" -> Some "*"
+  | "__matmul__" -> Some "@"
+  | "__truediv__" -> Some "/"
+  | "__floordiv__" -> Some "//"
+  | "__mod__" -> Some "%"
+  | "__divmod__" -> Some "divmod"
+  | "__pow__" -> Some "**"
+  | "__lshift__" -> Some "<<"
+  | "__rshift__" -> Some ">>"
+  | "__and__" -> Some "&"
+  | "__xor__" -> Some "^"
+  | "__or__" -> Some "|"
   | _ -> None
