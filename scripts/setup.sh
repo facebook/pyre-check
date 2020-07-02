@@ -125,14 +125,6 @@ fi
 if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
   temporary_repository="$(mktemp -d)"
   tar xf "${OPAM_REPOSITORY}" -C "$temporary_repository" --strip-components=1
-
-  # Get compiler if available.
-  compiler="${OPAM_REPOSITORY%/*}/$COMPILER_VERSION.tar.gz"
-  if [ -e "$compiler" ]; then
-    cp "$compiler" .
-    trap 'rm -rf ./$COMPILER_VERSION.tar.gz' EXIT
-  fi
-
   OPAM_REPOSITORY=$temporary_repository
 fi
 
