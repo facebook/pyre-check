@@ -115,7 +115,9 @@ let errors_from_not_found
           Node.location mismatch )
       in
       let kind =
-        let normal = Error.IncompatibleParameterType { name; position; callee; mismatch } in
+        let normal =
+          Error.IncompatibleParameterType (RegularParameter { name; position; callee; mismatch })
+        in
         let typed_dictionary_error
             ~method_name
             ~position
@@ -2280,19 +2282,23 @@ module State (Context : Context) = struct
               ~location
               ~kind:
                 (Error.IncompatibleParameterType
-                   {
-                     name = None;
-                     position = 2;
-                     callee = Some (Reference.create "isinstance");
-                     mismatch =
-                       {
-                         Error.actual = non_meta;
-                         expected =
-                           Type.union
-                             [Type.meta Type.Any; Type.Tuple (Type.Unbounded (Type.meta Type.Any))];
-                         due_to_invariance = false;
-                       };
-                   })
+                   (RegularParameter
+                      {
+                        name = None;
+                        position = 2;
+                        callee = Some (Reference.create "isinstance");
+                        mismatch =
+                          {
+                            Error.actual = non_meta;
+                            expected =
+                              Type.union
+                                [
+                                  Type.meta Type.Any;
+                                  Type.Tuple (Type.Unbounded (Type.meta Type.Any));
+                                ];
+                            due_to_invariance = false;
+                          };
+                      }))
           in
           let rec is_compatible annotation =
             match annotation with

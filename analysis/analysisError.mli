@@ -186,6 +186,19 @@ and incompatible_overload_kind =
     }
   | DifferingDecorators
   | MisplacedOverloadDecorator
+
+and incompatible_parameter_kind =
+  | Operand of {
+      operator_name: Identifier.t;
+      left_operand: Type.t;
+      right_operand: Type.t;
+    }
+  | RegularParameter of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+      mismatch: mismatch;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration_reason =
@@ -216,12 +229,7 @@ and kind =
     }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleParameterType of {
-      name: Identifier.t option;
-      position: int;
-      callee: Reference.t option;
-      mismatch: mismatch;
-    }
+  | IncompatibleParameterType of incompatible_parameter_kind
   | IncompatibleReturnType of {
       mismatch: mismatch;
       is_implicit: bool;

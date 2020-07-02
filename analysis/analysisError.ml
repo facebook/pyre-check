@@ -195,6 +195,19 @@ and incompatible_overload_kind =
     }
   | DifferingDecorators
   | MisplacedOverloadDecorator
+
+and incompatible_parameter_kind =
+  | Operand of {
+      operator_name: Identifier.t;
+      left_operand: Type.t;
+      right_operand: Type.t;
+    }
+  | RegularParameter of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+      mismatch: mismatch;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_decoration = {
@@ -225,12 +238,7 @@ and kind =
     }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleParameterType of {
-      name: Identifier.t option;
-      position: int;
-      callee: Reference.t option;
-      mismatch: mismatch;
-    }
+  | IncompatibleParameterType of incompatible_parameter_kind
   | IncompatibleReturnType of {
       mismatch: mismatch;
       is_implicit: bool;
@@ -532,8 +540,17 @@ let weaken_literals kind =
       ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent) ->
       InconsistentOverride
         { inconsistent with override = StrengthenedPrecondition (Found (weaken_mismatch mismatch)) }
-  | IncompatibleParameterType ({ mismatch; _ } as incompatible) ->
-      IncompatibleParameterType { incompatible with mismatch = weaken_mismatch mismatch }
+  | IncompatibleParameterType (Operand { operator_name; left_operand; right_operand }) ->
+      IncompatibleParameterType
+        (Operand
+           {
+             operator_name;
+             left_operand = Type.weaken_literals left_operand;
+             right_operand = Type.weaken_literals right_operand;
+           })
+  | IncompatibleParameterType (RegularParameter ({ mismatch; _ } as incompatible)) ->
+      IncompatibleParameterType
+        (RegularParameter { incompatible with mismatch = weaken_mismatch mismatch })
   | IncompatibleReturnType ({ mismatch; _ } as incompatible) ->
       IncompatibleReturnType { incompatible with mismatch = weaken_mismatch mismatch }
   | UninitializedAttribute ({ mismatch; _ } as uninitialized) ->
@@ -715,8 +732,19 @@ let rec messages ~concise ~signature location kind =
           ["This definition does not have the same decorators as the preceding overload(s)."]
       | MisplacedOverloadDecorator ->
           ["The @overload decorator must be the topmost decorator if present."] )
+  | IncompatibleParameterType (Operand { operator_name; left_operand; right_operand }) ->
+      [
+        Format.asprintf
+          "`%s` is not supported for operand types `%a` and `%a`."
+          operator_name
+          pp_type
+          left_operand
+          pp_type
+          right_operand;
+      ]
   | IncompatibleParameterType
-      { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
+      (RegularParameter
+        { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } }) ->
       let trace =
         if due_to_invariance then
           [Format.asprintf "This call might modify the type of the parameter."; invariance_message]
@@ -2211,10 +2239,13 @@ module Set = Set.Make (struct
 end)
 
 let due_to_analysis_limitations { kind; _ } =
+  let is_due_to_analysis_limitations annotation =
+    Type.contains_unknown annotation || Type.is_unbound annotation || Type.is_type_alias annotation
+  in
   match kind with
   | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
-  | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+  | IncompatibleParameterType (RegularParameter { mismatch = { actual; _ }; _ })
   | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
   | TypedDictionaryInitializationError (FieldTypeMismatch { actual_type = actual; _ })
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
@@ -2234,7 +2265,9 @@ let due_to_analysis_limitations { kind; _ } =
   | RedundantCast actual
   | UninitializedAttribute { mismatch = { actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.contains_unknown actual || Type.is_unbound actual || Type.is_type_alias actual
+      is_due_to_analysis_limitations actual
+  | IncompatibleParameterType (Operand { left_operand; right_operand; _ }) ->
+      is_due_to_analysis_limitations left_operand || is_due_to_analysis_limitations right_operand
   | Top -> true
   | UndefinedAttribute { origin = Class annotation; _ } -> Type.contains_unknown annotation
   | AnalysisFailure _
@@ -2305,7 +2338,31 @@ let less_or_equal ~resolution left right =
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
-  | IncompatibleParameterType left, IncompatibleParameterType right
+  | ( IncompatibleParameterType
+        (Operand
+          {
+            operator_name = left_operator_name;
+            left_operand = left_operand_for_left;
+            right_operand = right_operand_for_left;
+          }),
+      IncompatibleParameterType
+        (Operand
+          {
+            operator_name = right_operator_name;
+            left_operand = left_operand_for_right;
+            right_operand = right_operand_for_right;
+          }) )
+    when Identifier.equal_sanitized left_operator_name right_operator_name ->
+      GlobalResolution.less_or_equal
+        resolution
+        ~left:left_operand_for_left
+        ~right:left_operand_for_right
+      && GlobalResolution.less_or_equal
+           resolution
+           ~left:right_operand_for_left
+           ~right:right_operand_for_right
+  | ( IncompatibleParameterType (RegularParameter left),
+      IncompatibleParameterType (RegularParameter right) )
     when Option.equal Identifier.equal_sanitized left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
@@ -2681,12 +2738,37 @@ let join ~resolution left right =
                 mutability = left_mutability;
               };
           }
-    | IncompatibleParameterType left, IncompatibleParameterType right
+    | ( IncompatibleParameterType
+          (Operand
+            ( {
+                operator_name = left_operator_name;
+                left_operand = left_operand_for_left;
+                right_operand = right_operand_for_left;
+              } as left )),
+        IncompatibleParameterType
+          (Operand
+            {
+              operator_name = right_operator_name;
+              left_operand = left_operand_for_right;
+              right_operand = right_operand_for_right;
+            }) )
+      when Identifier.equal_sanitized left_operator_name right_operator_name ->
+        IncompatibleParameterType
+          (Operand
+             {
+               left with
+               left_operand =
+                 GlobalResolution.join resolution left_operand_for_left left_operand_for_right;
+               right_operand =
+                 GlobalResolution.join resolution right_operand_for_left right_operand_for_right;
+             })
+    | ( IncompatibleParameterType (RegularParameter left),
+        IncompatibleParameterType (RegularParameter right) )
       when Option.equal Identifier.equal_sanitized left.name right.name
            && left.position = right.position
            && Option.equal Reference.equal_sanitized left.callee right.callee ->
         let mismatch = join_mismatch left.mismatch right.mismatch in
-        IncompatibleParameterType { left with mismatch }
+        IncompatibleParameterType (RegularParameter { left with mismatch })
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (GlobalResolution.join resolution left right)
     | IncompatibleReturnType left, IncompatibleReturnType right ->
@@ -3035,7 +3117,7 @@ let filter ~resolution errors =
       match kind with
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | IncompatibleAwaitableType actual
-      | IncompatibleParameterType { mismatch = { actual; _ }; _ }
+      | IncompatibleParameterType (RegularParameter { mismatch = { actual; _ }; _ })
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
@@ -3080,7 +3162,7 @@ let filter ~resolution errors =
       | InconsistentOverride
           { override = StrengthenedPrecondition (Found { expected; actual; _ }); _ }
       | InconsistentOverride { override = WeakenedPostcondition { expected; actual; _ }; _ }
-      | IncompatibleParameterType { mismatch = { expected; actual; _ }; _ }
+      | IncompatibleParameterType (RegularParameter { mismatch = { expected; actual; _ }; _ })
       | IncompatibleReturnType { mismatch = { expected; actual; _ }; _ }
       | IncompatibleAttributeType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ }
@@ -3414,13 +3496,22 @@ let dequalify
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify_annotation annotation }
-    | IncompatibleParameterType ({ mismatch; callee; _ } as parameter) ->
+    | IncompatibleParameterType (Operand { operator_name; left_operand; right_operand }) ->
         IncompatibleParameterType
-          {
-            parameter with
-            mismatch = dequalify_mismatch mismatch;
-            callee = Option.map callee ~f:dequalify_reference;
-          }
+          (Operand
+             {
+               operator_name;
+               left_operand = dequalify left_operand;
+               right_operand = dequalify right_operand;
+             })
+    | IncompatibleParameterType (RegularParameter ({ mismatch; callee; _ } as parameter)) ->
+        IncompatibleParameterType
+          (RegularParameter
+             {
+               parameter with
+               mismatch = dequalify_mismatch mismatch;
+               callee = Option.map callee ~f:dequalify_reference;
+             })
     | IncompatibleReturnType ({ mismatch; _ } as return) ->
         IncompatibleReturnType { return with mismatch = dequalify_mismatch mismatch }
     | IncompatibleAttributeType { parent; incompatible_type = { mismatch; _ } as incompatible_type }
