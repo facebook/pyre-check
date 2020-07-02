@@ -204,6 +204,7 @@ let test_check_missing_return context =
           return 1
     |}
     [
+      "Incompatible parameter type [6]: `>` is not supported for operand types `unknown` and `int`.";
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
     ];

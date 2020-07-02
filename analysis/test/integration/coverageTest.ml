@@ -119,7 +119,13 @@ let test_check_coverage context =
 
   (* Comparison operator. *)
   assert_covered "1 == ERROR";
-  assert_covered "ERROR < 1";
+  assert_covered
+    ~additional_errors:
+      [
+        "Incompatible parameter type [6]: `<` is not supported for operand types `unknown` and \
+         `int`.";
+      ]
+    "ERROR < 1";
 
   (* Dictionaries. *)
   assert_covered "{ ERROR: 1 }";

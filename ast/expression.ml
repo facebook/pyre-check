@@ -1441,14 +1441,15 @@ let inverse_operator = function
   | "__rxor__" -> Some "__xor__"
   | "__or__" -> Some "__ror__"
   | "__ror__" -> Some "__or__"
+  (* cf. https://docs.python.org/3/reference/datamodel.html#object.__lt__ *)
+  | "__lt__" -> Some "__gt__"
+  | "__gt__" -> Some "__lt__"
+  | "__le__" -> Some "__ge__"
+  | "__ge__" -> Some "__le__"
   | _ -> None
 
 
 let is_operator = function
-  | "__lt__"
-  | "__gt__"
-  | "__le__"
-  | "__ge__"
   | "__eq__"
   | "__ne__" ->
       true

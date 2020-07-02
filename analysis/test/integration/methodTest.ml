@@ -211,6 +211,7 @@ let test_check_inverse_operator context =
 
       # Only one of them has the operator.
       x < optional_x
+      optional_x < x
       x + optional_x
       optional_x + x
       optional_x == x
@@ -228,6 +229,8 @@ let test_check_inverse_operator context =
     [
       "Incompatible parameter type [6]: `<` is not supported for operand types `int` and \
        `Optional[int]`.";
+      "Incompatible parameter type [6]: `<` is not supported for operand types `Optional[int]` and \
+       `int`.";
       "Incompatible parameter type [6]: `+` is not supported for operand types `int` and \
        `Optional[int]`.";
       "Incompatible parameter type [6]: `+` is not supported for operand types `Optional[int]` and \
@@ -269,6 +272,35 @@ let test_check_inverse_operator context =
       "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
        `int.__add__` but got `str`.";
     ];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+        pass
+
+      class D:
+        def __gt__(self, other: object) -> bool: ...
+        def __lt__(self, other: object) -> bool: ...
+        def __le__(self, other: object) -> bool: ...
+        def __ge__(self, other: object) -> bool: ...
+
+      def expects_bool(x: bool) -> None: ...
+
+      expects_bool(C() < D())
+      expects_bool(C() > D())
+      expects_bool(C() <= D())
+      expects_bool(C() >= D())
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      x1: bool = 5 < 6.0
+      x2: bool = 5 > 6.0
+      x3: bool = 5 <= 6.0
+      x4: bool = 5 >= 6.0
+    |}
+    [];
   assert_type_errors
     ~context
     {|

@@ -619,7 +619,7 @@ let test_forward_expression context =
     ~postcondition:["Container", dictionary_set_union]
     "1 in Container"
     Type.bool;
-  assert_forward "undefined < 1" Type.Any;
+  assert_forward "undefined < 1" Type.bool;
   assert_forward "undefined == undefined" Type.Any;
 
   (* Complex literal. *)

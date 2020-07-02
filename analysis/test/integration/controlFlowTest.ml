@@ -171,7 +171,10 @@ let test_check_ternary context =
         else:
           return 1
     |}
-    ["Undefined attribute [16]: `Optional` has no attribute `__gt__`."];
+    [
+      "Incompatible parameter type [6]: `>` is not supported for operand types `Optional[int]` and \
+       `int`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -567,7 +570,7 @@ let test_check_while context =
         while x < 1.0:
           pass
     |}
-    ["Incompatible parameter type [6]: `<` is not supported for operand types `int` and `float`."];
+    [];
   assert_type_errors
     {|
       from typing import Dict, Any
