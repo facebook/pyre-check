@@ -41,9 +41,18 @@ def main() -> None:
             python_file_path.touch()
             python_file_path.write_text("# pyre-strict \ndef foo():\n\treturn 1")
             # Confirm we can run `pyre init` successfully.
-            subprocess.run(
-                [str(pyre_path), "init"], cwd=temporary_project_path, input=b"n\n.\n"
+            init_process = subprocess.run(
+                [str(pyre_path), "init"],
+                cwd=temporary_project_path,
+                input=b"n\n.\n",
+                capture_output=True,
             )
+            error_message = init_process.stderr.decode()
+            production_assert(
+                init_process.returncode == 0,
+                f"Failed to run `pyre init` successfully: {error_message}",
+            )
+
             configuration = json.loads(
                 (temporary_project_path / ".pyre_configuration").read_text()
             )
