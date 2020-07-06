@@ -17,7 +17,6 @@ from ..filesystem import Target
 from ..repository import Repository
 from ..upgrade import (
     FixmeAll,
-    FixmeSingle,
     FixmeTargets,
     GlobalVersionUpdate,
     ProjectErrorSuppressingCommand,
@@ -341,71 +340,6 @@ class FixmeAllTest(unittest.TestCase):
         submit_changes.assert_called_once_with(
             commit=True, submit=True, title="Update pyre version for local"
         )
-
-
-class FixmeSingleTest(unittest.TestCase):
-    @patch("subprocess.run")
-    @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
-    )
-    @patch.object(upgrade.Configuration, "write")
-    @patch.object(upgrade.Configuration, "remove_version")
-    @patch.object(upgrade.Configuration, "get_errors")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
-    def test_run_fixme_single(
-        self,
-        submit_changes,
-        suppress_errors,
-        get_errors,
-        remove_version,
-        configuration_write,
-        find_configuration,
-        subprocess,
-    ) -> None:
-        arguments = MagicMock()
-        arguments.submit = True
-        arguments.path = Path("local")
-        arguments.error_source = "generate"
-        arguments.lint = False
-        arguments.no_commit = False
-        get_errors.return_value = []
-        configuration_contents = '{"targets":[]}'
-        with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_not_called()
-            submit_changes.assert_not_called()
-
-        configuration_contents = '{"version": 123}'
-        with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_not_called()
-            submit_changes.assert_called_once_with(
-                commit=True, submit=True, title="Update pyre version for local"
-            )
-
-        suppress_errors.reset_mock()
-        submit_changes.reset_mock()
-        pyre_errors = [
-            {
-                "line": 2,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "concise_description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            }
-        ]
-        get_errors.return_value = pyre_errors
-        with patch("builtins.open", mock_open(read_data=configuration_contents)):
-            FixmeSingle.from_arguments(arguments, repository).run()
-            suppress_errors.assert_called_once_with(pyre_errors)
-            submit_changes.assert_called_once_with(
-                commit=True, submit=True, title="Update pyre version for local"
-            )
 
 
 class FixmeTargetsTest(unittest.TestCase):
