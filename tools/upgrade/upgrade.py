@@ -20,14 +20,11 @@ from .commands.codemods import (
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
 )
-from .commands.command import (
-    CommandArguments,
-    ErrorSuppressingCommand,
-    ProjectErrorSuppressingCommand,
-)
+from .commands.command import CommandArguments, ErrorSuppressingCommand
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fixme import Fixme
+from .commands.fixme_all import FixmeAll
 from .commands.fixme_single import FixmeSingle
 from .commands.global_version_update import GlobalVersionUpdate
 from .commands.strict_default import StrictDefault
@@ -39,36 +36,6 @@ from .repository import Repository
 
 
 LOG: Logger = logging.getLogger(__name__)
-
-
-class FixmeAll(ProjectErrorSuppressingCommand):
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace, repository: Repository
-    ) -> "FixmeAll":
-        command_arguments = CommandArguments.from_arguments(arguments)
-        return FixmeAll(
-            command_arguments,
-            repository=repository,
-            only_fix_error_code=arguments.only_fix_error_code,
-            upgrade_version=arguments.upgrade_version,
-            error_source=arguments.error_source,
-            no_commit=arguments.no_commit,
-            submit=arguments.submit,
-        )
-
-    @classmethod
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
-        super(FixmeAll, cls).add_arguments(parser)
-        parser.set_defaults(command=cls.from_arguments)
-
-    def run(self) -> None:
-        project_configuration = Configuration.find_project_configuration()
-        configurations = Configuration.gather_local_configurations()
-        for configuration in configurations:
-            self._suppress_errors_in_project(
-                configuration, project_configuration.parent
-            )
 
 
 class FixmeTargets(ErrorSuppressingCommand):
