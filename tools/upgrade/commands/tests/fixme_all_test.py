@@ -15,16 +15,14 @@ from ... import upgrade
 from ...repository import Repository
 from .. import command
 from ..command import ProjectErrorSuppressingCommand
-from ..fixme_all import FixmeAll
+from ..fixme_all import Configuration, ErrorSuppressingCommand, FixmeAll
 
 
 repository = Repository()
 
 
 class FixmeAllTest(unittest.TestCase):
-    @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=None
-    )
+    @patch.object(Configuration, "find_project_configuration", return_value=None)
     def test_gather_local_configurations(self, _find_project_configuration) -> None:
         process = MagicMock()
 
@@ -67,21 +65,21 @@ class FixmeAllTest(unittest.TestCase):
         configurations_string = ""
         process.stdout = configurations_string.encode()
         with patch("subprocess.run", return_value=process):
-            configurations = upgrade.Configuration.gather_local_configurations()
+            configurations = Configuration.gather_local_configurations()
             self.assertEqual([], configurations)
 
         configurations_string = "path/to/.pyre_configuration.local"
         process.stdout = configurations_string.encode()
         configuration_contents = '{"targets":[]}'
         expected_configurations = [
-            upgrade.Configuration(
+            Configuration(
                 Path("path/to/.pyre_configuration.local"),
                 json.loads(configuration_contents),
             )
         ]
         with patch("subprocess.run", return_value=process) as subprocess_run:
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
-                configurations = upgrade.Configuration.gather_local_configurations()
+                configurations = Configuration.gather_local_configurations()
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
                 )
@@ -98,16 +96,16 @@ class FixmeAllTest(unittest.TestCase):
         process.stdout = configurations_string.encode()
         configuration_contents = '{"targets":[],\n"coverage":true}'
         expected_configurations = [
-            upgrade.Configuration(
+            Configuration(
                 Path("a/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
-            upgrade.Configuration(
+            Configuration(
                 Path("b/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
         ]
         with patch("subprocess.run", return_value=process):
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
-                configurations = upgrade.Configuration.gather_local_configurations()
+                configurations = Configuration.gather_local_configurations()
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
                 )
@@ -116,13 +114,13 @@ class FixmeAllTest(unittest.TestCase):
     mock_completed_process.stdout.decode = MagicMock(return_value="[]")
 
     @patch("subprocess.run")
-    @patch.object(upgrade.Configuration, "write")
-    @patch.object(upgrade.Configuration, "remove_version")
-    @patch.object(upgrade.Configuration, "get_errors")
-    @patch.object(upgrade.Configuration, "gather_local_configurations")
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "remove_version")
+    @patch.object(Configuration, "get_errors")
+    @patch.object(Configuration, "gather_local_configurations")
     @patch(f"{command.__name__}.Errors.from_stdin")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch(f"{upgrade.__name__}.Repository.format")
     def test_upgrade_project(
@@ -163,7 +161,7 @@ class FixmeAllTest(unittest.TestCase):
             }
         ]
         get_errors.return_value = pyre_errors
-        configuration = upgrade.Configuration(
+        configuration = Configuration(
             Path("/root/local/.pyre_configuration.local"), {"version": 123}
         )
         configuration.get_path()
@@ -235,15 +233,13 @@ class FixmeAllTest(unittest.TestCase):
         )
 
     @patch("subprocess.run")
-    @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
-    )
-    @patch.object(upgrade.Configuration, "write")
-    @patch.object(upgrade.Configuration, "remove_version")
-    @patch.object(upgrade.Configuration, "get_errors")
+    @patch.object(Configuration, "gather_local_configurations")
+    @patch.object(Configuration, "find_project_configuration", return_value=Path("."))
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "remove_version")
+    @patch.object(Configuration, "get_errors")
     @patch.object(upgrade.GlobalVersionUpdate, "run")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_all(
         self,
@@ -264,9 +260,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.upgrade_version = True
         arguments.no_commit = False
         gather.return_value = [
-            upgrade.Configuration(
-                Path("local/.pyre_configuration.local"), {"version": 123}
-            )
+            Configuration(Path("local/.pyre_configuration.local"), {"version": 123})
         ]
         get_errors.return_value = []
         FixmeAll.from_arguments(arguments, repository).run()
@@ -303,7 +297,7 @@ class FixmeAllTest(unittest.TestCase):
         suppress_errors.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
-            upgrade.Configuration(Path("local/.pyre_configuration.local"), {})
+            Configuration(Path("local/.pyre_configuration.local"), {})
         ]
         FixmeAll.from_arguments(arguments, repository).run()
         suppress_errors.assert_not_called()
@@ -323,9 +317,7 @@ class FixmeAllTest(unittest.TestCase):
         suppress_errors.reset_mock()
         submit_changes.reset_mock()
         gather.return_value = [
-            upgrade.Configuration(
-                Path("local/.pyre_configuration.local"), {"version": 123}
-            )
+            Configuration(Path("local/.pyre_configuration.local"), {"version": 123})
         ]
         arguments.hash = "abc"
         arguments.submit = True

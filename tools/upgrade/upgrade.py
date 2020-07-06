@@ -16,7 +16,6 @@ from .commands.codemods import (
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
 )
-from .commands.command import CommandArguments, ErrorSuppressingCommand  # noqa
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fixme import Fixme
@@ -26,9 +25,6 @@ from .commands.fixme_targets import FixmeTargets
 from .commands.global_version_update import GlobalVersionUpdate
 from .commands.strict_default import StrictDefault
 from .commands.targets_to_configuration import TargetsToConfiguration
-from .configuration import Configuration  # noqa
-from .errors import errors_from_targets  # noqa
-from .filesystem import Target, find_targets  # noqa
 from .repository import Repository
 
 

@@ -10,10 +10,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from ... import errors, upgrade
+from ... import errors
 from ...repository import Repository
 from .. import consolidate_nested_configurations
-from ..consolidate_nested_configurations import ConsolidateNestedConfigurations
+from ..consolidate_nested_configurations import (
+    ConsolidateNestedConfigurations,
+    ErrorSuppressingCommand,
+)
 
 
 repository = Repository()
@@ -50,7 +53,7 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
         f"{consolidate_nested_configurations.__name__}.Configuration.deduplicate_targets"
     )
     @patch(f"{consolidate_nested_configurations.__name__}.Configuration.add_strict")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     def test_consolidate(
         self,
         suppress_errors,

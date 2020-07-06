@@ -10,6 +10,7 @@ from pathlib import Path
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
+from .command import ErrorSuppressingCommand  # noqa
 from .command import CommandArguments, ProjectErrorSuppressingCommand
 
 

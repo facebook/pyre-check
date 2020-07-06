@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ... import upgrade
 from ...repository import Repository
-from ..fixme_single import FixmeSingle
+from ..fixme_single import Configuration, ErrorSuppressingCommand, FixmeSingle
 
 
 repository = Repository()
@@ -19,13 +19,11 @@ repository = Repository()
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("subprocess.run")
-    @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
-    )
-    @patch.object(upgrade.Configuration, "write")
-    @patch.object(upgrade.Configuration, "remove_version")
-    @patch.object(upgrade.Configuration, "get_errors")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(Configuration, "find_project_configuration", return_value=Path("."))
+    @patch.object(Configuration, "write")
+    @patch.object(Configuration, "remove_version")
+    @patch.object(Configuration, "get_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     def test_run_fixme_single(
         self,

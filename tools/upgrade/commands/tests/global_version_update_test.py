@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 from ... import upgrade
 from ...repository import Repository
-from ..global_version_update import GlobalVersionUpdate
+from ..global_version_update import Configuration, GlobalVersionUpdate
 
 
 repository = Repository()
@@ -21,18 +21,18 @@ class UpdateGlobalVersionTest(unittest.TestCase):
     @patch("subprocess.run")
     @patch(f"{upgrade.__name__}.Repository.submit_changes")
     @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=Path("/root")
+        Configuration, "find_project_configuration", return_value=Path("/root")
     )
-    @patch.object(upgrade.Configuration, "set_version")
-    @patch.object(upgrade.Configuration, "write")
+    @patch.object(Configuration, "set_version")
+    @patch.object(Configuration, "write")
     @patch.object(
-        upgrade.Configuration,
+        Configuration,
         "gather_local_configurations",
         return_value=[
-            upgrade.Configuration(
+            Configuration(
                 Path("/root/a/.pyre_configuration.local"), {"use_buck_builder": False}
             ),
-            upgrade.Configuration(
+            Configuration(
                 Path("/root/b/.pyre_configuration.local"), {"use_buck_builder": True}
             ),
         ],

@@ -10,10 +10,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from ... import errors, filesystem, upgrade
+from ... import errors, filesystem
 from ...repository import Repository
 from .. import expand_target_coverage
-from ..expand_target_coverage import ExpandTargetCoverage
+from ..expand_target_coverage import ErrorSuppressingCommand, ExpandTargetCoverage
 
 
 repository = Repository()
@@ -26,7 +26,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
     @patch(f"{expand_target_coverage.__name__}.Configuration.get_errors")
     @patch(f"{expand_target_coverage.__name__}.Configuration.deduplicate_targets")
     @patch(f"{expand_target_coverage.__name__}.add_local_mode")
-    @patch.object(upgrade.ErrorSuppressingCommand, "_suppress_errors")
+    @patch.object(ErrorSuppressingCommand, "_suppress_errors")
     @patch(f"{expand_target_coverage.__name__}.Repository.format")
     @patch(f"{expand_target_coverage.__name__}.find_files")
     def test_run_expand_target_coverage(

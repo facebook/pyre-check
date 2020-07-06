@@ -8,6 +8,7 @@ import logging
 
 from ..configuration import Configuration
 from ..repository import Repository
+from .command import ErrorSuppressingCommand  # noqa
 from .command import CommandArguments, ProjectErrorSuppressingCommand
 
 
