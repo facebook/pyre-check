@@ -11,7 +11,7 @@ from typing import List
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
-from .command import Command, CommandArguments
+from .command import Command, CommandArguments, ErrorSource
 from .fixme import Fixme
 
 
@@ -20,9 +20,16 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 class GlobalVersionUpdate(Command):
     def __init__(
-        self, *, repository: Repository, hash: str, paths: List[Path], submit: bool
+        self,
+        *,
+        repository: Repository,
+        error_source: str,
+        hash: str,
+        paths: List[Path],
+        submit: bool,
     ) -> None:
         super().__init__(repository)
+        self._error_source: str = error_source
         self._hash: str = hash
         self._paths: List[Path] = paths
         self._submit: bool = submit
@@ -33,6 +40,7 @@ class GlobalVersionUpdate(Command):
     ) -> "GlobalVersionUpdate":
         return GlobalVersionUpdate(
             repository=repository,
+            error_source=arguments.error_source,
             hash=arguments.hash,
             paths=arguments.paths,
             submit=arguments.submit,
@@ -49,6 +57,9 @@ class GlobalVersionUpdate(Command):
             help="A list of paths to local Pyre projects.",
             default=[],
             type=path_exists,
+        )
+        parser.add_argument(
+            "--error-source", choices=list(ErrorSource), default=ErrorSource.GENERATE
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
@@ -86,7 +97,9 @@ class GlobalVersionUpdate(Command):
                 lint=True,
             )
             fixme_command = Fixme(
-                command_arguments, repository=self._repository, error_source="generate"
+                command_arguments,
+                repository=self._repository,
+                error_source=self._error_source,
             )
             fixme_command.run()
 
