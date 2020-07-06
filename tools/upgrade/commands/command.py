@@ -6,6 +6,7 @@
 import argparse
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,11 @@ from ..repository import Repository
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class ErrorSource(Enum):
+    STDIN = "stdin"
+    GENERATE = "generate"
 
 
 @dataclass(frozen=True)
@@ -146,7 +152,7 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
             help="Upgrade and clean project if a version override set.",
         )
         parser.add_argument(
-            "--error-source", choices=["stdin", "generate"], default="generate"
+            "--error-source", choices=list(ErrorSource), default=ErrorSource.GENERATE
         )
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)

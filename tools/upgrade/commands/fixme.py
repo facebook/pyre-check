@@ -5,21 +5,15 @@
 
 import argparse
 import logging
-from enum import Enum
 from typing import Optional
 
 from ..configuration import Configuration
 from ..errors import Errors
 from ..repository import Repository
-from .command import CommandArguments, ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-class ErrorSource(Enum):
-    STDIN = "stdin"
-    GENERATE = "generate"
 
 
 class Fixme(ErrorSuppressingCommand):
