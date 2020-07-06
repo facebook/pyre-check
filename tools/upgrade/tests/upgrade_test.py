@@ -15,12 +15,7 @@ from .. import errors, upgrade
 from ..commands import command
 from ..filesystem import Target
 from ..repository import Repository
-from ..upgrade import (
-    FixmeAll,
-    FixmeTargets,
-    GlobalVersionUpdate,
-    ProjectErrorSuppressingCommand,
-)
+from ..upgrade import FixmeAll, FixmeTargets, ProjectErrorSuppressingCommand
 
 
 repository = Repository()
@@ -609,113 +604,6 @@ class FixmeTargetsTest(unittest.TestCase):
             ]
         )
         suppress_errors.assert_called_once_with(expected_errors)
-
-
-class UpdateGlobalVersionTest(unittest.TestCase):
-    @patch("subprocess.run")
-    @patch(f"{upgrade.__name__}.Repository.submit_changes")
-    @patch.object(
-        upgrade.Configuration, "find_project_configuration", return_value=Path("/root")
-    )
-    @patch.object(upgrade.Configuration, "set_version")
-    @patch.object(upgrade.Configuration, "write")
-    @patch.object(
-        upgrade.Configuration,
-        "gather_local_configurations",
-        return_value=[
-            upgrade.Configuration(
-                Path("/root/a/.pyre_configuration.local"), {"use_buck_builder": False}
-            ),
-            upgrade.Configuration(
-                Path("/root/b/.pyre_configuration.local"), {"use_buck_builder": True}
-            ),
-        ],
-    )
-    @patch.object(upgrade.Fixme, "run")
-    @patch("builtins.open")
-    def test_run_global_version_update(
-        self,
-        open_mock,
-        run_fixme,
-        gather_local_configurations,
-        configuration_write,
-        configuration_set_version,
-        find_project_configuration,
-        submit_changes,
-        subprocess,
-    ) -> None:
-        arguments = MagicMock()
-        arguments.submit = False
-        arguments.hash = "abcd"
-        arguments.paths = []
-        with patch("json.dump"):
-            mocks = [
-                mock_open(read_data='{"version": "old"}').return_value,
-                mock_open(read_data='{"use_buck_builder": false}').return_value,
-                mock_open(read_data='{"use_buck_builder": true}').return_value,
-            ]
-            open_mock.side_effect = mocks
-
-            GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_version.assert_has_calls(
-                [call("abcd"), call("old"), call("old")]
-            )
-            configuration_write.assert_has_calls([call(), call(), call()])
-            submit_changes.assert_called_once_with(
-                commit=True,
-                submit=False,
-                title="Update pyre global configuration version",
-                summary="Automatic upgrade to hash `abcd`",
-                ignore_failures=True,
-            )
-
-        # Paths passed from arguments will override the local configuration list
-        # Therefore, we only read the first json configuration.
-        subprocess.reset_mock()
-        configuration_set_version.reset_mock()
-        configuration_write.reset_mock()
-        arguments.paths = [Path("foo/bar")]
-        with patch("json.dump"):
-            mocks = [
-                mock_open(read_data='{"version": "old"}').return_value,
-                mock_open(read_data="{}").return_value,
-            ]
-            open_mock.side_effect = mocks
-
-            GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_version.assert_has_calls([call("abcd"), call("old")])
-            configuration_write.assert_has_calls([call(), call()])
-            subprocess.assert_has_calls([])
-
-        # Run fixme if global version has sources.
-        subprocess.reset_mock()
-        configuration_set_version.reset_mock()
-        configuration_write.reset_mock()
-        submit_changes.reset_mock()
-        arguments.paths = []
-        with patch("json.dump"):
-            mocks = [
-                mock_open(
-                    read_data='{"version": "old", "source_directories": ["source"]}'
-                ).return_value,
-                mock_open(read_data='{"use_buck_builder": false}').return_value,
-                mock_open(read_data='{"use_buck_builder": true}').return_value,
-            ]
-            open_mock.side_effect = mocks
-
-            GlobalVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_version.assert_has_calls(
-                [call("abcd"), call("old"), call("old")]
-            )
-            configuration_write.assert_has_calls([call(), call(), call()])
-            run_fixme.assert_called_once()
-            submit_changes.assert_called_once_with(
-                commit=True,
-                submit=False,
-                title="Update pyre global configuration version",
-                summary="Automatic upgrade to hash `abcd`",
-                ignore_failures=True,
-            )
 
 
 class FilterErrorTest(unittest.TestCase):
