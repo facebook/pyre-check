@@ -46,11 +46,8 @@ class OldOpam(Exception):
 @dataclass(frozen=True)
 class Runner:
     logger: logging.Logger
-    pyre_directory: Path
+    opam_root: Path
 
-    local: bool = False
-    temporary_root: bool = False
-    opam_root: Optional[Path] = None
     opam_repository_override: Optional[str] = None
     configure_only: bool = False
     environment_only: bool = False
@@ -93,28 +90,15 @@ class Runner:
     def environment_variables(self) -> Mapping[str, str]:
         return os.environ
 
-    def make_opam_root(self) -> Path:
-        home = Path.home()
-        home_opam = home / ".opam"
-        if self.local:
-            if not home_opam.is_dir():
-                local_opam = home / "local" / "opam"
-                local_opam.mkdir(parents=True)
-                local_opam.symlink_to(home_opam, target_is_directory=True)
-            return home_opam
-        if self.temporary_root:
-            return Path(mkdtemp())
-        return self.opam_root or home_opam
-
-    def produce_dune_file(self) -> None:
+    def produce_dune_file(self, pyre_directory: Path) -> None:
         build_type = self.build_type_override
         if not build_type:
-            if (self.pyre_directory / "facebook").is_dir:
+            if (pyre_directory / "facebook").is_dir:
                 build_type = "facebook"
             else:
                 build_type = "external"
-        with open(self.pyre_directory / "dune.in") as dune_in:
-            with open(self.pyre_directory / "dune", "w") as dune:
+        with open(pyre_directory / "dune.in") as dune_in:
+            with open(pyre_directory / "dune", "w") as dune:
                 dune_data = dune_in.read()
                 dune.write(dune_data.replace("%VERSION%", build_type))
 
@@ -159,7 +143,7 @@ class Runner:
             )
             raise OldOpam
 
-    def opam_environment_variables(self, opam_root: str) -> Dict[str, str]:
+    def opam_environment_variables(self) -> Dict[str, str]:
         self.logger.info("Activating opam")
         opam_env_result = self.run(
             [
@@ -169,7 +153,7 @@ class Runner:
                 "--switch",
                 self.compiler,
                 "--root",
-                opam_root,
+                self.opam_root.as_posix(),
                 "--set-root",
                 "--set-switch",
             ]
@@ -182,18 +166,7 @@ class Runner:
             opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
-    def __call__(self) -> None:
-        opam_root = self.make_opam_root().as_posix()
-        self.produce_dune_file()
-
-        if self.configure_only:
-            compiler_override = self.compiler_override
-            if compiler_override:
-                self.run(
-                    ["opam", "switch", "set", compiler_override, "--root", opam_root]
-                )
-            return
-
+    def initialize_opam_switch(self) -> Mapping[str, str]:
         self.check_if_preinstalled()
 
         opam_repository = self.extract_opam_repository()
@@ -208,17 +181,39 @@ class Runner:
                 "--compiler",
                 self.compiler,
                 "--root",
-                opam_root,
+                self.opam_root.as_posix(),
                 "default",
                 opam_repository,
             ]
         )
-        opam_environment_variables = self.opam_environment_variables(opam_root)
+        opam_environment_variables = self.opam_environment_variables()
 
         self.run(
             ["opam", "install", "--yes"] + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,
         )
+
+        return opam_environment_variables
+
+    def __call__(self, pyre_directory: Path) -> None:
+        self.produce_dune_file(pyre_directory)
+
+        if self.configure_only:
+            compiler_override = self.compiler_override
+            if compiler_override:
+                self.run(
+                    [
+                        "opam",
+                        "switch",
+                        "set",
+                        compiler_override,
+                        "--root",
+                        self.opam_root.as_posix(),
+                    ]
+                )
+            return
+
+        opam_environment_variables = self.initialize_opam_switch()
 
         if self.environment_only:
             self.logger.info(
@@ -229,12 +224,12 @@ class Runner:
         jobs = str(multiprocessing.cpu_count())
         self.run(
             ["make", self.make_arguments, "--jobs", jobs],
-            self.pyre_directory,
+            pyre_directory,
             add_environment_variables=opam_environment_variables,
         )
         self.run(
             ["make", "--jobs", jobs, "test"],
-            self.pyre_directory,
+            pyre_directory,
             add_environment_variables=opam_environment_variables,
         )
 
@@ -242,7 +237,7 @@ class Runner:
         self,
         command: List[str],
         current_working_directory: Optional[Path] = None,
-        add_environment_variables: Optional[Dict[str, str]] = None,
+        add_environment_variables: Optional[Mapping[str, str]] = None,
     ) -> str:
         if add_environment_variables:
             environment_variables = {
@@ -262,6 +257,20 @@ class Runner:
             return output[:-1]
         else:
             return output
+
+
+def make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -> Path:
+    home = Path.home()
+    home_opam = home / ".opam"
+    if local:
+        if not home_opam.is_dir():
+            local_opam = home / "local" / "opam"
+            local_opam.mkdir(parents=True)
+            local_opam.symlink_to(home_opam, target_is_directory=True)
+        return home_opam
+    if temporary_root:
+        return Path(mkdtemp())
+    return default or home_opam
 
 
 def main(runner_type: Type[Runner]) -> None:
@@ -289,19 +298,18 @@ def main(runner_type: Type[Runner]) -> None:
     if not pyre_directory:
         pyre_directory = Path(__file__).parent.parent.absolute()
 
+    opam_root = make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
+
     runner_type(
         logger=logging.getLogger(__name__),
-        pyre_directory=pyre_directory,
-        local=parsed.local,
-        temporary_root=parsed.temporary_root,
-        opam_root=parsed.opam_root,
+        opam_root=opam_root,
         opam_repository_override=parsed.repository,
         configure_only=parsed.configure,
         environment_only=parsed.environment_only,
         development=parsed.development,
         release=parsed.release,
         build_type=parsed.build_type,
-    )()
+    )(pyre_directory=pyre_directory)
 
 
 if __name__ == "__main__":
