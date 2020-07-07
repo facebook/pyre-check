@@ -228,16 +228,6 @@ let test_concise context =
       "Undefined attribute [16]: `Foo` has no attribute `a`.";
     ];
 
-  (* Impossible Assertion *)
-  assert_type_errors
-    {|
-      from typing import Optional
-      def foo(x: Optional[int]) -> None:
-        x = None
-        assert x
-    |}
-    ["Impossible assertion [25]: Assertion will always fail."];
-
   (* Incompatible Awaitable *)
   assert_type_errors
     {|

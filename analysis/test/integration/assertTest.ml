@@ -292,19 +292,15 @@ let test_check_all context =
 let test_check_impossible_assert context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def foo() -> None:
         x = None
         assert x
-    |}
-    ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."];
-  assert_type_errors
-    {|
+    |} [];
+  assert_type_errors {|
       def foo(x: None) -> None:
         assert x
-    |}
-    ["Impossible assertion [25]: `x` has type `None`, assertion `x` will always fail."];
+    |} [];
   assert_default_type_errors
     {|
       from typing import Optional, Any

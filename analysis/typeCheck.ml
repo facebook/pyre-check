@@ -4656,14 +4656,7 @@ module State (Context : Context) = struct
               Some resolution, errors
           | Name name when is_simple_name name -> (
               match refinable_annotation name with
-              | Some { Annotation.annotation = Type.NoneType; _ } ->
-                  ( None,
-                    emit_error
-                      ~errors
-                      ~location:(Node.location test)
-                      ~kind:
-                        (Error.ImpossibleAssertion
-                           { test; expression = test; annotation = Type.NoneType }) )
+              | Some { Annotation.annotation = Type.NoneType; _ } -> None, errors
               | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
                   let refined_annotation =
                     List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
