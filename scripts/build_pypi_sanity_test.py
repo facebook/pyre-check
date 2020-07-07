@@ -16,6 +16,37 @@ def production_assert(value: bool, *args: Any) -> None:
         raise AssertionError(*args)
 
 
+def validate_configuration(temporary_project_path: Path) -> None:
+    configuration_path = temporary_project_path / ".pyre_configuration"
+    try:
+        configuration = json.loads(configuration_path.read_text())
+    except json.JSONDecodeError:
+        raise AssertionError(f"Invalid configuration at `{configuration_path}`")
+    print(f"Successfully created configuration at `{configuration_path}`:")
+    print(json.dumps(configuration, indent=2))
+
+    # Confirm configuration contains actual typeshed and taint files.
+    typeshed_path = Path(configuration["typeshed"])
+    taint_path = Path(configuration["taint_models_path"])
+    binary = Path(configuration["binary"])
+
+    production_assert(taint_path.is_dir(), "Taint path is not a directory.")
+    production_assert(
+        (taint_path / "taint.config").is_file(), "Taint config is not included."
+    )
+
+    production_assert(typeshed_path.is_dir(), "Typeshed was not installed.")
+    production_assert(
+        (typeshed_path / "third_party").is_dir(),
+        "`third_party` was not included in typeshed.",
+    )
+    production_assert(
+        (typeshed_path / "stdlib").is_dir(), "`stdlib` was not included in typeshed."
+    )
+
+    production_assert(binary.is_file(), "Binary was not included in pypi package.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Test wheel or source distribution for basic functionality."
@@ -52,35 +83,7 @@ def main() -> None:
                 init_process.returncode == 0,
                 f"Failed to run `pyre init` successfully: {error_message}",
             )
-
-            configuration = json.loads(
-                (temporary_project_path / ".pyre_configuration").read_text()
-            )
-            print(json.dumps(configuration, indent=2))
-
-            # Confirm configuration contains actual typeshed and taint files.
-            typeshed_path = Path(configuration["typeshed"])
-            taint_path = Path(configuration["taint_models_path"])
-            binary = Path(configuration["binary"])
-
-            production_assert(taint_path.is_dir(), "Taint path is not a directory.")
-            production_assert(
-                (taint_path / "taint.config").is_file(), "Taint config is not included."
-            )
-
-            production_assert(typeshed_path.is_dir(), "Typeshed was not installed.")
-            production_assert(
-                (typeshed_path / "third_party").is_dir(),
-                "`third_party` was not included in typeshed.",
-            )
-            production_assert(
-                (typeshed_path / "stdlib").is_dir(),
-                "`stdlib` was not included in typeshed.",
-            )
-
-            production_assert(
-                binary.is_file(), "Binary was not included in pypi package."
-            )
+            validate_configuration(temporary_project_path)
 
             # Confirm Pyre reports errors as expected.
             result = subprocess.run(
