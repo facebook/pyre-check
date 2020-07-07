@@ -9,7 +9,7 @@ sidebar_label: Basics
 Pyre has applications beyond type checking python code; it can also run static
 analysis to identify potential security issues. These security issues are
 identified with what is called a **Taint Analysis**. The Python Static Analyzer
-feature of Pyre is usually abreviated to Pysa (pronounced like the Leaning tower
+feature of Pyre is usually abbreviated to Pysa (pronounced like the Leaning tower
 of Pisa).
 
 ## Taint Analysis
@@ -222,7 +222,7 @@ and can't be restricted to a specific rule or individual source to sink flows.
 This means you need to ensure you aren't potentially affecting other flows when
 you add a sanitizer for a flow you care about. For this reason, the above
 sanitizer examples might not be a good idea to use. If you are trying to track
-flows where SQL injection occurs, the `escape` sanitizer would would prevent you
+flows where SQL injection occurs, the `escape` sanitizer would prevent you
 from seeing any flows where data going into your SQL query happened to be html
 escaped.
 
@@ -274,7 +274,7 @@ There are other stub files with the `.pyi` extension which can also exist in
 your codebase. These `.pyi` stubs are similar and use [the same
 syntax](https://www.python.org/dev/peps/pep-0484/#stub-files) as the `.pysa`
 stubs, but are not the stubs that are referred to in this document (though they
-are relevent to static analysis). See the "Stubs" section of the [Gradual Typing
+are relevant to static analysis). See the "Stubs" section of the [Gradual Typing
 page](gradual_typing.md) for more info.
 
 ### Requirements and Features
