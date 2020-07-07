@@ -91,10 +91,18 @@ def main() -> None:
                 capture_output=True,
                 cwd=temporary_project_path,
             )
-            errors = json.loads(result.stdout)
+            try:
+                errors = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                error_message = result.stderr
+                raise AssertionError(
+                    f"Pyre did not successfully finish type checking: {error_message}"
+                )
             production_assert(
-                errors[0]["name"] == "Missing return annotation",
-                "Incorrect pyre error returned.",
+                errors and errors[0]["name"] == "Missing return annotation",
+                "Incorrect pyre errors returned."
+                if errors
+                else "Expected pyre errors but none returned.",
             )
 
 
