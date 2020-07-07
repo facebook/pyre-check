@@ -757,7 +757,13 @@ let rec process_type_query_request
           let paths =
             List.fold
               ~init:""
-              ~f:(fun sofar path -> Format.asprintf "%s\n\t`%a`" sofar PyrePath.pp path)
+              ~f:(fun sofar path ->
+                Format.asprintf
+                  "%s%s`%a`"
+                  sofar
+                  (if String.is_empty sofar then "" else ", ")
+                  PyrePath.pp
+                  path)
               errors
           in
           TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
