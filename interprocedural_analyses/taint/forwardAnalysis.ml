@@ -915,6 +915,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.DictionaryKeys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.Any]
+      (* `locals()` is a dictionary from all local names -> values. *)
+      | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
+          let add_root_taint locals_taint root =
+            let path_of_root =
+              match root with
+              | AccessPath.Root.Variable variable ->
+                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized variable)]
+              | NamedParameter { name }
+              | PositionalParameter { name; _ } ->
+                  [Abstract.TreeDomain.Label.Field (Identifier.sanitized name)]
+              | _ -> [Abstract.TreeDomain.Label.Any]
+            in
+            let root_taint =
+              ForwardState.read ~root ~path:[] state.taint |> ForwardState.Tree.prepend path_of_root
+            in
+            ForwardState.Tree.join locals_taint root_taint
+          in
+          let taint =
+            List.fold
+              (ForwardState.roots state.taint)
+              ~init:ForwardState.Tree.bottom
+              ~f:add_root_taint
+          in
+          taint, state
       | _ -> (
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } =
