@@ -23,12 +23,6 @@ val find_annotation
   position:Location.position ->
   (Location.t * Type.t) option
 
-val find_all_annotations
-  :  state:State.t ->
-  configuration:Configuration.Analysis.t ->
-  path:PyrePath.t ->
-  (Location.t * Type.t) list option
-
 val find_all_annotations_batch
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
