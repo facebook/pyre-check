@@ -560,7 +560,6 @@ let run_start_command
     saved_state_metadata
     configuration_file_hash
     store_type_check_resolution
-    _transitive
     new_incremental_check
     perform_autocompletion
     features
@@ -710,7 +709,6 @@ let command =
            "-store-type-check-resolution"
            no_arg
            ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
-      +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       +> flag "-new-incremental-check" no_arg ~doc:"Use the new fine grain dependency incremental"
       +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
       +> flag
