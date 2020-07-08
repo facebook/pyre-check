@@ -32,6 +32,7 @@ DEPENDENCIES = [
     "sedlex.2.1",
     "menhir.20200612",
     "lwt.5.3.0",
+    "ounit2-lwt.2.2.2",
 ]
 
 
