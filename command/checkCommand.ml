@@ -16,7 +16,6 @@ let run_check
     debug
     strict
     show_error_traces
-    _infer
     sequential
     filter_directories
     ignore_all_errors

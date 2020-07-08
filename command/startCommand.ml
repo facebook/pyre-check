@@ -570,7 +570,6 @@ let run_start_command
     debug
     strict
     show_error_traces
-    _infer
     sequential
     filter_directories
     ignore_all_errors

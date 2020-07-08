@@ -28,7 +28,6 @@ let run_analysis
     debug
     strict
     show_error_traces
-    _infer
     sequential
     filter_directories
     ignore_all_errors

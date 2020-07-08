@@ -22,7 +22,6 @@ let base_command_line_arguments =
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
     +> flag "-show-error-traces" no_arg ~doc:"Outputs additional error information"
-    +> flag "-infer" no_arg ~doc:"Outputs extra information and errors for inference purposes"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     +> flag
          "-filter-directories"
