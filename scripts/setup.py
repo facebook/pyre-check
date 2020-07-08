@@ -49,8 +49,6 @@ class Runner:
     opam_root: Path
 
     opam_repository_override: Optional[str] = None
-    configure_only: bool = False
-    environment_only: bool = False
     development: bool = False
     release: bool = False
     build_type: Optional[str] = None
@@ -195,10 +193,10 @@ class Runner:
 
         return opam_environment_variables
 
-    def __call__(self, pyre_directory: Path) -> None:
+    def configure(self, pyre_directory: Path, *, set_switch: bool = True) -> None:
         self.produce_dune_file(pyre_directory)
 
-        if self.configure_only:
+        if set_switch:
             compiler_override = self.compiler_override
             if compiler_override:
                 self.run(
@@ -211,27 +209,34 @@ class Runner:
                         self.opam_root.as_posix(),
                     ]
                 )
-            return
+
+    def full_setup(
+        self, pyre_directory: Path, *, run_tests: bool = False, run_clean: bool = False
+    ) -> None:
+        self.configure(pyre_directory=pyre_directory, set_switch=False)
 
         opam_environment_variables = self.initialize_opam_switch()
 
-        if self.environment_only:
-            self.logger.info(
-                "Environment built successfully, stopping here as requested."
+        if run_clean:
+            self.run(
+                ["dune", "clean"],
+                pyre_directory,
+                add_environment_variables=opam_environment_variables,
             )
-            return
 
         jobs = str(multiprocessing.cpu_count())
+
         self.run(
             ["make", self.make_arguments, "--jobs", jobs],
             pyre_directory,
             add_environment_variables=opam_environment_variables,
         )
-        self.run(
-            ["make", "--jobs", jobs, "test"],
-            pyre_directory,
-            add_environment_variables=opam_environment_variables,
-        )
+        if run_tests:
+            self.run(
+                ["make", "--jobs", jobs, "test"],
+                pyre_directory,
+                add_environment_variables=opam_environment_variables,
+            )
 
     def run(
         self,
@@ -300,16 +305,24 @@ def main(runner_type: Type[Runner]) -> None:
 
     opam_root = make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
-    runner_type(
-        logger=logging.getLogger(__name__),
+    logger = logging.getLogger(__name__)
+
+    runner = runner_type(
+        logger=logger,
         opam_root=opam_root,
         opam_repository_override=parsed.repository,
-        configure_only=parsed.configure,
-        environment_only=parsed.environment_only,
         development=parsed.development,
         release=parsed.release,
         build_type=parsed.build_type,
-    )(pyre_directory=pyre_directory)
+    )
+    if parsed.configure:
+        runner.configure(pyre_directory)
+    elif parsed.environment_only:
+        runner.configure(pyre_directory, set_switch=False)
+        runner.initialize_opam_switch()
+        logger.info("Environment built successfully, stopping here as requested.")
+    else:
+        runner.full_setup(pyre_directory, run_tests=True)
 
 
 if __name__ == "__main__":
