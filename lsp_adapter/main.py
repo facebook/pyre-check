@@ -167,6 +167,13 @@ def error_handler(loop: AbstractEventLoop, context: Dict[str, Any]) -> None:
 
 
 def run_server(loop: AbstractEventLoop, root: str) -> None:
+    logging.basicConfig(
+        filename=_get_log_file(root),
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+        filemode="w",
+    )
     logging.info("Starting adapter.")
     socket_connection = add_socket_connection(loop, root)
     stdin_pipe_reader = loop.connect_read_pipe(
@@ -179,13 +186,6 @@ def run_server(loop: AbstractEventLoop, root: str) -> None:
 
 def main(arguments: argparse.Namespace) -> None:
     root = arguments.root
-    logging.basicConfig(
-        filename=_get_log_file(root),
-        level=logging.DEBUG,
-        format="%(asctime)s %(message)s",
-        datefmt="%m/%d/%Y %I:%M:%S %p",
-        filemode="w",
-    )
     loop: AbstractEventLoop = asyncio.get_event_loop()
     try:
         if _should_run_null_server(arguments.null_server):
