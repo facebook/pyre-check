@@ -109,6 +109,7 @@ class Query(Command):
 
     def _socket_result_handler(self, result: Result) -> None:
         self._result = result
+        LOG.log(log.SUCCESS, "Received response from server")
         if self.query == "help":
             response = json.loads(result.output).get("response")
             log.stdout.write(response.get("help"))
