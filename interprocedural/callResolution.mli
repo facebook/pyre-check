@@ -35,7 +35,7 @@ val resolve_property_targets
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets : resolution:Resolution.t -> Call.t -> target list
 
-val transform_special_calls : Call.t -> Call.t option
+val transform_special_calls : resolution:Resolution.t -> Call.t -> Call.t option
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 

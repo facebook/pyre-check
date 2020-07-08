@@ -6,4 +6,5 @@
     ppx_sexp_message ppx_deriving_yojson))
  (libraries core sexplib yojson ppxlib ppx_deriving_yojson ppx_deriving
    pyrelib.analysis pyrelib.ast pyrelib.pyreParser pyrelib.recognized
-   pyrelib.scheduler pyrelib.statistics pyrelib.version pyrelib.file))
+   pyrelib.scheduler pyrelib.specialCallResolution pyrelib.statistics
+   pyrelib.version pyrelib.file))

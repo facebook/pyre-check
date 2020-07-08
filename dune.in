@@ -79,6 +79,15 @@
  (libraries pyrelib.network pyrePath pyre core yojson))
 
 (library
+ (name specialCallResolution)
+ (modules specialCallResolution)
+ (public_name pyrelib.specialCallResolution)
+ (preprocess
+  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
+    ppx_compare ppx_sexp_conv))
+ (libraries pyrelib.analysis))
+
+(library
  (name profiling)
  (modules profiling)
  (public_name pyrelib.profiling)
@@ -155,8 +164,16 @@
    pyrelib.deadStore pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
 
 (tests
- (names decoratorsTest fetchSavedStateTest projectSpecificPreprocessingTest)
- (modules decoratorsTest fetchSavedStateTest projectSpecificPreprocessingTest)
+ (names
+   decoratorsTest
+   fetchSavedStateTest
+   projectSpecificPreprocessingTest
+   specialCallResolutionTest)
+ (modules
+   decoratorsTest
+   fetchSavedStateTest
+   projectSpecificPreprocessingTest
+   specialCallResolutionTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))

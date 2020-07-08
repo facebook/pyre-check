@@ -206,6 +206,19 @@ let resolve_target ~resolution ?receiver_type callee =
         match self_argument with
         | Some _ -> [Callable.create_method name, self_argument]
         | None -> [Callable.create_function name, None] )
+    | _
+      when is_all_names
+           && Set.mem SpecialCallResolution.recognized_callable_target_types callable_type -> (
+        let name =
+          Node.value callee
+          |> (function
+               | Name name -> Some name
+               | _ -> None)
+          >>= Ast.Expression.name_to_reference
+        in
+        match name with
+        | Some name -> [Callable.create_function name, None]
+        | _ -> [] )
     | _ -> []
   in
   resolve_type callable_type
@@ -315,7 +328,7 @@ let get_global_targets ~resolution reference =
     GlobalTargets (resolve_target ~resolution callee)
 
 
-let transform_special_calls { Call.callee; arguments } =
+let transform_special_calls ~resolution { Call.callee; arguments } =
   match callee, arguments with
   | ( {
         Node.value =
@@ -354,10 +367,10 @@ let transform_special_calls { Call.callee; arguments } =
           arguments =
             List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
         }
-  | _ -> None
+  | _ -> SpecialCallResolution.redirect ~resolution { Call.callee; arguments }
 
 
 let redirect_special_calls ~resolution call =
-  match transform_special_calls call with
+  match transform_special_calls ~resolution call with
   | Some call -> call
   | None -> Annotated.Call.redirect_special_calls ~resolution call

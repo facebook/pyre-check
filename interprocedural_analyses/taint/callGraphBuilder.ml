@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Pyre
 open Core
 open Analysis
 open Ast
@@ -53,7 +54,9 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
   in
   let callables =
     match
-      Interprocedural.CallResolution.transform_special_calls { Expression.Call.callee; arguments }
+      Interprocedural.CallResolution.transform_special_calls
+        ~resolution
+        { Expression.Call.callee; arguments }
     with
     | Some { Expression.Call.callee = transformed_call; arguments = transformed_arguments } ->
         begin
@@ -67,6 +70,47 @@ let add_callee ~global_resolution ~target ~callables ~arguments ~dynamic ~qualif
                 ~dynamic:false
                 ~qualifier
                 ~callee:transformed_call
+          (* Some callables are decorated with a decorator that transforms them to a class that
+             stores & calls the callable opaquely. From Pysa's perspective, the type of the callable
+             is now `DecoratedClass`, and since we normally rely on the callable type to keep the
+             target names around, this means that we will no longer have an accurate call graph.
+
+             The SpecialCallResolution has a contract that it'll transform callables into the
+             underlying callable name for a small, special set of targets, so if we're in this case,
+             we make the angelic assumption that the base expression has a 1:1 match to the actual
+             callable that Pysa models. *)
+          | annotation
+            when Type.Set.mem SpecialCallResolution.recognized_callable_target_types annotation -> (
+              let name =
+                Node.value transformed_call
+                |> (function
+                     | Name name -> Some name
+                     | _ -> None)
+                >>= Ast.Expression.name_to_reference
+              in
+              match name with
+              | Some name ->
+                  DefaultBuilder.add_callee
+                    ~global_resolution
+                    ~target:None
+                    ~callables:
+                      (Some
+                         [
+                           {
+                             Type.Callable.kind = Named name;
+                             implementation =
+                               {
+                                 Type.Callable.annotation = Type.Any;
+                                 parameters = Type.Callable.Undefined;
+                               };
+                             overloads = [];
+                           };
+                         ])
+                    ~arguments:transformed_arguments
+                    ~dynamic:false
+                    ~qualifier
+                    ~callee:transformed_call
+              | _ -> () )
           | _ -> ()
         end;
         callables
