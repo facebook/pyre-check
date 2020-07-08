@@ -4227,7 +4227,23 @@ module GlobalAnnotationCache = struct
 end
 
 module PreviousEnvironment = ClassMetadataEnvironment
-include GlobalAnnotationCache
+
+module UpdateResult = struct
+  include GlobalAnnotationCache.UpdateResult
+
+  type upstream = ClassMetadataEnvironment.UpdateResult.t
+
+  let upstream result =
+    result
+    |> GlobalAnnotationCache.UpdateResult.upstream
+    |> AttributeCache.UpdateResult.upstream
+    |> MetaclassCache.UpdateResult.upstream
+    |> ParseAnnotationCache.UpdateResult.upstream
+end
+
+let update_this_and_all_preceding_environments =
+  GlobalAnnotationCache.update_this_and_all_preceding_environments
+
 
 module ReadOnly = struct
   include GlobalAnnotationCache.ReadOnly

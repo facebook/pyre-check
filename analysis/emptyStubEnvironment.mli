@@ -14,6 +14,7 @@ module EmptyStubReadOnly : sig
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
-include Environment.S with module ReadOnly = EmptyStubReadOnly
-
-module PreviousEnvironment = UnannotatedGlobalEnvironment
+include
+  Environment.S
+    with module ReadOnly = EmptyStubReadOnly
+     and module PreviousEnvironment = UnannotatedGlobalEnvironment

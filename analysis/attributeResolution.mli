@@ -179,6 +179,7 @@ module AttributeReadOnly : sig
   val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 end
 
-include Environment.S with module ReadOnly = AttributeReadOnly
-
-module PreviousEnvironment = ClassMetadataEnvironment
+include
+  Environment.S
+    with module ReadOnly = AttributeReadOnly
+     and module PreviousEnvironment = ClassMetadataEnvironment
