@@ -479,12 +479,12 @@ class Configuration:
             )
 
         if os.path.isdir(path):
-            local_configuration = os.path.join(path, CONFIGURATION_FILE + ".local")
+            local_configuration = os.path.join(path, LOCAL_CONFIGURATION_FILE)
             local_root = path
             if not os.path.exists(local_configuration):
                 raise EnvironmentException(
                     "Local configuration directory `{}` does not contain "
-                    "a `{}` file.".format(path, CONFIGURATION_FILE + ".local")
+                    "a `{}` file.".format(path, LOCAL_CONFIGURATION_FILE)
                 )
         else:
             local_configuration = path
