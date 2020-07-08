@@ -75,7 +75,6 @@ module Analysis = struct
     incremental_style: incremental_style;
     include_hints: bool;
     perform_autocompletion: bool;
-    go_to_definition_enabled: bool;
     features: Features.t;
     ignore_infer: Path.t list;
     log_directory: Path.t;
@@ -117,7 +116,6 @@ module Analysis = struct
       ?(incremental_style = Shallow)
       ?(include_hints = false)
       ?(perform_autocompletion = false)
-      ?(go_to_definition_enabled = false)
       ?(features = Features.default)
       ?(ignore_infer = [])
       ?log_directory
@@ -158,7 +156,6 @@ module Analysis = struct
       incremental_style;
       include_hints;
       perform_autocompletion;
-      go_to_definition_enabled;
       features;
       ignore_infer;
       log_directory =
