@@ -22,7 +22,7 @@ let run_analysis
     repository_root
     rule_filter
     find_obscure_flows
-    verbose
+    _verbose
     expected_version
     sections
     debug
@@ -60,7 +60,6 @@ let run_analysis
   let repository_root = repository_root >>| Path.create_absolute in
   let configuration =
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
       ~sections
       ~debug

@@ -564,7 +564,7 @@ let run_start_command
     new_incremental_check
     perform_autocompletion
     features
-    verbose
+    _verbose
     expected_version
     sections
     debug
@@ -607,7 +607,6 @@ let run_start_command
         Shallow
     in
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
       ~sections
       ~debug

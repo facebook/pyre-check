@@ -30,7 +30,7 @@ type section =
 val is_enabled : section -> bool
 
 (* Setup the logging environment where `sections` is a list of sections that are enabled. *)
-val initialize : verbose:bool -> sections:string list -> unit
+val initialize : debug:bool -> sections:string list -> unit
 
 val initialize_for_tests : unit -> unit
 

@@ -10,7 +10,7 @@ open Service
 
 (* run_command prints out the errors, for a Check run *)
 let run_check
-    verbose
+    _verbose
     expected_version
     sections
     debug
@@ -43,7 +43,6 @@ let run_check
   let ignore_all_errors = argument_to_paths ignore_all_errors in
   let configuration =
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
       ~sections
       ~debug

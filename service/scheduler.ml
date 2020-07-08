@@ -101,10 +101,10 @@ let create
 let create_sequential () = SequentialScheduler
 
 let run_process
-    ~configuration:({ Configuration.Analysis.verbose; sections; _ } as configuration)
+    ~configuration:({ Configuration.Analysis.debug; sections; _ } as configuration)
     process
   =
-  Log.initialize ~verbose ~sections;
+  Log.initialize ~debug ~sections;
   Configuration.Analysis.set_global configuration;
   try
     let result = process () in

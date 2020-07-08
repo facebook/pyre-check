@@ -38,17 +38,17 @@ let assert_disabled section =
 
 let test_initialize_default_off _ =
   assert_disabled `Fixpoint;
-  Log.initialize ~verbose:false ~sections:["fixpoint"];
+  Log.initialize ~debug:false ~sections:["fixpoint"];
   assert_enabled `Fixpoint;
-  Log.initialize ~verbose:false ~sections:["-fixpoint"];
+  Log.initialize ~debug:false ~sections:["-fixpoint"];
   assert_disabled `Fixpoint
 
 
 let test_initialize_default_on _ =
   assert_enabled `Warning;
-  Log.initialize ~verbose:false ~sections:["-warning"];
+  Log.initialize ~debug:false ~sections:["-warning"];
   assert_disabled `Warning;
-  Log.initialize ~verbose:false ~sections:["warning"];
+  Log.initialize ~debug:false ~sections:["warning"];
   assert_enabled `Warning
 
 

@@ -36,8 +36,8 @@ let test_equal _ =
        (Configuration.Analysis.create ~search_path:[SearchPath.Root root] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~verbose:true ())
-       (Configuration.Analysis.create ~verbose:false ()));
+       (Configuration.Analysis.create ~debug:true ())
+       (Configuration.Analysis.create ~debug:false ()));
   assert_false
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~expected_version:"a" ())

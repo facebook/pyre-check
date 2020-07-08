@@ -61,7 +61,6 @@ module Analysis = struct
     project_root: Path.t;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
-    verbose: bool;
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
@@ -101,7 +100,6 @@ module Analysis = struct
       ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
       ?(taint_model_paths = [])
-      ?(verbose = false)
       ?expected_version
       ?(strict = false)
       ?(debug = false)
@@ -136,7 +134,6 @@ module Analysis = struct
       project_root;
       search_path;
       taint_model_paths;
-      verbose;
       expected_version;
       strict;
       show_error_traces;

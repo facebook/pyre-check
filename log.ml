@@ -59,8 +59,8 @@ let enabled =
 
 let is_enabled section = Hash_set.mem enabled (section_to_string section)
 
-let initialize ~verbose ~sections =
-  if verbose then
+let initialize ~debug ~sections =
+  if debug then
     Hash_set.add enabled "Debug";
   let handle_section section =
     let normalize section = String.lowercase section |> String.capitalize in

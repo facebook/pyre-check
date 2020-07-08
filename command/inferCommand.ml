@@ -10,7 +10,7 @@ open Service
 
 let run_infer
     ignore_infer
-    verbose
+    _verbose
     expected_version
     sections
     debug
@@ -44,7 +44,6 @@ let run_infer
   let ignore_all_errors = argument_to_paths ignore_all_errors in
   let configuration =
     Configuration.Analysis.create
-      ~verbose
       ?expected_version
       ~sections
       ~debug
