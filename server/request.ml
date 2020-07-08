@@ -745,10 +745,10 @@ let rec process_type_query_request
     | TypeQuery.TypesInFiles paths ->
         let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
         let create_result = function
-          | { LookupCache.path; types_by_location = Some types } ->
+          | { LookupCache.path; types_by_location = Some types; _ } ->
               Either.First
                 { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
-          | { LookupCache.path; _ } -> Either.Second path
+          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then
@@ -757,13 +757,19 @@ let rec process_type_query_request
           let paths =
             List.fold
               ~init:""
-              ~f:(fun sofar path ->
+              ~f:(fun sofar (path, error_reason) ->
+                let print_reason = function
+                  | Some LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
+                  | Some LookupCache.FileNotFound -> " (file not found)"
+                  | None -> ""
+                in
                 Format.asprintf
-                  "%s%s`%a`"
+                  "%s%s`%a`%s"
                   sofar
                   (if String.is_empty sofar then "" else ", ")
                   PyrePath.pp
-                  path)
+                  path
+                  (print_reason error_reason))
               errors
           in
           TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)

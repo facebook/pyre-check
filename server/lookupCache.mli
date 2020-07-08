@@ -7,9 +7,14 @@ open Ast
 open Analysis
 open Core
 
+type error_reason =
+  | StubShadowing
+  | FileNotFound
+
 type types_by_path = {
   path: PyrePath.t;
   types_by_location: (Location.t * Type.t) list option;
+  error_reason: error_reason option;
 }
 
 val evict : lookups:Analysis.Lookup.t String.Table.t -> Reference.t -> unit
