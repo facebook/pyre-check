@@ -18,7 +18,7 @@ module type ReadOnly = sig
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
-module type PreviousUpdateResult = sig
+module type UpdateResultType = sig
   type t
 
   type read_only
@@ -39,7 +39,7 @@ end
 module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
-  module UpdateResult : PreviousUpdateResult with type read_only := ReadOnly.t
+  module UpdateResult : UpdateResultType with type read_only := ReadOnly.t
 
   val update_this_and_all_preceding_environments
     :  AstEnvironment.t ->
@@ -50,28 +50,18 @@ module type PreviousEnvironment = sig
 end
 
 module UpdateResult = struct
-  module type S = sig
-    include PreviousUpdateResult
-
-    type upstream
-
-    val upstream : t -> upstream
-  end
+  module type S = UpdateResultType
 
   module Make (PreviousEnvironment : PreviousEnvironment) (ReadOnly : ReadOnly) = struct
-    type upstream = PreviousEnvironment.UpdateResult.t
-
     type read_only = ReadOnly.t
 
     type t = {
-      upstream: upstream;
+      upstream: PreviousEnvironment.UpdateResult.t;
       triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
       read_only: ReadOnly.t;
     }
 
     let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-    let upstream { upstream; _ } = upstream
 
     let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
       triggered_dependencies :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
@@ -94,10 +84,7 @@ module type S = sig
 
   module PreviousEnvironment : PreviousEnvironment
 
-  module UpdateResult :
-    UpdateResult.S
-      with type upstream = PreviousEnvironment.UpdateResult.t
-       and type read_only = ReadOnly.t
+  module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
 
   val update_this_and_all_preceding_environments
     :  AstEnvironment.t ->
@@ -183,10 +170,7 @@ module EnvironmentTable = struct
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
-    module UpdateResult :
-      UpdateResult.S
-        with type upstream = In.PreviousEnvironment.UpdateResult.t
-         and type read_only = ReadOnly.t
+    module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
 
     val update_this_and_all_preceding_environments
       :  AstEnvironment.t ->
