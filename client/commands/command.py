@@ -155,7 +155,6 @@ class CommandArguments:
     additional_checks: List[str]
     show_error_traces: bool
     output: str
-    verbose: bool
     enable_profiling: bool
     enable_memory_profiling: bool
     noninteractive: bool
@@ -193,7 +192,6 @@ class CommandArguments:
             additional_checks=arguments.additional_check,
             show_error_traces=arguments.show_error_traces,
             output=arguments.output,
-            verbose=arguments.verbose,
             enable_profiling=arguments.enable_profiling,
             enable_memory_profiling=arguments.enable_memory_profiling,
             noninteractive=arguments.noninteractive,
@@ -239,7 +237,6 @@ class CommandParser(ABC):
         self._additional_checks: List[str] = self._command_arguments.additional_checks
         self._show_error_traces: bool = self._command_arguments.show_error_traces
         self._output: str = self._command_arguments.output
-        self._verbose: bool = self._command_arguments.verbose
         self._enable_profiling: bool = self._command_arguments.enable_profiling
         self._enable_memory_profiling: bool = (
             self._command_arguments.enable_memory_profiling
@@ -336,9 +333,6 @@ class CommandParser(ABC):
         # Logging.
         parser.add_argument(
             "--output", choices=[TEXT, JSON], default=TEXT, help="How to format output"
-        )
-        parser.add_argument(
-            "--verbose", action="store_true", help="Enable verbose logging"
         )
         parser.add_argument(
             "--enable-profiling", action="store_true", help=argparse.SUPPRESS
@@ -649,8 +643,6 @@ class Command(CommandParser, ABC):
             flags.append(",".join(self._additional_checks))
         if self._show_error_traces:
             flags.append("-show-error-traces")
-        if self._verbose:
-            flags.append("-verbose")
         if not self._hide_parse_errors:
             self._enable_logging_section("parser")
         logging_sections = self._logging_sections

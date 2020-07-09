@@ -107,7 +107,7 @@ class Reporting(Command):
                 for error in errors
                 if (
                     not error.is_ignored()
-                    and (self._verbose or not (error.is_external_to_global_root()))
+                    and (not (error.is_external_to_global_root()))
                 )
             ]
             sorted_errors = sorted(

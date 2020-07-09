@@ -42,7 +42,6 @@ def mock_arguments(
         additional_checks=[],
         show_error_traces=False,
         output=output,
-        verbose=False,
         enable_profiling=enable_profiling,
         enable_memory_profiling=enable_memory_profiling,
         noninteractive=False,
