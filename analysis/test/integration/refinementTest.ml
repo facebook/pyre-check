@@ -315,6 +315,21 @@ let test_assert_is_none context =
   ()
 
 
+let test_assert_is context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import Type
+      class Foo:
+        x: int = 1
+      def foo(o: Type[object]) -> None:
+        if (o is Foo):
+          o.x
+    |}
+    [];
+  ()
+
+
 let test_check_global_refinement context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -971,6 +986,7 @@ let () =
   "refinement"
   >::: [
          "check_assert_is_none" >:: test_assert_is_none;
+         "check_assert_is" >:: test_assert_is;
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
          "check_isinstance" >:: test_check_isinstance;

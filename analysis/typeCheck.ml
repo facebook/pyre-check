@@ -4723,10 +4723,13 @@ module State (Context : Context) = struct
               {
                 ComparisonOperator.left = { Node.value = Name name; _ };
                 operator = ComparisonOperator.Is;
-                right = { Node.value = Name (Name.Identifier "None"); _ };
+                right;
               }
             when is_simple_name name -> (
-              let refined = Annotation.create Type.NoneType in
+              let { Resolved.resolved = refined; _ } =
+                forward_expression ~resolution ~expression:right
+              in
+              let refined = Annotation.create refined in
               match refinable_annotation name with
               | Some previous ->
                   if
