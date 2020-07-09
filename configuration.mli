@@ -34,7 +34,6 @@ module Analysis : sig
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
     local_root: Path.t;
-    sections: string list;
     debug: bool;
     project_root: Path.t;
     search_path: SearchPath.t list;
@@ -68,7 +67,6 @@ module Analysis : sig
     ?ignore_all_errors:Path.t list ->
     ?number_of_workers:int ->
     ?local_root:Path.t ->
-    ?sections:string list ->
     ?project_root:Path.t ->
     ?search_path:SearchPath.t list ->
     ?taint_model_paths:Path.t list ->

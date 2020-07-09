@@ -33,6 +33,7 @@ let run_check
     local_root
     ()
   =
+  Log.initialize ~debug ~sections;
   let argument_to_paths argument =
     argument
     >>| String.split_on_chars ~on:[';']
@@ -44,7 +45,6 @@ let run_check
   let configuration =
     Configuration.Analysis.create
       ?expected_version
-      ~sections
       ~debug
       ~strict
       ~show_error_traces

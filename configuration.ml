@@ -56,7 +56,6 @@ module Analysis = struct
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
     local_root: Path.t;
-    sections: string list;
     debug: bool;
     project_root: Path.t;
     search_path: SearchPath.t list;
@@ -96,7 +95,6 @@ module Analysis = struct
       ?ignore_all_errors
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
-      ?(sections = [])
       ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
       ?(taint_model_paths = [])
@@ -129,7 +127,6 @@ module Analysis = struct
       ignore_all_errors;
       number_of_workers;
       local_root;
-      sections;
       debug;
       project_root;
       search_path;

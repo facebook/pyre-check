@@ -45,6 +45,7 @@ let run_analysis
     local_root
     ()
   =
+  Log.initialize ~debug ~sections;
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -61,7 +62,6 @@ let run_analysis
   let configuration =
     Configuration.Analysis.create
       ?expected_version
-      ~sections
       ~debug
       ~strict
       ~show_error_traces

@@ -586,6 +586,7 @@ let run_start_command
     local_root
     ()
   =
+  Log.initialize ~debug ~sections;
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -607,7 +608,6 @@ let run_start_command
     in
     Configuration.Analysis.create
       ?expected_version
-      ~sections
       ~debug
       ~infer:false
       ?configuration_file_hash
