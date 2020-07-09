@@ -207,15 +207,15 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                 String.equal (Reference.show name) "*")
           in
           match starred_import with
-          | Some { Import.name = { Node.location; _ }; _ } ->
+          | Some _ ->
               let expanded_import =
                 match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
                 | [] -> statement
                 | exports ->
                     List.map exports ~f:(fun name ->
                         {
-                          Import.name = Node.create ~location (Reference.create name);
-                          alias = Some (Node.create ~location name);
+                          Import.name = Node.create ~location:Location.any (Reference.create name);
+                          alias = Some (Node.create ~location:Location.any name);
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })

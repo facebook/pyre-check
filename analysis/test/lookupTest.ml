@@ -14,10 +14,11 @@ let show_location { Location.start; stop } =
   Format.asprintf "%a-%a" Location.pp_position start Location.pp_position stop
 
 
-let generate_lookup ~context source =
+let generate_lookup ~context ?(environment_sources = []) source =
   let environment =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
+      |> ScratchProject.build_type_environment
     in
     TypeEnvironment.read_only type_environment
   in
@@ -697,7 +698,20 @@ let test_lookup_imports context =
        unknown)], typing.Any]";
       "3:31-3:38/typing.Callable(subprocess.call)[[Named(command, unknown), Named(shell, \
        unknown)], typing.Any]";
-    ]
+    ];
+
+  (* Wildcard Imports *)
+  let source = {|
+      from environment import *
+    |} in
+  let environment_source = {|
+      class Foo: pass
+      class Bar: pass
+    |} in
+  assert_annotation_list
+    ~lookup:
+      (generate_lookup ~context ~environment_sources:["environment.py", environment_source] source)
+    []
 
 
 let test_lookup_string_annotations context =
