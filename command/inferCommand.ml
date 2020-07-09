@@ -33,7 +33,9 @@ let run_infer
     local_root
     ()
   =
+  let local_root = Path.create_absolute local_root in
   Log.initialize ~debug ~sections;
+  Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
   let argument_to_paths argument =
     argument
     >>| String.split_on_chars ~on:[';']
@@ -49,8 +51,6 @@ let run_infer
       ~debug
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
       ?profiling_output
       ?memory_profiling_output
       ~infer:true
@@ -64,7 +64,7 @@ let run_infer
       ~extensions
       ?log_directory
       ?ignore_infer
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
       ()
   in
   (fun () ->

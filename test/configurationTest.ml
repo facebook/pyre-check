@@ -9,10 +9,6 @@ open Test
 open Pyre
 
 let test_equal _ =
-  assert_true
-    (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~start_time:1.0 ())
-       (Configuration.Analysis.create ~start_time:2.0 ()));
   assert_false
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~infer:true ())

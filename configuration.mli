@@ -25,7 +25,6 @@ module Analysis : sig
   [@@deriving show]
 
   type t = {
-    start_time: float;
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
@@ -41,8 +40,6 @@ module Analysis : sig
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    log_identifier: string;
-    logger: string option;
     profiling_output: string option;
     memory_profiling_output: string option;
     excludes: Str.regexp list;
@@ -58,8 +55,7 @@ module Analysis : sig
   [@@deriving show, eq]
 
   val create
-    :  ?start_time:float ->
-    ?infer:bool ->
+    :  ?infer:bool ->
     ?configuration_file_hash:string ->
     ?parallel:bool ->
     ?analyze_external_sources:bool ->
@@ -74,8 +70,6 @@ module Analysis : sig
     ?strict:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
-    ?log_identifier:string ->
-    ?logger:string ->
     ?profiling_output:string ->
     ?memory_profiling_output:string ->
     ?excludes:string list ->

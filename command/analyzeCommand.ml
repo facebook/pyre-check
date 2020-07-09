@@ -45,7 +45,9 @@ let run_analysis
     local_root
     ()
   =
+  let local_root = Path.create_absolute local_root in
   Log.initialize ~debug ~sections;
+  Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -65,8 +67,6 @@ let run_analysis
       ~debug
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
       ?profiling_output
       ?memory_profiling_output
       ~infer:false
@@ -80,7 +80,7 @@ let run_analysis
       ~excludes
       ~extensions
       ?log_directory
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
       ()
   in
   let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in

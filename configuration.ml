@@ -47,7 +47,6 @@ module Analysis = struct
   [@@deriving show]
 
   type t = {
-    start_time: float;
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
@@ -63,8 +62,6 @@ module Analysis = struct
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    log_identifier: string;
-    logger: string option;
     profiling_output: string option;
     memory_profiling_output: string option;
     excludes: Str.regexp list; [@opaque]
@@ -86,7 +83,6 @@ module Analysis = struct
 
 
   let create
-      ?(start_time = Unix.time ())
       ?(infer = false)
       ?configuration_file_hash
       ?(parallel = true)
@@ -102,8 +98,6 @@ module Analysis = struct
       ?(strict = false)
       ?(debug = false)
       ?(show_error_traces = false)
-      ?(log_identifier = "")
-      ?logger
       ?profiling_output
       ?memory_profiling_output
       ?(excludes = [])
@@ -118,7 +112,6 @@ module Analysis = struct
       ()
     =
     {
-      start_time;
       infer;
       configuration_file_hash;
       parallel;
@@ -134,8 +127,6 @@ module Analysis = struct
       expected_version;
       strict;
       show_error_traces;
-      log_identifier;
-      logger;
       profiling_output;
       memory_profiling_output;
       excludes =

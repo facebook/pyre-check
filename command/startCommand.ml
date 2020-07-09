@@ -586,7 +586,9 @@ let run_start_command
     local_root
     ()
   =
+  let local_root = Path.create_absolute local_root in
   Log.initialize ~debug ~sections;
+  Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -613,8 +615,6 @@ let run_start_command
       ?configuration_file_hash
       ~strict
       ~show_error_traces
-      ~log_identifier
-      ?logger
       ?profiling_output
       ?memory_profiling_output
       ~parallel:(not sequential)
@@ -626,7 +626,7 @@ let run_start_command
       ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions
-      ~local_root:(Path.create_absolute local_root)
+      ~local_root
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion
