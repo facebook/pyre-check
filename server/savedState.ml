@@ -130,7 +130,6 @@ let compute_locally_changed_paths
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~configuration
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )

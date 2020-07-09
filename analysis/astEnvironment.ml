@@ -144,7 +144,6 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
          ~minimum_chunk_size:100
          ~preferred_chunks_per_worker:5
          ())
-    ~configuration
     ~initial:[]
     ~map:(fun _ -> List.fold ~init:[] ~f:parse_and_categorize)
     ~reduce:List.append

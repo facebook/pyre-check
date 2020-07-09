@@ -120,7 +120,6 @@ let analyze
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~configuration
       ~initial:DependencyGraph.empty_overrides
       ~map:(fun _ qualifiers ->
         List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
@@ -150,7 +149,6 @@ let analyze
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~configuration
       ~initial:Callable.RealMap.empty
       ~map:(fun _ qualifiers ->
         List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
@@ -205,7 +203,6 @@ let analyze
     in
     Scheduler.map_reduce
       scheduler
-      ~configuration
       ~policy:
         (Scheduler.Policy.fixed_chunk_count
            ~minimum_chunk_size:50
@@ -284,7 +281,6 @@ let analyze
     try
       let iterations =
         Interprocedural.Analysis.compute_fixpoint
-          ~configuration
           ~scheduler
           ~environment
           ~analyses
@@ -310,7 +306,7 @@ let analyze
       ~analyses
       all_callables
   in
-  let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
+  let errors = Interprocedural.Analysis.extract_errors scheduler all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
 
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)

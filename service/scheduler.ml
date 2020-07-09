@@ -100,8 +100,7 @@ let create
 
 let create_sequential () = SequentialScheduler
 
-let run_process ~configuration process =
-  Configuration.Analysis.set_global configuration;
+let run_process process =
   try
     let result = process () in
     Statistics.flush ();
@@ -110,7 +109,7 @@ let run_process ~configuration process =
   | error -> raise error
 
 
-let map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs () =
+let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
   let sequential_map_reduce () = map initial inputs |> fun mapped -> reduce mapped initial in
   match scheduler with
   | ParallelScheduler workers ->
@@ -121,9 +120,7 @@ let map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs ()
       if number_of_chunks = 1 then
         sequential_map_reduce ()
       else
-        let map accumulator inputs =
-          (fun () -> map accumulator inputs) |> run_process ~configuration
-        in
+        let map accumulator inputs = (fun () -> map accumulator inputs) |> run_process in
         MultiWorker.call
           (Some workers)
           ~job:map
@@ -133,11 +130,10 @@ let map_reduce scheduler ~policy ~configuration ~initial ~map ~reduce ~inputs ()
   | SequentialScheduler -> sequential_map_reduce ()
 
 
-let iter scheduler ~policy ~configuration ~f ~inputs =
+let iter scheduler ~policy ~f ~inputs =
   map_reduce
     scheduler
     ~policy
-    ~configuration
     ~initial:()
     ~map:(fun _ inputs -> f inputs)
     ~reduce:(fun _ _ -> ())

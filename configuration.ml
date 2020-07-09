@@ -144,12 +144,6 @@ module Analysis = struct
     }
 
 
-  let global : t option ref = ref None
-
-  let set_global configuration = global := Some configuration
-
-  let get_global () = !global
-
   let log_directory { log_directory; _ } = log_directory
 
   let search_path { local_root; search_path; _ } =

@@ -1007,7 +1007,6 @@ let update_this_and_all_preceding_environments ast_environment ~scheduler ~confi
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:5
            ())
-      ~configuration
       ~f:map
       ~inputs:modified_qualifiers
   in

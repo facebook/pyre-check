@@ -6105,7 +6105,6 @@ let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder de
            ~minimum_chunks_per_worker:2
            ~preferred_chunk_size:500
            ())
-      ~configuration
       ~initial:0
       ~map
       ~reduce
@@ -6138,7 +6137,6 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_bui
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:5
            ())
-      ~configuration
       ~initial:[]
       ~map
       ~reduce:List.append

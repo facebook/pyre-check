@@ -267,7 +267,6 @@ module EnvironmentTable = struct
                  ~minimum_chunk_size:100
                  ~preferred_chunks_per_worker:5
                  ())
-            ~configuration
             ~map:register
             ~reduce:(fun () () -> ())
             ~inputs:names_to_update
@@ -277,7 +276,7 @@ module EnvironmentTable = struct
         ()
       in
       match configuration with
-      | { incremental_style = FineGrained; _ } ->
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
           let triggered_dependencies =
             let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
             Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->

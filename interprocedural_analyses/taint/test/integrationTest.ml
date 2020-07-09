@@ -122,9 +122,7 @@ let test_integration context =
         |> DependencyGraph.union overrides
         |> DependencyGraph.reverse
       in
-      let configuration = Configuration.Analysis.create () in
       Analysis.compute_fixpoint
-        ~configuration
         ~scheduler:(Test.mock_scheduler ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]

@@ -502,7 +502,7 @@ let run
         adapter_socket = { path = adapter_socket_path; _ };
         log_path;
         daemonize;
-        configuration = { incremental_style; _ } as configuration;
+        configuration = { incremental_style; _ };
         _;
       } as server_configuration )
   =
@@ -546,7 +546,7 @@ let run
     | AlreadyRunning ->
         Log.info "Server is already running";
         0)
-  |> Scheduler.run_process ~configuration
+  |> Scheduler.run_process
 
 
 (** Default configuration when run from command line *)

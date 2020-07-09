@@ -94,7 +94,7 @@ let run_infer
                  errors) );
         ])
     |> Log.print "%s")
-  |> Scheduler.run_process ~configuration
+  |> Scheduler.run_process
 
 
 let infer_command =

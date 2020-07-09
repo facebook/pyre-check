@@ -80,10 +80,6 @@ module Analysis : sig
     unit ->
     t
 
-  val set_global : t -> unit
-
-  val get_global : unit -> t option
-
   val log_directory : t -> Path.t
 
   val search_path : t -> SearchPath.t list

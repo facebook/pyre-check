@@ -167,7 +167,7 @@ let run_analysis
         |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
     |> Log.print "%s")
-  |> Scheduler.run_process ~configuration
+  |> Scheduler.run_process
 
 
 let command =

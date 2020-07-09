@@ -570,7 +570,6 @@ let compute_callables_to_reanalyze
 
 
 let compute_fixpoint
-    ~configuration
     ~scheduler
     ~environment
     ~analyses
@@ -638,7 +637,6 @@ let compute_fixpoint
           Scheduler.map_reduce
             scheduler
             ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1000)
-            ~configuration
             ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
             ~initial:{ callables_processed = 0; callables_to_dump = Callable.Set.empty }
             ~reduce
@@ -705,7 +703,7 @@ let compute_fixpoint
       raise exn
 
 
-let extract_errors scheduler ~configuration all_callables =
+let extract_errors scheduler all_callables =
   let extract_errors callables =
     List.fold
       ~f:(fun errors callable -> (Fixpoint.get_result callable |> get_errors) :: errors)
@@ -716,7 +714,6 @@ let extract_errors scheduler ~configuration all_callables =
   Scheduler.map_reduce
     scheduler
     ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-    ~configuration
     ~initial:[]
     ~map:(fun _ callables -> extract_errors callables)
     ~reduce:List.cons

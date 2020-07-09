@@ -206,7 +206,6 @@ let run ~scheduler ~configuration ~environment sources =
            ~minimum_chunks_per_worker:2
            ~preferred_chunk_size:250
            ())
-      ~configuration
       ~initial:(0, [])
       ~map
       ~reduce
