@@ -493,6 +493,12 @@ class Configuration:
         self.local_configuration = local_configuration
         self._check_nested_configurations(local_root)
         self._read(local_configuration)
+        if not self.source_directories and not self.targets:
+            raise EnvironmentException(
+                "Local configuration `{}` does not specify any sources to type check.".format(
+                    local_configuration
+                )
+            )
 
     def _read(self, path: str) -> None:
         try:

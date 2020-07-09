@@ -11,7 +11,7 @@ import sys
 import unittest
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, cast
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 
 from .. import configuration
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
@@ -91,9 +91,9 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration("local/path")
             self.assertEqual(configuration.source_directories, ["local/path/a"])
 
-        json_load.side_effect = [{"version": "abc"}, {"source_directories": ["a"]}, {}]
+        json_load.side_effect = [{"source_directories": ["a"]}, {"version": "abc"}, {}]
         configuration = Configuration("local/path", log_directory=".pyre/local/path")
-        self.assertEqual(configuration.source_directories, ["a"])
+        self.assertEqual(configuration.source_directories, ["local/path/a"])
         self.assertEqual(configuration.ignore_all_errors, [".pyre/local/path"])
 
         # Configuration fields
@@ -329,7 +329,10 @@ class ConfigurationTest(unittest.TestCase):
                 configuration.taint_models_path, ["/root/.pyre/taint_models"]
             )
             json_load.side_effect = [
-                {"taint_models_path": ".pyre/taint_models"},
+                {
+                    "taint_models_path": ".pyre/taint_models",
+                    "source_directories": ["."],
+                },
                 {
                     "search_path": "simple_string/",
                     "version": "VERSION",
@@ -345,7 +348,10 @@ class ConfigurationTest(unittest.TestCase):
                 configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
             )
             json_load.side_effect = [
-                {"taint_models_path": ".pyre/taint_models"},
+                {
+                    "taint_models_path": ".pyre/taint_models",
+                    "source_directories": ["."],
+                },
                 {
                     "search_path": "simple_string/",
                     "version": "VERSION",
@@ -496,6 +502,7 @@ class ConfigurationTest(unittest.TestCase):
     # run - it's not important for this test anyway.
     @patch.object(Configuration, "_apply_defaults")
     @patch.object(Configuration, "_validate")
+    @patch.object(Configuration, "_read")
     @patch(f"{configuration.__name__}.expand_relative_path")
     @patch(f"{configuration.__name__}.find_root")
     @patch(f"{configuration.__name__}.Path.resolve")
@@ -506,6 +513,7 @@ class ConfigurationTest(unittest.TestCase):
         path_resolve,
         find_root,
         expand_relative_path,
+        configuration_read,
         configuration_validate,
         configuration_defaults,
         os_access,
@@ -527,14 +535,17 @@ class ConfigurationTest(unittest.TestCase):
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
 
-        with patch.object(Configuration, "_read") as Configuration_read:
+        with patch.object(
+            Configuration, "source_directories", new_callable=PropertyMock, create=True
+        ) as attribute_mock:
+            attribute_mock.return_value = ["."]
             configuration = Configuration()
-            Configuration_read.assert_has_calls([call(CONFIGURATION_FILE)])
+            configuration_read.assert_has_calls([call(CONFIGURATION_FILE)])
             self.assertEqual(configuration.local_configuration, None)
 
-        with patch.object(Configuration, "_read") as Configuration_read:
+            configuration_read.reset_mock()
             configuration = Configuration(local_configuration="original")
-            Configuration_read.assert_has_calls(
+            configuration_read.assert_has_calls(
                 [
                     call("original/" + CONFIGURATION_FILE + ".local"),
                     call(CONFIGURATION_FILE),
@@ -544,21 +555,10 @@ class ConfigurationTest(unittest.TestCase):
                 configuration.local_configuration,
                 "original/" + CONFIGURATION_FILE + ".local",
             )
-        with patch.object(Configuration, "_read") as Configuration_read:
+
+            configuration_read.reset_mock()
             configuration = Configuration(local_configuration="local")
-            Configuration_read.assert_has_calls(
-                [
-                    call("local/" + CONFIGURATION_FILE + ".local"),
-                    call(CONFIGURATION_FILE),
-                ]
-            )
-            self.assertEqual(
-                configuration.local_configuration,
-                "local/" + CONFIGURATION_FILE + ".local",
-            )
-        with patch.object(Configuration, "_read") as Configuration_read:
-            configuration = Configuration(local_configuration="local")
-            Configuration_read.assert_has_calls(
+            configuration_read.assert_has_calls(
                 [
                     call("local/" + CONFIGURATION_FILE + ".local"),
                     call(CONFIGURATION_FILE),
@@ -569,21 +569,64 @@ class ConfigurationTest(unittest.TestCase):
                 "local/" + CONFIGURATION_FILE + ".local",
             )
 
-        # Test configuration files.
-        os_path_isdir.return_value = False
-        os_path_isfile.return_value = True
-        with patch.object(Configuration, "_read") as Configuration_read:
+            configuration_read.reset_mock()
+            configuration = Configuration(local_configuration="local")
+            configuration_read.assert_has_calls(
+                [
+                    call("local/" + CONFIGURATION_FILE + ".local"),
+                    call(CONFIGURATION_FILE),
+                ]
+            )
+            self.assertEqual(
+                configuration.local_configuration,
+                "local/" + CONFIGURATION_FILE + ".local",
+            )
+
+            # Test configuration files.
+            os_path_isdir.return_value = False
+            os_path_isfile.return_value = True
+            configuration_read.reset_mock()
             configuration = Configuration(
                 local_configuration="local/.pyre_configuration.local"
             )
-            Configuration_read.assert_has_calls(
+            configuration_read.assert_has_calls(
                 [call("local/.pyre_configuration.local"), call(CONFIGURATION_FILE)]
             )
             self.assertEqual(
                 configuration.local_configuration, "local/.pyre_configuration.local"
             )
 
-        # Test nested configurations.
+    @patch("builtins.open", mock_open())  # pyre-fixme[56]
+    @patch("os.path.isfile")
+    @patch("os.path.isdir")
+    @patch("os.path.exists")
+    @patch("os.access")
+    @patch.object(Configuration, "_apply_defaults")
+    @patch.object(Configuration, "_validate")
+    @patch(f"{configuration.__name__}.expand_relative_path")
+    @patch(f"{configuration.__name__}.find_root")
+    @patch(f"{configuration.__name__}.Path.resolve")
+    @patch("json.loads")
+    def test_nested_configurations(
+        self,
+        json_loads,
+        path_resolve,
+        find_root,
+        expand_relative_path,
+        configuration_validate,
+        configuration_defaults,
+        os_access,
+        os_path_exists,
+        os_path_isdir,
+        os_path_isfile,
+    ) -> None:
+        # Do not expand test paths against real filesystem
+        expand_relative_path.side_effect = lambda root, path: path
+
+        # Assume all paths are valid.
+        os_access.return_value = True
+        os_path_exists.return_value = True
+
         find_root.side_effect = ["root", None]
         path_resolve.side_effect = [Path("root/local"), Path("root/local")]
         os_path_isdir.return_value = True
