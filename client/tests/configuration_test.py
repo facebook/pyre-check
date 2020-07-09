@@ -627,6 +627,7 @@ class ConfigurationTest(unittest.TestCase):
         os_access.return_value = True
         os_path_exists.return_value = True
 
+        # Properly ignored nested local configurations.
         find_root.side_effect = ["root", None]
         path_resolve.side_effect = [Path("root/local"), Path("root/local")]
         os_path_isdir.return_value = True
@@ -659,6 +660,7 @@ class ConfigurationTest(unittest.TestCase):
         except BaseException:
             self.fail("Configuration should not raise.")
 
+        # Improperly ignored nested local configurations.
         find_root.side_effect = ["root", None]
         path_resolve.side_effect = [Path("root/local"), Path("not_local")]
         json_loads.side_effect = [
@@ -683,6 +685,28 @@ class ConfigurationTest(unittest.TestCase):
                 "extensions": [".a", ".b", ""],
             },
             {},
+        ]
+        with self.assertRaises(EnvironmentException):
+            Configuration(local_configuration="root/local")
+
+        # Project and local configurations both specifying sources.
+        path_resolve.reset_mock()
+        find_root.side_effect = [None, None]
+        json_loads.side_effect = [
+            {
+                "source_directories": ["local_sources"],
+                "strict": False,
+                "extensions": [".a", ".b", ""],
+            },
+            {
+                "source_directories": ["project_sources"],
+                "binary": "abc",
+                "logger": "/usr/logger",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "strict": False,
+                "extensions": [".a", ".b", ""],
+            },
         ]
         with self.assertRaises(EnvironmentException):
             Configuration(local_configuration="root/local")
