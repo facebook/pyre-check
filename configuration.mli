@@ -40,8 +40,6 @@ module Analysis : sig
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    profiling_output: string option;
-    memory_profiling_output: string option;
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
@@ -70,8 +68,6 @@ module Analysis : sig
     ?strict:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
-    ?profiling_output:string ->
-    ?memory_profiling_output:string ->
     ?excludes:string list ->
     ?extensions:string list ->
     ?store_type_check_resolution:bool ->

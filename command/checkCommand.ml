@@ -36,6 +36,7 @@ let run_check
   let local_root = Path.create_absolute local_root in
   Log.initialize ~debug ~sections;
   Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Profiling.initialize ~profiling_output ~memory_profiling_output ();
   let argument_to_paths argument =
     argument
     >>| String.split_on_chars ~on:[';']
@@ -50,8 +51,6 @@ let run_check
       ~debug
       ~strict
       ~show_error_traces
-      ?profiling_output
-      ?memory_profiling_output
       ~infer:false
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)

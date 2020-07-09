@@ -62,8 +62,6 @@ module Analysis = struct
     expected_version: string option;
     strict: bool;
     show_error_traces: bool;
-    profiling_output: string option;
-    memory_profiling_output: string option;
     excludes: Str.regexp list; [@opaque]
     extensions: string list;
     store_type_check_resolution: bool;
@@ -98,8 +96,6 @@ module Analysis = struct
       ?(strict = false)
       ?(debug = false)
       ?(show_error_traces = false)
-      ?profiling_output
-      ?memory_profiling_output
       ?(excludes = [])
       ?(extensions = [])
       ?(store_type_check_resolution = true)
@@ -127,8 +123,6 @@ module Analysis = struct
       expected_version;
       strict;
       show_error_traces;
-      profiling_output;
-      memory_profiling_output;
       excludes =
         List.map excludes ~f:(fun exclude_regex ->
             Str.global_substitute

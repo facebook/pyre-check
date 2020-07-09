@@ -27,6 +27,12 @@ module Event : sig
     t
 end
 
+val initialize
+  :  ?profiling_output:string option ->
+  ?memory_profiling_output:string option ->
+  unit ->
+  unit
+
 val log_performance_event : (unit -> Event.t) -> unit
 
 val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> string -> 'a

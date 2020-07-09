@@ -589,6 +589,7 @@ let run_start_command
   let local_root = Path.create_absolute local_root in
   Log.initialize ~debug ~sections;
   Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Profiling.initialize ~profiling_output ~memory_profiling_output ();
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -615,8 +616,6 @@ let run_start_command
       ?configuration_file_hash
       ~strict
       ~show_error_traces
-      ?profiling_output
-      ?memory_profiling_output
       ~parallel:(not sequential)
       ?filter_directories
       ?ignore_all_errors
