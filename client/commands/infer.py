@@ -243,6 +243,7 @@ class StubFile:
         """
         classes = defaultdict(list)
         typing_imports = set()
+        alphabetical_imports = []
         contents = ""
         stubs_in_file = []
         for stub in self._fields:
@@ -273,15 +274,14 @@ class StubFile:
         for stub in stubs_in_file:
             typing_imports.update(stub.get_typing_imports())
             alphabetical_imports = sorted(list(typing_imports))
-            if alphabetical_imports and contents != "":
-                contents = (
-                    "from typing import {}\n\n".format(
-                        ", ".join(
-                            str(type_import) for type_import in alphabetical_imports
-                        )
-                    )
-                    + contents
+
+        if alphabetical_imports and contents != "":
+            contents = (
+                "from typing import {}\n\n".format(
+                    ", ".join(str(type_import) for type_import in alphabetical_imports)
                 )
+                + contents
+            )
         return contents
 
     def is_empty(self):
