@@ -472,3 +472,6 @@ let read_only ({ module_tracker } as environment) =
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
     is_module_tracked;
   }
+
+
+let module_tracker { module_tracker } = module_tracker

@@ -57,6 +57,8 @@ module ReadOnly : sig
   val is_module_tracked : t -> Reference.t -> bool
 end
 
+val module_tracker : t -> ModuleTracker.t
+
 (* Store the environment to saved-state *)
 val store : t -> unit
 
