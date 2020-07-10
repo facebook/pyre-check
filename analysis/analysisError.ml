@@ -320,6 +320,7 @@ and kind =
   | RevealedType of {
       expression: Expression.t;
       annotation: Annotation.t;
+      qualify: bool;
     }
   | UnsafeCast of {
       expression: Expression.t;
@@ -1772,7 +1773,7 @@ let rec messages ~concise ~signature location kind =
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
-  | RevealedType { expression; annotation = { Annotation.annotation; mutability } } ->
+  | RevealedType { expression; annotation = { Annotation.annotation; mutability }; _ } ->
       let annotation, detail =
         match mutability with
         | Mutable -> Format.asprintf "%a" pp_type annotation, ""
@@ -2489,8 +2490,8 @@ let less_or_equal ~resolution left right =
       GlobalResolution.less_or_equal resolution ~left ~right
   | RevealedType left, RevealedType right ->
       let less_or_equal_annotation
-          { Annotation.annotation = left_annotation; mutability = left_mutability }
-          { Annotation.annotation = right_annotation; mutability = right_mutability }
+          { Annotation.annotation = left_annotation; mutability = left_mutability; _ }
+          { Annotation.annotation = right_annotation; mutability = right_mutability; _ }
         =
         Annotation.equal_mutability left_mutability right_mutability
         && GlobalResolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
@@ -2720,11 +2721,13 @@ let join ~resolution left right =
           {
             annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
             expression = left_expression;
+            qualify = left_qualify;
           },
         RevealedType
           {
             annotation = { Annotation.annotation = right_annotation; mutability = right_mutability };
             expression = right_expression;
+            qualify = right_qualify;
           } )
       when Expression.equal left_expression right_expression
            && Annotation.equal_mutability left_mutability right_mutability ->
@@ -2737,6 +2740,7 @@ let join ~resolution left right =
                   GlobalResolution.join resolution left_annotation right_annotation;
                 mutability = left_mutability;
               };
+            qualify = left_qualify || right_qualify (* lol *);
           }
     | ( IncompatibleParameterType
           (Operand
@@ -3494,8 +3498,9 @@ let dequalify
           }
     | RedefinedClass redefined_class -> RedefinedClass redefined_class
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
-    | RevealedType { expression; annotation } ->
-        RevealedType { expression; annotation = dequalify_annotation annotation }
+    | RevealedType { expression; annotation; qualify } ->
+        let annotation = if qualify then annotation else dequalify_annotation annotation in
+        RevealedType { expression; annotation; qualify }
     | IncompatibleParameterType (Operand { operator_name; left_operand; right_operand }) ->
         IncompatibleParameterType
           (Operand

@@ -311,6 +311,7 @@ and kind =
   | RevealedType of {
       expression: Expression.t;
       annotation: Annotation.t;
+      qualify: bool;
     }
   | UnsafeCast of {
       expression: Expression.t;

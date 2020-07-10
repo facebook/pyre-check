@@ -2186,16 +2186,25 @@ module State (Context : Context) = struct
     | Call
         {
           callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
-          arguments = [{ Call.Argument.value; _ }];
+          arguments = { Call.Argument.value; _ } :: remainder;
         } ->
         (* Special case reveal_type(). *)
+        let qualify =
+          match remainder with
+          | [
+           { Call.Argument.name = Some { Node.value = name; _ }; value = { Node.value = True; _ } };
+          ]
+            when Identifier.equal name "$parameter$qualify" ->
+              true
+          | _ -> false
+        in
         let errors =
           emit_error
             ~errors:[]
             ~location
             ~kind:
               (Error.RevealedType
-                 { expression = value; annotation = resolve_expression ~resolution value })
+                 { expression = value; annotation = resolve_expression ~resolution value; qualify })
         in
         { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call

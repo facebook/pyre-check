@@ -453,7 +453,26 @@ let test_concise context =
     ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."]
 
 
+let test_reveal_type context =
+  let assert_type_errors = assert_type_errors ~context ~handle:"test.py" in
+  assert_type_errors
+    {|
+      class A: pass
+      a: A
+      reveal_type(a)
+      reveal_type(a, qualify=True)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `A`.";
+      "Revealed type [-1]: Revealed type for `a` is `test.A`.";
+    ]
+
+
 let () =
   "errorMessage"
-  >::: ["check_show_error_traces" >:: test_show_error_traces; "check_concise" >:: test_concise]
+  >::: [
+         "check_show_error_traces" >:: test_show_error_traces;
+         "check_concise" >:: test_concise;
+         "reveal_types" >:: test_reveal_type;
+       ]
   |> Test.run
