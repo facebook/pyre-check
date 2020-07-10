@@ -936,6 +936,30 @@ let test_type_parameters_for_bounded_tuple_union _ =
 
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
+let test_expression_contains_any _ =
+  assert_false
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
+  assert_true
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Callable"));
+  assert_true
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Union[typing.Any, None]"));
+  assert_true
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Union[typing.Callable]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression
+          ~preprocess:true
+          "pyre_extensions.type_variable_operators.Map[typing.List, int]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression
+          ~preprocess:true
+          "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"));
+  ()
+
+
 let test_is_concrete _ =
   assert_true (Type.is_concrete Type.none);
   assert_true (Type.is_concrete (Type.parametric "typing.Optional" ![Type.Bottom]));
@@ -2340,6 +2364,7 @@ let () =
          "is_async_generator" >:: test_is_generator;
          "contains_callable" >:: test_contains_callable;
          "contains_any" >:: test_contains_any;
+         "expression_contains_any" >:: test_expression_contains_any;
          "is_concrete" >:: test_is_concrete;
          "is_not_instantiated" >:: test_is_not_instantiated;
          "is_meta" >:: test_is_meta;

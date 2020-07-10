@@ -476,3 +476,16 @@ let collect_base_identifiers statement =
   end)
   in
   Collector.collect (Source.create [statement])
+
+
+let rec collect_non_generic_type_names { Node.value; _ } =
+  match value with
+  | Expression.Call { Call.arguments; _ } ->
+      List.concat_map
+        ~f:(fun { Call.Argument.value; _ } -> collect_non_generic_type_names value)
+        arguments
+  | Tuple elements
+  | List elements ->
+      List.concat_map ~f:collect_non_generic_type_names elements
+  | Name name -> name_to_reference name >>| Reference.show |> Option.to_list
+  | _ -> []

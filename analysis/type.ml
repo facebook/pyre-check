@@ -2124,42 +2124,14 @@ let create ~aliases =
   create_logic ~aliases ~variable_aliases
 
 
-module LiteralAnyVisitor = struct
-  module Visitor = struct
-    type t = bool
-
-    let node state = function
-      | Visit.Expression { Node.value = Name name; _ } ->
-          let is_any =
-            name_to_reference name
-            >>| Reference.show
-            >>| String.equal "typing.Any"
-            |> Option.value ~default:false
-          in
-          state || is_any
-      | _ -> state
-  end
-
-  include Visit.MakeNodeVisitor (Visitor)
-
-  let expression_contains_any expression =
-    let state =
-      (* We also want to take into account annotations like `list`, `dict`, etc. *)
-      match Node.value expression with
-      | Expression.Name name when is_simple_name name ->
-          name_to_reference_exn name
-          |> Reference.show
-          |> Hashtbl.find primitive_substitution_map
-          |> Option.value_map ~default:false ~f:contains_any
-          |> fun state -> ref state
-      | _ -> ref false
-    in
-    visit_expression ~state expression;
-    !state
-end
-
 (* Check if there is a literal Any provided, not including type aliases to Any. *)
-let expression_contains_any = LiteralAnyVisitor.expression_contains_any
+let expression_contains_any expression =
+  let primitives_with_any_map =
+    Identifier.Table.filter ~f:contains_any primitive_substitution_map
+  in
+  Visit.collect_non_generic_type_names expression
+  |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
+
 
 let is_not_instantiated annotation =
   let predicate = function

@@ -336,7 +336,25 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."]
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+  assert_type_errors
+    {|
+      from typing import Any, Callable, Mapping, Union
+      a: Union[Callable]
+      b: Union[Mapping[str, Any]]
+      c: Union[Callable, Mapping[str, Any]]
+      d: Callable
+      e: Mapping[str, Any]
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
+       that does not contain `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `c` must be specified as type \
+       that does not contain `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `d` must be specified as type \
+       that does not contain `Any`.";
+    ];
+  ()
 
 
 let test_check_builtin_globals context =
