@@ -1851,6 +1851,47 @@ let test_check_callable_protocols context =
       "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
        is used as type `typing.Type[C]`.";
     ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      class C:
+        __call__: Any = 1
+
+      def foo(c: C) -> None:
+        x = c()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      class C:
+        __init__: Any = 1
+
+      def foo() -> None:
+        x = C()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+  assert_default_type_errors
+    {|
+      from typing import Any
+
+      def unannotated_decorator(x):
+        return x
+
+      class C:
+        @unannotated_decorator
+        def __init__(self) -> None:
+          pass
+
+      def foo() -> None:
+        x = C()
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   ()
 
 

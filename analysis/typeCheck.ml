@@ -1827,6 +1827,17 @@ module State (Context : Context) = struct
       let arguments = List.rev reversed_arguments in
       let unpack_callable_and_self_argument = function
         | Type.Callable callable -> Some { callable; self_argument = None }
+        | Any ->
+            Some
+              {
+                callable =
+                  {
+                    kind = Anonymous;
+                    implementation = { annotation = Type.Any; parameters = Undefined };
+                    overloads = [];
+                  };
+                self_argument = None;
+              }
         | Parametric { name = "BoundMethod"; parameters = [Single callable; Single self_argument] }
           -> (
             let self_argument = Some self_argument in
