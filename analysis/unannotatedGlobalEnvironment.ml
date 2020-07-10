@@ -982,7 +982,19 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update_this_and_all_preceding_environments ast_environment ~scheduler ~configuration trigger =
+type t = { ast_environment: AstEnvironment.t }
+
+let create ast_environment = { ast_environment }
+
+let ast_environment { ast_environment } = ast_environment
+
+let read_only { ast_environment } =
+  let ast_environment = AstEnvironment.read_only ast_environment in
+  WriteOnly.read_only ~ast_environment
+
+
+let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~configuration trigger
+  =
   let upstream = AstEnvironment.update ~configuration ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =

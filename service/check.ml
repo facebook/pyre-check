@@ -40,8 +40,9 @@ let check
 
     let timer = Timer.start () in
     let update_result =
+      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        annotated_global_environment
         ~scheduler
         ~configuration
         ColdStart

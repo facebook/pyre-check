@@ -24,8 +24,10 @@ let test_global_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let update_result =
+      UnannotatedGlobalEnvironment.create ast_environment
+      |> fun unannotated_global_environment ->
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -48,9 +50,10 @@ let test_define_registration context =
   let assert_registers ~expected source =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -249,9 +252,10 @@ let test_simple_global_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -366,10 +370,11 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
     let update_result =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart
@@ -475,7 +480,7 @@ let test_updates context =
       ModuleTracker.update ~configuration ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-           ast_environment
+           unannotated_global_environment
            ~scheduler:(mock_scheduler ())
            ~configuration
     in
@@ -1747,8 +1752,9 @@ let test_builtin_modules context =
       ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
     in
     let update_result =
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart
@@ -1806,8 +1812,9 @@ let test_resolve_exports context =
       ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
     in
     let update_result =
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ColdStart

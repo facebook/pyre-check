@@ -41,8 +41,16 @@ module type PreviousEnvironment = sig
 
   module UpdateResult : UpdateResultType with type read_only := ReadOnly.t
 
+  type t
+
+  val create : AstEnvironment.t -> t
+
+  val ast_environment : t -> AstEnvironment.t
+
+  val read_only : t -> ReadOnly.t
+
   val update_this_and_all_preceding_environments
-    :  AstEnvironment.t ->
+    :  t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
     AstEnvironment.trigger ->
@@ -86,8 +94,16 @@ module type S = sig
 
   module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
 
+  type t
+
+  val create : AstEnvironment.t -> t
+
+  val ast_environment : t -> AstEnvironment.t
+
+  val read_only : t -> ReadOnly.t
+
   val update_this_and_all_preceding_environments
-    :  AstEnvironment.t ->
+    :  t ->
     scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
     AstEnvironment.trigger ->
@@ -172,8 +188,16 @@ module EnvironmentTable = struct
 
     module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
 
+    type t
+
+    val create : AstEnvironment.t -> t
+
+    val ast_environment : t -> AstEnvironment.t
+
+    val read_only : t -> ReadOnly.t
+
     val update_this_and_all_preceding_environments
-      :  AstEnvironment.t ->
+      :  t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
       AstEnvironment.trigger ->
@@ -354,14 +378,28 @@ module EnvironmentTable = struct
           }
 
 
+    type t = { upstream_environment: In.PreviousEnvironment.t }
+
+    let create ast_environment =
+      { upstream_environment = In.PreviousEnvironment.create ast_environment }
+
+
+    let ast_environment { upstream_environment } =
+      In.PreviousEnvironment.ast_environment upstream_environment
+
+
+    let read_only { upstream_environment } =
+      { ReadOnly.upstream_environment = In.PreviousEnvironment.read_only upstream_environment }
+
+
     let update_this_and_all_preceding_environments
-        ast_environment
+        { upstream_environment }
         ~scheduler
         ~configuration
         ast_environment_trigger
       =
       In.PreviousEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        upstream_environment
         ~scheduler
         ~configuration
         ast_environment_trigger

@@ -16,9 +16,10 @@ let test_simple_registration context =
       ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
     let update_result =
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        class_metadata_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(ScratchProject.configuration_of project)
         ColdStart
@@ -136,11 +137,12 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
     let update trigger =
       let scheduler = Test.mock_scheduler () in
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        class_metadata_environment
         ~scheduler
         ~configuration
         trigger

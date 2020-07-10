@@ -2534,8 +2534,9 @@ let update_environments
     ~ast_environment
     ast_environment_trigger
   =
+  let environment = AnnotatedGlobalEnvironment.create ast_environment in
   AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-    ast_environment
+    environment
     ~scheduler
     ~configuration
     ast_environment_trigger

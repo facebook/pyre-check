@@ -1,5 +1,4 @@
 (* Copyright (c) 2016-present, Facebook, Inc.
- *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
@@ -251,15 +250,23 @@ module ReadOnly = struct
     ClassHierarchy.variables ~default (class_hierarchy ?dependency read_only) class_name
 end
 
+type t = { edges: Edges.t }
+
+let create ast_environment = { edges = Edges.create ast_environment }
+
+let ast_environment { edges } = Edges.ast_environment edges
+
+let read_only { edges } = Edges.read_only edges
+
 let update_this_and_all_preceding_environments
-    ast_environment
+    { edges }
     ~scheduler
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ast_environment_trigger
   =
   let result =
     Edges.update_this_and_all_preceding_environments
-      ast_environment
+      edges
       ~scheduler
       ~configuration
       ast_environment_trigger

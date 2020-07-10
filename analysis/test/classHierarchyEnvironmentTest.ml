@@ -15,10 +15,11 @@ let test_simple_registration context =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
+    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
     let update_result =
       let scheduler = Test.mock_scheduler () in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        class_hierarchy_environment
         ~scheduler
         ~configuration
         ColdStart
@@ -231,11 +232,12 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
+    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
     let update trigger =
       let scheduler = Test.mock_scheduler () in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
-        ast_environment
+        class_hierarchy_environment
         ~scheduler
         ~configuration
         trigger
