@@ -5304,7 +5304,108 @@ let test_setitem _ =
            value = +Expression.Ellipsis;
            parent = None;
          };
-    ]
+    ];
+  assert_parsed_equal
+    "i[j] += 3,"
+    [
+      +Statement.Expression
+         (+Expression.Call
+             {
+               callee =
+                 +Expression.Name
+                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+               arguments =
+                 [
+                   { Call.Argument.name = None; value = !"j" };
+                   {
+                     Call.Argument.name = None;
+                     value =
+                       +Expression.Call
+                          {
+                            callee =
+                              +Expression.Name
+                                 (Name.Attribute
+                                    {
+                                      base =
+                                        +Expression.Call
+                                           {
+                                             callee =
+                                               +Expression.Name
+                                                  (Name.Attribute
+                                                     {
+                                                       base = !"i";
+                                                       attribute = "__getitem__";
+                                                       special = true;
+                                                     });
+                                             arguments =
+                                               [{ Call.Argument.name = None; value = !"j" }];
+                                           };
+                                      attribute = "__iadd__";
+                                      special = true;
+                                    });
+                            arguments =
+                              [
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Tuple [+Expression.Integer 3];
+                                };
+                              ];
+                          };
+                   };
+                 ];
+             });
+    ];
+  assert_parsed_equal
+    "i[j] += yield 3"
+    [
+      +Statement.Expression
+         (+Expression.Call
+             {
+               callee =
+                 +Expression.Name
+                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+               arguments =
+                 [
+                   { Call.Argument.name = None; value = !"j" };
+                   {
+                     Call.Argument.name = None;
+                     value =
+                       +Expression.Call
+                          {
+                            callee =
+                              +Expression.Name
+                                 (Name.Attribute
+                                    {
+                                      base =
+                                        +Expression.Call
+                                           {
+                                             callee =
+                                               +Expression.Name
+                                                  (Name.Attribute
+                                                     {
+                                                       base = !"i";
+                                                       attribute = "__getitem__";
+                                                       special = true;
+                                                     });
+                                             arguments =
+                                               [{ Call.Argument.name = None; value = !"j" }];
+                                           };
+                                      attribute = "__iadd__";
+                                      special = true;
+                                    });
+                            arguments =
+                              [
+                                {
+                                  Call.Argument.name = None;
+                                  value = +Expression.Yield (Some (+Expression.Integer 3));
+                                };
+                              ];
+                          };
+                   };
+                 ];
+             });
+    ];
+  ()
 
 
 let test_byte_order_mark _ =

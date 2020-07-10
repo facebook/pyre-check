@@ -417,7 +417,7 @@ simple_statement:
   ;
 
 small_statement:
-  | subscript = subscript; compound = compound_operator; value = test {
+  | subscript = subscript; compound = compound_operator; value = value {
       let value =
         binary_operator
           ~compound:true
