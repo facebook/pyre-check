@@ -197,7 +197,7 @@ let get_inference_errors ~context source =
     ( source,
       { configuration with infer = true },
       ast_environment,
-      GlobalResolution.create global_environment )
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create )
   in
   Inference.run ~configuration ~global_resolution ~source
   |> List.map

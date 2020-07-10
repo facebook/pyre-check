@@ -116,7 +116,9 @@ let test_unresolved_select context =
           ]
         |> ScratchProject.build_global_environment
       in
-      let global_resolution = GlobalResolution.create global_environment in
+      let global_resolution =
+        AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      in
       let resolution =
         TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
         |> Resolution.set_local

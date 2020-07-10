@@ -25,7 +25,7 @@ let environment ?source context =
 
 let resolution ?source context =
   let environment = environment ?source context in
-  GlobalResolution.create environment
+  AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create
 
 
 let concrete_connect ?parameters =

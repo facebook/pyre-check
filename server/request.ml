@@ -160,7 +160,8 @@ let rec process_type_query_request
     ~request
   =
   let process_request () =
-    let global_resolution = TypeEnvironment.global_resolution environment in
+    let read_only_environment = TypeEnvironment.read_only environment in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution =
       TypeCheck.resolution
@@ -217,7 +218,7 @@ let rec process_type_query_request
       else
         raise (ClassHierarchy.Untracked annotation)
     in
-    let global_environment = TypeEnvironment.global_environment environment in
+    let global_environment = TypeEnvironment.ReadOnly.global_environment read_only_environment in
     let class_metadata_environment =
       GlobalResolution.class_metadata_environment global_resolution
     in
@@ -428,7 +429,7 @@ let rec process_type_query_request
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.Defines module_or_class_names ->
-        let ast_environment = TypeEnvironment.ast_environment environment in
+        let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
             if AstEnvironment.ReadOnly.is_module ast_environment module_or_class_name then
@@ -519,7 +520,6 @@ let rec process_type_query_request
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
-        let global_environment = TypeEnvironment.global_environment environment in
         let resolution = GlobalResolution.create global_environment in
         let class_hierarchy_json =
           let indices =
@@ -827,10 +827,8 @@ let rec process_type_query_request
   { state; response = Some (TypeQueryResponse response) }
 
 
-let process_type_check_request ~state ~configuration paths =
-  let ({ errors; _ } as state), _ =
-    IncrementalCheck.recheck_with_state ~state ~configuration paths
-  in
+let process_type_check_request ~state:({ errors; _ } as state) ~configuration paths =
+  let _ = IncrementalCheck.recheck_with_state ~state ~configuration paths in
   let response =
     Hashtbl.data errors |> List.concat |> List.map ~f:(instantiate_error ~configuration ~state)
   in

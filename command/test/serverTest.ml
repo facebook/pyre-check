@@ -1519,7 +1519,9 @@ let test_incremental_repopulate context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let get_annotation { State.environment; _ } access_name =
-    let resolution = TypeEnvironment.global_resolution environment in
+    let resolution =
+      TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
+    in
     match
       GlobalResolution.function_definitions resolution (Reference.combine qualifier !&access_name)
     with
@@ -1623,7 +1625,9 @@ let test_incremental_attribute_caching context =
   in
   let assert_errors ~state expected =
     let get_error_strings { State.errors; environment; _ } =
-      let ast_environment = TypeEnvironment.ast_environment environment in
+      let ast_environment =
+        TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.ast_environment
+      in
       Hashtbl.to_alist errors
       |> List.map ~f:snd
       |> List.concat

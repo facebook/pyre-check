@@ -126,7 +126,7 @@ let test_add_constraint context =
     |}
       context
   in
-  let resolution = GlobalResolution.create environment in
+  let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
     let aliases a =
@@ -188,7 +188,10 @@ let test_add_constraint context =
     =
     let handler =
       let class_hierarchy =
-        GlobalResolution.create environment |> GlobalResolution.class_hierarchy |> hierarchy
+        AnnotatedGlobalEnvironment.read_only environment
+        |> GlobalResolution.create
+        |> GlobalResolution.class_hierarchy
+        |> hierarchy
       in
       let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
       let order =
@@ -251,7 +254,9 @@ let test_add_constraint context =
                   | Type.Tuple (Bounded ordered) -> ordered
                   | _ -> failwith "impossible"
               in
-              let global_resolution = GlobalResolution.create environment in
+              let global_resolution =
+                AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create
+              in
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
@@ -918,7 +923,7 @@ let test_instantiate_protocol_parameters context =
       expected
     =
     let environment = environment ?source context in
-    let resolution = GlobalResolution.create environment in
+    let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
     let substitute name =
       name
       |> String.substr_replace_all ~pattern:"P" ~with_:"test.P"
@@ -958,7 +963,7 @@ let test_instantiate_protocol_parameters context =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+      let handler = GlobalResolution.class_hierarchy resolution in
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;
         all_attributes = attributes;
@@ -1142,7 +1147,11 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+    let handler =
+      AnnotatedGlobalEnvironment.read_only environment
+      |> GlobalResolution.create
+      |> GlobalResolution.class_hierarchy
+    in
     let handler =
       {
         ConstraintsSet.class_hierarchy = hierarchy handler;

@@ -6064,7 +6064,9 @@ let check_function_definition
 
 let run_on_define ~configuration ~environment ?call_graph_builder (name, dependency) =
   let global_resolution =
-    let global_environment = TypeEnvironment.global_environment environment in
+    let global_environment =
+      TypeEnvironment.global_environment environment |> AnnotatedGlobalEnvironment.read_only
+    in
     GlobalResolution.create global_environment ?dependency
   in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
@@ -6132,8 +6134,9 @@ let legacy_run_on_modules ~scheduler ~configuration ~environment ?call_graph_bui
 
   let all_defines =
     let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment
-        (TypeEnvironment.global_resolution environment)
+      TypeEnvironment.global_environment environment
+      |> AnnotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
     in
     let map _ qualifiers =
       List.concat_map qualifiers ~f:(fun qualifier ->

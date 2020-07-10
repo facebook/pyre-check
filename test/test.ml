@@ -2535,11 +2535,12 @@ let update_environments
     ast_environment_trigger
   =
   let environment = AnnotatedGlobalEnvironment.create ast_environment in
-  AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-    environment
-    ~scheduler
-    ~configuration
-    ast_environment_trigger
+  ( environment,
+    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+      environment
+      ~scheduler
+      ~configuration
+      ast_environment_trigger )
 
 
 module ScratchProject = struct
@@ -2561,7 +2562,7 @@ module ScratchProject = struct
     type t = {
       sources: Source.t list;
       ast_environment: AstEnvironment.t;
-      global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+      global_environment: AnnotatedGlobalEnvironment.t;
     }
   end
 
@@ -2682,7 +2683,9 @@ module ScratchProject = struct
 
   let build_global_environment ({ configuration; _ } as project) =
     let ast_environment = build_ast_environment project in
-    let update_result = update_environments ~ast_environment ~configuration ColdStart in
+    let global_environment, update_result =
+      update_environments ~ast_environment ~configuration ColdStart
+    in
     let sources =
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
       |> AstEnvironment.UpdateResult.invalidated_modules
@@ -2691,7 +2694,6 @@ module ScratchProject = struct
              (AstEnvironment.ReadOnly.get_processed_source
                 (AstEnvironment.read_only ast_environment))
     in
-    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
 
 
@@ -2724,17 +2726,16 @@ module ScratchProject = struct
     built_type_environment, errors
 
 
-  let build_resolution project =
+  let build_global_resolution project =
     let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
-    let global_resolution = GlobalResolution.create global_environment in
+    AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+
+
+  let build_resolution project =
+    let global_resolution = build_global_resolution project in
     TypeCheck.resolution
       global_resolution (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
-
-
-  let build_global_resolution project =
-    let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
-    GlobalResolution.create global_environment
 end
 
 type test_update_environment_with_t = {
@@ -2832,7 +2833,9 @@ let assert_equivalent_attributes ~context source expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create global_environment in
+    let global_resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

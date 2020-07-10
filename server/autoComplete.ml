@@ -165,7 +165,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
 
             let run () =
               (* Update server state with the newly added dummy file *)
-              let state, _ =
+              let _ =
                 IncrementalCheck.recheck_with_state
                   ~state
                   ~configuration:
@@ -196,7 +196,9 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
           let get_items file state =
             (* This is the position of the item before DOT *)
             let item_position = { cursor_position with column = cursor_position.column - 2 } in
-            let global_resolution = TypeEnvironment.global_resolution environment in
+            let global_resolution =
+              TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
+            in
             let resolution =
               TypeCheck.resolution
                 global_resolution

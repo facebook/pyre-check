@@ -29,13 +29,11 @@ end
 
 type t
 
-val create : AnnotatedGlobalEnvironment.ReadOnly.t -> t
+val create : AnnotatedGlobalEnvironment.t -> t
 
-val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
+val global_environment : t -> AnnotatedGlobalEnvironment.t
 
-val global_resolution : t -> GlobalResolution.t
-
-val ast_environment : t -> AstEnvironment.ReadOnly.t
+val ast_environment : t -> AstEnvironment.t
 
 val get_errors : t -> Reference.t -> Error.t list
 

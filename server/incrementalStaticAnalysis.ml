@@ -10,7 +10,9 @@ open Analysis
 let run_additional_check ~configuration ~environment ~source_paths ~check =
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
-      let ast_environment = TypeEnvironment.ast_environment environment in
+      let ast_environment =
+        TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.ast_environment
+      in
       let sources =
         List.filter_map source_paths ~f:(fun { SourcePath.qualifier; is_external; _ } ->
             if is_external then

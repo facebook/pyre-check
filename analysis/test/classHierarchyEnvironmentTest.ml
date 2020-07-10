@@ -127,7 +127,7 @@ let test_inferred_generic_base context =
     let project = ScratchProject.setup ["test.py", source] ~context ~incremental_style:Shallow in
     let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
-    let update_result = Test.update_environments ~ast_environment ~configuration ColdStart in
+    let _, update_result = Test.update_environments ~ast_environment ~configuration ColdStart in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
       |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment

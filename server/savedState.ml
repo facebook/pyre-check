@@ -9,6 +9,8 @@ open Ast
 open Service
 module ModuleTracker = Analysis.ModuleTracker
 module AstEnvironment = Analysis.AstEnvironment
+module AnnotatedGlobalEnvironment = Analysis.AnnotatedGlobalEnvironment
+module TypeEnvironment = Analysis.TypeEnvironment
 
 module SymlinkTargetsToSources = Memory.Serializer (struct
   type t = Path.t String.Table.t
@@ -212,6 +214,7 @@ let load
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path) ~configuration;
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let ast_environment = AstEnvironment.load module_tracker in
+  let environment = AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
@@ -231,17 +234,6 @@ let load
   in
   let errors = ServerErrors.load () in
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
-  let environment, _ =
-    IncrementalCheck.recheck
-      ~module_tracker
-      ~ast_environment
-      ~errors
-      ~scheduler
-      ~connections
-      ~lookups:(String.Table.create ())
-      ~configuration
-      changed_paths
-  in
   let state =
     {
       State.module_tracker;
@@ -258,6 +250,7 @@ let load
       server_uuid = None;
     }
   in
+  let _ = IncrementalCheck.recheck_with_state ~state ~configuration changed_paths in
   state
 
 

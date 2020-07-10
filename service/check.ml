@@ -39,20 +39,24 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
+    let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let type_environment = TypeEnvironment.create global_environment in
+
     let update_result =
-      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        annotated_global_environment
+        global_environment
         ~scheduler
         ~configuration
         ColdStart
     in
-    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    let environment = TypeEnvironment.create global_environment in
-    let resolution = GlobalResolution.create global_environment in
     Statistics.performance ~name:"full environment built" ~timer ();
+
+    let global_resolution =
+      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result |> GlobalResolution.create
+    in
     let indices () =
-      GlobalResolution.unannotated_global_environment resolution
+      AnnotatedGlobalEnvironment.read_only global_environment
+      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
     if Log.is_enabled `Dotty then (
@@ -63,18 +67,21 @@ let check
       in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
       let class_hierarchy_dot =
-        ClassHierarchy.to_dot (GlobalResolution.class_hierarchy resolution) ~indices:(indices ())
+        ClassHierarchy.to_dot
+          (GlobalResolution.class_hierarchy global_resolution)
+          ~indices:(indices ())
       in
       File.create ~content:class_hierarchy_dot type_order_file |> File.write );
     if debug then (
-      GlobalResolution.class_hierarchy resolution
+      GlobalResolution.class_hierarchy global_resolution
       |> ClassHierarchy.check_integrity ~indices:(indices ());
       Statistics.event
         ~section:`Memory
         ~name:"shared memory size"
         ~integers:["size", Memory.heap_size ()]
         () );
-    ( environment,
+
+    ( type_environment,
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
       |> AstEnvironment.UpdateResult.invalidated_modules )
   in

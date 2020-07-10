@@ -39,7 +39,9 @@ let test_inferred_generic_base context =
       in
       List.find_map ~f:target statements |> value |> Node.map ~f:(ClassSummary.create ~qualifier)
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let parse_annotation =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in

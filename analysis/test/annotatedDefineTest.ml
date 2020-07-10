@@ -40,7 +40,9 @@ let test_parent_definition context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let actual =
-      parent_class_definition global_environment name parent >>| Node.value >>| ClassSummary.name
+      parent_class_definition (AnnotatedGlobalEnvironment.read_only global_environment) name parent
+      >>| Node.value
+      >>| ClassSummary.name
     in
     let cmp = Option.equal Reference.equal in
     let printer = function
@@ -87,7 +89,7 @@ let test_decorate context =
              (Reference.create "test")),
         global_environment )
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
     let take_define = function
       | [{ Node.value = Statement.Define define; location }] -> Node.create define ~location
       | _ -> failwith "Expected a define"

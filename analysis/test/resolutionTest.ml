@@ -1244,7 +1244,9 @@ let test_source_is_unit_test context =
       ScratchProject.setup ~context (["test.py", source] @ extra_sources)
       |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let source =
       AstEnvironment.ReadOnly.get_processed_source
         (AstEnvironment.read_only ast_environment)
@@ -1279,7 +1281,9 @@ let test_fallback_attribute context =
     let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create global_environment in
+    let global_resolution =
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
 
     let attribute =

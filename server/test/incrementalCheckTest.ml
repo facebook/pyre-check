@@ -40,12 +40,9 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
              (AstEnvironment.read_only ast_environment))
       |> AnalysisError.Instantiated.description ~show_error_traces:false ~concise:false
     in
-    Server.IncrementalCheck.recheck_with_state ~state ~configuration paths
-    |> fst
-    |> (fun { Server.State.errors; _ } -> errors)
-    |> Reference.Table.data
-    |> List.concat
-    |> List.map ~f:description
+    let _ = Server.IncrementalCheck.recheck_with_state ~state ~configuration paths in
+    let { Server.State.errors; _ } = state in
+    Reference.Table.data errors |> List.concat |> List.map ~f:description
   in
   assert_equal ~printer:(String.concat ~sep:"\n") expected errors;
   Memory.reset_shared_memory ()

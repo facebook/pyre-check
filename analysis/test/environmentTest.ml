@@ -41,7 +41,7 @@ let create_environments_and_project
     let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
-  global_environment, ast_environment, project
+  AnnotatedGlobalEnvironment.read_only global_environment, ast_environment, project
 
 
 let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources () =
@@ -523,7 +523,7 @@ let test_connect_type_order context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let update_result =
+  let _, update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
@@ -1134,7 +1134,7 @@ let test_connect_annotations_to_top context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let update_result =
+  let _, update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
@@ -1162,7 +1162,7 @@ let test_deduplicate context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let update_result =
+  let _, update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
@@ -1214,7 +1214,7 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let update_result =
+  let _, update_result =
     update_environments
       ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
@@ -1290,7 +1290,7 @@ let test_update_and_compute_dependencies context =
       delete_file project "source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
-      let update_result =
+      let _, update_result =
         let { ScratchProject.module_tracker; _ } = project in
         let configuration = ScratchProject.configuration_of project in
         let { Configuration.Analysis.local_root; _ } = configuration in

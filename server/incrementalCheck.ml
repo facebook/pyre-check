@@ -12,8 +12,7 @@ open Pyre
 type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 let recheck
-    ~module_tracker
-    ~ast_environment
+    ~environment
     ~errors
     ~scheduler
     ~connections
@@ -22,6 +21,8 @@ let recheck
     paths
   =
   let timer = Timer.start () in
+  let ast_environment = TypeEnvironment.ast_environment environment in
+  let module_tracker = AstEnvironment.module_tracker ast_environment in
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
@@ -55,10 +56,6 @@ let recheck
     AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result
       annotated_global_environment_update_result
     |> AstEnvironment.UpdateResult.invalidated_modules
-  in
-  let environment =
-    TypeEnvironment.create
-      (AnnotatedGlobalEnvironment.UpdateResult.read_only annotated_global_environment_update_result)
   in
   let recheck_modules, new_errors, total_rechecked_functions =
     match incremental_style with
@@ -221,25 +218,12 @@ let recheck
       ]
     ();
   StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
-  environment, new_errors
+  new_errors
 
 
 let recheck_with_state
-    ~state:
-      ( { State.module_tracker; ast_environment; errors; scheduler; connections; lookups; _ } as
-      state )
+    ~state:{ State.environment; errors; scheduler; connections; lookups; _ }
     ~configuration
     paths
   =
-  let _, new_errors =
-    recheck
-      ~module_tracker
-      ~ast_environment
-      ~errors
-      ~scheduler
-      ~connections
-      ~lookups
-      ~configuration
-      paths
-  in
-  state, new_errors
+  recheck ~environment ~errors ~scheduler ~connections ~lookups ~configuration paths
