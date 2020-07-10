@@ -26,9 +26,10 @@ type lookup = {
   error_reason: error_reason option;
 }
 
-let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ } paths =
+let get_lookups ~configuration ~state:{ lookups; environment; _ } paths =
   let paths, nonexistent_paths =
     let get_source_path path =
+      let module_tracker = TypeEnvironment.module_tracker environment in
       match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
       | Some source_path -> Either.First (path, source_path)
       | None when PyrePath.is_python_stub path -> Either.Second (path, FileNotFound)
@@ -75,7 +76,8 @@ let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ 
 
 let evict ~lookups reference = String.Table.remove lookups (Reference.show reference)
 
-let evict_path ~state:{ State.module_tracker; lookups; _ } ~configuration path =
+let evict_path ~state:{ State.environment; lookups; _ } ~configuration path =
+  let module_tracker = TypeEnvironment.module_tracker environment in
   match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> ()
   | Some { SourcePath.qualifier; _ } -> evict ~lookups qualifier

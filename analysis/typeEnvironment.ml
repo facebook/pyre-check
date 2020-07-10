@@ -22,6 +22,10 @@ let ast_environment { global_environment; _ } =
   AnnotatedGlobalEnvironment.ast_environment global_environment
 
 
+let module_tracker type_environment =
+  ast_environment type_environment |> AstEnvironment.module_tracker
+
+
 let set_errors { set_errors; _ } = set_errors
 
 let get_errors { get_errors; _ } = get_errors

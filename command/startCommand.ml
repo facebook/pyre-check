@@ -34,7 +34,7 @@ let is_connection_reset_error = function
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.ast_environment; _ } as state)
+    ({ Server.State.environment; _ } as state)
   =
   let errors_to_lsp_responses { Server.State.open_documents; _ } errors =
     let build_file_to_error_map error_list =
@@ -58,7 +58,7 @@ let computation_thread
         let open Analysis in
         reference
         |> Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-             (AstEnvironment.read_only ast_environment)
+             (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
              ~configuration:analysis_configuration
         >>| Hashtbl.update table ~f:update
         |> ignore

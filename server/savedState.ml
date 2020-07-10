@@ -236,9 +236,7 @@ let load
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
   let state =
     {
-      State.module_tracker;
-      ast_environment;
-      environment;
+      State.environment;
       errors;
       symlink_targets_to_sources;
       scheduler;
@@ -257,13 +255,13 @@ let load
 let save
     ~configuration
     ~saved_state_path
-    { State.errors; module_tracker; ast_environment; symlink_targets_to_sources; _ }
+    { State.errors; environment; symlink_targets_to_sources; _ }
   =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.SharedMemory.collect `aggressive;
-  ModuleTracker.SharedMemory.store module_tracker;
+  TypeEnvironment.module_tracker environment |> ModuleTracker.SharedMemory.store;
   SymlinkTargetsToSources.store symlink_targets_to_sources;
-  AstEnvironment.store ast_environment;
+  TypeEnvironment.ast_environment environment |> AstEnvironment.store;
   StoredConfiguration.store configuration;
   ServerErrors.store errors;
   Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();

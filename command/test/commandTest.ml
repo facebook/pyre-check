@@ -158,18 +158,14 @@ module ScratchServer = struct
       ?(external_sources = [])
       sources
     =
-    let configuration, module_tracker, ast_environment, environment, type_errors =
-      let ({ ScratchProject.module_tracker; configuration; _ } as project) =
+    let configuration, environment, type_errors =
+      let ({ ScratchProject.configuration; _ } as project) =
         ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
       in
-      let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, type_errors =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project
       in
-      ( { configuration with incremental_style },
-        module_tracker,
-        ast_environment,
-        type_environment,
-        type_errors )
+      { configuration with incremental_style }, type_environment, type_errors
     in
     (* Associate the new errors with new files *)
     let errors = Ast.Reference.Table.create () in
@@ -188,9 +184,7 @@ module ScratchServer = struct
     in
     let state =
       {
-        Server.State.module_tracker;
-        ast_environment;
-        environment;
+        Server.State.environment;
         errors;
         symlink_targets_to_sources = String.Table.create ();
         last_request_time = Unix.time ();

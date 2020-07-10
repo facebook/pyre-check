@@ -16,14 +16,15 @@ exception IncorrectParameters of Type.t
 
 exception MissingFunction of Reference.t
 
-let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } path =
+let errors_of_path ~configuration ~state:{ State.environment; errors; _ } path =
+  let module_tracker = TypeEnvironment.module_tracker environment in
   ModuleTracker.lookup_path ~configuration module_tracker path
   >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
   |> Option.value ~default:[]
 
 
-let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
-  let ast_environment = AstEnvironment.read_only ast_environment in
+let instantiate_error ~configuration ~state:{ State.environment; _ } error =
+  let ast_environment = TypeEnvironment.ast_environment environment |> AstEnvironment.read_only in
   AnalysisError.instantiate
     ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
     error
@@ -155,11 +156,12 @@ let process_client_shutdown_request ~state ~id =
 
 
 let rec process_type_query_request
-    ~state:({ State.module_tracker; environment; _ } as state)
+    ~state:({ State.environment; _ } as state)
     ~configuration
     ~request
   =
   let process_request () =
+    let module_tracker = TypeEnvironment.module_tracker environment in
     let read_only_environment = TypeEnvironment.read_only environment in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
@@ -299,7 +301,7 @@ let rec process_type_query_request
             ~lookup:
               (AstEnvironment.ReadOnly.get_real_path_relative
                  ~configuration
-                 (AstEnvironment.read_only state.ast_environment))
+                 (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
         in
         let callees =
           (* We don't yet support a syntax for fetching property setters. *)
@@ -504,14 +506,14 @@ let rec process_type_query_request
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative
                      ~configuration
-                     (AstEnvironment.read_only state.ast_environment))
+                     (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
             |> List.map ~f:(fun { Callgraph.callee; locations } ->
                    { TypeQuery.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Protocol.TypeQuery.caller; callees }
           in
-          let ast_environment = Analysis.AstEnvironment.read_only state.ast_environment in
+          let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
           AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
           >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
           >>| List.map ~f:callees
@@ -847,7 +849,7 @@ let process_display_type_errors_request ~state ~configuration paths =
 
 
 let process_get_definition_request
-    ~state:({ State.module_tracker; _ } as state)
+    ~state:({ State.environment; _ } as state)
     ~configuration
     ~request:{ DefinitionRequest.id; path; position }
   =
@@ -857,6 +859,7 @@ let process_get_definition_request
       match LookupCache.find_definition ~state ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
       | Some { Location.start; stop } -> (
+          let module_tracker = TypeEnvironment.module_tracker environment in
           match ModuleTracker.lookup_path ~configuration module_tracker path with
           | None -> TextDocumentDefinitionResponse.create_empty ~id
           | Some source_path ->
@@ -872,7 +875,7 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.module_tracker; connections; _ } as state)
+    ~state:({ State.environment; connections; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
@@ -883,6 +886,7 @@ let rec process
     configuration
   in
   let timer = Timer.start () in
+  let module_tracker = TypeEnvironment.module_tracker environment in
   let log_request_error ~error =
     Statistics.event
       ~section:`Error

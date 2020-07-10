@@ -68,7 +68,7 @@ let run_check
     let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
       let timer = Timer.start () in
-      let { Check.errors; ast_environment; _ } =
+      let { Check.errors; environment } =
         Check.check
           ~scheduler
           ~configuration
@@ -86,7 +86,7 @@ let run_check
           ]
         ~normals:["request kind", "FullCheck"]
         ();
-      errors, ast_environment
+      errors, TypeEnvironment.ast_environment environment
     in
     if debug then
       Memory.report_statistics ();

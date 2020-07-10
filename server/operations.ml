@@ -73,7 +73,7 @@ let start_from_scratch ~connections ~configuration () =
   let scheduler = Scheduler.create ~configuration () in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.module_tracker; ast_environment; environment; errors } =
+  let { Check.environment; errors } =
     Check.check
       ~scheduler
       ~configuration
@@ -87,7 +87,9 @@ let start_from_scratch ~connections ~configuration () =
       | None -> ()
       | Some symlink_target -> Hashtbl.set table ~key:symlink_target ~data:symlink_source
     in
-    Analysis.ModuleTracker.source_paths module_tracker |> List.iter ~f:add_source_path;
+    Analysis.TypeEnvironment.module_tracker environment
+    |> Analysis.ModuleTracker.source_paths
+    |> List.iter ~f:add_source_path;
     table
   in
   Statistics.performance
@@ -109,8 +111,6 @@ let start_from_scratch ~connections ~configuration () =
     table
   in
   {
-    module_tracker;
-    ast_environment;
     environment;
     errors;
     symlink_targets_to_sources;

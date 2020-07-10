@@ -112,9 +112,14 @@ let run_analysis
         ~scheduler
         ~configuration
         ~call_graph_builder:(module Taint.CallGraphBuilder)
-      |> fun { module_tracker; environment; ast_environment; _ } ->
-      let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
-      environment, Analysis.AstEnvironment.read_only ast_environment, qualifiers
+      |> fun { environment; _ } ->
+      let qualifiers =
+        Analysis.TypeEnvironment.module_tracker environment
+        |> Analysis.ModuleTracker.tracked_explicit_modules
+      in
+      ( environment,
+        Analysis.TypeEnvironment.ast_environment environment |> Analysis.AstEnvironment.read_only,
+        qualifiers )
     in
     let filename_lookup path_reference =
       match repository_root with

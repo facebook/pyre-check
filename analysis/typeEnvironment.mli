@@ -35,6 +35,8 @@ val global_environment : t -> AnnotatedGlobalEnvironment.t
 
 val ast_environment : t -> AstEnvironment.t
 
+val module_tracker : t -> ModuleTracker.t
+
 val get_errors : t -> Reference.t -> Error.t list
 
 val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option

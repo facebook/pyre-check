@@ -37,7 +37,7 @@ let assert_errors
   in
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
-  let { Service.Check.ast_environment; errors; _ } =
+  let { Service.Check.environment; errors; _ } =
     Service.Check.check
       ~scheduler
       ~configuration
@@ -50,7 +50,8 @@ let assert_errors
              ~lookup:
                (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
                   ~configuration
-                  (Analysis.AstEnvironment.read_only ast_environment))
+                  ( Analysis.TypeEnvironment.ast_environment environment
+                  |> Analysis.AstEnvironment.read_only ))
              error
            |> Analysis.AnalysisError.Instantiated.description ~show_error_traces:false)
   in

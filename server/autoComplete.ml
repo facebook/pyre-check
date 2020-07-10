@@ -138,7 +138,8 @@ let get_module_members_list ~resolution ~cursor_position:{ Location.line; column
 
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =
-  let { State.open_documents; module_tracker; environment; _ } = state in
+  let { State.open_documents; environment; _ } = state in
+  let module_tracker = Analysis.TypeEnvironment.module_tracker environment in
   match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> []
   | Some { SourcePath.qualifier; _ } -> (

@@ -7,8 +7,6 @@ open Core
 open Pyre
 
 type result = {
-  module_tracker: Analysis.ModuleTracker.t;
-  ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.TypeEnvironment.t;
   errors: Analysis.AnalysisError.t list;
 }
@@ -101,4 +99,4 @@ let check
   Profiling.track_shared_memory_usage ();
 
   (* Only destroy the scheduler if the check command created it. *)
-  { module_tracker; ast_environment; environment; errors }
+  { environment; errors }

@@ -11,9 +11,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
   let initial_sources = List.map initial_sources ~f:trim in
   let updated_sources = List.map updated_sources ~f:trim in
   (* Setup a server. *)
-  let ( ({ ScratchProject.module_tracker; _ } as project),
-        ({ Server.State.ast_environment; _ } as state) )
-    =
+  let ({ ScratchProject.module_tracker; _ } as project), ({ Server.State.environment; _ } as state) =
     ServerTest.initialize_server ~incremental_style:FineGrained ~context ~initial_sources
   in
   let update_module_tracker (is_external, source) =
@@ -37,7 +35,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
         ~lookup:
           (AstEnvironment.ReadOnly.get_real_path_relative
              ~configuration
-             (AstEnvironment.read_only ast_environment))
+             (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only))
       |> AnalysisError.Instantiated.description ~show_error_traces:false ~concise:false
     in
     let _ = Server.IncrementalCheck.recheck_with_state ~state ~configuration paths in
