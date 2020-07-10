@@ -40,7 +40,10 @@ let assert_event ?name ?event_type ?timestamp ?tags log_file =
 
 let test_event_format _ =
   let output_name = Filename.temp_file "event_format" "test" in
-  Profiling.initialize ~profiling_output:(Some output_name) ~memory_profiling_output:None ();
+  Profiling.GlobalState.initialize
+    ~profiling_output:(Some output_name)
+    ~memory_profiling_output:None
+    ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
     Sys.remove output_name;
     Profiling.log_performance_event event;
@@ -77,7 +80,10 @@ let test_event_format _ =
 
 let test_event_track _ =
   let output_name = Filename.temp_file "event_track" "test" in
-  Profiling.initialize ~profiling_output:(Some output_name) ~memory_profiling_output:None ();
+  Profiling.GlobalState.initialize
+    ~profiling_output:(Some output_name)
+    ~memory_profiling_output:None
+    ();
   let foo x = Profiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1) in
   let y = foo 42 in
   assert_int_equal 43 y;
@@ -89,7 +95,10 @@ let test_event_track _ =
 
 let test_memory_profiling _ =
   let output_name = Filename.temp_file "event_track" "test" in
-  Profiling.initialize ~profiling_output:None ~memory_profiling_output:(Some output_name) ();
+  Profiling.GlobalState.initialize
+    ~profiling_output:None
+    ~memory_profiling_output:(Some output_name)
+    ();
   Profiling.track_shared_memory_usage ~name:"foo" ();
   assert_event
     output_name

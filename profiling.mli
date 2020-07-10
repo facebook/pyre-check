@@ -3,6 +3,20 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+module GlobalState : sig
+  type t
+
+  val initialize
+    :  ?profiling_output:string option ->
+    ?memory_profiling_output:string option ->
+    unit ->
+    unit
+
+  val get : unit -> t
+
+  val restore : t -> unit
+end
+
 module Event : sig
   type event_type =
     | Duration of int
@@ -26,12 +40,6 @@ module Event : sig
     string ->
     t
 end
-
-val initialize
-  :  ?profiling_output:string option ->
-  ?memory_profiling_output:string option ->
-  unit ->
-  unit
 
 val log_performance_event : (unit -> Event.t) -> unit
 
