@@ -319,30 +319,10 @@ class Configuration:
                     if path not in non_existent_infer_paths
                 ]
 
-            typeshed_subdirectories = os.listdir(self.typeshed)
-            if "stdlib" not in typeshed_subdirectories:
-                LOG.warning(
-                    "Typeshed at `%s` contains subdirectories:\n%s",
-                    self.typeshed,
-                    typeshed_subdirectories,
-                )
-                raise InvalidConfiguration(
-                    "`typeshed` location must contain a `stdlib` directory."
-                )
-
-            for typeshed_subdirectory_name in typeshed_subdirectories:
+            for typeshed_subdirectory_name in ["stdlib", "third_party"]:
                 typeshed_subdirectory = os.path.join(
                     self.typeshed, typeshed_subdirectory_name
                 )
-                if (
-                    not os.path.isdir(typeshed_subdirectory)
-                    or typeshed_subdirectory_name == "tests"
-                    or typeshed_subdirectory_name[0] == "."
-                    or typeshed_subdirectory_name == "__pycache__"
-                ):
-                    # Ignore some well-known directories we do not care about.
-                    continue
-
                 assert_readable_directory(typeshed_subdirectory)
                 for typeshed_version_directory_name in os.listdir(
                     typeshed_subdirectory

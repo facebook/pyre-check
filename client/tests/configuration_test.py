@@ -788,7 +788,7 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")
     @patch("os.access", return_value=True)
-    @patch("os.listdir", side_effect=[["stdlib"], ["3"]])
+    @patch("os.listdir", side_effect=[["3"], ["3"]])
     @patch("builtins.open")
     @patch("json.loads")
     @patch("hashlib.sha1")
