@@ -587,7 +587,7 @@ let run_start_command
     ()
   =
   let local_root = Path.create_absolute local_root in
-  Log.initialize ~debug ~sections;
+  Log.GlobalState.initialize ~debug ~sections;
   Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
   Profiling.initialize ~profiling_output ~memory_profiling_output ();
   let filter_directories =

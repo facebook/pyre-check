@@ -13,7 +13,7 @@ open Statement
 
 let initialize () =
   Memory.initialize_for_tests ();
-  Log.initialize_for_tests ();
+  Log.GlobalState.initialize_for_tests ();
   Statistics.disable ()
 
 
