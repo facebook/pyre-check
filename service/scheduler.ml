@@ -77,7 +77,13 @@ module Policy = struct
           1
 end
 
-let entry = Worker.register_entry_point ~restore:(fun _ -> ())
+let entry =
+  Worker.register_entry_point ~restore:(fun (log_state, profiling_state, statistics_state) ->
+      Log.GlobalState.restore log_state;
+      Profiling.GlobalState.restore profiling_state;
+      Statistics.GlobalState.restore statistics_state;
+      ())
+
 
 let create
     ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
@@ -87,7 +93,11 @@ let create
   if parallel then
     let workers =
       Hack_parallel.Std.Worker.make
-        ~saved_state:()
+        ~saved_state:
+          ( (* These states need to be restored in the worker process. *)
+            Log.GlobalState.get (),
+            Profiling.GlobalState.get (),
+            Statistics.GlobalState.get () )
         ~entry
         ~nbr_procs:number_of_workers
         ~heap_handle

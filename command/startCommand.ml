@@ -466,7 +466,13 @@ let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_pat
 
 
 type run_server_daemon_entry =
-  ( Socket.t * Socket.t * Socket.t * Configuration.Server.t,
+  ( Socket.t
+    * Socket.t
+    * Socket.t
+    * Configuration.Server.t
+    * Log.GlobalState.t
+    * Profiling.GlobalState.t
+    * Statistics.GlobalState.t,
     unit Daemon.in_channel,
     unit Daemon.out_channel )
   Daemon.entry
@@ -477,11 +483,22 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, json_socket, adapter_socket, server_configuration)
+    (fun ( socket,
+           json_socket,
+           adapter_socket,
+           server_configuration,
+           log_state,
+           profiling_state,
+           statistics_state )
          (parent_in_channel, parent_out_channel)
          ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
+
+      (* Restore global states *)
+      Log.GlobalState.restore log_state;
+      Profiling.GlobalState.restore profiling_state;
+      Statistics.GlobalState.restore statistics_state;
 
       (* Detach the from a controlling terminal *)
       Unix.Terminal_io.setsid () |> ignore;
@@ -533,7 +550,13 @@ let run
           Daemon.spawn
             (stdin, stdout, stdout)
             run_server_daemon_entry
-            (socket, json_socket, adapter_socket, server_configuration)
+            ( socket,
+              json_socket,
+              adapter_socket,
+              server_configuration,
+              Log.GlobalState.get (),
+              Profiling.GlobalState.get (),
+              Statistics.GlobalState.get () )
         in
         Daemon.close handle;
         Log.log ~section:`Server "Forked off daemon with pid %d" pid;
