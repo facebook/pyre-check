@@ -91,7 +91,7 @@ let run_command
     ()
   =
   let local_root = Path.create_absolute local_root in
-  Statistics.initialize ~log_identifier ~project_name:(Path.last local_root) ();
+  Statistics.GlobalState.initialize ~log_identifier ~project_name:(Path.last local_root) ();
   let configuration =
     Configuration.Analysis.create
       ~local_root

@@ -35,7 +35,7 @@ let run_infer
   =
   let local_root = Path.create_absolute local_root in
   Log.GlobalState.initialize ~debug ~sections;
-  Statistics.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
+  Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
   Profiling.initialize ~profiling_output ~memory_profiling_output ();
   let argument_to_paths argument =
     argument

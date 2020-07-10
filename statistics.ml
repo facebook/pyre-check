@@ -12,12 +12,43 @@ module GlobalState = struct
     mutable last_flush_timestamp: float;
     mutable log_identifier: string;
     mutable project_name: string;
-    start_time: float;
-    flush_size: int;
-    flush_timeout: float;
-    username: string;
-    hostname: string;
+    mutable start_time: float;
   }
+
+  let flush_size = 500
+
+  let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
+
+  let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
+
+  let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ())
+
+  let global_state =
+    let current_time = Unix.time () in
+    {
+      logger = None;
+      last_flush_timestamp = current_time;
+      log_identifier = "";
+      project_name = "";
+      start_time = current_time;
+    }
+
+
+  let initialize ?logger ?log_identifier ?project_name () =
+    Option.iter logger ~f:(fun logger -> global_state.logger <- Some logger);
+    Option.iter log_identifier ~f:(fun identifier -> global_state.log_identifier <- identifier);
+    Option.iter project_name ~f:(fun name -> global_state.project_name <- name);
+    ()
+
+
+  let get () = global_state
+
+  let restore old_state =
+    global_state.logger <- old_state.logger;
+    global_state.last_flush_timestamp <- old_state.last_flush_timestamp;
+    global_state.log_identifier <- old_state.log_identifier;
+    global_state.project_name <- old_state.project_name;
+    global_state.start_time <- old_state.start_time
 end
 
 module Cache : sig
@@ -30,29 +61,7 @@ end = struct
   let with_cache ~f = Error_checking_mutex.critical_section lock ~f:(fun () -> f cache)
 end
 
-let global_state =
-  let current_time = Unix.time () in
-  {
-    GlobalState.logger = None;
-    last_flush_timestamp = current_time;
-    log_identifier = "";
-    project_name = "";
-    start_time = current_time;
-    flush_size = 500;
-    flush_timeout = 6.0 *. 3600.0 (* Seconds. *);
-    username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ());
-    hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname ());
-  }
-
-
-let initialize ?logger ?log_identifier ?project_name () =
-  Option.iter logger ~f:(fun logger -> global_state.logger <- Some logger);
-  Option.iter log_identifier ~f:(fun identifier -> global_state.log_identifier <- identifier);
-  Option.iter project_name ~f:(fun name -> global_state.project_name <- name);
-  ()
-
-
-let disable () = global_state.logger <- None
+let disable () = GlobalState.global_state.logger <- None
 
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   let server_configuration_metadata =
@@ -84,10 +93,10 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
     if metadata then
       [
         "binary", Sys.argv.(0);
-        "root", global_state.project_name;
-        "username", global_state.username;
-        "hostname", global_state.hostname;
-        "identifier", global_state.log_identifier;
+        "root", GlobalState.global_state.project_name;
+        "username", GlobalState.username;
+        "hostname", GlobalState.hostname;
+        "identifier", GlobalState.global_state.log_identifier;
       ]
       @ server_configuration_metadata
       @ normals
@@ -96,7 +105,10 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   in
   let integers =
     if metadata then
-      ["time", Unix.time () |> Int.of_float; "start_time", global_state.start_time |> Int.of_float]
+      [
+        "time", Unix.time () |> Int.of_float;
+        "start_time", GlobalState.global_state.start_time |> Int.of_float;
+      ]
       @ integers
     else
       integers
@@ -110,7 +122,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
 
 
 let flush () =
-  match global_state.logger with
+  match GlobalState.global_state.logger with
   | None -> ()
   | Some logger ->
       let flush_category ~key ~data =
@@ -123,7 +135,7 @@ let flush () =
       Cache.with_cache ~f:(fun cache ->
           Hashtbl.iteri ~f:flush_category cache;
           Hashtbl.clear cache);
-      global_state.last_flush_timestamp <- Unix.time ();
+      GlobalState.global_state.last_flush_timestamp <- Unix.time ();
       ()
 
 
@@ -141,9 +153,10 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
   in
   let exceeds_timeout () =
     let current_time = Unix.time () in
-    Float.(current_time -. global_state.last_flush_timestamp >= global_state.flush_timeout)
+    Float.(
+      current_time -. GlobalState.global_state.last_flush_timestamp >= GlobalState.flush_timeout)
   in
-  if flush || samples_count () >= global_state.flush_size || exceeds_timeout () then
+  if flush || samples_count () >= GlobalState.flush_size || exceeds_timeout () then
     flush_cache ()
 
 
