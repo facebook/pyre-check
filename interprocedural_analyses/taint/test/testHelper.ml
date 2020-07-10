@@ -382,13 +382,13 @@ let initialize
   =
   let configuration, ast_environment, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let { Test.ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, errors =
+    let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess
         ~call_graph_builder:(module Taint.CallGraphBuilder)
         project
     in
     ( Test.ScratchProject.configuration_of project,
-      AstEnvironment.read_only ast_environment,
+      TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only,
       type_environment,
       errors )
   in

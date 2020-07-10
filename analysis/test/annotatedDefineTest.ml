@@ -80,12 +80,13 @@ let test_parent_definition context =
 let test_decorate context =
   let assert_decorated source ~expected =
     let source, environment =
-      let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
       ( Option.value_exn
           (AstEnvironment.ReadOnly.get_processed_source
-             (AstEnvironment.read_only ast_environment)
+             ( AnnotatedGlobalEnvironment.ast_environment global_environment
+             |> AstEnvironment.read_only )
              (Reference.create "test")),
         global_environment )
     in

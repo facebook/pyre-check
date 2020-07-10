@@ -13,18 +13,13 @@ open TestHelper
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
-  let {
-    Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
-    type_environment = environment;
-    _;
-  }
-    =
+  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
     Test.ScratchProject.setup ~context [handle, source]
     |> Test.ScratchProject.build_type_environment
   in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
-      (AstEnvironment.read_only ast_environment)
+      (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
       qualifier
     |> fun option -> Option.value_exn option
   in

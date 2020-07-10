@@ -32,7 +32,7 @@ let create_environments_and_project
       ~include_helper_builtins:include_helpers
       additional_sources
   in
-  let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     project |> ScratchProject.build_global_environment
   in
   (* TODO (T47159596): This can be done in a more elegant way *)
@@ -41,7 +41,7 @@ let create_environments_and_project
     let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
-  AnnotatedGlobalEnvironment.read_only global_environment, ast_environment, project
+  global_environment, project
 
 
 let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources () =
@@ -51,11 +51,26 @@ let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additi
     ?include_helpers
     ?additional_sources
     ()
-  |> fst3
+  |> fst
+
+
+let create_readonly_environment
+    ~context
+    ?include_typeshed_stubs
+    ?include_helpers
+    ?additional_sources
+    ()
+  =
+  create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources ()
+  |> AnnotatedGlobalEnvironment.read_only
 
 
 let populate ?include_typeshed_stubs ?include_helpers sources =
-  create_environment ?include_typeshed_stubs ?include_helpers ~additional_sources:sources ()
+  create_readonly_environment
+    ?include_typeshed_stubs
+    ?include_helpers
+    ~additional_sources:sources
+    ()
 
 
 let order_and_environment ~context source =
@@ -401,7 +416,7 @@ let test_register_aliases context =
 
 
 let test_register_implicit_submodules context =
-  let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
+  let environment = create_readonly_environment ~context ~additional_sources:["a/b/c.py", ""] () in
   let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   let global_resolution = GlobalResolution.create environment in
   assert_bool
@@ -417,7 +432,7 @@ let test_register_implicit_submodules context =
 
 
 let test_register_globals context =
-  let environment = create_environment ~context () in
+  let environment = create_readonly_environment ~context () in
   let resolution = GlobalResolution.create environment in
   let assert_global reference expected =
     let actual =
@@ -1235,7 +1250,7 @@ let test_remove_extra_edges_to_object context =
 
 let test_update_and_compute_dependencies context =
   (* Pre-test setup *)
-  let environment, ast_environment, project =
+  let environment, project =
     create_environments_and_project
       ~context
       ~additional_sources:
@@ -1246,6 +1261,7 @@ let test_update_and_compute_dependencies context =
       |}]
       ()
   in
+  let readonly_environment = AnnotatedGlobalEnvironment.read_only environment in
   let dependency_A =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "A"))
   in
@@ -1253,12 +1269,12 @@ let test_update_and_compute_dependencies context =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "B"))
   in
   (* Establish dependencies *)
-  let untracked_global_resolution = GlobalResolution.create environment in
+  let untracked_global_resolution = GlobalResolution.create readonly_environment in
   let dependency_tracked_global_resolution_A =
-    GlobalResolution.create ~dependency:dependency_A environment
+    GlobalResolution.create ~dependency:dependency_A readonly_environment
   in
   let dependency_tracked_global_resolution_B =
-    GlobalResolution.create ~dependency:dependency_B environment
+    GlobalResolution.create ~dependency:dependency_B readonly_environment
   in
   let global resolution name = GlobalResolution.global resolution (Reference.create name) in
   (* A read Foo *)
@@ -1291,10 +1307,11 @@ let test_update_and_compute_dependencies context =
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
       let _, update_result =
-        let { ScratchProject.module_tracker; _ } = project in
-        let configuration = ScratchProject.configuration_of project in
+        let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
         let path = Path.create_relative ~root:local_root ~relative:"source.py" in
+        let ast_environment = AnnotatedGlobalEnvironment.ast_environment environment in
+        let module_tracker = AstEnvironment.module_tracker ast_environment in
         ModuleTracker.update ~configuration ~paths:[path] module_tracker
         |> (fun updates -> AstEnvironment.Update updates)
         |> update_environments

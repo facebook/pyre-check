@@ -2553,7 +2553,6 @@ module ScratchProject = struct
   module BuiltTypeEnvironment = struct
     type t = {
       sources: Source.t list;
-      ast_environment: AstEnvironment.t;
       type_environment: TypeEnvironment.t;
     }
   end
@@ -2561,7 +2560,6 @@ module ScratchProject = struct
   module BuiltGlobalEnvironment = struct
     type t = {
       sources: Source.t list;
-      ast_environment: AstEnvironment.t;
       global_environment: AnnotatedGlobalEnvironment.t;
     }
   end
@@ -2694,13 +2692,11 @@ module ScratchProject = struct
              (AstEnvironment.ReadOnly.get_processed_source
                 (AstEnvironment.read_only ast_environment))
     in
-    { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
+    { BuiltGlobalEnvironment.sources; global_environment }
 
 
   let build_type_environment ?call_graph_builder project =
-    let { BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
-      build_global_environment project
-    in
+    let { BuiltGlobalEnvironment.sources; global_environment } = build_global_environment project in
     let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
@@ -2709,7 +2705,7 @@ module ScratchProject = struct
          ~configuration
          ~environment:type_environment
          ?call_graph_builder;
-    { BuiltTypeEnvironment.sources; ast_environment; type_environment }
+    { BuiltTypeEnvironment.sources; type_environment }
 
 
   let build_type_environment_and_postprocess ?call_graph_builder project =
@@ -2775,13 +2771,13 @@ let assert_errors
           in
           ScratchProject.setup ~context ~external_sources [handle, source]
         in
-        let { ScratchProject.BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
+        let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project
         in
         let configuration = ScratchProject.configuration_of project in
         ( configuration,
           sources,
-          AstEnvironment.read_only ast_environment,
+          AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only,
           TypeEnvironment.create global_environment )
       in
       let configuration = { configuration with debug; strict; infer } in

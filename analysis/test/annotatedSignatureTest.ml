@@ -74,7 +74,7 @@ let test_unresolved_select context =
     in
     let parse_callable_and_signature ~callable ~arguments =
       let callable = replace_specials callable in
-      let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup
           ~context
           [
@@ -146,7 +146,8 @@ let test_unresolved_select context =
         let arguments, expression =
           match
             AstEnvironment.ReadOnly.get_processed_source
-              (AstEnvironment.read_only ast_environment)
+              ( AnnotatedGlobalEnvironment.ast_environment global_environment
+              |> AstEnvironment.read_only )
               (Reference.create "test")
             >>| Source.statements
             >>| List.rev

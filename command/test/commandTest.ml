@@ -59,7 +59,7 @@ let make_errors ~context ?(handle = "test.py") source =
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
-  let { ScratchProject.BuiltTypeEnvironment.ast_environment; _ }, errors =
+  let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
     ScratchProject.build_type_environment_and_postprocess project
   in
   let errors =
@@ -70,7 +70,7 @@ let make_errors ~context ?(handle = "test.py") source =
            ~lookup:
              (AstEnvironment.ReadOnly.get_real_path_relative
                 ~configuration:(ScratchProject.configuration_of project)
-                (AstEnvironment.read_only ast_environment)))
+                (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)))
   in
   Memory.reset_shared_memory ();
   errors

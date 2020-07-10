@@ -185,11 +185,13 @@ let test_backward context =
 let get_inference_errors ~context source =
   let source, configuration, ast_environment, global_resolution =
     let project = ScratchProject.setup ~context ["test.py", source] in
-    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.build_global_environment project
     in
     let configuration = ScratchProject.configuration_of project in
-    let ast_environment = AstEnvironment.read_only ast_environment in
+    let ast_environment =
+      AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only
+    in
     let source =
       AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
