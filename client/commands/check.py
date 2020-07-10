@@ -62,7 +62,7 @@ class Check(Reporting):
             self._targets,
             self._configuration,
             self._original_directory,
-            self._current_directory,
+            self._project_root,
             filter_directory=self._filter_directory,
             use_buck_builder=self._use_buck_builder,
             debug=self._debug,

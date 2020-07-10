@@ -48,7 +48,7 @@ class ProjectFilesMonitor(Subscriber):
     def __init__(
         self,
         configuration: Configuration,
-        current_directory: str,
+        project_root: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
         super(ProjectFilesMonitor, self).__init__(self.base_path(configuration))
@@ -59,7 +59,7 @@ class ProjectFilesMonitor(Subscriber):
             ["py", "pyi", "thrift"] + configuration.extensions
         )
 
-        self._watchman_path: str = self._find_watchman_path(current_directory)
+        self._watchman_path: str = self._find_watchman_path(project_root)
 
         self.socket_connection = SocketConnection(self._configuration.log_directory)
         self.socket_connection.connect()
@@ -151,7 +151,7 @@ class ProjectFilesMonitor(Subscriber):
     @staticmethod
     def restart_if_dead(
         configuration: Configuration,
-        current_directory: str,
+        project_root: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
         pid_path = watchman.compute_pid_path(
@@ -162,7 +162,7 @@ class ProjectFilesMonitor(Subscriber):
         LOG.debug("File monitor is not running.")
         try:
             ProjectFilesMonitor(
-                configuration, current_directory, analysis_directory
+                configuration, project_root, analysis_directory
             ).daemonize()
             LOG.debug("Restarted file monitor.")
         except MonitorException as exception:

@@ -136,7 +136,7 @@ class Kill(Command):
         try:
             scratch_path = (
                 subprocess.check_output(
-                    f"mkscratch path --subdir pyre {self._current_directory}".split()
+                    f"mkscratch path --subdir pyre {self._project_root}".split()
                 )
                 .decode()
                 .strip()

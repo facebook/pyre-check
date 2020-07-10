@@ -170,7 +170,7 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._current_directory = "/root"
+        kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
         kill_command._log_directory = "/some/log/directory/.pyre/foo"
         path_glob.return_value = [
@@ -202,7 +202,7 @@ class KillTest(unittest.TestCase):
             analysis_directory=MagicMock(),
             with_fire=MagicMock(),
         )
-        kill_command._current_directory = "/root"
+        kill_command._project_root = "/root"
         kill_command._dot_pyre_directory = Path("/some/log/directory/.pyre")
         kill_command._log_directory = "/some/log/directory/.pyre/foo"
         check_output.side_effect = Exception

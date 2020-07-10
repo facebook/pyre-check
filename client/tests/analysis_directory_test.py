@@ -69,7 +69,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
     )
     def test_resolve_analysis_directory(self, buck) -> None:  # pyre-fixme[2]
         original_directory = "/project"
-        current_directory = "/project"
+        project_root = "/project"
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -82,7 +82,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory=None,
             use_buck_builder=False,
             buck_mode=None,
@@ -100,7 +100,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory="/real/directory",
             use_buck_builder=False,
             buck_mode=None,
@@ -151,7 +151,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory="/buck_root/pyre_root",
-            current_directory="/buck_root/pyre_root/local",
+            project_root="/buck_root/pyre_root/local",
             filter_directory=None,
             use_buck_builder=True,
             debug=False,
@@ -173,7 +173,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory="/foo",
-            current_directory="/foo",
+            project_root="/foo",
             filter_directory=None,
             use_buck_builder=False,
             debug=False,
@@ -189,10 +189,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_get_new_deleted_and_tracked_paths_for_local_project(
-        self,
-        absolute_path: MagicMock,
-        isfile: MagicMock,
-        get_current_directory: MagicMock,
+        self, absolute_path: MagicMock, isfile: MagicMock, get_project_root: MagicMock
     ) -> None:
         def _isfile(path: str) -> bool:
             return "foo/deleted" not in path
@@ -242,10 +239,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     #  `unittest.mock.patch.object` could not be resolved in a global scope.
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
     def test_get_new_deleted_and_tracked_paths_for_root_project(
-        self,
-        absolute_path: MagicMock,
-        isfile: MagicMock,
-        get_current_directory: MagicMock,
+        self, absolute_path: MagicMock, isfile: MagicMock, get_project_root: MagicMock
     ) -> None:
         def _isfile(path: str) -> bool:
             return "foo/deleted" not in path
@@ -745,7 +739,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
     @patch.object(os.path, "relpath", side_effect=lambda path, relative: path)
     def test_resolve_analysis_directory(self, relpath, buck) -> None:  # pyre-fixme[2]
         original_directory = "/project"
-        current_directory = "/project"
+        project_root = "/project"
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -763,7 +757,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=["//x:y"],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory="/real/directory",
             use_buck_builder=False,
             buck_mode=None,
@@ -784,7 +778,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=["//overridden/..."],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory="/filter",
             use_buck_builder=False,
             buck_mode=None,
@@ -807,7 +801,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory="/filter",
             use_buck_builder=False,
             buck_mode=None,
@@ -832,7 +826,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             targets=[],
             configuration=configuration,
             original_directory=original_directory,
-            current_directory=current_directory,
+            project_root=project_root,
             filter_directory=None,
             use_buck_builder=False,
             buck_mode=None,

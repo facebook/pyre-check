@@ -664,7 +664,7 @@ def resolve_analysis_directory(
     targets: List[str],
     configuration: Configuration,
     original_directory: str,
-    current_directory: str,
+    project_root: str,
     filter_directory: Optional[str],
     use_buck_builder: Optional[bool],
     debug: bool,
@@ -702,7 +702,7 @@ def resolve_analysis_directory(
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
-            local_configuration_root, current_directory
+            local_configuration_root, project_root
         )
 
     use_buck_builder: bool = (
@@ -722,7 +722,7 @@ def resolve_analysis_directory(
             buck_root = buck.find_buck_root(os.getcwd())
             if not buck_root:
                 raise EnvironmentException(
-                    f"No Buck configuration at `{current_directory}` or any of its ancestors."
+                    f"No Buck configuration at `{project_root}` or any of its ancestors."
                 )
             project_name = _get_project_name(
                 isolate_per_process=isolate, relative_local_root=relative_local_root

@@ -101,7 +101,7 @@ class Start(Reporting):
                 self._command_arguments,
                 self._configuration,
                 self._analysis_directory,
-                self._current_directory,
+                self._project_root,
                 self._original_directory,
                 self.local_configuration,
                 self._configuration.other_critical_files,
@@ -140,7 +140,7 @@ class Start(Reporting):
                         try:
                             file_monitor = project_files_monitor.ProjectFilesMonitor(
                                 self._configuration,
-                                self._current_directory,
+                                self._project_root,
                                 self._analysis_directory,
                             )
                             file_monitor.daemonize()

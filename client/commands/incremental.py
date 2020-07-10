@@ -169,5 +169,5 @@ class Incremental(Reporting):
         if self._no_watchman:
             return
         ProjectFilesMonitor.restart_if_dead(
-            self._configuration, self._current_directory, self._analysis_directory
+            self._configuration, self._project_root, self._analysis_directory
         )

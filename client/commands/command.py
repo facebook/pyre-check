@@ -279,7 +279,7 @@ class CommandParser(ABC):
         # Derived arguments
         self._capable_terminal: bool = terminal.is_capable()
         self._original_directory: str = original_directory
-        self._current_directory: str = find_project_root(self._original_directory)
+        self._project_root: str = find_project_root(self._original_directory)
 
         local_configuration = self._command_arguments.local_configuration
         if local_configuration and local_configuration.endswith(
@@ -291,12 +291,10 @@ class CommandParser(ABC):
         )
         self._dot_pyre_directory: Path = (
             self._command_arguments.dot_pyre_directory
-            or Path(self._current_directory, LOG_DIRECTORY)
+            or Path(self._project_root, LOG_DIRECTORY)
         )
         self._log_directory: str = find_log_directory(
-            self._current_directory,
-            self._local_configuration,
-            str(self._dot_pyre_directory),
+            self._project_root, self._local_configuration, str(self._dot_pyre_directory)
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
@@ -505,8 +503,8 @@ class CommandParser(ABC):
         return None
 
     @property
-    def current_directory(self) -> Optional[str]:
-        return self._current_directory
+    def project_root(self) -> Optional[str]:
+        return self._project_root
 
     @property
     def local_configuration(self) -> Optional[str]:
@@ -603,7 +601,7 @@ class Command(CommandParser, ABC):
                 self._targets,
                 configuration,
                 self._original_directory,
-                self._current_directory,
+                self._project_root,
                 filter_directory=self._filter_directory,
                 use_buck_builder=self._use_buck_builder,
                 debug=self._debug,
@@ -662,8 +660,8 @@ class Command(CommandParser, ABC):
         if self._enable_profiling or self._enable_memory_profiling:
             # Clear the profiling log first since in pyre binary it's append-only
             remove_if_exists(self.profiling_log_path())
-        if self._current_directory:
-            flags.extend(["-project-root", self._current_directory])
+        if self._project_root:
+            flags.extend(["-project-root", self._project_root])
         if self._log_identifier:
             flags.extend(["-log-identifier", self._log_identifier])
         if self._logger:
