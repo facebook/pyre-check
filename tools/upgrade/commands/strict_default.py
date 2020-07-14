@@ -5,7 +5,11 @@
 
 import argparse
 import logging
+import os
 from pathlib import Path
+from typing import Optional
+
+from tools.pyre.client.find_directories import find_local_root
 
 from ..configuration import Configuration
 from ..errors import Errors, PartialErrorSuppression
@@ -15,6 +19,19 @@ from .command import CommandArguments, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def _get_configuration_path(
+    local_configuration: Optional[Path], project_configuration: Path
+) -> Path:
+    if local_configuration:
+        configuration_path = local_configuration / ".pyre_configuration.local"
+        return configuration_path
+    original_directory = os.getcwd()
+    configuration_path = find_local_root(original_directory)
+    if configuration_path:
+        return Path(configuration_path) / ".pyre_configuration.local"
+    return project_configuration
 
 
 class StrictDefault(ErrorSuppressingCommand):
@@ -71,10 +88,9 @@ class StrictDefault(ErrorSuppressingCommand):
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         local_configuration = self._local_configuration
-        if local_configuration:
-            configuration_path = local_configuration / ".pyre_configuration.local"
-        else:
-            configuration_path = project_configuration
+        configuration_path = _get_configuration_path(
+            local_configuration, project_configuration
+        )
         configuration = Configuration(configuration_path)
         LOG.info("Processing %s", configuration.get_directory())
         configuration.add_strict()

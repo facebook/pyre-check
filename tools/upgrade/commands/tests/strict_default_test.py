@@ -12,7 +12,12 @@ from unittest.mock import MagicMock, mock_open, patch
 from ... import errors
 from ...repository import Repository
 from .. import strict_default
-from ..strict_default import Configuration, ErrorSuppressingCommand, StrictDefault
+from ..strict_default import (
+    Configuration,
+    ErrorSuppressingCommand,
+    StrictDefault,
+    _get_configuration_path,
+)
 
 
 repository = Repository()
@@ -137,3 +142,29 @@ class StrictDefaultTest(unittest.TestCase):
             StrictDefault.from_arguments(arguments, repository).run()
             add_local_mode.assert_called_once()
             suppress_errors.assert_not_called()
+
+    def test_get_configuration_path(self):
+        project_path = Path("project/path")
+        configuration = _get_configuration_path(
+            local_configuration=Path("local/config/example"),
+            project_configuration=Path("project/example"),
+        )
+        self.assertEqual(
+            configuration, Path("local/config/example/.pyre_configuration.local")
+        )
+
+        with patch("os.getcwd", returns="fake/path"), patch(
+            f"{strict_default.__name__}.find_local_root", return_value=Path("cwd/path")
+        ):
+            configuration = _get_configuration_path(
+                local_configuration=None, project_configuration=project_path
+            )
+            self.assertEqual(configuration, Path("cwd/path/.pyre_configuration.local"))
+
+        with patch("os.getcwd", returns="fake/path"), patch(
+            f"{strict_default.__name__}.find_local_root", return_value=None
+        ):
+            configuration = _get_configuration_path(
+                local_configuration=None, project_configuration=project_path
+            )
+            self.assertEqual(configuration, project_path)
