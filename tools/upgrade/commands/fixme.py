@@ -56,7 +56,7 @@ class Fixme(ErrorSuppressingCommand):
         )
 
     def run(self) -> None:
-        if self._error_source == ErrorSource.GENERATE.value:
+        if self._error_source == ErrorSource.GENERATE:
             errors = self._generate_errors()
             self._suppress_errors(errors)
 
