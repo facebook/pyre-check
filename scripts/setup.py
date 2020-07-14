@@ -12,10 +12,9 @@ import multiprocessing
 import os
 import shutil
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Dict, List, Mapping, Optional, Type
+from typing import Dict, List, Mapping, NamedTuple, Optional, Type
 
 
 COMPILER_VERSION = "4.08.0"
@@ -44,8 +43,7 @@ class OldOpam(Exception):
     pass
 
 
-@dataclass(frozen=True)
-class Runner:
+class Runner(NamedTuple):
     logger: logging.Logger
     opam_root: Path
 
