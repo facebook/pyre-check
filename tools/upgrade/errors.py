@@ -36,21 +36,29 @@ class Errors:
 
     @staticmethod
     def from_json(
-        json_string: str, only_fix_error_code: Optional[int] = None
+        json_string: str,
+        only_fix_error_code: Optional[int] = None,
+        from_stdin: bool = False,
     ) -> "Errors":
         try:
             errors = json.loads(json_string)
             return Errors(_filter_errors(errors, only_fix_error_code))
         except json.decoder.JSONDecodeError:
-            raise UserError(
-                "Received invalid JSON as input. "
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
+            if from_stdin:
+                raise UserError(
+                    "Received invalid JSON as input. "
+                    "If piping from `pyre check` be sure to use `--output=json`."
+                )
+            else:
+                raise UserError(
+                    "Encountered invalid output when checking for pyre errors:\n",
+                    json_string,
+                )
 
     @staticmethod
     def from_stdin(only_fix_error_code: Optional[int] = None) -> "Errors":
         input = sys.stdin.read()
-        return Errors.from_json(input, only_fix_error_code)
+        return Errors.from_json(input, only_fix_error_code, from_stdin=True)
 
     def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors: List[Dict[str, Any]] = errors
