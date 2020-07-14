@@ -103,6 +103,7 @@ class TimedStreamHandler(logging.StreamHandler):
         suffix = ""
         color = ""
         active_lines = record.msg.count("\n") + 1
+        truncate = Format.TRUNCATE_OVERFLOW
         if record.levelname in self.LINE_BREAKING_LEVELS:
             record.msg += "\n"
 
@@ -110,17 +111,21 @@ class TimedStreamHandler(logging.StreamHandler):
             color = Color.RED
             self._record = None
             active_lines = 0
+            truncate = Format.WRAP_OVERFLOW
         elif record.levelname == "WARNING":
             color = Color.YELLOW
             self._record = None
             active_lines = 0
+            truncate = Format.WRAP_OVERFLOW
         elif record.levelname == "PROMPT":
             color = Color.YELLOW
             self._record = None
             active_lines = 0
+            truncate = Format.WRAP_OVERFLOW
         elif record.levelname == "SUCCESS":
             self._record = None
             active_lines = 0
+            truncate = Format.WRAP_OVERFLOW
         elif age:
             if age > 10:
                 color = Color.YELLOW
@@ -141,7 +146,7 @@ class TimedStreamHandler(logging.StreamHandler):
             color=color,
             cursor=Character.LAMBDA,
             clear=Format.CLEAR,
-            truncate=Format.TRUNCATE_OVERFLOW,
+            truncate=truncate,
             message=record.msg,
             suffix=suffix,
         )
