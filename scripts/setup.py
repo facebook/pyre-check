@@ -190,29 +190,6 @@ class Runner(NamedTuple):
 
         return opam_environment_variables
 
-    def configure(
-        self,
-        pyre_directory: Path,
-        *,
-        set_switch: bool = True,
-        build_type_override: Optional[BuildType] = None,
-    ) -> None:
-        self.produce_dune_file(pyre_directory, build_type_override)
-
-        if set_switch:
-            compiler_override = self.compiler_override
-            if compiler_override:
-                self.run(
-                    [
-                        "opam",
-                        "switch",
-                        "set",
-                        compiler_override,
-                        "--root",
-                        self.opam_root.as_posix(),
-                    ]
-                )
-
     def full_setup(
         self,
         pyre_directory: Path,
@@ -221,11 +198,7 @@ class Runner(NamedTuple):
         run_clean: bool = False,
         build_type_override: Optional[BuildType] = None,
     ) -> None:
-        self.configure(
-            pyre_directory=pyre_directory,
-            set_switch=False,
-            build_type_override=build_type_override,
-        )
+        self.produce_dune_file(pyre_directory, build_type_override)
 
         opam_environment_variables = self.initialize_opam_switch()
 
@@ -327,11 +300,21 @@ def main(runner_type: Type[Runner]) -> None:
         release=parsed.release,
     )
     if parsed.configure:
-        runner.configure(pyre_directory, build_type_override=parsed.build_type)
+        runner.produce_dune_file(pyre_directory, parsed.build_type)
+        compiler_override = runner.compiler_override
+        if compiler_override:
+            runner.run(
+                [
+                    "opam",
+                    "switch",
+                    "set",
+                    compiler_override,
+                    "--root",
+                    runner.opam_root.as_posix(),
+                ]
+            )
     elif parsed.environment_only:
-        runner.configure(
-            pyre_directory, set_switch=False, build_type_override=parsed.build_type
-        )
+        runner.produce_dune_file(pyre_directory, parsed.build_type)
         runner.initialize_opam_switch()
         logger.info("Environment built successfully, stopping here as requested.")
     else:
