@@ -12,6 +12,7 @@ import multiprocessing
 import os
 import shutil
 import subprocess
+from enum import Enum
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type
@@ -43,6 +44,11 @@ class OldOpam(Exception):
     pass
 
 
+class BuildType(Enum):
+    EXTERNAL = "external"
+    FACEBOOK = "facebook"
+
+
 class Runner(NamedTuple):
     logger: logging.Logger
     opam_root: Path
@@ -50,7 +56,7 @@ class Runner(NamedTuple):
     opam_repository_override: Optional[str] = None
     development: bool = False
     release: bool = False
-    build_type: Optional[str] = None
+    build_type_override: Optional[BuildType] = None
 
     @property
     def compiler_override(self) -> Optional[str]:
@@ -63,14 +69,6 @@ class Runner(NamedTuple):
     @property
     def compiler(self) -> str:
         return self.compiler_override or DEVELOPMENT_COMPILER
-
-    @property
-    def build_type_override(self) -> Optional[str]:
-        if self.build_type == "facebook":
-            return "facebook"
-        if self.build_type == "external":
-            return "external"
-        return None
 
     @property
     def make_arguments(self) -> str:
@@ -91,13 +89,13 @@ class Runner(NamedTuple):
         build_type = self.build_type_override
         if not build_type:
             if (pyre_directory / "facebook").is_dir:
-                build_type = "facebook"
+                build_type = BuildType.FACEBOOK
             else:
-                build_type = "external"
+                build_type = BuildType.EXTERNAL
         with open(pyre_directory / "dune.in") as dune_in:
             with open(pyre_directory / "dune", "w") as dune:
                 dune_data = dune_in.read()
-                dune.write(dune_data.replace("%VERSION%", build_type))
+                dune.write(dune_data.replace("%VERSION%", build_type.value))
 
     def check_if_preinstalled(self) -> None:
         if self.environment_variables.get(
@@ -294,7 +292,7 @@ def main(runner_type: Type[Runner]) -> None:
     parser.add_argument("--environment-only", action="store_true")
     parser.add_argument("--development", action="store_true")
     parser.add_argument("--release", action="store_true")
-    parser.add_argument("--build-type", type=str)
+    parser.add_argument("--build-type", type=BuildType)
 
     parsed = parser.parse_args()
 
@@ -312,7 +310,7 @@ def main(runner_type: Type[Runner]) -> None:
         opam_repository_override=parsed.repository,
         development=parsed.development,
         release=parsed.release,
-        build_type=parsed.build_type,
+        build_type_override=parsed.build_type,
     )
     if parsed.configure:
         runner.configure(pyre_directory)
