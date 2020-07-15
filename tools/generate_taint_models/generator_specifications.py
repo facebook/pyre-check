@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, NamedTuple, Optional, Set
 
-from .parameter import ArgumentKind, Parameter
+from .parameter import Parameter
 
 
 class ParameterAnnotation(ABC):
@@ -40,9 +40,9 @@ class AllParametersAnnotation(ParameterAnnotation):
         self.vararg = vararg
 
     def get(self, parameter: "Parameter") -> Optional[str]:
-        if parameter.kind == ArgumentKind.ARG:
+        if parameter.kind == Parameter.Kind.ARG:
             return self.arg
-        elif parameter.kind == ArgumentKind.VARARG:
+        elif parameter.kind == Parameter.Kind.VARARG:
             return self.vararg
         else:  # KWARG
             return self.kwarg

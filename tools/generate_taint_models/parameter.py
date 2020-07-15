@@ -2,16 +2,15 @@ from enum import Enum, auto
 from typing import NamedTuple, Optional
 
 
-class ArgumentKind(Enum):
-    ARG = auto()
-    VARARG = auto()
-    KWARG = auto()
-
-
 class Parameter(NamedTuple):
+    class Kind(Enum):
+        ARG = auto()
+        VARARG = auto()
+        KWARG = auto()
+
     name: str
     annotation: Optional[str]
-    kind: ArgumentKind
+    kind: Kind
 
     def __eq__(self, other: "Parameter") -> bool:
         if not isinstance(other, self.__class__):

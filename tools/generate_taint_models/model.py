@@ -17,7 +17,6 @@ import _ast
 from ...api import query
 from .generator_specifications import (
     AnnotationSpecification,
-    ArgumentKind,
     ParameterAnnotation,
     WhitelistSpecification,
 )
@@ -188,11 +187,11 @@ class CallableModel(RawCallableModel):
         parameters: List[Parameter] = []
         for parameter in view_parameters.values():
             if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                kind = ArgumentKind.KWARG
+                kind = Parameter.Kind.KWARG
             elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                kind = ArgumentKind.VARARG
+                kind = Parameter.Kind.VARARG
             else:
-                kind = ArgumentKind.ARG
+                kind = Parameter.Kind.ARG
 
             parameters.append(
                 Parameter(extract_name(parameter), extract_annotation(parameter), kind)
@@ -247,21 +246,21 @@ class FunctionDefinitionModel(RawCallableModel):
                 Parameter(
                     ast_arg.arg,
                     FunctionDefinitionModel._get_annotation(ast_arg),
-                    ArgumentKind.ARG,
+                    Parameter.Kind.ARG,
                 )
             )
 
         keyword_only_parameters = function_arguments.kwonlyargs
         if len(keyword_only_parameters) > 0:
             parameters.append(
-                Parameter(name="*", annotation=None, kind=ArgumentKind.ARG)
+                Parameter(name="*", annotation=None, kind=Parameter.Kind.ARG)
             )
             for parameter in keyword_only_parameters:
                 parameters.append(
                     Parameter(
                         parameter.arg,
                         FunctionDefinitionModel._get_annotation(parameter),
-                        ArgumentKind.ARG,
+                        Parameter.Kind.ARG,
                     )
                 )
 
@@ -271,7 +270,7 @@ class FunctionDefinitionModel(RawCallableModel):
                 Parameter(
                     f"*{vararg_parameters.arg}",
                     FunctionDefinitionModel._get_annotation(vararg_parameters),
-                    ArgumentKind.VARARG,
+                    Parameter.Kind.VARARG,
                 )
             )
 
@@ -281,7 +280,7 @@ class FunctionDefinitionModel(RawCallableModel):
                 Parameter(
                     f"**{kwarg_parameters.arg}",
                     FunctionDefinitionModel._get_annotation(kwarg_parameters),
-                    ArgumentKind.KWARG,
+                    Parameter.Kind.KWARG,
                 )
             )
 
@@ -321,11 +320,11 @@ class PyreFunctionDefinitionModel(RawCallableModel):
 
         for parameter in self.definition.parameters:
             if "**" in parameter.name:
-                kind = ArgumentKind.KWARG
+                kind = Parameter.Kind.KWARG
             elif "*" in parameter.name:
-                kind = ArgumentKind.VARARG
+                kind = Parameter.Kind.VARARG
             else:
-                kind = ArgumentKind.ARG
+                kind = Parameter.Kind.ARG
             parameters.append(
                 Parameter(
                     name=parameter.name, annotation=parameter.annotation, kind=kind

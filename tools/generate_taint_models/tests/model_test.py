@@ -294,8 +294,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("self", None, model.ArgumentKind.ARG),
-                    model.Parameter("a", None, model.ArgumentKind.ARG),
+                    model.Parameter("self", None, model.Parameter.Kind.ARG),
+                    model.Parameter("a", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
@@ -315,8 +315,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("self", None, model.ArgumentKind.ARG),
-                    model.Parameter("*args", None, model.ArgumentKind.VARARG),
+                    model.Parameter("self", None, model.Parameter.Kind.ARG),
+                    model.Parameter("*args", None, model.Parameter.Kind.VARARG),
                 ],
             ):
                 self.assertEqual(
@@ -335,8 +335,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("self", None, model.ArgumentKind.ARG),
-                    model.Parameter("**kwargs", None, model.ArgumentKind.KWARG),
+                    model.Parameter("self", None, model.Parameter.Kind.ARG),
+                    model.Parameter("**kwargs", None, model.Parameter.Kind.KWARG),
                 ],
             ):
                 self.assertEqual(
@@ -355,8 +355,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", "int", model.ArgumentKind.ARG),
-                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", "int", model.Parameter.Kind.ARG),
+                    model.Parameter("b", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
@@ -376,8 +376,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", None, model.ArgumentKind.ARG),
-                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", None, model.Parameter.Kind.ARG),
+                    model.Parameter("b", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
@@ -397,8 +397,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", "int", model.ArgumentKind.ARG),
-                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", "int", model.Parameter.Kind.ARG),
+                    model.Parameter("b", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
@@ -418,8 +418,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", None, model.ArgumentKind.ARG),
-                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", None, model.Parameter.Kind.ARG),
+                    model.Parameter("b", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
@@ -439,8 +439,8 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", None, model.ArgumentKind.ARG),
-                    model.Parameter("b", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", None, model.Parameter.Kind.ARG),
+                    model.Parameter("b", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 # pyre-ignore[45]: Cannot instantiate abstract class
@@ -473,9 +473,9 @@ class ModelTest(unittest.TestCase):
                 model.RawCallableModel,
                 "_generate_parameters",
                 return_value=[
-                    model.Parameter("a", None, model.ArgumentKind.ARG),
-                    model.Parameter("*", None, model.ArgumentKind.ARG),
-                    model.Parameter("keyword_only", None, model.ArgumentKind.ARG),
+                    model.Parameter("a", None, model.Parameter.Kind.ARG),
+                    model.Parameter("*", None, model.Parameter.Kind.ARG),
+                    model.Parameter("keyword_only", None, model.Parameter.Kind.ARG),
                 ],
             ):
                 self.assertEqual(
