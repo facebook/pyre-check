@@ -211,10 +211,6 @@ output indicating what taint Pysa has discovered. Note that each time Pysa
 analyzes the function (which could be many times) it will update it's
 understanding of the taint flowing into the function and output the current
 state. The final output will be the most complete.</p>
-<p><code>reveal_taint</code> is a new feature, and is may not always give correct results. A
-simple debugging technique when <code>reveal_taint</code> fails is to inject a call to a
-known sink for your source, such as <code>eval</code>, rather than <code>reveal_taint</code>. You can
-then run Pysa and see if your injected flow is detected.</p>
 <h3><a class="anchor" aria-hidden="true" id="resultsjson"></a><a href="#resultsjson" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a><code>results.json</code></h3>
 <p>Another strategy for getting a bit more metadata is adding a function into your
 code, which simply constructs and returns the type you want to examine. You can
@@ -237,4 +233,10 @@ development easier.</p>
 <p>On large projects, Pysa can take a long time to run. When you're iterating on a
 single rule, pass the <code>--rule</code> option to Pysa to speed things up a bit by
 omitting processing on all other rules. Eg. <code>pyre analyze --rule 5000</code></p>
+<h2><a class="anchor" aria-hidden="true" id="usage-examples"></a><a href="#usage-examples" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Usage Examples</h2>
+<p>Not all Pysa features will be covered in these docs, and provided examples won't
+always be complete. Every feature, however, <em>will</em> be covered in the tests
+located
+<a href="https://github.com/facebook/pyre-check/tree/master/interprocedural_analyses/taint/test/integration">here</a>.
+These tests can be a useful resource to discover how to use Pysa features.</p>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/pysa-model-generators.html"><span class="arrow-prev">← </span><span>Dynamically Generating Models</span></a><a class="docs-next button" href="/docs/pysa-coverage.html"><span>Coverage Increasing Strategies</span><span class="arrow-next"> →</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
