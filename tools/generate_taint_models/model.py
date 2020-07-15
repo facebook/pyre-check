@@ -10,11 +10,9 @@ import ast
 import inspect
 import logging
 import types
-from enum import Enum, auto
-from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Set, Union
+from typing import Callable, Iterable, List, Mapping, Optional, Set, Union
 
 import _ast
-from typing_extensions import Final
 
 from ...api import query
 from .generator_specifications import (
@@ -24,6 +22,7 @@ from .generator_specifications import (
     WhitelistSpecification,
 )
 from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
+from .parameter import Parameter
 
 
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
@@ -42,17 +41,6 @@ class Model(abc.ABC):
     @abc.abstractmethod
     def __hash__(self) -> int:
         ...
-
-
-class Parameter(NamedTuple):
-    name: str
-    annotation: Optional[str]
-    kind: ArgumentKind
-
-    def __eq__(self, other: "Parameter") -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        return self.name == other.name
 
 
 class RawCallableModel(Model):

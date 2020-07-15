@@ -6,18 +6,9 @@
 # pyre-strict
 
 from abc import ABC, abstractmethod
-from enum import Enum, auto
-from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Set
+from typing import Dict, NamedTuple, Optional, Set
 
-
-if TYPE_CHECKING:
-    from .model import Parameter
-
-
-class ArgumentKind(Enum):
-    ARG = auto()
-    VARARG = auto()
-    KWARG = auto()
+from .parameter import ArgumentKind, Parameter
 
 
 class ParameterAnnotation(ABC):
