@@ -230,7 +230,12 @@ class ReportingTest(unittest.TestCase):
             arguments,
             original_directory,
             configuration,
-            SharedAnalysisDirectory([], ["//target/name"], filter_paths=set()),
+            SharedAnalysisDirectory(
+                [],
+                ["//target/name"],
+                project_root="source_directory",
+                filter_paths=set(),
+            ),
         )
         with patch.object(os, "getcwd", return_value="source_directory"):
             self.assertEqual(

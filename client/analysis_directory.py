@@ -177,6 +177,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self,
         source_directories: List[str],
         targets: List[str],
+        project_root: str,
         original_directory: Optional[str] = None,
         filter_paths: Optional[Set[str]] = None,
         local_configuration_root: Optional[str] = None,
@@ -189,6 +190,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._source_directories: Set[str] = set(source_directories)
         self._targets: Set[str] = set(targets)
         self._original_directory = original_directory
+        self._project_root = project_root
         self._filter_paths: Set[str] = filter_paths or set()
         self._local_configuration_root = local_configuration_root
         self._extensions: Set[str] = set(extensions or []) | {"py", "pyi"}
@@ -213,7 +215,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 .strip()
             )
         except Exception:
-            return os.path.join(os.getcwd(), ".pyre")
+            return os.path.join(self._project_root, ".pyre")
 
     @functools.lru_cache(1)
     def get_root(self) -> str:
@@ -224,14 +226,14 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         )
 
     def get_filter_roots(self) -> Set[str]:
-        current_project_directories = self._filter_paths or {os.getcwd()}
+        current_project_directories = self._filter_paths or {self._project_root}
         if len(self._targets) == 0:
             return {
                 translate_path(os.getcwd(), filter_root)
                 for filter_root in current_project_directories
             }
         else:
-            buck_root = find_buck_root(os.getcwd())
+            buck_root = find_buck_root(self._project_root)
             if buck_root is None:
                 raise EnvironmentException(
                     "Cannot find buck root when constructing filter directories"
@@ -516,7 +518,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             if path not in self._symbolic_links
             and not self._is_in_search_path(path)
             and os.path.isfile(path)
-            and is_parent(os.getcwd(), path)
+            and is_parent(self._project_root, path)
         ]
         tracked_paths = [
             path
@@ -719,7 +721,7 @@ def resolve_analysis_directory(
         )
     else:
         if use_buck_builder:
-            buck_root = buck.find_buck_root(os.getcwd())
+            buck_root = find_buck_root(project_root)
             if not buck_root:
                 raise EnvironmentException(
                     f"No Buck configuration at `{project_root}` or any of its ancestors."
@@ -742,6 +744,7 @@ def resolve_analysis_directory(
             targets=targets,
             buck_builder=buck_builder,
             original_directory=original_directory,
+            project_root=project_root,
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
             extensions=configuration.extensions,

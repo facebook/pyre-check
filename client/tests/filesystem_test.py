@@ -323,7 +323,9 @@ class FilesystemTest(unittest.TestCase):
         # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+        shared_analysis_directory = SharedAnalysisDirectory(
+            ["first", "second"], [], project_root="default"
+        )
 
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "default/.pyre")
@@ -334,7 +336,9 @@ class FilesystemTest(unittest.TestCase):
         # Scratch, no local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+        shared_analysis_directory = SharedAnalysisDirectory(
+            ["first", "second"], [], project_root="default"
+        )
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
 
@@ -347,6 +351,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
+            project_root="default",
             filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
@@ -363,6 +368,7 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory = SharedAnalysisDirectory(
             ["first", "second"],
             [],
+            project_root="default",
             filter_paths={"path/to/local"},
             local_configuration_root="path/to/local",
         )
@@ -385,7 +391,9 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(SharedAnalysisDirectory, "_clear") as clear, patch.object(
             SharedAnalysisDirectory, "_merge"
         ) as merge:
-            shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+            shared_analysis_directory = SharedAnalysisDirectory(
+                ["first", "second"], [], project_root="/"
+            )
             acquire_lock.side_effect = acquire
             shared_analysis_directory.prepare()
             merge.assert_has_calls([call()])
@@ -431,6 +439,7 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory = SharedAnalysisDirectory(
                 [],
                 [],
+                project_root="/root",
                 original_directory="/root",
                 filter_paths=set(),
                 buck_builder=buck_builder,
@@ -448,6 +457,7 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
+                project_root="/root",
                 original_directory="/root",
                 filter_paths=set(),
                 buck_builder=buck_builder,
