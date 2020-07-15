@@ -159,7 +159,7 @@ discussed further in the Stubs section.
 class BaseException(TaintSink[Logging]): ...
 ```
 
-## Implicit Sinks
+### Implicit Sinks
 
 Implicit sinks are program expressions that we want to act as sinks, but that
 cannot be specified via taint signatures in `.pysa` files.  Currently, only
@@ -216,6 +216,15 @@ sanitize inputs, but is known to always return safe data despite touching
 tainted data. One such example could be `hmac.digest(key, msg, digest)`, which
 returns sufficiently unpredictable data that the data should no longer be
 considered attacker-controlled after passing through.
+
+Class attributes can also be marked as sanitizers with the `Sanitize`
+annotation. This will prevent the propagation of any taint assigned to that
+attribute on an instance of the class. For example, this sanitizer could remove
+a false positive flow through an obviously benign attribute like `__doc__`:
+
+```python
+object.__doc__: Sanitize = ...
+```
 
 Note that sanitizers are currently universal, meaning that they remove all taint
 and can't be restricted to a specific rule or individual source to sink flows.
