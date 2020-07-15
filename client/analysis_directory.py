@@ -32,6 +32,7 @@ from .filesystem import (
     translate_path,
     translate_paths,
 )
+from .find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 from .socket_connection import SocketConnection, SocketException
 
 
@@ -690,10 +691,10 @@ def resolve_analysis_directory(
         source_directories = source_directories or []
         targets = targets or []
         if targets:
-            configuration_name = ".pyre_configuration.local"
+            configuration_name = LOCAL_CONFIGURATION_FILE
             command = "pyre init --local"
         else:
-            configuration_name = ".pyre_configuration"
+            configuration_name = CONFIGURATION_FILE
             command = "pyre init"
         LOG.warning(
             "Setting up a `%s` with `%s` may reduce overhead.",
