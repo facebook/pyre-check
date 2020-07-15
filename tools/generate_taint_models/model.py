@@ -7,10 +7,8 @@
 
 import abc
 import ast
-import inspect
 import logging
-import types
-from typing import Callable, Iterable, List, Mapping, Optional, Set, Union
+from typing import Callable, Iterable, List, Optional, Set, Union
 
 import _ast
 
@@ -20,7 +18,7 @@ from .generator_specifications import (
     ParameterAnnotation,
     WhitelistSpecification,
 )
-from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
+from .inspect_parser import extract_parameters, extract_qualified_name
 from .parameter import Parameter
 
 
@@ -176,28 +174,7 @@ class CallableModel(RawCallableModel):
         )
 
     def _generate_parameters(self) -> List[Parameter]:
-        view_parameters: Mapping[str, inspect.Parameter] = {}
-        callable_object = self.callable_object
-        if isinstance(callable_object, types.FunctionType):
-            view_parameters = inspect.signature(callable_object).parameters
-        elif isinstance(callable_object, types.MethodType):
-            # pyre-ignore: Too dynamic
-            view_parameters = inspect.signature(callable_object.__func__).parameters
-
-        parameters: List[Parameter] = []
-        for parameter in view_parameters.values():
-            if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                kind = Parameter.Kind.KWARG
-            elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                kind = Parameter.Kind.VARARG
-            else:
-                kind = Parameter.Kind.ARG
-
-            parameters.append(
-                Parameter(extract_name(parameter), extract_annotation(parameter), kind)
-            )
-
-        return parameters
+        return extract_parameters(self.callable_object)
 
     def _get_fully_qualified_callable_name(self) -> Optional[str]:
         return extract_qualified_name(self.callable_object)
