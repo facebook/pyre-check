@@ -56,7 +56,6 @@ class Runner(NamedTuple):
     opam_repository_override: Optional[str] = None
     development: bool = False
     release: bool = False
-    build_type_override: Optional[BuildType] = None
 
     @property
     def compiler_override(self) -> Optional[str]:
@@ -85,8 +84,9 @@ class Runner(NamedTuple):
     def environment_variables(self) -> Mapping[str, str]:
         return os.environ
 
-    def produce_dune_file(self, pyre_directory: Path) -> None:
-        build_type = self.build_type_override
+    def produce_dune_file(
+        self, pyre_directory: Path, build_type: Optional[BuildType] = None
+    ) -> None:
         if not build_type:
             if (pyre_directory / "facebook").is_dir:
                 build_type = BuildType.FACEBOOK
@@ -190,8 +190,14 @@ class Runner(NamedTuple):
 
         return opam_environment_variables
 
-    def configure(self, pyre_directory: Path, *, set_switch: bool = True) -> None:
-        self.produce_dune_file(pyre_directory)
+    def configure(
+        self,
+        pyre_directory: Path,
+        *,
+        set_switch: bool = True,
+        build_type_override: Optional[BuildType] = None,
+    ) -> None:
+        self.produce_dune_file(pyre_directory, build_type_override)
 
         if set_switch:
             compiler_override = self.compiler_override
@@ -208,9 +214,18 @@ class Runner(NamedTuple):
                 )
 
     def full_setup(
-        self, pyre_directory: Path, *, run_tests: bool = False, run_clean: bool = False
+        self,
+        pyre_directory: Path,
+        *,
+        run_tests: bool = False,
+        run_clean: bool = False,
+        build_type_override: Optional[BuildType] = None,
     ) -> None:
-        self.configure(pyre_directory=pyre_directory, set_switch=False)
+        self.configure(
+            pyre_directory=pyre_directory,
+            set_switch=False,
+            build_type_override=build_type_override,
+        )
 
         opam_environment_variables = self.initialize_opam_switch()
 
@@ -310,16 +325,19 @@ def main(runner_type: Type[Runner]) -> None:
         opam_repository_override=parsed.repository,
         development=parsed.development,
         release=parsed.release,
-        build_type_override=parsed.build_type,
     )
     if parsed.configure:
-        runner.configure(pyre_directory)
+        runner.configure(pyre_directory, build_type_override=parsed.build_type)
     elif parsed.environment_only:
-        runner.configure(pyre_directory, set_switch=False)
+        runner.configure(
+            pyre_directory, set_switch=False, build_type_override=parsed.build_type
+        )
         runner.initialize_opam_switch()
         logger.info("Environment built successfully, stopping here as requested.")
     else:
-        runner.full_setup(pyre_directory, run_tests=True)
+        runner.full_setup(
+            pyre_directory, run_tests=True, build_type_override=parsed.build_type
+        )
 
 
 if __name__ == "__main__":
