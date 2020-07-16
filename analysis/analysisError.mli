@@ -193,7 +193,7 @@ and incompatible_parameter_kind =
       left_operand: Type.t;
       right_operand: Type.t;
     }
-  | RegularParameter of {
+  | Argument of {
       name: Identifier.t option;
       position: int;
       callee: Reference.t option;

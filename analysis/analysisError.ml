@@ -202,7 +202,7 @@ and incompatible_parameter_kind =
       left_operand: Type.t;
       right_operand: Type.t;
     }
-  | RegularParameter of {
+  | Argument of {
       name: Identifier.t option;
       position: int;
       callee: Reference.t option;
@@ -549,9 +549,8 @@ let weaken_literals kind =
              left_operand = Type.weaken_literals left_operand;
              right_operand = Type.weaken_literals right_operand;
            })
-  | IncompatibleParameterType (RegularParameter ({ mismatch; _ } as incompatible)) ->
-      IncompatibleParameterType
-        (RegularParameter { incompatible with mismatch = weaken_mismatch mismatch })
+  | IncompatibleParameterType (Argument ({ mismatch; _ } as incompatible)) ->
+      IncompatibleParameterType (Argument { incompatible with mismatch = weaken_mismatch mismatch })
   | IncompatibleReturnType ({ mismatch; _ } as incompatible) ->
       IncompatibleReturnType { incompatible with mismatch = weaken_mismatch mismatch }
   | UninitializedAttribute ({ mismatch; _ } as uninitialized) ->
@@ -744,8 +743,8 @@ let rec messages ~concise ~signature location kind =
           right_operand;
       ]
   | IncompatibleParameterType
-      (RegularParameter
-        { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } }) ->
+      (Argument { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } })
+    ->
       let trace =
         if due_to_invariance then
           [Format.asprintf "This call might modify the type of the parameter."; invariance_message]
@@ -2246,7 +2245,7 @@ let due_to_analysis_limitations { kind; _ } =
   match kind with
   | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
-  | IncompatibleParameterType (RegularParameter { mismatch = { actual; _ }; _ })
+  | IncompatibleParameterType (Argument { mismatch = { actual; _ }; _ })
   | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
   | TypedDictionaryInitializationError (FieldTypeMismatch { actual_type = actual; _ })
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
@@ -2362,8 +2361,7 @@ let less_or_equal ~resolution left right =
            resolution
            ~left:right_operand_for_left
            ~right:right_operand_for_right
-  | ( IncompatibleParameterType (RegularParameter left),
-      IncompatibleParameterType (RegularParameter right) )
+  | IncompatibleParameterType (Argument left), IncompatibleParameterType (Argument right)
     when Option.equal Identifier.equal_sanitized left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
@@ -2766,13 +2764,12 @@ let join ~resolution left right =
                right_operand =
                  GlobalResolution.join resolution right_operand_for_left right_operand_for_right;
              })
-    | ( IncompatibleParameterType (RegularParameter left),
-        IncompatibleParameterType (RegularParameter right) )
+    | IncompatibleParameterType (Argument left), IncompatibleParameterType (Argument right)
       when Option.equal Identifier.equal_sanitized left.name right.name
            && left.position = right.position
            && Option.equal Reference.equal_sanitized left.callee right.callee ->
         let mismatch = join_mismatch left.mismatch right.mismatch in
-        IncompatibleParameterType (RegularParameter { left with mismatch })
+        IncompatibleParameterType (Argument { left with mismatch })
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (GlobalResolution.join resolution left right)
     | IncompatibleReturnType left, IncompatibleReturnType right ->
@@ -3121,7 +3118,7 @@ let filter ~resolution errors =
       match kind with
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | IncompatibleAwaitableType actual
-      | IncompatibleParameterType (RegularParameter { mismatch = { actual; _ }; _ })
+      | IncompatibleParameterType (Argument { mismatch = { actual; _ }; _ })
       | IncompatibleReturnType { mismatch = { actual; _ }; _ }
       | IncompatibleVariableType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
       | TypedDictionaryInvalidOperation { mismatch = { actual; _ }; _ }
@@ -3166,7 +3163,7 @@ let filter ~resolution errors =
       | InconsistentOverride
           { override = StrengthenedPrecondition (Found { expected; actual; _ }); _ }
       | InconsistentOverride { override = WeakenedPostcondition { expected; actual; _ }; _ }
-      | IncompatibleParameterType (RegularParameter { mismatch = { expected; actual; _ }; _ })
+      | IncompatibleParameterType (Argument { mismatch = { expected; actual; _ }; _ })
       | IncompatibleReturnType { mismatch = { expected; actual; _ }; _ }
       | IncompatibleAttributeType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ }
@@ -3509,9 +3506,9 @@ let dequalify
                left_operand = dequalify left_operand;
                right_operand = dequalify right_operand;
              })
-    | IncompatibleParameterType (RegularParameter ({ mismatch; callee; _ } as parameter)) ->
+    | IncompatibleParameterType (Argument ({ mismatch; callee; _ } as parameter)) ->
         IncompatibleParameterType
-          (RegularParameter
+          (Argument
              {
                parameter with
                mismatch = dequalify_mismatch mismatch;

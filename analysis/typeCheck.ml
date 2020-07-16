@@ -118,7 +118,7 @@ let errors_from_not_found
       in
       let kind =
         let normal =
-          Error.IncompatibleParameterType (RegularParameter { name; position; callee; mismatch })
+          Error.IncompatibleParameterType (Argument { name; position; callee; mismatch })
         in
         let typed_dictionary_error
             ~method_name
@@ -2331,7 +2331,7 @@ module State (Context : Context) = struct
               ~location
               ~kind:
                 (Error.IncompatibleParameterType
-                   (RegularParameter
+                   (Argument
                       {
                         name = None;
                         position = 2;

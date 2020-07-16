@@ -265,7 +265,7 @@ let test_due_to_analysis_limitations _ =
   (* Parameter. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (RegularParameter
+       (Argument
           {
             name = Some "";
             position = 1;
@@ -274,7 +274,7 @@ let test_due_to_analysis_limitations _ =
           }));
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (RegularParameter
+       (Argument
           {
             name = Some "";
             position = 1;
@@ -284,7 +284,7 @@ let test_due_to_analysis_limitations _ =
           }));
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (RegularParameter
+       (Argument
           {
             name = Some "";
             position = 1;
@@ -294,7 +294,7 @@ let test_due_to_analysis_limitations _ =
           }));
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       (RegularParameter
+       (Argument
           {
             name = Some "";
             position = 1;
@@ -379,7 +379,7 @@ let test_join context =
   assert_join
     (error
        (Error.IncompatibleParameterType
-          (RegularParameter
+          (Argument
              {
                name = Some "";
                position = 1;
@@ -389,7 +389,7 @@ let test_join context =
              })))
     (error
        (Error.IncompatibleParameterType
-          (RegularParameter
+          (Argument
              {
                name = Some "";
                position = 1;
@@ -399,7 +399,7 @@ let test_join context =
              })))
     (error
        (Error.IncompatibleParameterType
-          (RegularParameter
+          (Argument
              {
                name = Some "";
                position = 1;
