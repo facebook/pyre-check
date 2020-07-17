@@ -35,7 +35,7 @@ let assert_taint ?models ~context source expect =
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
-        let { Model.models; errors } =
+        let { Model.models; errors; _ } =
           Model.parse
             ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
             ~source:model_source

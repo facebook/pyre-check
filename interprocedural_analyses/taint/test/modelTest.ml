@@ -51,7 +51,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
           Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
       | None -> None
     in
-    let { Taint.Model.models; errors } =
+    let { Taint.Model.models; errors; _ } =
       Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
     in
     assert_bool

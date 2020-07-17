@@ -43,6 +43,11 @@ val save_results
   Callable.t list ->
   unit
 
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
 (* Calls init on all specified analyses to get initial models *)
 val initialize
   :  Kind.abstract list ->
@@ -50,7 +55,7 @@ val initialize
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
   stubs:Callable.t list ->
-  InterproceduralResult.model_t Callable.Map.t
+  initialize_result
 
 val record_initial_models
   :  functions:Callable.t list ->

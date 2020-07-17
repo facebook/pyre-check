@@ -337,7 +337,7 @@ let run_with_taint_models tests ~name =
     let global_resolution =
       Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
     in
-    let { Taint.Model.models; errors } =
+    let { Taint.Model.models; errors; _ } =
       Model.parse
         ~resolution:
           (TypeCheck.resolution
@@ -360,7 +360,7 @@ let run_with_taint_models tests ~name =
     List.map tests ~f:(fun (name, test) ->
         name
         >:: fun context ->
-        set_up_taint_models ~context;
+        let _ = set_up_taint_models ~context in
         test context)
   in
   Test.run (name >::: decorated_tests)
@@ -420,10 +420,37 @@ let initialize
       in
       failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
 
-  (* Overrides must be done first, as they influence the call targets. *)
   let environment = TypeEnvironment.read_only environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let initial_models, skip_overrides =
+    let inferred_models = Model.infer_class_models ~environment in
+    match models with
+    | None -> inferred_models, Reference.Set.empty
+    | Some source ->
+        let { Taint.Model.models; errors; skip_overrides } =
+          Model.parse
+            ~resolution:
+              (TypeCheck.resolution
+                 global_resolution
+                 (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                 (module TypeCheck.DummyContext))
+            ~source:(Test.trim_extra_indentation source)
+            ~configuration:taint_configuration
+            inferred_models
+        in
+        assert_bool
+          (Format.sprintf
+             "The models shouldn't have any parsing errors: %s."
+             (List.to_string errors ~f:ident))
+          (List.is_empty errors);
+        models, skip_overrides
+  in
+  (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
-    let overrides = DependencyGraph.create_overrides ~environment ~source in
+    let overrides =
+      DependencyGraph.create_overrides ~environment ~source
+      |> Reference.Map.filter_keys ~f:(fun override -> not (Set.mem skip_overrides override))
+    in
     Service.StaticAnalysis.record_overrides overrides;
     DependencyGraph.from_overrides overrides
   in
@@ -433,7 +460,6 @@ let initialize
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let callables, stubs =
     Service.StaticAnalysis.regular_and_filtered_callables ~resolution:global_resolution ~source
     |> fst
@@ -449,29 +475,6 @@ let initialize
     let keys = Fixpoint.KeySet.of_list all_callables in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
-    let inferred_models = Model.infer_class_models ~environment in
-    let initial_models =
-      match models with
-      | None -> inferred_models
-      | Some source ->
-          let { Taint.Model.models; errors } =
-            Model.parse
-              ~resolution:
-                (TypeCheck.resolution
-                   global_resolution
-                   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                   (module TypeCheck.DummyContext))
-              ~source:(Test.trim_extra_indentation source)
-              ~configuration:taint_configuration
-              inferred_models
-          in
-          assert_bool
-            (Format.sprintf
-               "The models shouldn't have any parsing errors: %s."
-               (List.to_string errors ~f:ident))
-            (List.is_empty errors);
-          models
-    in
     initial_models
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs

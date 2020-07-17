@@ -75,6 +75,7 @@ let class_definitions resolution reference =
 module T = struct
   type parse_result = {
     models: TaintResult.call_model Interprocedural.Callable.Map.t;
+    skip_overrides: Reference.Set.t;
     errors: string list;
   }
 end
@@ -108,6 +109,7 @@ type taint_annotation =
       path: Abstract.TreeDomain.Label.path;
     }
   | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
+  | SkipOverrides (* Analyze as normally, but assume no overrides exist. *)
   | Sanitize
 
 (* Don't propagate inferred model of methods with Sanitize *)
@@ -301,6 +303,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
               | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
                   AddFeatureToArgument { add_feature_to_argument with path = field :: path }
               | SkipAnalysis
+              | SkipOverrides
               | Sanitize ->
                   annotation
             in
@@ -464,6 +467,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
         | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
+        | Name (Name.Identifier "SkipOverrides") -> [SkipOverrides]
         | Name (Name.Identifier "Sanitize") -> [Sanitize]
         | _ -> raise_invalid_annotation ()
       in
@@ -693,6 +697,7 @@ let taint_parameter
              model
              Sinks.AddFeatureToArgument
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
+    | SkipOverrides -> raise_invalid_model "SkipOverrides annotation must be in return position"
     | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
   in
   let annotation = parameter.Node.value.Parameter.annotation in
@@ -703,30 +708,41 @@ let taint_return
     ~configuration
     ~resolution
     ~parameters
+    ~name
     model
     expression
     ~callable_annotation
     ~sources_to_keep
     ~sinks_to_keep
   =
-  let add_to_model model annotation =
+  let add_to_model (model, skipped_override) annotation =
     let root = AccessPath.Root.LocalResult in
-    match annotation with
-    | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
-    | Source { source; breadcrumbs; path; leaf_name_provided } ->
-        List.map ~f:Features.SimpleSet.inject breadcrumbs
-        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
-    | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
-    | AddFeatureToArgument _ ->
-        raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
-    | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
-    | Sanitize -> { model with mode = TaintResult.Sanitize }
+    let model =
+      match annotation with
+      | Sink { sink; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_sink_taint ~root ~path ~leaf_name_provided ~sinks_to_keep model sink
+      | Source { source; breadcrumbs; path; leaf_name_provided } ->
+          List.map ~f:Features.SimpleSet.inject breadcrumbs
+          |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+          |> introduce_source_taint ~root ~path ~leaf_name_provided ~sources_to_keep model source
+      | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
+      | AddFeatureToArgument _ ->
+          raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
+      | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
+      | SkipOverrides -> model
+      | Sanitize -> { model with mode = TaintResult.Sanitize }
+    in
+    let skipped_override =
+      match annotation with
+      | SkipOverrides -> Some name
+      | _ -> skipped_override
+    in
+    model, skipped_override
   in
-  parse_annotations ~configuration ~parameters expression |> List.fold ~init:model ~f:add_to_model
+  parse_annotations ~configuration ~parameters expression
+  |> List.fold ~init:(model, None) ~f:add_to_model
 
 
 let create ~resolution ?path ~configuration ~rule_filter source =
@@ -1141,12 +1157,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
              ~configuration
              ~resolution:global_resolution
              ~parameters
+             ~name
              model
              return_annotation
              ~callable_annotation
              ~sources_to_keep
              ~sinks_to_keep)
-      |> fun model -> Core.Result.Ok { model; call_target; is_obscure = false }
+      |> fun (model, skipped_overload) ->
+      Core.Result.Ok ({ model; call_target; is_obscure = false }, skipped_overload)
     with
     | Failure message
     | Model.InvalidModel message ->
@@ -1163,7 +1181,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
   in
   {
     models =
-      List.map new_models ~f:(fun model -> model.call_target, model.model)
+      List.map new_models ~f:(fun (model, _) -> model.call_target, model.model)
       |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
       |> Callable.Map.merge models ~f:(fun ~key:_ ->
            function
@@ -1171,6 +1189,9 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration models =
            | `Left model
            | `Right model ->
                Some model);
+    skip_overrides =
+      List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
+      |> Reference.Set.of_list;
     errors;
   }
 

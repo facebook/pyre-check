@@ -214,10 +214,20 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     Fixpoint.{ is_partial = true; model; result }
 
 
+type initialize_result = {
+  initial_models: InterproceduralResult.model_t Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
 let initialize kinds ~configuration ~environment ~functions ~stubs =
-  let initialize_each models (Result.Analysis { kind; analysis }) =
+  let initialize_each
+      { initial_models = models; skip_overrides }
+      (Result.Analysis { kind; analysis })
+    =
     let module Analysis = (val analysis) in
-    let new_models = Analysis.init ~configuration ~environment ~functions ~stubs in
+    let { Result.initial_models = new_models; skip_overrides = new_skip_overrides } =
+      Analysis.init ~configuration ~environment ~functions ~stubs
+    in
     let add_analysis_model existing model =
       let open Result in
       let package = Pkg { kind = ModelPart kind; value = model } in
@@ -228,10 +238,16 @@ let initialize kinds ~configuration ~environment ~functions ~stubs =
       | `Left existing -> Some existing
       | `Right new_model -> Some (add_analysis_model Result.empty_model new_model)
     in
-    Callable.Map.merge models new_models ~f:merge
+    {
+      initial_models = Callable.Map.merge models new_models ~f:merge;
+      skip_overrides = Reference.Set.union skip_overrides new_skip_overrides;
+    }
   in
   let accumulate model kind = initialize_each model (Result.get_abstract_analysis kind) in
-  List.fold kinds ~init:Callable.Map.empty ~f:accumulate
+  List.fold
+    kinds
+    ~init:{ initial_models = Callable.Map.empty; skip_overrides = Reference.Set.empty }
+    ~f:accumulate
 
 
 let analyze_define

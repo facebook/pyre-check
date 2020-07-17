@@ -7,7 +7,9 @@ open Interprocedural
 
 (* Registers the liveness analysis with the interprocedural analysis framework. *)
 include DeadStoreResult.Register (struct
-  let init ~configuration:_ ~environment:_ ~functions:_ ~stubs:_ = Callable.Map.empty
+  let init ~configuration:_ ~environment:_ ~functions:_ ~stubs:_ =
+    { Result.initial_models = Callable.Map.empty; skip_overrides = Ast.Reference.Set.empty }
+
 
   let analyze ~callable:_ ~environment:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
 end)

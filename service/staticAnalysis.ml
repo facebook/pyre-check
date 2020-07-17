@@ -95,39 +95,6 @@ let analyze
     AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
   in
 
-  Log.info "Recording overrides...";
-  let timer = Timer.start () in
-  let overrides =
-    let combine ~key:_ left right = List.rev_append left right in
-    let build_overrides overrides qualifier =
-      try
-        match get_source qualifier with
-        | None -> overrides
-        | Some source ->
-            let new_overrides = DependencyGraph.create_overrides ~environment ~source in
-            record_overrides new_overrides;
-            Map.merge_skewed overrides new_overrides ~combine
-      with
-      | ClassHierarchy.Untracked untracked_type ->
-          Log.warning
-            "Error building overrides in path %a for untracked type %a"
-            Reference.pp
-            qualifier
-            Type.pp
-            untracked_type;
-          overrides
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:DependencyGraph.empty_overrides
-      ~map:(fun _ qualifiers ->
-        List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
-      ~reduce:(Map.merge_skewed ~combine)
-      ~inputs:qualifiers
-      ()
-  in
-  Statistics.performance ~name:"Overrides recorded" ~timer ();
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let callgraph =
@@ -220,7 +187,7 @@ let analyze
   let timer = Timer.start () in
   Log.info "Initializing analysis...";
   (* Initialize and add initial models of analyses to shared mem. *)
-  let () =
+  let skip_overrides =
     let configuration_json =
       let taint_model_paths =
         configuration.Configuration.Analysis.taint_model_paths
@@ -245,16 +212,57 @@ let analyze
               @ rule_settings ) );
         ]
     in
-
-    Analysis.initialize
-      analyses
-      ~configuration:configuration_json
-      ~environment
-      ~functions:callables
-      ~stubs
-    |> Analysis.record_initial_models ~functions:callables ~stubs
+    let { Interprocedural.Analysis.initial_models = models; skip_overrides } =
+      Analysis.initialize
+        analyses
+        ~configuration:configuration_json
+        ~environment
+        ~functions:callables
+        ~stubs
+    in
+    Analysis.record_initial_models ~functions:callables ~stubs models;
+    skip_overrides
   in
   Statistics.performance ~name:"Computed initial analysis state" ~timer ();
+  Log.info "Recording overrides...";
+  let timer = Timer.start () in
+  let overrides =
+    let combine ~key:_ left right = List.rev_append left right in
+    let build_overrides overrides qualifier =
+      try
+        match get_source qualifier with
+        | None -> overrides
+        | Some source ->
+            let new_overrides =
+              DependencyGraph.create_overrides ~environment ~source
+              |> Reference.Map.filter_keys ~f:(fun override ->
+                     not (Reference.Set.mem skip_overrides override))
+            in
+
+            record_overrides new_overrides;
+            Map.merge_skewed overrides new_overrides ~combine
+      with
+      | ClassHierarchy.Untracked untracked_type ->
+          Log.warning
+            "Error building overrides in path %a for untracked type %a"
+            Reference.pp
+            qualifier
+            Type.pp
+            untracked_type;
+          overrides
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~initial:DependencyGraph.empty_overrides
+      ~map:(fun _ qualifiers ->
+        List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+      ~reduce:(Map.merge_skewed ~combine)
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance ~name:"Overrides recorded" ~timer ();
+
   let timer = Timer.start () in
   Log.info "Computing overrides...";
   let override_dependencies = DependencyGraph.from_overrides overrides in

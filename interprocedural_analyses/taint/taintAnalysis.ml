@@ -36,11 +36,14 @@ include TaintResult.Register (struct
         None
     in
     let create_models ~configuration sources =
-      List.fold sources ~init:(models, []) ~f:(fun (models, errors) (path, source) ->
-          let { ModelParser.T.models; errors = new_errors } =
+      List.fold
+        sources
+        ~init:(models, [], Ast.Reference.Set.empty)
+        ~f:(fun (models, errors, skip_overrides) (path, source) ->
+          let { ModelParser.T.models; errors = new_errors; skip_overrides = new_skip_overrides } =
             ModelParser.parse ~resolution ~path ~source ~configuration ?rule_filter models
           in
-          models, List.rev_append new_errors errors)
+          models, List.rev_append new_errors errors, Set.union skip_overrides new_skip_overrides)
     in
     let remove_sinks models =
       Callable.Map.map ~f:(fun model -> { model with backward = Backward.empty }) models
@@ -60,26 +63,31 @@ include TaintResult.Register (struct
       |> Yojson.Safe.Util.to_list
       |> List.map ~f:Yojson.Safe.Util.to_string
     in
-    match model_paths with
-    | [] -> models
-    | _ -> (
-        try
-          let paths = List.map model_paths ~f:Path.create_absolute in
-          let configuration = Configuration.create ~rule_filter ~find_obscure_flows ~paths in
-          Configuration.register configuration;
-          let models, errors = Model.get_model_sources ~paths |> create_models ~configuration in
-          List.iter errors ~f:(fun error -> Log.error "%s" error);
-          if verify && not (List.is_empty errors) then
-            raise (Model.InvalidModel (List.hd_exn errors));
-          if find_obscure_flows then
-            models |> remove_sinks |> add_obscure_sinks
-          else
-            models
-        with
-        | exn ->
-            Log.error "Error getting taint models.";
-            Log.error "%s" (Exn.to_string exn);
-            raise exn )
+    let models, skip_overrides =
+      match model_paths with
+      | [] -> models, Ast.Reference.Set.empty
+      | _ -> (
+          try
+            let paths = List.map model_paths ~f:Path.create_absolute in
+            let configuration = Configuration.create ~rule_filter ~find_obscure_flows ~paths in
+            Configuration.register configuration;
+            let models, errors, skip_overrides =
+              Model.get_model_sources ~paths |> create_models ~configuration
+            in
+            List.iter errors ~f:(fun error -> Log.error "%s" error);
+            if verify && not (List.is_empty errors) then
+              raise (Model.InvalidModel (List.hd_exn errors));
+            if find_obscure_flows then
+              models |> remove_sinks |> add_obscure_sinks, skip_overrides
+            else
+              models, skip_overrides
+          with
+          | exn ->
+              Log.error "Error getting taint models.";
+              Log.error "%s" (Exn.to_string exn);
+              raise exn )
+    in
+    { Interprocedural.Result.initial_models = models; skip_overrides }
 
 
   let analyze ~callable:_ ~environment ~qualifier ~define ~mode existing_model =

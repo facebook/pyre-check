@@ -91,6 +91,11 @@ type model_t = {
 
 type result_t = result_pkg Kind.Map.t [@@deriving show]
 
+type 'call_model initialize_result = {
+  initial_models: 'call_model Callable.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
+
 module type ANALYZER = sig
   type result
 
@@ -110,7 +115,7 @@ module type ANALYZER = sig
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
     stubs:Callable.t list ->
-    call_model Callable.Map.t
+    call_model initialize_result
 end
 
 module type ANALYSIS_RESULT = sig
