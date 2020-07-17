@@ -22,6 +22,9 @@ class ErrorSource(Enum):
     STDIN = "stdin"
     GENERATE = "generate"
 
+    def __repr__(self) -> str:
+        return self.value
+
 
 @dataclass(frozen=True)
 class CommandArguments:
@@ -152,7 +155,10 @@ class ProjectErrorSuppressingCommand(ErrorSuppressingCommand):
             help="Upgrade and clean project if a version override set.",
         )
         parser.add_argument(
-            "--error-source", choices=list(ErrorSource), default=ErrorSource.GENERATE
+            "--error-source",
+            choices=list(ErrorSource),
+            default=ErrorSource.GENERATE,
+            type=ErrorSource,
         )
         parser.add_argument("--no-commit", action="store_true", help=argparse.SUPPRESS)
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
