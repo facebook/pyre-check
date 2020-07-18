@@ -256,18 +256,24 @@ let create_overrides ~environment ~source =
       let get_method_overrides class_ child_method =
         let method_name = Define.unqualified_name child_method in
         GlobalResolution.overrides (Reference.show class_) ~name:method_name ~resolution
-        >>| fun ancestor ->
+        >>= fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
           Type.Primitive parent_annotation |> Type.expression |> Expression.show |> Reference.create
         in
-        let method_name =
-          if Define.is_property_setter child_method then
-            method_name ^ "$setter"
-          else
-            method_name
-        in
-        Reference.create ~prefix:ancestor_parent method_name, class_
+        (* This special case exists only for `type`. Our override lookup for a class C first looks
+           at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
+           this causes a cycle to get registered. *)
+        if Reference.equal ancestor_parent class_ then
+          None
+        else
+          let method_name =
+            if Define.is_property_setter child_method then
+              method_name ^ "$setter"
+            else
+              method_name
+          in
+          Some (Reference.create ~prefix:ancestor_parent method_name, class_)
       in
       let extract_define = function
         | { Node.value = Statement.Define define; _ } -> Some define
