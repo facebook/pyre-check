@@ -7,6 +7,11 @@ open Core
 open Pyre
 open Path.AppendOperator
 
+module Adapter = struct
+  let log_path configuration =
+    (Configuration.Analysis.log_directory configuration ^| "server") ^| "adapter.log"
+end
+
 module Persistent = struct
   let log_path configuration =
     (Configuration.Analysis.log_directory configuration ^| "persistent") ^| "client.log"

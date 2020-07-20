@@ -23,4 +23,5 @@ let get_logs configuration =
       "server", Constants.Server.log_path configuration;
       "watchman", Constants.Watchman.log_path configuration;
       "persistent", Constants.Persistent.log_path configuration;
+      "adapter", Constants.Adapter.log_path configuration;
     ]
