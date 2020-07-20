@@ -88,7 +88,7 @@ class Runner(NamedTuple):
         self, pyre_directory: Path, build_type: Optional[BuildType] = None
     ) -> None:
         if not build_type:
-            if (pyre_directory / "facebook").is_dir:
+            if (pyre_directory / "facebook").is_dir():
                 build_type = BuildType.FACEBOOK
             else:
                 build_type = BuildType.EXTERNAL
