@@ -42,7 +42,7 @@ path](https://docs.djangoproject.com/en/2.2/topics/http/urls/#example).
 
 This generator is intended to taint all data returned from [Django view
 functions](https://docs.djangoproject.com/en/2.2/topics/http/views/) as
-`ReturnedToUser`. This us useful when you have decorators which allow your view
+`ReturnedToUser`. This is useful when you have decorators which allow your view
 functions to return raw python types, rather than `HttpResponse` objects. Note
 that you do not need this generator if you always construct `HttpResponse`
 objects, because they are already annotated as `ReturnedToUser` sinks.
