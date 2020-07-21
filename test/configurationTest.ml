@@ -11,66 +11,71 @@ open Pyre
 let test_equal _ =
   assert_false
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~infer:true ())
-       (Configuration.Analysis.create ~infer:false ()));
+       (Configuration.Analysis.create ~infer:true ~source_path:[] ())
+       (Configuration.Analysis.create ~infer:false ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~parallel:true ())
-       (Configuration.Analysis.create ~parallel:false ()));
+       (Configuration.Analysis.create ~parallel:true ~source_path:[] ())
+       (Configuration.Analysis.create ~parallel:false ~source_path:[] ()));
   let root = Path.current_working_directory () in
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~filter_directories:[] ())
-       (Configuration.Analysis.create ~filter_directories:[root] ()));
+       (Configuration.Analysis.create ~filter_directories:[] ~source_path:[] ())
+       (Configuration.Analysis.create ~filter_directories:[root] ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~number_of_workers:42 ())
-       (Configuration.Analysis.create ~number_of_workers:84 ()));
+       (Configuration.Analysis.create ~number_of_workers:42 ~source_path:[] ())
+       (Configuration.Analysis.create ~number_of_workers:84 ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~search_path:[] ())
-       (Configuration.Analysis.create ~search_path:[SearchPath.Root root] ()));
+       (Configuration.Analysis.create ~search_path:[] ~source_path:[] ())
+       (Configuration.Analysis.create ~search_path:[SearchPath.Root root] ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~debug:true ())
-       (Configuration.Analysis.create ~debug:false ()));
+       (Configuration.Analysis.create ~debug:true ~source_path:[] ())
+       (Configuration.Analysis.create ~debug:false ~source_path:[] ()));
   assert_false
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~expected_version:"a" ())
-       (Configuration.Analysis.create ~expected_version:"b" ()));
+       (Configuration.Analysis.create ~expected_version:"a" ~source_path:[] ())
+       (Configuration.Analysis.create ~expected_version:"b" ~source_path:[] ()));
   assert_false
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~strict:true ())
-       (Configuration.Analysis.create ~strict:false ()));
+       (Configuration.Analysis.create ~strict:true ~source_path:[] ())
+       (Configuration.Analysis.create ~strict:false ~source_path:[] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~debug:true ())
-       (Configuration.Analysis.create ~debug:false ()))
+       (Configuration.Analysis.create ~debug:true ~source_path:[] ())
+       (Configuration.Analysis.create ~debug:false ~source_path:[] ()))
 
 
 let test_search_path _ =
-  let assert_search_path ?(search_path = []) ~local_root expected =
+  let assert_search_path ?(search_path = []) ~source_path expected =
     let search_path =
       List.map search_path ~f:(Path.create_absolute ~follow_symbolic_links:false)
       |> List.map ~f:(fun root -> SearchPath.Root root)
     in
-    let local_root = Path.create_absolute ~follow_symbolic_links:false local_root in
+    let source_path = List.map source_path ~f:(Path.create_absolute ~follow_symbolic_links:false) in
     let search_path =
-      Configuration.Analysis.search_path (Configuration.Analysis.create ~search_path ~local_root ())
+      Configuration.Analysis.search_path
+        (Configuration.Analysis.create ~search_path ~source_path ())
       |> List.map ~f:SearchPath.show
     in
     assert_equal ~printer:(List.to_string ~f:ident) expected search_path
   in
-  assert_search_path ~local_root:"/a" ["/a"];
-  assert_search_path ~local_root:"/a" ["/a"];
+  assert_search_path ~source_path:["/a"] ["/a"];
+  assert_search_path ~source_path:["/a"] ["/a"];
   assert_search_path
     ~search_path:["/other"; "/another"]
-    ~local_root:"/a"
+    ~source_path:["/a"]
     ["/other"; "/another"; "/a"];
   assert_search_path
     ~search_path:["/other"; "/another"]
-    ~local_root:"/a"
+    ~source_path:["/a"]
     ["/other"; "/another"; "/a"];
+  assert_search_path
+    ~search_path:["/other"; "/another"]
+    ~source_path:["/a"; "/b"]
+    ["/other"; "/another"; "/a"; "/b"];
   ()
 
 

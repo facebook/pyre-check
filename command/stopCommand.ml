@@ -14,7 +14,8 @@ exception NotRunning
 
 let stop ~log_directory ~local_root =
   let configuration =
-    Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
+    let local_root = Path.create_absolute local_root in
+    Configuration.Analysis.create ?log_directory ~local_root ~source_path:[local_root] ()
   in
   try
     let in_channel, _ =

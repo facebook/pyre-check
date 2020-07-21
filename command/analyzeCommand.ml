@@ -37,6 +37,7 @@ let run_analysis
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     taint_models_paths
     excludes
@@ -45,6 +46,7 @@ let run_analysis
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
   let local_root = Path.create_absolute local_root in
   Log.GlobalState.initialize ~debug ~sections;
   Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
@@ -80,6 +82,7 @@ let run_analysis
       ~extensions
       ?log_directory
       ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ()
   in
   let result_json_path = result_json_path >>| Path.create_absolute ~follow_symbolic_links:false in

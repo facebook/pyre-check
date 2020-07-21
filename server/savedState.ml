@@ -69,7 +69,7 @@ end)
 exception IncompatibleState of string
 
 (* Return symlinks for files for a pyre project that are links to a separate project root. *)
-let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
+let restore_symbolic_links ~changed_paths ~source_path ~get_old_link_path =
   let new_paths, removed_paths = List.partition_tf ~f:Path.file_exists changed_paths in
   (* We need to get the deleted paths from shared memory, as the version of the server launched from
      the saved state will have references to this files, whereas they won't be present in the new
@@ -83,7 +83,8 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
       let file_filter file =
         Filename.check_suffix file ".py" || Filename.check_suffix file ".pyi"
       in
-      Path.list ~file_filter ~root:local_root () |> fun links -> Path.build_symlink_map ~links
+      List.concat_map source_path ~f:(fun root -> Path.list ~file_filter ~root ())
+      |> fun links -> Path.build_symlink_map ~links
     in
     List.filter_map new_paths ~f:(Map.find local_root_links)
   in
@@ -161,7 +162,7 @@ let load
           {
             Configuration.Analysis.expected_version;
             project_root;
-            local_root;
+            source_path;
             configuration_file_hash;
             _;
           } as configuration;
@@ -223,7 +224,7 @@ let load
   let changed_paths =
     match changed_paths with
     | Some changed_paths ->
-        restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
+        restore_symbolic_links ~changed_paths ~source_path ~get_old_link_path:(fun path ->
             Hashtbl.find symlink_targets_to_sources (Path.absolute path))
     | None ->
         compute_locally_changed_paths

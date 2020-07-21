@@ -63,7 +63,8 @@ let run_rage log_directory local_root () =
     (Version.version ())
     (Version.build_info ());
   let configuration =
-    Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
+    let local_root = Path.create_absolute local_root in
+    Configuration.Analysis.create ?log_directory ~local_root ~source_path:[local_root] ()
   in
   let logs =
     get_mercurial_base ()

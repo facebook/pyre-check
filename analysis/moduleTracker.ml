@@ -62,7 +62,7 @@ let remove_source_path ~configuration ~removed existing_files =
   remove [] existing_files
 
 
-let find_files { Configuration.Analysis.local_root; search_path; excludes; extensions; _ } =
+let find_files { Configuration.Analysis.source_path; search_path; excludes; extensions; _ } =
   let visited_directories = String.Hash_set.create () in
   let visited_files = String.Hash_set.create () in
   let valid_suffixes = ".py" :: ".pyi" :: extensions in
@@ -85,7 +85,7 @@ let find_files { Configuration.Analysis.local_root; search_path; excludes; exten
     in
     List.exists ~f:(String.equal extension) valid_suffixes && not (mark_visited visited_files path)
   in
-  let search_roots = local_root :: List.map ~f:SearchPath.to_path search_path in
+  let search_roots = List.append source_path (List.map ~f:SearchPath.to_path search_path) in
   List.map search_roots ~f:(fun root -> Path.list ~file_filter ~directory_filter ~root ())
   |> List.concat
 

@@ -10,7 +10,7 @@ open Analysis
 open Inference
 open Test
 
-let configuration = Configuration.Analysis.create ~infer:true ()
+let configuration = Configuration.Analysis.create ~infer:true ~source_path:[] ()
 
 let assert_backward ~resolution precondition statement postcondition =
   let module State = State (struct

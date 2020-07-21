@@ -25,6 +25,7 @@ let run_infer
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     _taint_models_directory
     excludes
@@ -33,6 +34,7 @@ let run_infer
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
   let local_root = Path.create_absolute local_root in
   Log.GlobalState.initialize ~debug ~sections;
   Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
@@ -64,6 +66,7 @@ let run_infer
       ?log_directory
       ?ignore_infer
       ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ()
   in
   (fun () ->

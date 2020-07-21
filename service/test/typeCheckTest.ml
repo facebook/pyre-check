@@ -33,6 +33,7 @@ let assert_errors
       ~search_path
       ~project_root:root
       ~local_root:root
+      ~source_path:[root]
       ()
   in
   let scheduler = Test.mock_scheduler () in

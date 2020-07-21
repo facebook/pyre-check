@@ -57,6 +57,7 @@ module Analysis = struct
     local_root: Path.t;
     debug: bool;
     project_root: Path.t;
+    source_path: Path.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
     expected_version: string option;
@@ -105,6 +106,7 @@ module Analysis = struct
       ?(features = Features.default)
       ?(ignore_infer = [])
       ?log_directory
+      ~source_path
       ()
     =
     {
@@ -118,6 +120,7 @@ module Analysis = struct
       local_root;
       debug;
       project_root;
+      source_path;
       search_path;
       taint_model_paths;
       expected_version;
@@ -146,10 +149,10 @@ module Analysis = struct
 
   let log_directory { log_directory; _ } = log_directory
 
-  let search_path { local_root; search_path; _ } =
-    (* Have an ordering of search_path > local_root with the parser. search_path precedes
+  let search_path { source_path; search_path; _ } =
+    (* Have an ordering of search_path > source_path with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    search_path @ [SearchPath.Root local_root]
+    search_path @ List.map source_path ~f:(fun path -> SearchPath.Root path)
 
 
   let features { features; _ } = features

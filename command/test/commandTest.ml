@@ -22,7 +22,13 @@ let mock_analysis_configuration
     ?expected_version
     ()
   =
-  Configuration.Analysis.create ~debug:false ~parallel:false ?expected_version ~local_root ()
+  Configuration.Analysis.create
+    ~debug:false
+    ~parallel:false
+    ?expected_version
+    ~local_root
+    ~source_path:[local_root]
+    ()
 
 
 let mock_server_configuration ~local_root ?expected_version () =
@@ -149,8 +155,6 @@ module ScratchServer = struct
     server_configuration: Configuration.Server.t;
     state: Server.State.t;
   }
-
-  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let start
       ?(incremental_style = Configuration.Analysis.FineGrained)

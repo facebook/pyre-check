@@ -88,15 +88,12 @@ let should_type_check
   && not (List.exists ignore_all_errors ~f:(directory_contains ~path))
 
 
-let create
-    ~configuration:({ Configuration.Analysis.local_root; search_path; excludes; _ } as configuration)
-    path
-  =
+let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
   let absolute_path = Path.absolute path in
   match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
   | true -> None
   | false ->
-      let search_paths = List.append search_path [SearchPath.Root local_root] in
+      let search_paths = Configuration.Analysis.search_path configuration in
       let is_external = not (should_type_check ~configuration path) in
       create_from_search_path ~is_external ~search_paths path
 

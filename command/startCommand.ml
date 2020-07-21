@@ -601,6 +601,7 @@ let run_start_command
     profiling_output
     memory_profiling_output
     project_root
+    source_path
     search_path
     taint_model_paths
     excludes
@@ -609,6 +610,7 @@ let run_start_command
     local_root
     ()
   =
+  let source_path = Option.value source_path ~default:[local_root] in
   let local_root = Path.create_absolute local_root in
   Log.GlobalState.initialize ~debug ~sections;
   Statistics.GlobalState.initialize ~log_identifier ?logger ~project_name:(Path.last local_root) ();
@@ -649,6 +651,7 @@ let run_start_command
       ~excludes
       ~extensions
       ~local_root
+      ~source_path:(List.map source_path ~f:Path.create_absolute)
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion

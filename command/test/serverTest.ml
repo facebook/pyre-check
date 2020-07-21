@@ -98,7 +98,8 @@ let test_server_stops context =
     _;
   }
     =
-    Operations.create_configuration (Configuration.Analysis.create ~local_root ())
+    Operations.create_configuration
+      (Configuration.Analysis.create ~local_root ~source_path:[local_root] ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion json_socket_path;

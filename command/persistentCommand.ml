@@ -95,6 +95,7 @@ let run_command
   let configuration =
     Configuration.Analysis.create
       ~local_root
+      ~source_path:[local_root]
       ?log_directory
       ~perform_autocompletion
       ~features:(Configuration.Features.create features)

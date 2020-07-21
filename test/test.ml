@@ -2591,11 +2591,15 @@ module ScratchProject = struct
       let file = File.create ~content (Path.create_relative ~root ~relative) in
       File.write file
     in
+    (* We assume that there's only one checked source directory that acts as the local root as well. *)
     let local_root = bracket_tmpdir context |> Path.create_absolute in
+    (* We assume that there's only one external source directory that acts as the local root as
+       well. *)
     let external_root = bracket_tmpdir context |> Path.create_absolute in
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
@@ -2618,7 +2622,7 @@ module ScratchProject = struct
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source
-      { configuration = { Configuration.Analysis.local_root; search_path; _ }; _ }
+      { configuration = { Configuration.Analysis.source_path; search_path; _ }; _ }
       ~is_external
       (relative, content)
     =
@@ -2631,7 +2635,9 @@ module ScratchProject = struct
               failwith
                 "Scratch projects should have the external root at the start of their search path."
         else
-          local_root
+          match source_path with
+          | root :: _ -> root
+          | _ -> failwith "Scratch projects should have only one source path."
       in
       Path.create_relative ~root ~relative
     in
@@ -2642,8 +2648,6 @@ module ScratchProject = struct
   let configuration_of { configuration; _ } = configuration
 
   let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
-
-  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let qualifiers_of { module_tracker; _ } =
     ModuleTracker.source_paths module_tracker

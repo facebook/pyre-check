@@ -137,6 +137,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~excludes:[".*/thereisnospoon.py"]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
@@ -331,6 +332,7 @@ let test_creation context =
     let module_tracker =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ()
@@ -386,6 +388,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Subdirectory { root = search_root; subdirectory = "sub" }]
         ~filter_directories:[local_root]
         ()
@@ -414,6 +417,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
         ~filter_directories:[local_root]
         ()
@@ -491,6 +495,85 @@ let test_creation context =
       ~is_stub:true
       ~is_external:true
   in
+  let test_priority_multi_source_paths () =
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let source_root0_path = Path.absolute local_root ^ "/source0" in
+    Sys_utils.mkdir_no_fail source_root0_path;
+    let source_root0 = Path.create_absolute ~follow_symbolic_links:false source_root0_path in
+    let source_root1_path = Path.absolute local_root ^ "/source1" in
+    Sys_utils.mkdir_no_fail source_root1_path;
+    let source_root1 = Path.create_absolute ~follow_symbolic_links:false source_root1_path in
+    let source_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
+    List.iter ~f:(touch source_root0) source_paths0;
+    let source_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
+    List.iter ~f:(touch source_root1) source_paths1;
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_path:[source_root0; source_root1]
+        ~filter_directories:[local_root]
+        ()
+    in
+    let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
+    (* Creation test *)
+    List.iter source_paths0 ~f:(fun path ->
+        assert_source_path
+          (create_exn source_root0 path)
+          ~search_root:source_root0
+          ~relative:path
+          ~priority:0
+          ~is_external:false
+          ~is_init:false);
+    List.iter source_paths1 ~f:(fun path ->
+        assert_source_path
+          (create_exn source_root1 path)
+          ~search_root:source_root1
+          ~relative:path
+          ~priority:1
+          ~is_external:false
+          ~is_init:false);
+
+    (* ModuleTracker initialization test *)
+    let tracker = ModuleTracker.create configuration in
+    assert_source_path
+      (lookup_exn tracker (Reference.create "a"))
+      ~search_root:source_root0
+      ~relative:"a.py"
+      ~priority:0
+      ~is_stub:false
+      ~is_external:false;
+    assert_source_path
+      (lookup_exn tracker (Reference.create "c"))
+      ~search_root:source_root0
+      ~relative:"c.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_path
+      (lookup_exn tracker (Reference.create "d"))
+      ~search_root:source_root1
+      ~relative:"d.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_path
+      (lookup_exn tracker (Reference.create "e"))
+      ~search_root:source_root0
+      ~relative:"e.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_path
+      (lookup_exn tracker (Reference.create "f"))
+      ~search_root:source_root0
+      ~relative:"f.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_path
+      (lookup_exn tracker (Reference.create "g"))
+      ~search_root:source_root0
+      ~relative:"g.pyi"
+      ~is_stub:true
+      ~is_external:false
+  in
   let test_exclude () =
     (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
     let local_root = bracket_tmpdir context |> Path.create_absolute in
@@ -505,6 +588,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root]
         ~excludes:["${SOURCE_DIRECTORY}/ba.*"]
         ()
@@ -552,6 +636,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root search_root]
         ~filter_directories:[search_root]
         ~ignore_all_errors:[durp]
@@ -595,6 +680,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root search_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[search_root; nonexist_root]
@@ -632,6 +718,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root link_search_root; SearchPath.Root link_local_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[search_root]
@@ -672,6 +759,7 @@ let test_creation context =
       let configuration =
         Configuration.Analysis.create
           ~local_root
+          ~source_path:[local_root]
           ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root0; external_root1]
@@ -716,6 +804,7 @@ let test_creation context =
       let configuration =
         Configuration.Analysis.create
           ~local_root
+          ~source_path:[local_root]
           ~search_path:[SearchPath.Root external_root1; SearchPath.Root external_root0]
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root0; external_root1]
@@ -754,8 +843,50 @@ let test_creation context =
         ~relative:"a.py"
         ~is_external:true
     in
+    let test_local_root_rules_it_all () =
+      let configuration =
+        Configuration.Analysis.create
+          ~local_root
+          ~source_path:[local_root; external_root0; external_root1]
+          ~filter_directories:[local_root; external_root0; external_root1]
+          ()
+      in
+      let create_exn = create_source_path_exn ~configuration in
+      let assert_source_path = assert_source_path ~configuration in
+      assert_source_path
+        (create_exn local_root "a.py")
+        ~search_root:local_root
+        ~relative:"a.py"
+        ~is_external:false;
+      assert_source_path
+        (create_exn external_root0 "a.py")
+        ~search_root:local_root
+        ~relative:"external0/a.py"
+        ~is_external:false;
+      assert_source_path
+        (create_exn local_root "external0/a.py")
+        ~search_root:local_root
+        ~relative:"external0/a.py"
+        ~is_external:false;
+      assert_source_path
+        (create_exn external_root1 "a.py")
+        ~search_root:local_root
+        ~relative:"external0/external1/a.py"
+        ~is_external:false;
+      assert_source_path
+        (create_exn external_root0 "external1/a.py")
+        ~search_root:local_root
+        ~relative:"external0/external1/a.py"
+        ~is_external:false;
+      assert_source_path
+        (create_exn local_root "external0/external1/a.py")
+        ~search_root:local_root
+        ~relative:"external0/external1/a.py"
+        ~is_external:false
+    in
     test_external_root_0_before_1 ();
-    test_external_root_1_before_0 ()
+    test_external_root_1_before_0 ();
+    test_local_root_rules_it_all ()
   in
   let test_overlapping2 () =
     (* SETUP:
@@ -777,6 +908,7 @@ let test_creation context =
     let configuration =
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root stubs_root; SearchPath.Root venv_root]
         ~filter_directories:[local_root]
         ()
@@ -850,6 +982,7 @@ let test_creation context =
       touch external_root1 "f.pyi";
       Configuration.Analysis.create
         ~local_root
+        ~source_path:[local_root]
         ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
         ~filter_directories:[local_root; external_root0]
         ()
@@ -873,6 +1006,7 @@ let test_creation context =
   test_directory_filter2 ();
   test_directory_filter3 ();
   test_priority ();
+  test_priority_multi_source_paths ();
   test_overlapping ();
   test_overlapping2 ();
   test_root_independence ()

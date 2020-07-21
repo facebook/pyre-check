@@ -35,6 +35,7 @@ module Analysis : sig
     local_root: Path.t;
     debug: bool;
     project_root: Path.t;
+    source_path: Path.t list;
     search_path: SearchPath.t list;
     taint_model_paths: Path.t list;
     expected_version: string option;
@@ -77,6 +78,7 @@ module Analysis : sig
     ?features:Features.t ->
     ?ignore_infer:Path.t list ->
     ?log_directory:string ->
+    source_path:Path.t list ->
     unit ->
     t
 
