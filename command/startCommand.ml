@@ -648,7 +648,7 @@ let run_start_command
       ?ignore_all_errors
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
-      ~search_path:(List.map search_path ~f:SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~taint_model_paths:(List.map taint_model_paths ~f:Path.create_absolute)
       ~excludes
       ~extensions

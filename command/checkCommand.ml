@@ -59,7 +59,7 @@ let run_check
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~search_path:(List.map search_path ~f:SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
       ~excludes
       ~extensions
       ?log_directory

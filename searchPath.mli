@@ -22,6 +22,16 @@ val get_root : t -> Path.t
 
 val to_path : t -> Path.t
 
+(* Create search path from its string representation. This operation does NOT have filesystem
+   side-effect. *)
 val create : string -> t
+
+(* Create a normalized search path from its string representation. Normalizing a path means to
+   expand its relativized root and follow symlinks. This operation DOES have filesystem side-effect. *)
+val create_normalized : string -> t
+
+(* Turn a potentially un-normalized search path into a normalized one. This operation DOES have
+   filesystem side-effect.*)
+val normalize : t -> t
 
 val search_for_path : search_paths:t list -> Path.t -> search_result option

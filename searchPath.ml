@@ -33,16 +33,33 @@ let to_path path =
   | Subdirectory { root; subdirectory } -> Path.create_relative ~root ~relative:subdirectory
 
 
-let pp formatter path = Path.pp formatter (to_path path)
+let pp formatter = function
+  | Root root -> Path.pp formatter root
+  | Subdirectory { root; subdirectory } ->
+      Format.fprintf formatter "%a$%s" Path.pp root subdirectory
+
 
 let show path = Format.asprintf "%a" pp path
 
 let create serialized =
   match String.split serialized ~on:'$' with
-  | [root] -> Root (Path.create_absolute root)
-  | [root; subdirectory] -> Subdirectory { root = Path.create_absolute root; subdirectory }
+  | [root] -> Root (Path.create_absolute ~follow_symbolic_links:false root)
+  | [root; subdirectory] ->
+      Subdirectory { root = Path.create_absolute ~follow_symbolic_links:false root; subdirectory }
   | _ -> failwith (Format.asprintf "Unable to create search path from %s" serialized)
 
+
+let normalize = function
+  | Root root -> Root (Path.create_absolute ~follow_symbolic_links:true (Path.absolute root))
+  | Subdirectory { root; subdirectory } ->
+      Subdirectory
+        {
+          root = Path.create_absolute ~follow_symbolic_links:true (Path.absolute root);
+          subdirectory;
+        }
+
+
+let create_normalized serialized = create serialized |> normalize
 
 let search_for_path ~search_paths path =
   let under_root search_path =
