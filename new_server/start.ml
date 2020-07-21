@@ -58,14 +58,14 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
   handle_line ()
 
 
-let initialize_server_state { ServerConfiguration.log_path } =
+let initialize_server_state ({ ServerConfiguration.log_path; _ } as server_configuration) =
   Log.info "Initializing server state...";
-  let state = ref { ServerState.socket_path = socket_path_of log_path } in
+  let state = ref { ServerState.socket_path = socket_path_of log_path; server_configuration } in
   Log.info "Server state initialized.";
   state
 
 
-let with_server ~f ({ ServerConfiguration.log_path } as server_configuration) =
+let with_server ~f ({ ServerConfiguration.log_path; _ } as server_configuration) =
   let open Lwt in
   let socket_path = socket_path_of log_path in
   let server_state =

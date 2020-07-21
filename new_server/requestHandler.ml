@@ -5,7 +5,7 @@
 
 open Core
 
-let process_request ~state:({ ServerState.socket_path } as state) request =
+let process_request ~state:({ ServerState.socket_path; server_configuration } as state) request =
   match request with
   | Request.GetInfo ->
       let response =
@@ -14,6 +14,7 @@ let process_request ~state:({ ServerState.socket_path } as state) request =
             version = Version.version ();
             pid = Unix.getpid () |> Pid.to_int;
             socket = Pyre.Path.absolute socket_path;
+            configuration = server_configuration;
           }
       in
       Lwt.return (state, response)

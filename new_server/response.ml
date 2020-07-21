@@ -11,5 +11,6 @@ type t =
       version: string;
       pid: int;
       socket: string;
+      configuration: ServerConfiguration.t;
     }
 [@@deriving sexp, compare, hash, yojson]

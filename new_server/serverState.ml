@@ -5,4 +5,7 @@
 
 open Pyre
 
-type t = { socket_path: Path.t }
+type t = {
+  socket_path: Path.t;
+  server_configuration: ServerConfiguration.t;
+}
