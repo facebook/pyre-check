@@ -102,20 +102,17 @@ let wait_on_signals fatal_signals =
   return_unit
 
 
-let start_server ~f server_configuration =
+let start_server ~on_started ~on_exception server_configuration =
   let open Lwt in
-  let on_server_startup_failure exn =
-    Log.error "Cannot start Pyre server.";
-    Log.error "%s" (Exn.to_string exn);
-    f None
-  in
-  catch
-    (fun () -> with_server server_configuration ~f:(fun server_state -> f (Some server_state)))
-    on_server_startup_failure
+  catch (fun () -> with_server server_configuration ~f:on_started) on_exception
 
 
 let start_server_and_wait server_configuration =
   let open Lwt in
-  start_server server_configuration ~f:(function
-      | None -> return_unit
-      | Some _ -> wait_on_signals [Signal.int])
+  start_server
+    server_configuration
+    ~on_started:(fun _ -> wait_on_signals [Signal.int])
+    ~on_exception:(fun exn ->
+      Log.error "Exception thrown from Pyre server.";
+      Log.error "%s" (Exn.to_string exn);
+      return_unit)

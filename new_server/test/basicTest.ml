@@ -48,15 +48,18 @@ let test_client ~server_state (input_channel, output_channel) =
 let basic_test log_path =
   let server_configuration = { ServerConfiguration.log_path } in
   (* Start the server first *)
-  Start.start_server server_configuration ~f:(function
-      | None -> failwith "Server fails to start."
-      | Some server_state ->
-          (* Open a connection to the started server and send some test messages. *)
-          let socket_address =
-            let { ServerState.socket_path; _ } = !server_state in
-            Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path)
-          in
-          Lwt_io.with_connection socket_address (test_client ~server_state:!server_state))
+  Start.start_server
+    server_configuration
+    ~on_exception:(fun exn ->
+      let message = Format.sprintf "Server fails to start: %s" (Exn.to_string exn) in
+      failwith message)
+    ~on_started:(fun server_state ->
+      (* Open a connection to the started server and send some test messages. *)
+      let socket_address =
+        let { ServerState.socket_path; _ } = !server_state in
+        Lwt_unix.ADDR_UNIX (Pyre.Path.absolute socket_path)
+      in
+      Lwt_io.with_connection socket_address (test_client ~server_state:!server_state))
 
 
 let () =
