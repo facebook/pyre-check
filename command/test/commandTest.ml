@@ -14,7 +14,7 @@ let clean_environment () =
      that the library modifies. *)
   Unix.unsetenv "HH_SERVER_DAEMON_PARAM";
   Unix.unsetenv "HH_SERVER_DAEMON";
-  Worker.killall ()
+  ()
 
 
 let mock_analysis_configuration
@@ -209,7 +209,7 @@ module ScratchServer = struct
                   adapter_sockets = [];
                 };
           };
-        scheduler = Test.mock_scheduler ();
+        scheduler = Scheduler.create_sequential ();
         open_documents = Ast.Reference.Table.create ();
         server_uuid = None;
       }

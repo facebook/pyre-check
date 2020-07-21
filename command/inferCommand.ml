@@ -70,10 +70,10 @@ let run_infer
       ()
   in
   (fun () ->
-    let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
-      let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
-      errors, ast_environment
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration ~scheduler () in
+          errors, ast_environment)
     in
     if debug then
       Memory.report_statistics ();

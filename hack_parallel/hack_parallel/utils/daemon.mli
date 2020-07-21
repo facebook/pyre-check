@@ -94,6 +94,10 @@ val close : ('a, 'b) handle -> unit
 (* Kill a 'spawned' child and close the associated typed channels. *)
 val kill : ('a, 'b) handle -> unit
 
+(* Kill a 'spawned' child and close the associated typed channels, then wait for its termination. *)
+(* Unlike `kill`, this API makes sure the terminated children do not become zombie processes. *)
+val kill_and_wait : ('a, 'b) handle -> unit
+
 (* Main function, that execute a alternate entry point.
    It should be called only once. Just before the main entry point.
    This function does not return when a custom entry point is selected. *)

@@ -110,6 +110,18 @@ let create
 
 let create_sequential () = SequentialScheduler
 
+let destroy = function
+  | SequentialScheduler -> ()
+  | ParallelScheduler workers -> List.iter workers ~f:Worker.kill
+
+
+let with_scheduler ~configuration ~f =
+  let scheduler = create ~configuration () in
+  match scheduler with
+  | SequentialScheduler -> f SequentialScheduler
+  | ParallelScheduler _ -> Exn.protectx ~f scheduler ~finally:(fun _ -> destroy scheduler)
+
+
 let run_process process =
   try
     let result = process () in
@@ -154,11 +166,6 @@ let iter scheduler ~policy ~f ~inputs =
 let is_parallel = function
   | SequentialScheduler -> false
   | ParallelScheduler _ -> true
-
-
-let destroy = function
-  | SequentialScheduler -> ()
-  | ParallelScheduler _ -> Worker.killall ()
 
 
 let once_per_worker scheduler ~configuration:_ ~f =

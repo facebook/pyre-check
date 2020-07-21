@@ -875,7 +875,7 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.environment; connections; _ } as state)
+    ~state:({ State.environment; connections; scheduler; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
@@ -916,7 +916,10 @@ let rec process
       | TypeCheckRequest paths -> process_type_check_request ~state ~configuration paths
       | StopRequest ->
           Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
+              Operations.stop
+                ~reason:"explicit request"
+                ~configuration:server_configuration
+                ~scheduler)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | UnparsableQuery { query; reason } ->
           let response = TypeQuery.Error (Format.sprintf "Unable to parse %s: %s" query reason) in
@@ -1175,7 +1178,10 @@ let rec process
     | Worker.Worker_exited_abnormally (pid, status) ->
         Statistics.log_worker_exception ~pid status ~origin:"server";
         Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
-            Operations.stop ~reason:"Worker exited abnormally" ~configuration:server_configuration)
+            Operations.stop
+              ~reason:"Worker exited abnormally"
+              ~configuration:server_configuration
+              ~scheduler)
     | uncaught_exception ->
         let should_stop =
           match request with
@@ -1187,7 +1193,10 @@ let rec process
         Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
           Error_checking_mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop ~reason:"uncaught exception" ~configuration:server_configuration);
+              Operations.stop
+                ~reason:"uncaught exception"
+                ~configuration:server_configuration
+                ~scheduler);
         { state; response = None }
   in
   Statistics.performance

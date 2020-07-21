@@ -312,8 +312,8 @@ module Std : sig
     (* Returns the worker which produces this handle *)
     val get_worker: 'a handle -> t
 
-    (* Killall the workers *)
-    val killall: unit -> unit
+    (* Kill a worker *)
+    val kill: t -> unit
 
     val current_worker_id: unit -> int
   end

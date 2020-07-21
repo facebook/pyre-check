@@ -95,7 +95,6 @@ let run_analysis
   in
   (fun () ->
     let timer = Timer.start () in
-    let scheduler = Scheduler.create ~configuration () in
     (* In order to save time, sanity check models before starting the analysis. *)
     Log.info "Verifying model syntax and configuration.";
     Taint.Model.get_model_sources ~paths:configuration.Configuration.Analysis.taint_model_paths
@@ -105,76 +104,78 @@ let run_analysis
       ~paths:configuration.Configuration.Analysis.taint_model_paths
     |> ignore;
 
-    let environment, ast_environment, qualifiers =
-      let configuration =
-        (* In order to get an accurate call graph and type information, we need to ensure that we
-           schedule a type check for external files. *)
-        { configuration with analyze_external_sources = true }
-      in
-      Service.Check.check
-        ~scheduler
-        ~configuration
-        ~call_graph_builder:(module Taint.CallGraphBuilder)
-      |> fun { environment; _ } ->
-      let qualifiers =
-        Analysis.TypeEnvironment.module_tracker environment
-        |> Analysis.ModuleTracker.tracked_explicit_modules
-      in
-      ( environment,
-        Analysis.TypeEnvironment.ast_environment environment |> Analysis.AstEnvironment.read_only,
-        qualifiers )
-    in
-    let filename_lookup path_reference =
-      match repository_root with
-      | Some root ->
-          Analysis.AstEnvironment.ReadOnly.get_real_path
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        let environment, ast_environment, qualifiers =
+          let configuration =
+            (* In order to get an accurate call graph and type information, we need to ensure that
+               we schedule a type check for external files. *)
+            { configuration with analyze_external_sources = true }
+          in
+          Service.Check.check
+            ~scheduler
             ~configuration
-            ast_environment
-            path_reference
-          >>= Pyre.Path.follow_symbolic_link
-          >>= fun path -> Pyre.Path.get_relative_to_root ~root ~path
-      | None ->
-          Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-            ~configuration
-            ast_environment
-            path_reference
-    in
-    let errors =
-      Service.StaticAnalysis.analyze
-        ~scheduler
-        ~analysis_kind:(get_analysis_kind analysis)
-        ~configuration:
-          {
-            Configuration.StaticAnalysis.configuration;
-            result_json_path;
-            dump_call_graph;
-            verify_models = not no_verify;
-            rule_filter;
-            find_obscure_flows;
-          }
-        ~filename_lookup
-        ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~qualifiers
-        ()
-    in
-    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-    Statistics.performance
-      ~name:"analyze"
-      ~timer
-      ~integers:
-        [
-          "gc_minor_collections", minor_collections;
-          "gc_major_collections", major_collections;
-          "gc_compactions", compactions;
-        ]
-      ();
+            ~call_graph_builder:(module Taint.CallGraphBuilder)
+          |> fun { environment; _ } ->
+          let qualifiers =
+            Analysis.TypeEnvironment.module_tracker environment
+            |> Analysis.ModuleTracker.tracked_explicit_modules
+          in
+          ( environment,
+            Analysis.TypeEnvironment.ast_environment environment
+            |> Analysis.AstEnvironment.read_only,
+            qualifiers )
+        in
+        let filename_lookup path_reference =
+          match repository_root with
+          | Some root ->
+              Analysis.AstEnvironment.ReadOnly.get_real_path
+                ~configuration
+                ast_environment
+                path_reference
+              >>= Pyre.Path.follow_symbolic_link
+              >>= fun path -> Pyre.Path.get_relative_to_root ~root ~path
+          | None ->
+              Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+                ~configuration
+                ast_environment
+                path_reference
+        in
+        let errors =
+          Service.StaticAnalysis.analyze
+            ~scheduler
+            ~analysis_kind:(get_analysis_kind analysis)
+            ~configuration:
+              {
+                Configuration.StaticAnalysis.configuration;
+                result_json_path;
+                dump_call_graph;
+                verify_models = not no_verify;
+                rule_filter;
+                find_obscure_flows;
+              }
+            ~filename_lookup
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~qualifiers
+            ()
+        in
+        let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+        Statistics.performance
+          ~name:"analyze"
+          ~timer
+          ~integers:
+            [
+              "gc_minor_collections", minor_collections;
+              "gc_major_collections", major_collections;
+              "gc_compactions", compactions;
+            ]
+          ();
 
-    (* Print results. *)
-    List.map errors ~f:(fun error ->
-        Interprocedural.Error.instantiate ~lookup:filename_lookup error
-        |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
-    |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
-    |> Log.print "%s")
+        (* Print results. *)
+        List.map errors ~f:(fun error ->
+            Interprocedural.Error.instantiate ~lookup:filename_lookup error
+            |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
+        |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
+        |> Log.print "%s"))
   |> Scheduler.run_process
 
 

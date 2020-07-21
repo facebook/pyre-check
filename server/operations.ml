@@ -194,6 +194,7 @@ let stop
         pid_path;
         _;
       }
+    ~scheduler
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
 
@@ -205,7 +206,7 @@ let stop
   Path.remove json_socket_link;
   Path.remove adapter_link;
   Path.remove pid_path;
-  Worker.killall ();
+  Scheduler.destroy scheduler;
   exit 0
 
 

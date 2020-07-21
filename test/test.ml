@@ -2605,6 +2605,7 @@ module ScratchProject = struct
         ~ignore_all_errors:[external_root]
         ~incremental_style
         ~features:{ Configuration.Features.default with go_to_definition = true }
+        ~parallel:false
         ()
     in
     let external_sources =

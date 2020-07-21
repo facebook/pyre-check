@@ -68,28 +68,28 @@ let run_check
       ()
   in
   (fun () ->
-    let scheduler = Scheduler.create ~configuration () in
     let errors, ast_environment =
-      let timer = Timer.start () in
-      let { Check.errors; environment } =
-        Check.check
-          ~scheduler
-          ~configuration
-          ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
-      in
-      let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-      Statistics.performance
-        ~name:"check"
-        ~timer
-        ~integers:
-          [
-            "gc_minor_collections", minor_collections;
-            "gc_major_collections", major_collections;
-            "gc_compactions", compactions;
-          ]
-        ~normals:["request kind", "FullCheck"]
-        ();
-      errors, TypeEnvironment.ast_environment environment
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          let timer = Timer.start () in
+          let { Check.errors; environment } =
+            Check.check
+              ~scheduler
+              ~configuration
+              ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+          in
+          let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+          Statistics.performance
+            ~name:"check"
+            ~timer
+            ~integers:
+              [
+                "gc_minor_collections", minor_collections;
+                "gc_major_collections", major_collections;
+                "gc_compactions", compactions;
+              ]
+            ~normals:["request kind", "FullCheck"]
+            ();
+          errors, TypeEnvironment.ast_environment environment)
     in
     if debug then
       Memory.report_statistics ();

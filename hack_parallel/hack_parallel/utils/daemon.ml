@@ -295,6 +295,10 @@ let kill h =
   close h;
   Sys_utils.terminate_process h.pid
 
+let kill_and_wait h =
+  kill h;
+  Unix.waitpid [] h.pid |> ignore
+
 let close_out = close_out
 let output_string = output_string
 let flush = flush

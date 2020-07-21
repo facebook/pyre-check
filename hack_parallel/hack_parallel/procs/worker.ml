@@ -258,7 +258,6 @@ let register_entry_point ~restore =
  *
  **************************************************************************)
 
-let workers = ref []
 
 let current_worker_id = ref 0
 
@@ -271,7 +270,6 @@ let make_one spawn id =
     f input
   in
   let worker = { call_wrapper = { wrap }; id; busy = false; killed = false; prespawned; spawn } in
-  workers := worker :: !workers;
   worker
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
@@ -425,8 +423,5 @@ let kill w =
     w.killed <- true;
     match w.prespawned with
     | None -> ()
-    | Some handle -> Daemon.kill handle
+    | Some handle -> Daemon.kill_and_wait handle
   end
-
-let killall () =
-  List.iter ~f:kill !workers

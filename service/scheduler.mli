@@ -49,6 +49,10 @@ val create : configuration:Configuration.Analysis.t -> unit -> t
 
 val create_sequential : unit -> t
 
+val destroy : t -> unit
+
+val with_scheduler : configuration:Configuration.Analysis.t -> f:(t -> 'a) -> 'a
+
 val run_process : (unit -> 'result) -> 'result
 
 val map_reduce
@@ -64,7 +68,5 @@ val map_reduce
 val iter : t -> policy:Policy.t -> f:('input list -> unit) -> inputs:'input list -> unit
 
 val is_parallel : t -> bool
-
-val destroy : t -> unit
 
 val once_per_worker : t -> configuration:Configuration.Analysis.t -> f:(unit -> unit) -> unit

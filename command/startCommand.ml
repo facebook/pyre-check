@@ -34,7 +34,7 @@ let is_connection_reset_error = function
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.environment; _ } as state)
+    ({ Server.State.environment; scheduler; _ } as state)
   =
   let errors_to_lsp_responses { Server.State.open_documents; _ } errors =
     let build_file_to_error_map error_list =
@@ -145,7 +145,7 @@ let computation_thread
             ( match request with
             | Server.Protocol.Request.StopRequest ->
                 write_to_json_socket (Jsonrpc.Response.Stop.to_json ());
-                Operations.stop ~reason:"explicit request" ~configuration
+                Operations.stop ~reason:"explicit request" ~configuration ~scheduler
             | _ -> () );
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
@@ -198,7 +198,7 @@ let computation_thread
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
           if Float.(current_time -. state.last_request_time > stop_after_idle_for) then
             Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
-                Operations.stop ~reason:"idle" ~configuration);
+                Operations.stop ~reason:"idle" ~configuration ~scheduler);
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
@@ -217,7 +217,7 @@ let computation_thread
               with
               | _ ->
                   Error_checking_mutex.critical_section state.connections.lock ~f:(fun () ->
-                      Operations.stop ~reason:"failed integrity check" ~configuration)
+                      Operations.stop ~reason:"failed integrity check" ~configuration ~scheduler)
             else
               state.last_integrity_check
           in
@@ -241,17 +241,18 @@ let request_handler_thread
           _;
         } as server_configuration ),
       ({ Server.State.lock; connections = raw_connections } as connections),
+      scheduler,
       request_queue )
   =
   let queue_request ~origin request =
     match request, origin with
     | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
-        Operations.stop ~reason:"explicit request" ~configuration:server_configuration
+        Operations.stop ~reason:"explicit request" ~configuration:server_configuration ~scheduler
     | Protocol.Request.StopRequest, Protocol.Request.JSONSocket _ ->
         Squeue.push_or_drop request_queue (origin, request) |> ignore
     | Protocol.Request.StopRequest, _ ->
-        Operations.stop ~reason:"explicit request" ~configuration:server_configuration
+        Operations.stop ~reason:"explicit request" ~configuration:server_configuration ~scheduler
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket
       ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
@@ -322,7 +323,7 @@ let request_handler_thread
       Log.error
         "Stopping server due to missing source root, %s is not a directory."
         (Path.show local_root);
-      Operations.stop ~reason:"missing source root" ~configuration:server_configuration );
+      Operations.stop ~reason:"missing source root" ~configuration:server_configuration ~scheduler );
     let readable =
       Unix.select
         ~restart:true
@@ -408,16 +409,11 @@ let request_handler_thread
   try loop () with
   | uncaught_exception ->
       Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";
-      Operations.stop ~reason:"exception" ~configuration:server_configuration
+      Operations.stop ~reason:"exception" ~configuration:server_configuration ~scheduler
 
 
 (** Main server either as a daemon or in terminal *)
-let serve
-    ~socket
-    ~json_socket
-    ~adapter_socket
-    ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
-  =
+let serve ~socket ~json_socket ~adapter_socket ~server_configuration =
   Version.log_version_banner ();
   (fun () ->
     Log.log ~section:`Server "Starting daemon server loop...";
@@ -439,21 +435,27 @@ let serve
             };
       }
     in
+    let state = Operations.start ~connections ~configuration:server_configuration () in
     (* Register signal handlers. *)
     Signal.Expert.handle Signal.int (fun _ ->
-        Operations.stop ~reason:"interrupt" ~configuration:server_configuration);
+        Operations.stop
+          ~reason:"interrupt"
+          ~configuration:server_configuration
+          ~scheduler:state.scheduler);
     Signal.Expert.handle Signal.pipe (fun _ -> ());
     Thread.create
       ~on_uncaught_exn:`Kill_whole_process
       request_handler_thread
-      (server_configuration, connections, request_queue)
+      (server_configuration, connections, state.scheduler, request_queue)
     |> ignore;
-    let state = Operations.start ~connections ~configuration:server_configuration () in
     try computation_thread request_queue server_configuration state with
     | uncaught_exception ->
         Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";
-        Operations.stop ~reason:"exception" ~configuration:server_configuration)
-  |> Scheduler.run_process ~configuration
+        Operations.stop
+          ~reason:"exception"
+          ~configuration:server_configuration
+          ~scheduler:state.scheduler)
+  |> Scheduler.run_process
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
