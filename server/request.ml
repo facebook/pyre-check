@@ -18,9 +18,10 @@ exception MissingFunction of Reference.t
 
 let errors_of_path ~configuration ~state:{ State.environment; errors; _ } path =
   let module_tracker = TypeEnvironment.module_tracker environment in
-  ModuleTracker.lookup_path ~configuration module_tracker path
-  >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
-  |> Option.value ~default:[]
+  match ModuleTracker.lookup_path ~configuration module_tracker path with
+  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } ->
+      Hashtbl.find errors qualifier |> Option.value ~default:[]
+  | _ -> []
 
 
 let instantiate_error ~configuration ~state:{ State.environment; _ } error =
@@ -234,9 +235,13 @@ let rec process_type_query_request
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->
         let source_paths =
-          List.filter_map
-            paths
-            ~f:(Analysis.ModuleTracker.lookup_path ~configuration module_tracker)
+          let lookup_path path =
+            ModuleTracker.lookup_path ~configuration module_tracker path
+            |> function
+            | ModuleTracker.PathLookup.Found source_path -> Some source_path
+            | _ -> None
+          in
+          List.filter_map paths ~f:lookup_path
         in
         let errors =
           IncrementalStaticAnalysis.run_additional_check
@@ -861,10 +866,10 @@ let process_get_definition_request
       | Some { Location.start; stop } -> (
           let module_tracker = TypeEnvironment.module_tracker environment in
           match ModuleTracker.lookup_path ~configuration module_tracker path with
-          | None -> TextDocumentDefinitionResponse.create_empty ~id
-          | Some source_path ->
+          | ModuleTracker.PathLookup.Found source_path ->
               let path = SourcePath.full_path ~configuration source_path in
-              TextDocumentDefinitionResponse.create ~id ~start ~stop ~path )
+              TextDocumentDefinitionResponse.create ~id ~start ~stop ~path
+          | _ -> TextDocumentDefinitionResponse.create_empty ~id )
     in
     TextDocumentDefinitionResponse.to_yojson response
     |> Yojson.Safe.to_string
@@ -898,7 +903,7 @@ let rec process
   let update_open_documents ~state path =
     let { State.open_documents; _ } = state in
     match ModuleTracker.lookup_path ~configuration module_tracker path with
-    | Some { SourcePath.qualifier; _ } ->
+    | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } ->
         Reference.Table.set
           open_documents
           ~key:qualifier
@@ -1094,7 +1099,7 @@ let rec process
           let { State.open_documents; _ } = state in
           let relative_path =
             match ModuleTracker.lookup_path ~configuration module_tracker path with
-            | Some { SourcePath.qualifier; relative; _ } ->
+            | ModuleTracker.PathLookup.Found { SourcePath.qualifier; relative; _ } ->
                 Reference.Table.remove open_documents qualifier;
                 Some relative
             | _ -> None

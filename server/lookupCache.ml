@@ -30,21 +30,10 @@ let get_lookups ~configuration ~state:{ lookups; environment; _ } paths =
   let paths, nonexistent_paths =
     let get_source_path path =
       let module_tracker = TypeEnvironment.module_tracker environment in
-      match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
-      | Some source_path -> Either.First (path, source_path)
-      | None when PyrePath.is_python_stub path -> Either.Second (path, FileNotFound)
-      | None ->
-          let error_reason =
-            match
-              Analysis.ModuleTracker.lookup_path
-                ~configuration
-                module_tracker
-                (PyrePath.with_suffix path ~suffix:"i")
-            with
-            | Some _ -> StubShadowing
-            | None -> FileNotFound
-          in
-          Either.Second (path, error_reason)
+      match ModuleTracker.lookup_path ~configuration module_tracker path with
+      | ModuleTracker.PathLookup.Found source_path -> Either.First (path, source_path)
+      | ModuleTracker.PathLookup.ShadowedBy _ -> Either.Second (path, StubShadowing)
+      | ModuleTracker.PathLookup.NotFound -> Either.Second (path, FileNotFound)
     in
     List.partition_map ~f:get_source_path paths
   in
@@ -78,9 +67,9 @@ let evict ~lookups reference = String.Table.remove lookups (Reference.show refer
 
 let evict_path ~state:{ State.environment; lookups; _ } ~configuration path =
   let module_tracker = TypeEnvironment.module_tracker environment in
-  match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
-  | None -> ()
-  | Some { SourcePath.qualifier; _ } -> evict ~lookups qualifier
+  match ModuleTracker.lookup_path ~configuration module_tracker path with
+  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> evict ~lookups qualifier
+  | _ -> ()
 
 
 let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) () =

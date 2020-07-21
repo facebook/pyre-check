@@ -13,22 +13,30 @@ module IncrementalUpdate : sig
   [@@deriving sexp, compare, eq]
 end
 
-module Lookup : sig
+module ModuleLookup : sig
   type t =
     | Explicit of Ast.SourcePath.t
     | Implicit of Ast.Reference.t
   [@@deriving sexp, compare, eq]
 end
 
+module PathLookup : sig
+  type t =
+    | Found of Ast.SourcePath.t
+    | ShadowedBy of Ast.SourcePath.t
+    | NotFound
+  [@@deriving sexp, compare]
+end
+
 type t
 
 val create : Configuration.Analysis.t -> t
 
-val lookup : t -> Ast.Reference.t -> Lookup.t option
+val lookup : t -> Ast.Reference.t -> ModuleLookup.t option
 
 val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
 
-val lookup_path : configuration:Configuration.Analysis.t -> t -> Path.t -> Ast.SourcePath.t option
+val lookup_path : configuration:Configuration.Analysis.t -> t -> Path.t -> PathLookup.t
 
 val source_paths : t -> Ast.SourcePath.t list
 

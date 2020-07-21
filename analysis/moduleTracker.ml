@@ -7,11 +7,19 @@ open Core
 open Ast
 open Pyre
 
-module Lookup = struct
+module ModuleLookup = struct
   type t =
     | Explicit of Ast.SourcePath.t
     | Implicit of Ast.Reference.t
   [@@deriving sexp, compare, eq]
+end
+
+module PathLookup = struct
+  type t =
+    | Found of Ast.SourcePath.t
+    | ShadowedBy of Ast.SourcePath.t
+    | NotFound
+  [@@deriving sexp, compare]
 end
 
 type t = {
@@ -141,23 +149,26 @@ let lookup_source_path { module_to_files; _ } module_name =
 
 
 let lookup_path ~configuration tracker path =
-  SourcePath.create ~configuration path
-  >>= fun { SourcePath.relative; priority; qualifier; _ } ->
-  lookup_source_path tracker qualifier
-  >>= fun ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as source_path)
-          ->
-  if String.equal relative tracked_relative && Int.equal priority tracked_priority then
-    Some source_path
-  else
-    None
+  match SourcePath.create ~configuration path with
+  | None -> PathLookup.NotFound
+  | Some { SourcePath.relative; priority; qualifier; _ } -> (
+      match lookup_source_path tracker qualifier with
+      | None -> PathLookup.NotFound
+      | Some
+          ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as source_path)
+        ->
+          if String.equal relative tracked_relative && Int.equal priority tracked_priority then
+            PathLookup.Found source_path
+          else
+            PathLookup.ShadowedBy source_path )
 
 
 let lookup { module_to_files; submodule_refcounts } module_name =
   match Hashtbl.find module_to_files module_name with
-  | Some (source_path :: _) -> Some (Lookup.Explicit source_path)
+  | Some (source_path :: _) -> Some (ModuleLookup.Explicit source_path)
   | _ -> (
       match Hashtbl.mem submodule_refcounts module_name with
-      | true -> Some (Lookup.Implicit module_name)
+      | true -> Some (ModuleLookup.Implicit module_name)
       | false -> None )
 
 

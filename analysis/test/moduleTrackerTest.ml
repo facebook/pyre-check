@@ -342,8 +342,8 @@ let test_creation context =
       let actual =
         match ModuleTracker.lookup module_tracker qualifier with
         | None -> ModuleStatus.Untracked
-        | Some (ModuleTracker.Lookup.Explicit _) -> ModuleStatus.Explicit
-        | Some (ModuleTracker.Lookup.Implicit _) -> ModuleStatus.Implicit
+        | Some (ModuleTracker.ModuleLookup.Explicit _) -> ModuleStatus.Explicit
+        | Some (ModuleTracker.ModuleLookup.Implicit _) -> ModuleStatus.Implicit
       in
       assert_equal
         ~cmp:[%compare.equal: ModuleStatus.t]
