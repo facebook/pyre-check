@@ -205,15 +205,13 @@ let get_inference_errors ~context source =
   |> List.map
        ~f:
          (AnalysisError.instantiate
+            ~show_error_traces:false
             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
 
 
 let assert_inference_errors ~context ~expected source =
   let errors = get_inference_errors ~context source in
-  let actual =
-    List.map errors ~f:(fun error ->
-        AnalysisError.Instantiated.description error ~show_error_traces:false)
-  in
+  let actual = List.map errors ~f:AnalysisError.Instantiated.description in
   assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
   Memory.reset_shared_memory ()
 
@@ -271,7 +269,7 @@ let assert_infer ?(fields = ["description"]) ~context source errors =
         | _ -> `String "TEST FAIL: ERROR ACCESSING FIELD IN ERROR JSON"
       in
       List.fold
-        ~init:(AnalysisError.Instantiated.to_json ~show_error_traces:false error)
+        ~init:(AnalysisError.Instantiated.to_yojson error)
         ~f:access_field
         (String.split ~on:'.' field)
     in

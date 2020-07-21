@@ -35,19 +35,19 @@ module type Error = sig
   [@@deriving compare, eq, show, sexp, hash]
 
   module Instantiated : sig
-    type t [@@deriving sexp, compare, eq, show, hash]
+    type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
 
     val location : t -> Location.WithPath.t
 
     val path : t -> string
 
-    val kind : t -> kind
-
     val code : t -> int
 
-    val description : ?separator:string -> ?concise:bool -> t -> show_error_traces:bool -> string
+    val description : t -> string
 
-    val to_json : show_error_traces:bool -> t -> Yojson.Safe.json
+    val long_description : t -> string
+
+    val concise_description : t -> string
   end
 
   include Hashable with type t := t
@@ -60,7 +60,11 @@ module type Error = sig
 
   val code : t -> int
 
-  val instantiate : lookup:(Reference.t -> string option) -> t -> Instantiated.t
+  val instantiate
+    :  show_error_traces:bool ->
+    lookup:(Reference.t -> string option) ->
+    t ->
+    Instantiated.t
 end
 
 module Make (Kind : Kind) : Error with type kind := Kind.t

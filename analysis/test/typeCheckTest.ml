@@ -76,8 +76,11 @@ let description ~resolution error =
   let ast_environment =
     Resolution.global_resolution resolution |> GlobalResolution.ast_environment
   in
-  Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
-  |> Error.Instantiated.description ~show_error_traces:false
+  Error.instantiate
+    ~show_error_traces:false
+    ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+    error
+  |> Error.Instantiated.description
 
 
 let test_initial context =

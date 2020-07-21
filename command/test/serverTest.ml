@@ -18,7 +18,7 @@ let int_request_id id = LanguageServer.Types.RequestId.Int id
 let test_language_server_protocol_json_format context =
   let handle = "filename.py" in
   let configuration =
-    let project = ScratchProject.setup ~context [handle, ""] in
+    let project = ScratchProject.setup ~context ~show_error_traces:true [handle, ""] in
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
@@ -27,6 +27,7 @@ let test_language_server_protocol_json_format context =
     CommandTest.make_errors
       ~context
       ~handle
+      ~show_error_traces:true
       {|
         class unittest.mock.Base: ...
         class unittest.mock.NonCallableMock: ...
@@ -67,7 +68,7 @@ let test_language_server_protocol_json_format context =
             "diagnostics": [
               {
                 "message":
-                  "Incompatible return type [7]: Expected `None` but got `int`.\nType `None` expected on line 5, specified on line 4.",
+                  "Incompatible return type [7]: Expected `None` but got `int`. Type `None` expected on line 5, specified on line 4.",
                 "range": {
                   "end": { "character": 10, "line": 4 },
                   "start": { "character": 2, "line": 4 }
@@ -1634,10 +1635,11 @@ let test_incremental_attribute_caching context =
       |> List.concat
       |> List.map ~f:(fun error ->
              AnalysisError.instantiate
+               ~show_error_traces:false
                ~lookup:
                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
                error
-             |> AnalysisError.Instantiated.description ~show_error_traces:false)
+             |> AnalysisError.Instantiated.description)
     in
     let printer = String.concat ~sep:"\n" in
     assert_equal ~printer expected (get_error_strings state)

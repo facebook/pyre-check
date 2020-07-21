@@ -172,8 +172,8 @@ let run_analysis
 
         (* Print results. *)
         List.map errors ~f:(fun error ->
-            Interprocedural.Error.instantiate ~lookup:filename_lookup error
-            |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
+            Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup error
+            |> Interprocedural.Error.Instantiated.to_yojson)
         |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
         |> Log.print "%s"))
   |> Scheduler.run_process

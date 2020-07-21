@@ -32,8 +32,7 @@ let assert_static_analysis_errors ~context ~source ~check ~expected ~include_typ
         ~source_paths
         ~check
     in
-    List.map errors ~f:(fun error ->
-        AnalysisError.Instantiated.description error ~show_error_traces:false ~concise:true)
+    List.map errors ~f:(fun error -> AnalysisError.Instantiated.concise_description error)
   in
   assert_equal
     ~cmp:(List.equal String.equal)

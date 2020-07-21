@@ -22,14 +22,7 @@ module Response = struct
   module TypeErrors = struct
     let to_json errors =
       let errors =
-        `Assoc
-          [
-            ( "errors",
-              `List
-                (List.map
-                   errors
-                   ~f:(Analysis.AnalysisError.Instantiated.to_json ~show_error_traces:false)) );
-          ]
+        `Assoc ["errors", `List (List.map errors ~f:Analysis.AnalysisError.Instantiated.to_yojson)]
       in
       `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", errors]
   end

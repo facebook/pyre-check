@@ -24,9 +24,10 @@ let ignore_lines_test context =
     let descriptions =
       List.map type_errors ~f:(fun error ->
           Error.instantiate
+            ~show_error_traces
             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
             error
-          |> Error.Instantiated.description ~show_error_traces)
+          |> Error.Instantiated.description)
     in
     let description_list_to_string descriptions =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]

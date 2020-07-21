@@ -2582,6 +2582,7 @@ module ScratchProject = struct
       ?(incremental_style = Configuration.Analysis.FineGrained)
       ~context
       ?(external_sources = [])
+      ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
       sources
@@ -2605,6 +2606,7 @@ module ScratchProject = struct
         ~ignore_all_errors:[external_root]
         ~incremental_style
         ~features:{ Configuration.Features.default with go_to_definition = true }
+        ~show_error_traces
         ~parallel:false
         ()
     in
@@ -2794,6 +2796,7 @@ let assert_errors
       |> List.map
            ~f:
              (AnalysisError.instantiate
+                ~show_error_traces
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
@@ -2802,19 +2805,19 @@ let assert_errors
           let location = AnalysisError.Instantiated.location error in
           Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
     in
+    let show_description ~concise error =
+      if concise then
+        AnalysisError.Instantiated.concise_description error
+      else
+        AnalysisError.Instantiated.description error
+    in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then
-        let errors =
-          List.map
-            ~f:(fun error ->
-              AnalysisError.Instantiated.description error ~show_error_traces ~concise)
-            errors
-          |> String.concat ~sep:"\n"
-        in
+        let errors = List.map ~f:(show_description ~concise) errors |> String.concat ~sep:"\n" in
         Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
     assert_false found_any;
     let to_string error =
-      let description = AnalysisError.Instantiated.description error ~show_error_traces ~concise in
+      let description = show_description ~concise error in
       if include_line_numbers then
         let line = AnalysisError.Instantiated.location error |> Location.WithPath.line in
         Format.sprintf "%d: %s" line description

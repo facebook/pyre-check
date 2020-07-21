@@ -37,8 +37,7 @@ module PublishDiagnostics = struct
           severity = Some DiagnosticSeverity.Error;
           code = None;
           source = Some "Pyre";
-          message =
-            TypeCheck.Error.Instantiated.description error ~show_error_traces:true ~separator:"\n";
+          message = TypeCheck.Error.Instantiated.description error;
         }
     in
     {

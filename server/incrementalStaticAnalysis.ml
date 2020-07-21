@@ -7,7 +7,12 @@ open Core
 open Ast
 open Analysis
 
-let run_additional_check ~configuration ~environment ~source_paths ~check =
+let run_additional_check
+    ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
+    ~environment
+    ~source_paths
+    ~check
+  =
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
       let ast_environment =
@@ -25,6 +30,7 @@ let run_additional_check ~configuration ~environment ~source_paths ~check =
       |> List.map
            ~f:
              (AnalysisError.instantiate
+                ~show_error_traces
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
   | None ->

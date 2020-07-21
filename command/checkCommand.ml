@@ -101,16 +101,14 @@ let run_check
         errors
         ~f:
           (AnalysisError.instantiate
+             ~show_error_traces
              ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     Yojson.Safe.to_string
       (`Assoc
         [
           ( "errors",
-            `List
-              (List.map
-                 ~f:(fun error -> AnalysisError.Instantiated.to_json ~show_error_traces error)
-                 errors) );
+            `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
         ])
     |> Log.print "%s")
   |> Scheduler.run_process

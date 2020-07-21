@@ -241,7 +241,7 @@ let check_expectation
         define_name
         (Error.Instantiated.code error)
       |> assert_failure;
-    let error_string = Error.Instantiated.description ~show_error_traces:true error in
+    let error_string = Error.Instantiated.description error in
     let regexp = Str.regexp pattern in
     if not (Str.string_match regexp error_string 0) then
       Format.sprintf
@@ -307,7 +307,10 @@ let check_expectation
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     List.map
       actual_errors
-      ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+      ~f:
+        (Error.instantiate
+           ~show_error_traces:true
+           ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
   in
   assert_errors errors actual_errors
 
@@ -412,10 +415,11 @@ let initialize
         errors
         |> List.map ~f:(fun error ->
                AnalysisError.instantiate
+                 ~show_error_traces:false
                  ~lookup:
                    (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
                  error
-               |> AnalysisError.Instantiated.description ~show_error_traces:false)
+               |> AnalysisError.Instantiated.description)
         |> String.concat ~sep:"\n"
       in
       failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );

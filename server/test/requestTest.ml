@@ -61,6 +61,7 @@ let test_process_type_query_request context =
   let { ScratchServer.configuration; state; _ } =
     ScratchServer.start
       ~context
+      ~show_error_traces:true
       [
         "test.py", {|
         def foo(a: int) -> int:
@@ -126,6 +127,8 @@ let test_process_type_query_request context =
                 {
                     "line": 4,
                     "column": 2,
+                    "stop_line": 4,
+                    "stop_column": 12,
                     "path": "await.py",
                     "code": 1001,
                     "name": "Unawaited awaitable",
@@ -364,9 +367,7 @@ let test_process_type_query_request context =
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =
-  let actual_errors =
-    List.map actual_errors ~f:(Error.Instantiated.description ~show_error_traces:false)
-  in
+  let actual_errors = List.map actual_errors ~f:Error.Instantiated.description in
   let equal left right =
     List.equal
       String.equal

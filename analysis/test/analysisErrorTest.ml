@@ -879,6 +879,7 @@ let test_description _ =
   let assert_messages error expected =
     let actual =
       Error.instantiate
+        ~show_error_traces:false
         ~lookup:(fun _ -> None)
         {
           kind = error;
@@ -887,7 +888,7 @@ let test_description _ =
             Node.create_with_default_location
               (Ast.Statement.Define.Signature.create_toplevel ~qualifier:None);
         }
-      |> Error.Instantiated.description ~show_error_traces:false
+      |> Error.Instantiated.description
     in
     assert_equal ~printer:Fn.id expected actual
   in

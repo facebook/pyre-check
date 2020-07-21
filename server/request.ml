@@ -24,9 +24,14 @@ let errors_of_path ~configuration ~state:{ State.environment; errors; _ } path =
   | _ -> []
 
 
-let instantiate_error ~configuration ~state:{ State.environment; _ } error =
+let instantiate_error
+    ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
+    ~state:{ State.environment; _ }
+    error
+  =
   let ast_environment = TypeEnvironment.ast_environment environment |> AstEnvironment.read_only in
   AnalysisError.instantiate
+    ~show_error_traces
     ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
     error
 

@@ -43,7 +43,7 @@ let start_server ~local_root ?expected_version () =
 
 
 (* NOTE: This function runs a standalone type-check pass and therefore needs to nuke shared memory. *)
-let make_errors ~context ?(handle = "test.py") source =
+let make_errors ~context ?(handle = "test.py") ?(show_error_traces = false) source =
   let project =
     let builtins_source =
       {|
@@ -61,6 +61,7 @@ let make_errors ~context ?(handle = "test.py") source =
     |} in
     ScratchProject.setup
       ~context
+      ~show_error_traces
       ~include_typeshed_stubs:false
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
@@ -69,10 +70,12 @@ let make_errors ~context ?(handle = "test.py") source =
     ScratchProject.build_type_environment_and_postprocess project
   in
   let errors =
+    let { Configuration.Analysis.show_error_traces; _ } = ScratchProject.configuration_of project in
     List.map
       errors
       ~f:
         (AnalysisError.instantiate
+           ~show_error_traces
            ~lookup:
              (AstEnvironment.ReadOnly.get_real_path_relative
                 ~configuration:(ScratchProject.configuration_of project)
@@ -158,13 +161,19 @@ module ScratchServer = struct
 
   let start
       ?(incremental_style = Configuration.Analysis.FineGrained)
+      ?(show_error_traces = false)
       ~context
       ?(external_sources = [])
       sources
     =
     let configuration, environment, type_errors =
       let ({ ScratchProject.configuration; _ } as project) =
-        ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
+        ScratchProject.setup
+          ~context
+          ~external_sources
+          ~include_helper_builtins:false
+          ~show_error_traces
+          sources
       in
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project

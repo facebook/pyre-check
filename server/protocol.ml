@@ -305,11 +305,7 @@ module TypeQuery = struct
         `Assoc
           [
             ( "errors",
-              `List
-                (List.map
-                   ~f:(fun error ->
-                     AnalysisError.Instantiated.to_json ~show_error_traces:true error)
-                   errors) );
+              `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors) );
           ]
     | Help string -> `Assoc ["help", `String string]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
