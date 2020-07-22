@@ -60,7 +60,33 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
 
 let initialize_server_state ({ ServerConfiguration.log_path; _ } as server_configuration) =
   Log.info "Initializing server state...";
-  let state = ref { ServerState.socket_path = socket_path_of log_path; server_configuration } in
+  let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
+  let { Service.Check.environment; errors } =
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        Service.Check.check
+          ~scheduler
+          ~configuration
+          ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
+  in
+  let error_table =
+    let table = Ast.Reference.Table.create () in
+    let add_error error =
+      let key = Analysis.AnalysisError.path error in
+      Hashtbl.add_multi table ~key ~data:error
+    in
+    List.iter errors ~f:add_error;
+    table
+  in
+  let state =
+    ref
+      {
+        ServerState.socket_path = socket_path_of log_path;
+        server_configuration;
+        configuration;
+        type_environment = environment;
+        error_table;
+      }
+  in
   Log.info "Server state initialized.";
   state
 

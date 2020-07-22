@@ -5,7 +5,7 @@
 
 open Core
 
-let process_request ~state:({ ServerState.socket_path; server_configuration } as state) request =
+let process_request ~state:({ ServerState.socket_path; server_configuration; _ } as state) request =
   match request with
   | Request.GetInfo ->
       let response =

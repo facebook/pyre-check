@@ -8,4 +8,7 @@ open Pyre
 type t = {
   socket_path: Path.t;
   server_configuration: ServerConfiguration.t;
+  configuration: Configuration.Analysis.t;
+  type_environment: Analysis.TypeEnvironment.t;
+  error_table: Analysis.AnalysisError.t list Ast.Reference.Table.t;
 }
