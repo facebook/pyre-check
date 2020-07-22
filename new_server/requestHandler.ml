@@ -77,4 +77,15 @@ let process_request
       in
       let response = Response.TypeErrors instantiated_errors in
       Lwt.return (state, response)
+  | Request.IncrementalUpdate paths ->
+      let _ =
+        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+            List.map paths ~f:(Path.create_absolute ~follow_symbolic_links:false)
+            |> Server.IncrementalCheck.recheck
+                 ~configuration
+                 ~scheduler
+                 ~environment:type_environment
+                 ~errors:error_table)
+      in
+      Lwt.return (state, Response.Ok)
   | Request.Stop -> Stop.stop_waiting_server ()

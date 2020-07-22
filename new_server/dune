@@ -5,5 +5,5 @@
   (pps ppx_hash ppx_compare ppx_sexp_conv ppx_sexp_message
     ppx_deriving_yojson))
  (libraries core lwt lwt.unix ppx_deriving_yojson ppx_deriving_yojson.runtime
-   pyrelib.service pyrelib.ast pyrelib.analysis pyrelib.fetchSavedState
-   pyrelib.pyre pyrelib.version))
+   pyrelib.server pyrelib.service pyrelib.ast pyrelib.analysis
+   pyrelib.fetchSavedState pyrelib.pyre pyrelib.version))

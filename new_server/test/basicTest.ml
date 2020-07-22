@@ -68,11 +68,13 @@ let test_basic client =
         ])
     |> Result.ok_or_failwith
   in
+  (* Query all type errors. *)
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
     ~expected:(Response.TypeErrors [error_in_test; error_in_test2])
   >>= fun () ->
+  (* Query type errors for `test.py`. *)
   let test_path =
     Client.current_server_state client
     |> fun { ServerState.server_configuration = { ServerConfiguration.global_root; _ }; _ } ->
@@ -82,6 +84,36 @@ let test_basic client =
     client
     ~request:(Request.DisplayTypeError [Path.absolute test_path])
     ~expected:(Response.TypeErrors [error_in_test])
+  >>= fun () ->
+  (* Sending `IncrementalUpdate` without the corresponding filesystem should have no impact on the
+     type errors. *)
+  Client.assert_response
+    client
+    ~request:(Request.IncrementalUpdate [Path.absolute test_path])
+    ~expected:Response.Ok
+  >>= fun () ->
+  Client.assert_response
+    client
+    ~request:(Request.DisplayTypeError [])
+    ~expected:(Response.TypeErrors [error_in_test; error_in_test2])
+  >>= fun () ->
+  (* Actually test incrementally changes on `test.py`. *)
+  let new_test_content =
+    Test.trim_extra_indentation {|
+       def foo(x: int) -> int:
+         return x
+    |}
+  in
+  File.create ~content:new_test_content test_path |> File.write;
+  Client.assert_response
+    client
+    ~request:(Request.IncrementalUpdate [Path.absolute test_path])
+    ~expected:Response.Ok
+  >>= fun () ->
+  Client.assert_response
+    client
+    ~request:(Request.DisplayTypeError [])
+    ~expected:(Response.TypeErrors [error_in_test2])
 
 
 let test_basic context =

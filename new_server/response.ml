@@ -6,6 +6,7 @@
 open Core
 
 type t =
+  | Ok
   | Error of string
   | Info of {
       version: string;

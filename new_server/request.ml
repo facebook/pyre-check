@@ -7,5 +7,6 @@ open Core
 type t =
   | GetInfo
   | DisplayTypeError of string list
+  | IncrementalUpdate of string list
   | Stop
 [@@deriving sexp, compare, hash, yojson { strict = false }]
