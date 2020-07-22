@@ -12,12 +12,10 @@ open Pyre
 type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 let recheck
+    ~configuration:({ incremental_style; _ } as configuration)
+    ~scheduler
     ~environment
     ~errors
-    ~scheduler
-    ~connections
-    ~lookups
-    ~configuration:({ incremental_style; _ } as configuration)
     paths
   =
   let timer = Timer.start () in
@@ -27,11 +25,6 @@ let recheck
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
   SharedMem.collect `aggressive;
-  Log.info "Parsing %d updated modules..." (List.length module_updates);
-  StatusUpdate.write
-    ~message:"Reparsing updated modules..."
-    ~connections
-    ~message_type:WarningMessage;
   Log.log
     ~section:`Server
     "Incremental Module Update %a"
@@ -39,10 +32,6 @@ let recheck
     [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
-  StatusUpdate.write
-    ~message:"Repopulating the environment"
-    ~connections
-    ~message_type:WarningMessage;
 
   let annotated_global_environment_update_result =
     let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
@@ -194,8 +183,6 @@ let recheck
     ~integers:["size", Memory.heap_size ()]
     ();
 
-  (* Clean up all lookup data related to updated files. *)
-  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) recheck_modules;
 
@@ -217,8 +204,7 @@ let recheck
         "number of re-checked functions", total_rechecked_functions;
       ]
     ();
-  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
-  new_errors
+  recheck_modules, new_errors
 
 
 let recheck_with_state
@@ -226,4 +212,12 @@ let recheck_with_state
     ~configuration
     paths
   =
-  recheck ~environment ~errors ~scheduler ~connections ~lookups ~configuration paths
+  StatusUpdate.write
+    ~message:"Incremental recheck in progress..."
+    ~connections
+    ~message_type:WarningMessage;
+  let recheck_modules, new_errors = recheck ~configuration ~scheduler ~environment ~errors paths in
+  (* Clean up all lookup data related to updated files. *)
+  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
+  StatusUpdate.write ~message:"Done recheck." ~connections ~message_type:InfoMessage;
+  new_errors
