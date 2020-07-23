@@ -239,7 +239,6 @@ let analyze
                      not (Reference.Set.mem skip_overrides override))
             in
 
-            record_overrides new_overrides;
             Map.merge_skewed overrides new_overrides ~combine
       with
       | ClassHierarchy.Untracked untracked_type ->
@@ -261,6 +260,7 @@ let analyze
       ~inputs:qualifiers
       ()
   in
+  record_overrides overrides;
   Statistics.performance ~name:"Overrides recorded" ~timer ();
 
   let timer = Timer.start () in
