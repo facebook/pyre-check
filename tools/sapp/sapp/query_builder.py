@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import or_
 
-from .db import DB
 from .models import (
     Issue,
     IssueInstance,
@@ -36,73 +35,78 @@ class Filter(Enum):
 
 
 class IssueQueryBuilder:
-    def __init__(self, database: DB, current_run_id: int):
-        self.db = database
+    def __init__(self, current_run_id: int):
+        self._session = None
         self.current_run_id = current_run_id
         self.issue_filters: Dict[
             Filter, Set[Tuple[Union[int, str, Tuple[int, int, ...]], ...]]
         ] = defaultdict(set)
         self.breadcrumb_filters: Dict[Filter, List[str]] = defaultdict(list)
 
+    @property
+    def session(self):
+        if self._session is None:
+            raise Exception("No current session found for query!")
+        return self._session
+
+    def with_session(self, session):
+        self._session = session
+        return self
+
     def get(self) -> List:
-        with self.db.make_session() as session:
-            query = self._get_session_query(session)
-            for filter_type, filter_conditions in self.issue_filters.items():
-                if filter_type == Filter.codes:
-                    column = Issue.code
-                elif filter_type == Filter.callables:
-                    column = CallableText.contents
-                elif filter_type == Filter.file_names:
-                    column = FilenameText.contents
-                elif filter_type == Filter.trace_length_to_sources:
-                    column = IssueInstance.min_trace_length_to_sources
-                elif filter_type == Filter.trace_length_to_sinks:
-                    column = IssueInstance.min_trace_length_to_sinks
+        query = self._get_session_query(self._session)
+        for filter_type, filter_conditions in self.issue_filters.items():
+            if filter_type == Filter.codes:
+                column = Issue.code
+            elif filter_type == Filter.callables:
+                column = CallableText.contents
+            elif filter_type == Filter.file_names:
+                column = FilenameText.contents
+            elif filter_type == Filter.trace_length_to_sources:
+                column = IssueInstance.min_trace_length_to_sources
+            elif filter_type == Filter.trace_length_to_sinks:
+                column = IssueInstance.min_trace_length_to_sinks
 
-                for filter_condition in filter_conditions:
-                    if (
-                        filter_type == Filter.trace_length_to_sources
-                        or filter_type == Filter.trace_length_to_sinks
-                    ):
-                        if filter_condition[0]:
-                            query = query.filter(column >= filter_condition[0])
-                        if filter_condition[1]:
-                            query = query.filter(column <= filter_condition[1])
-                    else:
-                        query = query.filter(
-                            or_(*[column.like(item) for item in filter_condition])
-                        )
-            issues = list(
-                query.join(Issue, IssueInstance.issue_id == Issue.id).join(
-                    MessageText, MessageText.id == IssueInstance.message_id
-                )
-            )
-
-            any_feature_set = set()
-            all_feature_set = set()
-            for filter_type, filter_condition in self.breadcrumb_filters.items():
-                if filter_type == Filter.any_features:
-                    any_feature_set |= set(filter_condition)
+            for filter_condition in filter_conditions:
+                if (
+                    filter_type == Filter.trace_length_to_sources
+                    or filter_type == Filter.trace_length_to_sinks
+                ):
+                    if filter_condition[0]:
+                        query = query.filter(column >= filter_condition[0])
+                    if filter_condition[1]:
+                        query = query.filter(column <= filter_condition[1])
                 else:
-                    all_feature_set |= set(filter_condition)
-                features_list = [
-                    self._get_leaves_issue_instance(
-                        session,
-                        int(issue.id),
-                        # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                        #  `(cls: SharedTextKind) -> Any`.
-                        SharedTextKind.FEATURE,
+                    query = query.filter(
+                        or_(*[column.like(item) for item in filter_condition])
                     )
-                    for issue in issues
-                ]
-                for issue, features in zip(issues, features_list):
-                    if any_feature_set and not (features & any_feature_set):
-                        issues.remove(issue)
-                    elif all_feature_set and not (
-                        features & all_feature_set == all_feature_set
-                    ):
-                        issues.remove(issue)
-            return issues
+        issues = list(
+            query.join(Issue, IssueInstance.issue_id == Issue.id).join(
+                MessageText, MessageText.id == IssueInstance.message_id
+            )
+        )
+
+        any_feature_set = set()
+        all_feature_set = set()
+        for filter_type, filter_condition in self.breadcrumb_filters.items():
+            if filter_type == Filter.any_features:
+                any_feature_set |= set(filter_condition)
+            else:
+                all_feature_set |= set(filter_condition)
+            features_list = [
+                self._get_leaves_issue_instance(
+                    self._session, int(issue.id), SharedTextKind.FEATURE
+                )
+                for issue in issues
+            ]
+            for issue, features in zip(issues, features_list):
+                if any_feature_set and not (features & any_feature_set):
+                    issues.remove(issue)
+                elif all_feature_set and not (
+                    features & all_feature_set == all_feature_set
+                ):
+                    issues.remove(issue)
+        return issues
 
     def where_codes_is_any_of(self, codes: List[int]) -> IssueQueryBuilder:
         self.issue_filters[Filter.codes].add(tuple(codes))
@@ -137,43 +141,28 @@ class IssueQueryBuilder:
         return self
 
     def sources(self, issues) -> List[Set[str]]:
-        with self.db.make_session() as session:
-            return [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.SINK,
-                )
-                for issue in issues
-            ]
+        return [
+            self._get_leaves_issue_instance(
+                self._session, int(issue.id), SharedTextKind.SINK
+            )
+            for issue in issues
+        ]
 
     def sinks(self, issues) -> List[Set[str]]:
-        with self.db.make_session() as session:
-            return [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.SOURCE,
-                )
-                for issue in issues
-            ]
+        return [
+            self._get_leaves_issue_instance(
+                self._session, int(issue.id), SharedTextKind.SOURCE
+            )
+            for issue in issues
+        ]
 
     def features(self, issues) -> List[Set[str]]:
-        with self.db.make_session() as session:
-            return [
-                self._get_leaves_issue_instance(
-                    session,
-                    int(issue.id),
-                    # pyre-fixme[6]: Expected `SharedTextKind` for 3rd param but got
-                    #  `(cls: SharedTextKind) -> Any`.
-                    SharedTextKind.FEATURE,
-                )
-                for issue in issues
-            ]
+        return [
+            self._get_leaves_issue_instance(
+                self._session, int(issue.id), SharedTextKind.FEATURE
+            )
+            for issue in issues
+        ]
 
     def _get_session_query(self, session: Session) -> Query:
         return (

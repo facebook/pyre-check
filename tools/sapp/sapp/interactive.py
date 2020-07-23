@@ -503,7 +503,7 @@ details              show additional information about the current trace frame
         """
         pager = self._resolve_pager(use_pager)
 
-        builder = IssueQueryBuilder(self.db, self.current_run_id)
+        builder = IssueQueryBuilder(self.current_run_id)
 
         if codes is not None:
             if not isinstance(codes, int) and not isinstance(codes, list):
@@ -586,11 +586,12 @@ details              show additional information about the current trace frame
                 any_features = [any_features]
             builder = builder.where_any_features(any_features)
 
-        issues = builder.get()
-
-        sources_list = builder.sources(issues)
-        sinks_list = builder.sinks(issues)
-        features_list = builder.features(issues)
+        with self.db.make_session() as session:
+            builder = builder.with_session(session)
+            issues = builder.get()
+            sources_list = builder.sources(issues)
+            sinks_list = builder.sinks(issues)
+            features_list = builder.features(issues)
 
         issue_strings = []
         for issue, sources, sinks, features in zip(
