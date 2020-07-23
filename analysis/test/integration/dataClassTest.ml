@@ -203,8 +203,8 @@ let test_check_attr context =
           pass
     |}
     [
-      "Invalid decoration [56]: Decorator `test.C.x.validator` could not be resolved in a global \
-       scope.";
+      "Invalid decoration [56]: Pyre was not able to infer the type of the decorator \
+       `test.C.x.validator`.";
     ]
 
 

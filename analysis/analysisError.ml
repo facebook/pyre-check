@@ -1001,14 +1001,16 @@ let rec messages ~concise ~signature location kind =
           ] )
   | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolve } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
-      [Format.asprintf "Decorator `%s` could not be resolved in a global scope." name]
+      [Format.asprintf "Pyre was not able to infer the type of the decorator `%s`." name]
   | InvalidDecoration { decorator = { name; _ }; reason = CouldNotResolveArgument argument } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in
       [
         Format.asprintf
-          "Argument `%s` to decorator factory `%s` could not be resolved in a global scope."
+          "Pyre was not able to infer the type of argument `%s` to decorator factory `%s`."
           (show_sanitized_expression argument)
           name;
+        "This can usually be worked around by extracting your argument into a global variable and \
+         providing an explicit type annotation.";
       ]
   | InvalidDecoration { decorator = { name; _ }; reason = NonCallableDecoratorFactory result } ->
       let name = Node.value name |> Reference.sanitized |> Reference.show in

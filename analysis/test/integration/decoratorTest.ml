@@ -373,7 +373,7 @@ let test_decorators context =
         return x
     |}
     [
-      "Invalid decoration [56]: Decorator `my_decorator` could not be resolved in a global scope.";
+      "Invalid decoration [56]: Pyre was not able to infer the type of the decorator `my_decorator`.";
       "Unbound name [10]: Name `my_decorator` is used but not defined in the current scope.";
     ];
   assert_type_errors
@@ -399,8 +399,8 @@ let test_decorators context =
     |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Invalid decoration [56]: Argument `1.__add__(\"foo\")` to decorator factory \
-       `test.my_decorator` could not be resolved in a global scope.";
+      "Invalid decoration [56]: Pyre was not able to infer the type of argument \
+       `1.__add__(\"foo\")` to decorator factory `test.my_decorator`.";
       "Incompatible parameter type [6]: `+` is not supported for operand types `int` and `str`.";
     ];
 
@@ -857,8 +857,8 @@ let test_decorator_factories context =
      reveal_type(foo)
     |}
     [
-      "Invalid decoration [56]: Argument `3.__add__(4)` to decorator factory \
-       `test.decorator_factory` could not be resolved in a global scope.";
+      "Invalid decoration [56]: Pyre was not able to infer the type of argument `3.__add__(4)` to \
+       decorator factory `test.decorator_factory`.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
   assert_type_errors
@@ -1101,7 +1101,7 @@ let test_invalid_decorators context =
 
     |}
     [
-      "Invalid decoration [56]: Decorator `dec` could not be resolved in a global scope.";
+      "Invalid decoration [56]: Pyre was not able to infer the type of the decorator `dec`.";
       "Unbound name [10]: Name `dec` is used but not defined in the current scope.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
