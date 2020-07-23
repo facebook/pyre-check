@@ -209,7 +209,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
           | Some _ ->
               let expanded_import =
                 match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
-                | [] -> statement
+                | [] -> []
                 | exports ->
                     List.map exports ~f:(fun name ->
                         {
@@ -218,9 +218,9 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })
-                    |> fun value -> { statement with Node.value }
+                    |> fun value -> [{ statement with Node.value }]
               in
-              state, [expanded_import]
+              state, expanded_import
           | None -> state, [statement] )
       | _ -> state, [statement]
   end)

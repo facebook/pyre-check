@@ -1784,7 +1784,41 @@ let test_expand_wildcard_imports context =
     |}
     {|
       from a import bar as bar
+    |};
+
+  (* Empty files *)
+  assert_expanded ["a.py", ""] {|
+      from a import *
+    |} "";
+  assert_expanded
+    ["a.py", ""; "b.py", "x = 1"]
+    {|
+      from a import *
+      from b import *
     |}
+    {|
+      from b import x as x
+    |};
+  assert_expanded
+    ["a.py", ""; "b.py", "x = 1"]
+    {|
+      from a import *
+      from b import *
+    |}
+    {|
+      from b import x as x
+    |};
+  assert_expanded
+    ["a.py", ""; "b.py", "from a import *"; "c.py", "x = 1"]
+    {|
+      from a import *
+      from b import *
+      from c import *
+    |}
+    {|
+      from c import x as x
+    |};
+  ()
 
 
 let test_expand_implicit_returns _ =
