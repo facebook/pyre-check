@@ -153,6 +153,7 @@ class Configuration:
 
     def __init__(
         self,
+        project_root: str,
         local_configuration: Optional[str] = None,
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
@@ -169,6 +170,7 @@ class Configuration:
         self.formatter = formatter
         self.ignore_all_errors = []
         self.number_of_workers: int = 0
+        self.project_root: str = project_root
         self.local_configuration: Optional[str] = None
         self.taint_models_path: List[str] = []
         self.file_hash: Optional[str] = None
@@ -214,8 +216,10 @@ class Configuration:
 
         self.other_critical_files: List[str] = []
 
+        project_configuration = os.path.join(project_root, CONFIGURATION_FILE)
+
         # Order matters. The values will only be updated if a field is None.
-        self._read(CONFIGURATION_FILE)
+        self._read(project_configuration)
         self._override_version_hash()
         self._resolve_versioned_paths()
         self._apply_defaults()
@@ -422,6 +426,7 @@ class Configuration:
         local_root: Path = Path(local_root).resolve()
         try:
             parent_local_configuration = Configuration(
+                project_root=self.project_root,
                 local_configuration=parent_local_root,
                 search_path=[search_path.root for search_path in self._search_path],
                 binary=self._binary,
