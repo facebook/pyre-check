@@ -6,11 +6,9 @@
 # pyre-unsafe
 
 import argparse
-import io
 import unittest
-from pathlib import Path
-from typing import List, Optional
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from typing import List
+from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
 from ...analysis_directory import AnalysisDirectory

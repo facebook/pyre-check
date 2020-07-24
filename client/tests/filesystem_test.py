@@ -16,7 +16,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import __name__ as client_name, buck, commands, filesystem
+from .. import buck, commands, filesystem
 from ..analysis_directory import (
     NotWithinLocalConfigurationException,
     SharedAnalysisDirectory,
@@ -430,7 +430,7 @@ class FilesystemTest(unittest.TestCase):
         arguments.logger = None
         configuration = MagicMock()
         configuration.source_directories = []
-        configuration.local_configuration_root = "/root/local"
+        configuration.local_root = "/root/local"
         configuration.use_buck_builder = False
         configuration.ignore_unbuilt_dependencies = False
 

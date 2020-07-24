@@ -567,7 +567,7 @@ class Command(CommandParser, ABC):
     def generate_configuration(self, logger: Optional[str]) -> Configuration:
         return Configuration(
             project_root=self._project_root,
-            local_configuration=self._local_root,
+            local_root=self._local_root,
             search_path=self._search_path,
             binary=self._binary,
             typeshed=self._typeshed,

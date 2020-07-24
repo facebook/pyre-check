@@ -340,8 +340,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
             ]
             configuration = Configuration(
-                project_root="/root",
-                local_configuration="/root/local/.pyre_configuration.local",
+                project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
@@ -361,8 +360,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
             ]
             configuration = Configuration(
-                project_root="/root",
-                local_configuration="/root/local/.pyre_configuration.local",
+                project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
@@ -545,63 +543,50 @@ class ConfigurationTest(unittest.TestCase):
             attribute_mock.return_value = ["."]
             configuration = Configuration("")
             configuration_read.assert_has_calls([call(CONFIGURATION_FILE)])
-            self.assertEqual(configuration.local_configuration, None)
+            self.assertEqual(configuration.local_root, None)
 
             configuration_read.reset_mock()
-            configuration = Configuration(
-                project_root="/", local_configuration="original"
-            )
+            configuration = Configuration(project_root="/", local_root="original")
             configuration_read.assert_has_calls(
                 [
                     call("original/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration,
-                "original/" + LOCAL_CONFIGURATION_FILE,
-            )
+            self.assertEqual(configuration.local_root, "original")
 
             configuration_read.reset_mock()
-            configuration = Configuration(project_root="/", local_configuration="local")
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
                 [
                     call("local/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration, "local/" + LOCAL_CONFIGURATION_FILE
-            )
+            self.assertEqual(configuration.local_root, "local")
 
             configuration_read.reset_mock()
-            configuration = Configuration(project_root="/", local_configuration="local")
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
                 [
                     call("local/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration, "local/" + LOCAL_CONFIGURATION_FILE
-            )
+            self.assertEqual(configuration.local_root, "local")
 
             # Test configuration files.
             os_path_isdir.return_value = False
             os_path_isfile.return_value = True
             configuration_read.reset_mock()
-            configuration = Configuration(
-                project_root="/", local_configuration="local/.pyre_configuration.local"
-            )
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
                 [
                     call("local/.pyre_configuration.local"),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration, "local/.pyre_configuration.local"
-            )
+            self.assertEqual(configuration.local_root, "local")
 
     @patch("builtins.open", mock_open())  # pyre-fixme[56]
     @patch("os.path.isfile")
@@ -663,7 +648,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         try:
-            Configuration(project_root="root", local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
         except BaseException:
             self.fail("Configuration should not raise.")
 
@@ -694,7 +679,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         with self.assertRaises(EnvironmentException):
-            Configuration(project_root="root", local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
 
         # Project and local configurations both specifying sources.
         path_resolve.reset_mock()
@@ -716,7 +701,7 @@ class ConfigurationTest(unittest.TestCase):
             },
         ]
         with self.assertRaises(EnvironmentException):
-            Configuration(project_root="root", local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")
@@ -730,31 +715,27 @@ class ConfigurationTest(unittest.TestCase):
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
         with self.assertRaises(EnvironmentException):
-            Configuration(project_root="/", local_configuration="local")
+            Configuration(project_root="/", local_root="local")
 
         # Test that a non-existing local configuration file was provided.
         os_path_exists.return_value = False
         os_path_isdir.return_value = False
         os_path_isfile.return_value = True
         with self.assertRaises(EnvironmentException):
-            Configuration(
-                project_root="/", local_configuration="local/.some_configuration"
-            )
+            Configuration(project_root="/", local_root="local/.some_configuration")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(
-                project_root="/", local_configuration="local/.some_configuration"
-            )
+            Configuration(project_root="/", local_root="local/.some_configuration")
 
         # Test an existing local directory, without a configuration file.
         os_path_exists.side_effect = lambda path: not path.endswith(".local")
         os_path_isdir.return_value = lambda path: not path.endswith(".local")
         os_path_isfile.return_value = lambda path: path.endswith(".local")
         with self.assertRaises(EnvironmentException):
-            Configuration(project_root="/", local_configuration="localdir")
+            Configuration(project_root="/", local_root="localdir")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(project_root="/", local_configuration="localdir")
+            Configuration(project_root="/", local_root="localdir")
 
     @patch("os.path.isdir")
     @patch.object(Configuration, "_validate")
