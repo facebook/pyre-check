@@ -136,7 +136,7 @@ class Rage(Command):
             file=output_file,
             flush=True,
         )
-        if self.local_configuration is not None:
+        if self.local_root is not None:
             self._call_client(
                 command=self.NAME, capture_output=False, stdout=output_file
             ).check()

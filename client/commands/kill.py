@@ -225,7 +225,7 @@ class Kill(Command):
             ).run()
 
     def _run(self) -> None:
-        explicit_local = self.local_configuration
+        explicit_local = self.local_root
         if explicit_local:
             LOG.warning(
                 "Pyre kill will terminate all running servers. "

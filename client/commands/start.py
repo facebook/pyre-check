@@ -103,7 +103,7 @@ class Start(Reporting):
                 self._analysis_directory,
                 self._project_root,
                 self._original_directory,
-                self.local_configuration,
+                self.local_root,
                 self._configuration.other_critical_files,
             ).daemonize()
 
