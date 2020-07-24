@@ -77,11 +77,6 @@ class GlobalVersionUpdate(Command):
                     configuration_path,
                 )
                 continue
-            if local_configuration.differential:
-                LOG.info(
-                    "Skipping differential configuration at `%s`", configuration_path
-                )
-                continue
             local_configuration.set_version(old_version)
             local_configuration.write()
 
