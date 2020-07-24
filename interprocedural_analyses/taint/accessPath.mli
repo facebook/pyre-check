@@ -14,6 +14,7 @@ module Root : sig
     | PositionalParameter of {
         position: int;
         name: Identifier.t;
+        positional_only: bool;
       }
     | NamedParameter of { name: Identifier.t }
     | StarParameter of { position: int }

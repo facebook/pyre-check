@@ -16,6 +16,7 @@ module Root = struct
     | PositionalParameter of {
         position: int;
         name: Identifier.t;
+        positional_only: bool;
       }
     | NamedParameter of { name: Identifier.t }
     | StarParameter of { position: int }
@@ -36,7 +37,18 @@ module Root = struct
         ({ Node.value = { Parameter.name = prefixed_name; _ }; _ } as original)
       =
       let prefixed_name_string = prefixed_name in
-      if String.is_prefix ~prefix:"**" prefixed_name_string then
+      if String.equal prefixed_name_string "/" then
+        let mark_as_positional_only (parameter, name, original) =
+          let parameter =
+            match parameter with
+            | PositionalParameter { position; name; _ } ->
+                PositionalParameter { position; name; positional_only = true }
+            | _ -> parameter
+          in
+          parameter, name, original
+        in
+        seen_star, excluded, List.map ~f:mark_as_positional_only normalized
+      else if String.is_prefix ~prefix:"**" prefixed_name_string then
         let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"**" in
         ( true,
           excluded,
@@ -57,7 +69,9 @@ module Root = struct
         let normal_name = prefixed_name_string |> chop_parameter_prefix in
         ( false,
           normal_name :: excluded,
-          (PositionalParameter { position; name = normal_name }, prefixed_name, original)
+          ( PositionalParameter { position; name = normal_name; positional_only = false },
+            prefixed_name,
+            original )
           :: normalized )
     in
     List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
@@ -200,7 +214,7 @@ let match_actuals_to_formals arguments roots =
       in
       let get_matched_root = function
         (* Positions are 0 indexed, hence the < instead of <=. *)
-        | PositionalParameter { position; name } when position < matched_positions -> Some name
+        | PositionalParameter { position; name; _ } when position < matched_positions -> Some name
         | _ -> None
       in
       List.filter_map roots ~f:get_matched_root
@@ -232,7 +246,7 @@ let to_json { root; path } =
   let open Root in
   let root_name = function
     | LocalResult -> "result"
-    | PositionalParameter { position = _; name } -> Format.sprintf "formal(%s)" name
+    | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
     | NamedParameter { name } -> Format.sprintf "formal(%s)" name
     | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
     | StarStarParameter _ -> "formal(**kw)"
