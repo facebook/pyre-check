@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 from .. import configuration
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
-from ..find_directories import CONFIGURATION_FILE
+from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
 class MockCompletedProcess(NamedTuple):
@@ -236,9 +236,9 @@ class ConfigurationTest(unittest.TestCase):
         )
 
         def directory_side_effect(path: str) -> str:
-            if path.endswith(".pyre_configuration"):
+            if path.endswith(CONFIGURATION_FILE):
                 return "/root"
-            elif path.endswith(".pyre_configuration.local"):
+            elif path.endswith(LOCAL_CONFIGURATION_FILE):
                 return "/root/local"
             else:
                 return path
@@ -553,39 +553,37 @@ class ConfigurationTest(unittest.TestCase):
             )
             configuration_read.assert_has_calls(
                 [
-                    call("original/" + CONFIGURATION_FILE + ".local"),
+                    call("original/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
                 configuration.local_configuration,
-                "original/" + CONFIGURATION_FILE + ".local",
+                "original/" + LOCAL_CONFIGURATION_FILE,
             )
 
             configuration_read.reset_mock()
             configuration = Configuration(project_root="/", local_configuration="local")
             configuration_read.assert_has_calls(
                 [
-                    call("local/" + CONFIGURATION_FILE + ".local"),
+                    call("local/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
-                configuration.local_configuration,
-                "local/" + CONFIGURATION_FILE + ".local",
+                configuration.local_configuration, "local/" + LOCAL_CONFIGURATION_FILE
             )
 
             configuration_read.reset_mock()
             configuration = Configuration(project_root="/", local_configuration="local")
             configuration_read.assert_has_calls(
                 [
-                    call("local/" + CONFIGURATION_FILE + ".local"),
+                    call("local/" + LOCAL_CONFIGURATION_FILE),
                     call("/" + CONFIGURATION_FILE),
                 ]
             )
             self.assertEqual(
-                configuration.local_configuration,
-                "local/" + CONFIGURATION_FILE + ".local",
+                configuration.local_configuration, "local/" + LOCAL_CONFIGURATION_FILE
             )
 
             # Test configuration files.
