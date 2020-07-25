@@ -35,8 +35,9 @@ third party libraries such as Django, which are not in typeshed.
 
 1. The `operate_on_threes` function is similar to `operate_on_twos`, but it uses
    `exec` rather than `eval`. Add a new line to `sources_sinks.pysa` to teach
-   Pysa that `exec` also executes code. Don't forget it needs to match the stubs
-   described above
+   Pysa that `exec` also executes code. Don't forget it needs to exactly match
+   the [`exec` stub provided by
+   typeshed.](https://github.com/python/typeshed/blob/83e955b52ff0379538441df2cfd0b0e1b4aa5f7e/stdlib/2and3/builtins.pyi#L1249)
 
    You will know you are done this step when you run `pyre analyze`, and see **2
    issues** in the output.
