@@ -111,9 +111,9 @@ provides an example of how to add a new model generator.</p>
 <p>The basic workflow is:</p>
 <ol>
 <li>Create a new file under <code>generate_taint_models</code> of the form <code>get_&lt;pattern of model&gt;</code>.</li>
-<li>Write a class that inherits from ModelGenerator.</li>
+<li>Write a class that inherits from <a href="https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/model_generator.py">ModelGenerator</a>.</li>
 <li>Collect all the callables you're interested in modeling via <code>gather_functions_to_model</code>.</li>
-<li>Convert the callables you've collected into models. The CallableModel class is a convenience that pretty prints things in the right way - you just need to specify what kind of taint the parameters and return value should have, specify the callable to model, and call generate().</li>
+<li>Convert the callables you've collected into models. The <a href="https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/model.py">CallableModel</a> class is a convenience that pretty prints things in the right way - you just need to specify what kind of taint the parameters and return value should have, specify the callable to model, and call generate().</li>
 <li>Register your class in the registry (<a href="https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/get_graphql_sources.py#L73-L75">example</a>).</li>
 <li>Write unit tests (<a href="https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/tests/get_annotated_free_functions_with_decorator_test.py">example</a>).</li>
 <li>Import your new class in the <code>__init__</code> file (<a href="https://github.com/facebook/pyre-check/blob/922410239404aa436691754402b0c3db68c5a46f/tools/generate_taint_models/__init__.py#L7">example</a>).</li>
