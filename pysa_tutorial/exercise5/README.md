@@ -41,9 +41,9 @@ how Django dispatches incoming requests._
 
 1. Run `python3 generate_models.py --output-directory .` from this directory
 
-1. Verify that you have a `.pysa` file generated for you, and that the file
-   correctly declares the `operator` argument to `operate_on_twos` as
-   `TaintSource[UserControlled]`
+1. Verify that you have a `.pysa` file called
+   `generated_django_path_params.pysa`, and that the file correctly declares the
+   `operator` argument to `operate_on_twos` as `TaintSource[UserControlled]`
 
 1. Run `pyre analyze`, and verify you see **1 issue** in the output.
 
@@ -56,18 +56,21 @@ Update `generate_models.py` to correctly generate a `.pysa` file, which will
 tell Pysa that the `operator` argument to `operate_on_threes` is
 user-controlled.
 
-1. Look through the available dynamic model generators in in
-   `pyre-check/tools/generate_taint_models/`, or read a summary of a few in the
-   [public
-   docs](https://pyre-check.org/docs/pysa-model-generators.html#example-model-generators).
-   Identify which one would be useful in this scenario
+1. Read a summary of available model generators in the
+   [docs](https://pyre-check.org/docs/pysa-model-generators.html#example-model-generators),
+   and identify which one would be useful in this scenario.
 
-1. Update `generate_models.py` to also call the generator you identified.
+   _Note that the full set of available dynamic model generators can be found by
+   browsing `pyre-check/tools/generate_taint_models/`_
+
+1. Uncomment the commented out code in `generate_models.py` and fill in the
+   missing pieces to start using the generator you identified.
 
 1. Run `python3 generate_models.py --output-directory .` from this directory
 
-1. Verify that you have a new `.pysa` file generated, in addition to the one
-   from the previous section. Check that this file is correctly declaring the
-   `operator` argument to `operate_on_threes` as `TaintSource[UserControlled]`
+1. Verify that you have a new `.pysa` file called
+   `generated_decorator_extracted_params.pysa`, in addition to the one from the
+   previous section. Check that this file is correctly declaring the `operator`
+   argument to `operate_on_threes` as `TaintSource[UserControlled]`
 
 1. Run `pyre analyze`, and verify you see **2 issues** in the output.
