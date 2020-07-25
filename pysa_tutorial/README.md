@@ -14,7 +14,9 @@ The tutorial contains 4 exercises that cover the following topics: running and o
    pip3 install pyre-check
    ```
 
-1. Go to the first exercise:
+1. If doing this tutorial with an accompanying lecture, wait for the
+   presentation to resume. If going through on your own, go to the first
+   exercise:
 
    ```
    cd exercise1
