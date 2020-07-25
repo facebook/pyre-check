@@ -2,7 +2,7 @@
 
 The purpose of this exercise is to learn how to remove false positive issues using _sanitizers_.
 
-None of the functions in `views.py` are vulnerable, but they will all show up in `pyre analyze` as false positives. The goal of this exercise is to make changes to `sources_sinks.pysa` and `views.py` in order to remove the false positives.
+None of the functions in `views.py` are vulnerable, but they will all show up in `pyre analyze` as false positives. The goal of this exercise is to make changes to `sanitizers.pysa` and `views.py` in order to remove the false positives.
 
 ## What you need to know
 
