@@ -15,6 +15,7 @@ from click import Parameter, Path, argument, option
 from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
+from .application import start_app
 from .context import Context, pass_context
 from .create_database import CreateDatabase
 from .database_saver import DatabaseSaver
@@ -201,4 +202,13 @@ def analyze(
     pipeline.run(input_files, summary_blob)
 
 
-commands = [analyze, explore]
+@click.command(
+    help="backend flask server for exploration of issues",
+    context_settings={"ignore_unknown_options": True},
+)
+@pass_context
+def server(ctx: Context):
+    start_app(ctx.database)
+
+
+commands = [analyze, explore, server]

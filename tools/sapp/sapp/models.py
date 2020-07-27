@@ -9,6 +9,8 @@ from collections import namedtuple
 from itertools import islice
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
+from graphene import relay
+from graphene_sqlalchemy import SQLAlchemyObjectType
 from munch import Munch
 from sqlalchemy import (
     Boolean,
@@ -518,6 +520,15 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
             # for a while and then came back are also marked new.
             i.is_new_issue = i.issue_id.is_new
             yield i
+
+    @classmethod
+    def generateSQLAlchemyObject(cls):
+        class IssueInstanceType(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+                interfaces = (relay.Node,)
+
+        return IssueInstanceType
 
 
 class IssueStatus(enum.Enum):

@@ -2489,6 +2489,9 @@ class base class_metadata_environment dependency =
                 overloads = List.map old_overloads ~f:process_overload;
               }
             |> Result.return
+        | name, callable when String.is_suffix name ~suffix:".validator" ->
+            (* TODO(T70606997): We should be type checking attr validators properly. *)
+            Result.return callable
         | "contextlib.contextmanager", Callable callable ->
             let process_overload ({ Type.Callable.annotation; _ } as overload) =
               let joined =

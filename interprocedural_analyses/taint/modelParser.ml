@@ -1123,13 +1123,14 @@ let create ~resolution ?path ~configuration ~rule_filter source =
         let adjust_position (root, name, parameter) =
           let root =
             match root with
-            | AccessPath.Root.PositionalParameter { position; name } ->
+            | AccessPath.Root.PositionalParameter { position; name; positional_only } ->
                 AccessPath.Root.PositionalParameter
                   {
                     position =
                       Map.find callable_parameter_names_to_positions name
                       |> Option.value ~default:position;
                     name;
+                    positional_only;
                   }
             | _ -> root
           in

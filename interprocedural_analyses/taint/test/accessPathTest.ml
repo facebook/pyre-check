@@ -63,9 +63,9 @@ let test_of_expression context =
 let test_match_actuals_to_formals _ =
   let open Ast.Statement in
   let open Ast.Expression in
-  let positional ?(actual_path = []) (position, name) =
+  let positional ?(actual_path = []) ?(positional_only = false) (position, name) =
     {
-      AccessPath.root = AccessPath.Root.PositionalParameter { position; name };
+      AccessPath.root = AccessPath.Root.PositionalParameter { position; name; positional_only };
       actual_path;
       formal_path = [];
     }
@@ -195,6 +195,10 @@ let test_match_actuals_to_formals _ =
     ~call:"foo(**{'x': 1})"
     ~expected:
       [{|**{ "x":1 }|}, [positional ~actual_path:[Abstract.TreeDomain.Label.Field "x"] (0, "x")]];
+  assert_match
+    ~signature:"def foo(x, /): ..."
+    ~call:"foo(1)"
+    ~expected:["1", [positional ~positional_only:true (0, "x")]];
   ()
 
 

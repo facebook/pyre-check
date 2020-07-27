@@ -563,7 +563,7 @@ class Infer(Reporting):
             if self._in_place is not None:
                 LOG.info("Annotating files")
                 annotate_paths(
-                    self._configuration.local_configuration_root,
+                    self._configuration.local_root,
                     self._formatter,
                     stubs,
                     type_directory,

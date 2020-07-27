@@ -1,13 +1,16 @@
 # (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
 
-import argparse
+import logging
 import os
+from typing import Optional
 
+import sqlalchemy
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_graphql import GraphQLView
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
-from .models import session
+from .models import Base
 from .schema import schema
 
 
@@ -19,10 +22,13 @@ application = Flask(
 CORS(application)
 application.debug = True
 
+session: Optional[Session] = None
+
 
 @application.teardown_appcontext
 def shutdown_session(exception=None):
-    session.remove()
+    if session is not None:
+        session.remove()
 
 
 @application.route("/", defaults={"path": ""})
@@ -31,20 +37,21 @@ def serve(path):
     if path != "" and os.path.exists(application.static_folder + "/" + path):
         return send_from_directory(application.static_folder, path)
     else:
-        print(application.static_folder)
+        logging.error(application.static_folder)
         return send_from_directory(application.static_folder, "index.html")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--interactive-graphql", action="store_true")
-    arguments = parser.parse_args()
-
+def start_app(database):
     application.add_url_rule(
         "/graphql",
-        view_func=GraphQLView.as_view(
-            "graphql", schema=schema, graphiql=arguments.interactive_graphql
-        ),
+        view_func=GraphQLView.as_view("graphql", schema=schema, graphiql=True),
     )
+    engine = sqlalchemy.create_engine(
+        sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
+        echo=False,
+        poolclass=None,
+    )
+    session = scoped_session(sessionmaker(bind=engine))
+    Base.query = session.query_property()
 
     application.run()

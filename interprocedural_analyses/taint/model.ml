@@ -149,7 +149,9 @@ let get_global_model ~resolution ~expression =
   | None -> None
 
 
-let global_root = AccessPath.Root.PositionalParameter { position = 0; name = "$global" }
+let global_root =
+  AccessPath.Root.PositionalParameter { position = 0; name = "$global"; positional_only = false }
+
 
 let get_global_sink_model ~resolution ~location ~expression =
   let to_sink
@@ -214,7 +216,8 @@ let infer_class_models ~environment =
                 ]))
     in
     BackwardState.assign
-      ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })
+      ~root:
+        (AccessPath.Root.PositionalParameter { position; name = attribute; positional_only = false })
       ~path:[]
       leaf
       existing_state

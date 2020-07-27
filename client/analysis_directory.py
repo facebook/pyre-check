@@ -79,7 +79,7 @@ def _resolve_filter_paths(
                 [buck.presumed_target_root(target) for target in targets]
             )
     else:
-        local_configuration_root = configuration.local_configuration_root
+        local_configuration_root = configuration.local_root
         if local_configuration_root:
             filter_paths = {local_configuration_root}
     return translate_paths(filter_paths, original_directory)
@@ -702,7 +702,7 @@ def resolve_analysis_directory(
             command,
         )
 
-    local_configuration_root = configuration.local_configuration_root
+    local_configuration_root = configuration.local_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
             local_configuration_root, project_root

@@ -395,9 +395,7 @@ class StartTest(unittest.TestCase):
 
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
         configuration = mock_configuration()
-        configuration.local_configuration_root = os.path.join(
-            os.getcwd(), "first/second"
-        )
+        configuration.local_root = os.path.join(os.getcwd(), "first/second")
         configuration.version_hash = "hash"
         command = Start(
             arguments,

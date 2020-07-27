@@ -202,10 +202,7 @@ let test_check_attr context =
         def check(self, attribute: attr.Attribute[int], value: typing.Optional[int]) -> None:
           pass
     |}
-    [
-      "Invalid decoration [56]: Pyre was not able to infer the type of the decorator \
-       `test.C.x.validator`.";
-    ]
+    []
 
 
 let () =

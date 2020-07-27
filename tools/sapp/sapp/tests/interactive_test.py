@@ -444,6 +444,49 @@ class InteractiveTest(TestCase):
             output = self.stdout.getvalue().strip()
             self.assertNotIn("Issue 1", output)
 
+    def testListIssuesFilterExcludeFeature(self):
+        self._list_issues_filter_setup()
+
+        self.fakes.instance()
+        feature1 = self.fakes.feature("via:feature1")
+        feature2 = self.fakes.feature("via:feature2")
+        self.fakes.feature("via:feature3")
+
+        self.fakes.save_all(self.db)
+
+        assocs = [
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=feature1.id, issue_instance_id=1
+            ),
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=feature2.id, issue_instance_id=1
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, assocs)
+            session.commit()
+            self.interactive.setup()
+
+            self.interactive.issues(exclude_features="via:feature1")
+            output = self.stdout.getvalue().strip()
+            self.assertNotIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(exclude_features=["via:feature1", "via:feature2"])
+            output = self.stdout.getvalue().strip()
+            self.assertNotIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(exclude_features=["via:feature1", "via:feature3"])
+            output = self.stdout.getvalue().strip()
+            self.assertNotIn("Issue 1", output)
+
+            self._clear_stdout()
+            self.interactive.issues(exclude_features=["via:feature3"])
+            output = self.stdout.getvalue().strip()
+            self.assertIn("Issue 1", output)
+
     def testListIssuesFilterAllFeatureAndAnyFeature(self):
         self._list_issues_filter_setup()
 

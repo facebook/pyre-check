@@ -281,20 +281,18 @@ class CommandParser(ABC):
         self._original_directory: str = original_directory
         self._project_root: str = find_project_root(self._original_directory)
 
-        local_configuration = self._command_arguments.local_configuration
-        if local_configuration and local_configuration.endswith(
-            LOCAL_CONFIGURATION_FILE
-        ):
-            local_configuration = local_configuration[: -len(LOCAL_CONFIGURATION_FILE)]
-        self._local_configuration: Final[Optional[str]] = find_local_root(
-            self._original_directory, local_configuration
+        local_root = self._command_arguments.local_configuration
+        if local_root and local_root.endswith(LOCAL_CONFIGURATION_FILE):
+            local_root = local_root[: -len(LOCAL_CONFIGURATION_FILE)]
+        self._local_root: Final[Optional[str]] = find_local_root(
+            self._original_directory, local_root
         )
         self._dot_pyre_directory: Path = (
             self._command_arguments.dot_pyre_directory
             or Path(self._project_root, LOG_DIRECTORY)
         )
         self._log_directory: str = find_log_directory(
-            self._project_root, self._local_configuration, str(self._dot_pyre_directory)
+            self._project_root, self._local_root, str(self._dot_pyre_directory)
         )
         Path(self._log_directory).mkdir(parents=True, exist_ok=True)
 
@@ -507,8 +505,8 @@ class CommandParser(ABC):
         return self._project_root
 
     @property
-    def local_configuration(self) -> Optional[str]:
-        return self._local_configuration
+    def local_root(self) -> Optional[str]:
+        return self._local_root
 
     @property
     def log_directory(self) -> str:
@@ -520,15 +518,13 @@ class CommandParser(ABC):
 
     @property
     def relative_local_root(self) -> Optional[str]:
-        if not self.local_configuration:
+        if not self.local_root:
             return None
         return str(Path(self.log_directory).relative_to(self._dot_pyre_directory))
 
 
 class Command(CommandParser, ABC):
     _buffer: List[str] = []
-
-    _local_root: str = ""
 
     def __init__(
         self,
@@ -538,16 +534,6 @@ class Command(CommandParser, ABC):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(command_arguments, original_directory)
-        local_configuration = self._local_configuration
-        if local_configuration:
-            self._local_root = (
-                local_configuration
-                if os.path.isdir(local_configuration)
-                else os.path.dirname(local_configuration)
-            )
-        else:
-            self._local_root = self._original_directory
-
         logger = self._command_arguments.logger
         if logger:
             logger = translate_path(self._original_directory, logger)
@@ -580,7 +566,8 @@ class Command(CommandParser, ABC):
 
     def generate_configuration(self, logger: Optional[str]) -> Configuration:
         return Configuration(
-            local_configuration=self._local_configuration,
+            project_root=self._project_root,
+            local_root=self._local_root,
             search_path=self._search_path,
             binary=self._binary,
             typeshed=self._typeshed,

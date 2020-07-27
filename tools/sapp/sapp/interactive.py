@@ -466,6 +466,7 @@ details              show additional information about the current trace frame
         filenames: Optional[Union[str, List[str]]] = None,
         all_features: Optional[Union[str, List[str]]] = None,
         any_features: Optional[Union[str, List[str]]] = None,
+        exclude_features: Optional[Union[str, List[str]]] = None,
         exact_trace_length_to_sources: Optional[int] = None,
         exact_trace_length_to_sinks: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
@@ -480,6 +481,8 @@ details              show additional information about the current trace frame
             filenames: str or list[str]    filenames to filter on (supports wildcards)
             all_features: str or list[str] features to filter on
             any_features: str or list[str] features to inclusively filter on
+            exclude_features: str or list[str]
+                features to exclude issues based upon
             exact_trace_length_to_sources: int
                 exact values for min trace length to sources to filter on
             exact_trace_length_to_sinks: int
@@ -503,7 +506,7 @@ details              show additional information about the current trace frame
         """
         pager = self._resolve_pager(use_pager)
 
-        builder = IssueQueryBuilder(self.db, self.current_run_id)
+        builder = IssueQueryBuilder(self.current_run_id)
 
         if codes is not None:
             if not isinstance(codes, int) and not isinstance(codes, list):
@@ -586,11 +589,21 @@ details              show additional information about the current trace frame
                 any_features = [any_features]
             builder = builder.where_any_features(any_features)
 
-        issues = builder.get()
+        if exclude_features is not None:
+            if not isinstance(exclude_features, str) and not isinstance(
+                exclude_features, list
+            ):
+                raise UserError("'any_features' should be str or list of str.")
+            if isinstance(exclude_features, str):
+                exclude_features = [exclude_features]
+            builder = builder.where_exclude_features(exclude_features)
 
-        sources_list = builder.sources(issues)
-        sinks_list = builder.sinks(issues)
-        features_list = builder.features(issues)
+        with self.db.make_session() as session:
+            builder = builder.with_session(session)
+            issues = builder.get()
+            sources_list = builder.sources(issues)
+            sinks_list = builder.sinks(issues)
+            features_list = builder.features(issues)
 
         issue_strings = []
         for issue, sources, sinks, features in zip(

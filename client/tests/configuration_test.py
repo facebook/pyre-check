@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, PropertyMock, call, mock_open, patch
 from .. import configuration
 from ..configuration import Configuration, InvalidConfiguration, SearchPathElement
 from ..exceptions import EnvironmentException
-from ..find_directories import CONFIGURATION_FILE
+from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 
 class MockCompletedProcess(NamedTuple):
@@ -74,7 +74,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
@@ -88,7 +88,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         with self.assertRaises(EnvironmentException):
-            configuration = Configuration("local/path")
+            configuration = Configuration("", "local/path")
             self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"source_directories": ["a"]}, {"version": "abc"}, {}]
@@ -98,7 +98,7 @@ class ConfigurationTest(unittest.TestCase):
 
         # Configuration fields
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
@@ -107,14 +107,14 @@ class ConfigurationTest(unittest.TestCase):
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.file_hash, None)
 
         with patch.object(os.path, "isdir", return_value=False):
             json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
             with self.assertRaises(InvalidConfiguration):
-                configuration = Configuration()
+                configuration = Configuration("")
 
         with patch.object(
             site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
@@ -125,7 +125,7 @@ class ConfigurationTest(unittest.TestCase):
                 side_effect=lambda path: path.startswith("/mock/site0"),
             ):
                 json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
-                configuration = Configuration()
+                configuration = Configuration("")
                 self.assertIn("/mock/site0$abc", configuration.search_path)
             with patch.object(
                 os.path,
@@ -133,7 +133,7 @@ class ConfigurationTest(unittest.TestCase):
                 side_effect=lambda path: path.startswith("/mock/site1"),
             ):
                 json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
-                configuration = Configuration()
+                configuration = Configuration("")
                 self.assertIn("/mock/site1$abc", configuration.search_path)
 
         json_load.side_effect = [
@@ -145,7 +145,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
@@ -163,7 +163,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
@@ -183,7 +183,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(
             configuration.search_path, ["additional/", "root/$subdirectory"]
@@ -202,7 +202,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         with self.assertRaises(InvalidConfiguration):
-            Configuration()
+            Configuration("")
 
         json_load.side_effect = [
             {
@@ -213,7 +213,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, [".pyre/taint_models"])
@@ -227,7 +227,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(
@@ -236,9 +236,9 @@ class ConfigurationTest(unittest.TestCase):
         )
 
         def directory_side_effect(path: str) -> str:
-            if path.endswith(".pyre_configuration"):
+            if path.endswith(CONFIGURATION_FILE):
                 return "/root"
-            elif path.endswith(".pyre_configuration.local"):
+            elif path.endswith(LOCAL_CONFIGURATION_FILE):
                 return "/root/local"
             else:
                 return path
@@ -248,7 +248,7 @@ class ConfigurationTest(unittest.TestCase):
                 {"binary": "some/dir/pyre.bin", "typeshed": "some/typeshed"},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.binary, "/root/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/typeshed")
             self.assertIsNone(configuration.buck_builder_binary)
@@ -257,7 +257,7 @@ class ConfigurationTest(unittest.TestCase):
                 {"binary": "~/some/dir/pyre.bin", "typeshed": "~/some/typeshed"},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.binary, "/home/user/some/dir/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/typeshed")
 
@@ -269,7 +269,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.binary, "/root/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/root/some/VERSION/typeshed")
 
@@ -281,7 +281,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.binary, "/home/user/some/VERSION/pyre.bin")
             self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
 
@@ -289,7 +289,7 @@ class ConfigurationTest(unittest.TestCase):
                 {"buck_builder_binary": "/some/dir/buck_builder"},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(
                 configuration.buck_builder_binary, "/some/dir/buck_builder"
             )
@@ -298,7 +298,7 @@ class ConfigurationTest(unittest.TestCase):
                 {"buck_builder_binary": "some/dir/buck_builder"},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(
                 configuration.buck_builder_binary, "/root/some/dir/buck_builder"
             )
@@ -307,7 +307,7 @@ class ConfigurationTest(unittest.TestCase):
                 {"ignore_all_errors": ["abc/def", "/abc/def", "~/abc/def"]},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(
                 configuration.ignore_all_errors,
                 ["/root/abc/def", "/abc/def", "/home/user/abc/def"],
@@ -322,7 +322,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
@@ -340,7 +340,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
             ]
             configuration = Configuration(
-                local_configuration="/root/local/.pyre_configuration.local"
+                project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
@@ -360,7 +360,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
             ]
             configuration = Configuration(
-                local_configuration="/root/local/.pyre_configuration.local"
+                project_root="/root", local_root="/root/local"
             )
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
@@ -378,7 +378,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
@@ -395,7 +395,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(
             configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
         )
@@ -405,26 +405,26 @@ class ConfigurationTest(unittest.TestCase):
 
         # Test manual loading of the binary
         json_load.side_effect = [{}, {}]
-        configuration = Configuration(binary="some/file/path/")
+        configuration = Configuration(project_root="", binary="some/file/path/")
         self.assertEqual(configuration.binary, "some/file/path/")
 
         # Test manual loading of typeshed directory.
         json_load.side_effect = [{}, {}]
-        configuration = Configuration(typeshed="some/directory/path/")
+        configuration = Configuration(project_root="", typeshed="some/directory/path/")
         self.assertEqual(configuration.typeshed, "some/directory/path/")
 
         json_load.side_effect = [{"binary": "/binary"}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.binary, "/binary")
 
         json_load.side_effect = [{"version": "VERSION", "binary": "/%V/binary"}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.binary, "/VERSION/binary")
 
         # Test version override
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [{}, {}]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.version_hash, "VERSION_HASH")
 
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
@@ -432,18 +432,18 @@ class ConfigurationTest(unittest.TestCase):
                 {"version": "NOT_THIS_VERSION", "typeshed": "/TYPE/%V/SHED/"},
                 {},
             ]
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration.typeshed, "/TYPE/VERSION_HASH/SHED/")
 
         # Test buck builder fields
         json_load.side_effect = [{"use_buck_builder": True}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertTrue(configuration.use_buck_builder)
         json_load.side_effect = [{"use_buck_builder": False}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertFalse(configuration.use_buck_builder)
         json_load.side_effect = [{}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertFalse(configuration.use_buck_builder)
 
         # Test multiple definitions of the ignore_all_errors files.
@@ -451,45 +451,47 @@ class ConfigurationTest(unittest.TestCase):
             {"ignore_all_errors": ["buck-out/dev/gen"]},
             {"ignore_all_errors": ["buck-out/dev/gen2"]},
         ]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.typeshed, "/TYPESHED/")
 
         # Test excludes
         json_load.side_effect = [{"exclude": "regexp"}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.excludes, ["regexp"])
 
         json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.excludes, ["regexp1", "regexp2"])
 
         json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
-        configuration = Configuration(excludes=["regexp3", "regexp4"])
+        configuration = Configuration(
+            project_root="/root", excludes=["regexp3", "regexp4"]
+        )
         self.assertEqual(
             configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
         )
 
         # Test extensions
         json_load.side_effect = [{"extensions": [".a", ".b"]}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.extensions, [".a", ".b"])
 
         json_load.side_effect = [{}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.autocomplete, False)
         json_load.side_effect = [{"autocomplete": True}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.autocomplete, True)
 
         json_load.side_effect = [{}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.other_critical_files, [])
         json_load.side_effect = [{"critical_files": ["critical", "files"]}, {}]
-        configuration = Configuration()
+        configuration = Configuration("")
         self.assertEqual(configuration.other_critical_files, ["critical", "files"])
 
     @patch("os.path.isfile")
@@ -539,62 +541,52 @@ class ConfigurationTest(unittest.TestCase):
             Configuration, "source_directories", new_callable=PropertyMock, create=True
         ) as attribute_mock:
             attribute_mock.return_value = ["."]
-            configuration = Configuration()
+            configuration = Configuration("")
             configuration_read.assert_has_calls([call(CONFIGURATION_FILE)])
-            self.assertEqual(configuration.local_configuration, None)
+            self.assertEqual(configuration.local_root, None)
 
             configuration_read.reset_mock()
-            configuration = Configuration(local_configuration="original")
+            configuration = Configuration(project_root="/", local_root="original")
             configuration_read.assert_has_calls(
                 [
-                    call("original/" + CONFIGURATION_FILE + ".local"),
-                    call(CONFIGURATION_FILE),
+                    call("original/" + LOCAL_CONFIGURATION_FILE),
+                    call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration,
-                "original/" + CONFIGURATION_FILE + ".local",
-            )
+            self.assertEqual(configuration.local_root, "original")
 
             configuration_read.reset_mock()
-            configuration = Configuration(local_configuration="local")
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
                 [
-                    call("local/" + CONFIGURATION_FILE + ".local"),
-                    call(CONFIGURATION_FILE),
+                    call("local/" + LOCAL_CONFIGURATION_FILE),
+                    call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration,
-                "local/" + CONFIGURATION_FILE + ".local",
-            )
+            self.assertEqual(configuration.local_root, "local")
 
             configuration_read.reset_mock()
-            configuration = Configuration(local_configuration="local")
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
                 [
-                    call("local/" + CONFIGURATION_FILE + ".local"),
-                    call(CONFIGURATION_FILE),
+                    call("local/" + LOCAL_CONFIGURATION_FILE),
+                    call("/" + CONFIGURATION_FILE),
                 ]
             )
-            self.assertEqual(
-                configuration.local_configuration,
-                "local/" + CONFIGURATION_FILE + ".local",
-            )
+            self.assertEqual(configuration.local_root, "local")
 
             # Test configuration files.
             os_path_isdir.return_value = False
             os_path_isfile.return_value = True
             configuration_read.reset_mock()
-            configuration = Configuration(
-                local_configuration="local/.pyre_configuration.local"
-            )
+            configuration = Configuration(project_root="/", local_root="local")
             configuration_read.assert_has_calls(
-                [call("local/.pyre_configuration.local"), call(CONFIGURATION_FILE)]
+                [
+                    call("local/.pyre_configuration.local"),
+                    call("/" + CONFIGURATION_FILE),
+                ]
             )
-            self.assertEqual(
-                configuration.local_configuration, "local/.pyre_configuration.local"
-            )
+            self.assertEqual(configuration.local_root, "local")
 
     @patch("builtins.open", mock_open())  # pyre-fixme[56]
     @patch("os.path.isfile")
@@ -656,7 +648,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         try:
-            Configuration(local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
         except BaseException:
             self.fail("Configuration should not raise.")
 
@@ -687,7 +679,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
 
         # Project and local configurations both specifying sources.
         path_resolve.reset_mock()
@@ -709,7 +701,7 @@ class ConfigurationTest(unittest.TestCase):
             },
         ]
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="root/local")
+            Configuration(project_root="root", local_root="root/local")
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")
@@ -723,27 +715,27 @@ class ConfigurationTest(unittest.TestCase):
         os_path_isdir.return_value = True
         os_path_isfile.return_value = False
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="local")
+            Configuration(project_root="/", local_root="local")
 
         # Test that a non-existing local configuration file was provided.
         os_path_exists.return_value = False
         os_path_isdir.return_value = False
         os_path_isfile.return_value = True
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="local/.some_configuration")
+            Configuration(project_root="/", local_root="local/.some_configuration")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="local/.some_configuration")
+            Configuration(project_root="/", local_root="local/.some_configuration")
 
         # Test an existing local directory, without a configuration file.
         os_path_exists.side_effect = lambda path: not path.endswith(".local")
         os_path_isdir.return_value = lambda path: not path.endswith(".local")
         os_path_isfile.return_value = lambda path: path.endswith(".local")
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="localdir")
+            Configuration(project_root="/", local_root="localdir")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(local_configuration="localdir")
+            Configuration(project_root="/", local_root="localdir")
 
     @patch("os.path.isdir")
     @patch.object(Configuration, "_validate")
@@ -773,7 +765,7 @@ class ConfigurationTest(unittest.TestCase):
                 directory = parent_directory
             calls = bundled_typeshed_calls + environment_typeshed_calls
 
-            configuration = Configuration()
+            configuration = Configuration("")
             os_path_isdir.assert_has_calls(calls)
             self.assertEqual(configuration.source_directories, [])
             self.assertEqual(configuration.targets, [])
@@ -822,7 +814,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
                 {},
             ]
-            Configuration()
+            Configuration("")
         except BaseException:
             self.fail("Configuration should not raise.")
 
@@ -839,7 +831,7 @@ class ConfigurationTest(unittest.TestCase):
                 },
                 {},
             ]
-            Configuration()
+            Configuration("")
 
     @patch.object(Configuration, "_read")
     @patch.object(Configuration, "_override_version_hash")
@@ -861,17 +853,17 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]), patch(
             "shutil.which", side_effect=accept_tmp
         ):
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration._binary, "/tmp/pyre/bin/pyre.bin")
         with patch.object(sys, "argv", ["/tmp/unknown/bin/pyre"]), patch(
             "shutil.which", side_effect=accept_tmp
         ):
-            configuration = Configuration()
+            configuration = Configuration("")
             self.assertEqual(configuration._binary, None)
 
     @patch.object(Configuration, "_validate")
     def test_get_binary_version(self, _validate) -> None:
-        configuration = Configuration()
+        configuration = Configuration("")
         configuration._binary = "<binary>"
 
         def assert_version(
