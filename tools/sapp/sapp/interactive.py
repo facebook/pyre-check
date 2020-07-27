@@ -466,6 +466,7 @@ details              show additional information about the current trace frame
         filenames: Optional[Union[str, List[str]]] = None,
         all_features: Optional[Union[str, List[str]]] = None,
         any_features: Optional[Union[str, List[str]]] = None,
+        exclude_features: Optional[Union[str, List[str]]] = None,
         exact_trace_length_to_sources: Optional[int] = None,
         exact_trace_length_to_sinks: Optional[int] = None,
         max_trace_length_to_sources: Optional[int] = None,
@@ -480,6 +481,8 @@ details              show additional information about the current trace frame
             filenames: str or list[str]    filenames to filter on (supports wildcards)
             all_features: str or list[str] features to filter on
             any_features: str or list[str] features to inclusively filter on
+            exclude_features: str or list[str]
+                features to exclude issues based upon
             exact_trace_length_to_sources: int
                 exact values for min trace length to sources to filter on
             exact_trace_length_to_sinks: int
@@ -585,6 +588,15 @@ details              show additional information about the current trace frame
             if isinstance(any_features, str):
                 any_features = [any_features]
             builder = builder.where_any_features(any_features)
+
+        if exclude_features is not None:
+            if not isinstance(exclude_features, str) and not isinstance(
+                exclude_features, list
+            ):
+                raise UserError("'any_features' should be str or list of str.")
+            if isinstance(exclude_features, str):
+                exclude_features = [exclude_features]
+            builder = builder.where_exclude_features(exclude_features)
 
         with self.db.make_session() as session:
             builder = builder.with_session(session)

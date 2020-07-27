@@ -32,6 +32,7 @@ class Filter(Enum):
     trace_length_to_sinks = "trace_length_to_sinks"
     any_features = "any_features"
     all_features = "all_features"
+    exclude_features = "exclude_features"
 
 
 class IssueQueryBuilder:
@@ -88,11 +89,17 @@ class IssueQueryBuilder:
 
         any_feature_set = set()
         all_feature_set = set()
+        exclude_feature_set = set()
         for filter_type, filter_condition in self.breadcrumb_filters.items():
             if filter_type == Filter.any_features:
                 any_feature_set |= set(filter_condition)
-            else:
+            elif filter_type == Filter.all_features:
                 all_feature_set |= set(filter_condition)
+            elif filter_type == Filter.exclude_features:
+                exclude_feature_set |= set(filter_condition)
+            else:
+                raise Exception(f"Invalid filter type provided: {filter_type}")
+
             features_list = [
                 self._get_leaves_issue_instance(
                     self._session, int(issue.id), SharedTextKind.FEATURE
@@ -105,6 +112,8 @@ class IssueQueryBuilder:
                 elif all_feature_set and not (
                     features & all_feature_set == all_feature_set
                 ):
+                    issues.remove(issue)
+                elif exclude_feature_set and features & exclude_feature_set:
                     issues.remove(issue)
         return issues
 
@@ -138,6 +147,10 @@ class IssueQueryBuilder:
 
     def where_all_features(self, features: List[str]) -> IssueQueryBuilder:
         self.breadcrumb_filters[Filter.all_features] += features
+        return self
+
+    def where_exclude_features(self, features: List[str]) -> IssueQueryBuilder:
+        self.breadcrumb_filters[Filter.exclude_features] += features
         return self
 
     def sources(self, issues) -> List[Set[str]]:
