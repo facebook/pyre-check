@@ -28,7 +28,3 @@ def do_or(request: HttpRequest) -> HttpResponse:
     result = eval(f"{left} or {right}")  # noqa: P204
 
     return result
-
-
-def do_boolean_operations(request: HttpRequest) -> HttpResponse:
-    ...

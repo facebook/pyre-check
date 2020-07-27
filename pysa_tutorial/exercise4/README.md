@@ -31,7 +31,7 @@ these tutorials, SAPP is the prefered way to browse issues.
 ## Instructions
 
 1. The numeric operations from the previous tutorial have been replaced with a
-   set of boolean operations in this tutorial. These operations have been
+   set of `and` and `or` operations in this tutorial. These operations have been
    crafted carefully to ensure that they are not exploitable for RCE, however,
    they still trigger Pysa issues. Your goal is to use _features_ to filter
    these issues out while browsing results in SAPP.
