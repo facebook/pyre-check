@@ -53,7 +53,6 @@ class Runner(NamedTuple):
     logger: logging.Logger
     opam_root: Path
 
-    opam_repository_override: Optional[str] = None
     development: bool = False
     release: bool = False
 
@@ -75,10 +74,6 @@ class Runner(NamedTuple):
             return "release"
         else:
             return "dev"
-
-    @property
-    def opam_repository(self) -> str:
-        return self.opam_repository_override or "https://opam.ocaml.org"
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -111,23 +106,6 @@ class Runner(NamedTuple):
                 self.logger.error("If you want to bypass this safety check, run:")
                 self.logger.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
                 raise OCamlbuildAlreadyInstalled
-
-    def extract_opam_repository(self) -> str:
-        if self.opam_repository.endswith("tar.gz"):
-            temporary_repository = mkdtemp()
-            self.run(
-                [
-                    "tar",
-                    "xf",
-                    self.opam_repository,
-                    "-C",
-                    temporary_repository,
-                    "--strip-components=1",
-                ]
-            )
-            return temporary_repository
-        else:
-            return self.opam_repository
 
     def validate_opam_version(self) -> None:
         version = self.run(["opam", "--version"])
@@ -164,7 +142,6 @@ class Runner(NamedTuple):
     def initialize_opam_switch(self) -> Mapping[str, str]:
         self.check_if_preinstalled()
 
-        opam_repository = self.extract_opam_repository()
         self.validate_opam_version()
         self.run(
             [
@@ -178,7 +155,7 @@ class Runner(NamedTuple):
                 "--root",
                 self.opam_root.as_posix(),
                 "default",
-                opam_repository,
+                "https://opam.ocaml.org",
             ]
         )
         opam_environment_variables = self.opam_environment_variables()
@@ -276,7 +253,6 @@ def main(runner_type: Type[Runner]) -> None:
     parser.add_argument("--local", action="store_true")
     parser.add_argument("--temporary_root", action="store_true")
     parser.add_argument("--opam-root", type=Path)
-    parser.add_argument("--repository", type=str)
     parser.add_argument("--configure", action="store_true")
     parser.add_argument("--environment-only", action="store_true")
     parser.add_argument("--development", action="store_true")
@@ -296,7 +272,6 @@ def main(runner_type: Type[Runner]) -> None:
     runner = runner_type(
         logger=logger,
         opam_root=opam_root,
-        opam_repository_override=parsed.repository,
         development=parsed.development,
         release=parsed.release,
     )
