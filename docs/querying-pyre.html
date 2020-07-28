@@ -64,21 +64,21 @@ information without having to run a full type check.</p>
 <p>This command gives you the list of attributes for a class.</p>
 <pre><code class="hljs"><span class="hljs-comment"># a.py</span>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
-    <span class="hljs-symbol">a:</span> int = <span class="hljs-number">2</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">foo</span><span class="hljs-params">(<span class="hljs-keyword">self</span>)</span></span> -&gt; <span class="hljs-symbol">str:</span>
+    a: int = <span class="hljs-number">2</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">foo</span><span class="hljs-params">(self)</span> -&gt; str:</span>
         <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>
 </code></pre>
-<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"attributes(a.C)"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"attributes(a.C)"</span>
 {
-    <span class="hljs-comment">"response"</span>: {
-        <span class="hljs-comment">"attributes"</span>: [
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"attributes"</span>: [
             {
-                <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"int"</span>,
-                <span class="hljs-comment">"name"</span>: <span class="hljs-comment">"a"</span>
+                <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"int"</span>,
+                <span class="hljs-string">"name"</span>: <span class="hljs-string">"a"</span>
             },
             {
-                <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"typing.Callable(a.C.foo)[[], str]"</span>,
-                <span class="hljs-comment">"name"</span>: <span class="hljs-comment">"foo"</span>
+                <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"typing.Callable(a.C.foo)[[], str]"</span>,
+                <span class="hljs-string">"name"</span>: <span class="hljs-string">"foo"</span>
             }
         ]
     }
@@ -90,7 +90,7 @@ information without having to run a full type check.</p>
 <p>The command <code>dump_class_hierarchy()</code> returns the entire class hierarchy as Pyre understands it; elides type variables.</p>
 <h2><a class="anchor" aria-hidden="true" id="join"></a><a href="#join" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Join</h2>
 <p>This command uses Pyre's type engine to find a common superclass for two types.</p>
-<pre><code class="hljs"><span class="hljs-variable">$ </span>pyre query <span class="hljs-string">"join(typing.Iterable[int], typing.Iterable[str])"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"join(typing.Iterable[int], typing.Iterable[str])"</span>
 {
     <span class="hljs-string">"response"</span>: {
         <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.Iterable[typing.Union[int, str]]"</span>
@@ -106,15 +106,15 @@ information without having to run a full type check.</p>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">D</span><span class="hljs-params">(C)</span>:</span>
   <span class="hljs-keyword">pass</span>
 </code></pre>
-<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"less_or_equal(a.D, a.C)"</span>
-{<span class="hljs-comment">"response"</span>:{<span class="hljs-comment">"boolean"</span>:<span class="hljs-keyword">true</span>}}
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"less_or_equal(a.D, a.C)"</span>
+{<span class="hljs-string">"response"</span><span class="hljs-symbol">:</span>{<span class="hljs-string">"boolean"</span><span class="hljs-symbol">:true</span>}}
 
-<span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"less_or_equal(a.C, a.D)"</span>
-{<span class="hljs-comment">"response"</span>:{<span class="hljs-comment">"boolean"</span>:<span class="hljs-keyword">true</span>}}
+$ pyre query <span class="hljs-string">"less_or_equal(a.C, a.D)"</span>
+{<span class="hljs-string">"response"</span><span class="hljs-symbol">:</span>{<span class="hljs-string">"boolean"</span><span class="hljs-symbol">:true</span>}}
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="meet"></a><a href="#meet" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Meet</h2>
 <p>This command uses Pyre's type engine to find a common subclass for two types.</p>
-<pre><code class="hljs"><span class="hljs-variable">$ </span>pyre query <span class="hljs-string">"meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]])"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]])"</span>
 {
     <span class="hljs-string">"response"</span>: {
         <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.Iterable[int]"</span>
@@ -125,7 +125,7 @@ information without having to run a full type check.</p>
 <p>This command returns the list of methods for a type, excluding inherited ones.</p>
 <pre><code class="hljs"><span class="hljs-comment"># a.py</span>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
-  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(<span class="hljs-keyword">self</span>, <span class="hljs-symbol">x:</span> int)</span></span> -&gt; <span class="hljs-symbol">str:</span>
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(self, x: int)</span> -&gt; str:</span>
     <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>
 </code></pre>
 <pre><code class="hljs">$ pyre query <span class="hljs-string">"methods(a.C)"</span>
@@ -150,10 +150,10 @@ information without having to run a full type check.</p>
 <span class="hljs-attr">A</span> = typing.Union[int, str]
 <span class="hljs-attr">B</span> = typing.Union[A, typing.List[str]]
 </code></pre>
-<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"normalize_type(a.B)"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"normalize_type(a.B)"</span>
 {
-    <span class="hljs-comment">"response"</span>: {
-        <span class="hljs-comment">"type"</span>: <span class="hljs-comment">"typing.Union[typing.List[int], int, str]"</span>
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.Union[typing.List[int], int, str]"</span>
     }
 }
 </code></pre>
@@ -182,7 +182,7 @@ information without having to run a full type check.</p>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="superclasses"></a><a href="#superclasses" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Superclasses</h2>
 <p>Displays the superclasses of a given class name.</p>
-<pre><code class="hljs"><span class="hljs-variable">$ </span>pyre query <span class="hljs-string">"superclasses(int)"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"superclasses(int)"</span>
 {
     <span class="hljs-string">"response"</span>: {
         <span class="hljs-string">"superclasses"</span>: [
@@ -201,7 +201,7 @@ information without having to run a full type check.</p>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="type"></a><a href="#type" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Type</h2>
 <p>Evaluates the type of the given expression.</p>
-<pre><code class="hljs"><span class="hljs-variable">$ </span>pyre query <span class="hljs-string">"type([1 + 2, ''])"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"type([1 + 2, ''])"</span>
 {
     <span class="hljs-string">"response"</span>: {
         <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.List[typing.Union[int, str]]"</span>
@@ -213,19 +213,19 @@ information without having to run a full type check.</p>
 <pre><code class="hljs"><span class="hljs-comment"># a.py</span>
 <span class="hljs-attr">variable</span> = <span class="hljs-number">2</span>
 </code></pre>
-<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"type_at_position('a.py', 1, 2)"</span>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"type_at_position('a.py', 1, 2)"</span>
 {
-    <span class="hljs-comment">"response"</span>: {
-        <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"int"</span>,
-        <span class="hljs-comment">"location"</span>: {
-            <span class="hljs-comment">"path"</span>: <span class="hljs-comment">"a.py"</span>,
-            <span class="hljs-comment">"start"</span>: {
-                <span class="hljs-comment">"column"</span>: <span class="hljs-number">0</span>,
-                <span class="hljs-comment">"line"</span>: <span class="hljs-number">1</span>
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"int"</span>,
+        <span class="hljs-string">"location"</span>: {
+            <span class="hljs-string">"path"</span>: <span class="hljs-string">"a.py"</span>,
+            <span class="hljs-string">"start"</span>: {
+                <span class="hljs-string">"column"</span>: <span class="hljs-number">0</span>,
+                <span class="hljs-string">"line"</span>: <span class="hljs-number">1</span>
             },
-            <span class="hljs-comment">"stop"</span>: {
-                <span class="hljs-comment">"column"</span>: <span class="hljs-number">8</span>,
-                <span class="hljs-comment">"line"</span>: <span class="hljs-number">1</span>
+            <span class="hljs-string">"stop"</span>: {
+                <span class="hljs-string">"column"</span>: <span class="hljs-number">8</span>,
+                <span class="hljs-string">"line"</span>: <span class="hljs-number">1</span>
             }
         }
     }
@@ -237,57 +237,57 @@ information without having to run a full type check.</p>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
   attribute = <span class="hljs-string">""</span>
 </code></pre>
-<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"types(path='a.py')"</span>
-{
-    <span class="hljs-comment">"response"</span>: [
-        {
-            <span class="hljs-comment">"path"</span>: <span class="hljs-comment">"a.py"</span>,
-            <span class="hljs-comment">"types"</span>: [
-                {
-                    <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"str"</span>,
-                    <span class="hljs-comment">"location"</span>: {
-                        <span class="hljs-comment">"path"</span>: <span class="hljs-comment">"a.py"</span>,
-                        <span class="hljs-comment">"start"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">16</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        },
-                        <span class="hljs-comment">"stop"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">18</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        }
-                    }
-                },
-                {
-                    <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"str"</span>,
-                    <span class="hljs-comment">"location"</span>: {
-                        <span class="hljs-comment">"path"</span>: <span class="hljs-comment">"a.py"</span>,
-                        <span class="hljs-comment">"start"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">4</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        },
-                        <span class="hljs-comment">"stop"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">13</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        }
-                    }
-                },
-                {
-                    <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"typing.Type[a.C]"</span>,
-                    <span class="hljs-comment">"location"</span>: {
-                        <span class="hljs-comment">"path"</span>: <span class="hljs-comment">"a.py"</span>,
-                        <span class="hljs-comment">"start"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">4</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        },
-                        <span class="hljs-comment">"stop"</span>: {
-                            <span class="hljs-comment">"column"</span>: <span class="hljs-number">13</span>,
-                            <span class="hljs-comment">"line"</span>: <span class="hljs-number">2</span>
-                        }
-                    }
-                }
-            ]
-        }
-    ]
-}
+<pre><code class="hljs"><span class="hljs-string">$</span> <span class="hljs-string">pyre</span> <span class="hljs-string">query</span> <span class="hljs-string">"types(path='a.py')"</span>
+<span class="hljs-string">{</span>
+    <span class="hljs-attr">"response":</span> <span class="hljs-string">[</span>
+        <span class="hljs-string">{</span>
+            <span class="hljs-attr">"path":</span> <span class="hljs-string">"a.py"</span><span class="hljs-string">,</span>
+            <span class="hljs-attr">"types":</span> <span class="hljs-string">[</span>
+                <span class="hljs-string">{</span>
+                    <span class="hljs-attr">"annotation":</span> <span class="hljs-string">"str"</span><span class="hljs-string">,</span>
+                    <span class="hljs-attr">"location":</span> <span class="hljs-string">{</span>
+                        <span class="hljs-attr">"path":</span> <span class="hljs-string">"a.py"</span><span class="hljs-string">,</span>
+                        <span class="hljs-attr">"start":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">16</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">},</span>
+                        <span class="hljs-attr">"stop":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">18</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">}</span>
+                    <span class="hljs-string">}</span>
+                <span class="hljs-string">},</span>
+                <span class="hljs-string">{</span>
+                    <span class="hljs-attr">"annotation":</span> <span class="hljs-string">"str"</span><span class="hljs-string">,</span>
+                    <span class="hljs-attr">"location":</span> <span class="hljs-string">{</span>
+                        <span class="hljs-attr">"path":</span> <span class="hljs-string">"a.py"</span><span class="hljs-string">,</span>
+                        <span class="hljs-attr">"start":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">4</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">},</span>
+                        <span class="hljs-attr">"stop":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">13</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">}</span>
+                    <span class="hljs-string">}</span>
+                <span class="hljs-string">},</span>
+                <span class="hljs-string">{</span>
+                    <span class="hljs-attr">"annotation":</span> <span class="hljs-string">"typing.Type[a.C]"</span><span class="hljs-string">,</span>
+                    <span class="hljs-attr">"location":</span> <span class="hljs-string">{</span>
+                        <span class="hljs-attr">"path":</span> <span class="hljs-string">"a.py"</span><span class="hljs-string">,</span>
+                        <span class="hljs-attr">"start":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">4</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">},</span>
+                        <span class="hljs-attr">"stop":</span> <span class="hljs-string">{</span>
+                            <span class="hljs-attr">"column":</span> <span class="hljs-number">13</span><span class="hljs-string">,</span>
+                            <span class="hljs-attr">"line":</span> <span class="hljs-number">2</span>
+                        <span class="hljs-string">}</span>
+                    <span class="hljs-string">}</span>
+                <span class="hljs-string">}</span>
+            <span class="hljs-string">]</span>
+        <span class="hljs-string">}</span>
+    <span class="hljs-string">]</span>
+<span class="hljs-string">}</span>
 </code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/watchman-integration.html"><span class="arrow-prev">← </span><span>Watchman Integration</span></a><a class="docs-next button" href="/docs/pysa-basics.html"><span>Basics</span><span class="arrow-next"> →</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
