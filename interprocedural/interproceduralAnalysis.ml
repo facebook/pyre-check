@@ -344,7 +344,8 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     let lookup_and_join ({ Result.is_obscure; models } as result) override =
       match get_override_model override with
       | None ->
-          Log.dump
+          Log.log
+            ~section:`Interprocedural
             "During override analysis, can't find model for %a"
             Callable.pretty_print
             override;
