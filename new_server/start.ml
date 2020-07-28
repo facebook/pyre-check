@@ -48,6 +48,12 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
     | Some message ->
         let on_uncaught_server_exception exn =
           Log.info "Uncaught server exception: %s" (Exn.to_string exn);
+          let () =
+            let { ServerState.server_configuration; _ } = !server_state in
+            StartupNotification.produce_for_configuration
+              ~server_configuration
+              "Restarting Pyre server due to unexpected crash"
+          in
           Stop.stop_waiting_server ()
         in
         catch (fun () -> handle_request ~state:!server_state message) on_uncaught_server_exception

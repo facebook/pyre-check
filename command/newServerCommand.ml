@@ -23,7 +23,9 @@ let run_server configuration_file =
       | Result.Error message ->
           Log.error "Malformed server specification JSON.";
           Log.error "%s" message
-      | Result.Ok server_configuration ->
+      | Result.Ok ({ Newserver.ServerConfiguration.log_path; _ } as server_configuration) ->
+          Newserver.StartupNotification.consume ~log_path ()
+          |> Option.iter ~f:(fun message -> Log.warning "%s" message);
           Lwt_main.run (Newserver.Start.start_server_and_wait server_configuration) )
 
 
