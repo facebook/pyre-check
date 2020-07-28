@@ -1,0 +1,6 @@
+{
+  "short_name": "SAPP Server",
+  "name": "SAPP Frontend Server",
+  "start_url": ".",
+  "display": "standalone"
+}
