@@ -26,6 +26,7 @@ type generic_type_problems =
   | IncorrectNumberOfParameters of {
       actual: int;
       expected: int;
+      can_accept_more_parameters: bool;
     }
   | ViolateConstraints of {
       actual: Type.t;

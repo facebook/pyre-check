@@ -201,6 +201,15 @@ let test_check_method_returns context =
           f(1, 2)
     |}
     ["Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters."];
+  assert_type_errors
+    ~context
+    {|
+      import typing
+      def foo() -> None:
+          x: typing.Tuple
+          x = (1, 2)
+    |}
+    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."];
   ()
 
 

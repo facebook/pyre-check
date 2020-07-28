@@ -161,6 +161,7 @@ module TypeParameterValidationTypes = struct
     | IncorrectNumberOfParameters of {
         actual: int;
         expected: int;
+        can_accept_more_parameters: bool;
       }
     | ViolateConstraints of {
         actual: Type.t;
@@ -855,24 +856,30 @@ class base class_metadata_environment dependency =
                   |> fun (parameters, errors) ->
                   Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
               | None ->
+                  let annotation, can_accept_more_parameters =
+                    match name with
+                    | "typing.Callable" -> Type.Callable.create ~annotation:Type.Any (), false
+                    | "tuple" -> Type.Tuple (Type.Unbounded Type.Any), true
+                    | _ ->
+                        ( Type.parametric
+                            name
+                            (List.map generics ~f:(function
+                                | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
+                                | ListVariadic _ -> Group Any
+                                | ParameterVariadic _ -> CallableParameters Undefined)),
+                          false )
+                  in
                   let mismatch =
                     {
                       name;
                       kind =
                         IncorrectNumberOfParameters
-                          { actual = List.length given; expected = List.length generics };
+                          {
+                            actual = List.length given;
+                            expected = List.length generics;
+                            can_accept_more_parameters;
+                          };
                     }
-                  in
-                  let annotation =
-                    match name with
-                    | "typing.Callable" -> Type.Callable.create ~annotation:Type.Any ()
-                    | _ ->
-                        Type.parametric
-                          name
-                          (List.map generics ~f:(function
-                              | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                              | ListVariadic _ -> Group Any
-                              | ParameterVariadic _ -> CallableParameters Undefined))
                   in
                   annotation, mismatch :: sofar
             in

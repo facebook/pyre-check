@@ -132,7 +132,7 @@ let test_create _ =
   assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
   assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
   assert_create "typing.Tuple[()]" (Type.tuple []);
-  assert_create "tuple" (Type.Tuple (Type.Unbounded Type.Any));
+  assert_create "tuple" (Type.Primitive "tuple");
   assert_create "typing.Any" Type.Any;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
   assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
@@ -937,11 +937,15 @@ let test_type_parameters_for_bounded_tuple_union _ =
 let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
 let test_expression_contains_any _ =
+  assert_true
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "typing.Dict[typing.Any, typing.Any]"));
+  assert_false (Type.expression_contains_any (parse_single_expression ~preprocess:true "dict"));
   assert_false
     (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
   assert_false
     (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Callable"));
-  assert_true
+  assert_false
     (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Tuple"));
   assert_true
     (Type.expression_contains_any

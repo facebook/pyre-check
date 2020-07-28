@@ -1104,7 +1104,12 @@ let rec messages ~concise ~signature location kind =
               (Type.expression variable);
           ] )
   | InvalidTypeParameters
-      { name; kind = AttributeResolution.IncorrectNumberOfParameters { expected; actual } } ->
+      {
+        name;
+        kind =
+          AttributeResolution.IncorrectNumberOfParameters
+            { expected; actual; can_accept_more_parameters };
+      } ->
       let additional =
         let replacement =
           match name with
@@ -1124,11 +1129,14 @@ let rec messages ~concise ~signature location kind =
           else
             Format.asprintf ", received %d" actual
         in
+        let parameter_count_message =
+          Format.asprintf "%s%d" (if can_accept_more_parameters then "at least " else "") expected
+        in
         [
           Format.asprintf
-            "Generic type `%s` expects %d type parameter%s%s%s."
+            "Generic type `%s` expects %s type parameter%s%s%s."
             name
-            expected
+            parameter_count_message
             (if expected = 1 then "" else "s")
             received
             additional;

@@ -959,9 +959,27 @@ let test_invalid_type_parameters context =
       actual_mismatches
   in
   assert_invalid_type_parameters
+    ~given_type:"typing.List[str, int]"
+    ~expected_transformed_type:"typing.List[typing.Any]"
+    [
+      {
+        name = "list";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 2; expected = 1; can_accept_more_parameters = false };
+      };
+    ];
+  assert_invalid_type_parameters
     ~given_type:"typing.List"
     ~expected_transformed_type:"typing.List[typing.Any]"
-    [{ name = "list"; kind = IncorrectNumberOfParameters { actual = 0; expected = 1 } }];
+    [
+      {
+        name = "list";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 1; can_accept_more_parameters = false };
+      };
+    ];
   assert_invalid_type_parameters
     ~given_type:"typing.Callable[[int, str], bool]"
     ~expected_transformed_type:"typing.Callable[[int, str], bool]"
@@ -969,7 +987,33 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~given_type:"typing.Callable"
     ~expected_transformed_type:"typing.Callable[..., typing.Any]"
-    [{ name = "typing.Callable"; kind = IncorrectNumberOfParameters { actual = 0; expected = 2 } }];
+    [
+      {
+        name = "typing.Callable";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 2; can_accept_more_parameters = false };
+      };
+    ];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Tuple[int, ...]"
+    ~expected_transformed_type:"typing.Tuple[int, ...]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Tuple[int, str]"
+    ~expected_transformed_type:"typing.Tuple[int, str]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"tuple"
+    ~expected_transformed_type:"typing.Tuple[typing.Any, ...]"
+    [
+      {
+        name = "tuple";
+        kind =
+          IncorrectNumberOfParameters
+            { actual = 0; expected = 1; can_accept_more_parameters = true };
+      };
+    ];
   ()
 
 

@@ -804,15 +804,30 @@ let test_suppress _ =
   assert_suppressed
     Source.Unsafe
     (Error.InvalidTypeParameters
-       { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 0 } });
+       {
+         name = "dict";
+         kind =
+           IncorrectNumberOfParameters
+             { expected = 2; actual = 0; can_accept_more_parameters = false };
+       });
   assert_not_suppressed
     Source.Unsafe
     (Error.InvalidTypeParameters
-       { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 1 } });
+       {
+         name = "dict";
+         kind =
+           IncorrectNumberOfParameters
+             { expected = 2; actual = 1; can_accept_more_parameters = false };
+       });
   assert_not_suppressed
     Source.Strict
     (Error.InvalidTypeParameters
-       { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 0 } });
+       {
+         name = "dict";
+         kind =
+           IncorrectNumberOfParameters
+             { expected = 2; actual = 0; can_accept_more_parameters = false };
+       });
   let suppress_missing_return = [Error.code (error (missing_return Type.Any))] in
   assert_suppressed
     Source.Unsafe

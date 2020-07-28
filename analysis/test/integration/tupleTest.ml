@@ -165,10 +165,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple:
         return ()
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as "
-      ^ "type that does not contain `Any`.";
-    ];
+    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."];
   assert_type_errors
     {|
       import typing

@@ -1544,7 +1544,6 @@ let primitive_substitution_map =
     "$unknown", Top;
     "None", none;
     "function", Callable.create ~annotation:Any ();
-    "tuple", Tuple (Unbounded Any);
     "typing.Any", Any;
     "typing.ChainMap", Primitive "collections.ChainMap";
     "typing.Counter", Primitive "collections.Counter";
@@ -1553,7 +1552,7 @@ let primitive_substitution_map =
     "typing.Dict", Primitive "dict";
     "typing.List", Primitive "list";
     "typing.OrderedDict", Primitive "collections.OrderedDict";
-    "typing.Tuple", Tuple (Unbounded Any);
+    "typing.Tuple", Primitive "tuple";
     "typing.Type", Primitive "type";
     "typing_extensions.Protocol", Primitive "typing.Protocol";
     (* This is broken in typeshed:
