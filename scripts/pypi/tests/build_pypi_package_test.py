@@ -17,18 +17,21 @@ from ..build_pypi_package import (
     patch_version,
     sync_pysa_stubs,
     sync_python_files,
-    valid_version,
+    validate_version,
 )
 
 
 class TestArgumentValidationMethods(unittest.TestCase):
     def test_validate_version(self) -> None:
-        self.assertEqual(valid_version("0.0.01"), "0.0.01")
+        validate_version("0.0.01")
         with self.assertRaises(ValueError):
-            valid_version("x0.0.01")
+            validate_version("x0.0.01")
 
 
 class TestCreatingWheel(unittest.TestCase):
+    def setUp(self) -> None:
+        self.pyre_directory: Path = Path(__file__).resolve().parent.parent.parent.parent
+
     def test_create_init_files(self) -> None:
         with tempfile.TemporaryDirectory() as build_root:
             path = Path(build_root)
@@ -46,7 +49,7 @@ class TestCreatingWheel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
             add_init_files(build_path)
-            sync_python_files(build_path)
+            sync_python_files(self.pyre_directory, build_path)
             command_directory = build_path / "pyre_check/client/commands"
             self.assertTrue(command_directory.is_dir())
 
@@ -56,7 +59,7 @@ class TestCreatingWheel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as build_root:
             build_path = Path(build_root)
             add_init_files(build_path)
-            sync_pysa_stubs(build_path)
+            sync_pysa_stubs(self.pyre_directory, build_path)
             args, _ = subprocess_run.call_args
             expected_args = [
                 "rsync",
