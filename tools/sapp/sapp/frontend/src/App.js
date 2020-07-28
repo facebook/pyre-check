@@ -17,20 +17,29 @@ const client = new ApolloClient({
 function IssueInstances() {
   const {loading, error, data} = useQuery(gql`
     {
-      issueInstances {
-        location
-        filenameId
-        filename
-        callableId
-        isNewIssue
-        runId
-        issueId
-        messageId
-        minTraceLengthToSources
-        minTraceLengthToSinks
-        minTraceLengthToEntrypoints
-        rank
-        callableCount
+      issueInstances{
+        edges {
+          node {
+            location
+            filenameId
+            filename {
+              contents
+            }
+            callableId
+            isNewIssue
+            runId
+            issueId
+            messageId
+            minTraceLengthToSources
+            minTraceLengthToSinks
+            rank
+            callableCount
+            minTraceLengthToEntrypoints
+            issue {
+              code
+            }
+          }
+        }
       }
     }
   `);
@@ -38,36 +47,23 @@ function IssueInstances() {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error :(</p>;
 
-  return data.issueInstances.map(
-    ({
-      location,
-      filenameId,
-      filename,
-      callableId,
-      isNewIssue,
-      runId,
-      issueId,
-      messageId,
-      minTraceLengthToSources,
-      minTraceLengthToSinks,
-      rank,
-      callableCount,
-      minTraceLengthToEntrypoints,
-    }) => (
+  return data.issueInstances.edges.map(
+    ({node}) => (
         <IssueInstance
-          location={location}
-          filenameId={filenameId}
-          filename={filename}
-          callableId={callableId}
-          isNewIssue={isNewIssue}
-          runId={runId}
-          issueId={issueId}
-          messageId={issueId}
-          minTraceLengthToSources={minTraceLengthToSources}
-          minTraceLengthToSinks={minTraceLengthToSinks}
-          rank={rank}
-          callableCount={callableCount}
-          minTraceLengthToEntrypoints={minTraceLengthToEntrypoints}
+          location={node.location}
+          filenameId={node.filenameId}
+          filename={node.filename.contents}
+          code={node.issue.code}
+          callableId={node.callableId}
+          isNewIssue={node.isNewIssue}
+          runId={node.runId}
+          issueId={node.issueId}
+          messageId={node.issueId}
+          minTraceLengthToSources={node.minTraceLengthToSources}
+          minTraceLengthToSinks={node.minTraceLengthToSinks}
+          rank={node.rank}
+          callableCount={node.callableCount}
+          minTraceLengthToEntrypoints={node.minTraceLengthToEntrypoints}
         />
     ),
   );

@@ -8,6 +8,7 @@ class IssueInstance extends React.Component {
         <p>Location: {this.props.location}</p>
         <p>File: {this.props.filename}</p>
         <p>Filename Id: {this.props.filenameId}</p>
+        <p>Code: {this.props.code}</p>
         <p>Callable Id: {this.props.callableId}</p>
         <p>Callable Count: {this.props.callableCount}</p>
         <p>isNewIssue: {this.props.isNewIssue}</p>

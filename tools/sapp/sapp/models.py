@@ -337,7 +337,7 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
         )
 
     @classmethod
-    def generateSQLAlchemyObject(cls):
+    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
         class SharedTextType(SQLAlchemyObjectType):
             class Meta:
                 model = cls
@@ -536,7 +536,7 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
             yield i
 
     @classmethod
-    def generateSQLAlchemyObject(cls):
+    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
         class IssueInstanceType(SQLAlchemyObjectType):
             class Meta:
                 model = cls
@@ -657,6 +657,15 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     @classmethod
     def merge(cls, session, issues):
         return cls._merge_by_key(session, issues, cls.handle)
+
+    @classmethod
+    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
+        class IssueType(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+                interfaces = (relay.Node,)
+
+        return IssueType
 
 
 class RunStatus(enum.Enum):

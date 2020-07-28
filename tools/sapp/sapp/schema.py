@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, List
 import graphene
 from graphene import relay
 
-from .models import IssueInstance, SharedText
+from .models import Issue, IssueInstance, SharedText
+
+
+if TYPE_CHECKING:
+    from graphql.execution.base import ResolveInfo
 
 
 if TYPE_CHECKING:
@@ -14,6 +18,7 @@ if TYPE_CHECKING:
 
 SharedTextType = SharedText.generateSQLAlchemyObject()
 IssueInstanceType = IssueInstance.generateSQLAlchemyObject()
+IssueType = Issue.generateSQLAlchemyObject()
 
 
 class IssueConnection(relay.Connection):
