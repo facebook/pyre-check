@@ -1,5 +1,4 @@
 import React from 'react';
-import {render} from 'react-dom';
 import {
   ApolloClient,
   InMemoryCache,
@@ -14,10 +13,9 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-function IssueInstances() {
-  const {loading, error, data} = useQuery(gql`
-    {
-      issueInstances{
+const ISSUE_QUERY = gql`
+    query IssueInstances($after: String) {
+      issueInstances(first: 1 after: $after){
         edges {
           node {
             location
@@ -40,33 +38,56 @@ function IssueInstances() {
             }
           }
         }
+        pageInfo {
+          endCursor
+        }
       }
     }
-  `);
+  `;
+
+function IssueInstances() {
+  const {loading, error, data, fetchMore} = useQuery(ISSUE_QUERY, {variables: {after: null}});
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error :(</p>;
 
-  return data.issueInstances.edges.map(
-    ({node}) => (
-        <IssueInstance
-          location={node.location}
-          filenameId={node.filenameId}
-          filename={node.filename.contents}
-          code={node.issue.code}
-          callableId={node.callableId}
-          isNewIssue={node.isNewIssue}
-          runId={node.runId}
-          issueId={node.issueId}
-          messageId={node.issueId}
-          minTraceLengthToSources={node.minTraceLengthToSources}
-          minTraceLengthToSinks={node.minTraceLengthToSinks}
-          rank={node.rank}
-          callableCount={node.callableCount}
-          minTraceLengthToEntrypoints={node.minTraceLengthToEntrypoints}
-        />
-    ),
-  );
+  return (
+    <>
+      <ul>
+        {data.issueInstances.edges.map(({node}) => (
+
+          <IssueInstance
+            location={node.location}
+            filenameId={node.filenameId}
+            filename={node.filename.contents}
+            code={node.issue.code}
+            callableId={node.callableId}
+            isNewIssue={node.isNewIssue}
+            runId={node.runId}
+            issueId={node.issueId}
+            messageId={node.issueId}
+            minTraceLengthToSources={node.minTraceLengthToSources}
+            minTraceLengthToSinks={node.minTraceLengthToSinks}
+            rank={node.rank}
+            callableCount={node.callableCount}
+            minTraceLengthToEntrypoints={node.minTraceLengthToEntrypoints}
+          />))}
+      </ul>
+      <button onClick={() => {
+        const endCursor = data.issueInstances.pageInfo.endCursor;
+        fetchMore({
+          variables: {after: endCursor},
+          updateQuery: (prevResult, {fetchMoreResult}) => {
+            fetchMoreResult.issueInstances.edges = [
+              ...prevResult.issueInstances.edges,
+              ...fetchMoreResult.issueInstances.edges,
+            ];
+            return fetchMoreResult
+          }
+        });
+        }}> More </button>
+      </>
+  )
 }
 
 function App() {
