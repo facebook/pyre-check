@@ -10,10 +10,11 @@
 (* The server will be automatically shut down after the promise returned by either `on_started` or
    `on_exception` fulfills. *)
 val start_server
-  :  on_started:(ServerState.t ref -> 'a Lwt.t) ->
-  on_exception:(exn -> 'a Lwt.t) ->
+  :  ?watchman:Watchman.Raw.t ->
+  on_started:(ServerState.t ref -> unit Lwt.t) ->
+  on_exception:(exn -> unit Lwt.t) ->
   ServerConfiguration.t ->
-  'a Lwt.t
+  unit Lwt.t
 
 (* Start the server and blocks forever until exceptional events occur. Returns immediately when the
    server fails to start. *)
