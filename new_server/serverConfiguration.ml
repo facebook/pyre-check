@@ -24,6 +24,7 @@ type t = {
   strict: bool;
   show_error_traces: bool;
   store_type_check_resolution: bool;
+  critical_files: string list;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
@@ -87,6 +88,7 @@ let of_yojson json =
     let debug = json |> bool_member "debug" ~default:false in
     let strict = json |> bool_member "strict" ~default:false in
     let show_error_traces = json |> bool_member "show_error_traces" ~default:false in
+    let critical_files = json |> string_list_member "critical_files" ~default:[] in
     let store_type_check_resolution =
       json |> bool_member "store_type_check_resolution" ~default:false
     in
@@ -107,6 +109,7 @@ let of_yojson json =
         debug;
         strict;
         show_error_traces;
+        critical_files;
         store_type_check_resolution;
         parallel;
         number_of_workers;
@@ -133,6 +136,7 @@ let to_yojson
       debug;
       strict;
       show_error_traces;
+      critical_files;
       store_type_check_resolution;
       parallel;
       number_of_workers;
@@ -154,6 +158,7 @@ let to_yojson
       "debug", [%to_yojson: bool] debug;
       "strict", [%to_yojson: bool] strict;
       "show_error_traces", [%to_yojson: bool] show_error_traces;
+      "critical_files", [%to_yojson: string list] critical_files;
       "store_type_check_resolution", [%to_yojson: bool] store_type_check_resolution;
       "parallel", [%to_yojson: bool] parallel;
       "number_of_workers", [%to_yojson: int] number_of_workers;
@@ -182,6 +187,7 @@ let analysis_configuration_of
       debug;
       strict;
       show_error_traces;
+      critical_files = _;
       store_type_check_resolution;
       parallel;
       number_of_workers;

@@ -69,6 +69,7 @@ let test_json_parsing context =
         "strict", `Bool false;
         "show_error_traces", `Bool false;
         "store_type_check_resolution", `Bool false;
+        "critical_files", `List [];
         "parallel", `Bool false;
         "number_of_workers", `Int 1;
       ];
@@ -100,7 +101,8 @@ let test_json_parsing context =
     "debug": true,
     "strict": true,
     "show_error_traces": true,
-    "store_type_check_resolution": true
+    "store_type_check_resolution": true,
+    "critical_files": ["foo.py", "bar.txt"]
   } |}
        mandatory_fileds)
     ~expected:
@@ -109,6 +111,7 @@ let test_json_parsing context =
         "strict", `Bool true;
         "show_error_traces", `Bool true;
         "store_type_check_resolution", `Bool true;
+        "critical_files", `List [`String "foo.py"; `String "bar.txt"];
       ];
   assert_parsed
     (Format.sprintf

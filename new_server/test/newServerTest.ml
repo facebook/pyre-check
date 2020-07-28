@@ -104,6 +104,7 @@ module ScratchProject = struct
         strict = false;
         show_error_traces = false;
         store_type_check_resolution = false;
+        critical_files = [];
         parallel = false;
         number_of_workers = 1;
       }

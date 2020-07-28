@@ -25,6 +25,12 @@ let instantiate_error
     error
 
 
+let find_critical_file ~server_configuration:{ ServerConfiguration.critical_files; _ } paths =
+  List.find paths ~f:(fun path ->
+      let base_name = Path.create_absolute ~follow_symbolic_links:false path |> Path.last in
+      List.exists critical_files ~f:(String.equal base_name))
+
+
 let process_request
     ~state:
       ( {
@@ -77,15 +83,21 @@ let process_request
       in
       let response = Response.TypeErrors instantiated_errors in
       Lwt.return (state, response)
-  | Request.IncrementalUpdate paths ->
-      let _ =
-        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            List.map paths ~f:(Path.create_absolute ~follow_symbolic_links:false)
-            |> Server.IncrementalCheck.recheck
-                 ~configuration
-                 ~scheduler
-                 ~environment:type_environment
-                 ~errors:error_table)
-      in
-      Lwt.return (state, Response.Ok)
+  | Request.IncrementalUpdate paths -> (
+      match find_critical_file ~server_configuration paths with
+      | Some path ->
+          Format.sprintf "Pyre needs to restart as it is notified on potential changes in `%s`" path
+          |> StartupNotification.produce_for_configuration ~server_configuration;
+          Stop.stop_waiting_server ()
+      | None ->
+          let _ =
+            Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+                List.map paths ~f:(Path.create_absolute ~follow_symbolic_links:false)
+                |> Server.IncrementalCheck.recheck
+                     ~configuration
+                     ~scheduler
+                     ~environment:type_environment
+                     ~errors:error_table)
+          in
+          Lwt.return (state, Response.Ok) )
   | Request.Stop -> Stop.stop_waiting_server ()

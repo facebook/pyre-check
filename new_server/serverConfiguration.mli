@@ -24,6 +24,7 @@ type t = {
   strict: bool;
   show_error_traces: bool;
   store_type_check_resolution: bool;
+  critical_files: string list;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
