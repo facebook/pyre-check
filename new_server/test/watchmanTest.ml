@@ -110,8 +110,7 @@ let test_subscription _ =
         Watchman.Subscriber.Setting.raw = mock_raw;
         root;
         (* We are not going to test these settings so they can be anything. *)
-        base_names = [];
-        suffixes = [];
+        filter = { Watchman.Subscriber.Filter.base_names = []; suffixes = [] };
       }
     in
     Lwt.catch
@@ -219,10 +218,40 @@ let test_subscription _ =
   >>= fun () -> Lwt.return_unit
 
 
+let test_filter_expression context =
+  let assert_expression ~expected filter =
+    let actual = Watchman.Subscriber.Filter.watchman_expression_of filter in
+    assert_equal
+      ~ctxt:context
+      ~cmp:Yojson.Safe.equal
+      ~printer:Yojson.Safe.pretty_to_string
+      expected
+      actual
+  in
+  assert_expression
+    { Watchman.Subscriber.Filter.base_names = ["foo.txt"; "TARGETS"]; suffixes = ["cc"; "cpp"] }
+    ~expected:
+      (`List
+        [
+          `String "allof";
+          `List [`String "type"; `String "f"];
+          `List
+            [
+              `String "anyof";
+              `List [`String "suffix"; `String "cc"];
+              `List [`String "suffix"; `String "cpp"];
+              `List [`String "match"; `String "foo.txt"];
+              `List [`String "match"; `String "TARGETS"];
+            ];
+        ]);
+  ()
+
+
 let () =
   "watchman_test"
   >::: [
          "low_level" >:: OUnitLwt.lwt_wrapper test_low_level_apis;
          "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
+         "filter_expression" >:: test_filter_expression;
        ]
   |> Test.run

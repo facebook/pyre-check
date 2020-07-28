@@ -122,17 +122,22 @@ let get_watchman_subscriber
       in
       get_raw_watchman watchman
       >>= fun raw ->
-      let base_names =
-        String.Set.of_list critical_files
-        |> fun set ->
-        Set.add set ".pyre_configuration"
-        |> fun set -> Set.add set ".pyre_configuration.local" |> Set.to_list
+      let subscriber_setting =
+        let filter =
+          let base_names =
+            String.Set.of_list critical_files
+            |> fun set ->
+            Set.add set ".pyre_configuration"
+            |> fun set -> Set.add set ".pyre_configuration.local" |> Set.to_list
+          in
+          let suffixes =
+            String.Set.of_list extensions
+            |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
+          in
+          { Watchman.Subscriber.Filter.base_names; suffixes }
+        in
+        { Watchman.Subscriber.Setting.raw; root; filter }
       in
-      let suffixes =
-        String.Set.of_list extensions
-        |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
-      in
-      let subscriber_setting = { Watchman.Subscriber.Setting.raw; root; base_names; suffixes } in
       Watchman.Subscriber.subscribe subscriber_setting >>= Lwt.return_some
 
 

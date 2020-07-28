@@ -145,17 +145,33 @@ module Raw = struct
 end
 
 module Subscriber = struct
+  module Filter = struct
+    type t = {
+      base_names: string list;
+      suffixes: string list;
+    }
+    [@@deriving sexp, compare]
+
+    let watchman_expression_of { base_names; suffixes; _ } =
+      let base_names =
+        List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])
+      in
+      let suffixes =
+        List.map suffixes ~f:(fun suffix -> `List [`String "suffix"; `String suffix])
+      in
+      `List
+        [
+          `String "allof";
+          `List [`String "type"; `String "f"];
+          `List (`String "anyof" :: List.append suffixes base_names);
+        ]
+  end
+
   module Setting = struct
     type t = {
       raw: Raw.t;
-      (* Watchman requires its root to be an absolute path. *)
       root: Path.t;
-      (* The subscriber will track changes in files that satisfies any of the following condition:
-       * - Suffix of the file is included in `suffixes`.
-       * - File name of the file is included in `base_names`.
-       *)
-      base_names: string list;
-      suffixes: string list;
+      filter: Filter.t;
     }
   end
 
@@ -164,18 +180,12 @@ module Subscriber = struct
     initial_clock: string;
   }
 
-  let subscribe { Setting.raw; root; base_names; suffixes } =
+  let subscribe { Setting.raw; root; filter } =
     let open Lwt.Infix in
     Raw.open_connection raw
     >>= fun connection ->
     let do_subscribe () =
       let request =
-        let base_names =
-          List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])
-        in
-        let suffixes =
-          List.map suffixes ~f:(fun suffix -> `List [`String "suffix"; `String suffix])
-        in
         `List
           [
             `String "subscribe";
@@ -184,13 +194,7 @@ module Subscriber = struct
             `Assoc
               [
                 "empty_on_fresh_instance", `Bool true;
-                ( "expression",
-                  `List
-                    [
-                      `String "allof";
-                      `List [`String "type"; `String "f"];
-                      `List (`String "anyof" :: List.append suffixes base_names);
-                    ] );
+                "expression", Filter.watchman_expression_of filter;
                 "fields", `List [`String "name"];
               ];
           ]

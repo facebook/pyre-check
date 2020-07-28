@@ -56,17 +56,26 @@ module Raw : sig
 end
 
 module Subscriber : sig
+  module Filter : sig
+    (* The subscriber will track changes in files that satisfy any of the following conditions:
+     * - Suffix of the file is included in `suffixes`.
+     * - File name of the file is included in `base_names`. *)
+    type t = {
+      base_names: string list;
+      suffixes: string list;
+    }
+    [@@deriving sexp, compare]
+
+    val watchman_expression_of : t -> Yojson.Safe.t
+  end
+
   module Setting : sig
     type t = {
       (* The underlying low-level abstraction layer. *)
       raw: Raw.t;
       (* The watchman root. *)
       root: Pyre.Path.t;
-      (* The subscriber will track changes in files that satisfy any of the following conditions:
-       * - Suffix of the file is included in `suffixes`.
-       * - File name of the file is included in `base_names`. *)
-      base_names: string list;
-      suffixes: string list;
+      filter: Filter.t;
     }
   end
 
