@@ -1,9 +1,8 @@
 import React from 'react';
-import {render} from 'react-dom';
 
 class IssueInstance extends React.Component {
   render() {
-      return <div class="issue_instance">
+      return <div className="issue_instance">
         <h3> Issue {this.props.issueId}</h3>
         <p>Location: {this.props.location}</p>
         <p>File: {this.props.filename}</p>
