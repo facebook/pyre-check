@@ -21,7 +21,8 @@ project.
    python3 -m venv tutorial
    source tutorial/bin/activate
    pip3 install pyre-check
-   pip3 install click click-log ipython==7.6.1 munch pygments SQLAlchemy ujson~=1.35 xxhash~=1.3.0 prompt-toolkit~=2.0.9
+   # Temporary workaround for dependencies problem
+   pip3 install click click-log ipython==7.6.1 munch pygments SQLAlchemy ujson~=1.35 xxhash~=1.3.0 prompt-toolkit~=2.0.9 flask flask_cors flask_graphql graphene graphene_sqlalchemy
    ```
 
 1. If doing this tutorial with an accompanying lecture, wait for the
