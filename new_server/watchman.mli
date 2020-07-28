@@ -5,6 +5,8 @@
 
 exception ConnectionError of string
 
+exception SubscriptionError of string
+
 module Raw : sig
   module Response : sig
     type t =
@@ -51,4 +53,45 @@ module Raw : sig
      connection can be successfully established. The connection will be automatically shutdown after
      the promise returned by `f` either gets fulfilled or rejected. *)
   val with_connection : f:(Connection.t -> 'a Lwt.t) -> t -> 'a Lwt.t
+end
+
+module Subscriber : sig
+  module Setting : sig
+    type t = {
+      (* The underlying low-level abstraction layer. *)
+      raw: Raw.t;
+      (* The watchman root. *)
+      root: Pyre.Path.t;
+      (* The subscriber will track changes in files that satisfy any of the following conditions:
+       * - Suffix of the file is included in `suffixes`.
+       * - File name of the file is included in `base_names`. *)
+      base_names: string list;
+      suffixes: string list;
+    }
+  end
+
+  type t
+
+  (* Establish a socket connection with the watchman background service, and set up a subscription
+     that watches the set of files as specified in the setting. The returned promise resolves
+     immediately after the subscription is set up. 
+   * May raise `ConnectionError` if the underlying connection logic raises, or `SubscriptionError`
+     in one of the following case: 
+   * - Watchman sends an invalid JSON.
+   * - Watchman rejects the subscription request.
+   * - Watchman's response to the subscription request does not contain an initial clock. *)
+  val subscribe : Setting.t -> t Lwt.t
+
+  (* Listen to the watchman server and invoke `f` on the "files" field of every received message.
+     The returned promise would wait forever as long as the underlying socket connection is alive,
+     except when an excpetion is raised.
+   * May raise `ConnectionError` if the underlying connection logic raises, or `SubscriptionError`
+     in one of the following case: 
+   * - Watchman sends an invalid JSON.
+   * - Watchman sends an `is_fresh_instance` update.
+   * - Watchman sends an update with no "files" field in it. *)
+  val listen : f:(Pyre.Path.t list -> unit Lwt.t) -> t -> unit Lwt.t
+
+  (* A convenient wrapper that invokes `subscribe` first and then `listen` *)
+  val with_subscription : f:(Pyre.Path.t list -> unit Lwt.t) -> Setting.t -> unit Lwt.t
 end

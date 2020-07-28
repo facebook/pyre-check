@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 open Newserver
+module Path = Pyre.Path
 
 let test_low_level_apis _ =
   let open Lwt.Infix in
@@ -46,4 +47,182 @@ let test_low_level_apis _ =
           Lwt.return_unit)
 
 
-let () = "watchman_test" >::: ["low_level" >:: OUnitLwt.lwt_wrapper test_low_level_apis] |> Test.run
+let test_subscription _ =
+  let open Lwt.Infix in
+  let root = Path.create_absolute ~follow_symbolic_links:false "/fake/root" in
+  let version_name = "fake_watchman_version" in
+  let subscription_name = "my_subscription" in
+  let initial_clock = "fake:clock:0" in
+  let initial_success_response =
+    `Assoc
+      [
+        "version", `String version_name;
+        "subscribe", `String subscription_name;
+        "clock", `String initial_clock;
+      ]
+  in
+  let initial_fail_response =
+    `Assoc
+      ["version", `String version_name; "error", `String "RootResolveError: unable to resolve root"]
+  in
+  let update_response ?(is_fresh_instance = false) ?(clock = "fake:clock:default") file_names =
+    `Assoc
+      [
+        "is_fresh_instance", `Bool is_fresh_instance;
+        "files", `List (List.map file_names ~f:(fun name -> `String name));
+        "root", `String (Path.absolute root);
+        "version", `String version_name;
+        "clock", `String clock;
+        (* This can be mocked better once we start to utilize `since` queries. *)
+        "since", `String initial_clock;
+      ]
+  in
+  let assert_updates ?(should_raise = false) ~expected responses =
+    let mock_raw =
+      (* Our simple mock server doesn't really care what get sent to it. *)
+      let send _ = Lwt.return_unit in
+      (* Our simple mock server simply forward the mocked responses in order. *)
+      let remaining_responses = ref responses in
+      let receive () =
+        match !remaining_responses with
+        | [] -> Lwt.return_none
+        | next_response :: rest ->
+            remaining_responses := rest;
+            Lwt.return_some next_response
+      in
+      Watchman.Raw.create_for_testing ~send ~receive ()
+    in
+    let remaining_updates = ref expected in
+    let assert_update actual =
+      match !remaining_updates with
+      | [] -> assert_failure "Watchman subscriber receives more updates than expected."
+      | next_update :: rest ->
+          remaining_updates := rest;
+          assert_equal
+            ~cmp:[%compare.equal: Path.t list]
+            ~printer:(fun paths -> [%sexp_of: Path.t list] paths |> Sexp.to_string_hum)
+            next_update
+            actual;
+          Lwt.return_unit
+    in
+    let setting =
+      {
+        Watchman.Subscriber.Setting.raw = mock_raw;
+        root;
+        (* We are not going to test these settings so they can be anything. *)
+        base_names = [];
+        suffixes = [];
+      }
+    in
+    Lwt.catch
+      (fun () ->
+        Watchman.Subscriber.with_subscription setting ~f:assert_update
+        >>= fun () ->
+        if should_raise then
+          assert_failure "Expected an exception to raise but did not get one";
+        Lwt.return_unit)
+      (fun exn ->
+        ( if not should_raise then
+            let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
+            assert_failure message );
+        Lwt.return_unit)
+  in
+
+  (* Lack of initial response would raise. *)
+  assert_updates ~should_raise:true ~expected:[] []
+  >>= fun () ->
+  (* Failing initial response would raise. *)
+  assert_updates ~should_raise:true ~expected:[] [initial_fail_response]
+  >>= fun () ->
+  (* Missing initial clock would raise. *)
+  assert_updates
+    ~should_raise:true
+    ~expected:[]
+    [`Assoc ["version", `String version_name; "subscribe", `String subscription_name]]
+  >>= fun () ->
+  (* Single file in single update. *)
+  assert_updates
+    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    [initial_success_response; update_response ["foo.py"]]
+  >>= fun () ->
+  (* Multiple files in single update. *)
+  assert_updates
+    ~expected:
+      [
+        [
+          Path.create_relative ~root ~relative:"foo.py";
+          Path.create_relative ~root ~relative:"bar/baz.py";
+        ];
+      ]
+    [initial_success_response; update_response ["foo.py"; "bar/baz.py"]]
+  >>= fun () ->
+  (* Single file in multiple updates. *)
+  assert_updates
+    ~expected:
+      [
+        [Path.create_relative ~root ~relative:"foo.py"];
+        [Path.create_relative ~root ~relative:"bar/baz.py"];
+      ]
+    [initial_success_response; update_response ["foo.py"]; update_response ["bar/baz.py"]]
+  >>= fun () ->
+  (* Multiple files in multiple updates. *)
+  assert_updates
+    ~expected:
+      [
+        [
+          Path.create_relative ~root ~relative:"foo.py";
+          Path.create_relative ~root ~relative:"bar/baz.py";
+        ];
+        [
+          Path.create_relative ~root ~relative:"my/cat.py";
+          Path.create_relative ~root ~relative:"dog.py";
+        ];
+      ]
+    [
+      initial_success_response;
+      update_response ["foo.py"; "bar/baz.py"];
+      update_response ["my/cat.py"; "dog.py"];
+    ]
+  >>= fun () ->
+  (* Initial fresh instance update is ok *)
+  assert_updates
+    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    [
+      initial_success_response;
+      update_response ~clock:initial_clock ~is_fresh_instance:true [];
+      update_response ~clock:"fake:clock:1" ["foo.py"];
+    ]
+  >>= fun () ->
+  (* Non-initial fresh instance update is not ok *)
+  assert_updates
+    ~should_raise:true
+    ~expected:[]
+    [initial_success_response; update_response ~clock:"fake:clock:1" ~is_fresh_instance:true []]
+  >>= fun () ->
+  assert_updates
+    ~should_raise:true
+    ~expected:[]
+    [
+      initial_success_response;
+      update_response ~clock:initial_clock ~is_fresh_instance:true [];
+      update_response ~clock:"fake:clock:1" ~is_fresh_instance:true [];
+    ]
+  >>= fun () ->
+  assert_updates
+    ~should_raise:true
+    ~expected:[[Path.create_relative ~root ~relative:"foo.py"]]
+    [
+      initial_success_response;
+      update_response ["foo.py"];
+      update_response ~clock:"fake:clock:1" ~is_fresh_instance:true ["bar.py"];
+    ]
+  >>= fun () -> Lwt.return_unit
+
+
+let () =
+  "watchman_test"
+  >::: [
+         "low_level" >:: OUnitLwt.lwt_wrapper test_low_level_apis;
+         "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
+       ]
+  |> Test.run
