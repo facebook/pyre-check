@@ -336,6 +336,15 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
             cls.kind,
         )
 
+    @classmethod
+    def generateSQLAlchemyObject(cls):
+        class SharedTextType(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+                interfaces = (relay.Node,)
+
+        return SharedTextType
+
 
 class IssueInstanceSharedTextAssoc(Base, PrepareMixin, RecordMixin):  # noqa
     """Assoc table between issue instances and its properties that are
