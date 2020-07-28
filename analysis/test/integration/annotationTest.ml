@@ -1427,7 +1427,10 @@ let test_check_invalid_inheritance context =
       class MyCallable(Callable):
         pass
     |}
-    ["Invalid inheritance [39]: `typing.Callable[..., typing.Any]` is not a valid parent class."];
+    [
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+      "Invalid inheritance [39]: `typing.Callable[..., typing.Any]` is not a valid parent class.";
+    ];
   assert_type_errors
     ~context
     {|

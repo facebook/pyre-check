@@ -924,6 +924,55 @@ let test_attribute_type context =
   ()
 
 
+let test_invalid_type_parameters context =
+  let open AttributeResolution in
+  let assert_invalid_type_parameters
+      ?(source = "")
+      ~given_type
+      ~expected_transformed_type
+      expected_mismatches
+    =
+    let parse annotation =
+      parse_single_expression ~preprocess:true annotation
+      (* Avoid `GlobalResolution.parse_annotation` because that calls
+         `check_invalid_type_parameters`. *)
+      |> Type.create ~aliases:(fun _ -> None)
+    in
+    let global_resolution =
+      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+      in
+      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    in
+    let actual_mismatches, actual_transformed_type =
+      GlobalResolution.check_invalid_type_parameters global_resolution (parse given_type)
+    in
+    assert_equal
+      ~cmp:[%equal: Type.t]
+      ~printer:[%show: Type.t]
+      (parse expected_transformed_type)
+      actual_transformed_type;
+    assert_equal
+      ~cmp:[%equal: type_parameters_mismatch list]
+      ~printer:[%show: type_parameters_mismatch list]
+      expected_mismatches
+      actual_mismatches
+  in
+  assert_invalid_type_parameters
+    ~given_type:"typing.List"
+    ~expected_transformed_type:"typing.List[typing.Any]"
+    [{ name = "list"; kind = IncorrectNumberOfParameters { actual = 0; expected = 1 } }];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Callable[[int, str], bool]"
+    ~expected_transformed_type:"typing.Callable[[int, str], bool]"
+    [];
+  assert_invalid_type_parameters
+    ~given_type:"typing.Callable"
+    ~expected_transformed_type:"typing.Callable[..., typing.Any]"
+    [{ name = "typing.Callable"; kind = IncorrectNumberOfParameters { actual = 0; expected = 2 } }];
+  ()
+
+
 let test_meet context =
   let assert_meet ?(source = "") ~left ~right expected =
     let global_resolution =
@@ -2250,6 +2299,7 @@ let () =
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
          "test_attribute_from_annotation" >:: test_attribute_type;
+         "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
        ]

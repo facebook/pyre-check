@@ -1546,7 +1546,6 @@ let primitive_substitution_map =
     "function", Callable.create ~annotation:Any ();
     "tuple", Tuple (Unbounded Any);
     "typing.Any", Any;
-    "typing.Callable", Callable.create ~annotation:Any ();
     "typing.ChainMap", Primitive "collections.ChainMap";
     "typing.Counter", Primitive "collections.Counter";
     "typing.DefaultDict", Primitive "collections.defaultdict";

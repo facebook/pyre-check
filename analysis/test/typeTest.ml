@@ -193,7 +193,7 @@ let test_create _ =
   assert_create
     "typing.TypeVar('_CallableT', bound='typing.Callable')"
     (Type.variable
-       ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
+       ~constraints:(Type.Variable.Bound (Type.Primitive "typing.Callable"))
        "_CallableT");
 
   (* Check that type aliases are resolved. *)
@@ -293,7 +293,7 @@ let test_create _ =
   (* Callables. *)
   let default_overload = { Type.Callable.annotation = Type.Top; parameters = Undefined } in
   let open Type.Callable in
-  assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
+  assert_create "typing.Callable" (Type.Primitive "typing.Callable");
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable.__getitem__((..., int))"
@@ -939,12 +939,14 @@ let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 let test_expression_contains_any _ =
   assert_false
     (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Type"));
-  assert_true
+  assert_false
     (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Callable"));
+  assert_true
+    (Type.expression_contains_any (parse_single_expression ~preprocess:true "typing.Tuple"));
   assert_true
     (Type.expression_contains_any
        (parse_single_expression ~preprocess:true "typing.Union[typing.Any, None]"));
-  assert_true
+  assert_false
     (Type.expression_contains_any
        (parse_single_expression ~preprocess:true "typing.Union[typing.Callable]"));
   assert_false

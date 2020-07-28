@@ -347,12 +347,11 @@ let test_check_globals context =
       e: Mapping[str, Any]
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
-       that does not contain `Any`.";
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
       "Missing global annotation [5]: Globally accessible variable `c` must be specified as type \
        that does not contain `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `d` must be specified as type \
-       that does not contain `Any`.";
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
     ];
   ()
 

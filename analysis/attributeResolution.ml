@@ -791,6 +791,11 @@ class base class_metadata_environment dependency =
               | "typing_extensions.Final"
               | "typing.Optional" ->
                   [Type.Variable.Unary (Type.Variable.Unary.create "T")]
+              | "typing.Callable" ->
+                  [
+                    Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Ps");
+                    Type.Variable.Unary (Type.Variable.Unary.create "R");
+                  ]
               | _ ->
                   ClassHierarchyEnvironment.ReadOnly.variables
                     (class_hierarchy_environment class_metadata_environment)
@@ -858,13 +863,18 @@ class base class_metadata_environment dependency =
                           { actual = List.length given; expected = List.length generics };
                     }
                   in
-                  ( Type.parametric
-                      name
-                      (List.map generics ~f:(function
-                          | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
-                          | ListVariadic _ -> Group Any
-                          | ParameterVariadic _ -> CallableParameters Undefined)),
-                    mismatch :: sofar )
+                  let annotation =
+                    match name with
+                    | "typing.Callable" -> Type.Callable.create ~annotation:Type.Any ()
+                    | _ ->
+                        Type.parametric
+                          name
+                          (List.map generics ~f:(function
+                              | Type.Variable.Unary _ -> Type.Parameter.Single Type.Any
+                              | ListVariadic _ -> Group Any
+                              | ParameterVariadic _ -> CallableParameters Undefined))
+                  in
+                  annotation, mismatch :: sofar
             in
             match annotation with
             | Type.Primitive ("typing.Final" | "typing_extensions.Final") -> annotation, sofar
