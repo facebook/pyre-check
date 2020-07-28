@@ -37,4 +37,4 @@ class Query(graphene.ObjectType):
         return issue_instances_query.all()
 
 
-schema = graphene.Schema(query=Query)
+schema = graphene.Schema(query=Query, auto_camelcase=False)

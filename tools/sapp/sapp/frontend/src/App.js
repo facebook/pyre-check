@@ -15,24 +15,24 @@ const client = new ApolloClient({
 
 const ISSUE_QUERY = gql`
     query IssueInstances($after: String) {
-      issueInstances(first: 1 after: $after){
+      issue_instances(first: 1 after: $after){
         edges {
           node {
             location
-            filenameId
+            filename_id
             filename {
               contents
             }
-            callableId
-            isNewIssue
-            runId
-            issueId
-            messageId
-            minTraceLengthToSources
-            minTraceLengthToSinks
+            callable_id
+            is_new_issue
+            run_id
+            issue_id
+            message_id
+            min_trace_length_to_sources
+            min_trace_length_to_sinks
             rank
-            callableCount
-            minTraceLengthToEntrypoints
+            callable_count
+            min_trace_length_to_entrypoints
             issue {
               code
             }
@@ -54,33 +54,32 @@ function IssueInstances() {
   return (
     <>
       <ul>
-        {data.issueInstances.edges.map(({node}) => (
-
+        {data.issue_instances.edges.map(({node}) => (
           <IssueInstance
             location={node.location}
-            filenameId={node.filenameId}
+            filename_id={node.filename_id}
             filename={node.filename.contents}
             code={node.issue.code}
-            callableId={node.callableId}
-            isNewIssue={node.isNewIssue}
-            runId={node.runId}
-            issueId={node.issueId}
-            messageId={node.issueId}
-            minTraceLengthToSources={node.minTraceLengthToSources}
-            minTraceLengthToSinks={node.minTraceLengthToSinks}
+            callable_id={node.callable_id}
+            is_new_issue={node.is_new_issue}
+            run_id={node.run_id}
+            issue_id={node.issue_id}
+            message_id={node.message_id}
+            min_trace_length_to_sources={node.min_trace_length_to_sources}
+            min_trace_length_to_sinks={node.min_trace_length_to_sinks}
             rank={node.rank}
-            callableCount={node.callableCount}
-            minTraceLengthToEntrypoints={node.minTraceLengthToEntrypoints}
+            callable_count={node.callable_count}
+            min_trace_length_to_entrypoints={node.min_trace_length_to_entrypoints}
           />))}
       </ul>
       <button onClick={() => {
-        const endCursor = data.issueInstances.pageInfo.endCursor;
+        const endCursor = data.issue_instances.pageInfo.endCursor;
         fetchMore({
           variables: {after: endCursor},
           updateQuery: (prevResult, {fetchMoreResult}) => {
-            fetchMoreResult.issueInstances.edges = [
-              ...prevResult.issueInstances.edges,
-              ...fetchMoreResult.issueInstances.edges,
+            fetchMoreResult.issue_instances.edges = [
+              ...prevResult.issue_instances.edges,
+              ...fetchMoreResult.issue_instances.edges,
             ];
             return fetchMoreResult
           }
