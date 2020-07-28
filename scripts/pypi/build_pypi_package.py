@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright (c) 2018-present, Facebook, Inc.
 #
 # This source code is licensed under the MIT license found in the
@@ -7,6 +5,7 @@
 
 import argparse
 import json
+import os
 import platform
 import re
 import shutil
@@ -14,6 +13,12 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import List, Tuple
+
+# just validate that it's available, but we don't invoke it directly
+import wheel  # noqa
+from twine.commands.check import check as twine_check
+
+from .setup import run as run_setup
 
 
 MODULE_NAME = "pyre_check"
@@ -25,7 +30,7 @@ RUNTIME_DEPENDENCIES = [
     "pyre_extensions",
 ]
 
-SCRIPTS_DIRECTORY: Path = Path(__file__).resolve().parent
+SCRIPTS_DIRECTORY: Path = Path(__file__).resolve().parent.parent
 PYRE_CHECK_DIRECTORY: Path = SCRIPTS_DIRECTORY.parent
 STUBS_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "stubs"
 CLIENT_DIRECTORY: Path = PYRE_CHECK_DIRECTORY / "client"
@@ -176,14 +181,15 @@ def sync_documentation_files(build_root: Path) -> None:
 
 
 def generate_setup_py(version: str) -> str:
-    path = PYRE_CHECK_DIRECTORY / "scripts/setup_template.py"
+    path = PYRE_CHECK_DIRECTORY / "scripts/pypi/setup.py"
     setup_template = path.read_text()
-    sapp_dependencies = json.loads((sapp_directory() / "requirements.json").read_text())
+    sapp_dependencies = (sapp_directory() / "requirements.json").read_text()
+    runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
     return setup_template.format(
         PACKAGE_NAME="pyre-check",
         PACKAGE_VERSION=version,
         MODULE_NAME=MODULE_NAME,
-        RUNTIME_DEPENDENCIES=RUNTIME_DEPENDENCIES,
+        RUNTIME_DEPENDENCIES=runtime_dependencies,
         SAPP_DEPENDENCIES=sapp_dependencies,
     )
 
@@ -199,12 +205,32 @@ def create_setup_py(version: str, build_root: Path) -> None:
     (build_root / "setup.py").write_text(setup_contents)
 
 
-def build_distribution(build_root: Path) -> None:
-    subprocess.run(["python3", "setup.py", "sdist"], cwd=build_root)
+def run_setup_command(build_root: Path, version: str, command: str) -> None:
+    with open(PYRE_CHECK_DIRECTORY / "README.md") as f:
+        long_description = f.read()
+    old_dir = os.getcwd()
+    os.chdir(build_root)
+    run_setup(
+        package_name="pyre-check",
+        package_version=version,
+        module_name=MODULE_NAME,
+        runtime_dependencies=RUNTIME_DEPENDENCIES,
+        sapp_dependencies=json.loads(
+            (sapp_directory() / "requirements.json").read_text()
+        ),
+        long_description=long_description,
+        script_name="setup.py",
+        script_args=[command],
+    )
+    os.chdir(old_dir)
 
 
-def build_wheel(build_root: Path) -> None:
-    subprocess.run(["python3", "setup.py", "bdist_wheel"], cwd=build_root)
+def build_distribution(build_root: Path, version: str) -> None:
+    run_setup_command(build_root, version, "sdist")
+
+
+def build_wheel(build_root: Path, version: str) -> None:
+    run_setup_command(build_root, version, "bdist_wheel")
 
 
 def create_dist_directory() -> None:
@@ -265,11 +291,11 @@ def main() -> None:
         sync_documentation_files(build_path)
         sync_stubs(build_path)
 
-        build_distribution(build_path)
+        build_distribution(build_path, version)
         create_dist_directory()
         create_setup_cfg(build_path)
-        subprocess.run(["twine", "check", build_path / "dist"])
-        build_wheel(build_path)
+        twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
+        build_wheel(build_path, version)
 
         wheel_destination, distribution_destination = rename_and_move_artifacts(
             build_path
