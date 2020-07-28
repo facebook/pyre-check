@@ -1,22 +1,30 @@
-from typing import Callable
+from django.http import HttpRequest, HttpResponse
 
 
-def api_wrapper(func: Callable):
-    def inner(request):
-        func(request, **request.GET)
-
-    return inner
+def example_feature(argument: str) -> None:
+    ...
 
 
-def operate_on_twos(request, operator: str):
-    result = eval(f"2 {operator} 2")  # noqa: P204
+def assert_numeric(operand: str) -> None:
+    assert operand.isnumeric()
+
+
+def do_and(request: HttpRequest) -> HttpResponse:
+    left = bool(request.GET["left"])
+    right = bool(request.GET["right"])
+
+    result = eval(f"{left} and {right}")  # noqa: P204
 
     return result
 
 
-@api_wrapper
-def operate_on_threes(request, operator: str):
+def do_or(request: HttpRequest) -> HttpResponse:
+    left = request.GET["left"]
+    right = request.GET["right"]
 
-    exec(f"result = 3 {operator} 3")
+    assert_numeric(left)
+    assert_numeric(right)
 
-    return result  # noqa: F821
+    result = eval(f"{left} or {right}")  # noqa: P204
+
+    return result
