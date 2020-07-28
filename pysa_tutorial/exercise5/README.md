@@ -74,3 +74,9 @@ user-controlled.
    argument to `operate_on_threes` as `TaintSource[UserControlled]`
 
 1. Run `pyre analyze`, and verify you see **2 issues** in the output.
+
+## Debugging Tips
+
+- Getting `During override analysis, can't find model for 'OverrideTarget'`?
+  Don't worry! That's a benign internal Pysa warning; it doesn't indicate
+  anything wrong with your code

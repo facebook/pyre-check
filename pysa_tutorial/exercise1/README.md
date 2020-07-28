@@ -67,3 +67,9 @@ gives Pyre another place to look to discover _stub_ files for Pysa.
 1. The last portion of the output should be a JSON array, containing a list of
    _issues_ Pysa found. Confirm that the issue points to the function
    `views.operate_on_twos` and that the message says it is `Possible RCE`.
+
+## Debugging Tips
+
+- Getting `During override analysis, can't find model for 'OverrideTarget'`?
+  Don't worry! That's a benign internal Pysa warning; it doesn't indicate
+  anything wrong with your code

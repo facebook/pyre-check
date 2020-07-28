@@ -111,3 +111,20 @@ these tutorials, SAPP is the prefered way to browse issues.
 
       You will know you are done this exercise when you see **0 issue**
       displayed.
+
+## Debugging Tips
+
+- Getting `During override analysis, can't find model for 'OverrideTarget'`?
+  Don't worry! That's a benign internal Pysa warning; it doesn't indicate
+  anything wrong with your code
+- `pyre analyze` erroring out? Try these strategies:
+  -  Make sure type annotations didn't sneak into your `.pysa` model files. The
+     only annotations you should have should be feature annoations:
+     `AddFeatureToArgument[Via[FEATURE_NAME]]`. Make sure you remove all type
+     annotations such as `-> None` from your `.pysa` files.
+  - Make sure you're using **fully qualified names**. All of your models for
+    functions in this file should look like `def
+    FILE_NAME.function_name(argument: ANNOTATION): ...`
+- `sapp` erroring out? Try these strategies:
+  - Make sure you installed the necessary dependencies described in
+    `pyre-check/pysa_tutorial/README.md`
