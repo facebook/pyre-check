@@ -19,47 +19,58 @@ let socket_path_of log_path =
     ~relative:(Format.sprintf "pyre_server_%s.sock" log_path_digest)
 
 
-let handle_request ~state request_string =
+let request_from_string request_string =
+  try
+    let json = Yojson.Safe.from_string request_string in
+    match Request.of_yojson json with
+    | Result.Error _ -> Result.Error "Malformed JSON request"
+    | Result.Ok request -> Result.Ok request
+  with
+  | Yojson.Json_error message -> Result.Error message
+
+
+let handle_request ~server_state request =
   let open Lwt.Infix in
-  let result =
-    try
-      let json = Yojson.Safe.from_string request_string in
-      match Request.of_yojson json with
-      | Result.Error _ -> Lwt.return (state, Response.Error "Malformed JSON request")
-      | Result.Ok request -> RequestHandler.process_request ~state request
-    with
-    | Yojson.Json_error message -> Lwt.return (state, Response.Error message)
+  let server_state = Lazy.force server_state in
+  let on_uncaught_server_exception exn =
+    Log.info "Uncaught server exception: %s" (Exn.to_string exn);
+    let () =
+      let { ServerState.server_configuration; _ } = !server_state in
+      StartupNotification.produce_for_configuration
+        ~server_configuration
+        "Restarting Pyre server due to unexpected crash"
+    in
+    Stop.stop_waiting_server ()
   in
-  result
-  >|= fun (server_state, response) ->
-  server_state, Response.to_yojson response |> Yojson.Safe.to_string
+  Lwt.catch
+    (fun () -> RequestHandler.process_request ~state:!server_state request)
+    on_uncaught_server_exception
+  >>= fun (new_state, response) ->
+  server_state := new_state;
+  Lwt.return response
 
 
 let handle_connection ~server_state _client_address (input_channel, output_channel) =
-  let open Lwt in
-  let server_state = Lazy.force server_state in
+  let open Lwt.Infix in
   (* Raw request messages are processed line-by-line. *)
   let rec handle_line () =
     Lwt_io.read_line_opt input_channel
     >>= function
     | None ->
         Log.info "Connection closed";
-        return_unit
+        Lwt.return_unit
     | Some message ->
-        let on_uncaught_server_exception exn =
-          Log.info "Uncaught server exception: %s" (Exn.to_string exn);
-          let () =
-            let { ServerState.server_configuration; _ } = !server_state in
-            StartupNotification.produce_for_configuration
-              ~server_configuration
-              "Restarting Pyre server due to unexpected crash"
-          in
-          Stop.stop_waiting_server ()
+        let response =
+          match request_from_string message with
+          | Result.Error message -> Lwt.return (Response.Error message)
+          | Result.Ok request -> handle_request ~server_state request
         in
-        catch (fun () -> handle_request ~state:!server_state message) on_uncaught_server_exception
-        >>= fun (new_state, response) ->
-        server_state := new_state;
-        Lwt_io.write_line output_channel response >>= handle_line
+        response
+        >>= fun response ->
+        Response.to_yojson response
+        |> Yojson.Safe.to_string
+        |> Lwt_io.write_line output_channel
+        >>= handle_line
   in
   handle_line ()
 
