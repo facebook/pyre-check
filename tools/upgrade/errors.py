@@ -275,18 +275,21 @@ def _suppress_errors(
         if number not in errors:
             new_lines.append(line)
             continue
-        if errors[number][0]["code"] == "0":
+
+        if any(error["code"] == "0" for error in errors[number]):
             # Handle unused ignores.
             replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
             if replacement == "":
                 removing_pyre_comments = True
                 _remove_comment_preamble(new_lines)
+                continue
             else:
-                new_lines.append(replacement)
-            continue
+                line = replacement
 
         comments = []
         for error in errors[number]:
+            if error["code"] == "0":
+                continue
             indent = len(line) - len(line.lstrip(" "))
             description = custom_comment if custom_comment else error["description"]
             comment = "{}# pyre-fixme[{}]: {}".format(
