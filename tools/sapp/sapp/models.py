@@ -11,6 +11,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyObjectType
+from graphene_sqlalchemy.converter import (
+    convert_column_to_int_or_id,
+    convert_column_to_string,
+    convert_sqlalchemy_type,
+)
 from munch import Munch
 from sqlalchemy import (
     Boolean,
@@ -1329,3 +1334,7 @@ def create(db: DB):
         Base.metadata.create_all(db.engine)  # pyre-ignore [16]
     except NoSuchTableError:
         pass
+
+
+convert_sqlalchemy_type.register(SourceLocationType)(convert_column_to_string)
+convert_sqlalchemy_type.register(BIGDBIDType)(convert_column_to_int_or_id)
