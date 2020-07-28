@@ -77,14 +77,16 @@ let test_json_parsing context =
   (* Individual values *)
   assert_parsed
     (Format.sprintf
-       {|{
-    %s,
-    "excludes": ["/excludes"],
-    "checked_directory_allowlist": ["/allows"],
-    "checked_directory_blocklist": ["/blocks"],
-    "extensions": [".typsy"],
-    "taint_model_paths": ["/taint/model"]
-  } |}
+       {|
+          {
+            %s,
+            "excludes": ["/excludes"],
+            "checked_directory_allowlist": ["/allows"],
+            "checked_directory_blocklist": ["/blocks"],
+            "extensions": [".typsy"],
+            "taint_model_paths": ["/taint/model"]
+          }
+       |}
        mandatory_fileds)
     ~expected:
       [
@@ -96,14 +98,16 @@ let test_json_parsing context =
       ];
   assert_parsed
     (Format.sprintf
-       {|{
-    %s,
-    "debug": true,
-    "strict": true,
-    "show_error_traces": true,
-    "store_type_check_resolution": true,
-    "critical_files": ["foo.py", "bar.txt"]
-  } |}
+       {|
+          {
+            %s,
+            "debug": true,
+            "strict": true,
+            "show_error_traces": true,
+            "store_type_check_resolution": true,
+            "critical_files": ["foo.py", "bar.txt"]
+          }
+       |}
        mandatory_fileds)
     ~expected:
       [
@@ -115,19 +119,26 @@ let test_json_parsing context =
       ];
   assert_parsed
     (Format.sprintf
-       {|{
-    %s,
-    "parallel": true,
-    "number_of_workers": 20
-  } |}
+       {|
+          {
+            %s,
+            "parallel": true,
+            "number_of_workers": 20
+          }
+       |}
        mandatory_fileds)
     ~expected:["parallel", `Bool true; "number_of_workers", `Int 20];
   assert_parsed
-    (Format.sprintf {|{
-    %s,
-    "local_root": "/project/local"
-  } |} mandatory_fileds)
-    ~expected:["local_root", `String "/project/local"];
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "local_root": "/project/local",
+            "watchman_root": "/project"
+          }
+       |}
+       mandatory_fileds)
+    ~expected:["local_root", `String "/project/local"; "watchman_root", `String "/project"];
   ()
 
 

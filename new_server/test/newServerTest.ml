@@ -60,6 +60,7 @@ module ScratchProject = struct
   type t = {
     context: test_ctxt;
     server_configuration: ServerConfiguration.t;
+    watchman: Watchman.Raw.t option;
   }
 
   let setup
@@ -67,6 +68,7 @@ module ScratchProject = struct
       ?(external_sources = [])
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?watchman
       sources
     =
     let add_source ~root (relative, content) =
@@ -74,10 +76,10 @@ module ScratchProject = struct
       let file = File.create ~content (Path.create_relative ~root ~relative) in
       File.write file
     in
-    (* We assume that there's only one checked source directory that acts as the local root as well. *)
-    let source_root = bracket_tmpdir context |> Path.create_absolute in
-    (* We assume that there's only one external source directory that acts as the local root as
+    (* We assume that there's only one checked source directory that acts as the global root as
        well. *)
+    let source_root = bracket_tmpdir context |> Path.create_absolute in
+    (* We assume that there's only one external source directory. *)
     let external_root = bracket_tmpdir context |> Path.create_absolute in
     let external_sources =
       if include_typeshed_stubs then
@@ -88,6 +90,8 @@ module ScratchProject = struct
     let log_root = bracket_tmpdir context |> Path.create_absolute in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
+    (* We assume that watchman root is the same as global root. *)
+    let watchman_root = Option.map watchman ~f:(fun _ -> source_root) in
     let server_configuration =
       {
         ServerConfiguration.source_paths = [source_root];
@@ -99,6 +103,7 @@ module ScratchProject = struct
         log_path = log_root;
         global_root = source_root;
         local_root = None;
+        watchman_root;
         taint_model_paths = [];
         debug = false;
         strict = false;
@@ -109,10 +114,10 @@ module ScratchProject = struct
         number_of_workers = 1;
       }
     in
-    { context; server_configuration }
+    { context; server_configuration; watchman }
 
 
-  let test_server_with ~f { context; server_configuration } =
+  let test_server_with ~f { context; server_configuration; _ } =
     Start.start_server
       server_configuration
       ~on_exception:(function

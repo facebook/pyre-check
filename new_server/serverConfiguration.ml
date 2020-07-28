@@ -18,6 +18,7 @@ type t = {
   log_path: Path.t;
   global_root: Path.t;
   local_root: Path.t option;
+  watchman_root: Path.t option;
   taint_model_paths: Path.t list;
   (* Type checking controls *)
   debug: bool;
@@ -47,6 +48,12 @@ let of_yojson json =
     let bool_member ?default name json = member name json |> to_bool_with_default ?default in
     let int_member ?default name json = member name json |> to_int_with_default ?default in
     let path_member name json = member name json |> to_path in
+    let optional_path_member name json =
+      member name json
+      |> function
+      | `Null -> None
+      | _ as element -> Some (to_path element)
+    in
     let list_member ?default ~f name json =
       member name json
       |> fun element ->
@@ -76,14 +83,8 @@ let of_yojson json =
     let extensions = json |> string_list_member "extensions" ~default:[] in
     let log_path = json |> path_member "log_path" in
     let global_root = json |> path_member "global_root" in
-    let local_root =
-      json
-      |> member "local_root"
-      |> fun element ->
-      match element with
-      | `Null -> None
-      | _ -> Some (to_path element)
-    in
+    let local_root = json |> optional_path_member "local_root" in
+    let watchman_root = json |> optional_path_member "watchman_root" in
     let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
     let debug = json |> bool_member "debug" ~default:false in
     let strict = json |> bool_member "strict" ~default:false in
@@ -105,6 +106,7 @@ let of_yojson json =
         log_path;
         global_root;
         local_root;
+        watchman_root;
         taint_model_paths;
         debug;
         strict;
@@ -132,6 +134,7 @@ let to_yojson
       log_path;
       global_root;
       local_root;
+      watchman_root;
       taint_model_paths;
       debug;
       strict;
@@ -169,6 +172,12 @@ let to_yojson
     | None -> result
     | Some local_root -> ("local_root", [%to_yojson: string] (Path.absolute local_root)) :: result
   in
+  let result =
+    match watchman_root with
+    | None -> result
+    | Some watchman_root ->
+        ("watchman_root", [%to_yojson: string] (Path.absolute watchman_root)) :: result
+  in
   `Assoc result
 
 
@@ -183,6 +192,7 @@ let analysis_configuration_of
       log_path;
       global_root;
       local_root;
+      watchman_root = _;
       taint_model_paths;
       debug;
       strict;

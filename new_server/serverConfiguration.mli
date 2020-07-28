@@ -18,6 +18,7 @@ type t = {
   log_path: Path.t;
   global_root: Path.t;
   local_root: Path.t option;
+  watchman_root: Path.t option;
   taint_model_paths: Path.t list;
   (* Type checking controls *)
   debug: bool;

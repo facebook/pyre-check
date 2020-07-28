@@ -21,6 +21,7 @@ module ScratchProject : sig
   type t = {
     context: OUnit2.test_ctxt;
     server_configuration: ServerConfiguration.t;
+    watchman: Watchman.Raw.t option;
   }
 
   val setup
@@ -28,6 +29,7 @@ module ScratchProject : sig
     ?external_sources:(string * string) list ->
     ?include_typeshed_stubs:bool ->
     ?include_helper_builtins:bool ->
+    ?watchman:Watchman.Raw.t ->
     (* A list of test sources specified in the form of (relative_path, content) *)
     (string * string) list ->
     t
