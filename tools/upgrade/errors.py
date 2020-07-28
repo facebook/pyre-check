@@ -17,6 +17,7 @@ from . import UserError, ast
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+MAX_LINES_PER_FIXME: int = 4
 
 
 class PartialErrorSuppression(Exception):
@@ -299,12 +300,14 @@ def _suppress_errors(
             if not max_line_length or len(comment) <= max_line_length:
                 comments.append(comment)
             else:
-                if truncate:
-                    comments.append(comment[: (max_line_length - 3)] + "...")
+                truncated_comment = comment[: (max_line_length - 3)] + "..."
+                split_comment_lines = _split_across_lines(
+                    comment, indent, max_line_length
+                )
+                if truncate or len(split_comment_lines) > MAX_LINES_PER_FIXME:
+                    comments.append(truncated_comment)
                 else:
-                    comments.extend(
-                        _split_across_lines(comment, indent, max_line_length)
-                    )
+                    comments.extend(split_comment_lines)
 
         LOG.info(
             "Adding comment%s on line %d: %s",

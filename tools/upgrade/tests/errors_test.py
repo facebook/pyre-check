@@ -366,3 +366,23 @@ class ErrorsTest(unittest.TestCase):
             max_line_length=25,
             truncate=True,
         )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "1",
+                        "description": "this description takes up over four lines \
+                        of content when it is split, given the max line length",
+                    }
+                ]
+            },
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: this ...
+            def foo() -> None: pass
+            """,
+            max_line_length=25,
+        )
