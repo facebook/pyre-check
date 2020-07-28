@@ -65,6 +65,20 @@ let test_parse_query context =
   assert_parses "is_compatible_with(  int, int)" (IsCompatibleWith (!"int", !"int"));
   assert_parses "Is_Compatible_With(  int, int)" (IsCompatibleWith (!"int", !"int"));
   assert_parses "meet(int, bool)" (Meet (!"int", !"bool"));
+  assert_parses
+    "names(path='a.py')"
+    (NamesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
+  assert_parses
+    "names('a.py')"
+    (NamesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
+  assert_parses
+    "names('a.py', 'b.py')"
+    (NamesInFiles
+       [
+         Path.create_relative ~root:local_root ~relative:"a.py";
+         Path.create_relative ~root:local_root ~relative:"b.py";
+       ]);
+  assert_fails_to_parse "names(a.py)";
   assert_parses "join(int, bool)" (Join (!"int", !"bool"));
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";

@@ -61,6 +61,7 @@ module TypeQuery = struct
     | LessOrEqual of Expression.t * Expression.t
     | Meet of Expression.t * Expression.t
     | Methods of Expression.t
+    | NamesInFiles of Path.t list
     | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | RunCheck of {

@@ -639,6 +639,7 @@ let rec process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
+    | TypeQuery.NamesInFiles _ -> TypeQuery.Error "NamesInFiles query not yet supported."
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
