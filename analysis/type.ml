@@ -1655,6 +1655,7 @@ let create_literal = function
                     member_name = attribute;
                   }))
       | _ -> None )
+  | Expression.Name (Identifier "None") -> Some none
   | _ -> None
 
 

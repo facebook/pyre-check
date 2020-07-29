@@ -271,6 +271,32 @@ let test_bytes_literals context =
   ()
 
 
+let test_literal_none context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+
+      def expects_literal_none(s: Literal[None]) -> None: ...
+
+      x: Literal[None] = None
+
+      x2: Literal[42, None] = None
+      reveal_type(x2)
+
+      y: Literal[None]
+      expects_literal_none(y)
+      expects_literal_none(None)
+
+      y2: None = y
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x2` is \
+       `typing.Optional[typing_extensions.Literal[42]]`.";
+    ];
+  ()
+
+
 let () =
   "literal"
   >::: [
@@ -278,5 +304,6 @@ let () =
          "enumeration_literal" >:: test_enumeration_literal;
          "ternary_with_literals" >:: test_ternary_with_literals;
          "bytes_literals" >:: test_bytes_literals;
+         "literal_none" >:: test_literal_none;
        ]
   |> Test.run
