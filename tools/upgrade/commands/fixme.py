@@ -46,7 +46,10 @@ class Fixme(ErrorSuppressingCommand):
         super(Fixme, cls).add_arguments(parser)
         parser.set_defaults(command=cls.from_arguments)
         parser.add_argument(
-            "--error-source", choices=list(ErrorSource), default=ErrorSource.STDIN
+            "--error-source",
+            type=ErrorSource,
+            choices=list(ErrorSource),
+            default=ErrorSource.STDIN,
         )
         parser.add_argument(
             "--only-fix-error-code",

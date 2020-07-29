@@ -59,7 +59,10 @@ class GlobalVersionUpdate(Command):
             type=path_exists,
         )
         parser.add_argument(
-            "--error-source", choices=list(ErrorSource), default=ErrorSource.GENERATE
+            "--error-source",
+            type=ErrorSource,
+            choices=list(ErrorSource),
+            default=ErrorSource.GENERATE,
         )
         parser.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
