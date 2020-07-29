@@ -89,30 +89,6 @@ let test_language_server_protocol_json_format context =
   assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
 
 
-let test_server_stops context =
-  let local_root = bracket_tmpdir context |> Pyre.Path.create_absolute in
-  let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
-  Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
-  let {
-    Configuration.Server.socket = { path = socket_path; _ };
-    json_socket = { path = json_socket_path; _ };
-    _;
-  }
-    =
-    Operations.create_configuration
-      (Configuration.Analysis.create ~local_root ~source_path:[local_root] ())
-  in
-  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
-  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion json_socket_path;
-  CommandTest.with_timeout
-    ~seconds:1
-    (fun () ->
-      match Unix.waitpid pid with
-      | Ok _ -> assert true
-      | Error _ -> assert false)
-    ()
-
-
 let test_server_exits_on_directory_removal context =
   let directory = bracket_tmpdir context in
   let pid = Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ()) in
@@ -1669,7 +1645,6 @@ let () =
   CommandTest.run_command_tests
     "server"
     [
-      "server_stops", test_server_stops;
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
