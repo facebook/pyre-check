@@ -176,6 +176,7 @@ type literal =
   | Boolean of bool
   | Integer of int
   | String of string
+  | Bytes of string
   | EnumerationMember of {
       enumeration_type: t;
       member_name: Identifier.t;
@@ -309,6 +310,8 @@ val set : t -> t
 val string : t
 
 val literal_string : string -> t
+
+val literal_bytes : string -> t
 
 val tuple : t list -> t
 

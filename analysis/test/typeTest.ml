@@ -447,6 +447,11 @@ let test_create _ =
              (create_concatenation ~mappers:["list"] (Type.Variable.Variadic.List.create "Ts")))));
 
   assert_create "typing_extensions.Literal['foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[u'foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[b'foo']" (Type.literal_bytes "foo");
+  assert_create
+    "typing_extensions.Literal[u'foo', b'foo']"
+    (Type.union [Type.literal_string "foo"; Type.literal_bytes "foo"]);
   assert_create
     "typing_extensions.Literal[Foo.ONE]"
     (Type.Literal
@@ -706,6 +711,7 @@ let test_weaken_literals _ =
   in
   assert_weakened_literal (Type.literal_integer 1) Type.integer;
   assert_weakened_literal (Type.literal_string "foo") Type.string;
+  assert_weakened_literal (Type.literal_bytes "foo") Type.bytes;
   assert_weakened_literal (Type.Literal (Type.Boolean true)) Type.bool;
   assert_weakened_literal
     (Type.Literal

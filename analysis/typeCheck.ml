@@ -3172,8 +3172,14 @@ module State (Context : Context) = struct
             ~init:(resolution, [])
         in
         { resolution; errors; resolved = Type.string; resolved_annotation = None; base = None }
-    | String { StringLiteral.kind = StringLiteral.Bytes; _ } ->
-        { resolution; errors = []; resolved = Type.bytes; resolved_annotation = None; base = None }
+    | String { StringLiteral.kind = StringLiteral.Bytes; value } ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.literal_bytes value;
+          resolved_annotation = None;
+          base = None;
+        }
     | String { StringLiteral.kind = StringLiteral.String; value } ->
         {
           resolution;

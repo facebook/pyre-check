@@ -628,8 +628,8 @@ let test_forward_expression context =
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" (Type.literal_integer 1);
-  assert_forward "\"\"" (Type.literal_string "");
-  assert_forward "b\"\"" Type.bytes;
+  assert_forward {|""|} (Type.literal_string "");
+  assert_forward {|b""|} (Type.literal_bytes "");
 
   (* Dictionaries. *)
   assert_forward "{1: 1}" (Type.dictionary ~key:Type.integer ~value:Type.integer);

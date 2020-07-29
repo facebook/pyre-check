@@ -246,11 +246,37 @@ let test_ternary_with_literals context =
   ()
 
 
+let test_bytes_literals context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+
+      def expects_bytes(s: bytes) -> None: ...
+
+      x: Literal[b"byte1"] = b"byte1"
+      x: Literal[b"byte1"] = u"byte1"
+
+      y: Literal[b"byte2"]
+      expects_bytes(y)
+
+      x2: Literal[b"byte1", b"byte2", u"string", 42] = b"byte1"
+      x2 = b"byte1"
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type \
+       `typing_extensions.Literal[b'byte1']` but is used as type \
+       `typing_extensions.Literal['byte1']`.";
+    ];
+  ()
+
+
 let () =
   "literal"
   >::: [
          "boolean_literal" >:: test_boolean_literal;
          "enumeration_literal" >:: test_enumeration_literal;
          "ternary_with_literals" >:: test_ternary_with_literals;
+         "bytes_literals" >:: test_bytes_literals;
        ]
   |> Test.run

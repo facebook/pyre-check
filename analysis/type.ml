@@ -417,6 +417,7 @@ module T = struct
     | Boolean of bool
     | Integer of int
     | String of string
+    | Bytes of string
     | EnumerationMember of {
         enumeration_type: t;
         member_name: Identifier.t;
@@ -698,6 +699,7 @@ let rec pp format annotation =
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
@@ -778,6 +780,7 @@ let rec pp_concise format annotation =
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
+  | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
   | NoneType -> Format.fprintf format "None"
@@ -887,6 +890,8 @@ let set parameter = Parametric { name = "set"; parameters = [Single parameter] }
 let string = Primitive "str"
 
 let literal_string literal = Literal (String literal)
+
+let literal_bytes literal = Literal (Bytes literal)
 
 let tuple parameters = Tuple (Bounded (Concrete parameters))
 
@@ -1088,6 +1093,7 @@ let rec expression annotation =
           | Boolean false -> Expression.False
           | Integer literal -> Expression.Integer literal
           | String literal -> Expression.String { value = literal; kind = StringLiteral.String }
+          | Bytes literal -> Expression.String { value = literal; kind = StringLiteral.Bytes }
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
                 (Attribute
@@ -1635,6 +1641,8 @@ let create_literal = function
   | Expression.Integer literal -> Some (Literal (Integer literal))
   | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
       Some (Literal (String value))
+  | Expression.String { StringLiteral.kind = StringLiteral.Bytes; value } ->
+      Some (Literal (Bytes value))
   | Expression.Name
       (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
       match name_to_reference base_name with
@@ -2307,6 +2315,7 @@ let weaken_literals annotation =
   let constraints = function
     | Literal (Integer _) -> Some integer
     | Literal (String _) -> Some string
+    | Literal (Bytes _) -> Some bytes
     | Literal (Boolean _) -> Some bool
     | Literal (EnumerationMember { enumeration_type; _ }) -> Some enumeration_type
     | _ -> None
