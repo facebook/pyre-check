@@ -63,9 +63,6 @@ third party libraries such as Django, which are not in typeshed.
 
 ## Debugging Tips
 
-- Getting `During override analysis, can't find model for 'OverrideTarget'`?
-  Don't worry! That's a benign internal Pysa warning; it doesn't indicate
-  anything wrong with your code
 - `pyre analyze` erroring out? Make sure type annotations didn't sneak into your
   `.pysa` model files. The only annotations you should have should be taint
   annoations: `__source: TaintSink[CodeExecution]`. Make sure you remove all

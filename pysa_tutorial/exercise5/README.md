@@ -76,9 +76,3 @@ user-controlled.
 
 1. Run `pyre analyze`, and verify you see **two issues** within a JSON list in
    the output.
-
-## Debugging Tips
-
-- Getting `During override analysis, can't find model for 'OverrideTarget'`?
-  Don't worry! That's a benign internal Pysa warning; it doesn't indicate
-  anything wrong with your code
