@@ -223,6 +223,7 @@ and kind =
       annotation: Type.t;
       test: Expression.t;
     }
+  | IncompatibleAsyncGeneratorReturnType of Type.t
   | IncompatibleAttributeType of {
       parent: Type.t;
       incompatible_type: incompatible_type;

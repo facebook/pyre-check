@@ -232,6 +232,7 @@ and kind =
       annotation: Type.t;
       test: Expression.t;
     }
+  | IncompatibleAsyncGeneratorReturnType of Type.t
   | IncompatibleAttributeType of {
       parent: Type.t;
       incompatible_type: incompatible_type;
@@ -435,6 +436,7 @@ let code = function
   | TypedDictionaryInvalidOperation _ -> 54
   | TypedDictionaryInitializationError _ -> 55
   | InvalidDecoration _ -> 56
+  | IncompatibleAsyncGeneratorReturnType _ -> 57
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -449,6 +451,7 @@ let name = function
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
   | ImpossibleAssertion _ -> "Impossible assertion"
+  | IncompatibleAsyncGeneratorReturnType _ -> "Incompatible async generator return type"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
@@ -683,6 +686,13 @@ let rec messages ~concise ~signature location kind =
           pp_type
           annotation
           (show_sanitized_expression test);
+      ]
+  | IncompatibleAsyncGeneratorReturnType annotation ->
+      [
+        Format.asprintf
+          "Expected return annotation to be AsyncGenerator or a superclass but got `%a`."
+          pp_type
+          annotation;
       ]
   | IncompatibleAwaitableType actual ->
       [Format.asprintf "Expected an awaitable but got `%a`." pp_type actual]
@@ -2295,6 +2305,7 @@ let due_to_analysis_limitations { kind; _ } =
   | DeadStore _
   | Deobfuscation _
   | IllegalAnnotationTarget _
+  | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidArgument (ListVariadicVariable _)
@@ -2356,6 +2367,8 @@ let less_or_equal ~resolution left right =
   | ImpossibleAssertion left, ImpossibleAssertion right when Expression.equal left.test right.test
     ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+  | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
+      GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | ( IncompatibleParameterType
@@ -2581,6 +2594,7 @@ let less_or_equal ~resolution left right =
   | Deobfuscation _, _
   | IllegalAnnotationTarget _, _
   | ImpossibleAssertion _, _
+  | IncompatibleAsyncGeneratorReturnType _, _
   | IncompatibleAttributeType _, _
   | IncompatibleAwaitableType _, _
   | IncompatibleConstructorAnnotation _, _
@@ -2672,6 +2686,8 @@ let join ~resolution left right =
     | IllegalAnnotationTarget left, IllegalAnnotationTarget right when Expression.equal left right
       ->
         IllegalAnnotationTarget left
+    | IncompatibleAsyncGeneratorReturnType left, IncompatibleAsyncGeneratorReturnType right ->
+        IncompatibleAsyncGeneratorReturnType (GlobalResolution.join resolution left right)
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (GlobalResolution.join resolution left right)
     | ( IncompleteType
@@ -2981,6 +2997,7 @@ let join ~resolution left right =
     | Deobfuscation _, _
     | IllegalAnnotationTarget _, _
     | ImpossibleAssertion _, _
+    | IncompatibleAsyncGeneratorReturnType _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
     | IncompatibleConstructorAnnotation _, _
@@ -3426,6 +3443,8 @@ let dequalify
     | IllegalAnnotationTarget left -> IllegalAnnotationTarget left
     | ImpossibleAssertion ({ annotation; _ } as assertion) ->
         ImpossibleAssertion { assertion with annotation = dequalify annotation }
+    | IncompatibleAsyncGeneratorReturnType actual ->
+        IncompatibleAsyncGeneratorReturnType (dequalify actual)
     | IncompatibleAwaitableType actual -> IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)

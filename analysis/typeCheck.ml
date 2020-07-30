@@ -544,8 +544,17 @@ module State (Context : Context) = struct
       value =
         {
           Define.signature =
-            { name; parent; parameters; return_annotation; decorators; async; nesting_define; _ } as
-            signature;
+            {
+              name;
+              parent;
+              parameters;
+              return_annotation;
+              decorators;
+              async;
+              nesting_define;
+              generator;
+              _;
+            } as signature;
           captures;
           unbound_names;
           _;
@@ -724,7 +733,7 @@ module State (Context : Context) = struct
         else
           errors
       in
-      let add_variance_error errors annotation =
+      let add_variance_error ~errors annotation =
         match annotation with
         | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
             emit_error
@@ -733,6 +742,27 @@ module State (Context : Context) = struct
               ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
         | _ -> errors
       in
+      let add_async_generator_error ~errors annotation =
+        if async && generator then
+          let async_generator_type =
+            Type.Parametric
+              { name = "typing.AsyncGenerator"; parameters = [Single Type.Any; Single Type.Any] }
+          in
+          if
+            GlobalResolution.less_or_equal
+              ~left:async_generator_type
+              ~right:annotation
+              global_resolution
+          then
+            errors
+          else
+            emit_error
+              ~errors
+              ~location
+              ~kind:(Error.IncompatibleAsyncGeneratorReturnType annotation)
+        else
+          errors
+      in
       let errors = add_missing_return_error ~errors return_annotation in
       match return_annotation with
       | None -> errors
@@ -740,8 +770,10 @@ module State (Context : Context) = struct
           let annotation_errors, annotation =
             parse_and_check_annotation ~resolution return_annotation
           in
-          let errors = List.append annotation_errors errors in
-          add_variance_error errors annotation
+          List.append annotation_errors errors
+          |> fun errors ->
+          add_async_generator_error ~errors annotation
+          |> fun errors -> add_variance_error ~errors annotation
     in
     let add_capture_annotations resolution errors =
       let process_signature ({ Define.Signature.name = { Node.value = name; _ }; _ } as signature) =

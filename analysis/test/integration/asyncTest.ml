@@ -220,7 +220,52 @@ let test_check_async context =
         async with 1:
           return 0
     |}
-    ["Undefined attribute [16]: `int` has no attribute `__aenter__`."]
+    ["Undefined attribute [16]: `int` has no attribute `__aenter__`."];
+  assert_type_errors
+    {|
+      from typing import Iterable, AsyncGenerator
+      async def foo() -> Iterable[str]:
+        yield "a"
+    |}
+    [
+      "Incompatible async generator return type [57]: Expected return annotation to be"
+      ^ " AsyncGenerator or a superclass "
+      ^ "but got `Iterable[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Iterable, AsyncGenerator
+      async def foo() -> object:
+        yield "a"
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Iterable, AsyncGenerator
+      async def foo() -> AsyncGenerator[str, str]:
+        yield "a"
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Iterable, AsyncGenerator
+      async def foo() -> AsyncGenerator[str, None]:
+        yield "a"
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Iterable, AsyncGenerator
+      class MyExtendedAsyncGenerator(AsyncGenerator[int,int]):
+        pass
+      async def foo() -> MyExtendedAsyncGenerator:
+        yield "a"
+    |}
+    [
+      "Incompatible async generator return type [57]: Expected return annotation to be"
+      ^ " AsyncGenerator or a superclass "
+      ^ "but got `MyExtendedAsyncGenerator`.";
+    ]
 
 
 let () = "async" >::: ["check_async" >:: test_check_async] |> Test.run
