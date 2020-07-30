@@ -89,3 +89,15 @@ class ParameterSpecification(list):
 
 def ListVariadic(name) -> object:
     return Any
+
+
+_A = TypeVar("_A", bound=int)
+_B = TypeVar("_B", bound=int)
+
+
+class Add(Generic[_A, _B], int):
+    pass
+
+
+class Multiply(Generic[_A, _B], int):
+    pass

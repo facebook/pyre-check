@@ -1310,8 +1310,8 @@ let test_check_invalid_type_variables context =
 
 
 let test_check_aliases context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
       import typing_extensions
       class C(typing_extensions.Protocol):
@@ -1319,7 +1319,6 @@ let test_check_aliases context =
     |}
     [];
   assert_type_errors
-    ~context
     {|
       import typing_extensions
       class C(typing_extensions.Protocol[int]):
@@ -1327,7 +1326,6 @@ let test_check_aliases context =
     |}
     [];
   assert_type_errors
-    ~context
     {|
       class FOO:
         x: int = 0
@@ -1347,7 +1345,6 @@ let test_check_aliases context =
 
   (* Locals are not aliases *)
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         x = int
@@ -1355,14 +1352,13 @@ let test_check_aliases context =
     |}
     ["Undefined or invalid type [11]: Annotation `foo.x` is not defined as a type."];
 
-  assert_type_errors ~context {|
+  assert_type_errors {|
       def foo(type: int) -> None:
         x = type
     |} [];
 
   (* Aliases to undefined types *)
   assert_type_errors
-    ~context
     {|
       import typing
       MyAlias = typing.Union[int, UndefinedName]
@@ -1373,7 +1369,6 @@ let test_check_aliases context =
     ];
   (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
-    ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
@@ -1381,7 +1376,6 @@ let test_check_aliases context =
     ["Unbound name [10]: Name `UndefinedName` is used but not defined in the current scope."];
   (* TODO (T61917464): Surface explicit type aliases registeration failures as type errors *)
   assert_type_errors
-    ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, "UndefinedName"]
@@ -1390,14 +1384,12 @@ let test_check_aliases context =
 
   (* Aliases to invalid types *)
   assert_type_errors
-    ~context
     {|
       import typing
       MyAlias = typing.Union[int, 3]
     |}
     ["Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified."];
   assert_type_errors
-    ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, 3]
@@ -1406,12 +1398,12 @@ let test_check_aliases context =
 
 
 let test_final_type context =
-  assert_type_errors ~context {|
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors {|
       from typing import Final
       x: Final[int] = 3
     |} [];
   assert_type_errors
-    ~context
     {|
       from typing import Final
       x: Final[str] = 3
@@ -1420,8 +1412,8 @@ let test_final_type context =
 
 
 let test_check_invalid_inheritance context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
       from typing import Callable
       class MyCallable(Callable):
@@ -1432,7 +1424,6 @@ let test_check_invalid_inheritance context =
       "Invalid inheritance [39]: `typing.Callable[..., typing.Any]` is not a valid parent class.";
     ];
   assert_type_errors
-    ~context
     {|
       from typing import Any
       class MySpecialClass(Any, int):
@@ -1443,8 +1434,8 @@ let test_check_invalid_inheritance context =
 
 
 let test_check_invalid_generic_inheritance context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1474,7 +1465,6 @@ let test_check_invalid_generic_inheritance context =
     ];
   (* Check __new__. *)
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1495,7 +1485,6 @@ let test_check_invalid_generic_inheritance context =
        `Base.__new__` but got `str`.";
     ];
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1528,7 +1517,6 @@ let test_check_invalid_generic_inheritance context =
        as type `PartialChild[str]`.";
     ];
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1554,7 +1542,6 @@ let test_check_invalid_generic_inheritance context =
        `PartialChildWithConstructor[str]` but is used as type `PartialChildWithConstructor[int]`.";
     ];
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1585,7 +1572,6 @@ let test_check_invalid_generic_inheritance context =
       "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
     ];
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
 
@@ -1631,15 +1617,14 @@ let test_check_invalid_generic_inheritance context =
 
 
 let test_check_literal_assignment context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
       from typing_extensions import Literal
       x: Literal["on", "off"] = "on"
     |}
     [];
   assert_type_errors
-    ~context
     {|
       from typing import Generic, TypeVar
 
@@ -1661,8 +1646,8 @@ let test_check_literal_assignment context =
 
 
 let test_check_safe_cast context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
-    ~context
     {|
       import pyre_extensions
       def foo(input: float) -> int:
@@ -1673,7 +1658,6 @@ let test_check_safe_cast context =
        not a super type of `input`.";
     ];
   assert_type_errors
-    ~context
     {|
         import pyre_extensions
         def foo(input: int) -> float:
@@ -1698,6 +1682,259 @@ let test_check_annotation_with_any context =
     ]
 
 
+let test_check_typevar_arithmetic context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+      x : Add[Literal[1],Literal[2]]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[3]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      def f1(a : N) -> Add[N,Literal[3]]: ...
+      def f2(a : N) -> Add[Literal[3],N]: ...
+      reveal_type(f1(2))
+      reveal_type(f2(2))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.f1(2)` is `typing_extensions.Literal[5]`.";
+      "Revealed type [-1]: Revealed type for `test.f2(2)` is `typing_extensions.Literal[5]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+      def f(a : N, b : M) -> Add[N,M]: ...
+      reveal_type(f(1,2))
+    |}
+    ["Revealed type [-1]: Revealed type for `test.f(1, 2)` is `typing_extensions.Literal[3]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      # 3N + 3
+      def f(x : N) -> Add[Add[Add[N,N],Literal[3]],N]: ...
+      reveal_type(f(1))
+    |}
+    ["Revealed type [-1]: Revealed type for `test.f(1)` is `typing_extensions.Literal[6]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      def f1(n : N) -> Add[N,N]: ...
+      def f2(n : N) -> Add[N,N]:
+        return f1(n)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add, Multiply
+
+      N = TypeVar("N", bound=int)
+      def f1(n : N) -> Multiply[N,Literal[2]]: ...
+      def f2(n : N) -> Add[N,N]:
+        return f1(n)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      class Vec(Generic[N]): pass
+      def push(a : Vec[N]) -> Vec[Add[N,Literal[1]]]: ...
+      def pop(a : Vec[Add[N,Literal[1]]]) -> Vec[N] : ...
+
+      v : Vec[Literal[10]]
+      reveal_type(push(v))
+      reveal_type(pop(v))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.push(v)` is `Vec[typing_extensions.Literal[11]]`.";
+      "Revealed type [-1]: Revealed type for `test.pop(v)` is `Vec[typing_extensions.Literal[9]]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add, Multiply
+
+      N = TypeVar("N", bound=int)
+      A = TypeVar("A")
+      def f1(a : A, n : N) -> Add[A,N]: ...
+      def f2(a : A) -> Multiply[A,Literal[3]]: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`. Add & Multiply only accept type variables \
+       with a bound that's a subtype of int.";
+      "Invalid type parameters [24]: Type parameter `Variable[A]` violates constraints on \
+       `pyre_extensions.Add`/`pyre_extensions.Multiply`. Add & Multiply only accept type variables \
+       with a bound that's a subtype of int.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+      from typing_extensions import Literal
+      from pyre_extensions import Add, Multiply
+
+      N = TypeVar("N", bound=int)
+      def f1(n : N) -> Add[N,Literal["foo"]]: ...
+      def f2(n : N) -> Multiply[N,Literal["foo"]]: ...
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
+       constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Add`.";
+      "Invalid type parameters [24]: Type parameter `typing_extensions.Literal['foo']` violates \
+       constraints on `Variable[pyre_extensions._B (bound to int)]` in generic type `Multiply`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      from typing_extensions import Literal
+      from pyre_extensions import Add
+
+      N = TypeVar("N", bound=int)
+      M = TypeVar("M", bound=int)
+
+      class Vec(Generic[N]): pass
+      def pop(a : Vec[Add[N,M]], b : M) -> Vec[N] : ...
+
+      v : Vec[Literal[10]]
+      pop(v,3)
+    |}
+    (* Currently this is a limitation of our system. We can only resolve subtyping relationships on
+       IntExpressions of the form: factor * N + constant <: factor' * M + constant'. That is because
+       to set bounds we need to isolate one type variable in one side of the expression what
+       requires the use of some algebra that is not allowed due to the lack of inverse operators
+       (subtraction and division)
+
+       Eventually, we would like this to work at least for polynomials of degree 1. See T70449275 *)
+    [
+      "Incompatible parameter type [6]: Expected `Vec[pyre_extensions.IntExpression[M + N]]` for \
+       1st positional only parameter to call `pop` but got `Vec[int]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      a : Add[Literal[3],int]
+      b : Add[Literal[4],Any]
+      c : Add[int,Any]
+
+      reveal_type(a)
+      reveal_type(b)
+      reveal_type(c)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+      "Revealed type [-1]: Revealed type for `b` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any
+      from pyre_extensions import Multiply
+      from typing_extensions import Literal
+
+      a : Multiply[Literal[3],int]
+      b : Multiply[Literal[4],Any]
+      c : Multiply[int,Any]
+
+      reveal_type(a)
+      reveal_type(b)
+      reveal_type(c)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `int`.";
+      "Revealed type [-1]: Revealed type for `b` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Any`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any, TypeVar, Generic
+      from pyre_extensions import Add
+      from typing_extensions import Literal
+
+      A = TypeVar("A", bound=int)
+      B = TypeVar("B", bound=int)
+
+      class Vec(Generic[A]): ...
+
+      def add(a : Vec[A], b : Vec[B]) -> Vec[Add[A,B]]: ...
+
+      a : Vec[Literal[5]]
+      b : Vec[int]
+      c : Vec[Any]
+      c1 = add(a,b)
+      c2 = add(a,c)
+      c3 = add(b,c)
+
+      reveal_type(c1)
+      reveal_type(c2)
+      reveal_type(c3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c1` is `Vec[int]`.";
+      "Revealed type [-1]: Revealed type for `c2` is `Vec[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `c3` is `Vec[typing.Any]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from typing import Any, TypeVar, Generic
+      from pyre_extensions import Multiply
+      from typing_extensions import Literal
+
+      A = TypeVar("A", bound=int)
+      B = TypeVar("B", bound=int)
+
+      class Vec(Generic[A]): ...
+
+      def multiply(a : Vec[A], b : Vec[B]) -> Vec[Multiply[A,B]]: ...
+
+      a : Vec[Literal[5]]
+      b : Vec[int]
+      c : Vec[Any]
+      c1 = multiply(a,b)
+      c2 = multiply(a,c)
+      c3 = multiply(b,c)
+
+      reveal_type(c1)
+      reveal_type(c2)
+      reveal_type(c3)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `c1` is `Vec[int]`.";
+      "Revealed type [-1]: Revealed type for `c2` is `Vec[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `c3` is `Vec[typing.Any]`.";
+    ]
+
+
 let () =
   "annotation"
   >::: [
@@ -1718,5 +1955,6 @@ let () =
          "check_literal_assignment" >:: test_check_literal_assignment;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
+         "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
        ]
   |> Test.run

@@ -1361,12 +1361,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         import type_variable_operators
 
         _T = TypeVar("_T")
+        _A = TypeVar("_A", bound=int)
+        _B = TypeVar("_B", bound=int)
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
         def ListVariadic(__name: str) -> Type: ...
         def classproperty(f: Any) -> Any: ...
+        class Add(Generic[_A, _B], int): pass
+        class Multiply(Generic[_A, _B], int): pass
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",

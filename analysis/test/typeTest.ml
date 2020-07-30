@@ -2362,6 +2362,102 @@ let test_is_unit_test _ =
   ()
 
 
+let test_polynomial_create_from_list _ =
+  let assert_create given expected =
+    let given = Type.Polynomial.create_from_list given in
+    assert_equal ~printer:Fn.id expected (Type.Polynomial.show_normal given)
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_create [] "0";
+  assert_create [1, []] "1";
+  assert_create [1, [x, 1]] "x";
+  assert_create [3, [x, 1]] "3x";
+  assert_create [3, [x, 2]] "3x^2";
+  assert_create [5, [y, 1; z, 1; x, 1]] "5xyz";
+  assert_create [5, [y, 2; z, 1; x, 3]] "5x^3y^2z";
+  assert_create [4, []; 3, [x, 2]] "4 + 3x^2";
+  assert_create [3, [x, 2]; 4, [y, 2]] "3x^2 + 4y^2";
+  assert_create [3, [x, 2; y, 1]; 4, [y, 2]] "4y^2 + 3x^2y";
+  assert_create [1, [y, 1]; 1, [x, 1]; 2, []] "2 + x + y";
+  assert_create
+    [
+      2, [y, 1]; 1, [x, 1]; 1, [x, 2; y, 1]; 1, [z, 1]; 1, [y, 1; z, 1; x, 1]; 1, [x, 1; y, 2]; 2, [];
+    ]
+    "2 + x + 2y + z + x^2y + xy^2 + xyz";
+  ()
+
+
+let test_add_polynomials _ =
+  let assert_add given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.add given1 given2));
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.add given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_add [3, []] [2, []] "5";
+  assert_add [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "3 + 4x + 2y + z";
+  ()
+
+
+let test_subtract_polynomials _ =
+  let assert_subtract given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.subtract given1 given2))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_subtract [] [3, []] "-3";
+  assert_subtract [3, []] [3, []] "0";
+  assert_subtract [3, [x, 1]] [3, [x, 1]] "0";
+  assert_subtract [] [1, [x, 1]] "-x";
+  assert_subtract [2, []] [3, []] "-1";
+  assert_subtract [1, []; 3, [x, 1]; 2, [y, 1]] [2, []; 1, [x, 1]; 1, [z, 1]] "-1 + 2x + 2y + -z";
+  ()
+
+
+let test_multiply_polynomial _ =
+  let assert_multiply given1 given2 expected =
+    let given1 = Type.Polynomial.create_from_list given1 in
+    let given2 = Type.Polynomial.create_from_list given2 in
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.multiply given1 given2));
+    assert_equal
+      ~printer:Fn.id
+      expected
+      (Type.Polynomial.show_normal (Type.Polynomial.multiply given2 given1))
+  in
+  let x = Type.Variable.Unary.create "x" in
+  let y = Type.Variable.Unary.create "y" in
+  let z = Type.Variable.Unary.create "z" in
+  assert_multiply [1, []] [] "0";
+  assert_multiply [1, [x, 1]] [] "0";
+  assert_multiply [2, []] [4, []] "8";
+  assert_multiply [2, [y, 1]] [1, [z, 1]] "2yz";
+  assert_multiply [2, [y, 1]] [1, [x, 1]] "2xy";
+  assert_multiply [2, [y, 1]] [1, [x, 1; z, 1]] "2xyz";
+  assert_multiply [3, []; 1, [x, 1]] [1, [y, 1]] "3y + xy";
+  assert_multiply [1, [x, 1]; 3, [z, 1]] [2, []; 1, [y, 2]] "2x + 6z + xy^2 + 3y^2z";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -2414,6 +2510,10 @@ let () =
          "fields_from_constructor" >:: test_fields_from_constructor;
          "map_callable_annotation" >:: test_map_callable_annotation;
          "type_parameters_for_bounded_tuple_union" >:: test_type_parameters_for_bounded_tuple_union;
+         "polynomial_create_from_list" >:: test_polynomial_create_from_list;
+         "add_polynomials" >:: test_add_polynomials;
+         "subtract_polynomials" >:: test_subtract_polynomials;
+         "multiply_polynomial" >:: test_multiply_polynomial;
        ]
   |> Test.run;
   "primitive" >::: ["is unit test" >:: test_is_unit_test] |> Test.run;

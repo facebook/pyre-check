@@ -159,6 +159,13 @@ module OrderImplementation = struct
               union
             else
               List.map elements ~f:(join order other) |> List.fold ~f:(join order) ~init:Type.Bottom
+        | Type.IntExpression polynomial, other when Type.Polynomial.is_base_case polynomial ->
+            join order other (Type.polynomial_to_type polynomial)
+        | other, Type.IntExpression polynomial when Type.Polynomial.is_base_case polynomial ->
+            join order other (Type.polynomial_to_type polynomial)
+        | Type.IntExpression _, other
+        | other, Type.IntExpression _ ->
+            join order other (Type.Primitive "int")
         | _, Type.Variable _
         | Type.Variable _, _ ->
             union
@@ -420,9 +427,14 @@ module OrderImplementation = struct
         | Type.Callable _, _
         | _, Type.Callable _ ->
             Bottom
-        | Type.Literal _, _
-        | _, Type.Literal _ ->
-            Type.Bottom
+        | (Type.IntExpression _ as int_expression), other
+        | other, (Type.IntExpression _ as int_expression)
+        | (Type.Literal _ as int_expression), other
+        | other, (Type.Literal _ as int_expression) ->
+            if always_less_or_equal order ~left:int_expression ~right:other then
+              int_expression
+            else
+              Type.Bottom
         | Type.Primitive _, _ when always_less_or_equal order ~left ~right -> left
         | _, Type.Primitive _ when always_less_or_equal order ~left:right ~right:left -> right
         | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right

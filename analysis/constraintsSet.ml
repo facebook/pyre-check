@@ -491,6 +491,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Type.Variable.Unary.upper_bound bound_variable)
           ~right
     | _, Type.Variable _bound_variable -> impossible
+    | Type.IntExpression _, _
+    | _, Type.IntExpression _ ->
+        Type.solve_less_or_equal_polynomial
+          ~left
+          ~right
+          ~impossible
+          ~solve:(solve_less_or_equal order ~constraints)
     | _, Type.Union rights ->
         if
           Type.Variable.all_variables_are_resolved left

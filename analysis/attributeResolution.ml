@@ -892,6 +892,38 @@ class base class_metadata_environment dependency =
                 annotation, sofar
             | Type.Parametric { name; parameters } ->
                 invalid_type_parameters ~name ~given:parameters
+            | Type.IntExpression _ ->
+                let invalid_generic_int given =
+                  let generic_int =
+                    Type.Variable.Unary.create
+                      "T"
+                      ~constraints:(Type.Record.Variable.Bound (Primitive "int"))
+                  in
+                  let invalid =
+                    let order = self#full_order ~assumptions in
+                    let pair = Type.Variable.UnaryPair (generic_int, given) in
+                    TypeOrder.OrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+                    >>= TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                    |> Option.is_none
+                  in
+                  if invalid then
+                    Some
+                      {
+                        name = "IntExpression";
+                        kind = ViolateConstraints { actual = given; expected = generic_int };
+                      }
+                  else
+                    None
+                in
+                let errors =
+                  Type.Variable.GlobalTransforms.Unary.collect_all annotation
+                  |> List.filter_map ~f:(fun variable ->
+                         invalid_generic_int (Type.Variable variable))
+                in
+                if List.length errors > 0 then
+                  Any, errors @ sofar
+                else
+                  annotation, sofar
             | _ -> annotation, sofar
           in
           { Type.Transform.transformed_annotation; new_state }

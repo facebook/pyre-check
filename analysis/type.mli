@@ -162,6 +162,38 @@ module Record : sig
   end
 end
 
+module Polynomial : sig
+  module Monomial : sig
+    type 'a variable [@@deriving compare, eq, sexp, show, hash]
+
+    type 'a variable_degree [@@deriving eq, sexp, compare, hash, show]
+
+    type 'a t [@@deriving eq, sexp, compare, hash, show]
+  end
+
+  type 'a t [@@deriving compare, eq, sexp, hash, show]
+
+  val is_base_case : 'a t -> bool
+
+  val show_normal : ?concise:bool -> 'a t -> string
+
+  val create_from_variable : 'a Record.Variable.RecordUnary.record -> 'a t
+
+  val create_from_int : int -> 'a t
+
+  val create_from_list : (int * ('a Record.Variable.RecordUnary.record * int) list) list -> 'a t
+
+  val add : 'a t -> 'a t -> 'a t
+
+  val subtract : 'a t -> 'a t -> 'a t
+
+  val multiply : 'a t -> 'a t -> 'a t
+
+  val pow : 'a t -> int -> 'a t
+
+  val replace : 'a t -> by:'a t -> variable:'a Monomial.variable -> 'a t
+end
+
 module Primitive : sig
   type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
@@ -203,6 +235,7 @@ and t =
   | Tuple of tuple
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
+  | IntExpression of t Polynomial.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type class_data = {
@@ -212,6 +245,15 @@ type class_data = {
 }
 
 type type_t = t [@@deriving compare, eq, sexp, show]
+
+val polynomial_to_type : t Polynomial.t -> t
+
+val solve_less_or_equal_polynomial
+  :  left:t ->
+  right:t ->
+  solve:(left:t -> right:t -> 'a) ->
+  impossible:'a ->
+  'a
 
 module Map : Map.S with type Key.t = t
 
