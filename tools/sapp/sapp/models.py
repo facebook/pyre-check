@@ -9,8 +9,6 @@ from collections import namedtuple
 from itertools import islice
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
-from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphene_sqlalchemy.converter import (
     convert_column_to_int_or_id,
     convert_column_to_string,
@@ -336,15 +334,6 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
             cls.kind,
         )
 
-    @classmethod
-    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
-        class SharedTextType(SQLAlchemyObjectType):
-            class Meta:
-                model = cls
-                interfaces = (relay.Node,)
-
-        return SharedTextType
-
 
 class IssueInstanceSharedTextAssoc(Base, PrepareMixin, RecordMixin):  # noqa
     """Assoc table between issue instances and its properties that are
@@ -535,15 +524,6 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
             i.is_new_issue = i.issue_id.is_new
             yield i
 
-    @classmethod
-    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
-        class IssueInstanceType(SQLAlchemyObjectType):
-            class Meta:
-                model = cls
-                interfaces = (relay.Node,)
-
-        return IssueInstanceType
-
 
 class IssueStatus(enum.Enum):
     """Issues are born uncategorized. Humans can
@@ -657,15 +637,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     @classmethod
     def merge(cls, session, issues):
         return cls._merge_by_key(session, issues, cls.handle)
-
-    @classmethod
-    def generateSQLAlchemyObject(cls) -> Type[SQLAlchemyObjectType]:
-        class IssueType(SQLAlchemyObjectType):
-            class Meta:
-                model = cls
-                interfaces = (relay.Node,)
-
-        return IssueType
 
 
 class RunStatus(enum.Enum):

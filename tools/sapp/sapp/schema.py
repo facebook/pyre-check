@@ -1,40 +1,37 @@
 # (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
 
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import graphene
 from graphene import relay
+from graphene_sqlalchemy import get_session
+from graphql.execution.base import ResolveInfo
+from sqlalchemy.sql import func
 
-from .models import Issue, IssueInstance, SharedText
-
-
-if TYPE_CHECKING:
-    from graphql.execution.base import ResolveInfo
-
-
-if TYPE_CHECKING:
-    from graphql.execution.base import ResolveInfo
-
-
-SharedTextType = SharedText.generateSQLAlchemyObject()
-IssueInstanceType = IssueInstance.generateSQLAlchemyObject()
-IssueType = Issue.generateSQLAlchemyObject()
+from .interactive import IssueQueryResult, IssueQueryResultType
+from .models import Run, RunStatus
+from .query_builder import IssueQueryBuilder
 
 
 class IssueConnection(relay.Connection):
     class Meta:
-        node = IssueInstanceType
+        node = IssueQueryResultType
 
 
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
-    issue_instances = relay.ConnectionField(IssueConnection)
+    issues = relay.ConnectionField(IssueConnection)
 
-    def resolve_issue_instances(
-        self, info: "ResolveInfo", **args
-    ) -> List[IssueInstance]:
-        issue_instances_query = IssueInstanceType.get_query(info)
-        return issue_instances_query.all()
+    def resolve_issues(self, info: ResolveInfo, **args) -> List[IssueQueryResult]:
+        session = get_session(info.context)
+        latest_run_id = (
+            session.query(func.max(Run.id))
+            .filter(Run.status == RunStatus.FINISHED)
+            .scalar()
+        )
+        builder = IssueQueryBuilder(latest_run_id).with_session(session)
+
+        return builder.get()
 
 
 schema = graphene.Schema(query=Query, auto_camelcase=False)

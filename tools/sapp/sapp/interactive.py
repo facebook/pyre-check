@@ -24,6 +24,7 @@ from typing import (
 )
 
 import click
+import graphene
 import IPython
 from IPython import paths
 from IPython.core import page
@@ -81,6 +82,23 @@ class IssueQueryResult(NamedTuple):
     message: str
     min_trace_length_to_sources: int
     min_trace_length_to_sinks: int
+
+
+class IssueQueryResultType(graphene.ObjectType):
+    class Meta:
+        interfaces = (graphene.relay.Node,)
+
+    issue_id = graphene.ID()
+    filename = graphene.String()
+    location = graphene.String()
+    code = graphene.Int()
+    callable = graphene.String()
+    message = graphene.String()
+    min_trace_length_to_sources = graphene.Int()
+    min_trace_length_to_sinks = graphene.Int()
+
+    def resolve_issue_id(self, info):
+        return self.id
 
 
 class TraceFrameQueryResult(NamedTuple):
