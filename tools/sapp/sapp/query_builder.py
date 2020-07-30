@@ -76,9 +76,13 @@ class IssueQueryBuilder:
                     if filter_condition[1]:
                         query = query.filter(column <= filter_condition[1])
                 else:
-                    query = query.filter(
-                        or_(*[column.like(item) for item in filter_condition])
-                    )
+                    if not filter_condition:
+                        query = query.filter(column is None)
+                    else:
+                        query = query.filter(
+                            or_(*[column.like(item) for item in filter_condition])
+                        )
+
         issues = list(
             query.join(Issue, IssueInstance.issue_id == Issue.id).join(
                 MessageText, MessageText.id == IssueInstance.message_id

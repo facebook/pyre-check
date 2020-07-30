@@ -22,11 +22,11 @@ class Query(graphene.ObjectType):
     node = relay.Node.Field()
     issues = relay.ConnectionField(
         IssueConnection,
-        codes=graphene.List(graphene.Int, default_value=[]),
-        callables=graphene.List(graphene.String, default_value=[]),
-        file_names=graphene.List(graphene.String, default_value=[]),
-        trace_length_to_sinks=graphene.List(graphene.String, default_value=[]),
-        trace_length_to_sources=graphene.List(graphene.String, default_value=[]),
+        codes=graphene.List(graphene.Int, default_value=["%"]),
+        callables=graphene.List(graphene.String, default_value=["%"]),
+        file_names=graphene.List(graphene.String, default_value=["%"]),
+        trace_length_to_sinks=graphene.List(graphene.String, default_value=["%"]),
+        trace_length_to_sources=graphene.List(graphene.String, default_value=["%"]),
     )
 
     def resolve_issues(
