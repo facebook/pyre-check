@@ -106,7 +106,7 @@ class IssueQueryBuilder:
                 )
                 for issue in issues
             ]
-            for issue, features in zip(issues, features_list):
+            for issue, features in zip(issues.copy(), features_list):
                 if any_feature_set and not (features & any_feature_set):
                     issues.remove(issue)
                 elif all_feature_set and not (

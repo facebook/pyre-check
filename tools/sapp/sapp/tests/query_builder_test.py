@@ -4,6 +4,7 @@ from sqlalchemy.sql import func
 
 from ..db import DB, DBType
 from ..models import (
+    DBID,
     IssueInstanceSharedTextAssoc,
     Run,
     RunStatus,
@@ -401,10 +402,10 @@ class QueryBuilderTest(TestCase):
             self.assertNotIn(1, issue_ids)
 
     def testAssertExcludeFeatures(self) -> None:
-        self.fakes.instance()
         feature1 = self.fakes.feature("via:feature1")
         feature2 = self.fakes.feature("via:feature2")
         self.fakes.feature("via:feature3")
+        feature4 = self.fakes.feature("via:feature4")
 
         self.fakes.save_all(self.db)
 
@@ -417,6 +418,16 @@ class QueryBuilderTest(TestCase):
             session.add(
                 IssueInstanceSharedTextAssoc(  # pyre-ignore
                     shared_text_id=feature2.id, issue_instance_id=1
+                )
+            )
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature1.id, issue_instance_id=2
+                )
+            )
+            session.add(
+                IssueInstanceSharedTextAssoc(  # pyre-ignore
+                    shared_text_id=feature4.id, issue_instance_id=2
                 )
             )
             session.commit()
@@ -432,6 +443,7 @@ class QueryBuilderTest(TestCase):
                 int(issue.id) for issue in builder.where_exclude_features([]).get()
             }
             self.assertIn(1, issue_ids)
+            self.assertIn(2, issue_ids)
 
             builder = IssueQueryBuilder(latest_run_id)
             builder = builder.with_session(session)
@@ -440,6 +452,25 @@ class QueryBuilderTest(TestCase):
                 for issue in builder.where_exclude_features(["via:feature1"]).get()
             }
             self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
+
+            builder = IssueQueryBuilder(latest_run_id)
+            builder = builder.with_session(session)
+            issue_ids = {
+                int(issue.id)
+                for issue in builder.where_exclude_features(["via:feature2"]).get()
+            }
+            self.assertNotIn(1, issue_ids)
+            self.assertIn(2, issue_ids)
+
+            builder = IssueQueryBuilder(latest_run_id)
+            builder = builder.with_session(session)
+            issue_ids = {
+                int(issue.id)
+                for issue in builder.where_exclude_features(["via:feature3"]).get()
+            }
+            self.assertIn(1, issue_ids)
+            self.assertIn(2, issue_ids)
 
             builder = IssueQueryBuilder(latest_run_id)
             builder = builder.with_session(session)
@@ -450,14 +481,29 @@ class QueryBuilderTest(TestCase):
                 ).get()
             }
             self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
 
             builder = IssueQueryBuilder(latest_run_id)
             builder = builder.with_session(session)
             issue_ids = {
                 int(issue.id)
-                for issue in builder.where_exclude_features(["via:feature3"]).get()
+                for issue in builder.where_exclude_features(
+                    ["via:feature1", "via:feature4"]
+                ).get()
             }
-            self.assertIn(1, issue_ids)
+            self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
+
+            builder = IssueQueryBuilder(latest_run_id)
+            builder = builder.with_session(session)
+            issue_ids = {
+                int(issue.id)
+                for issue in builder.where_exclude_features(
+                    ["via:feature2", "via:feature4"]
+                ).get()
+            }
+            self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
 
             builder = IssueQueryBuilder(latest_run_id)
             builder = builder.with_session(session)
@@ -468,3 +514,4 @@ class QueryBuilderTest(TestCase):
                 ).get()
             }
             self.assertNotIn(1, issue_ids)
+            self.assertNotIn(2, issue_ids)
