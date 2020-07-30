@@ -6,6 +6,9 @@
 open Core
 open OUnit2
 open Newserver
+module Path = Pyre.Path
+
+let ( ! ) = Path.create_absolute ~follow_symbolic_links:false
 
 let test_json_parsing context =
   let assert_parsed ~expected json_string =
@@ -142,4 +145,47 @@ let test_json_parsing context =
   ()
 
 
-let () = "configuration" >::: ["json_parsing" >:: test_json_parsing] |> Test.run
+let test_critical_files context =
+  let assert_find ~expected ~critical_files paths =
+    let actual = ServerConfiguration.CriticalFiles.find critical_files paths in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Path.t option]
+      ~printer:(fun result -> [%sexp_of: Path.t option] result |> Sexp.to_string_hum)
+      expected
+      actual
+  in
+  assert_find ~critical_files:[] ~expected:None [];
+  assert_find ~critical_files:["a.py"] ~expected:None [];
+  assert_find ~critical_files:["a.py"] ~expected:None [!"b.py"];
+  assert_find ~critical_files:["a.py"] ~expected:(Some !"a.py") [!"a.py"];
+  assert_find ~critical_files:["a.py"] ~expected:(Some !"foo/a.py") [!"foo/a.py"];
+  assert_find ~critical_files:["a.py"] ~expected:(Some !"/foo/bar/a.py") [!"/foo/bar/a.py"];
+  assert_find ~critical_files:["b.py"] ~expected:(Some !"foo/b.py") [!"foo/a.py"; !"foo/b.py"];
+  assert_find ~critical_files:["a.py"] ~expected:None [!"a/foo.py"; !"/b/a/foo.py"];
+  assert_find ~critical_files:["a.py"] ~expected:(Some !"a.py") [!"a.py"; !"b.py"];
+  assert_find ~critical_files:["a.py"] ~expected:(Some !"a.py") [!"b.py"; !"a.py"];
+  assert_find ~critical_files:["a.py"; "b.py"] ~expected:None [];
+  assert_find ~critical_files:["a.py"; "b.py"] ~expected:None [!"c.py"];
+  assert_find ~critical_files:["a.py"; "b.py"] ~expected:(Some !"b.py") [!"b.py"; !"c.py"];
+  assert_find ~critical_files:["a.py"; "b.py"] ~expected:(Some !"b.py") [!"c.py"; !"b.py"];
+  assert_find
+    ~critical_files:["a.py"; "b.py"]
+    ~expected:(Some !"foo/b.py")
+    [!"foo/c.py"; !"d.py"; !"foo/b.py"];
+
+  assert_find
+    ~critical_files:[".pyre_configuration"]
+    ~expected:(Some !"foo/.pyre_configuration")
+    [!"foo/a.py"; !"foo/.pyre_configuration.local"; !"foo/.pyre_configuration"];
+  assert_find
+    ~critical_files:[".pyre_configuration.local"]
+    ~expected:(Some !"foo/.pyre_configuration.local")
+    [!"foo/a.py"; !"foo/.pyre_configuration"; !"foo/.pyre_configuration.local"];
+  ()
+
+
+let () =
+  "configuration"
+  >::: ["json_parsing" >:: test_json_parsing; "critical_files" >:: test_critical_files]
+  |> Test.run

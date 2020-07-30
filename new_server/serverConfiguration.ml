@@ -6,6 +6,22 @@
 open Core
 open Pyre
 
+module CriticalFiles = struct
+  type t = string list [@@deriving sexp, compare, hash]
+
+  let of_yojson = function
+    | `Null -> Result.Ok []
+    | _ as elements -> [%of_yojson: string list] elements
+
+
+  let to_yojson = [%to_yojson: string list]
+
+  let find critical_files paths =
+    List.find paths ~f:(fun path ->
+        let base_name = Path.last path in
+        List.exists critical_files ~f:(String.equal base_name))
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: Path.t list;
@@ -25,7 +41,7 @@ type t = {
   strict: bool;
   show_error_traces: bool;
   store_type_check_resolution: bool;
-  critical_files: string list;
+  critical_files: CriticalFiles.t;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
@@ -89,7 +105,9 @@ let of_yojson json =
     let debug = json |> bool_member "debug" ~default:false in
     let strict = json |> bool_member "strict" ~default:false in
     let show_error_traces = json |> bool_member "show_error_traces" ~default:false in
-    let critical_files = json |> string_list_member "critical_files" ~default:[] in
+    let critical_files =
+      json |> member "critical_files" |> CriticalFiles.of_yojson |> Result.ok_or_failwith
+    in
     let store_type_check_resolution =
       json |> bool_member "store_type_check_resolution" ~default:false
     in

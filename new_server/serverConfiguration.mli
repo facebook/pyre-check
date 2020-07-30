@@ -6,6 +6,12 @@
 open Core
 open Pyre
 
+module CriticalFiles : sig
+  type t = string list [@@deriving sexp, compare, hash, yojson]
+
+  val find : t -> Path.t list -> Path.t option
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: Path.t list;
@@ -25,7 +31,7 @@ type t = {
   strict: bool;
   show_error_traces: bool;
   store_type_check_resolution: bool;
-  critical_files: string list;
+  critical_files: CriticalFiles.t;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
