@@ -42,10 +42,6 @@ def serve(path):
 
 
 def start_app(database):
-    application.add_url_rule(
-        "/graphql",
-        view_func=GraphQLView.as_view("graphql", schema=schema, graphiql=True),
-    )
     engine = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL("sqlite", database=database.dbname),
         echo=False,
@@ -53,5 +49,15 @@ def start_app(database):
     )
     session = scoped_session(sessionmaker(bind=engine))
     Base.query = session.query_property()
+
+    application.add_url_rule(
+        "/graphql",
+        view_func=GraphQLView.as_view(
+            "graphql",
+            schema=schema,
+            graphiql=True,
+            get_context=lambda: {"session": session},
+        ),
+    )
 
     application.run()
