@@ -6,24 +6,56 @@ Pyre ships with **Pysa** Python Static Analyzer, a security focused static analy
 
 *Read this in other languages: [Español](README.es.md)*
 
-## Getting Started
+## Requirements
+You need a working [Python 3.6 or later](https://www.python.org/getit/) environment to run Pyre. We highly recommend that you install [watchman](https://facebook.github.io/watchman/) to get the most out of Pyre but it's not strictly necessary. On MacOS you can get everything with [homebrew](https://brew.sh/):
+```
+$ brew install python3 watchman
+```
+In Ubuntu, Mint and Debian you can install Python 3 like this:
+```
+$ sudo apt-get install python3 python3-pip watchman
+```
+We tested Pyre on **Ubuntu 16.04 LTS**, **CentOS 7**, as well as **OSX 10.11** and later.
 
-To install Pyre on your system run `pip install pyre-check` and you should be good to go! Run it on your project with `pyre --source-directory . check`.
+## Getting Started
+These instructions assume you're working with a virtual environment set up inside of your project directory as follows.
+
+```
+$ cd your_project
+$ python3 -m venv venv
+(venv) $ pip install pyre-check
+```
+
+We now need to tell Pyre what to check by running
+```
+(venv) $ pyre init
+```
+By default, this command will set up a configuration for Pyre (`.pyre_configuration`) as well as watchman (`.watchmanconfig`) in your project's directory.
+
+Note that if you do have your virtual environment inside your project directory you will want to tell Pyre not to check the contents of it by adding the following line to your `.pyre_configuration` file:
+
+```
+"ignore_all_errors": [
+  "<absolute path to the virtual environment>"
+],
+```
+
+If you're using watchman, you need to make sure we have watchman listening to file changes in your project directory:
+
+```
+(venv) $ touch .watchmanconfig
+```
+
+We are now ready to start Pyre:
+```
+(venv) $ echo "i: int = 'string'" > test.py
+(venv) $ pyre
+ ƛ Found 1 type error!
+test.py:1:0 Incompatible variable type [9]: i is declared to have type `int` but is used as type `str`.
+```
+Note that the first invocation initializes Pyre's server that handles incremental updates and will be slower than subsequent invocations – you can easily see this by invoking `pyre` again and observe the same result instantaneously.
 
 For more detailed documentation, see https://pyre-check.org.
-
-## Supported platforms
-
-* **Python**: you need **Python 3.6 or later** to run Pyre.
-
-* **Operating System**:
-  * a recent version of Linux (we tested on **Ubuntu 16.04 LTS** and **CentOS 7**);
-  * **OSX 10.11** or newer;
-  * please note: Windows is not supported.
-
-## Installation
-
-See [INSTALL.md](INSTALL.md) for details on installing Pyre from a packaged version or from source.
 
 ## Join the Pyre community
 
