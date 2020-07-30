@@ -12,8 +12,18 @@ catch the vulnerabilities.
 
 ### Stubs
 
-The `sources_sinks.pysa` file contains stubs with annotations, which have to
-match the stub file that Pyre uses. Pyre's primary set of _stubs_ come from
+The `sources_sinks.pysa` file contains models with taint annotations. These
+models have to match the stubs in `.pyi` stub file, if present, or the original
+source code, otherwise. When translating a `.pyi` stub or source code to a
+model, make sure:
+
+1. The function name is unchanged
+1. The argument names are unchanged
+1. Type annotations are removed
+1. The function or attribute is [fully
+   qualified](https://pyre-check.org/docs/pysa-basics.html#fully-qualified-names)
+
+Pyre's primary set of _stubs_ come from
 [typeshed](https://github.com/python/typeshed). Pyre ships with its own copy of
 typeshed, and you can find that copy in `$VIRTUAL_ENV/lib/pyre_check/typeshed`.
 
@@ -30,8 +40,8 @@ third party libraries such as Django, which are not in typeshed.
    also user controlled. Don't forget it needs to match the stubs described
    above
 
-   You will know you are done this step when you run `pyre analyze`, and see **1
-   issue** in the output.
+   You will know you are done this step when you run `pyre analyze`, and see
+   **one issue** within a JSON list in the output.
 
 1. The `operate_on_threes` function is similar to `operate_on_twos`, but it uses
    `exec` rather than `eval`. Add a new line to `sources_sinks.pysa` to teach
@@ -39,8 +49,8 @@ third party libraries such as Django, which are not in typeshed.
    the [`exec` stub provided by
    typeshed.](https://github.com/python/typeshed/blob/83e955b52ff0379538441df2cfd0b0e1b4aa5f7e/stdlib/2and3/builtins.pyi#L1249)
 
-   You will know you are done this step when you run `pyre analyze`, and see **2
-   issues** in the output.
+   You will know you are done this step when you run `pyre analyze`, and see
+   **two issues** within a JSON list in the output.
 
 1. The `operate_on_fours` function is similar to the previous two functions, but
    it uses a sink that executes shell code, rather than python code. The sink is
@@ -48,8 +58,8 @@ third party libraries such as Django, which are not in typeshed.
    teach Pysa that it is also dangerous for user controlled data to be a part of
    shell code execution.
 
-   You will know you are done this step when you run `pyre analyze`, and see **3
-   issues** in the output.
+   You will know you are done this step when you run `pyre analyze`, and see
+   **three issues** within a JSON list in the output.
 
 ## Debugging Tips
 

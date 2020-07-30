@@ -11,8 +11,8 @@ the make changes to `generate_models.py` so that it can dynamically generate
 source annotations for `views.py`, allowing Pysa to catch the RCE
 vulnerabilities.
 
-**If you directly modify any file other than `generate_models.py` in this
-exercise, you are doing something wrong.**
+**You do not need to directly modify any file other than `generate_models.py` in
+this exercise.**
 
 ## What you need to know
 
@@ -45,7 +45,8 @@ how Django dispatches incoming requests._
    `generated_django_path_params.pysa`, and that the file correctly declares the
    `operator` argument to `operate_on_twos` as `TaintSource[UserControlled]`
 
-1. Run `pyre analyze`, and verify you see **1 issue** in the output.
+1. Run `pyre analyze`, and verify you see **one issue** within a JSON list in
+   the output.
 
 ### Extend `generate_models.py`
 
@@ -73,7 +74,8 @@ user-controlled.
    previous section. Check that this file is correctly declaring the `operator`
    argument to `operate_on_threes` as `TaintSource[UserControlled]`
 
-1. Run `pyre analyze`, and verify you see **2 issues** in the output.
+1. Run `pyre analyze`, and verify you see **two issues** within a JSON list in
+   the output.
 
 ## Debugging Tips
 

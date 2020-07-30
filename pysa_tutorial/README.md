@@ -15,11 +15,19 @@ project.
 
 ## Setup Instructions
 
+1. If you aren't alredy looking at this README on your local machine (ie. you're
+   reading this on GitHub), clone this repo and navigate to the tutorial folder:
+
+   ```
+   git clone https://github.com/facebook/pyre-check.git
+   cd pyre-check/pysa_tutorial
+   ```
+
 1. Install the correct environment. From this directory, run:
 
    ```
-   python3 -m venv tutorial
-   source tutorial/bin/activate
+   python3 -m venv ${TMPDIR:-/tmp}/tutorial"
+   source "${TMPDIR:-/tmp}/tutorial/bin/activate"
    pip3 install pyre-check
    # Temporary workaround for dependencies problem
    pip3 install click click-log ipython==7.6.1 munch pygments SQLAlchemy ujson~=1.35 xxhash~=1.3.0 prompt-toolkit~=2.0.9 flask flask_cors flask_graphql graphene graphene_sqlalchemy

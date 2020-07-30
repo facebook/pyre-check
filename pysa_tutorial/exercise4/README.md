@@ -2,7 +2,7 @@
 
 The purpose of this exercise is to learn how to add _features_ to issues, so
 that we can filter down to only the interesting issues with the _Static Analysis
-Post Processor (SAPP).
+Post Processor (SAPP)_.
 
 Like the previous exercise, none of the functions in `views.py` are vulnerable,
 but they will all show up in `pyre analyze` as false positives. The goal of this
@@ -72,10 +72,10 @@ these tutorials, SAPP is the prefered way to browse issues.
    1. Filter out this issue within the SAPP prompt:
 
       ```
-      >>> issues(exclude_features=["AUTO_ADDED_FEATURE"])
+      >>> issues(exclude_features=["<REPLACE_ME>"])
       ```
 
-      You will know you are done this section when you see **1 issue**
+      You will know you are done this section when you see **one issue**
       displayed.
 
 1. `do_or` ensures RCE is not possible by asserting that both user controlled
@@ -97,7 +97,7 @@ these tutorials, SAPP is the prefered way to browse issues.
       sapp explore
       ```
 
-   1. Query issues with the `issues(exclude_features=["AUTO_ADDED_FEATURE"])`
+   1. Query issues with the `issues(exclude_features=["<REPLACE_ME>"])`
       query you wrote in the previous step. The issue representing `do_or`
       should be the only remaining issue you see in your SAPP output; ensure you
       see `Callable: views.do_or` the issue output.
@@ -106,10 +106,10 @@ these tutorials, SAPP is the prefered way to browse issues.
       query to filter out this issue:
 
       ```
-      >>> issues(exclude_features=["AUTO_ADDED_FEATURE", "FEATURE_YOU_ADDED"])
+      >>> issues(exclude_features=["<REPLACE_ME>", "<AND_REPLACE_ME>"])
       ```
 
-      You will know you are done this exercise when you see **0 issue**
+      You will know you are done this exercise when you see **zero issue**
       displayed.
 
 ## Debugging Tips
