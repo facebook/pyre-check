@@ -1,6 +1,6 @@
 {
   "overview": {
-    "Contents": [
+    "Pyre": [
       "overview",
       "installation",
       "guided-tour",
@@ -10,22 +10,18 @@
       "error-types",
       "lsp-integration",
       "watchman-integration",
-      "querying-pyre",
-      {
-        "type": "subcategory",
-        "label": "Pysa: Python Static Analyzer",
-        "ids": [
-          "pysa-basics",
-          "pysa-running",
-          "pysa-features",
-          "pysa-advanced",
-          "pysa-model-generators",
-          "pysa-tips",
-          "pysa-coverage",
-          "static-analysis-post-processor",
-          "pysa-additional-resources"
-        ]
-      }
+      "querying-pyre"
+    ],
+    "Pysa": [
+      "pysa-basics",
+      "pysa-running",
+      "pysa-features",
+      "pysa-advanced",
+      "pysa-model-generators",
+      "pysa-tips",
+      "pysa-coverage",
+      "static-analysis-post-processor",
+      "pysa-additional-resources"
     ]
   }
 }
