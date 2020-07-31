@@ -176,11 +176,12 @@ module Subscriber = struct
   end
 
   type t = {
+    setting: Setting.t;
     connection: Raw.Connection.t;
     initial_clock: string;
   }
 
-  let subscribe { Setting.raw; root; filter } =
+  let subscribe ({ Setting.raw; root; filter } as setting) =
     let open Lwt.Infix in
     Raw.open_connection raw
     >>= fun connection ->
@@ -210,7 +211,7 @@ module Subscriber = struct
           match Yojson.Safe.Util.member "error" initial_response with
           | `Null -> (
               match Yojson.Safe.Util.member "clock" initial_response with
-              | `String initial_clock -> Lwt.return { connection; initial_clock }
+              | `String initial_clock -> Lwt.return { setting; connection; initial_clock }
               | _ as error ->
                   let message =
                     Format.sprintf
@@ -231,7 +232,11 @@ module Subscriber = struct
         Raw.shutdown_connection connection >>= fun () -> raise exn)
 
 
-  let listen ~f { connection; initial_clock } =
+  let setting_of { setting; _ } = setting
+
+  let connection_of { connection; _ } = connection
+
+  let listen ~f { connection; initial_clock; setting = _ } =
     let open Lwt.Infix in
     let rec do_listen () =
       Raw.Connection.receive connection ()

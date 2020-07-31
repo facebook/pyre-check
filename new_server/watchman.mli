@@ -93,6 +93,12 @@ module Subscriber : sig
    * - Watchman's response to the subscription request does not contain an initial clock. *)
   val subscribe : Setting.t -> t Lwt.t
 
+  (* Return the setting used to create the subscriber. *)
+  val setting_of : t -> Setting.t
+
+  (* Return the connection used by the subscriber. *)
+  val connection_of : t -> Raw.Connection.t
+
   (* Listen to the watchman server and invoke `f` on the "files" field of every received message.
      The returned promise would wait forever as long as the underlying socket connection is alive,
      except when an excpetion is raised.
