@@ -122,6 +122,38 @@ let test_lookup_pick_narrowest context =
   assert_annotation ~position:{ Location.line = 3; column = 28 } ~annotation:None
 
 
+(* Qualified Names *)
+let assert_qualified_names ~lookup expected =
+  let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    ~pp_diff:(diff ~print:list_diff)
+    expected
+    ( Lookup.get_all_qualified_names lookup
+    |> List.map ~f:(fun (key, data) ->
+           Format.asprintf "%s -> %s" (show_location key) (Reference.show data))
+    |> List.sort ~compare:String.compare )
+
+
+let test_lookup_qualified_names context =
+  let environment_sources =
+    ["a.py", {|
+      class A:
+        def __init__(self) -> None:
+          self.a = 1
+    |}]
+  in
+  let source = {|
+      from .a import A as RenamedA
+
+      a = RenamedA
+    |} in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    ["2:15-2:16 -> a.A"; "2:20-2:28 -> a.A"; "4:0-4:1 -> test.a"; "4:4-4:12 -> a.A"]
+
+
 (* Definitions *)
 let assert_definition_list ~lookup expected =
   let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
@@ -887,6 +919,7 @@ let () =
          "lookup" >:: test_lookup;
          "lookup_out_of_bounds_location" >:: test_lookup_out_of_bounds_location;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
+         "lookup_qualified_names" >:: test_lookup_qualified_names;
          "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "lookup_attributes" >:: test_lookup_attributes;
