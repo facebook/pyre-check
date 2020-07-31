@@ -137,6 +137,14 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
+  let qualified_name_at_location_to_yojson { location; qualified_name } =
+    `Assoc
+      [
+        "location", Location.to_yojson location;
+        "qualified_name", `String (Reference.show qualified_name);
+      ]
+
+
   type qualified_names_at_file = {
     path: PyrePath.t;
     qualified_names: qualified_name_at_location list;
