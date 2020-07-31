@@ -142,6 +142,106 @@ let test_json_parsing context =
        |}
        mandatory_fileds)
     ~expected:["local_root", `String "/project/local"; "watchman_root", `String "/project"];
+  assert_not_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": "derp"
+          }
+       |}
+       mandatory_fileds);
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": [
+              "load_from_file",
+              {
+                "shared_memory_path": "/some/path"
+              }
+            ]
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "saved_state_action",
+          `List [`String "load_from_file"; `Assoc ["shared_memory_path", `String "/some/path"]] );
+      ];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": [
+              "load_from_file",
+              {
+                "shared_memory_path": "/some/path",
+                "changed_files_path": "/some/other/path"
+              }
+            ]
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "saved_state_action",
+          `List
+            [
+              `String "load_from_file";
+              `Assoc
+                [
+                  "shared_memory_path", `String "/some/path";
+                  "changed_files_path", `String "/some/other/path";
+                ];
+            ] );
+      ];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": [
+              "load_from_project",
+              {
+                "project_name": "my_project"
+              }
+            ]
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "saved_state_action",
+          `List [`String "load_from_project"; `Assoc ["project_name", `String "my_project"]] );
+      ];
+  assert_parsed
+    (Format.sprintf
+       {|
+          {
+            %s,
+            "saved_state_action": [
+              "load_from_project",
+              {
+                "project_name": "my_project",
+                "project_metadata": "my_metadata"
+              }
+            ]
+          }
+       |}
+       mandatory_fileds)
+    ~expected:
+      [
+        ( "saved_state_action",
+          `List
+            [
+              `String "load_from_project";
+              `Assoc
+                ["project_name", `String "my_project"; "project_metadata", `String "my_metadata"];
+            ] );
+      ];
   ()
 
 

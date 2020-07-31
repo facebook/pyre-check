@@ -22,6 +22,90 @@ module CriticalFiles = struct
         List.exists critical_files ~f:(String.equal base_name))
 end
 
+module SavedStateAction = struct
+  type t =
+    | LoadFromFile of {
+        shared_memory_path: Path.t;
+        changed_files_path: Path.t option;
+      }
+    | LoadFromProject of {
+        project_name: string;
+        project_metadata: string option;
+      }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    let parsing_failed () =
+      let message =
+        Format.sprintf "Malformed saved state action JSON: %s" (Yojson.Safe.to_string json)
+      in
+      Result.Error message
+    in
+    match json with
+    | `List [`String "load_from_file"; load_from_file_options] -> (
+        match
+          ( member "shared_memory_path" load_from_file_options,
+            member "changed_files_path" load_from_file_options )
+        with
+        | `String shared_memory_path, `String changed_files_path ->
+            Result.Ok
+              (LoadFromFile
+                 {
+                   shared_memory_path =
+                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
+                   changed_files_path =
+                     Some (Path.create_absolute ~follow_symbolic_links:false changed_files_path);
+                 })
+        | `String shared_memory_path, `Null ->
+            Result.Ok
+              (LoadFromFile
+                 {
+                   shared_memory_path =
+                     Path.create_absolute ~follow_symbolic_links:false shared_memory_path;
+                   changed_files_path = None;
+                 })
+        | _, _ -> parsing_failed () )
+    | `List [`String "load_from_project"; load_from_project_options] -> (
+        match
+          ( member "project_name" load_from_project_options,
+            member "project_metadata" load_from_project_options )
+        with
+        | `String project_name, `String project_metadata ->
+            Result.Ok (LoadFromProject { project_name; project_metadata = Some project_metadata })
+        | `String project_name, `Null ->
+            Result.Ok (LoadFromProject { project_name; project_metadata = None })
+        | _, _ -> parsing_failed () )
+    | _ -> parsing_failed ()
+
+
+  let to_yojson = function
+    | LoadFromFile { shared_memory_path; changed_files_path } ->
+        let load_from_file_options =
+          let shared_memory_path_option =
+            "shared_memory_path", `String (Path.absolute shared_memory_path)
+          in
+          match changed_files_path with
+          | None -> [shared_memory_path_option]
+          | Some changed_files_path ->
+              let changed_files_path_option =
+                "changed_files_path", `String (Path.absolute changed_files_path)
+              in
+              [shared_memory_path_option; changed_files_path_option]
+        in
+        `List [`String "load_from_file"; `Assoc load_from_file_options]
+    | LoadFromProject { project_name; project_metadata } ->
+        let load_from_project_options =
+          let project_name_option = "project_name", `String project_name in
+          match project_metadata with
+          | None -> [project_name_option]
+          | Some project_metadata ->
+              let project_metadata_option = "project_metadata", `String project_metadata in
+              [project_name_option; project_metadata_option]
+        in
+        `List [`String "load_from_project"; `Assoc load_from_project_options]
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: Path.t list;
@@ -42,6 +126,7 @@ type t = {
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFiles.t;
+  saved_state_action: SavedStateAction.t option;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
@@ -108,6 +193,13 @@ let of_yojson json =
     let critical_files =
       json |> member "critical_files" |> CriticalFiles.of_yojson |> Result.ok_or_failwith
     in
+    let saved_state_action =
+      json
+      |> member "saved_state_action"
+      |> function
+      | `Null -> None
+      | _ as json -> SavedStateAction.of_yojson json |> Result.ok_or_failwith |> Option.some
+    in
     let store_type_check_resolution =
       json |> bool_member "store_type_check_resolution" ~default:false
     in
@@ -130,6 +222,7 @@ let of_yojson json =
         strict;
         show_error_traces;
         critical_files;
+        saved_state_action;
         store_type_check_resolution;
         parallel;
         number_of_workers;
@@ -158,6 +251,7 @@ let to_yojson
       strict;
       show_error_traces;
       critical_files;
+      saved_state_action;
       store_type_check_resolution;
       parallel;
       number_of_workers;
@@ -196,6 +290,12 @@ let to_yojson
     | Some watchman_root ->
         ("watchman_root", [%to_yojson: string] (Path.absolute watchman_root)) :: result
   in
+  let result =
+    match saved_state_action with
+    | None -> result
+    | Some saved_state_action ->
+        ("saved_state_action", SavedStateAction.to_yojson saved_state_action) :: result
+  in
   `Assoc result
 
 
@@ -216,6 +316,7 @@ let analysis_configuration_of
       strict;
       show_error_traces;
       critical_files = _;
+      saved_state_action = _;
       store_type_check_resolution;
       parallel;
       number_of_workers;

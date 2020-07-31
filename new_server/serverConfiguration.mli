@@ -12,6 +12,19 @@ module CriticalFiles : sig
   val find : t -> Path.t list -> Path.t option
 end
 
+module SavedStateAction : sig
+  type t =
+    | LoadFromFile of {
+        shared_memory_path: Path.t;
+        changed_files_path: Path.t option;
+      }
+    | LoadFromProject of {
+        project_name: string;
+        project_metadata: string option;
+      }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 type t = {
   (* Source file discovery *)
   source_paths: Path.t list;
@@ -32,6 +45,7 @@ type t = {
   show_error_traces: bool;
   store_type_check_resolution: bool;
   critical_files: CriticalFiles.t;
+  saved_state_action: SavedStateAction.t option;
   (* Parallelism controls *)
   parallel: bool;
   number_of_workers: int;
