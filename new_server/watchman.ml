@@ -10,6 +10,8 @@ exception ConnectionError of string
 
 exception SubscriptionError of string
 
+exception QueryError of string
+
 module Raw = struct
   module Response = struct
     type t =
@@ -144,29 +146,27 @@ module Raw = struct
         Lwt.return (Result.Error message))
 end
 
+module Filter = struct
+  type t = {
+    base_names: string list;
+    suffixes: string list;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let watchman_expression_of { base_names; suffixes; _ } =
+    let base_names =
+      List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])
+    in
+    let suffixes = List.map suffixes ~f:(fun suffix -> `List [`String "suffix"; `String suffix]) in
+    `List
+      [
+        `String "allof";
+        `List [`String "type"; `String "f"];
+        `List (`String "anyof" :: List.append suffixes base_names);
+      ]
+end
+
 module Subscriber = struct
-  module Filter = struct
-    type t = {
-      base_names: string list;
-      suffixes: string list;
-    }
-    [@@deriving sexp, compare]
-
-    let watchman_expression_of { base_names; suffixes; _ } =
-      let base_names =
-        List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])
-      in
-      let suffixes =
-        List.map suffixes ~f:(fun suffix -> `List [`String "suffix"; `String suffix])
-      in
-      `List
-        [
-          `String "allof";
-          `List [`String "type"; `String "f"];
-          `List (`String "anyof" :: List.append suffixes base_names);
-        ]
-  end
-
   module Setting = struct
     type t = {
       raw: Raw.t;
@@ -274,4 +274,141 @@ module Subscriber = struct
   let with_subscription ~f config =
     let open Lwt.Infix in
     subscribe config >>= fun subscriber -> listen ~f subscriber
+end
+
+module SinceQuery = struct
+  module Since = struct
+    module SavedState = struct
+      type t = {
+        storage: string;
+        project_name: string;
+        project_metadata: string option;
+      }
+      [@@deriving sexp, compare, hash]
+
+      let watchman_expression_of { storage; project_name; project_metadata } =
+        let storage_entry = "storage", `String storage in
+        let configuration_entry =
+          ( "config",
+            let project_name_entry = "project", `String project_name in
+            match project_metadata with
+            | None -> `Assoc [project_name_entry]
+            | Some project_metadata ->
+                let project_metadata_entry = "project-metadata", `String project_metadata in
+                `Assoc [project_name_entry; project_metadata_entry] )
+        in
+        `Assoc [storage_entry; configuration_entry]
+    end
+
+    type t =
+      | Clock of string
+      | SourceControlAware of {
+          mergebase_with: string;
+          saved_state: SavedState.t option;
+        }
+    [@@deriving sexp, compare, hash]
+
+    let watchman_expression_of = function
+      | Clock clock -> `String clock
+      | SourceControlAware { mergebase_with; saved_state } ->
+          `Assoc
+            [
+              ( "scm",
+                let mergebase_with_entry = "mergebase-with", `String mergebase_with in
+                match saved_state with
+                | None -> `Assoc [mergebase_with_entry]
+                | Some saved_state ->
+                    let saved_state_entry =
+                      "saved-state", SavedState.watchman_expression_of saved_state
+                    in
+                    `Assoc [mergebase_with_entry; saved_state_entry] );
+            ]
+  end
+
+  module Response = struct
+    module SavedState = struct
+      type t = {
+        bucket: string;
+        path: string;
+        commit_id: string option;
+      }
+      [@@deriving sexp, compare, hash]
+
+      let of_watchman_response_exn response =
+        let open Yojson.Safe.Util in
+        let bucket = member "manifold-bucket" response |> to_string in
+        let path = member "manifold-path" response |> to_string in
+        let commit_id =
+          match member "commit-id" response with
+          | `String id -> Some id
+          | _ -> None
+        in
+        { bucket; path; commit_id }
+    end
+
+    type t = {
+      relative_paths: string list;
+      saved_state: SavedState.t option;
+    }
+    [@@deriving sexp, compare, hash]
+
+    let of_watchman_response_exn response =
+      let open Yojson.Safe.Util in
+      let relative_paths = member "files" response |> to_list |> filter_string in
+      let saved_state =
+        match member "saved-state-info" response with
+        | `Null -> None
+        | _ as response -> SavedState.of_watchman_response_exn response |> Option.some
+      in
+      { relative_paths; saved_state }
+
+
+    let of_watchman_response response =
+      try Some (of_watchman_response_exn response) with
+      | _ -> None
+  end
+
+  type t = {
+    root: Pyre.Path.t;
+    filter: Filter.t;
+    since: Since.t;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let watchman_request_of { root; filter; since } =
+    `List
+      [
+        `String "query";
+        `String (Path.absolute root);
+        `Assoc
+          [
+            "fields", `List [`String "name"];
+            "expression", Filter.watchman_expression_of filter;
+            "since", Since.watchman_expression_of since;
+          ];
+      ]
+
+
+  let query_exn ~connection since_query =
+    let open Lwt.Infix in
+    let request = watchman_request_of since_query in
+    Raw.Connection.send connection request
+    >>= fun () ->
+    Raw.Connection.receive connection ()
+    >>= function
+    | Raw.Response.Ok response -> Lwt.return (Response.of_watchman_response_exn response)
+    | Error message -> raise (QueryError message)
+    | EndOfStream ->
+        let message = "Failed to receive any response from watchman server" in
+        raise (QueryError message)
+
+
+  let query ~connection since_query =
+    let open Lwt.Infix in
+    Lwt.catch
+      (fun () ->
+        query_exn ~connection since_query >>= fun response -> Lwt.return (Result.Ok response))
+      (fun exn ->
+        let message = Format.sprintf "Watchman query failed. Exception: %s" (Exn.to_string exn) in
+        Lwt.return (Result.Error message))
 end

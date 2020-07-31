@@ -110,7 +110,7 @@ let test_subscription _ =
         Watchman.Subscriber.Setting.raw = mock_raw;
         root;
         (* We are not going to test these settings so they can be anything. *)
-        filter = { Watchman.Subscriber.Filter.base_names = []; suffixes = [] };
+        filter = { Watchman.Filter.base_names = []; suffixes = [] };
       }
     in
     Lwt.catch
@@ -220,7 +220,7 @@ let test_subscription _ =
 
 let test_filter_expression context =
   let assert_expression ~expected filter =
-    let actual = Watchman.Subscriber.Filter.watchman_expression_of filter in
+    let actual = Watchman.Filter.watchman_expression_of filter in
     assert_equal
       ~ctxt:context
       ~cmp:Yojson.Safe.equal
@@ -229,7 +229,7 @@ let test_filter_expression context =
       actual
   in
   assert_expression
-    { Watchman.Subscriber.Filter.base_names = ["foo.txt"; "TARGETS"]; suffixes = ["cc"; "cpp"] }
+    { Watchman.Filter.base_names = ["foo.txt"; "TARGETS"]; suffixes = ["cc"; "cpp"] }
     ~expected:
       (`List
         [
@@ -247,11 +247,241 @@ let test_filter_expression context =
   ()
 
 
+let test_since_query_request context =
+  let open Watchman.SinceQuery in
+  let root = Path.create_absolute ~follow_symbolic_links:false "/fake/root" in
+  let filter = { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] } in
+  let assert_request ~expected request =
+    let actual = watchman_request_of request in
+    assert_equal
+      ~ctxt:context
+      ~cmp:Yojson.Safe.equal
+      ~printer:Yojson.Safe.pretty_to_string
+      expected
+      actual
+  in
+  assert_request
+    { root; filter; since = Since.Clock "fake:clock" }
+    ~expected:
+      (Yojson.Safe.from_string
+         {|
+           [
+             "query",
+             "/fake/root",
+             {
+               "fields": [ "name" ],
+               "expression": [
+                 "allof",
+                 [ "type", "f" ],
+                 [ "anyof", [ "suffix", ".py" ], [ "match", ".pyre_configuration" ] ]
+               ],
+               "since": "fake:clock"
+             }
+           ]
+         |});
+  assert_request
+    {
+      root;
+      filter;
+      since = Since.SourceControlAware { mergebase_with = "master"; saved_state = None };
+    }
+    ~expected:
+      (Yojson.Safe.from_string
+         {|
+           [
+             "query",
+             "/fake/root",
+             {
+               "fields": [ "name" ],
+               "expression": [
+                 "allof",
+                 [ "type", "f" ],
+                 [ "anyof", [ "suffix", ".py" ], [ "match", ".pyre_configuration" ] ]
+               ],
+               "since": { "scm": { "mergebase-with": "master" } }
+             }
+           ]
+         |});
+  assert_request
+    {
+      root;
+      filter;
+      since =
+        Since.SourceControlAware
+          {
+            mergebase_with = "master";
+            saved_state =
+              Some
+                {
+                  Since.SavedState.storage = "my_storage";
+                  project_name = "my_project";
+                  project_metadata = None;
+                };
+          };
+    }
+    ~expected:
+      (Yojson.Safe.from_string
+         {|
+           [
+             "query",
+             "/fake/root",
+             {
+               "fields": [ "name" ],
+               "expression": [
+                 "allof",
+                 [ "type", "f" ],
+                 [ "anyof", [ "suffix", ".py" ], [ "match", ".pyre_configuration" ] ]
+               ],
+               "since": {
+                 "scm": {
+                   "mergebase-with": "master",
+                   "saved-state": {
+                     "storage": "my_storage",
+                     "config": { "project": "my_project" }
+                   }
+                 }
+               }
+             }
+           ]
+         |});
+  assert_request
+    {
+      root;
+      filter;
+      since =
+        Since.SourceControlAware
+          {
+            mergebase_with = "master";
+            saved_state =
+              Some
+                {
+                  Since.SavedState.storage = "my_storage";
+                  project_name = "my_project";
+                  project_metadata = Some "my_metadata";
+                };
+          };
+    }
+    ~expected:
+      (Yojson.Safe.from_string
+         {|
+           [
+             "query",
+             "/fake/root",
+             {
+               "fields": [ "name" ],
+               "expression": [
+                 "allof",
+                 [ "type", "f" ],
+                 [ "anyof", [ "suffix", ".py" ], [ "match", ".pyre_configuration" ] ]
+               ],
+               "since": {
+                 "scm": {
+                   "mergebase-with": "master",
+                   "saved-state": {
+                     "storage": "my_storage",
+                     "config": {
+                       "project": "my_project",
+                       "project-metadata": "my_metadata"
+                     }
+                   }
+                 }
+               }
+             }
+           ]
+         |});
+  ()
+
+
+let test_since_query_response context =
+  let open Watchman.SinceQuery in
+  let assert_response ~expected response =
+    let actual = Response.of_watchman_response response in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Response.t option]
+      ~printer:(fun response -> [%sexp_of: Response.t option] response |> Sexp.to_string_hum)
+      expected
+      actual
+  in
+  assert_response
+    (`Assoc ["files", `List [`String "a.py"; `String "subdirectory/b.py"]])
+    ~expected:(Some { Response.relative_paths = ["a.py"; "subdirectory/b.py"]; saved_state = None });
+  assert_response
+    (`Assoc
+      [
+        ( "saved-state-info",
+          `Assoc ["manifold-bucket", `String "my_bucket"; "manifold-path", `String "my_path"] );
+        "files", `List [`String "a.py"; `String "subdirectory/b.py"];
+      ])
+    ~expected:
+      (Some
+         {
+           Response.relative_paths = ["a.py"; "subdirectory/b.py"];
+           saved_state =
+             Some { Response.SavedState.bucket = "my_bucket"; path = "my_path"; commit_id = None };
+         });
+  assert_response
+    (`Assoc
+      [
+        ( "saved-state-info",
+          `Assoc
+            [
+              "manifold-bucket", `String "my_bucket";
+              "manifold-path", `String "my_path";
+              "commit-id", `String "my_commit";
+            ] );
+        "files", `List [`String "a.py"; `String "subdirectory/b.py"];
+      ])
+    ~expected:
+      (Some
+         {
+           Response.relative_paths = ["a.py"; "subdirectory/b.py"];
+           saved_state =
+             Some
+               {
+                 Response.SavedState.bucket = "my_bucket";
+                 path = "my_path";
+                 commit_id = Some "my_commit";
+               };
+         });
+  ()
+
+
+let test_since_query _ =
+  let open Lwt.Infix in
+  (* Test what happens when watchman sends back no response. *)
+  let mock_raw =
+    let send _ = Lwt.return_unit in
+    let receive () = Lwt.return_none in
+    Watchman.Raw.create_for_testing ~send ~receive ()
+  in
+  Lwt.catch
+    (fun () ->
+      Watchman.Raw.with_connection mock_raw ~f:(fun connection ->
+          Watchman.SinceQuery.(
+            query_exn
+              ~connection
+              {
+                root = Path.create_absolute ~follow_symbolic_links:false "/fake/root";
+                filter = { Watchman.Filter.base_names = []; suffixes = [] };
+                since = Since.Clock "fake:clock";
+              }))
+      >>= fun _ -> assert_failure "Unexpected success")
+    (function
+      | Watchman.QueryError _ -> Lwt.return_unit
+      | _ as exn ->
+          let message = Format.sprintf "Unexpected failure: %s" (Exn.to_string exn) in
+          assert_failure message)
+
+
 let () =
   "watchman_test"
   >::: [
          "low_level" >:: OUnitLwt.lwt_wrapper test_low_level_apis;
          "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
          "filter_expression" >:: test_filter_expression;
+         "since_query_request" >:: test_since_query_request;
+         "since_query_response" >:: test_since_query_response;
+         "since_query" >:: OUnitLwt.lwt_wrapper test_since_query;
        ]
   |> Test.run

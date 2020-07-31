@@ -7,6 +7,8 @@ exception ConnectionError of string
 
 exception SubscriptionError of string
 
+exception QueryError of string
+
 module Raw : sig
   module Response : sig
     type t =
@@ -55,20 +57,20 @@ module Raw : sig
   val with_connection : f:(Connection.t -> 'a Lwt.t) -> t -> 'a Lwt.t
 end
 
+module Filter : sig
+  (* Only track changes in files that satisfy any of the following conditions:
+   * - Suffix of the file is included in `suffixes`.
+   * - File name of the file is included in `base_names`. *)
+  type t = {
+    base_names: string list;
+    suffixes: string list;
+  }
+  [@@deriving sexp, compare, hash]
+
+  val watchman_expression_of : t -> Yojson.Safe.t
+end
+
 module Subscriber : sig
-  module Filter : sig
-    (* The subscriber will track changes in files that satisfy any of the following conditions:
-     * - Suffix of the file is included in `suffixes`.
-     * - File name of the file is included in `base_names`. *)
-    type t = {
-      base_names: string list;
-      suffixes: string list;
-    }
-    [@@deriving sexp, compare]
-
-    val watchman_expression_of : t -> Yojson.Safe.t
-  end
-
   module Setting : sig
     type t = {
       (* The underlying low-level abstraction layer. *)
@@ -103,4 +105,61 @@ module Subscriber : sig
 
   (* A convenient wrapper that invokes `subscribe` first and then `listen` *)
   val with_subscription : f:(Pyre.Path.t list -> unit Lwt.t) -> Setting.t -> unit Lwt.t
+end
+
+module SinceQuery : sig
+  module Since : sig
+    module SavedState : sig
+      type t = {
+        storage: string;
+        project_name: string;
+        project_metadata: string option;
+      }
+      [@@deriving sexp, compare, hash]
+    end
+
+    type t =
+      | Clock of string
+      | SourceControlAware of {
+          mergebase_with: string;
+          saved_state: SavedState.t option;
+        }
+    [@@deriving sexp, compare, hash]
+  end
+
+  module Response : sig
+    module SavedState : sig
+      type t = {
+        bucket: string;
+        path: string;
+        commit_id: string option;
+      }
+      [@@deriving sexp, compare, hash]
+    end
+
+    type t = {
+      relative_paths: string list;
+      saved_state: SavedState.t option;
+    }
+    [@@deriving sexp, compare, hash]
+
+    val of_watchman_response_exn : Yojson.Safe.t -> t
+
+    val of_watchman_response : Yojson.Safe.t -> t option
+  end
+
+  type t = {
+    root: Pyre.Path.t;
+    filter: Filter.t;
+    since: Since.t;
+  }
+  [@@deriving sexp, compare, hash]
+
+  val watchman_request_of : t -> Yojson.Safe.t
+
+  (* Send the given "since" query to the watchman background service and return the response. *)
+  val query_exn : connection:Raw.Connection.t -> t -> Response.t Lwt.t
+
+  (* Same as `query_exn` but returns `Result.t` rather than throwing. *)
+  val query : connection:Raw.Connection.t -> t -> (Response.t, string) Core.Result.t Lwt.t
 end

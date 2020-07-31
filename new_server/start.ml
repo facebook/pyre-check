@@ -134,7 +134,7 @@ let get_watchman_subscriber
             String.Set.of_list extensions
             |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
           in
-          { Watchman.Subscriber.Filter.base_names; suffixes }
+          { Watchman.Filter.base_names; suffixes }
         in
         { Watchman.Subscriber.Setting.raw; root; filter }
       in
