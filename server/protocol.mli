@@ -124,7 +124,7 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type types_at_file = {
+  type types_at_path = {
     path: PyrePath.t;
     types: type_at_location list;
   }
@@ -136,7 +136,7 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type qualified_names_at_file = {
+  type qualified_names_at_path = {
     path: PyrePath.t;
     qualified_names: qualified_name_at_location list;
   }
@@ -233,14 +233,14 @@ module TypeQuery : sig
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
-    | NamesByFile of qualified_names_at_file list
+    | NamesByPath of qualified_names_at_path list
     | Path of Pyre.Path.t
     | References of Reference.t list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
     | TypeAtLocation of type_at_location
-    | TypesByFile of types_at_file list
+    | TypesByPath of types_at_path list
   [@@deriving eq, show, to_yojson]
 
   and response =

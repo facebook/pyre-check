@@ -671,7 +671,7 @@ let rec process_type_query_request
         in
         let results, errors = List.partition_map ~f:create_result qualified_names in
         if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.NamesByFile results)
+          TypeQuery.Response (TypeQuery.NamesByPath results)
         else
           TypeQuery.Error
             (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
@@ -800,7 +800,7 @@ let rec process_type_query_request
         in
         let results, errors = List.partition_map ~f:create_result annotations in
         if List.is_empty errors then
-          TypeQuery.Response (TypeQuery.TypesByFile results)
+          TypeQuery.Response (TypeQuery.TypesByPath results)
         else
           TypeQuery.Error
             (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))

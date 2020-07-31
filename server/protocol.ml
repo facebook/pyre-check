@@ -125,7 +125,7 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
-  type types_at_file = {
+  type types_at_path = {
     path: PyrePath.t;
     types: type_at_location list;
   }
@@ -145,7 +145,7 @@ module TypeQuery = struct
       ]
 
 
-  type qualified_names_at_file = {
+  type qualified_names_at_path = {
     path: PyrePath.t;
     qualified_names: qualified_name_at_location list;
   }
@@ -244,14 +244,14 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
-    | NamesByFile of qualified_names_at_file list
+    | NamesByPath of qualified_names_at_path list
     | Path of Path.t
     | References of Reference.t list
     | Success of string
     | Superclasses of superclasses_mapping list
     | Type of Type.t
     | TypeAtLocation of type_at_location
-    | TypesByFile of types_at_file list
+    | TypesByPath of types_at_path list
   [@@deriving eq, show]
 
   and response =
@@ -379,8 +379,8 @@ module TypeQuery = struct
     | FoundPath path -> `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
-    | NamesByFile paths_to_qualified_names ->
-        `List (List.map paths_to_qualified_names ~f:qualified_names_at_file_to_yojson)
+    | NamesByPath paths_to_qualified_names ->
+        `List (List.map paths_to_qualified_names ~f:qualified_names_at_path_to_yojson)
     | References references ->
         let json_references =
           List.map references ~f:(fun reference -> `String (Reference.show reference))
@@ -402,8 +402,8 @@ module TypeQuery = struct
             `List (List.map class_to_superclasses_mapping ~f:superclasses_to_json) )
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation
-    | TypesByFile paths_to_annotations ->
-        `List (List.map paths_to_annotations ~f:types_at_file_to_yojson)
+    | TypesByPath paths_to_annotations ->
+        `List (List.map paths_to_annotations ~f:types_at_path_to_yojson)
 
 
   and response_to_yojson = function

@@ -602,7 +602,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -651,7 +651,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -698,7 +698,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -721,7 +721,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -758,7 +758,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -800,7 +800,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -838,7 +838,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -860,7 +860,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -885,7 +885,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -928,7 +928,7 @@ let test_query context =
     ~query:"types(path='test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
@@ -973,7 +973,7 @@ let test_query context =
     ~query:"types('test.py')"
     (fun local_root ->
       Protocol.TypeQuery.Response
-        (Protocol.TypeQuery.TypesByFile
+        (Protocol.TypeQuery.TypesByPath
            [
              {
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
