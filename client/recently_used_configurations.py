@@ -112,5 +112,5 @@ def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:
         index = 0 if user_input == "" else int(user_input)
         return local_roots[index]
     except (Exception, KeyboardInterrupt):
-        LOG.error(f"No valid local root chosen. Quitting.")
+        LOG.error("No valid local root chosen. Quitting.")
         return None
