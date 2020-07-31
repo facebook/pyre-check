@@ -131,6 +131,18 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
+  type qualified_name_at_location = {
+    location: Location.t;
+    qualified_name: Reference.t;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  type qualified_names_at_file = {
+    path: PyrePath.t;
+    qualified_names: qualified_name_at_location list;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type coverage_at_location = {
     location: Location.t;
     coverage: coverage_level;
@@ -224,6 +236,7 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
+    | NamesByFile of qualified_names_at_file list
     | Path of Path.t
     | References of Reference.t list
     | Success of string
@@ -358,6 +371,8 @@ module TypeQuery = struct
     | FoundPath path -> `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
+    | NamesByFile paths_to_qualified_names ->
+        `List (List.map paths_to_qualified_names ~f:qualified_names_at_file_to_yojson)
     | References references ->
         let json_references =
           List.map references ~f:(fun reference -> `String (Reference.show reference))
@@ -389,6 +404,8 @@ module TypeQuery = struct
 
 
   let create_type_at_location (location, annotation) = { location; annotation }
+
+  let create_qualified_name_at_location (location, qualified_name) = { location; qualified_name }
 
   let json_socket_response response =
     `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", response_to_yojson response]

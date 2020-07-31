@@ -19,6 +19,12 @@ type types_by_path = {
   error_reason: error_reason option;
 }
 
+type qualified_names_by_path = {
+  path: PyrePath.t;
+  qualified_names_by_location: (Location.t * Reference.t) list option;
+  error_reason: error_reason option;
+}
+
 type lookup = {
   path: PyrePath.t;
   source_path: SourcePath.t option;
@@ -129,3 +135,15 @@ let find_definition ~state ~configuration path position =
     | _ -> ()
   in
   definition
+
+
+let find_all_qualified_names ~state ~configuration ~paths =
+  let get_names { path; lookup; error_reason; _ } =
+    let qualified_names =
+      lookup
+      >>| Lookup.get_all_qualified_names
+      >>| List.sort ~compare:[%compare: Location.t * Reference.t]
+    in
+    { path; qualified_names_by_location = qualified_names; error_reason }
+  in
+  List.map ~f:get_names (get_lookups ~configuration ~state paths)

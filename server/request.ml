@@ -237,6 +237,24 @@ let rec process_type_query_request
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
+    let get_error_paths errors =
+      List.fold
+        ~init:""
+        ~f:(fun sofar (path, error_reason) ->
+          let print_reason = function
+            | Some LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | Some LookupCache.FileNotFound -> " (file not found)"
+            | None -> ""
+          in
+          Format.asprintf
+            "%s%s`%a`%s"
+            sofar
+            (if String.is_empty sofar then "" else ", ")
+            PyrePath.pp
+            path
+            (print_reason error_reason))
+        errors
+    in
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->
         let source_paths =
@@ -639,7 +657,24 @@ let rec process_type_query_request
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Expression.show annotation)))
-    | TypeQuery.NamesInFiles _ -> TypeQuery.Error "NamesInFiles query not yet supported."
+    | TypeQuery.NamesInFiles paths ->
+        let qualified_names = LookupCache.find_all_qualified_names ~state ~configuration ~paths in
+        let create_result = function
+          | { LookupCache.path; qualified_names_by_location = Some qualified_names; _ } ->
+              Either.First
+                {
+                  TypeQuery.path;
+                  qualified_names =
+                    List.map ~f:TypeQuery.create_qualified_name_at_location qualified_names;
+                }
+          | { LookupCache.path; error_reason; _ } -> Either.Second (path, error_reason)
+        in
+        let results, errors = List.partition_map ~f:create_result qualified_names in
+        if List.is_empty errors then
+          TypeQuery.Response (TypeQuery.NamesByFile results)
+        else
+          TypeQuery.Error
+            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
@@ -767,25 +802,8 @@ let rec process_type_query_request
         if List.is_empty errors then
           TypeQuery.Response (TypeQuery.TypesByFile results)
         else
-          let paths =
-            List.fold
-              ~init:""
-              ~f:(fun sofar (path, error_reason) ->
-                let print_reason = function
-                  | Some LookupCache.StubShadowing -> " (file shadowed by .pyi stub file)"
-                  | Some LookupCache.FileNotFound -> " (file not found)"
-                  | None -> ""
-                in
-                Format.asprintf
-                  "%s%s`%a`%s"
-                  sofar
-                  (if String.is_empty sofar then "" else ", ")
-                  PyrePath.pp
-                  path
-                  (print_reason error_reason))
-              errors
-          in
-          TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
+          TypeQuery.Error
+            (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | TypeQuery.ValidateTaintModels path -> (
         try
           let paths =

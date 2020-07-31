@@ -130,6 +130,18 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type qualified_name_at_location = {
+    location: Location.t;
+    qualified_name: Reference.t;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  type qualified_names_at_file = {
+    path: PyrePath.t;
+    qualified_names: qualified_name_at_location list;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type coverage_at_location = {
     location: Location.t;
     coverage: coverage_level;
@@ -221,6 +233,7 @@ module TypeQuery : sig
     | FoundPath of string
     | FoundSignature of found_signature list
     | Help of string
+    | NamesByFile of qualified_names_at_file list
     | Path of Pyre.Path.t
     | References of Reference.t list
     | Success of string
@@ -236,6 +249,8 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   val create_type_at_location : Location.t * Type.t -> type_at_location
+
+  val create_qualified_name_at_location : Location.t * Reference.t -> qualified_name_at_location
 
   val json_socket_response : response -> Yojson.Safe.t
 end

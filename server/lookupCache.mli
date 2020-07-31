@@ -17,6 +17,12 @@ type types_by_path = {
   error_reason: error_reason option;
 }
 
+type qualified_names_by_path = {
+  path: PyrePath.t;
+  qualified_names_by_location: (Location.t * Reference.t) list option;
+  error_reason: error_reason option;
+}
+
 val evict : lookups:Analysis.Lookup.t String.Table.t -> Reference.t -> unit
 
 val evict_path : state:State.t -> configuration:Configuration.Analysis.t -> PyrePath.t -> unit
@@ -40,3 +46,9 @@ val find_definition
   PyrePath.t ->
   Location.position ->
   Location.t option
+
+val find_all_qualified_names
+  :  state:State.t ->
+  configuration:Configuration.Analysis.t ->
+  paths:PyrePath.t list ->
+  qualified_names_by_path list
