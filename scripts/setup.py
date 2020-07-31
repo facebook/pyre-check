@@ -18,6 +18,9 @@ from tempfile import mkdtemp
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type
 
 
+LOG: logging.Logger = logging.getLogger(__name__)
+
+
 COMPILER_VERSION = "4.08.0"
 DEVELOPMENT_COMPILER: str = COMPILER_VERSION
 RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
@@ -50,7 +53,6 @@ class BuildType(Enum):
 
 
 class Runner(NamedTuple):
-    logger: logging.Logger
     opam_root: Path
 
     development: bool = False
@@ -99,25 +101,25 @@ class Runner(NamedTuple):
             ocamlc_location = self.run(["ocamlc", "-where"])
             test_ocamlbuild_location = Path(ocamlc_location) / "ocamlbuild"
             if test_ocamlbuild_location.is_dir():
-                self.logger.error(
+                LOG.error(
                     "OCamlbuild will refuse to install since it is already "
                     + f"present at {test_ocamlbuild_location}."
                 )
-                self.logger.error("If you want to bypass this safety check, run:")
-                self.logger.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
+                LOG.error("If you want to bypass this safety check, run:")
+                LOG.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
                 raise OCamlbuildAlreadyInstalled
 
     def validate_opam_version(self) -> None:
         version = self.run(["opam", "--version"])
         if version[:1] != "2":
-            self.logger.error(
+            LOG.error(
                 "Pyre only supports opam 2.0.0 and above, please update your "
                 + "opam version."
             )
             raise OldOpam
 
     def opam_environment_variables(self) -> Dict[str, str]:
-        self.logger.info("Activating opam")
+        LOG.info("Activating opam")
         opam_env_result = self.run(
             [
                 "opam",
@@ -135,7 +137,7 @@ class Runner(NamedTuple):
         for line in opam_env_result.split("\n"):
             environment_variable, quoted_value = line.split(";")[0].split("=")
             value = quoted_value[1:-1]
-            self.logger.info(f'{environment_variable}="{value}"')
+            LOG.info(f'{environment_variable}="{value}"')
             opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
@@ -214,7 +216,7 @@ class Runner(NamedTuple):
             }
         else:
             environment_variables = self.environment_variables
-        self.logger.info(command)
+        LOG.info(command)
         output = subprocess.check_output(
             command,
             universal_newlines=True,
@@ -267,13 +269,8 @@ def main(runner_type: Type[Runner]) -> None:
 
     opam_root = make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
-    logger = logging.getLogger(__name__)
-
     runner = runner_type(
-        logger=logger,
-        opam_root=opam_root,
-        development=parsed.development,
-        release=parsed.release,
+        opam_root=opam_root, development=parsed.development, release=parsed.release
     )
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
@@ -292,7 +289,7 @@ def main(runner_type: Type[Runner]) -> None:
     elif parsed.environment_only:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
         runner.initialize_opam_switch()
-        logger.info("Environment built successfully, stopping here as requested.")
+        LOG.info("Environment built successfully, stopping here as requested.")
     else:
         runner.full_setup(
             pyre_directory, run_tests=True, build_type_override=parsed.build_type
