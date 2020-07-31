@@ -47,6 +47,7 @@ module NodeVisitor = struct
     =
     let annotate_expression ({ Node.location; value } as expression) =
       let resolution = if postcondition then post_resolution else pre_resolution in
+      let global_resolution = Resolution.global_resolution resolution in
       let resolve ~resolution ~expression =
         try
           let annotation = Resolution.resolve_expression_to_annotation resolution expression in
@@ -64,7 +65,7 @@ module NodeVisitor = struct
       in
       let resolve_definition ~expression =
         let find_definition reference =
-          GlobalResolution.global_location (Resolution.global_resolution resolution) reference
+          GlobalResolution.global_location global_resolution reference
           >>| Location.strip_module
           >>= fun location -> if Location.equal location Location.any then None else Some location
         in
@@ -86,7 +87,19 @@ module NodeVisitor = struct
       let resolve_qualified_name ~expression =
         match Node.value (delocalize expression) with
         | Expression.Name (Name.Identifier name) when Identifier.is_sanitized name -> None
-        | Expression.Name name -> name_to_reference name
+        | Expression.Name name -> (
+            let reference = name_to_reference name in
+            reference
+            >>= GlobalResolution.resolve_exports global_resolution
+            >>= function
+            | UnannotatedGlobalEnvironment.ResolvedReference.Module reference -> Some reference
+            | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+                { from; name; remaining = []; _ } ->
+                Some (Reference.combine from (Reference.create name))
+            | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
+                { stub_module; remaining = []; _ } ->
+                Some stub_module
+            | _ -> reference )
         | _ -> None
       in
       let store_lookup ~table ~location ~data =

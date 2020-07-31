@@ -164,23 +164,36 @@ let test_lookup_qualified_names context =
   in
   let source =
     {|
+      from . import b
       from .b import A as RenamedA
 
-      a = RenamedA
-      b = a.attribute
+      x = RenamedA
+      y = x
+      y = x.attribute
+      y = RenamedA.attribute
+      z = b.A
     |}
   in
   let lookup = generate_lookup ~context ~environment_sources source in
   assert_qualified_names
     ~lookup
     [
-      "2:15-2:16 -> b.A";
-      "2:20-2:28 -> b.A";
-      "4:0-4:1 -> test.a";
-      "4:4-4:12 -> b.A";
-      "5:0-5:1 -> test.b";
-      "5:4-5:15 -> test.a.attribute";
-      "5:4-5:5 -> test.a";
+      "2:14-2:15 -> b";
+      "3:15-3:16 -> a.A";
+      "3:20-3:28 -> a.A";
+      "5:0-5:1 -> test.x";
+      "5:4-5:12 -> a.A";
+      "6:0-6:1 -> test.y";
+      "6:4-6:5 -> test.x";
+      "7:0-7:1 -> test.y";
+      "7:4-7:15 -> test.x.attribute";
+      "7:4-7:5 -> test.x";
+      "8:0-8:1 -> test.y";
+      "8:4-8:12 -> a.A";
+      "8:4-8:22 -> b.A.attribute";
+      "9:0-9:1 -> test.z";
+      "9:4-9:5 -> b";
+      "9:4-9:7 -> a.A";
     ];
 
   let environment_sources =
@@ -247,9 +260,7 @@ let test_lookup_qualified_names context =
     |}
   in
   let lookup = generate_lookup ~context source in
-  assert_qualified_names
-    ~lookup
-    ["2:25-2:29 -> List.__getitem__"; "2:30-2:33 -> int"; "2:4-2:7 -> test.foo"]
+  assert_qualified_names ~lookup ["2:30-2:33 -> int"; "2:4-2:7 -> test.foo"]
 
 
 (* Definitions *)
