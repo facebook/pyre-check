@@ -85,6 +85,7 @@ module NodeVisitor = struct
       in
       let resolve_qualified_name ~expression =
         match Node.value (delocalize expression) with
+        | Expression.Name (Name.Identifier name) when Identifier.is_sanitized name -> None
         | Expression.Name name -> name_to_reference name
         | _ -> None
       in

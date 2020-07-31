@@ -37,6 +37,8 @@ let sanitized name =
   stars ^ name
 
 
+let is_sanitized name = String.is_prefix ~prefix:"$" name
+
 let equal_sanitized left right = equal (sanitized left) (sanitized right)
 
 let pp_sanitized format identifier = Format.fprintf format "%a" String.pp (sanitized identifier)

@@ -136,13 +136,9 @@ let assert_qualified_names ~lookup expected =
 
 
 let test_lookup_qualified_names context =
-  let environment_sources =
-    ["a.py", {|
-      class A:
-        def __init__(self) -> None:
-          self.a = 1
-    |}]
-  in
+  let environment_sources = ["a.py", {|
+      class A: pass
+    |}] in
   let source = {|
       from .a import A as RenamedA
 
@@ -151,7 +147,109 @@ let test_lookup_qualified_names context =
   let lookup = generate_lookup ~context ~environment_sources source in
   assert_qualified_names
     ~lookup
-    ["2:15-2:16 -> a.A"; "2:20-2:28 -> a.A"; "4:0-4:1 -> test.a"; "4:4-4:12 -> a.A"]
+    ["2:15-2:16 -> a.A"; "2:20-2:28 -> a.A"; "4:0-4:1 -> test.a"; "4:4-4:12 -> a.A"];
+
+  let environment_sources =
+    [
+      ( "a.py",
+        {|
+      class A:
+        def __init__(self) -> None:
+          self.attribute = 1
+    |} );
+      "b.py", {|
+      from .a import A
+    |};
+    ]
+  in
+  let source =
+    {|
+      from .b import A as RenamedA
+
+      a = RenamedA
+      b = a.attribute
+    |}
+  in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    [
+      "2:15-2:16 -> b.A";
+      "2:20-2:28 -> b.A";
+      "4:0-4:1 -> test.a";
+      "4:4-4:12 -> b.A";
+      "5:0-5:1 -> test.b";
+      "5:4-5:15 -> test.a.attribute";
+      "5:4-5:5 -> test.a";
+    ];
+
+  let environment_sources =
+    [
+      ( "module/a.py",
+        {|
+      class A:
+        attribute = ""
+        def method(self, input: str) -> None:
+          pass
+    |}
+      );
+    ]
+  in
+  let source =
+    {|
+      from .module import a
+
+      global_class = a.A
+      global_instance = a.A()
+      global_instance.method(global_instance.attribute)
+
+      def foo() -> None:
+        global_instance.method(global_instance.attribute)
+        local_instance = a.A()
+        local_variable = local_instance.method(local_instance.attribute)
+    |}
+  in
+  let lookup = generate_lookup ~context ~environment_sources source in
+  assert_qualified_names
+    ~lookup
+    [
+      "10:19-10:20 -> module.a";
+      "10:19-10:22 -> module.a.A";
+      "10:2-10:16 -> test.foo.local_instance";
+      "11:19-11:33 -> test.foo.local_instance";
+      "11:19-11:40 -> test.foo.local_instance.method";
+      "11:2-11:16 -> test.foo.local_variable";
+      "11:41-11:55 -> test.foo.local_instance";
+      "11:41-11:65 -> test.foo.local_instance.attribute";
+      "2:20-2:21 -> module.a";
+      "4:0-4:12 -> test.global_class";
+      "4:15-4:16 -> module.a";
+      "4:15-4:18 -> module.a.A";
+      "5:0-5:15 -> test.global_instance";
+      "5:18-5:19 -> module.a";
+      "5:18-5:21 -> module.a.A";
+      "6:0-6:15 -> test.global_instance";
+      "6:0-6:22 -> test.global_instance.method";
+      "6:23-6:38 -> test.global_instance";
+      "6:23-6:48 -> test.global_instance.attribute";
+      "8:13-8:17 -> None";
+      "8:4-8:7 -> test.foo";
+      "9:2-9:17 -> test.global_instance";
+      "9:2-9:24 -> test.global_instance.method";
+      "9:25-9:40 -> test.global_instance";
+      "9:25-9:50 -> test.global_instance.attribute";
+    ];
+
+  let source =
+    {|
+      def foo(x: List[int]) -> List[int]:
+        return [element for element in x]
+    |}
+  in
+  let lookup = generate_lookup ~context source in
+  assert_qualified_names
+    ~lookup
+    ["2:25-2:29 -> List.__getitem__"; "2:30-2:33 -> int"; "2:4-2:7 -> test.foo"]
 
 
 (* Definitions *)
