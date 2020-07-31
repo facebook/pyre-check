@@ -47,13 +47,9 @@ def validate_configuration(temporary_project_path: Path) -> None:
     production_assert(binary.is_file(), "Binary was not included in pypi package.")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Test wheel or source distribution for basic functionality."
-    )
-    parser.add_argument("pypi", type=str)
-    arguments = parser.parse_args()
-    pypi = arguments.pypi
+def run_sanity_test(version: str, use_wheel: bool) -> None:
+    message = "wheel" if use_wheel else "source distribution"
+    print(f"Sanity testing {message}")
     with tempfile.TemporaryDirectory() as temporary_venv:
         venv = Path(temporary_venv)
         builder = EnvBuilder(system_site_packages=False, clear=True, with_pip=True)
@@ -62,7 +58,20 @@ def main() -> None:
         pyre_path = venv / "bin" / "pyre"
 
         # Confirm that pypi package can be successfully installed
-        subprocess.run([venv / "bin" / "pip", "install", pypi])
+        wheel_flag = "--only-binary" if use_wheel else "--no-binary"
+        subprocess.run(
+            [
+                venv / "bin" / "pip",
+                "install",
+                "--index-url",
+                "https://test.pypi.org/simple/",
+                "--extra-index-url",
+                "https://pypi.org/simple",
+                wheel_flag,
+                "pyre-check",
+                f"pyre-check=={version}",
+            ]
+        )
         production_assert(pyre_path.exists(), "Pyre was not installed.")
 
         # Create test project.
@@ -104,6 +113,17 @@ def main() -> None:
                 if errors
                 else "Expected pyre errors but none returned.",
             )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Test wheel & source distribution for basic functionality."
+    )
+    parser.add_argument("version", type=str)
+    arguments = parser.parse_args()
+    version: str = arguments.version
+    run_sanity_test(version, use_wheel=True)
+    run_sanity_test(version, use_wheel=False)
 
 
 if __name__ == "__main__":
