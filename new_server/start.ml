@@ -31,7 +31,8 @@ let request_from_string request_string =
 
 let handle_request ~server_state request =
   let open Lwt.Infix in
-  let server_state = Lazy.force server_state in
+  Lazy.force server_state
+  >>= fun server_state ->
   let on_uncaught_server_exception exn =
     Log.info "Uncaught server exception: %s" (Exn.to_string exn);
     let () =
@@ -75,37 +76,138 @@ let handle_connection ~server_state _client_address (input_channel, output_chann
   handle_line ()
 
 
-let initialize_server_state ({ ServerConfiguration.log_path; _ } as server_configuration) =
-  Log.info "Initializing server state...";
+let initialize_server_state
+    ?watchman_subscriber
+    ({ ServerConfiguration.log_path; saved_state_action; critical_files; _ } as server_configuration)
+  =
   let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
-  let { Service.Check.environment; errors } =
-    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-        Service.Check.check
-          ~scheduler
-          ~configuration
-          ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
-  in
-  let error_table =
-    let table = Ast.Reference.Table.create () in
-    let add_error error =
-      let key = Analysis.AnalysisError.path error in
-      Hashtbl.add_multi table ~key ~data:error
+  (* This is needed to initialize shared memory. *)
+  let _ = Memory.get_heap_handle configuration in
+  let start_from_scratch () =
+    Log.info "Initializing server state from scratch...";
+    let { Service.Check.environment; errors } =
+      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+          Service.Check.check
+            ~scheduler
+            ~configuration
+            ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
     in
-    List.iter errors ~f:add_error;
-    table
+    let error_table =
+      let table = Ast.Reference.Table.create () in
+      let add_error error =
+        let key = Analysis.AnalysisError.path error in
+        Hashtbl.add_multi table ~key ~data:error
+      in
+      List.iter errors ~f:add_error;
+      table
+    in
+    {
+      ServerState.socket_path = socket_path_of log_path;
+      server_configuration;
+      configuration;
+      type_environment = environment;
+      error_table;
+    }
   in
-  let state =
-    ref
-      {
-        ServerState.socket_path = socket_path_of log_path;
-        server_configuration;
-        configuration;
-        type_environment = environment;
-        error_table;
-      }
+  let fetch_saved_state_from_files ~shared_memory_path ~changed_files_path () =
+    try
+      let open Pyre in
+      let changed_files =
+        changed_files_path
+        >>| File.create
+        >>= File.content
+        >>| String.split_lines
+        >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:false)
+        |> Option.value ~default:[]
+      in
+      Lwt.return (Result.Ok { SavedState.Fetched.path = shared_memory_path; changed_files })
+    with
+    | exn ->
+        let message =
+          Format.sprintf
+            "Cannot fetch saved state from file due to exception: %s"
+            (Exn.to_string exn)
+        in
+        Lwt.return (Result.Error message)
   in
+  let fetch_saved_state_from_project ~project_name ~project_metadata () =
+    let open Lwt.Infix in
+    Lwt.catch
+      (fun () ->
+        match watchman_subscriber with
+        | None -> failwith "Watchman is not enabled"
+        | Some watchman_subscriber ->
+            let { Watchman.Subscriber.Setting.root = watchman_root; filter = watchman_filter; _ } =
+              Watchman.Subscriber.setting_of watchman_subscriber
+            in
+            let watchman_connection = Watchman.Subscriber.connection_of watchman_subscriber in
+            let target = Path.create_relative ~root:log_path ~relative:"server/server.state" in
+            SavedState.query_and_fetch_exn
+              {
+                SavedState.Setting.watchman_root;
+                watchman_filter;
+                watchman_connection;
+                project_name;
+                project_metadata;
+                critical_files;
+                target;
+              }
+            >>= fun fetched -> Lwt.return (Result.Ok fetched))
+      (fun exn ->
+        let message =
+          Format.sprintf
+            "Cannot fetch saved state from project due to exception: %s"
+            (Exn.to_string exn)
+        in
+        Lwt.return (Result.Error message))
+  in
+  let load_from_saved_state = function
+    | Result.Error message ->
+        Log.warning "%s" message;
+        Lwt.return (start_from_scratch ())
+    | Result.Ok { SavedState.Fetched.path; changed_files } ->
+        Log.info "Restoring environments from saved state...";
+        let loaded_state =
+          Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
+          let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+          let ast_environment = Analysis.AstEnvironment.load module_tracker in
+          let type_environment =
+            Analysis.AnnotatedGlobalEnvironment.create ast_environment
+            |> Analysis.TypeEnvironment.create
+          in
+          Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+          let error_table = Server.SavedState.ServerErrors.load () in
+          {
+            ServerState.socket_path = socket_path_of log_path;
+            server_configuration;
+            configuration;
+            type_environment;
+            error_table;
+          }
+        in
+        let open Lwt.Infix in
+        Log.info "Processing recent updates not included in saved state...";
+        Request.IncrementalUpdate (List.map changed_files ~f:Path.absolute)
+        |> RequestHandler.process_request ~state:loaded_state
+        >>= fun (new_state, _) -> Lwt.return new_state
+  in
+  let open Lwt.Infix in
+  let get_initial_state () =
+    match saved_state_action with
+    | None -> Lwt.return (start_from_scratch ())
+    | Some
+        (ServerConfiguration.SavedStateAction.LoadFromFile
+          { shared_memory_path; changed_files_path }) ->
+        fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
+        >>= load_from_saved_state
+    | Some (ServerConfiguration.SavedStateAction.LoadFromProject { project_name; project_metadata })
+      ->
+        fetch_saved_state_from_project ~project_name ~project_metadata () >>= load_from_saved_state
+  in
+  get_initial_state ()
+  >>= fun state ->
   Log.info "Server state initialized.";
-  state
+  Lwt.return (ref state)
 
 
 let get_watchman_subscriber
@@ -153,15 +255,15 @@ let on_watchman_update ~server_state paths =
 let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_configuration) =
   let open Lwt in
   let socket_path = socket_path_of log_path in
-  let server_state =
-    (* We do not want the expensive server initialization to happen before we start to listen on the
-       socket. Hence the use of `lazy` here to delay the initialization. *)
-    lazy (initialize_server_state server_configuration)
-  in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ?watchman server_configuration
   >>= fun watchman_subscriber ->
+  let server_state =
+    (* We do not want the expensive server initialization to happen before we start to listen on the
+       socket. Hence the use of `lazy` here to delay the initialization. *)
+    lazy (initialize_server_state ?watchman_subscriber server_configuration)
+  in
   Lwt_io.establish_server_with_client_address
     (Lwt_unix.ADDR_UNIX (Path.absolute socket_path))
     (handle_connection ~server_state)
@@ -169,8 +271,7 @@ let with_server ?watchman ~f ({ ServerConfiguration.log_path; _ } as server_conf
   let server_waiter () =
     (* Force the server state initialization to run immediately so the computation does not need to
        happen inside request handlers. *)
-    let server_state = Lazy.force server_state in
-    f server_state
+    Lazy.force server_state >>= f
   in
   let server_destructor () =
     Log.info "Server is going down. Cleaning up...";
